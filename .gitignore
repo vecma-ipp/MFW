@@ -1,0 +1,15 @@
+*.pyc
+*.pyo
+.ipynb_checkpoints/
+*.so
+
+build
+*build*
+*egg*
+*dist*
+usr
+*cache*
+
+*.swp
+*.log
+
