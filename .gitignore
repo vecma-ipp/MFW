@@ -13,3 +13,4 @@ usr
 *.swp
 *.log
 
+externals/*
