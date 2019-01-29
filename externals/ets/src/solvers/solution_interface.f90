@@ -1,0 +1,130 @@
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+!> INTERFACE TO NUMERICAL SOLVER
+!>
+!> This interface is prepared to test the ETS
+!> and will be replaced by KEPLER 
+!>
+!> \author D.Kalupin
+!>
+!> \version "$Id: solution_interface.f90 1741 2016-04-25 11:56:33Z denka $"
+! + + + + + + INTERFACE TO NUMERICAL SOLVER + + + + + + +    
+
+      SUBROUTINE SOLUTION_INTERFACE (SOLVER, ifail)
+
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+!     This interface is prepared to test the ETS        +
+!     and will be replaced by KEPLER                    +
+!                                                       +
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+!     Source:       --                                  +
+!     Developers:   D.Kalupin                           +
+!     Kontacts:     D.Kalupin@fz-juelich.de             +
+!                                                       +
+!     Comments:     should be replaced by KEPLER        +
+!                                                       +
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+
+
+      USE ETS_PLASMA
+      USE TYPE_SOLVER
+      USE ITM_TYPES
+
+      IMPLICIT NONE
+
+      INTEGER, INTENT (INOUT)         :: ifail
+      INTEGER                         :: ifail1
+
+! +++ Input/Output with ETS:
+      TYPE (NUMERICS), INTENT (INOUT) :: SOLVER                 !contains all I/O quantities to numerics part
+
+
+! +++ Internal input/output parameters:
+      INTEGER   :: SOLVER_TYPE                                !specifies the option for numerical solution
+
+
+
+! + + + + + + + + + INTERFACE PART  + + + + + + + + + + +    
+
+      SOLVER_TYPE    = SOLVER%TYPE
+
+      !IF (SOLVER_TYPE.EQ.1 .or. SOLVER_TYPE.EQ.4) THEN !AF 15.Sep.2011
+      IF (SOLVER_TYPE.EQ.1) THEN !AF 15.Sep.2011 - 4 is for the improved solver 3 now
+!       call numerical solver extracted from RITM, with 
+!       differential form of equation
+        CALL SOLUTION1 (SOLVER, ifail1)
+
+      ELSE IF (SOLVER_TYPE.EQ.2) THEN
+!       call numerical solver extracted from RITM, with 
+!       integral form of equation
+        CALL SOLUTION2 (SOLVER, ifail1)
+
+      ELSE IF (SOLVER_TYPE.EQ.3) THEN                        !This part should be changed by COREDIF people
+!       call matrix numerical solver extracted from COREDIF  !introducing the interface to matrix solver
+        CALL SOLUTION3 (SOLVER, ifail1)                      
+
+      !AF - 14.Sep.2011
+      ELSE IF (SOLVER_TYPE.EQ.4) THEN
+!       call the improved solver 3 (progonka/block thomas) from Roman Stankiewicz
+        CALL SOLUTION4 (SOLVER, ifail1)
+      !AF - End
+        
+      ELSE IF (SOLVER_TYPE.EQ.6) THEN
+!       call solver from Guido Huysmans
+        CALL SOLUTION6 (SOLVER, ifail1)
+
+      ELSE IF (SOLVER_TYPE.EQ.7 .or. SOLVER_TYPE.EQ.8) THEN
+!       call numerical solver extracted from RITM, with 
+!       differential form of equation
+        CALL SOLUTION7 (SOLVER, ifail1)
+
+      ELSE IF (SOLVER_TYPE.EQ.9) THEN
+!       call solver from Guido Huysmans
+!        CALL SOLUTION9 (SOLVER, ifail1)   !disappeared in latest release
+
+      ELSE IF (SOLVER_TYPE.EQ.10) THEN
+!       call solver from CRONOS
+        write(*,*) 'call COSSOLVER'
+!        CALL SOLUTION_cronos(SOLVER, ifail1)   !disappeared in latest release
+        CALL SOLUTION10(SOLVER, ifail1)   !AF, 9.Jul.2010
+
+      ELSE IF (SOLVER_TYPE.EQ.11) THEN
+!       call solver from FESB (Anna Šušnjara)
+        write(*,*) 'call SOLUTIONFEM'
+        CALL SOLUTIONFEM (SOLVER, ifail)
+
+      ELSE 
+        write(*,*) 'Invalid SOLVER_TYPE = ',SOLVER_TYPE
+      END IF
+
+      IF (ifail1.GT.2) ifail1 = 0
+      ifail = MAX(ifail, ifail1)
+
+      write(*,*) 'Solution maximum fractional error = ',  &
+           maxval(abs(  &
+                        solver%c(1:solver%ndim,:)*solver%a(1:solver%ndim,:)*solver%y(1:solver%ndim,:) &
+                      - solver%c(1:solver%ndim,:)*solver%b(1:solver%ndim,:)*solver%ym(1:solver%ndim,:) &
+                      - solver%h*solver%d(1:solver%ndim,:)*solver%dy(1:solver%ndim,:) &
+                      + solver%h*solver%e(1:solver%ndim,:)*solver%y(1:solver%ndim,:) &
+                      - solver%h*solver%c(1:solver%ndim,:)*solver%f(1:solver%ndim,:) &
+                      + solver%h*solver%c(1:solver%ndim,:)*solver%g(1:solver%ndim,:)*solver%y(1:solver%ndim,:) &
+                      )) /  &
+           max( tiny(1.0_R8), &
+                maxval(abs( solver%c(1:solver%ndim,:)*solver%a(1:solver%ndim,:)*solver%y(1:solver%ndim,:) )), &
+                maxval(abs( solver%c(1:solver%ndim,:)*solver%b(1:solver%ndim,:)*solver%ym(1:solver%ndim,:) )), &
+                maxval(abs( solver%h*solver%d(1:solver%ndim,:)*solver%dy(1:solver%ndim,:) )), &
+                maxval(abs( solver%h*solver%e(1:solver%ndim,:)*solver%y(1:solver%ndim,:) )), &
+                maxval(abs( solver%h*solver%c(1:solver%ndim,:)*solver%f(1:solver%ndim,:) )), &
+                maxval(abs( solver%h*solver%c(1:solver%ndim,:)*solver%g(1:solver%ndim,:)*solver%y(1:solver%ndim,:) ))  &
+                )
+
+
+      RETURN
+
+      END SUBROUTINE SOLUTION_INTERFACE
+
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+
+
+
+

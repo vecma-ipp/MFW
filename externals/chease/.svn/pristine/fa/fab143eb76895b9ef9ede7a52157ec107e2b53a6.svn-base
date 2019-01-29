@@ -1,0 +1,27 @@
+!*DECK U36
+!*CALL PROCESS
+SUBROUTINE WRTEXT(VAR,CTEXT,TEXT,K,KN)
+  !        --------------------------------------
+  !
+  USE globals
+  IMPLICIT NONE
+  INTEGER          ::     KN
+  INTEGER          ::     L
+  REAL(RKIND)      ::     VAR
+  INTEGER          ::     K
+  DIMENSION VAR(*)
+  CHARACTER*(*) TEXT,CTEXT
+  !
+  IF (K .EQ. 1) THEN
+     WRITE(TEXT,9900) CTEXT,VAR(1)
+  ELSE IF (K .EQ. 2) THEN
+     WRITE(TEXT,9901) CTEXT,VAR(1)
+  ELSE IF (K .EQ. 3) THEN
+     WRITE(TEXT,9902) CTEXT,(VAR(L),L=1,KN)
+  ENDIF
+  !
+  RETURN
+9900 FORMAT(A,' = ',1PG13.5)
+9901 FORMAT(A,' = ',1PG13.5,'%')
+9902 FORMAT(A,' = ',13(1PG12.4))
+END SUBROUTINE WRTEXT

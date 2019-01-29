@@ -1,0 +1,151 @@
+RH test
+/
+&NUMBER_OF_SPECIES
+ nspecies_max=2
+/
+&BASIC
+ job_time      = 3600                !> Time duration of the run  
+ extra_time    = 100                 !> Time for preparing restart files
+ rfsavetime    = 200000               !> Time for Intermediate restart file saving
+ nrun          = 100                 !> Number of time-steps  
+ dt            = 500.                 !> Delta t in \omega_{ci} units
+ nlres         = f                   !> flag for restarting simulation 
+ nlsave        = t                   !> flag for saving restart files
+ nsel_equil    = 2                   !> 1 MHD, 2 ad-hoc, 3 cylinder
+ !nsel_fullf    = 0                   !> 0 delta f, 1 full f
+ nsel_coord    = 2                   !> coordinates: 1->(R,Z) 2->(S,CHI)  
+ clones        = 1                   !> number of clones
+ nsel_linear   = t                   !> T, linear run
+ nsel_island   = 0
+ nsel_beta     = 1	
+ nsel_elmag    = 0
+/
+&EQUIL	
+ lx          = 100
+ nequ_r      = 360 
+ nequ_z      = 360 
+ zrmag       = 1.667
+ zzmag       = -2.17719577732440E-11
+ r0_mid      = 1.667
+ a_mid       = 0.01667
+ btor0       = 2.4
+ ksel        = 3
+ qcoef(1)    = 1.4999 
+ qcoef(2)    = 0.0002
+ beta        = 1e-9 
+/
+ &FIELDS
+ ns            = 64 
+ nchi          = 32
+ nphi          = 4 
+ nidbas        = 3      !> Order of splines
+!!! Filter:
+ nlfilt        =  4      !> type of filter
+ mfilt1        = -10
+ mfilt2        =  10
+ nfilt1        =  0
+ nfilt2        =  0 
+ deltam        =  10
+!!! Domain:
+ annular       = 0
+ sfmin         = 0.0
+ sfmax         = 1.0
+ n_flux_tube   = 4
+!!! TURBO SCHEME
+ nsel_turbo_adi    = 0
+ turbo_adi_niter   = 0
+ /
+ &SOLVER
+ nsel_solve         = 1
+ nsel_phi_solver    = 6,
+ nsel_phibar_solver = 6,
+ nsel_mass_solver   = 99,
+ nsel_ampere_solver = 99,
+ iquafor            = 4  !> Order of RK 
+ model              = 2
+ nsel_nipol         = 0
+ delta_s            = 0 
+ nsel_gradp         = 0 
+ nlptransp          = t
+ nlonemat           = f,
+/
+ &DIAG
+ nfreq_phipol   = 1 
+ nfreq_adiab    = 100
+ nfreq_opt      = 0
+ nfreq_spec     = 100
+ nfreq_noise    = 500
+ nfreq_1D       = 1
+ nfreq_dens     = 2
+ nfreq_hdf5     = 1
+ nlnoise_2D     = f
+ nbin_flux      = 64 
+ thetabin_s     = 0.624
+ s_spec         = 0.624
+ svol_min       = 0.2
+ svol_max       = 0.8
+/
+&CURV
+ nequ_s     = 360
+ nequ_c     = 360
+/
+&ISLAND
+/
+&COLLISIONS
+/
+&TYPE_SPECIES
+ species_name = "deuterium"
+ electron_type = f
+ kinetic_species = t
+/
+ &ATTRIBUTES
+nptot         = 1000000
+MASS          = 1.0     !> mass/proton_mass 
+CHARGE        = 1.0     !> charge/abs(el_charge) 
+nsel_profile  = 4
+Tau           = 1.0
+n             = 1e19
+VPAR          = 0.0,
+kappan0       = 0.0,
+kappat0       = 0.0,
+KAPPAVP0      = 0.0,
+WIDTHS        = 0.04,
+SPEAK         = 0.5,
+pertname      = 'RH_SIN',
+pertw         = 1.0e-6
+kr_pert       = 1
+nmin_ini      = 0 
+nmax_ini      = 0
+mmin_ini      = 0 
+mmax_ini      = 0
+nsel_loadphi  = 1
+nsel_addp     = t 
+nsel_f0can    = f
+!nsel_ddt0     = f
+nsel_mirror   = t
+nsel_addvpa   = t
+nsel_psi0corr = t          
+nsel_relax    = 0   	
+NSEL_GYR  = 1,
+NAVG      = 4,	
+NORDRK    = 4,
+KAPV        = 5.,
+!MODELW      = 1,
+wdecay_rate = 0.
+wdecay_heatrate         = 0.0
+wdecay_conserve_zonal   = t
+wdecay_conserve_energy  = t
+/
+&TYPE_SPECIES
+ species_name = "electrons"
+ electron_type = t
+ kinetic_species = f
+/
+ &ATTRIBUTES
+kappan0       = 0.0,
+kappat0       = 0.0,
+SPEAK         = 0.5,
+
+/
+ &DIAGNOSTICS
+/

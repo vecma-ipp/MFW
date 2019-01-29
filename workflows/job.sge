@@ -1,0 +1,18 @@
+#!/bin/bash
+#$ -l h_rt=2:00:00
+#$ -M olivier.hoenen@ipp.mpg.de
+#$ -m e
+#$ -notify
+#$ -N ComPat_gem
+#$ -pe impi_hydra.* 128
+#$ -cwd
+#$ -V
+
+module load itm-ruby
+module load impi
+source $ITMHOME/public/muscle/devel/etc/muscle.profile
+export OMP_NUM_THREADS=1
+
+export MUSCLE_TMP_DIR=/tmp/
+
+time muscle2 -amc test.cxa.rb 

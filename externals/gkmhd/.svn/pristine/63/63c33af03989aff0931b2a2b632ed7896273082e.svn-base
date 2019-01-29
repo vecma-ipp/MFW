@@ -1,0 +1,35 @@
+!...  allocate dependent and auxiliary variables
+
+  DO i=1,nx
+     j=fsfc(i)%ny
+
+     ALLOCATE(fsfc(i)%uu(0:n_neighbors,nvars,j))
+     ALLOCATE(fsfc(i)%puu(nvars,j))
+
+     ALLOCATE(fsfc(i)%area(j))
+     ALLOCATE(fsfc(i)%area2(j))
+     ALLOCATE(fsfc(i)%aratio(n_neighbors,j))
+
+     ALLOCATE(fsfc(i)%diag(j))
+     ALLOCATE(fsfc(i)%uuc(j))
+     ALLOCATE(fsfc(i)%uux(j))
+     ALLOCATE(fsfc(i)%amult(0:n_neighbors,j))
+
+     ALLOCATE(fsfc(i)%fuu(neqs,j))
+     ALLOCATE(fsfc(i)%fuu1(neqs,j))
+     ALLOCATE(fsfc(i)%fuu2(neqs,j))
+     ALLOCATE(fsfc(i)%suu(neqs,j))
+     ALLOCATE(fsfc(i)%suu1(neqs,j))
+     ALLOCATE(fsfc(i)%suu2(neqs,j))
+
+     fsfc(i)%uu=0.
+     fsfc(i)%puu=0.
+
+     fsfc(i)%suu=0.
+     fsfc(i)%suu1=0.
+     fsfc(i)%suu2=0.
+  END DO
+
+  ALLOCATE(puu(nadvect))
+  ALLOCATE(duu(0:n_neighbors,nadvect))
+

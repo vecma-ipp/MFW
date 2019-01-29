@@ -1,0 +1,8 @@
+***** quick dirty draft version 15-09-2016 *****
+ - some path to secondary scripts are hard-coded to /pfs/home/olivh/public/pyscripts/plots/...
+   if you don't have access to such place, please update these paths to point to wherever this dir is stored
+ - scripts require python interface of the UAL (with or without backend)
+   to use the one with backend: source $ITMSCRIPTDIR/ITMv1 kepler test 4.10b
+   to use the one without backend: go to ual/python_interface and build the tool
+ - slice_bind.py script also require ascii_cpo package to be in PYTHONPATH, refer to instructions in ual/python_interface
+

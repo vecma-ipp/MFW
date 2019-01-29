@@ -1,0 +1,404 @@
+!*DECK C2SM02B
+!*CALL PROCESS
+SUBROUTINE SURFADD(K,PRMIN,PRMAX,PZMIN,PZMAX,PB2MIN,PROFZMN, &
+     &  PROFZMX,PDENSE,PTEMPE,PTEMPI,PDENSEP,PTEMPEP,PTEMPIP,PRZION, &
+     &  PRPEOP,PL31,PL32,PALFA,PFT,PS,KGLOB,KOPT)
+  !        #########################################################
+  !
+  !                                        AUTHORS:
+  !                                        O. SAUTER,  CRPP-EPFL
+  !**********************************************************************
+  !                                                                     *
+  ! SURFADD CALLED AT END OF SURFACE. ENABLES ONE TO ADD DIAGNOSTIC CALCULATIONS
+  !
+  !   DEFINE VALUES WHICH CANNOT BE COMPUTED IN GLOADD, BECAUSE NEED LOCAL VALUE.
+  !   OTHERWISE USE GLOADD. THUS TEXT ARRAYS, NUMBER OF VALUES IN ARRAYS, ETC. ARE
+  !   DONE IN GLOADD => REFER TO IT FOR MORE COMMENTS
+  !
+  !   KOPT = 1: DIAGNOSTICS RELATED TO EQUILIBRIUM, PRETOR => RBDIAG
+  !   .    = 2: DIAGNOSTICS RELATED TO SAWTEETH CRITERIA => DIAGARS
+  !   .         AND DIAG ON RATIONAL Q SURFACES
+  !   .    = 3: DIAGNOSTICS RELATED TO NEOCLASSICAL TEARING MODE STUFF
+  !   .         => GLOBNEO, QVALNEO, VALSNEO, ETC. IN COMNEO
+  !
+  !   FOR EACH CALL, THE FLAG NFLGADDIA(|KOPT|) IS SET TO 1, SO THAT SUBSEQUENT
+  !   CALL FROM MAPPIN CAN CHECK APPROPRIATE SEQUENCE. NOTE THAT NFLGADDIA IS THEN
+  !   MODIFIED BY GLOADD AND FINALLY USED BY OUTGLOAD FOR APPROPRIATE OUTPUT
+  !   THUS CHANGE ROUTINE OUTGLOAD AND GLOADD ACCORDINGLY WHEN MODIFYING THIS ROUTINE.
+  !
+  ! WARNING: NOW k=1 corresponds to 2nd point since we add s=0 afterwards as for eqchease_out arrays
+  !
+  !**********************************************************************
+  !
+  USE globals
+  USE interpol
+  IMPLICIT NONE
+  !
+  INTEGER          ::     J
+  INTEGER          ::     ITOSORT
+  REAL(RKIND)      ::     ZDUMMY
+  INTEGER          ::     INBVAL
+  INTEGER          ::     IUP
+  INTEGER          ::     INEONBQS
+  REAL(RKIND)      ::     PS
+  REAL(RKIND)      ::     ZFTKM1
+  REAL(RKIND)      ::     ZALFKM1
+  REAL(RKIND)      ::     ZALFQ
+  REAL(RKIND)      ::     ZL32KM1
+  REAL(RKIND)      ::     ZL32QS
+  REAL(RKIND)      ::     ZL31KM1
+  REAL(RKIND)      ::     ZL31QS
+  REAL(RKIND)      ::     ZRPEKM1
+  REAL(RKIND)      ::     ZNEPKM1
+  REAL(RKIND)      ::     ZEFKM1
+  REAL(RKIND)      ::     ZTIPKM1
+  REAL(RKIND)      ::     ZTEPKM1
+  REAL(RKIND)      ::     ZTIKM1
+  REAL(RKIND)      ::     ZTEKM1
+  REAL(RKIND)      ::     ZNEKM1
+  REAL(RKIND)      ::     PFT
+  REAL(RKIND)      ::     PALFA
+  REAL(RKIND)      ::     PL32
+  REAL(RKIND)      ::     PL31
+  REAL(RKIND)      ::     PRPEOP
+  REAL(RKIND)      ::     PDENSEP
+  REAL(RKIND)      ::     PRZION
+  REAL(RKIND)      ::     PTEMPIP
+  REAL(RKIND)      ::     PTEMPEP
+  REAL(RKIND)      ::     PTEMPI
+  REAL(RKIND)      ::     PTEMPE
+  REAL(RKIND)      ::     PDENSE
+  INTEGER          ::     I
+  REAL(RKIND)      ::     PROFZMX
+  REAL(RKIND)      ::     PROFZMN
+  REAL(RKIND)      ::     PB2MIN
+  INTEGER          ::     KGLOB
+  INTEGER          ::     KOPT
+  REAL(RKIND)      ::     ZEPS13
+  INTEGER          ::     K
+  REAL(RKIND)      ::     ZCPRK
+  REAL(RKIND)      ::     ZEPS08
+  REAL(RKIND)      ::     ZAMID
+  REAL(RKIND)      ::     ZRMID
+  REAL(RKIND)      ::     PRMIN
+  REAL(RKIND)      ::     PRMAX
+  REAL(RKIND)      ::     ZX2
+  REAL(RKIND)      ::     PZMIN
+  REAL(RKIND)      ::     PZMAX
+  REAL(RKIND)      ::     ZX1
+  DIMENSION ITOSORT(10), ZDUMMY(10)
+  SAVE ZTEKM1, ZTEPKM1, ZTIKM1, ZTIPKM1, ZEFKM1, ZRPEKM1, ZNEKM1, &
+       &     ZNEPKM1, ZL31KM1, ZL32KM1, ZALFKM1, ZFTKM1
+  !     
+  !----*----*----*---*----*----*----*----*----*----*----*----*----*----*-
+  !
+  !     0. INITIALIZE SOME LOCAL DATA AS IN SURFACE
+  !
+
+  ZX1 = PZMAX - PZMIN
+  ZX2 = PRMAX - PRMIN
+  ZRMID = 0.5_RKIND * (PRMAX + PRMIN)
+  ZAMID = 0.5_RKIND * (PRMAX - PRMIN)
+  ZEPS08 = 1.E-08_RKIND
+  ZCPRK = MAX(ZEPS08,CPR(K))
+  ZEPS13 = 1.E-13_RKIND
+  !
+  GO TO (100, 200, 300, 400) ABS(KOPT)
+  !
+  !.......................................................................
+  !
+  !   1. EQUILIBRIUM DIAGNOSTICS RELATED TO COMPARISON WITH PRETOR AND OTHERS
+  !   .  RBDIAG ARRAY
+  !   .  MORE DETAILS IN GLOADD AND OUTGLOAD
+  !
+100 CONTINUE 
+  !
+  !   CALLED FROM SURFACE
+  !
+  NFLGADDIA(1) = 1
+  !
+  ! all can be computed directly in gloadd now
+  !
+  GO TO 999
+  !.......................................................................
+  !
+  !   2. DIAGNOSTIC ARRAYS AND VALUES ON RATIONAL Q SURFACES.(DIAGARS)
+  !   .  SEE GLOADD FOR MORE DETAILS
+  !
+200 CONTINUE 
+  !
+  !   CALLED FROM SURFACE
+  !
+  NFLGADDIA(2) = 1
+  !
+  ! all can be computed directly in gloadd now
+  !
+  GO TO 999
+  !.......................................................................
+  !
+  !   3. PARAMETERS RELATED TO NEOCLASSICAL TEARING MODE
+  !   .  GLOBNEO, QVALNEO, VALSNEO
+  !   FOR MORE DETAILS, SEE GLOADD
+  !
+300 CONTINUE 
+  !
+  !   CALLED FROM SURFACE
+  !
+  !   STUFF TO BE COMPUTED ON EACH QVALNEO SURFACE
+  !   DEFINED HERE SO THAT NEONBVAL DEFINED AT BEGINNING, BUT DONE ONLY FOR K=1
+  !
+  IF (K .EQ. 1) THEN
+     TITSNEO(1) = "  SQRT(PSI)"
+     TITSNEO(2) = "   BETAPBGA" ! LOCAL BETA-P AS DEFINED IN CHEASE
+     TITSNEO(3) = "   BETAPVGA" ! LOCAL BETA-P WITH <P> INSTEAD OF <P>-P
+     !   INT(DLP)**2 / (2VOL/R0) (= BETAP_GA / BETAP)
+     TITSNEO(4) = "      CONVF"
+     TITSNEO(5) = "   BETAPLOC"
+     TITSNEO(6) = "     SHEARQ"
+     TITSNEO(7) = "     SHEARP"
+     TITSNEO(8) = "      LP/LQ"
+     TITSNEO(9) = "   RHOVOL*A"
+     TITSNEO(10) = "      NE"
+     TITSNEO(11) = "      TE"
+     TITSNEO(12) = "      TI"
+     TITSNEO(13) = "    L_QPSI"
+     TITSNEO(14) = "   SHEARTE"
+     TITSNEO(15) = "   SHEARTI"
+     TITSNEO(16) = "   SHEART"
+     TITSNEO(17) = "     ZEFF"
+     TITSNEO(18) = "    ETAEI"
+     TITSNEO(19) = "     PE/P"
+     TITSNEO(20) = "    TE/TI"
+     TITSNEO(21) = "  DI=EFH-4"
+     TITSNEO(22) = " DR=E+F+H2"
+     TITSNEO(23) = "      H"
+     TITSNEO(24) = "     E+F"
+     TITSNEO(25) = " E+F(APP.)"
+     TITSNEO(26) = "    LBS_N"
+     TITSNEO(27) = "   LBS_TE"
+     TITSNEO(28) = "   LBS_TI"
+     TITSNEO(29) = "  DELTA_BS"
+     TITSNEO(30) = " DELTA_POL"
+     TITSNEO(31) = " DELTA_GGJ"
+     TITSNEO(32) = " EP1/2ROIP"
+     TITSNEO(33) = "      FT"
+     TITSNEO(34) = "  FT_APP."
+     TITSNEO(35) = "  NUESTAR"
+     TITSNEO(36) = "BPAV_GA/B0"
+     TITSNEO(37) = "RLFS*BPOL_LFS"
+     TITSNEO(38) = "rh*Bphi_LFS/Q_LFS"
+     TITSNEO(39) = "Ipl(rho)"
+     TITSNEO(40) = "ALPHA(RHO)"
+     TITSNEO(41) = "ALPHA(PSI)"
+     TITSNEO(42) = "PTILD"
+     TITSNEO(43) = " WELL"
+     !   BALOONING CRITERIA COMPUTED ONLY IN OUTGLOAD AS BALOON ROUTINE CALLED
+     !   AFTER GLOQUA
+     TITSNEO(44) = " MERCIER_I"
+     TITSNEO(45) = " MERCIER_R"
+     TITSNEO(46) = " BALOONING"
+     TITSNEO(47) = "   R_LFS"
+     TITSNEO(48) = "  DR/DRHOA"
+     TITSNEO(49) = "DPSI/DRHOA"
+     TITSNEO(50) = "DQLOC/DPSI"
+     NEONBVAL = 50
+     IF (NEONBVAL .GT. NPDIANEO) THEN
+        PRINT *,' NEONBVAL= ',NEONBVAL,' > NPDIANEO= ',NPDIANEO
+        STOP 'SURFADD 1'
+     ENDIF
+     !
+     !   GLOBAL QUANTITIES
+     !
+     TITGLNEO(1) = "R0EXP"
+     TITGLNEO(2) = "B0EXP"
+     TITGLNEO(3) = "R0 [*R0EXP]"
+     TITGLNEO(4) = "A [*R0EXP]"
+     TITGLNEO(5) = "KAPPA"
+     TITGLNEO(6) = "DELTA_AV"
+     TITGLNEO(7) = "IP [*R0EXP*B0EXP/MU0]"
+     TITGLNEO(8) = "BETAN"
+     TITGLNEO(9) = "BETAN*"
+     TITGLNEO(10) = "BETANEXP"
+     TITGLNEO(11) = "BETANEXPGA"
+     TITGLNEO(12) = "BETAPGA"
+     TITGLNEO(13) = "Li_GA"
+     NEONBGLO = 13
+     IF (NEONBGLO .GT. NPDIANEO) THEN
+        PRINT *,' NEONBGLO= ',NEONBGLO,' > NPDIANEO= ',NPDIANEO
+        STOP 'SURFADD 2'
+     ENDIF
+  ENDIF
+  !
+  NFLGADDIA(3) = 1
+  !
+  !   LOCAL VALUES: CHECK IF NEED DATA FOR NEOCLASSICAL STUFF ON LOCAL Q OR S
+  !
+  IF (K .EQ. 1) THEN
+    ! For these values only passed through arguments and calculated in surface 
+    ! assume values at sm(1) are the same as on-axis at sm=0
+     I = 1
+     QVALNEO(I) = QPSI(1)
+     VALSNEO(1,I) = 0._rkind
+     !     Q/Q'
+     VALSNEO(13,I) = QVALNEO(I)/CDQ(K)
+     !     P/P' * Q'/Q
+     VALSNEO(8,I) = ZCPRK/(CPPR(K)-ZEPS13) / VALSNEO(13,I)
+     VALSNEO(10,I) = PDENSE
+     VALSNEO(11,I) = PTEMPE
+     VALSNEO(12,I) = PTEMPI
+     !     FIRST COMPUTE L_QPSI/L_TEPSI AND LATER MULTIPLY BY SHEARQ TO GET SHEAR_TE
+     VALSNEO(14,I) = VALSNEO(13,I)*PTEMPEP/PTEMPE
+     VALSNEO(15,I) = VALSNEO(13,I)*PTEMPIP/PTEMPI
+     !     Q/Q' / (T/T')_AVGR
+     VALSNEO(16,I) = VALSNEO(13,I) * 2._RKIND/(PTEMPE/PTEMPEP+PTEMPI/PTEMPIP)
+     VALSNEO(17,I) = PRZION
+     !     ETAEI=1/(P'TE/TE'P-1), ASSUMING RPE'=0
+     !   ETAEI = TE'/TE * NE/NE'
+     IF (PDENSEP .EQ. 0._RKIND) VALSNEO(18,I) = 1._RKIND/(CPPR(K)/ZCPRK*PTEMPE &
+          &       /PTEMPEP - 1._RKIND)
+     IF (PDENSEP .NE. 0._RKIND) VALSNEO(18,I) = PTEMPEP/PTEMPE * PDENSE/PDENSEP
+     VALSNEO(19,I) = PRPEOP
+     !     RELATED TO L_BS
+     VALSNEO(26,I) = PL31 / VALSNEO(18,I)
+     VALSNEO(27,I) = PRPEOP * (PL31 + PL32)
+     VALSNEO(28,I) = PL31*(1+PALFA)*(1._RKIND-PRPEOP)
+     VALSNEO(33,I) = PFT
+     VALSNEO(35,I) = RNUSTAR(K)
+  ENDIF
+  IF (K .GT. 1) THEN
+     DO I=2,NEONBQS-1
+        !   CHECK IF Q VALUE IN INTERVAL, OR FOR QVALNEO<0 IF S IN INTERVAL
+        IF ( (QPSI(K)-QVALNEO(I))*(QPSI(K-1)-QVALNEO(I)).LE.0._RKIND .OR. &
+             &         (smiso(k)-(-QVALNEO(I))) * &
+             &         (smiso(K-1)-(-QVALNEO(I))).LE.0._RKIND ) THEN
+           !   IF S CHOSEN, COMPUTE EFFECTIVE Q VALUE
+           IF (QVALNEO(I) .LT. 0._RKIND) QVALNEO(I) = &
+                &           FLINEAR(SMISO(K-1),SMISO(K),QPSI(K-1),QPSI(K),-QVALNEO(I))
+           VALSNEO(1,I) = FLINEAR(QPSI(K-1),QPSI(K),SMISO(K-1),SMISO(K),QVALNEO(I))
+           VALSNEO(13,I) = QVALNEO(I)/FLINEAR(QPSI(K-1),QPSI(K),CDQ(K-1),CDQ(K),QVALNEO(I))
+           VALSNEO(8,I) = FLINEAR(QPSI(K-1),QPSI(K),CPR(K-1),ZCPRK, &
+                &           QVALNEO(I))/(FLINEAR(QPSI(K-1),QPSI(K),CPPR(K-1), &
+                &           CPPR(K),QVALNEO(I))-ZEPS08) / VALSNEO(13,I)
+           VALSNEO(10,I) = FLINEAR(QPSI(K-1),QPSI(K),ZNEKM1,PDENSE,QVALNEO(I))
+           VALSNEO(11,I) = FLINEAR(QPSI(K-1),QPSI(K),ZTEKM1,PTEMPE,QVALNEO(I))
+           VALSNEO(12,I) = FLINEAR(QPSI(K-1),QPSI(K),ZTIKM1,PTEMPI,QVALNEO(I))
+           !     FIRST COMPUTE L_QPSI/L_TEPSI AND LATER MULTIPLY BY SHEARQ TO GET SHEAR_TE
+           VALSNEO(14,I) = FLINEAR(QPSI(K-1),QPSI(K),ZTEPKM1,PTEMPEP,QVALNEO(I))*VALSNEO(13,I)/VALSNEO(11,I)
+           VALSNEO(15,I) = FLINEAR(QPSI(K-1),QPSI(K),ZTIPKM1,PTEMPIP,QVALNEO(I))*VALSNEO(13,I)/VALSNEO(12,I)
+           VALSNEO(16,I) = 2._RKIND/(1._RKIND/VALSNEO(14,I)+1._RKIND/VALSNEO(15,I))
+           VALSNEO(17,I) = FLINEAR(QPSI(K-1),QPSI(K),ZEFKM1,PRZION,QVALNEO(I))
+           VALSNEO(18,I) = FLINEAR(QPSI(K-1),QPSI(K),ZTEPKM1,PTEMPEP,QVALNEO(I))/VALSNEO(11,I)*VALSNEO(10,I) &
+                &          /FLINEAR(QPSI(K-1),QPSI(K),ZNEPKM1,PDENSEP,QVALNEO(I))
+           VALSNEO(19,I) = FLINEAR(QPSI(K-1),QPSI(K),ZRPEKM1,PRPEOP,QVALNEO(I))
+           !     RELATED TO L_BS
+           ZL31QS=FLINEAR(QPSI(K-1),QPSI(K),ZL31KM1,PL31,QVALNEO(I))
+           ZL32QS=FLINEAR(QPSI(K-1),QPSI(K),ZL32KM1,PL32,QVALNEO(I))
+           ZALFQ=FLINEAR(QPSI(K-1),QPSI(K),ZALFKM1,PALFA,QVALNEO(I))
+           VALSNEO(26,I) = ZL31QS / VALSNEO(18,I)
+           VALSNEO(27,I) = VALSNEO(19,I) * (ZL31QS + ZL32QS)
+           VALSNEO(28,I) = ZL31QS*(1+ZALFQ)*(1._RKIND-VALSNEO(19,I))
+           VALSNEO(33,I) = FLINEAR(QPSI(K-1),QPSI(K),ZFTKM1,PFT,QVALNEO(I))
+           VALSNEO(35,I) = FLINEAR(QPSI(K-1),QPSI(K),RNUSTAR(K-1),RNUSTAR(K),QVALNEO(I))
+        ENDIF
+     END DO
+  ENDIF
+  IF (ABS(PSIISO(K)/CPSRF-1._RKIND) .LE. ZEPS08) THEN
+     I = NEONBQS
+     QVALNEO(I) = QPSI(K)
+     VALSNEO(1,I) = PS
+     VALSNEO(13,I) = QVALNEO(I) / CDQ(K)
+     VALSNEO(8,I) = ZCPRK / (CPPR(K)-1.E-13_RKIND) / VALSNEO(13,I)
+     VALSNEO(10,I) = PDENSE
+     VALSNEO(11,I) = PTEMPE
+     VALSNEO(12,I) = PTEMPI
+     !     FIRST COMPUTE L_QPSI/L_TEPSI AND LATER MULTIPLY BY SHEARQ TO GET SHEAR_TE
+     VALSNEO(14,I) = VALSNEO(13,I)*PTEMPEP/PTEMPE
+     VALSNEO(15,I) = VALSNEO(13,I)*PTEMPIP/PTEMPI
+     VALSNEO(16,I) = VALSNEO(13,I) &
+          &       * 2._RKIND/(PTEMPE/PTEMPEP+PTEMPI/PTEMPIP)
+     VALSNEO(17,I) = PRZION
+     VALSNEO(18,I) = PTEMPEP/PTEMPE*PDENSE/PDENSEP
+     VALSNEO(19,I) = PRPEOP
+     !     RELATED TO L_BS
+     VALSNEO(26,I) = PL31 / VALSNEO(18,I)
+     VALSNEO(27,I) = PRPEOP * (PL31 + PL32)
+     VALSNEO(28,I) = PL31*(1+PALFA)*(1._RKIND-PRPEOP)
+     VALSNEO(33,I) = PFT
+     VALSNEO(35,I) = RNUSTAR(K)
+     !
+     !     NEO VALUES DEFINED, SHIT INDICES IF A VALUE OF QVALNEO IS NOT IN RANGE OF Q PROFILE
+     !     DETECTED IF A VALUE OF VALSNEO(1,.) IS NEGATIVE, AS INITIALIZED TO -1. IN
+     !     PRESET AND IS VALUE OF S.
+     !
+     INEONBQS = NEONBQS
+600  CONTINUE 
+     DO I=1,NEONBQS
+        IF (VALSNEO(1,I) .LE. -0.5_RKIND) THEN
+           DO IUP=I+1,NEONBQS
+              QVALNEO(IUP-1) = QVALNEO(IUP)
+              DO INBVAL=1,NEONBVAL
+                 VALSNEO(INBVAL,IUP-1) = VALSNEO(INBVAL,IUP)
+              END DO
+           END DO
+           NEONBQS = NEONBQS - 1
+           GO TO 600
+        ENDIF
+     END DO
+     IF (NEONBQS .NE. INEONBQS) WRITE(6,'(//," WARNING: SOME", &
+          &       " INPUT VALUES OF QVALNEO WERE OUT OF Q PROFILE, NEONBQS", &
+          &       " CHANGED FROM ",I2," TO ",I2/)') INEONBQS,NEONBQS
+     !
+     !   SORT ACCORDING TO S VALUES
+     !
+     IF (NEONBQS .LE. 10) THEN
+        DO I=1,NEONBQS
+           ZDUMMY(I) = VALSNEO(1,I)
+        ENDDO
+        CALL INDEXX(NEONBQS,ZDUMMY,ITOSORT)
+        DO I=1,NEONBVAL
+           DO J=1,NEONBQS
+              ZDUMMY(J) = VALSNEO(I,J)
+           END DO
+           DO J=1,NEONBQS
+              VALSNEO(I,J) = ZDUMMY(ITOSORT(J))
+           END DO
+        END DO
+        !   Q VALUES
+        DO J=1,NEONBQS
+           ZDUMMY(J) = QVALNEO(J)
+        END DO
+        DO J=1,NEONBQS
+           QVALNEO(J) = ZDUMMY(ITOSORT(J))
+        END DO
+     ELSE
+        WRITE(6,'(/," IN SURFADD: VALUES FOR NEOCLASSICAL AND", &
+             &         " OTHER STUFF NOT SORTED AS MORE THAN 10 SURFACES",/)')
+     ENDIF
+     !
+  ENDIF
+  ZTEKM1 = PTEMPE
+  ZTEPKM1 = PTEMPEP
+  ZTIKM1 = PTEMPI
+  ZTIPKM1 = PTEMPIP
+  ZEFKM1 = PRZION
+  ZRPEKM1 = PRPEOP
+  ZNEKM1 = PDENSE
+  ZNEPKM1 = PDENSEP
+  ZL31KM1 = PL31
+  ZL32KM1 = PL32
+  ZALFKM1 = PALFA
+  ZFTKM1 = PFT
+  !
+  GO TO 999
+  !
+  !     4. NOT YET
+  !
+400 CONTINUE 
+  !     
+  PRINT *,' OPTION 4 NOT YET IMPLEMENTED IN SURFADD'
+  STOP 'SURFADD 400'
+  !
+999 CONTINUE 
+  !
+  RETURN
+END SUBROUTINE SURFADD

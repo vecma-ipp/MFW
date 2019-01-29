@@ -1,0 +1,45 @@
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <!-- document element -->
+  <xs:element name="parameters">
+    <xs:complexType>
+      <xs:all>
+        <xs:element ref="physical" maxOccurs="1"/>
+        <xs:element ref="grid" maxOccurs="1"/>
+      </xs:all>
+    </xs:complexType>
+  </xs:element>
+
+  <!-- physical parameters -->
+  <xs:element name="physical">
+    <xs:complexType>
+      <xs:all>
+        <xs:element ref="thresh"/>
+        <xs:element ref="tfloor"/>
+        <xs:element ref="beta_reduction"/>
+        <xs:element ref="etae_pinch"/>
+        <xs:element ref="chi_d"/>
+      </xs:all>
+    </xs:complexType>
+  </xs:element>
+
+<xs:element name="thresh" type="xs:float"/>
+<xs:element name="tfloor" type="xs:float"/>
+<xs:element name="beta_reduction" type="xs:float"/>
+<xs:element name="etae_pinch" type="xs:float"/>
+<xs:element name="chi_d" type="xs:float"/>
+
+  <!-- grid parameters -->
+  <xs:element name="grid">
+    <xs:complexType>
+      <xs:all>
+        <xs:element ref="nrho_transp"/>
+        <xs:element ref="nion"/>
+      </xs:all>
+    </xs:complexType>
+  </xs:element>
+
+<xs:element name="nrho_transp" type="xs:integer"/>
+<xs:element name="nion" type="xs:integer"/>
+
+</xs:schema>
+

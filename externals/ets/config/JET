@@ -1,0 +1,7 @@
+GOT_PERFLIB = 'yes'
+FC=pgf95
+#INCLUDE=-I /afs/efda-itm.eu/project/switm/ual/${UAL_VERSION}/include/amd64_pgi
+FCOPTS=-g ${INCLUDE} # -Ktrap=fp
+MOD=mod
+LIBS=-llapack -lblas
+

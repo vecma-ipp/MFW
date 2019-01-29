@@ -1,0 +1,44 @@
+${OBJECTCODE}/%.o : %.F
+	-${CPP} ${DEFINES} -P ${INCLUDE} $< > ${OBJECTCODE}/$*.f
+	${FC} ${FCOPTS} ${INCLUDE} -I${OBJECTCODE} -c ${OBJECTCODE}/$*.f -o $@
+	@if [ -f $*.o ] ; then /bin/mv $*.o ${OBJECTCODE}/ ; fi
+	@if [ -f $*.${MOD} ] ; then /bin/mv $*.${MOD} ${OBJECTCODE}/ ; fi
+	@-/bin/mv *.${MOD} ${OBJECTCODE}/
+
+${OBJECTCODE}/%.o : %.f
+	${FC} ${FCOPTS} ${INCLUDE} -I${OBJECTCODE} -c $< -o $@
+	@if [ -f $*.o ] ; then /bin/mv $*.o ${OBJECTCODE}/ ; fi
+	@if [ -f $*.${MOD} ] ; then /bin/mv $*.${MOD} ${OBJECTCODE}/ ; fi
+	@-/bin/mv *.${MOD} ${OBJECTCODE}/
+
+${OBJECTCODE}/%.o : %.F90
+	-${CPP} ${DEFINES} -P ${INCLUDE} $< > ${OBJECTCODE}/$*.f90
+	${FC} ${FCOPTS} ${INCLUDE} -I${OBJECTCODE} -c ${OBJECTCODE}/$*.f90 -o $@
+	@if [ -f $*.o ] ; then /bin/mv $*.o ${OBJECTCODE}/ ; fi
+	@if [ -f $*.${MOD} ] ; then /bin/mv $*.${MOD} ${OBJECTCODE}/ ; fi
+	@-/bin/mv *.${MOD} ${OBJECTCODE}/
+
+${OBJECTCODE}/%.${MOD} : %.F90
+	-${CPP} ${DEFINES} -P ${INCLUDE} $< > ${OBJECTCODE}/$*.f9900
+	${FC} ${FCOPTS} ${INCLUDE} -I${OBJECTCODE} -c ${OBJECTCODE}/$*.f90 -o $@
+	@if [ -f $*.o ] ; then /bin/mv $*.o ${OBJECTCODE}/ ; fi
+	@if [ -f *.${MOD} ] ; then /bin/mv *.${MOD} ${OBJECTCODE}/ ; fi
+	@-/bin/mv $*.${MOD} ${OBJECTCODE}/
+
+${OBJECTCODE}/%.o : %.f90
+	${FC} ${FCOPTS} ${INCLUDE} -I${OBJECTCODE} -c $< -o ${OBJECTCODE}/$*.o
+	@if [ -f $*.o ] ; then /bin/mv $*.o ${OBJECTCODE}/ ; fi
+	@if [ -f $*.${MOD} ] ; then /bin/mv $*.${MOD} ${OBJECTCODE}/ ; fi
+	@-/bin/mv *.${MOD} ${OBJECTCODE}/
+
+${OBJECTCODE}/%.${MOD} : %.f90
+	${FC} ${FCOPTS} ${INCLUDE} -I${OBJECTCODE} -c $< -o ${OBJECTCODE}/$*.o
+	@if [ -f $*.o ] ; then /bin/mv $*.o ${OBJECTCODE}/ ; fi
+	@if [ -f $*.${MOD} ] ; then /bin/mv $*.${MOD} ${OBJECTCODE}/ ; fi
+	@-/bin/mv *.${MOD} ${OBJECTCODE}/
+
+${OBJECTCODE}/%.o : %.c
+	${CC} -O0 -g -fPIC ${DEFINES} ${INCLUDE}  -c $< -o ${OBJECTCODE}/$*.o
+
+${OBJECTCODE}/%.o : %.cpp
+	${CXX} -O0 -g -fPIC ${DEFINES} ${INCLUDE}  -c $< -o ${OBJECTCODE}/$*.o

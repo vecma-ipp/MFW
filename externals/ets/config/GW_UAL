@@ -1,0 +1,50 @@
+GOT_PERFLIB = 'yes'
+FC=pgf95 -Mnosecond_underscore -fPIC
+FCOPTS=-g -O3 # -Ktrap=fp
+FCOPTS=-g -O0 # -Ktrap=fp
+MOD=mod
+LIBS=-llapack -lblas 
+DEFINES = -DUAL
+
+MUMPS_BASE = /pfs/scratch/imp3/coster/SVN/ETS/branches/COS/SPARSE/MUMPS_4.7.3
+
+UAL=yes
+ifeq ($(UAL),yes)
+  INCLUDE += -I ${UAL}/include/amd64_pgi
+  LIBSCHEMAS = 
+  LIBS += -R${UAL}/lib \
+           -L${UAL}/lib \
+           -lUALFORTRANInterface_pgi \
+           -rpath /afs/efda-itm.eu/project/lsf/7.0/linux2.6-glibc2.3-x86_64/lib
+endif
+
+AMNS=yes
+ifeq ($(AMNS),yes)
+  INCLUDE += -I ${ITMLIBDIR}/amns/${DATAVERSION}/lib/amd64_pgi_10
+  LIBS += -rpath ${ITMLIBDIR}/amns/${DATAVERSION}/lib/amd64_pgi_10 -L${ITMLIBDIR}/amns/${DATAVERSION}/lib/amd64_pgi_10 -lamns
+endif
+
+CJK=yes
+ifeq ($(CJK),yes)
+  INCLUDE += -I ${ITMLIBDIR}/ualtools/${DATAVERSION}/lib/amd64_pgi_10
+  LIBS += -rpath ${ITMLIBDIR}/ualtools/${DATAVERSION}/lib/amd64_pgi_10 -L${ITMLIBDIR}/ualtools/${DATAVERSION}/lib/amd64_pgi_10 -lualtools -lualtools
+endif
+
+ITMTYPES=yes
+ifeq ($(ITMTYPES),yes)
+  INCLUDE += -I ${ITMLIBDIR}/itmtypes/lib/amd64_pgi_10
+  LIBS += -rpath ${ITMLIBDIR}/itmtypes/lib/amd64_pgi_10 -L${ITMLIBDIR}/itmtypes/lib/amd64_pgi_10 -litmtypes -litmtypes
+endif
+
+ITMCONSTANTS=yes
+ifeq ($(ITMCONSTANTS),yes)
+  INCLUDE += -I ${ITMLIBDIR}/itmconstants/lib/amd64_pgi_10
+  LIBS += -rpath ${ITMLIBDIR}/itmconstants/lib/amd64_pgi_10 -L${ITMLIBDIR}/itmconstants/lib/amd64_pgi_10 -litmconstants
+endif
+
+XMLLIB=yes
+ifeq ($(XMLLIB),yes)
+  INCLUDE += -I ${ITMLIBDIR}/xmllib/${DATAVERSION}/lib/amd64_pgi_10
+  LIBS += -rpath ${ITMLIBDIR}/xmllib/${DATAVERSION}/lib/amd64_pgi_10 -L${ITMLIBDIR}/xmllib/${DATAVERSION}/lib/amd64_pgi_10 -lxml -lxml
+endif
+

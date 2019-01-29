@@ -1,0 +1,23 @@
+GOT_PERFLIB = 'no'
+FC=ifort
+FCOPTS=-g -mcmodel=medium -shared-intel
+MOD=mod
+LIBS=-lmkl_lapack -lmkl_blas -lmkl -liomp5 -lpthreads
+LIBS=-llapack
+INCLUDE=
+DEFINES = -DUAL
+
+UAL=local
+ifeq ($(UAL),yes)
+  INCLUDE=-I /afs/efda-itm.eu/project/switm/ual/${UAL_VERSION}/include/amd64_pgi
+  LIBSCHEMAS =
+  LIBS += -L/afs/efda-itm.eu/project/switm/ual/${UAL_VERSION}/lib -lUALFORTRANInterface_pgi
+else
+ifeq ($(UAL),local)
+  INCLUDE = -I $(MDSPLUS_DIR)/include -I /usr/java/jdk1.6.0_20/include -I /usr/java/jdk1.6.0_20/include/linux -I /afs/efda-itm.eu/project/switm/hdf5/amd64_pgi/include -I /afs/efda-itm.eu/project/mpi/openmpi-1.4.3/pgi/include
+  LIBSCHEMAS =
+  LIBS += -L$(MDSPLUS_DIR)/lib -lTreeShr -lTdiShr -lMdsShr -lXTreeShr -lCacheShr -lMdsIpShr # -ljava
+  LIBS += -L/usr/lib64/mysql -lmysqlclient
+#  LIBS += -L/afs/efda-itm.eu/project/switm/hdf5/amd64_pgi/lib
+endif
+endif

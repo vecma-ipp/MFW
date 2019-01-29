@@ -1,0 +1,1039 @@
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+!> IMPURITY
+!>
+!> \author I. Ivanova-Stanik
+!>
+!> \version "$Id: impurity.F90 1682 2015-08-07 11:50:03Z dpc $"
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+MODULE IMPURITY
+
+CONTAINS
+
+
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+! + + + + + + + + + + + + IMPURITY + + + + + + + + + + + + + +   
+
+  SUBROUTINE IMPURITY_ETS   (EQUILIBRIUM_ITER, COREPROF_ITER,  CORETRANSP_ITER,      &
+                             COREIMPUR_OLD,    COREIMPUR_ITER, CORENEUTRALS_ITER,    &
+                             CORESOURCE_ITER,  CORESOURCE_NEW, COREIMPUR_NEW,        &
+                             CONTROL_INTEGER,  CONTROL_DOUBLE)
+
+
+                                  
+	  
+!-------------------------------------------------------!
+!     This routine calculate impurity density for       !
+!     different impurity                                !
+!-------------------------------------------------------!
+!     Source:       ---                                 !
+!     Developers:   I.M.Ivanova-Stanik                  !
+!     Kontacts:     irena@ifpilm.waw.pl                !
+!                                                       !
+!     Comments:     might change after the ITM          !
+!                   data stucture is finalized          !
+!                                                       !
+!-------------------------------------------------------!
+
+
+    USE EUITM_SCHEMAS
+    USE ITM_TYPES
+    USE COPY_STRUCTURES
+    USE DEALLOCATE_STRUCTURES
+    USE NEUTRALS
+    USE ALLOCATE_DEALLOCATE
+    USE ITM_CONSTANTS
+
+#ifdef GOT_AMNSPROTO
+    USE amns_types
+    USE amns_module
+    USE euitm_routines
+#endif    
+      
+      
+    IMPLICIT NONE
+ 
+! +++ CPO derived types:
+    TYPE (TYPE_EQUILIBRIUM), POINTER :: EQUILIBRIUM_ITER(:)       !input CPO with geometry quantities from previous iterration
+    TYPE (TYPE_COREPROF),    POINTER :: COREPROF_ITER(:) 
+    TYPE (TYPE_CORETRANSP),  POINTER :: CORETRANSP_ITER(:)
+    TYPE (TYPE_COREIMPUR),   POINTER :: COREIMPUR_OLD(:)          !input CPO with impurities
+    TYPE (TYPE_COREIMPUR),   POINTER :: COREIMPUR_ITER(:)         !input CPO with impurities
+    TYPE (TYPE_COREIMPUR),   POINTER :: COREIMPUR_NEW(:)          !input CPO with impurities
+    TYPE (TYPE_CORENEUTRALS),POINTER :: CORENEUTRALS_ITER(:)      !input CPO with neutrals  
+    TYPE (TYPE_CORESOURCE),  POINTER :: CORESOURCE_ITER(:)        !input CPO impurity radiation
+    TYPE (TYPE_CORESOURCE),  POINTER :: CORESOURCE_NEW(:)         !input CPO impurity radiation
+
+      
+
+! +++ Dimensions:
+    INTEGER                          :: NEQ                       !number of radial points     (input, determined from EQUILIBRIUM CPO)
+    INTEGER                          :: NRHO                      !number of radial points     (input, determined from COREPROF CPO)
+    INTEGER                          :: NNUCL                     !number of ion species       (input, determined from COREPROF CPO)
+    INTEGER                          :: NION                      !number of ion species       (input, determined from COREPROF CPO)
+    INTEGER                          :: NIMP                      !number of impurity species  (input, determined from COREIMPUR CPO)
+    INTEGER,             ALLOCATABLE :: NZIMP(:)
+    INTEGER,             ALLOCATABLE :: NZ_BND_TYPE(:)            !boundary condition, type, one impurity
+    INTEGER                          :: NNEUT                     !number of neutrals species                (input)
+    INTEGER,             ALLOCATABLE :: NTYPE(:)                  !number of impurity ionization states (input)     
+    INTEGER,             ALLOCATABLE :: NCOMP(:)                  !max_number of distinct atoms enter the composition-"1" wich is neutral
+    INTEGER,               PARAMETER :: NOCUR = 1                 !number of CPO ocurancies in the work flow
+    INTEGER                          :: NRHO_TR  
+    INTEGER                          :: NRHO_SR  
+
+! +++ Indexes:
+    INTEGER                          :: IRHO,  IIMP,  IZIMP       !index of impurity component, number of considered impurity components (max ionization state)
+    INTEGER                          :: INEUT, ITYPE, ICOMP       !number of neutrals species                (input)
+    INTEGER                          :: MAX_NZIMP
+    INTEGER                          :: NZIMP2
+
+
+    REAL (R8)                        :: B0, B0PRIME               !magnetic field from current time step, [T], previous time steps, [T], time derivative, [T/s]
+    REAL (R8)                        :: R0               
+    REAL (R8),           ALLOCATABLE :: RHO(:)                    !toroidal flux coordinate,not normalise,[m]               [m]
+    REAL (R8),           ALLOCATABLE :: VOL(:)                    !V,                                     [m^3]
+    REAL (R8),           ALLOCATABLE :: VPR(:)                    !V',                                    [m^2]
+    REAL (R8),           ALLOCATABLE :: VPRM(:)                   !V' (at previous time step),            [m^2]
+    REAL (R8),           ALLOCATABLE :: G3(:)                     !<(nabla_rho)^2>,                       [-]
+    REAL (R8),           ALLOCATABLE :: NE(:)                     !electron density                                          [m^-3]
+    REAL (R8),           ALLOCATABLE :: TE(:)			  !electron temperature
+    REAL (R8),           ALLOCATABLE :: DNZ1(:,:)                 !density gradient,                                         [m^-4]
+    REAL (R8),           ALLOCATABLE :: FLUX(:,:)                 !ion flux,                                                 [1/s]
+    REAL (R8),           ALLOCATABLE :: FLUX_INTER(:,:)           !ion flux,                                                 [1/s]
+    REAL (R8),           ALLOCATABLE :: NZ1(:,:)		  !one impurity density 
+    REAL (R8),           ALLOCATABLE :: NZM1(:,:)		  !old one impurity density 
+    REAL (R8),           ALLOCATABLE :: DIFF(:,:)                 !diffusion coefficient for different ionisation,           [m^2/s] 
+    REAL (R8),           ALLOCATABLE :: VCON(:,:)		  !pinch velocity for different ionisation               [m/s]
+    REAL (R8),           ALLOCATABLE :: IMP_RADIATION(:,:)        !impurity radiation        
+    REAL (R8),           ALLOCATABLE :: NZSOURCE(:,:)             !value of the source term,[m^-3.s^-1]
+    REAL (R8),           ALLOCATABLE :: NZ_BND(:,:)               !boundary condition, value, one impurity[depends on NZ_BND_TYPE]
+    REAL (R8),           ALLOCATABLE :: ANEUT(:)
+ 
+! part for radiation
+    REAL (R8),           ALLOCATABLE :: LIN_RAD1(:,:)		  !profile of lineradiation for one impurity 
+    REAL (R8),           ALLOCATABLE :: BREM_RAD1(:,:)		  !profile of bremst. for one impurity 
+    REAL (R8),           ALLOCATABLE :: LIN_RAD(:)		  !profile of lineradiation for whole impurity 
+    REAL (R8),           ALLOCATABLE :: BREM_RAD(:)		  !profile of bremst. for whole impurity 
+    REAL (R8),           ALLOCATABLE :: JON_EN1(:,:)		  !profile of jonisation energy for one impurity 
+    REAL (R8),           ALLOCATABLE :: JON_EN(:)		  !profile of jonisation energy for wholeimpurity 
+    REAL (R8),           ALLOCATABLE :: REC_LOS1(:,:)		  !profile of recombination losses for one impurity 
+    REAL (R8),           ALLOCATABLE :: REC_LOS(:)		  !profile of recombination losses for wholeimpurity           
+    REAL (R8),           ALLOCATABLE :: QRAD(:)
+    REAL (R8),           ALLOCATABLE :: SE_EXP(:)
+    
+    REAL (R8),           ALLOCATABLE :: FUN(:)
+    REAL (R8),           ALLOCATABLE :: FUN_IN(:)
+    REAL (R8),           ALLOCATABLE :: FUN_OUT(:)
+    
+    INTEGER,             INTENT(IN)  :: CONTROL_INTEGER(2)        !integer control parameters
+    REAL (R8),           INTENT(IN)  :: CONTROL_DOUBLE(5)         !real control parameters
+   
+    REAL (R8)                        :: TIME                    
+    LOGICAL,                    SAVE :: first = .TRUE.
+
+    REAL (R8),           ALLOCATABLE ::R_LIN_INT(:)
+    REAL (R8),           ALLOCATABLE ::R_LIN_INT1(:,:)
+    REAL (R8),           ALLOCATABLE ::R_BREM_INT(:)
+    REAL (R8),           ALLOCATABLE ::R_BREM_INT1(:,:)
+    REAL (R8),           ALLOCATABLE ::R_SUM_INT(:)
+    REAL (R8),           ALLOCATABLE ::R_SUM_INT1(:,:)
+    REAL (R8),           ALLOCATABLE ::E_JON_INT(:)
+    REAL (R8),           ALLOCATABLE ::E_JON_INT1(:,:)
+    REAL (R8),           ALLOCATABLE ::E_REC_INT(:)
+    REAL (R8),           ALLOCATABLE ::E_REC_INT1(:,:)
+    REAL (R8),           ALLOCATABLE ::E_SUM_INT(:)
+    REAL (R8),           ALLOCATABLE ::E_SUM_INT1(:,:)
+    REAL (R8),           ALLOCATABLE ::SUM_LIN_INT(:)
+    REAL (R8),           ALLOCATABLE ::SUM_BREM_INT(:)
+    REAL (R8),           ALLOCATABLE ::SUM_RAD_INT(:)
+    REAL (R8),           ALLOCATABLE ::SUM_JON_INT(:)
+    REAL (R8),  	 ALLOCATABLE ::SUM_REC_INT(:)
+    REAL (R8),  	 ALLOCATABLE ::SUM_LOS_INT(:)
+
+
+! +++ Atomic data:
+#ifdef GOT_AMNSPROTO
+    TYPE (amns_handle_type),    SAVE :: amns
+    TYPE (amns_handle_rx_type), ALLOCATABLE, SAVE :: &
+                                        amns_ei(:,:), amns_eip(:,:),amns_rc(:,:), amns_lr(:,:), amns_br(:,:)
+    TYPE (amns_version_type)         :: amns_database
+    TYPE (amns_reaction_type)        :: ei_rx, eip_rx, rc_rx, lr_rx, br_rx
+    TYPE (amns_reactants_type)       :: species
+    TYPE (amns_query_type)           :: query
+    TYPE (amns_answer_type)          :: answer
+    TYPE (amns_set_type)             :: set
+! DPC added for testing
+    type (amns_version_type)         :: version
+    REAL (R8)                        :: ZN_imp, AM_imp
+#endif    
+    CHARACTER (len=80)               :: FORMAT
+    
+
+      WRITE (*,*) ' '  
+      WRITE (*,*) '===========> IMPURITY started'  
+
+
+
+! +++ Set dimensions:
+    NEQ                    = SIZE (EQUILIBRIUM_ITER(1)%profiles_1d%rho_tor         )
+    NRHO                   = SIZE (COREIMPUR_ITER(1)%rho_tor                       )
+    CALL GET_COMP_DIMENSIONS      (COREIMPUR_OLD(1)%COMPOSITIONS, NNUCL, NION,  NIMP,  NZIMP, NNEUT, NTYPE, NCOMP)
+
+    MAX_NZIMP              = MAXVAL(NZIMP)
+
+
+
+
+! +++ Allocate output CPOs:
+!    IF(.NOT.ASSOCIATED(COREIMPUR_NEW)) 
+    ALLOCATE (COREIMPUR_NEW(1))
+    CALL COPY_CPO            (COREIMPUR_ITER(1), COREIMPUR_NEW(1))
+
+ 
+!    IF(ASSOCIATED(CORESOURCE_NEW)) DEALLOCATE(CORESOURCE_NEW)
+    CALL ALLOCATE_CORESOURCE_CPO   (NOCUR, NRHO, NNUCL, NION,  NIMP,  NZIMP, NNEUT, NTYPE, NCOMP, CORESOURCE_NEW )
+    CALL deallocate_cpo            (CORESOURCE_NEW(1)%COMPOSITIONS)
+    CALL COPY_CPO                  (COREIMPUR_ITER(1)%COMPOSITIONS, CORESOURCE_NEW(1)%COMPOSITIONS)
+     
+    COREIMPUR_NEW(1)%datainfo%cocos            = 13
+    CORESOURCE_NEW(1)%datainfo%cocos           = 13
+
+    COREIMPUR_NEW(1)%time                      = COREPROF_ITER(1)%time
+    CORESOURCE_NEW(1)%time                     = COREPROF_ITER(1)%time
+
+    COREIMPUR_NEW(1)%rho_tor                   = COREPROF_ITER(1)%rho_tor
+    CORESOURCE_NEW(1)%VALUES(1)%rho_tor        = COREPROF_ITER(1)%rho_tor
+
+    COREIMPUR_NEW(1)%rho_tor_norm              = COREPROF_ITER(1)%rho_tor/COREPROF_ITER(1)%rho_tor(NRHO)
+    CORESOURCE_NEW(1)%VALUES(1)%rho_tor_norm   = COREPROF_ITER(1)%rho_tor/COREPROF_ITER(1)%rho_tor(NRHO)
+
+
+    COREIMPUR_NEW(1)%diagnosticsum%radiation%line_rad%profile       = 0.0_R8
+    COREIMPUR_NEW(1)%diagnosticsum%radiation%brem_radrec%profile    = 0.0_R8
+    COREIMPUR_NEW(1)%diagnosticsum%radiation%sum%profile            = 0.0_R8
+    COREIMPUR_NEW(1)%diagnosticsum%energy%ionization%profile        = 0.0_R8
+    COREIMPUR_NEW(1)%diagnosticsum%energy%recombin%profile          = 0.0_R8
+    COREIMPUR_NEW(1)%diagnosticsum%energy%sum%profile               = 0.0_R8
+
+
+! +++ Load AMNS data:
+    IF(first) THEN
+!#ifdef GOT_AMNSPROTO
+       WRITE(*,*)      'ITM AMNSPROTO data used (via UAL)'
+       ALLOCATE(amns_ei(0:max_nzimp, nimp), amns_rc(0:max_nzimp, nimp),  &
+                amns_eip(0:max_nzimp,nimp), amns_lr(0:max_nzimp, nimp),  & 
+		amns_br(0:max_nzimp, nimp))
+! version added for testing
+!       version%backend='ascii'
+       CALL ITM_AMNS_SETUP(amns, version)
+       query%string  = 'version'
+       CALL ITM_AMNS_QUERY(amns,query,answer)
+       WRITE(*,*)      'AMNS data base version = ',TRIM(answer%string)
+       ei_rx%string  = 'EI'
+       eip_rx%string = 'EIP'
+       rc_rx%string  = 'RC'
+       lr_rx%string  = 'LR'
+       br_rx%string  = 'BR'
+       FORMAT        = '(''ZN = '',f5.2,'', IS = '',i2,'', RX = '',a,'', SRC = '',a)'
+       query%string  = 'source'
+       DO iimp=1, nimp
+          ZN_imp = COREIMPUR_OLD(1)%compositions%nuclei(COREIMPUR_OLD(1)%compositions%IMPURITIES(IIMP)%nucindex)%zn
+          AM_imp = COREIMPUR_OLD(1)%compositions%nuclei(COREIMPUR_OLD(1)%compositions%IMPURITIES(IIMP)%nucindex)%amn
+          AM_imp = 0
+          DO izimp=0, nzimp(iimp)-1
+! EI
+             allocate(species%components(4))
+             species%components =  &
+                  (/ amns_reactant_type(ZN_imp, izimp, AM_imp, 0), &
+                     amns_reactant_type(0, -1, 0, 0), &
+                     amns_reactant_type(ZN_imp, izimp+1, AM_imp, 1), &
+                     amns_reactant_type(0, -1, 0, 1) &
+                  /)
+             CALL ITM_AMNS_SETUP_TABLE(amns, ei_rx, species, amns_ei(izimp, iimp))
+             deallocate(species%components)
+!             CALL ITM_AMNS_QUERY_TABLE(amns_ei(izimp, iimp), query,answer)
+!             WRITE(*,FORMAT) species%components(1)%ZN, izimp, TRIM(ei_rx%string), TRIM(answer%string)
+! LR
+             allocate(species%components(2))
+             species%components = &
+                  (/ amns_reactant_type(ZN_imp, izimp, AM_imp, 0), &
+                     amns_reactant_type(ZN_imp, izimp, AM_imp, 1) &
+                  /)
+             CALL ITM_AMNS_SETUP_TABLE(amns, lr_rx, species, amns_lr(izimp, iimp))
+             deallocate(species%components)
+!             CALL ITM_AMNS_QUERY_TABLE(amns_lr(izimp, iimp), query,answer)
+!             !WRITE(*,FORMAT) species%components(1)%ZN, izimp, TRIM(lr_rx%string), TRIM(answer%string)
+          ENDDO
+          DO izimp=1, nzimp(IIMP)
+! RC
+             allocate(species%components(4))
+             species%components = &
+                  (/ amns_reactant_type(ZN_imp, izimp, AM_imp, 0), &
+                     amns_reactant_type(0, -1, 0, 0), &
+                     amns_reactant_type(ZN_imp, izimp-1, AM_imp, 1), &
+                     amns_reactant_type(0, -1, 0, 1) &
+                   /)
+             CALL ITM_AMNS_SETUP_TABLE(amns, rc_rx, species, amns_rc(izimp, iimp))
+             deallocate(species%components)
+!             CALL ITM_AMNS_QUERY_TABLE(amns_rc(izimp, iimp), query,answer)
+!             WRITE(*,FORMAT) species%components(1)%ZN, izimp, TRIM(rc_rx%string), TRIM(answer%string)
+! BR
+             allocate(species%components(2))
+             species%components = &
+                  (/ amns_reactant_type(ZN_imp, izimp, AM_imp, 0), &
+                     amns_reactant_type(ZN_imp, izimp, AM_imp, 1) &
+                  /)
+	     CALL ITM_AMNS_SETUP_TABLE(amns, br_rx, species, amns_br(izimp, iimp))
+             deallocate(species%components)
+!             CALL ITM_AMNS_QUERY_TABLE(amns_br(izimp, iimp), query,answer)
+!             WRITE(*,FORMAT) species%components(1)%ZN, izimp, TRIM(br_rx%string), TRIM(answer%string)
+          ENDDO
+	  DO izimp=0,nzimp(IIMP)
+	  !new for potential
+             allocate(species%components(2))
+             species%components = &
+                  (/ amns_reactant_type(ZN_imp, izimp, AM_imp, 0), &
+                     amns_reactant_type(ZN_imp, izimp, AM_imp, 1) &
+                  /)
+             CALL ITM_AMNS_SETUP_TABLE(amns, eip_rx, species, amns_eip(izimp, iimp))
+             deallocate(species%components)
+!	     CALL ITM_AMNS_QUERY_TABLE(amns_eip(izimp, iimp), query,answer)
+!	     WRITE(*,FORMAT) species%components(1)%ZN, IZIMP, TRIM(eip_rx%string),TRIM(answer%string)
+	  ENDDO
+       ENDDO
+!#else
+       WRITE(*,*) 'Roman Zagorski AMNS data used'
+!#endif    
+       first=.FALSE.
+    ENDIF
+
+
+
+	  
+! +++ Allocate local variables:
+    ALLOCATE (RHO(NRHO))
+    ALLOCATE (VOL(NRHO))
+    ALLOCATE (VPR(NRHO))
+    ALLOCATE (VPRM(NRHO))
+    ALLOCATE (G3(NRHO))
+    ALLOCATE (NE(NRHO))
+    ALLOCATE (TE(NRHO))
+    ALLOCATE (FUN_OUT(NRHO))
+    ALLOCATE (QRAD(NRHO))
+ 
+! for radiation
+     ALLOCATE (LIN_RAD(NRHO))  
+     ALLOCATE (BREM_RAD(NRHO))
+     ALLOCATE (JON_EN(NRHO))
+     ALLOCATE (REC_LOS(NRHO))
+     ALLOCATE (R_LIN_INT(NRHO))
+     ALLOCATE (R_BREM_INT(NRHO))
+     ALLOCATE (R_SUM_INT(NRHO))
+     ALLOCATE (E_JON_INT(NRHO))
+     ALLOCATE (E_REC_INT(NRHO))
+     ALLOCATE (E_SUM_INT(NRHO))
+     ALLOCATE (SUM_LIN_INT(NRHO))
+     ALLOCATE (SUM_BREM_INT(NRHO))
+     ALLOCATE (SUM_RAD_INT(NRHO))
+     ALLOCATE (SUM_JON_INT(NRHO))
+     ALLOCATE (SUM_REC_INT(NRHO))
+     ALLOCATE (SUM_LOS_INT(NRHO))
+     ALLOCATE (SE_EXP(NRHO))
+     ALLOCATE (FUN(NRHO))
+
+! +++ Copy data to local variables:
+    B0	        = COREPROF_ITER(1)%toroid_field%b0
+    R0	        = COREPROF_ITER(1)%toroid_field%r0
+    NE          = COREPROF_ITER(1)%ne%value
+    TE          = COREPROF_ITER(1)%te%value
+    RHO		= COREPROF_ITER(1)%rho_tor
+    B0PRIME     = 0.0_R8 
+    QRAD        = 0.0_R8
+    SE_EXP      = 0.0_R8
+
+! for radiation    
+   
+
+    CALL L3interp(EQUILIBRIUM_ITER(1)%profiles_1d%volume, EQUILIBRIUM_ITER(1)%profiles_1d%rho_tor, NEQ,  &
+                  VOL,                                    RHO,                                     NRHO)
+    CALL L3deriv (EQUILIBRIUM_ITER(1)%profiles_1d%volume, EQUILIBRIUM_ITER(1)%profiles_1d%rho_tor, NEQ,  &
+                  VPR,                                    RHO,                                     NRHO)
+    CALL L3deriv (EQUILIBRIUM_ITER(1)%profiles_1d%volume, EQUILIBRIUM_ITER(1)%profiles_1d%rho_tor, NEQ,  &
+                  VPRM,                                   RHO,                                     NRHO)
+    CALL L3interp(EQUILIBRIUM_ITER(1)%profiles_1d%gm3,    EQUILIBRIUM_ITER(1)%profiles_1d%rho_tor, NEQ,  &
+                  G3,                                     RHO,                                     NRHO)
+
+
+
+! +++ Set up dimensions:
+    DO IIMP=1, NIMP
+       NZIMP2    = NZIMP(IIMP)+2
+			     
+       ALLOCATE (ANEUT(NNEUT))
+       ALLOCATE (NZ1(NRHO,NZIMP2))
+       ALLOCATE (NZM1(NRHO,NZIMP2))
+       ALLOCATE (DIFF(NRHO,NZIMP2))
+       ALLOCATE (VCON(NRHO,NZIMP2))
+       ALLOCATE (DNZ1(NRHO,NZIMP2))
+       ALLOCATE (FLUX(NRHO,NZIMP2))
+       ALLOCATE (FLUX_INTER(NRHO,NZIMP2))
+       ALLOCATE (IMP_RADIATION(NRHO,NZIMP2))
+       ALLOCATE (NZ_BND(3,NZIMP2))
+       ALLOCATE (NZ_BND_TYPE(NZIMP2))
+       ALLOCATE (NZSOURCE(NRHO,NZIMP2))
+ 
+! for radiation
+       ALLOCATE (LIN_RAD1(NRHO,NZIMP2))
+       ALLOCATE (BREM_RAD1(NRHO,NZIMP2)) 
+       ALLOCATE (JON_EN1(NRHO,NZIMP2))
+       ALLOCATE (REC_LOS1(NRHO,NZIMP2))
+       ALLOCATE (R_LIN_INT1(NRHO,NZIMP2))      
+       ALLOCATE (R_BREM_INT1(NRHO,NZIMP2)) 
+       ALLOCATE (R_SUM_INT1(NRHO,NZIMP2))
+       ALLOCATE (E_JON_INT1(NRHO,NZIMP2))      
+       ALLOCATE (E_REC_INT1(NRHO,NZIMP2)) 
+       ALLOCATE (E_SUM_INT1(NRHO,NZIMP2))
+	           
+       ANEUT          = 0.0_R8
+       NZ1            = 0.0_R8
+       NZM1           = 0.0_R8
+       DIFF           = 0.0_R8
+       VCON           = 0.0_R8
+       DNZ1           = 0.0_R8
+       FLUX           = 0.0_R8
+       FLUX_INTER     = 0.0_R8
+       IMP_RADIATION  = 0.0_R8
+       NZ_BND         = 0.0_R8
+       NZ_BND_TYPE    = 0
+       NZSOURCE       = 0.0_R8
+
+!for radiation
+        
+       
+       ALLOCATE (FUN_IN(SIZE(COREIMPUR_ITER(1)%rho_tor)))
+       NRHO_TR  = SIZE(CORETRANSP_ITER(1)%VALUES(1)%rho_tor)
+       NRHO_SR  = SIZE(CORESOURCE_ITER(1)%VALUES(1)%rho_tor)
+       
+
+       DO IZIMP=1,NZIMP(IIMP) 
+       
+       
+          FUN_IN              = COREIMPUR_ITER(1)%IMPURITY(IIMP)%NZ(:,IZIMP)
+          CALL L3interp        (FUN_IN, COREIMPUR_ITER(1)%rho_tor, NRHO,  FUN_OUT, RHO, NRHO)
+          NZ1(:,IZIMP+1)      = FUN_OUT
+          FUN_IN              = COREIMPUR_OLD(1)%IMPURITY(IIMP)%NZ(:,IZIMP)
+          CALL L3interp        (FUN_IN, COREIMPUR_ITER(1)%rho_tor, NRHO,  FUN_OUT, RHO, NRHO)
+          NZM1(:,IZIMP+1)     = FUN_OUT
+          CALL L3interp        (CORETRANSP_ITER(1)%VALUES(1)%nz_transp(IIMP)%diff_eff(:,IZIMP),  CORETRANSP_ITER(1)%VALUES(1)%rho_tor, NRHO_TR,  FUN_OUT, RHO, NRHO)
+          DIFF(:,IZIMP+1)     = FUN_OUT
+          CALL L3interp        (CORETRANSP_ITER(1)%VALUES(1)%nz_transp(IIMP)%vconv_eff(:,IZIMP), CORETRANSP_ITER(1)%VALUES(1)%rho_tor, NRHO_TR,  FUN_OUT, RHO, NRHO)
+          VCON(:,IZIMP+1)     = FUN_OUT
+          CALL L3interp        (CORESOURCE_ITER(1)%VALUES(1)%sz(IIMP)%exp(:,IZIMP),              CORESOURCE_ITER(1)%VALUES(1)%rho_tor, NRHO_SR,  FUN_OUT, RHO, NRHO)
+          NZSOURCE(:,IZIMP+1) = FUN_OUT    
+          NZ_BND(1,IZIMP+1)   = COREIMPUR_ITER(1)%IMPURITY(IIMP)%BOUNDARY%VALUE(1,IZIMP)
+          NZ_BND_TYPE(IZIMP+1)= COREIMPUR_ITER(1)%IMPURITY(IIMP)%BOUNDARY%TYPE(IZIMP)  
+       END DO 
+
+       DEALLOCATE (FUN_IN)
+
+       
+       LIN_RAD1        = 0.0_R8
+       BREM_RAD1       = 0.0_R8
+       JON_EN1         = 0.0_R8
+       REC_LOS1        = 0.0_R8
+       
+          
+! +++ connectin with neutrals 
+
+       IF(nneut.GT.0) THEN
+
+          ALLOCATE (FUN_IN(SIZE(CORENEUTRALS_ITER(1)%rho_tor)))
+       
+          DO INEUT=1,NNEUT
+             ANEUT(INEUT)	      = COREIMPUR_ITER(1)%compositions%nuclei(COREIMPUR_OLD(1)%compositions%neutralscomp(INEUT)%neutcomp(1)%nucindex)%amn
+
+             IF (COREIMPUR_ITER(1)%compositions%nuclei(COREIMPUR_OLD(1)%compositions%IMPURITIES(IIMP)%nucindex)%amn.EQ.   &
+                  ANEUT(INEUT)) THEN
+
+                DO ITYPE = 1, NTYPE(INEUT)
+                   FUN_IN        = CORENEUTRALS_ITER(1)%PROFILES(INEUT)%NEUTRALTYPE(ITYPE)%n0%value
+                   CALL L3interp  (FUN_IN, CORENEUTRALS_ITER(1)%rho_tor, SIZE(CORENEUTRALS_ITER(1)%rho_tor),  FUN_OUT, RHO, NRHO)
+                   NZ1(:,1)   = NZ1(:,1) + FUN_OUT(:)
+                END DO
+
+                NZM1(:,1)        = NZ1(:,1)	      
+
+             ENDIF
+
+          END DO
+
+          DEALLOCATE (FUN_IN)
+
+       ENDIF
+
+
+
+
+#ifdef GOT_AMNSPROTO
+      CALL IMPURITY_ONE  (TE, NE, NZ1, NZM1, VPR, VPRM, R0, B0, B0PRIME, DIFF, FLUX, FLUX_INTER, RHO,   &
+                          VCON, NRHO, NZIMP2, NZSOURCE, NZ_BND, NZ_BND_TYPE,                            &
+                          CONTROL_DOUBLE, CONTROL_INTEGER, G3, IMP_RADIATION, SE_EXP, MAX_NZIMP,        &
+                          amns_ei(:,iimp), amns_rc(:,iimp), amns_lr(:,iimp), amns_br(:,iimp),           &
+			  amns_eip(:,iimp), LIN_RAD1,BREM_RAD1,JON_EN1,REC_LOS1)
+
+
+#else
+      CALL IMPURITY_ONE  (TE, NE, NZ1, NZM1, VPR, VPRM, R0, B0, B0PRIME, DIFF, FLUX, FLUX_INTER, RHO,   &
+                          VCON, NRHO, NZIMP2, NZSOURCE, NZ_BND, NZ_BND_TYPE,                            &
+                          CONTROL_DOUBLE, CONTROL_INTEGER, G3, IMP_RADIATION, SE_EXP, MAX_NZIMP)
+#endif
+        
+
+       DO IRHO=1,NRHO
+            LIN_RAD(IRHO)      = 0.0_R8
+            BREM_RAD(IRHO)     = 0.0_R8
+            JON_EN (IRHO)      = 0.0_R8
+            REC_LOS (IRHO)     = 0.0_R8
+	 ENDDO   
+ 
+      DO IZIMP = 1,NZIMP(IIMP)
+         IF (NZ1(NRHO,IZIMP+1).LE.1.0D-200) NZ1(NRHO,IZIMP+1) = 0._R8 
+      ENDDO
+         
+	  
+      DO IRHO=1,NRHO
+         DO IZIMP=1,NZIMP(IIMP)
+            QRAD(IRHO)                                                     = QRAD(IRHO) + IMP_RADIATION(IRHO,IZIMP+1)
+            COREIMPUR_NEW(1)%IMPURITY(IIMP)%NZ(IRHO,IZIMP)                 = NZ1(IRHO,IZIMP+1)	
+            COREIMPUR_NEW(1)%IMPURITY(IIMP)%transp_coef%diff(IRHO,IZIMP)   = DIFF(IRHO,IZIMP+1)	
+            COREIMPUR_NEW(1)%IMPURITY(IIMP)%transp_coef%vconv(IRHO,IZIMP)  = VCON(IRHO,IZIMP+1)	
+            COREIMPUR_NEW(1)%IMPURITY(IIMP)%flux%flux_dv(IRHO,IZIMP)       = FLUX(IRHO,IZIMP+1)
+            COREIMPUR_NEW(1)%IMPURITY(IIMP)%flux%flux_interp(IRHO,IZIMP)   = FLUX_INTER(IRHO,IZIMP+1)
+            COREIMPUR_NEW(1)%IMPURITY(IIMP)%z(IRHO,IZIMP)                  = IZIMP
+            COREIMPUR_NEW(1)%IMPURITY(IIMP)%zsq(IRHO,IZIMP)                = IZIMP**2
+
+
+                                                                           
+ 
+! for radiation for one impurity - PROFILE         
+	    
+	    COREIMPUR_NEW(1)%impurity(iimp)%diagnostic%radiation%line_rad%profile(IRHO,IZIMP)     = LIN_RAD1(IRHO,IZIMP+1)
+            COREIMPUR_NEW(1)%IMPURITY(IIMP)%diagnostic%radiation%brem_radrec%profile(IRHO,IZIMP)  = BREM_RAD1(IRHO,IZIMP+1)
+	    COREIMPUR_NEW(1)%IMPURITY(IIMP)%diagnostic%radiation%sum%profile(IRHO,IZIMP)          = LIN_RAD1(IRHO,IZIMP+1)+ BREM_RAD1(IRHO,IZIMP+1)
+	    COREIMPUR_NEW(1)%impurity(iimp)%diagnostic%energy%ionization%profile(Irho,IZIMP)      = ITM_EV*JON_EN1(IRHO,IZIMP+1)
+	    COREIMPUR_NEW(1)%impurity(iimp)%diagnostic%energy%recombin%profile(irho,IZIMP)        = ITM_EV*REC_LOS1(IRHO,IZIMP+1)
+	    COREIMPUR_NEW(1)%impurity(iimp)%diagnostic%energy%sum%profile(irho,IZIMP)             = ITM_EV*(REC_LOS1(IRHO,IZIMP+1)+JON_EN1(IRHO,IZIMP+1))
+	    
+          
+	    FUN =VPR*(LIN_RAD1(IRHO,IZIMP+1)+ BREM_RAD1(IRHO,IZIMP+1))
+            CALL INTEGR2(NRHO,RHO,FUN,FUN_OUT)                                  
+            COREIMPUR_NEW(1)%IMPURITY(IIMP)%diagnostic%radiation%sum%integral(:,IZIMP)            = FUN_OUT(:)
+
+    
+	    LIN_RAD(IRHO)  = LIN_RAD(IRHO)   + LIN_RAD1(IRHO,IZIMP+1)
+	    BREM_RAD(IRHO) = BREM_RAD(IRHO)  + BREM_RAD1(IRHO,IZIMP+1) 
+	    JON_EN(IRHO)   = JON_EN(IRHO)    + JON_EN1(IRHO,IZIMP+1)
+	    REC_LOS(IRHO)  = REC_LOS(IRHO)   + REC_LOS1(IRHO,IZIMP+1)       
+    
+        END DO
+      END DO 
+      
+       R_LIN_INT1      = 0.0_R8
+       R_BREM_INT1     = 0.0_R8
+       R_SUM_INT1      = 0.0_R8
+       E_JON_INT1      = 0.0_R8
+       E_REC_INT1      = 0.0_R8
+       E_SUM_INT1      = 0.0_R8
+       
+      
+! for radiation on impurity- INTEGRAL     
+!******************* for line radiation for one impurity for one ionisations state*************         
+	 DO IZIMP=1,NZIMP(IIMP)
+           R_LIN_INT1(1,IZIMP)=RHO(1)*COREIMPUR_NEW(1)%impurity(iimp)%diagnostic%radiation%line_rad%profile(1,IZIMP)
+         
+	 DO IRHO=2,NRHO
+            R_LIN_INT1(IRHO,IZIMP)=R_LIN_INT1(IRHO-1,izimp) +  (VOL(IRHO)-VOL(IRHO-1))*0.5_R8  *           &
+	       (COREIMPUR_NEW(1)%impurity(iimp)%diagnostic%radiation%line_rad%profile(IRHO,IZIMP)+            &
+	        COREIMPUR_NEW(1)%impurity(iimp)%diagnostic%radiation%line_rad%profile(IRHO-1,IZIMP))
+	 ENDDO
+	    DO irho=1,NRHO
+	    COREIMPUR_NEW(1)%impurity(iimp)%diagnostic%radiation%line_rad%integral(IRHO,IZIMP) = R_LIN_INT1(IRHO,IZIMP) 
+	    ENDDO	
+	 ENDDO	   
+
+!******************* for bremstahlung+Recombination*************   
+	 DO IZIMP=1,NZIMP(IIMP)
+           R_BREM_INT1(1,IZIMP)=RHO(1)*COREIMPUR_NEW(1)%impurity(iimp)%diagnostic%radiation%BREM_RADREC%profile(1,IZIMP)
+         
+	 DO IRHO=2,NRHO
+            R_BREM_INT1(IRHO,IZIMP)=R_BREM_INT1(IRHO-1,izimp) +  (VOL(IRHO)-VOL(IRHO-1))*0.5_R8  *           &
+	       (COREIMPUR_NEW(1)%impurity(iimp)%diagnostic%radiation%BREM_RADREC%profile(IRHO,IZIMP)+            &
+	        COREIMPUR_NEW(1)%impurity(iimp)%diagnostic%radiation%BREM_RADREC%profile(IRHO-1,IZIMP))
+	 ENDDO
+	   DO irho=1,NRHO
+	    COREIMPUR_NEW(1)%impurity(iimp)%diagnostic%radiation%BREM_RADREC%integral(IRHO,IZIMP) = R_BREM_INT1(IRHO,IZIMP)    
+           ENDDO	
+	 ENDDO	
+
+!******************* for sum lin+Brem+rec for one impurity,one ion.state*************   
+	 DO IZIMP=1,NZIMP(IIMP)
+           R_SUM_INT1(1,IZIMP)=RHO(1)*COREIMPUR_NEW(1)%impurity(iimp)%diagnostic%radiation%SUM%profile(1,IZIMP)
+                                      
+	 DO IRHO=2,NRHO
+            R_SUM_INT1(IRHO,IZIMP)=R_SUM_INT1(IRHO-1,izimp) +  (VOL(IRHO)-VOL(IRHO-1))*0.5_R8  *           &
+	       (COREIMPUR_NEW(1)%impurity(iimp)%diagnostic%radiation%SUM%profile(IRHO,IZIMP)+              &
+	        COREIMPUR_NEW(1)%impurity(iimp)%diagnostic%radiation%SUM%profile(IRHO-1,IZIMP))
+	 ENDDO
+	  DO irho=1,NRHO 
+	    COREIMPUR_NEW(1)%impurity(iimp)%diagnostic%radiation%SUM%integral(IRHO,IZIMP) = R_SUM_INT1(IRHO,IZIMP)    
+          ENDDO	
+	 ENDDO	    
+
+!******************* for jonisation losses for one impurity,one ion.state*************   
+	 DO IZIMP=1,NZIMP(IIMP)
+           E_JON_INT1(1,IZIMP)=RHO(1)*COREIMPUR_NEW(1)%impurity(iimp)%diagnostic%energy%ionization%profile(1,IZIMP)
+         
+	 DO IRHO=2,NRHO
+            E_JON_INT1(IRHO,IZIMP)=E_JON_INT1(IRHO-1,izimp) +  (VOL(IRHO)-VOL(IRHO-1))*0.5_R8  *           &
+	       (COREIMPUR_NEW(1)%impurity(iimp)%diagnostic%energy%ionization%profile(irho,IZIMP)+            &
+	        COREIMPUR_NEW(1)%impurity(iimp)%diagnostic%energy%ionization%profile(irho-1,IZIMP))
+	 ENDDO
+	  DO irho=1,NRHO
+	    COREIMPUR_NEW(1)%impurity(iimp)%diagnostic%energy%ionization%integral(irho,IZIMP) = E_JON_INT1(IRHO,IZIMP)    
+          ENDDO	
+	 ENDDO	    
+
+!******************* for recombination losses for one impurity,one ion.state*************   
+	 DO IZIMP=1,NZIMP(IIMP)
+           E_REC_INT1(1,IZIMP)=RHO(1)*COREIMPUR_NEW(1)%impurity(iimp)%diagnostic%energy%recombin%profile(1,IZIMP)
+         
+	 DO IRHO=2,NRHO
+            E_REC_INT1(IRHO,IZIMP)=E_REC_INT1(IRHO-1,izimp) +  (VOL(IRHO)-VOL(IRHO-1))*0.5_R8  *           &
+	       (COREIMPUR_NEW(1)%impurity(iimp)%diagnostic%energy%recombin%profile(irho,IZIMP)+            &
+	        COREIMPUR_NEW(1)%impurity(iimp)%diagnostic%energy%recombin%profile(irho-1,IZIMP))
+	 ENDDO
+	  DO irho=1,NRHO  
+	    COREIMPUR_NEW(1)%impurity(iimp)%diagnostic%energy%recombin%integral(irho,IZIMP) = E_REC_INT1(IRHO,IZIMP)    
+          ENDDO	
+	 ENDDO	    
+
+!******************* for sum losses for one impurity,one ion.state*************   
+	 DO IZIMP=1,NZIMP(IIMP)
+           E_SUM_INT1(1,IZIMP)=RHO(1)*COREIMPUR_NEW(1)%impurity(iimp)%diagnostic%energy%sum%profile(1,IZIMP)
+         
+	 DO IRHO=2,NRHO
+            E_SUM_INT1(IRHO,IZIMP)=E_SUM_INT1(IRHO-1,izimp) +  (VOL(IRHO)-VOL(IRHO-1))*0.5_R8  *           &
+	       (COREIMPUR_NEW(1)%impurity(iimp)%diagnostic%energy%sum%profile(irho,IZIMP)+            &
+	        COREIMPUR_NEW(1)%impurity(iimp)%diagnostic%energy%sum%profile(irho-1,IZIMP))
+	 ENDDO
+	  DO irho=1,NRHO
+	    COREIMPUR_NEW(1)%impurity(iimp)%diagnostic%energy%sum%integral(irho,IZIMP) = E_SUM_INT1(IRHO,IZIMP)    
+          ENDDO	
+	 ENDDO	 
+
+! for radiation
+        DO IRHO=1,NRHO
+            COREIMPUR_NEW(1)%DIAGNOSTIC%RADIATION%LINE_RAD%PROFILE(IRHO,IIMP)        = LIN_RAD(IRHO)
+            COREIMPUR_NEW(1)%DIAGNOSTIC%RADIATION%BREM_RADREC%PROFILE(IRHO,IIMP)     = BREM_RAD(IRHO)
+            COREIMPUR_NEW(1)%DIAGNOSTIC%RADIATION%SUM%PROFILE(IRHO,IIMP)             = LIN_RAD(IRHO) + BREM_RAD(IRHO)
+            COREIMPUR_NEW(1)%diagnostic%energy%ionization%profile(IRHO,IIMP)         = ITM_EV*JON_EN(IRHO)
+            COREIMPUR_NEW(1)%diagnostic%energy%recombin%profile(IRHO,IIMP)           = ITM_EV*REC_LOS(IRHO)
+            COREIMPUR_NEW(1)%diagnostic%energy%sum%profile(IRHO,IIMP)                = ITM_EV*(REC_LOS(IRHO) + JON_EN(IRHO))
+        ENDDO
+           
+	   
+	   R_LIN_INT       = 0.0_R8
+	   R_BREM_INT      = 0.0_R8
+           R_SUM_INT       = 0.0_R8
+	   E_JON_INT       = 0.0_R8
+           E_REC_INT       = 0.0_R8
+           E_SUM_INT       = 0.0_R8
+	   
+! for radiation on impurity- INTEGRAL     
+!******************* for line radiation for one impurity *************         
+	 
+           R_LIN_INT(1)=RHO(1)*COREIMPUR_NEW(1)%diagnostic%radiation%line_rad%profile(1,IIMP)
+         
+	 DO IRHO=2,NRHO
+            R_LIN_INT(IRHO)=R_LIN_INT(IRHO-1) +  (VOL(IRHO)-VOL(IRHO-1))*0.5_R8  *           &
+	       (COREIMPUR_NEW(1)%diagnostic%radiation%line_rad%profile(IRHO,IIMP)+            &
+	        COREIMPUR_NEW(1)%diagnostic%radiation%line_rad%profile(IRHO-1,IIMP))
+         ENDDO
+	  DO irho=1,NRHO		
+	    COREIMPUR_NEW(1)%diagnostic%radiation%line_rad%integral(IRHO,IIMP) = R_LIN_INT(IRHO)    
+	 ENDDO	   
+!******************* for bremstahlung+Recombination*************   
+           R_BREM_INT(1)=RHO(1)*COREIMPUR_NEW(1)%diagnostic%radiation%BREM_RADREC%profile(1,IIMP)
+         
+	 DO IRHO=2,NRHO
+            R_BREM_INT(IRHO)=R_BREM_INT(IRHO-1) +  (VOL(IRHO)-VOL(IRHO-1))*0.5_R8  *           &
+	       (COREIMPUR_NEW(1)%diagnostic%radiation%BREM_RADREC%profile(IRHO,IIMP)+            &
+	        COREIMPUR_NEW(1)%diagnostic%radiation%BREM_RADREC%profile(IRHO-1,IIMP))
+	 ENDDO
+	  DO irho=1,NRHO  
+	    COREIMPUR_NEW(1)%diagnostic%radiation%BREM_RADREC%integral(IRHO,IIMP) = R_BREM_INT(IRHO)    
+          ENDDO	
+
+!******************* for SUM*************   
+           R_SUM_INT(1)=RHO(1)*COREIMPUR_NEW(1)%diagnostic%radiation%SUM%profile(1,IIMP)
+         
+	 DO IRHO=2,NRHO
+            R_SUM_INT(IRHO)=R_SUM_INT(IRHO-1) +  (VOL(IRHO)-VOL(IRHO-1))*0.5_R8  *           &
+	       (COREIMPUR_NEW(1)%diagnostic%radiation%SUM%profile(IRHO,IIMP)     +            &
+	        COREIMPUR_NEW(1)%diagnostic%radiation%SUM%profile(IRHO-1,IIMP))
+	 ENDDO
+	  DO irho=1,NRHO
+	    COREIMPUR_NEW(1)%diagnostic%radiation%SUM%integral(IRHO,IIMP) = R_SUM_INT(IRHO)    
+          ENDDO	
+
+!******************* for jonisation losses*************   
+           E_JON_INT(1)=RHO(1)*COREIMPUR_NEW(1)%diagnostic%energy%ionization%profile(1,IIMP)
+         
+	 DO IRHO=2,NRHO
+            E_JON_INT(IRHO)=E_JON_INT(IRHO-1) +  (VOL(IRHO)-VOL(IRHO-1))*0.5_R8  *           &
+	       (COREIMPUR_NEW(1)%diagnostic%energy%ionization%profile(IRHO,IIMP)     +            &
+	        COREIMPUR_NEW(1)%diagnostic%energy%ionization%profile(IRHO-1,IIMP))
+	 ENDDO
+	  DO irho=1,NRHO
+	    COREIMPUR_NEW(1)%diagnostic%energy%ionization%integral(IRHO,IIMP) = E_JON_INT(IRHO)    
+          ENDDO	
+
+!******************* for recombination losses*************   
+           E_REC_INT(1)=RHO(1)*COREIMPUR_NEW(1)%diagnostic%energy%recombin%profile(1,IIMP)
+         
+	 DO IRHO=2,NRHO
+            E_REC_INT(IRHO)=E_REC_INT(IRHO-1) +  (VOL(IRHO)-VOL(IRHO-1))*0.5_R8  *           &
+	       (COREIMPUR_NEW(1)%diagnostic%energy%recombin%profile(IRHO,IIMP)     +            &
+	        COREIMPUR_NEW(1)%diagnostic%energy%recombin%profile(IRHO-1,IIMP))
+	 ENDDO
+	  DO irho=1,NRHO
+	    COREIMPUR_NEW(1)%diagnostic%energy%recombin%integral(IRHO,IIMP) = E_REC_INT(IRHO)    
+          ENDDO	
+
+!******************* for sum losses*************   
+           E_SUM_INT(1)=RHO(1)*COREIMPUR_NEW(1)%diagnostic%energy%SUM%profile(1,IIMP)
+         
+	 DO IRHO=2,NRHO
+            E_SUM_INT(IRHO)=E_SUM_INT(IRHO-1) +  (VOL(IRHO)-VOL(IRHO-1))*0.5_R8  *           &
+	       (COREIMPUR_NEW(1)%diagnostic%energy%sum%profile(IRHO,IIMP)     +            &
+	        COREIMPUR_NEW(1)%diagnostic%energy%sum%profile(IRHO-1,IIMP))
+	 ENDDO
+	  DO irho=1,NRHO
+	    COREIMPUR_NEW(1)%diagnostic%energy%sum%integral(IRHO,IIMP) = E_SUM_INT(IRHO)    
+          ENDDO	
+
+!********* ######## diagnosticsum   ######## ******************
+  
+	
+    DO IRHO=1,NRHO
+        COREIMPUR_NEW(1)%diagnosticsum%radiation%line_rad%profile(IRHO)             =    &
+	        COREIMPUR_NEW(1)%diagnosticsum%radiation%line_rad%profile(IRHO)     +    &
+	        COREIMPUR_NEW(1)%DIAGNOSTIC%RADIATION%LINE_RAD%PROFILE(IRHO,IIMP) 
+        
+	COREIMPUR_NEW(1)%diagnosticsum%radiation%brem_radrec%profile(IRHO)          =    &
+                COREIMPUR_NEW(1)%diagnosticsum%radiation%brem_radrec%profile(IRHO)  +    &
+		COREIMPUR_NEW(1)%DIAGNOSTIC%RADIATION%brem_radrec%PROFILE(IRHO,IIMP)
+	
+	COREIMPUR_NEW(1)%diagnosticsum%radiation%sum%profile(IRHO)                  =    &
+	        COREIMPUR_NEW(1)%diagnosticsum%radiation%SUM%profile(IRHO)          +    &
+		COREIMPUR_NEW(1)%DIAGNOSTIC%RADIATION%LINE_RAD%PROFILE(IRHO,IIMP)   +    &
+		COREIMPUR_NEW(1)%DIAGNOSTIC%RADIATION%brem_radrec%PROFILE(IRHO,IIMP)
+	
+	COREIMPUR_NEW(1)%diagnosticsum%energy%ionization%profile(IRHO)              =    & 
+	        COREIMPUR_NEW(1)%diagnosticsum%energy%ionization%profile(IRHO)      +    &
+		COREIMPUR_NEW(1)%diagnostic%energy%ionization%profile(IRHO,IIMP)     
+       
+        COREIMPUR_NEW(1)%diagnosticsum%energy%recombin%profile(IRHO)                =    & 
+	        COREIMPUR_NEW(1)%diagnosticsum%energy%recombin%profile(IRHO)        +    &
+		COREIMPUR_NEW(1)%diagnostic%energy%recombin%profile(IRHO,IIMP) 
+	
+	COREIMPUR_NEW(1)%diagnosticsum%energy%sum%profile(IRHO)                     =    & 
+	        COREIMPUR_NEW(1)%diagnosticsum%energy%sum%profile(IRHO)             +    &
+		COREIMPUR_NEW(1)%diagnostic%energy%ionization%profile(IRHO,IIMP)    +    &
+		COREIMPUR_NEW(1)%diagnostic%energy%recombin%profile(IRHO,IIMP)       
+     ENDDO
+     
+      SUM_LIN_INT     = 0.0_R8
+      SUM_BREM_INT    = 0.0_R8
+      SUM_RAD_INT     = 0.0_R8
+      SUM_JON_INT     = 0.0_R8
+      SUM_REC_INT     = 0.0_R8
+      SUM_LOS_INT     = 0.0_R8
+     
+      SUM_LIN_INT(1)  = RHO(1)*COREIMPUR_NEW(1)%diagnosticsum%radiation%line_rad%profile(1)
+      SUM_BREM_INT(1) = RHO(1)*COREIMPUR_NEW(1)%diagnosticsum%radiation%brem_radrec%profile(1)
+      SUM_RAD_INT(1)  = RHO(1)*COREIMPUR_NEW(1)%diagnosticsum%radiation%sum%profile(1) 
+      SUM_JON_INT(1)  = RHO(1)*COREIMPUR_NEW(1)%diagnosticsum%energy%ionization%profile(1)  
+      SUM_REC_INT(1)  = RHO(1)*COREIMPUR_NEW(1)%diagnosticsum%energy%recombin%profile(1) 
+      SUM_LOS_INT(1)  = RHO(1)*COREIMPUR_NEW(1)%diagnosticsum%energy%sum%profile(1)  
+        
+	 DO IRHO=2,NRHO
+            SUM_LIN_INT(IRHO) = SUM_LIN_INT(IRHO-1) +  (VOL(IRHO)-VOL(IRHO-1))*0.5_R8                 *     &
+	                       (COREIMPUR_NEW(1)%diagnosticsum%radiation%line_rad%profile(IRHO)       +     &
+	                        COREIMPUR_NEW(1)%diagnosticsum%radiation%line_rad%profile(IRHO-1))
+	    SUM_BREM_INT(IRHO)= SUM_BREM_INT(IRHO-1) +  (VOL(IRHO)-VOL(IRHO-1))*0.5_R8                *     &
+	                       (COREIMPUR_NEW(1)%diagnosticsum%radiation%brem_radrec%profile(IRHO)    +     &
+	                        COREIMPUR_NEW(1)%diagnosticsum%radiation%brem_radrec%profile(IRHO-1))
+	    SUM_RAD_INT(IRHO) = SUM_RAD_INT(IRHO-1) +  (VOL(IRHO)-VOL(IRHO-1))*0.5_R8                 *     &
+	                       (COREIMPUR_NEW(1)%diagnosticsum%radiation%sum%profile(IRHO)            +     &
+	                        COREIMPUR_NEW(1)%diagnosticsum%radiation%sum%profile(IRHO-1))
+	    
+	    SUM_JON_INT(IRHO) = SUM_JON_INT(IRHO-1) +  (VOL(IRHO)-VOL(IRHO-1))*0.5_R8                 *     &
+	                       (COREIMPUR_NEW(1)%diagnosticsum%energy%ionization%profile(IRHO)        +     &
+	                        COREIMPUR_NEW(1)%diagnosticsum%energy%ionization%profile(IRHO-1))
+	    	                        
+	    SUM_REC_INT(IRHO) = SUM_REC_INT(IRHO-1) +  (VOL(IRHO)-VOL(IRHO-1))*0.5_R8                 *     &
+	                       (COREIMPUR_NEW(1)%diagnosticsum%energy%recombin%profile(IRHO)          +     &
+	                        COREIMPUR_NEW(1)%diagnosticsum%energy%recombin%profile(IRHO-1))		
+	    SUM_LOS_INT(IRHO) = SUM_LOS_INT(IRHO-1) +  (VOL(IRHO)-VOL(IRHO-1))*0.5_R8                 *     &
+	                       (COREIMPUR_NEW(1)%diagnosticsum%energy%sum%profile(IRHO)               +     &
+	                        COREIMPUR_NEW(1)%diagnosticsum%energy%sum%profile(IRHO-1))
+	       
+          ENDDO
+	
+	
+	 DO IRHO=1,NRHO 
+	   COREIMPUR_NEW(1)%diagnosticsum%radiation%line_rad%integral(IRHO)      =                            &
+	             COREIMPUR_NEW(1)%diagnosticsum%radiation%line_rad%integral(IRHO)    + SUM_LIN_INT(IRHO)  
+	   COREIMPUR_NEW(1)%diagnosticsum%radiation%brem_radrec%integral(IRHO)   =                            &
+	             COREIMPUR_NEW(1)%diagnosticsum%radiation%brem_radrec%integral(IRHO) + SUM_BREM_INT(IRHO)  
+	   COREIMPUR_NEW(1)%diagnosticsum%radiation%sum%integral(IRHO)           =                            &
+	             COREIMPUR_NEW(1)%diagnosticsum%radiation%sum%integral(IRHO)         + SUM_RAD_INT(IRHO)  
+	   
+	   COREIMPUR_NEW(1)%diagnosticsum%energy%ionization%integral(IRHO)       =                            &
+	             COREIMPUR_NEW(1)%diagnosticsum%energy%ionization%integral(IRHO)     + SUM_JON_INT(IRHO)  
+	   COREIMPUR_NEW(1)%diagnosticsum%energy%recombin%integral(IRHO)         =                            &
+	             COREIMPUR_NEW(1)%diagnosticsum%energy%recombin%integral(IRHO)       + SUM_REC_INT(IRHO)   
+	   COREIMPUR_NEW(1)%diagnosticsum%energy%sum%integral(IRHO)              =                            &
+	             COREIMPUR_NEW(1)%diagnosticsum%energy%sum%integral(IRHO)            + SUM_LOS_INT(IRHO)   
+	 ENDDO
+	 
+      CORESOURCE_NEW(1)%VALUES(1)%se%exp                                 = SE_EXP
+      CORESOURCE_NEW(1)%VALUES(1)%qe%exp                                 = - QRAD
+      CORESOURCE_NEW(1)%VALUES(1)%rho_tor                                = RHO
+      CORESOURCE_NEW(1)%VALUES(1)%rho_tor_norm                           = RHO/RHO(NRHO)
+
+
+  
+       DEALLOCATE (ANEUT)                 
+       DEALLOCATE (NZ1)
+       DEALLOCATE (NZM1)
+       DEALLOCATE (DIFF)
+       DEALLOCATE (VCON)
+       DEALLOCATE (DNZ1)
+       DEALLOCATE (FLUX)
+       DEALLOCATE (FLUX_INTER)
+       DEALLOCATE (IMP_RADIATION)
+       DEALLOCATE (NZ_BND)
+       DEALLOCATE (NZ_BND_TYPE)
+       DEALLOCATE (NZSOURCE)
+! for radiation
+       DEALLOCATE (LIN_RAD1)
+       DEALLOCATE (BREM_RAD1)
+       DEALLOCATE (R_LIN_INT1)
+       DEALLOCATE (R_BREM_INT1)
+       DEALLOCATE (R_SUM_INT1)
+       DEALLOCATE (E_JON_INT1)      
+       DEALLOCATE (E_REC_INT1) 
+       DEALLOCATE (E_SUM_INT1)
+       DEALLOCATE (JON_EN1)
+       DEALLOCATE (REC_LOS1)
+  
+       WRITE(*,*)'END OF IMPURITY',IIMP
+
+    END DO 
+
+     DEALLOCATE (LIN_RAD)  
+     DEALLOCATE (BREM_RAD)
+     DEALLOCATE (JON_EN)
+     DEALLOCATE (REC_LOS)
+     DEALLOCATE (R_LIN_INT)
+     DEALLOCATE (R_BREM_INT)
+     DEALLOCATE (R_SUM_INT)
+     DEALLOCATE (E_JON_INT)      
+     DEALLOCATE (E_REC_INT) 
+     DEALLOCATE (E_SUM_INT)
+     DEALLOCATE (SUM_LIN_INT)
+     DEALLOCATE (SUM_BREM_INT)
+     DEALLOCATE (SUM_RAD_INT)
+     DEALLOCATE (SUM_JON_INT)
+     DEALLOCATE (SUM_REC_INT)
+     DEALLOCATE (SUM_LOS_INT)
+     
+
+    DEALLOCATE (RHO)
+    DEALLOCATE (VOL)
+    DEALLOCATE (VPR)
+    DEALLOCATE (VPRM)
+    DEALLOCATE (G3)
+    DEALLOCATE (NE)
+    DEALLOCATE (TE)
+    DEALLOCATE (FUN_OUT)
+    DEALLOCATE (QRAD)
+    DEALLOCATE (SE_EXP)
+    DEALLOCATE (FUN)
+    DEALLOCATE (NZIMP)
+    IF(ALLOCATED(ntype)) DEALLOCATE (NTYPE)
+
+      ALLOCATE            (CORESOURCE_NEW(1)%VALUES(1)%sourceid%id(1))
+      ALLOCATE            (CORESOURCE_NEW(1)%VALUES(1)%sourceid%description(1))
+      CORESOURCE_NEW(1)%VALUES(1)%sourceid%id          = 'impurity'
+      CORESOURCE_NEW(1)%VALUES(1)%sourceid%flag        = 29
+      CORESOURCE_NEW(1)%VALUES(1)%sourceid%description = 'Impurity source'
+
+
+      WRITE (*,*) 'IMPURITY finished <==========='  
+      WRITE (*,*) ' '  
+
+
+    RETURN
+
+    ENTRY impurity_finish
+
+    DO iimp = 1, SIZE(amns_ei, dim=2)
+       DO izimp = 0, SIZE(amns_ei, dim=1)-1
+!          if(allocated(amns_ei(izimp, iimp))) then
+             CALL ITM_AMNS_FINISH_TABLE(amns_ei(izimp, iimp))
+!          endif
+       ENDDO
+    ENDDO
+    DO iimp = 1, SIZE(amns_rc, dim=2)
+       DO izimp = 0, SIZE(amns_rc, dim=1)-1
+!          if(allocated(amns_rc(izimp, iimp))) then
+             CALL ITM_AMNS_FINISH_TABLE(amns_rc(izimp, iimp))
+!          endif
+       ENDDO
+    ENDDO
+    DO iimp = 1, SIZE(amns_eip, dim=2)
+       DO izimp = 0, SIZE(amns_eip, dim=1)-1
+!          if(allocated(amns_eip(izimp, iimp))) then
+             CALL ITM_AMNS_FINISH_TABLE(amns_eip(izimp, iimp))
+!          endif
+       ENDDO
+    ENDDO
+    DO iimp = 1, SIZE(amns_lr, dim=2)
+       DO izimp = 0, SIZE(amns_lr, dim=1)-1
+!          if(allocated(amns_lr(izimp, iimp))) then
+             CALL ITM_AMNS_FINISH_TABLE(amns_lr(izimp, iimp))
+!          endif
+       ENDDO
+    ENDDO
+    DO iimp = 1, SIZE(amns_br, dim=2)
+       DO izimp = 0, SIZE(amns_br, dim=1)-1
+!          if(allocated(amns_br(izimp, iimp))) then
+             CALL ITM_AMNS_FINISH_TABLE(amns_br(izimp, iimp))
+!          endif
+       ENDDO
+    ENDDO
+    !WRITE(*,*) 'Calling ITM_AMNS_FINISH'
+    CALL ITM_AMNS_FINISH(amns)
+    !WRITE(*,*) 'deallocating amns_ei'
+    DEALLOCATE(amns_ei)
+    !WRITE(*,*) 'deallocating amns_rc'
+    DEALLOCATE(amns_rc)
+    !WRITE(*,*) 'deallocating amns_eip'
+    DEALLOCATE(amns_eip)
+    !WRITE(*,*) 'deallocating amns_lr'
+    DEALLOCATE(amns_lr)
+    !WRITE(*,*) 'deallocating amns_br'
+    DEALLOCATE(amns_br)
+    !WRITE(*,*) 'returning'
+
+
+
+    RETURN
+
+    END SUBROUTINE IMPURITY_ETS
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + 
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + +
+
+
+
+
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+  SUBROUTINE WRITEOUTIMPUR     (ITIME_OUT,COREIMPUR)
+	                                  
+
+    USE EUITM_SCHEMAS
+    USE ITM_TYPES
+    IMPLICIT NONE
+
+    TYPE (TYPE_COREIMPUR), POINTER  :: COREIMPUR(:)        
+  
+! +++ Internal parameters:
+    INTEGER                         :: NRHO                
+    INTEGER                         :: NIMP                
+    INTEGER,   ALLOCATABLE          :: NZIMP(:)           
+    INTEGER	                    :: ITIME_OUT
+    INTEGER	                    :: IIMP          
+    INTEGER	                    :: IRHO,IZIMP
+
+    REAL (R8), ALLOCATABLE          :: RHO(:)              
+ 
+    CHARACTER (33)                  :: FILENAME
+    
+    
+    NRHO                   = SIZE (COREIMPUR(1)%rho_tor)
+    NIMP                   = SIZE (COREIMPUR(1)%IMPURITY)
+    ALLOCATE (NZIMP(NIMP))
+    DO IIMP = 1, NIMP
+       NZIMP(IIMP)         = SIZE (COREIMPUR(1)%IMPURITY(IIMP)%nz,       DIM=2)
+    END DO
+    
+    
+    ALLOCATE     (RHO(NRHO))
+    RHO		= COREIMPUR(1)%RHO_TOR
+    
+    DO IIMP=1,NIMP
+       WRITE(FILENAME,'(a,i1.1,a,i7.7,a)') 'eq_ets_data/OUTIM',IIMP,'/IMP',ITIME_OUT,'.DAT'
+       OPEN (UNIT=20, FILE=FILENAME)
+       loop_irho:	DO IRHO = 1, NRHO 
+        WRITE (20,'(101(1x,e14.7))') RHO(IRHO), (COREIMPUR(1)%IMPURITY(IIMP)%nz(IRHO,IZIMP), IZIMP=1,NZIMP(IIMP)), &
+	        (COREIMPUR(1)%impurity(iimp)%diagnostic%radiation%line_rad%profile(IRHO,IZIMP), IZIMP=1,NZIMP(IIMP)),&
+		(COREIMPUR(1)%impurity(iimp)%diagnostic%radiation%line_rad%integral(IRHO,IZIMP), IZIMP=1,NZIMP(IIMP))
+    
+	 
+       END DO loop_irho
+       CLOSE (20)
+    END DO 
+    
+    DEALLOCATE (RHO)
+    
+    RETURN
+  END SUBROUTINE WRITEOUTIMPUR
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+
+
+
+SUBROUTINE INTEGR2(N,X,Y,INTY) !AF 11.Oct.2011 - assumes that Y is zero f0r X.eq.0, just as INTEGR does too...
+!-------------------------------------------------------!
+!  This subroutine calculates integral of function      !
+!  Y(X) from X=0 until X=X(N)                         !
+!-------------------------------------------------------!
+
+  use itm_types
+
+  IMPLICIT NONE
+
+  INTEGER :: N                                          ! number of radial points (input)
+  INTEGER :: I
+
+  REAL (R8) :: X(N), &                                  ! argument array (input)
+       Y(N), &                                  ! function array (input)
+       INTY(N)                                  ! function integral array (output)
+
+  INTY(1)=Y(1)*X(1)/2.e0_R8
+  DO I=2,N
+     INTY(I)=INTY(I-1)+(Y(I-1)+Y(I))*(X(I)-X(I-1))/2.e0_R8
+  END DO
+
+  RETURN
+
+END SUBROUTINE INTEGR2
+
+
+
+END MODULE IMPURITY
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + 
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + +

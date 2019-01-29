@@ -1,0 +1,37 @@
+<?xml version="1.0"?>
+
+<?xml-stylesheet type="text/xsl" href="./ets.xsl" charset="ISO-8859-1"?>
+
+<parameters>
+
+  <output>
+    <shot>                 3     </shot>             <!-- shot number -->
+    <run>                #c#     </run>              <!-- run number -->
+  </output>
+
+  <dims>
+    <nrho>               #r#     </nrho>             <!-- NRHO, number of radial points -->
+    <nion>                 1     </nion>             <!-- NION, number of ions -->          
+    <nimp>                 0     </nimp>             <!-- NIMP, number of impurity types -->
+    <nzimp>                0     </nzimp>            <!-- NZIMP, number of impurity ionisation states -->
+  </dims>
+
+  <solver>
+    <solver_type>        #s#     </solver_type>      <!-- choice of numerical solver, 1-RITM differential, 2-RITM integral, 3-COREDIF matrix -->
+   <sigma_source>          1     </sigma_source>     <!-- option for origin of Plasma electrical conductivity: 0: plasma collisions; 1: transport module; 2: source module -->
+    <tau>                #t#     </tau>              <!-- TAU, time step [s] --> 
+    <amix>            1.0d-0     </amix>             <!-- AMIX, mixing factor --> 
+    <convrec>         1.0d-6     </convrec>          <!-- PRECISION --> 
+    <ntime>              #n#     </ntime>            <!-- NTIME, number of time points -->   
+    <nsol>                 2     </nsol>             <!-- Number of analytical example -->   
+  </solver>
+
+  <boundary>
+    <psi_bnd_type>         1     </psi_bnd_type>     <!-- Type of boundary conditions CURRENT -->
+    <ni_bnd_type>          1     </ni_bnd_type>      <!-- Type of boundary conditions ION DENSITY -->
+    <ti_bnd_type>          1     </ti_bnd_type>      <!-- Type of boundary conditions ION TEMPERATURE -->
+    <te_bnd_type>          1     </te_bnd_type>      <!-- Type of boundary conditions ELECTRON TEMPERATURE -->
+    <vtor_bnd_type>        1     </vtor_bnd_type>    <!-- Type of boundary conditions ROTATION -->
+  </boundary>
+
+</parameters>

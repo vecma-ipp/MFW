@@ -1,0 +1,53 @@
+MODULE Coeff
+
+  USE Dim
+
+  IMPLICIT NONE
+
+  REAL, DIMENSION(:), ALLOCATABLE, SAVE :: xx,yy,rho,ra,rho_tor,rho_vol,rho_cut
+  REAL, DIMENSION(:), ALLOCATABLE, SAVE :: fsbndyeta,fsbndyr,fsbndyz
+  REAL, DIMENSION(:), ALLOCATABLE, SAVE :: dvp0,dvp1,dvp2
+  REAL, DIMENSION(:), ALLOCATABLE, SAVE :: dvpy,dvpy1,dvpy2,dvpy3
+  REAL, DIMENSION(:), ALLOCATABLE, SAVE :: itor,jtor,ptor,psitor,dpdpsi
+  REAL, DIMENSION(:), ALLOCATABLE, SAVE :: diidpsi,dphidv,qtor,phitor,vtor
+  REAL, DIMENSION(:), ALLOCATABLE, SAVE :: fsavgr0,fsavgr1,fsavgr2,sshift
+  REAL, SAVE :: hx,hxm,hxm2,hx2m,hy,hym,hym2,hy2m
+  REAL, SAVE :: raxis,zaxis,qaxis
+  REAL, SAVE :: a00,b00,r00,z00,j00,p00,rho00
+  REAL, SAVE :: xzero
+
+  REAL, DIMENSION(:), ALLOCATABLE, SAVE :: j_eq,p_eq
+
+  INTEGER :: ipe=0,ipex=0
+  INTEGER :: mypee=0,mypew=0
+  INTEGER :: nsends,nsend,nrecv
+
+  CHARACTER(len=8) :: hfile,tfile,dfile,pfile,tfilein,tfileout
+  CHARACTER(len=8) :: ffile='fout_000'
+  CHARACTER(len=11) :: proffile='gkprofs.dat'
+
+  LOGICAL, SAVE :: write_cpos = .false.
+  LOGICAL, SAVE :: write_snaps = .false.
+  LOGICAL, SAVE :: write_diags = .false.
+  LOGICAL, SAVE :: write_debug = .false.
+
+  INTEGER, SAVE :: niter_eq = 100, nr_eq = 65, nchi_eq = 65
+  INTEGER, SAVE :: npsi_eq, neta_eq
+
+  character(len = 7), SAVE :: grid_choice = "rho_pol"
+  character(len = 12), SAVE :: j_choice = "jphi"
+  character(len = 4), SAVE :: cpo_choice = "SFL"
+
+  REAL, SAVE :: rr0 = 3.3, elongation = 1., triangularity = 0., &
+       beta = 0.01, delta = 0.01, &
+       jj0 = 1.0, wn = 8., &
+       econvg = 1.e-8
+
+  NAMELIST/parm/ &
+       rr0,elongation,triangularity,beta,delta,jj0,wn, &
+       grid_choice, &
+       nx00,npesx, &
+       niter_eq,nr_eq,nchi_eq
+
+END MODULE Coeff
+

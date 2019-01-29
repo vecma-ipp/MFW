@@ -1,0 +1,55 @@
+HDF5=/usr/local/hdf5_serial
+
+F90 = g95
+F90FLAGS = -g  -Wno-globals -I${HDF5}/include
+CC = cc
+CFLAGS = -O2 -Impiuni
+LDFLAGS = -L. -L${HDF5}/lib -Lmpiuni
+LIBS =  -lfutils -lhdf5_fortran -lhdf5 -lz -lmpiuni -lSystemStubs
+
+.SUFFIXES:
+.SUFFIXES: .o .c .f90
+
+.f90.o:
+	$(F90) $(F90FLAGS) -c $<
+
+lib: libfutils.a getfile
+
+getfile: getfile.o
+	$(F90) $(LDFLAGS) -o $@ $<  $(LIBS)
+
+testmem: testmem.o cutils.o
+	$(F90) $(LDFLAGS) -o $@ $< cutils.o
+
+libfutils.a: futils.o cutils.o buffer.o vis3d.o uniproc.o
+	ar r $@ $?
+	ranlib $@
+	make -C mpiuni -f Makefile.mac lib
+
+futils.o: append.tpl zappend.tpl \
+          putarr.tpl cputarr.tpl \
+          getarr.tpl cgetarr.tpl
+	$(F90) $(F90FLAGS) -Impiuni -c futils.f90
+
+buffer.o: futils.o
+	$(F90) $(F90FLAGS) -Impiuni -c buffer.f90
+
+vis3d.o: futils.o
+	$(F90) $(F90FLAGS) -Impiuni -c vis3d.f90
+
+test_s:	$(SERIAL)
+	@for x in $(SERIAL); do \
+	echo === Running $$x ===;\
+	./$$x ;\
+        echo ;\
+	done
+
+getfile.o:	libfutils.a
+
+clean:
+	rm -f *.o *~ a.out
+	make -C mpiuni clean
+
+distclean: clean
+	rm -f $(SERIAL) ex6 getfile *.h5 *.a *.mod
+	make -C mpiuni distclean

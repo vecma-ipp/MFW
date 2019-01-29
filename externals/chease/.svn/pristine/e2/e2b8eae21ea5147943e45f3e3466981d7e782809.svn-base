@@ -1,0 +1,9 @@
+# Files and directories to exclude from Git repository
+*~
+*.[oa]
+*.mod
+src-f90/chease
+src-f90/chease_hdf5
+src-f90/chease_itm
+src-f90/chease_imas
+src-f90/chease_itm_hdf5

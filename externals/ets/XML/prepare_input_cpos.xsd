@@ -1,0 +1,745 @@
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <!-- document element -->
+  <xs:element name="parameters">			
+    <xs:annotation>
+      <xs:documentation>
+        GLOBAL: parameters for eq_ets_test
+      </xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:all>
+        <xs:element ref="dimensions" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="output" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="global" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="compositions" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="equilibrium" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="coreprof" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="coretransp" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="coresource" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="coreimpur" minOccurs="0" maxOccurs="1"/>
+      </xs:all>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:simpleType name="StringList">
+     <xs:list itemType="xs:string"/>
+  </xs:simpleType>
+
+  <xs:simpleType name="FloatList">
+     <xs:list itemType="xs:float"/>
+  </xs:simpleType>
+
+  <!-- dimensions parameters -->
+  <xs:element name="dimensions">			
+    <xs:annotation>
+      <xs:documentation>
+        BLOCK: specify the dimensions
+      </xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:all>
+         <xs:element ref="nrho" minOccurs="0" maxOccurs="1"/>
+         <xs:element ref="npsi" minOccurs="0" maxOccurs="1"/>
+         <xs:element ref="neq_dim1" minOccurs="0" maxOccurs="1"/>
+         <xs:element ref="neq_dim2" minOccurs="0" maxOccurs="1"/>
+         <xs:element ref="neq_max_npoints" minOccurs="0" maxOccurs="1"/>
+      </xs:all>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="nrho" type="xs:integer">		
+    <xs:annotation>
+      <xs:documentation>
+        NRHO,  number of radial points
+      </xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:element name="npsi" type="xs:integer">			
+    <xs:annotation>
+      <xs:documentation>
+        NPSI,   number of equilibrium points
+      </xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:element name="neq_dim1" type="xs:integer">			
+    <xs:annotation>
+      <xs:documentation>
+        NDIM1, number of points for 2-D equilibrium signals in R direction
+      </xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:element name="neq_dim2" type="xs:integer">			
+    <xs:annotation>
+      <xs:documentation>
+        NDIM2, number of points for 2-D equilibrium signals in Z direction
+      </xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:element name="neq_max_npoints" type="xs:integer">		
+    <xs:annotation>
+      <xs:documentation>
+        MAX_NPOINTS,  number of equilibrium boundary points
+      </xs:documentation>
+    </xs:annotation>
+  </xs:element>
+
+  <!-- output parameters -->
+  <xs:element name="output">				
+    <xs:annotation>
+      <xs:documentation>
+        BLOCK: specify output CPO options
+      </xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:all>
+         <xs:element ref="shot" minOccurs="0" maxOccurs="1"/>
+         <xs:element ref="run" minOccurs="0" maxOccurs="1"/>
+      </xs:all>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="shot" type="xs:integer">		
+    <xs:annotation>
+      <xs:documentation>
+        shot number
+      </xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:element name="run" type="xs:integer">		
+    <xs:annotation>
+      <xs:documentation>
+        run number
+      </xs:documentation>
+    </xs:annotation>
+  </xs:element>
+
+  <!-- global parameters -->
+  <xs:element name="global">				
+    <xs:annotation>
+      <xs:documentation>
+        BLOCK: specify global options
+      </xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:all>
+         <xs:element ref="time" minOccurs="0" maxOccurs="1"/>
+         <xs:element ref="R0" minOccurs="0" maxOccurs="1"/>
+         <xs:element ref="B0" minOccurs="0" maxOccurs="1"/>
+         <xs:element ref="A0" minOccurs="0" maxOccurs="1"/>
+         <xs:element ref="Ip" minOccurs="0" maxOccurs="1"/>
+         <xs:element ref="Rgeo" minOccurs="0" maxOccurs="1"/>
+         <xs:element ref="rho" minOccurs="0" maxOccurs="1"/>
+      </xs:all>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="time" type="xs:float">		
+    <xs:annotation>
+      <xs:documentation>
+        Time in the equilibriun CPO [s]
+      </xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:element name="R0" type="xs:float">		
+    <xs:annotation>
+      <xs:documentation>
+        R0, reference R [m]
+      </xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:element name="B0" type="xs:float">		
+    <xs:annotation>
+      <xs:documentation>
+        B0, vacuum B ar R0 [T]
+      </xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:element name="A0" type="xs:float">		
+    <xs:annotation>
+      <xs:documentation>
+        A0, minor radius [m]
+      </xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:element name="Ip" type="xs:float">		
+    <xs:annotation>
+      <xs:documentation>
+        Ip, plasma current [A]
+      </xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:element name="Rgeo" type="xs:float">		
+    <xs:annotation>
+      <xs:documentation>
+        Rgeo, geometric axis of plasma [m]
+      </xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:element name="rho" type="StringList">		
+    <xs:annotation>
+      <xs:documentation>
+        expression giving the relative weighting of points in rho
+      </xs:documentation>
+    </xs:annotation>
+  </xs:element>
+
+
+
+  <!-- compositions parameters -->
+  <xs:element name="compositions">					
+    <xs:annotation>
+      <xs:documentation>
+        BLOCK: specify the compositions
+      </xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:all>
+         <xs:element ref="force_compositions" minOccurs="0" maxOccurs="1"/>
+         <xs:element ref="ions" minOccurs="0" maxOccurs="1"/>
+         <xs:element ref="impurity" minOccurs="0" maxOccurs="1"/>
+         <xs:element ref="neutrals" minOccurs="0" maxOccurs="1"/>
+      </xs:all>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="force_compositions" type="xs:integer">		
+    <xs:annotation>
+      <xs:documentation>
+        flag for compositions settings
+      </xs:documentation>
+    </xs:annotation>
+  </xs:element>
+
+  <!-- ion composition -->
+  <xs:element name="ions">					
+    <xs:annotation>
+      <xs:documentation>
+        BLOCK: specify ion composition
+      </xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:all>
+         <xs:element ref="amn" minOccurs="0" maxOccurs="1"/>
+         <xs:element ref="zn" minOccurs="0" maxOccurs="1"/>
+         <xs:element ref="zion" minOccurs="0" maxOccurs="1"/>
+      </xs:all>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="amn" type="FloatList">
+    <xs:annotation>
+      <xs:documentation>
+        atomic mass IONS
+      </xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:element name="zn" type="FloatList">
+    <xs:annotation>
+      <xs:documentation>
+        nuclear charge IONS
+      </xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:element name="zion" type="FloatList">
+    <xs:annotation>
+      <xs:documentation>
+        charge IONS
+      </xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  
+
+  <!-- impurity composition -->
+  <xs:element name="impurity">					
+    <xs:annotation>
+      <xs:documentation>
+        BLOCK: specify impurity composition
+      </xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:all>
+         <xs:element ref="amn_imp" minOccurs="0" maxOccurs="1"/>
+         <xs:element ref="zn_imp" minOccurs="0" maxOccurs="1"/>
+         <xs:element ref="max_z_imp" minOccurs="0" maxOccurs="1"/>
+      </xs:all>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="amn_imp" type="FloatList">
+    <xs:annotation>
+      <xs:documentation>
+        atomic mass IMPURITY
+      </xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:element name="zn_imp" type="FloatList">
+    <xs:annotation>
+      <xs:documentation>
+        nuclear charge IMPURITY
+      </xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:element name="max_z_imp" type="FloatList">
+    <xs:annotation>
+      <xs:documentation>
+        maximum charge IMPURITY
+      </xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  
+
+  <!-- neutral composition -->
+  <xs:element name="neutrals">					
+    <xs:annotation>
+      <xs:documentation>
+        BLOCK: specify neutrals composition
+      </xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:all>
+         <xs:element ref="cold_neutrals" minOccurs="0" maxOccurs="1"/>
+         <xs:element ref="thermal_neutrals" minOccurs="0" maxOccurs="1"/>
+         <xs:element ref="fast_neutrals" minOccurs="0" maxOccurs="1"/>
+         <xs:element ref="NBI_neutrals" minOccurs="0" maxOccurs="1"/>
+      </xs:all>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="cold_neutrals" type="xs:integer">			
+    <xs:annotation>
+      <xs:documentation>
+        flag for cold neutrals
+      </xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:element name="thermal_neutrals" type="xs:integer">			
+    <xs:annotation>
+      <xs:documentation>
+        flag for thermal neutrals
+      </xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:element name="fast_neutrals" type="xs:integer">			
+    <xs:annotation>
+      <xs:documentation>
+        flag for fast neutrals
+      </xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:element name="NBI_neutrals" type="xs:integer">			
+    <xs:annotation>
+      <xs:documentation>
+        flag for NBI neutrals
+      </xs:documentation>
+    </xs:annotation>
+  </xs:element>
+
+
+
+  <!-- equilibrium parameters -->
+  <xs:element name="equilibrium">			
+    <xs:annotation>
+      <xs:documentation>
+        BLOCK: specify parameters for the equilibrium CPO
+      </xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:all>
+         <xs:element ref="equilibrium_ext" minOccurs="0" maxOccurs="1"/>
+         <xs:element ref="el" minOccurs="0" maxOccurs="1"/>
+         <xs:element ref="tr_u" minOccurs="0" maxOccurs="1"/>
+         <xs:element ref="tr_l" minOccurs="0" maxOccurs="1"/>
+      </xs:all>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="equilibrium_ext" type="xs:string">	
+    <xs:annotation>
+      <xs:documentation>
+        Reference CPO for equilibrium in the form USER/DEVICE/VERSION/SHOT/RUN or SHOT/RUN; not used if blank
+      </xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:element name="el" type="xs:float">		
+    <xs:annotation>
+      <xs:documentation>
+        Ellipticity
+      </xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:element name="tr_u" type="xs:float">		
+    <xs:annotation>
+      <xs:documentation>
+        Upper triangularity
+      </xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:element name="tr_l" type="xs:float">		
+    <xs:annotation>
+      <xs:documentation>
+        Lower triangularity
+      </xs:documentation>
+    </xs:annotation>
+  </xs:element>
+
+  <!-- coreprof parameters -->
+  <xs:element name="coreprof">				
+    <xs:annotation>
+      <xs:documentation>
+        BLOCK: specify parameters for the coreprof CPO
+      </xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:all>
+         <xs:element ref="coreprof_ext" minOccurs="0" maxOccurs="1"/>
+         <xs:element ref="ni" minOccurs="0" maxOccurs="1"/>
+         <xs:element ref="ti" minOccurs="0" maxOccurs="1"/>
+         <xs:element ref="te" minOccurs="0" maxOccurs="1"/>
+         <xs:element ref="vtor" minOccurs="0" maxOccurs="1"/>
+         <xs:element ref="jpar" minOccurs="0" maxOccurs="1"/>
+         <xs:element ref="qsf" minOccurs="0" maxOccurs="1"/>
+      </xs:all>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="coreprof_ext" type="xs:string">	
+    <xs:annotation>
+      <xs:documentation>
+        Reference CPO for coreprof in the form USER/DEVICE/VERSION/SHOT/RUN or SHOT/RUN; not used if blank
+      </xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:element name="ni" type="StringList">		
+    <xs:annotation>
+      <xs:documentation>
+        NION list of expressions giving the ion desities as a function of a normalized radial coordinate [/m^3]
+      </xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:element name="ti" type="StringList">		
+    <xs:annotation>
+      <xs:documentation>
+        NION list of expressions giving the ion temperatures as a function of a normalized radial coordinate [eV]
+      </xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:element name="te" type="StringList">		
+    <xs:annotation>
+      <xs:documentation>
+        expression giving the electron temperature as a function of a normalized radial coordinate [eV]
+      </xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:element name="vtor" type="StringList">		
+    <xs:annotation>
+      <xs:documentation>
+        NION list of expressions giving the ion toroidal velocities as a function of a normalized radial coordinate [m/s]
+      </xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:element name="jpar" type="StringList">		
+    <xs:annotation>
+      <xs:documentation>
+        expression giving the parallel current density as a function of a normalized radial coordinate [A/m^2]
+      </xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:element name="qsf" type="StringList">		
+    <xs:annotation>
+      <xs:documentation>
+        expression giving the safety factor as a function of a normalized radial coordinate []
+      </xs:documentation>
+    </xs:annotation>
+  </xs:element>
+
+  <!-- coretransp parameters -->
+  <xs:element name="coretransp">			
+    <xs:annotation>
+      <xs:documentation>
+        BLOCK: specify parameters for the coretransp CPO
+      </xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:all>
+         <xs:element ref="coretransp_ext" minOccurs="0" maxOccurs="1"/>
+         <xs:element ref="sigma" minOccurs="0" maxOccurs="1"/>
+         <xs:element ref="ne_diff" minOccurs="0" maxOccurs="1"/>
+         <xs:element ref="ne_conv" minOccurs="0" maxOccurs="1"/>
+         <xs:element ref="ni_diff" minOccurs="0" maxOccurs="1"/>
+         <xs:element ref="ni_conv" minOccurs="0" maxOccurs="1"/>
+         <xs:element ref="te_diff" minOccurs="0" maxOccurs="1"/>
+         <xs:element ref="te_conv" minOccurs="0" maxOccurs="1"/>
+         <xs:element ref="ti_diff" minOccurs="0" maxOccurs="1"/>
+         <xs:element ref="ti_conv" minOccurs="0" maxOccurs="1"/>
+         <xs:element ref="vtor_diff" minOccurs="0" maxOccurs="1"/>
+         <xs:element ref="vtor_conv" minOccurs="0" maxOccurs="1"/>
+         <xs:element ref="nz_diff" minOccurs="0" maxOccurs="1"/>
+         <xs:element ref="nz_conv" minOccurs="0" maxOccurs="1"/>
+      </xs:all>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="coretransp_ext" type="xs:string">	
+    <xs:annotation>
+      <xs:documentation>
+        Reference CPO for coretransp in the form USER/DEVICE/VERSION/SHOT/RUN or SHOT/RUN; not used if blank
+      </xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:element name="sigma" type="StringList">		
+    <xs:annotation>
+      <xs:documentation>
+        expression giving the parallel conductivity as a function of a normalized radial coordinate [???]
+      </xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:element name="ne_diff" type="StringList">	
+    <xs:annotation>
+      <xs:documentation>
+        3 expressions giving the electron particle diffusivities [m^2/s]
+      </xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:element name="ne_conv" type="StringList">	
+    <xs:annotation>
+      <xs:documentation>
+        3 expressions giving the electron pinch velocities [m/s]
+      </xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:element name="ni_diff" type="StringList">	
+    <xs:annotation>
+      <xs:documentation>
+        NION * 3 expressions giving the ion particle diffusivities [m^2/s]
+      </xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:element name="ni_conv" type="StringList">	
+    <xs:annotation>
+      <xs:documentation>
+        NION * 3 expressions giving the ion pinch velocities [m/s]
+      </xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:element name="te_diff" type="StringList">	
+    <xs:annotation>
+      <xs:documentation>
+        expression giving the electron thermal diffusivity [m^2/s]
+      </xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:element name="te_conv" type="StringList">	
+    <xs:annotation>
+      <xs:documentation>
+        expression giving the electron thermal pinch velocity [m/s]
+      </xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:element name="ti_diff" type="StringList">	
+    <xs:annotation>
+      <xs:documentation>
+        NION expressions giving the ion thermal diffusivities [m^2/s]
+      </xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:element name="ti_conv" type="StringList">	
+    <xs:annotation>
+      <xs:documentation>
+        NION expressions giving the ion thermal pinch velocities [m/s]
+      </xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:element name="vtor_diff" type="StringList">	
+    <xs:annotation>
+      <xs:documentation>
+        NION expressions giving the ion toroidal velocity diffusivities [m^2/s]
+      </xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:element name="vtor_conv" type="StringList">	
+    <xs:annotation>
+      <xs:documentation>
+        NION expressions giving the ion toroidal velocity pinch velocities [m/s]
+      </xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:element name="nz_diff" type="StringList">		
+    <xs:annotation>
+      <xs:documentation>
+        NIMP * MAX_NZIMP expressions giving the impurity ion particle diffusivities [m^2/s]
+      </xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:element name="nz_conv" type="StringList">		
+    <xs:annotation>
+      <xs:documentation>
+        NIMP * MAX_NZIMP expressions giving the impurity ion pinch velocities
+      </xs:documentation>
+    </xs:annotation>
+  </xs:element>
+
+  <!-- coresource parameters -->
+  <xs:element name="coresource">			
+    <xs:annotation>
+      <xs:documentation>
+        BLOCK: specify parameters for the coresource CPO
+      </xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:all>
+         <xs:element ref="coresource_ext" minOccurs="0" maxOccurs="1"/>
+         <xs:element ref="j" minOccurs="0" maxOccurs="1"/>
+         <xs:element ref="sigma_src" minOccurs="0" maxOccurs="1"/>
+         <xs:element ref="qe_exp" minOccurs="0" maxOccurs="1"/>
+         <xs:element ref="qe_imp" minOccurs="0" maxOccurs="1"/>
+         <xs:element ref="qi_exp" minOccurs="0" maxOccurs="1"/>
+         <xs:element ref="qi_imp" minOccurs="0" maxOccurs="1"/>
+	 <xs:element ref="qz_exp" minOccurs="0" maxOccurs="1"/>
+         <xs:element ref="qz_imp" minOccurs="0" maxOccurs="1"/>
+         <xs:element ref="si_exp" minOccurs="0" maxOccurs="1"/>
+         <xs:element ref="si_imp" minOccurs="0" maxOccurs="1"/>
+	 <xs:element ref="sz_exp" minOccurs="0" maxOccurs="1"/>
+         <xs:element ref="sz_imp" minOccurs="0" maxOccurs="1"/>
+         <xs:element ref="ui_exp" minOccurs="0" maxOccurs="1"/>
+         <xs:element ref="ui_imp" minOccurs="0" maxOccurs="1"/>
+       </xs:all>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="coresource_ext" type="xs:string">	
+    <xs:annotation>
+      <xs:documentation>
+        Reference CPO for coresource in the form USER/DEVICE/VERSION/SHOT/RUN or SHOT/RUN; not used if blank
+      </xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:element name="j" type="StringList">		
+    <xs:annotation>
+      <xs:documentation>
+        expression for j as a function of a normalized radial coordinate [A/m^2]
+      </xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:element name="sigma_src" type="StringList">		
+    <xs:annotation>
+      <xs:documentation>
+        expression for sigma as a function of a normalized radial coordinate [????]
+      </xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:element name="qe_exp" type="StringList">		
+    <xs:annotation>
+      <xs:documentation>
+        expression for the explicit part of the electron heating as a function of a normalized radial coordinate [W/m^3]
+      </xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:element name="qe_imp" type="StringList">		
+    <xs:annotation>
+      <xs:documentation>
+        expression for the implicit part of the electron heating as a function of a normalized radial coordinate [W/m^3/eV ??]
+      </xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:element name="qi_exp" type="StringList">		
+    <xs:annotation>
+      <xs:documentation>
+        NION expressions for the explicit part of the ion heating as a function of a normalized radial coordinate [W/m^3]
+      </xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:element name="qi_imp" type="StringList">		
+    <xs:annotation>
+      <xs:documentation>
+        NION expressions for the implicit part of the ion heating as a function of a normalized radial coordinate [W/m^3/eV ??]
+      </xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:element name="qz_exp" type="StringList">		
+    <xs:annotation>
+      <xs:documentation>
+        NIMP,MAX_NZIMP expressions for the explicit part of the impurity heating as a function of a normalized radial coordinate [W/m^3]
+      </xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:element name="qz_imp" type="StringList">		
+    <xs:annotation>
+      <xs:documentation>
+        NIMP .LT. MAX_NZIMP expressions for the implicit part of the impurity heating as a function of a normalized radial coordinate [W/m^3/eV ??]
+      </xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:element name="si_exp" type="StringList">		
+    <xs:annotation>
+      <xs:documentation>
+        NION expressions for the explicit part of the ion particle source as a function of a normalized radial coordinate [/m^3/s]
+      </xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:element name="si_imp" type="StringList">		
+    <xs:annotation>
+      <xs:documentation>
+        NION expressions for the implicit part of the ion particle source as a function of a normalized radial coordinate [/m^3/s.m^3 ??]
+      </xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:element name="sz_exp" type="StringList">		
+    <xs:annotation>
+      <xs:documentation>
+        NIMP,MAX_NZIMP expressions for the explicit part of the impurity particle source as a function of a normalized radial coordinate [/m^3/s]
+      </xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:element name="sz_imp" type="StringList">		
+    <xs:annotation>
+      <xs:documentation>
+        NIMP,MAX_NZIMP expressions for the implicit part of the impurity particle source as a function of a normalized radial coordinate [/m^3/s.m^3 ??]
+      </xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:element name="ui_exp" type="StringList">		
+    <xs:annotation>
+      <xs:documentation>
+        NION expressions for the explicit part of the toroidal velocity source as a function of a normalized radial coordinate [??]
+      </xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:element name="ui_imp" type="StringList">		
+    <xs:annotation>
+      <xs:documentation>
+        NION expressions for the implicit part of the toroidal velocity source as a function of a normalized radial coordinate [??]
+      </xs:documentation>
+    </xs:annotation>
+  </xs:element>
+
+  <!-- coreimpur parameters -->
+  <xs:element name="coreimpur">				
+    <xs:annotation>
+      <xs:documentation>
+        BLOCK: specify parameters for the coreimpur CPO
+      </xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:all>
+         <xs:element ref="coreimpur_ext" minOccurs="0" maxOccurs="1"/>
+         <xs:element ref="nz" minOccurs="0" maxOccurs="1"/>
+      </xs:all>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="coreimpur_ext" type="xs:string">	
+    <xs:annotation>
+      <xs:documentation>
+        Reference CPO for coreimpur in the form USER/DEVICE/VERSION/SHOT/RUN or SHOT/RUN; not used if blank
+      </xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:element name="nz" type="StringList">		
+    <xs:annotation>
+      <xs:documentation>
+        NIMP * MAX_NZIMP expressions giving the impurity ion desities as a function of a normalized radial coordinate [/m^3]
+      </xs:documentation>
+    </xs:annotation>
+  </xs:element>
+
+</xs:schema>

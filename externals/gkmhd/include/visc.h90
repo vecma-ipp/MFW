@@ -1,0 +1,11 @@
+!...  coefficients for brackets 
+!...  find loop distances
+
+        thxm2=tau*vpp*rhos2/fsfc(i)%area(j)
+
+        DO mu=1,neqs
+           fsfc(i)%suu(mu,j)=fsfc(i)%suu(mu,j) + thxm2* &
+                SUM(fsfc(i)%aratio(1:n_neighbors,j)* &
+                (duu(1:n_neighbors,mu)-duu(0,mu)))
+        END DO
+

@@ -1,0 +1,19 @@
+MODULE Pvars
+
+  USE Dim
+
+  INTEGER :: black=1,blue=4,red=2,green=3,yellow=7,purple=6,magenta=6
+  INTEGER :: soli=1,dash=2,ddot=3,dots=4
+
+  REAL, DIMENSION(:), ALLOCATABLE :: xp,yp,sp
+
+  REAL, DIMENSION(:), ALLOCATABLE :: fcor,xcor,ycor
+
+  REAL, DIMENSION(:), ALLOCATABLE :: pfx,rkyl
+  REAL, DIMENSION(:,:), ALLOCATABLE :: pfxa,cx,uup,fcors
+
+  REAL, DIMENSION(:,:,:), ALLOCATABLE :: cxa
+
+  COMPLEX, DIMENSION(:,:), ALLOCATABLE :: uuky
+
+END MODULE Pvars

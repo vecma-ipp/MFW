@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+
+    <xs:element name="parameters">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element ref="IMPURITY1"/>
+                <xs:element ref="IMPURITY2"/>
+                <xs:element ref="IMPURITY3"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="IMPURITY1">
+        <xs:complexType>
+            <xs:choice>
+                <xs:element ref="OFF"/>
+                <xs:element ref="Define_impurity"/>
+            </xs:choice>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="IMPURITY2">
+        <xs:complexType>
+            <xs:choice>
+                <xs:element ref="OFF"/>
+                <xs:element ref="Define_impurity"/>
+            </xs:choice>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="IMPURITY3">
+        <xs:complexType>
+            <xs:choice>
+                <xs:element ref="OFF"/>
+                <xs:element ref="Define_impurity"/>
+            </xs:choice>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="Define_impurity">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element ref="amn"/>
+                <xs:element ref="zn"/>
+                <xs:element ref="ionization_states"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="amn" type="xs:int" default="1"/>
+    <xs:element name="zn" type="xs:int" default="1"/>
+    <xs:element name="zion" type="xs:int" default="1"/>
+    <xs:element name="OFF">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element ref="Not_Active"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+    <xs:element fixed="The species is not active, signals are not allocated." name="Not_Active"
+        type="xs:string"/>
+    <xs:element name="ionization_states">
+        <xs:complexType>
+            <xs:choice>
+                <xs:element ref="fully_stripped_state_only"/>
+                <xs:element ref="all"/>
+            </xs:choice>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="fully_stripped_state_only">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element ref="Profile"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="all">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element ref="Profiles"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="Profile">
+        <xs:complexType>
+            <xs:choice>
+                <xs:element ref="radially_constant"/>
+                <xs:element ref="proportional_to_source_profile"/>
+            </xs:choice>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="Profiles">
+        <xs:complexType>
+            <xs:choice>
+                <xs:element ref="all_radially_constant"/>
+                <xs:element ref="all_proportional_to_source_profile"/>
+                <xs:element ref="coronal_distribution"/>
+            </xs:choice>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="Densities" type="FloatList" default="0 0"/>
+    <xs:element name="Density" type="xs:float" default="0"/>
+    <xs:element default="0" name="Total_Density" type="xs:float"/>
+    <xs:element name="Source_profile">
+        <xs:complexType>
+            <xs:choice>
+                <xs:element ref="electrons"/>
+                <xs:element ref="ions"/>
+            </xs:choice>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="electrons">
+        <xs:complexType>
+            <xs:all>
+                <xs:element ref="NOTE"/>
+            </xs:all>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="ions">
+        <xs:complexType>
+            <xs:all>
+                <xs:element ref="NOTE"/>
+                <xs:element ref="extrapolate_from"/>
+            </xs:all>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="extrapolate_from">
+        <xs:complexType>
+            <xs:choice>
+                <xs:element ref="total_ion_density"/>
+                <xs:element ref="selected_ion"/>
+            </xs:choice>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="total_ion_density">
+        <xs:complexType>
+            <xs:sequence/>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="selected_ion">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element ref="amn"/>
+                <xs:element ref="zn"/>
+                <xs:element ref="zion"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="Fraction" type="xs:float" default="0"/>
+    <xs:element name="Fractions" type="FloatList" default="0 0"/>
+    <xs:element name="radially_constant">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element ref="Density"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="proportional_to_source_profile">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element ref="Source_profile"/>
+                <xs:element ref="Fraction"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="all_radially_constant">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element ref="Densities"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="all_proportional_to_source_profile">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element ref="Source_profile"/>
+                <xs:element ref="Fractions"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="coronal_distribution">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element ref="Total_Density"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+    <xs:element
+        fixed="Output impurity profiles will be proportional to the choosen profile: N_imp=N*Fraction"
+        name="NOTE" type="xs:string"/>
+    <xs:simpleType name="FloatList">
+        <xs:list itemType="xs:float"/>
+    </xs:simpleType>
+</xs:schema>

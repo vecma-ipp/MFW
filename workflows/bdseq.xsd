@@ -1,0 +1,23 @@
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <!-- document element -->
+
+  <xs:element name="parameters">
+    <xs:complexType>
+      <xs:all>
+        <xs:element ref="symmetry_coords" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="write_diags" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="write_cpos" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="nr_eq" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="neta_eq" minOccurs="0" maxOccurs="1"/>
+      </xs:all>
+    </xs:complexType>
+  </xs:element>
+
+<xs:element name="symmetry_coords" type="xs:boolean"/>
+<xs:element name="write_diags" type="xs:boolean"/>
+<xs:element name="write_cpos" type="xs:boolean"/>
+<xs:element name="nr_eq" type="xs:integer"/>
+<xs:element name="neta_eq" type="xs:integer"/>
+
+</xs:schema>
+

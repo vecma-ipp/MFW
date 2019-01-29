@@ -1,0 +1,72 @@
+*************************
+***    CHEASE NAMELIST FILE
+***    namelist created by write_namelist_CHEASE.m
+*************************
+&EQDATA
+ RELAX = 0.,
+ NDIAGOP = 1,
+ NBSEXPQ=0000,
+ NPROPT=1,
+ NIDEAL=6, NPLOT=1,    NTCASE=0,   NSMOOTH=1,
+ NS=40,    NT=40,      NPSI=180,    NCHI=180, NISO=180, NTNOVA=12,
+ CFNRESS=1.00,
+ NRSCAL=0, NCSCAL=1,   NTMF0=0,
+ NBAL=0,   NBLOPT=0,     CFBAL=10.00, 
+
+ NOPT=0,
+
+ NSURF=6,  
+ ASPCT= 0.28,
+
+ CPRESS=1 ,QSPEC=1.05, CSSPEC=0.0,
+ ETAEI= 0.1, RPEOP= 0.5,  RZION=1.5,
+ NPPFUN = 8, NPP=1,      
+ NFUNC=4,
+
+ NDIFPS=0, NDIFT=1,
+
+ NMESHA=0, NPOIDA=3, SOLPDA=.60,APLACE=.00,.70,1.0,
+                                AWIDTH=.05,.07,.05,
+ NMESHA=0, NPOIDQ=10, SOLPDA=.10,QPLACE=1.00,1.00,2.00,2.00,3.00,3.00,4.00,4.00,4.41,4.41,
+                                 QWIDTH=0.13,0.04,0.09,0.04,0.07,0.02,0.04,0.01,0.01,0.001,
+ NMESHC=1, NPOIDC=2, SOLPDC=.70,CPLACE=.95,.99,1.0, CWIDTH=.10,.02,.05,
+                                DWIDTH=.18,.08,.05,
+ NMESHD=0, NPOIDD=2, SOLPDD=.60,DPLACE=-1.80,-1.80,4.0,
+                                DWIDTH=.18,.08,.05,
+ NMESHE=0, NPOIDE=4, SOLPDE=.50,EPLACE=-1.70,-1.70, 1.70, 1.70,
+                                EWIDTH=.18,.08,.18,.08,
+
+ EPSLON=1.0E-8, GAMMA=1.6666666667,
+ NTURN=20, NBLC0=16,   NPPR=24,
+ MSMAX=1,  NINMAP=40,  NINSCA=40,
+ NSYM=0,   NEGP=-1,    NER=1, NVEXP=1,  REXT=10.0, R0W=1., RZ0W=0.,
+ NEQDSK=0,  NEQDXTPO=1,
+ PSISCL= 1.0,  NRBOX=129, NZBOX=129,
+AP=     0.3,      0.5,      0.4,        0,      0.4,        0,        0,
+ASPCT=       1,
+AT=     0.2,      0.8,        1,        0,      0.4,        0,        0,
+B0EXP=     1.4,
+CPRESS=       1,
+CSSPEC=       0,
+CURRT=     200,
+DELTA=-0.33187,
+ELONG=  1.5061,
+NCHI=140,
+NCSCAL=1,
+NDIAGOP=1,
+NFUNC=4,
+NFUNRHO=0,
+NPPFUN=8,
+NPROPT=1,
+NPSI=140,
+NS=40,
+NSTTP=2,
+NSURF=6,
+NT=40,
+QSPEC=     0.9,
+R0EXP= 0.99408,
+SIGNB0XP=       1,
+SIGNIPXP=       1,
+XI=       0,
+/
+

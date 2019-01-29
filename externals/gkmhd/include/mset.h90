@@ -1,0 +1,44 @@
+!...  allocate arrays
+
+!  nvsnap=9
+
+  ny00=4*nx00
+
+  nx0=nx00
+  ny0=ny00
+
+  nx=nx0+2*ngdx
+  ny=ny0+2*ngdy
+
+  nxm=nx-1
+  nxm2=nx-2
+  nxm3=nx-3
+  nxm4=nx-4
+
+  nym=ny-1
+  nym2=ny-2
+  nym3=ny-3
+  nym4=ny-4
+
+  nk=nx00/2
+  nl=ny00/2
+
+!...  grid
+
+  ALLOCATE(xx(nx))
+  ALLOCATE(yy(ny))
+
+  ALLOCATE(fsfc(nx))
+  ALLOCATE(rho(nx))
+  ALLOCATE(ra(nx))
+
+!...  auxiliaries
+
+  ALLOCATE(dvp0(nx))
+  ALLOCATE(dvp1(nx))
+  ALLOCATE(dvp2(nx))
+
+  ALLOCATE(dvpy(6*nx00+2*ngdy))
+  ALLOCATE(dvpy1(6*nx00+2*ngdy))
+  ALLOCATE(dvpy2(6*nx00+2*ngdy))
+  ALLOCATE(dvpy3(6*nx00+2*ngdy))

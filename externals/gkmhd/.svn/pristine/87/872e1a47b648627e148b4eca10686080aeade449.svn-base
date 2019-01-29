@@ -1,0 +1,18 @@
+!...  put the final CPOs
+
+  nr_prof=SIZE(coreprof(1)%rho_tor)
+  npsi_eq=SIZE(eq_out(1)%profiles_1d%rho_tor)
+
+  coreprof(1)%rho_tor=coreprof(1)%rho_tor &
+       *eq_out(1)%profiles_1d%rho_tor(npsi_eq) &
+       /coreprof(1)%rho_tor(nr_prof)
+
+  CALL L3interp(eq_out(1)%profiles_1d%psi, &
+       eq_out(1)%profiles_1d%rho_tor,npsi_eq, &
+       coreprof(1)%psi%value, &
+       coreprof(1)%rho_tor,nr_prof)
+  CALL L3interp(eq_out(1)%profiles_1d%q, &
+       eq_out(1)%profiles_1d%rho_tor,npsi_eq, &
+       coreprof(1)%profiles1d%q%value, &
+       coreprof(1)%rho_tor,nr_prof)
+

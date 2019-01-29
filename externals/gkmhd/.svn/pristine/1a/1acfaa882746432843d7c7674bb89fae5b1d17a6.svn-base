@@ -1,0 +1,10 @@
+!...  allocate 1-D FFT arrays
+
+  nwork=ny*2
+  ntable=4*ny+100
+
+  ALLOCATE (wk(nwork))
+  ALLOCATE (tg(ntable))
+  ALLOCATE (rfty(ny0))
+  ALLOCATE (cftky(0:nl))
+

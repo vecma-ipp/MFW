@@ -1,0 +1,3 @@
+To check out the AMNS routines:
+
+svn co http://gforge.efda-itm.eu/svn/amnsproto/trunk/src_lib src/amnsprotolib

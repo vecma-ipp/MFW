@@ -1,0 +1,63 @@
+To run Chease from an EXPEQ file as EXPEQ_50555t63.95 in this directory:
+
+run.chease.expeq 50555t63.95 dir_in dir_out [pfactor peop]
+
+thus:
+run.chease.expeq 50555t63.95 . .
+
+then output in dir_out/o.50555t63.95
+
+One should get the same as o.50555t63.95.example
+
+Plots using matlab:
+matlab
+addpath('../matlab')
+Chease_Plot (from Zabiego, modified)
+shot: 50555
+time: 63.95
+
+Change input data in run.chease.expeq to run chease differently, for example
+
+To make use of the profile file, change:
+NBSEXPQ=0000,
+to
+NBSEXPQ=1111,
+
+where the first 1 means Te is given in EXPTNZ file, the second, ne, the 3rd Zeff, the fourth Ti. I am working on taking ni as well.
+
+
+-----------------------------------------------------------------------
+
+running a test case:
+
+cp EXPEQ_50555t63.95 /tmp/sauter/EXPEQ
+cp EXPTNZ_50555t63.95 /tmp/sauter/EXPTNZ
+cp chease_namelist_EXPEQ /tmp/sauter/chease_namelist
+cd /tmp/sauter
+cat chease_namelist > o.test50555
+chease >> o.test50555
+
+testing
+o.chease_to_cols o.test50555 o.test50555.cols
+matlab
+>> plotdatafile
+o.test50555.cols
+
+
+-----------------------------------------------------------------------
+Chease in Kepler: 2010 March 23
+Starting with version equiv to tag 7_5 it starts working
+Has added p
+Now needs to not read in EXPEQ file etc.
+take shot=191 and run=11 as starting value
+
+
+-----------------------------------------------------------------------
+To get various quantities at specific q values:
+
+In namelist:
+NEONBQS (nb of q surfaces, by default 2+5 values)
+QVALNEO (q values, by default: on-axis, 1., 1.5, 2., 3., 4., edge; specify QVALNEO=0.,1., 1.5, 2., 3., 4.,0.)
+
+Note that there is already just above the output on integer q surfaces for sawtooth related quantities in particular like li
+They are from DIAGARS(..,IDIAGLAS+j)

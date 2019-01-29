@@ -1,0 +1,3743 @@
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+!> Main plasma
+!>
+!> This routine finds the solution for the set of
+!> transport equations describing the main plasma,
+!> with given sources and transport coefficients
+!> for all components.
+!>
+!> Equations are derived following Hinton&Hazeltine, 
+!> Rev. Mod. Phys. vol. 48 (1976), pp.239-308 
+!>
+!> \author D.Kalupin, R.Stankiewicz
+!>
+!> \version "$Id$"
+! + + + + + + + + + + MAIN PLASMA + + + + + + + + + + + +   
+SUBROUTINE MAIN_PLASMA                                 &
+!     (GEOMETRY, PROFILES, TRANSPORT, SOURCES, IMPURITY, EVOLUTION, CONTROL, ifail,failstring) 
+     (GEOMETRY, PROFILES, TRANSPORT, SOURCES, IMPURITY, EVOLUTION, CONTROL, HYPER_DIFF_RATIO, ifail,failstring) !AF 25.Apr.2016
+
+!-------------------------------------------------------!
+!     This routine finds the solution for the set of    !
+!     transport equations describing the main plasma,   !
+!     with given sources and transport coefficients     !
+!     for all components.                               !
+!-------------------------------------------------------!
+!     Source:       ---                                 !
+!     Developers:   D.Kalupin, R.Stankiewicz            !
+!     Kontacts:     D.Kalupin@fz-juelich.de             !
+!                   Roman.Stankiewich@gmail.com         !
+!                                                       !
+!     Comments:     equation are derived following      !
+!                   Hinton&Hazeltine, Rev. Mod. Phys.   !
+!                   vol. 48 (1976), pp.239-308          !
+!                                                       !
+!-------------------------------------------------------!
+
+
+! +++ Declaration of variables: 
+  USE ETS_PLASMA
+
+  USE S4_PARAMETERS !AF 12.Oct.2011 - to avoid a few interface blocks
+
+  IMPLICIT NONE
+
+  INTEGER                       :: ifail
+  CHARACTER(LEN=500)            :: failstring
+
+  INTEGER                       :: NRHO                   !number of radial points (input)
+  INTEGER                       :: NION                   !number of ion species (input)
+
+  INTEGER                       :: IRHO                   !current radial knot
+  INTEGER                       :: IION                   !current ion type
+
+  REAL (R8)                     :: CONV                   !convergency at current iteration
+
+  TYPE (MAGNETIC_GEOMETRY)      :: GEOMETRY               !contains all geometry quantities
+  TYPE (PLASMA_PROFILES)        :: PROFILES               !contains profiles of plasma parameters
+  TYPE (TRANSPORT_COEFFICIENTS) :: TRANSPORT              !contains profiles of trasport coefficients
+  TYPE (SOURCES_AND_SINKS)      :: SOURCES                !contains profiles of sources
+  TYPE (TIME_EVOLUTION)         :: EVOLUTION              !contains all parameters required by time evolution
+  TYPE (RUN_CONTROL)            :: CONTROL                !contains all parameters required by run
+  TYPE (IMPURITY_PROFILES)      :: IMPURITY               !contains profiles of impurities calculated
+!by separate module
+!control and iterations loop
+
+! +++ Stabilization scheme !AF 25.Apr.2016
+  REAL (R8)                     :: HYPER_DIFF_RATIO       !ratio of hyper diffusivity to maximum diffusivity !AF 25.Apr.2016
+
+
+! +++ Set up dimensions:
+  NRHO = PROFILES%NRHO
+  NION = PROFILES%NION
+
+!AF, 11.Oct.2011
+ALLOCATE(LOCAL_FLUX_NI_S4(NION))
+ALLOCATE(LOCAL_FLUX_NI_CONV_S4(NION))
+LOCAL_FLUX_NI_S4(:) = 0.0_R8
+LOCAL_FLUX_NI_CONV_S4(:) = 0.0_R8
+!AF - End
+
+! +++ calculation of new current density profile:
+  CALL CURRENT                                                 &
+       (GEOMETRY,PROFILES,TRANSPORT,SOURCES,EVOLUTION,CONTROL,ifail,failstring) 
+
+
+
+! +++ calculation of new ion density profiles:
+  CALL ION_DENSITY                                             &
+!       (GEOMETRY,PROFILES,TRANSPORT,SOURCES,EVOLUTION,CONTROL,ifail,failstring) 
+       (GEOMETRY,PROFILES,TRANSPORT,SOURCES,EVOLUTION,CONTROL,HYPER_DIFF_RATIO,ifail,failstring) !AF 25.Apr.2016
+
+
+
+! +++ calculation of new electron density profile:
+  IF   (CONTROL%QUASI_NEUT.GT.0.5)                             &
+  CALL ELECTRON_DENSITY                                        &
+!       (GEOMETRY,PROFILES,TRANSPORT,SOURCES,EVOLUTION,CONTROL,ifail,failstring) 
+       (GEOMETRY,PROFILES,TRANSPORT,SOURCES,EVOLUTION,CONTROL,HYPER_DIFF_RATIO,ifail,failstring) !AF 25.Apr.2016
+
+
+
+! +++ calculation of electron/ion density profile from quasi-neutrality:
+  CALL QUASI_NEUTRALITY                                        &
+       (GEOMETRY,PROFILES,IMPURITY,CONTROL,ifail) 
+
+
+
+! +++ calculation of new ion temperature profiles:
+  CALL TEMPERATURES                                            &
+!       (GEOMETRY,PROFILES,TRANSPORT,SOURCES,EVOLUTION,CONTROL,ifail,failstring) 
+       (GEOMETRY,PROFILES,TRANSPORT,SOURCES,EVOLUTION,CONTROL,HYPER_DIFF_RATIO,ifail,failstring) !AF 25.Apr.2016
+
+
+
+! +++ calculation of new toroidal rotation profiles:
+  CALL ROTATION                                                &
+       (GEOMETRY,PROFILES,TRANSPORT,SOURCES,EVOLUTION,CONTROL,ifail,failstring) 
+
+
+
+
+!AF, 11.Oct.2011
+DEALLOCATE(LOCAL_FLUX_NI_S4)
+DEALLOCATE(LOCAL_FLUX_NI_CONV_S4)
+!AF - End
+
+  RETURN
+
+
+
+END SUBROUTINE MAIN_PLASMA
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+
+
+
+
+
+
+
+
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+!-------------------------------------------------------!
+!                                                       !
+!___________  SOLUTION OF TRANSPORT EQUATIONS: _________!
+!                                                       !
+!-------------------------------------------------------!
+! These subroutines define generic numerical            !
+! coefficients and boundary conditions, required by     !
+! standardized interface to numerical solver            !
+!-------------------------------------------------------!
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+
+
+
+
+! +++          CURRENT TRANSPORT EQUATION            +++
+
+
+
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+!> CURRENT TRANSPORT EQUATION
+!>
+!> This subroutine solves current diffusion equation
+!> and provides the flux function, density of
+!> parallel current, density of toroidal current,
+!> safety factor power density due to Ohmic heating
+!> and parallel electric field 
+!>
+!> \f[
+!>   \sigma _\|
+!>   \left(\frac{\partial }{\partial t}-
+!>         \frac{\rho{\dot{B}}_0}{2B_0}\cdot\frac{\partial}{\partial\rho}
+!>   \right) \Psi =
+!>   \frac{F^2}{\mu_0B_0\rho }
+!>   \frac{\partial}{\partial\rho}
+!>   \left[\frac{V'}{4\pi^2}
+!>         \left\langle\left|\frac{\nabla\rho}{R}\right|^2
+!>         \right\rangle
+!>         \frac{1}{F}\frac{\partial\Psi}{\partial\rho}
+!>   \right]-
+!>   \frac{V'}{2\pi\rho}
+!>   \left(j_\mathrm{ni,exp}+j_\mathrm{ni,imp}\cdot\Psi
+!>   \right)
+!> \f]
+!> 
+!> These subroutines define generic numerical
+!> coefficients and boundary conditions, required by
+!> standardized interface to numerical solver
+!>
+!> \author D.Kalupin, R.Stankiewicz
+!>
+!> \version "$Id$"
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+SUBROUTINE CURRENT                                  &
+     (GEOMETRY,PROFILES,TRANSPORT,SOURCES,EVOLUTION,CONTROL,ifail,failstring)
+
+!-------------------------------------------------------!
+!     This subroutine solves current diffusion equation !
+!     and provides the flux function, density of        !
+!     parallel current, density of toroidal current,    !
+!     safety factor power density due to Ohmic heating  !
+!     and parallel electric field                       !
+!-------------------------------------------------------!
+
+  USE ITM_CONSTANTS
+  USE ETS_PLASMA
+  USE TYPE_SOLVER
+
+  IMPLICIT NONE
+
+  INTEGER, INTENT (INOUT)       :: ifail
+  CHARACTER(LEN=500)            :: failstring
+
+! +++ External parameters:
+  TYPE (MAGNETIC_GEOMETRY)      :: GEOMETRY               !contains all geometry quantities
+  TYPE (PLASMA_PROFILES)        :: PROFILES               !contains profiles of plasma parameters
+  TYPE (TRANSPORT_COEFFICIENTS) :: TRANSPORT              !contains profiles of trasport coefficients
+  TYPE (SOURCES_AND_SINKS)      :: SOURCES                !contains profiles of sources
+  TYPE (TIME_EVOLUTION)         :: EVOLUTION              !contains all parameters required by time evolution
+  TYPE (COLLISIONALITY)         :: COLLISIONS             !contains all terms determined by plasma collisions
+  TYPE (RUN_CONTROL)            :: CONTROL                !contains all parameters required by run
+!evolution and convergence loop
+! +++ Input/Output to numerical solver:
+  TYPE (NUMERICS)               :: SOLVER                 !contains all I/O quantities to numerics part
+
+! +++ Internal parameters:
+  INTEGER   :: IRHO,    NRHO                              !radius index, number of radial points
+  INTEGER   :: NION                                       !number of considered ion components
+
+  REAL (R8) :: BT, BTM, BTPRIME                           !magnetic field from current time step, [T], previous time steps, [T], time derivative, [T/s]
+  REAL (R8) :: RGEO                                       !major radius,                          [m]
+  REAL (R8) :: RHO(PROFILES%NRHO)                         !normalised minor radius,               [m]
+  REAL (R8) :: VPR(PROFILES%NRHO)                         !V',                                    [m^2]
+  REAL (R8) :: G3(PROFILES%NRHO)                          !<(nabla_rho/R)^2>,                     [m^-2]
+  REAL (R8) :: FDIA(PROFILES%NRHO)                        !diamagnetic function,                  [T*m]
+
+  REAL (R8) :: PSI(PROFILES%NRHO), PSIM(PROFILES%NRHO)    !flux function from current ans previous time step,               [V*s]
+  REAL (R8) :: DPSI(PROFILES%NRHO), DPSIM(PROFILES%NRHO)  !AF - 25.Sep.2014
+
+  REAL (R8) :: PSI_BND(2,3)                               !boundary condition, value, [depend on PSI_BND_TYPE]
+  INTEGER   :: PSI_BND_TYPE(2)                            !boundary condition, type
+
+  REAL (R8) :: SIGMA(PROFILES%NRHO)                       !plasma parallel conductivity,          [(Ohm*m)^-1]
+
+  REAL (R8) :: QSF(PROFILES%NRHO)                         !safety factor
+  REAL (R8) :: CURR_TOR(PROFILES%NRHO)                    !current density, toroidal,             [A/m^2]
+  REAL (R8) :: CURR_PAR(PROFILES%NRHO)                    !current density, parallel,             [A/m^2]
+  REAL (R8) :: CURR_NI_EXP(PROFILES%NRHO)                 !total non inductive current, PSI independent component,          [A/m^2]
+  REAL (R8) :: CURR_NI_IMP(PROFILES%NRHO)                 !total non inductive current, component proportional to PSI,      [A/m^2/V/s]
+  REAL (R8) :: QOH(PROFILES%NRHO)                         !Ohmic heating,                         [W/m^3] 
+  REAL (R8) :: QOH_TOT                                    !Ohmic heating,                         [W] 
+  REAL (R8) :: CURR_TOT, CURR_NI                          !Total Ohmic and non-inductive currents [A] 
+  REAL (R8) :: E_PAR(PROFILES%NRHO)                       !parallel electric field,,              [V/m] 
+
+  REAL (R8) :: FUN1(PROFILES%NRHO), DFUN1(PROFILES%NRHO)
+  REAL (R8) :: FUN2(PROFILES%NRHO)
+  REAL (R8) :: FUN3(PROFILES%NRHO), INTFUN3(PROFILES%NRHO)
+  REAL (R8) :: FUN4(PROFILES%NRHO), DFUN4(PROFILES%NRHO)
+  REAL (R8) :: FUN5(PROFILES%NRHO), DFUN5(PROFILES%NRHO)
+  REAL (R8) :: FUN7(PROFILES%NRHO), INTFUN7(PROFILES%NRHO)
+
+  REAL (R8) :: AMIX, TAU                                  !mixing factor, time step,              [s]
+
+  INTEGER   :: FLAG                                       !flag for equation: 0 - interpretative (not solved), 1 - predictive (solved)
+  INTEGER   :: NDIM                                       !number of equations to be solved
+  INTEGER   :: SOLVER_TYPE                                !specifies the option for numerical solution
+  REAL (R8) :: Y(PROFILES%NRHO)                           !function at the current amd previous time steps
+  REAL (R8) :: YM(PROFILES%NRHO)                          !function at the current amd previous time steps
+  REAL (R8) :: DY(PROFILES%NRHO)                          !derivative of function
+  REAL (R8) :: DYM(PROFILES%NRHO)                         !derivative of function at previous time step !AF - 25.Sep.2014
+  REAL (R8) :: A(PROFILES%NRHO)                           !coefficients for numerical solver
+  REAL (R8) :: B(PROFILES%NRHO)                           !coefficients for numerical solver
+  REAL (R8) :: C(PROFILES%NRHO)                           !coefficients for numerical solver
+  REAL (R8) :: D(PROFILES%NRHO)                           !coefficients for numerical solver
+  REAL (R8) :: E(PROFILES%NRHO)                           !coefficients for numerical solver
+  REAL (R8) :: F(PROFILES%NRHO)                           !coefficients for numerical solver
+  REAL (R8) :: G(PROFILES%NRHO)                           !coefficients for numerical solver
+  REAL (R8) :: H                                          !coefficients for numerical solver
+  REAL (R8) :: V(2), U(2), W(2)                           !boundary conditions for numerical solver
+
+  REAL (R8) :: DPC1(PROFILES%NRHO), DPC2(PROFILES%NRHO), solution_norm
+
+  INTEGER   :: DY_FROM_SOLVER !AF, 4.Oct.2011
+  INTEGER   :: FIX_AXIS !AF, 5.Oct.2011
+
+  DY_FROM_SOLVER = 0 !AF 4.Oct.2011 - to more easily switch between the 2 ways of getting DPSI
+  FIX_AXIS = 1 !AF, 5.Oct.2011 - to more easily switch on/off the axis corrections
+
+! +++ Set up dimensions:
+  NDIM                = 1
+  NRHO                = PROFILES%NRHO      
+  NION                = PROFILES%NION      
+
+
+! +++ Allocate types for interface with PLASMA_COLLISIONS:
+  CALL ALLOCATE_COLLISIONALITY (NRHO, NION, COLLISIONS, ifail)
+
+
+! +++ Allocate types for interface with numerical solver:
+  CALL  ALLOCATE_NUMERICS (NDIM, NRHO, SOLVER, ifail)
+
+
+! +++ Set equation to 'predictive' and all coefficients to zero:
+  FLAG                = 1
+  Y(:)                = 0.0E0_R8
+  DY(:)               = 0.0E0_R8
+  YM(:)               = 0.0E0_R8
+  DYM(:)              = 0.0E0_R8 !AF - 25.Sep.2014
+  A(:)                = 0.0E0_R8
+  B(:)                = 0.0E0_R8
+  C(:)                = 0.0E0_R8
+  D(:)                = 0.0E0_R8
+  E(:)                = 0.0E0_R8
+  F(:)                = 0.0E0_R8
+  G(:)                = 0.0E0_R8
+  H                   = 0.0E0_R8
+  V(:)                = 0.0E0_R8
+  U(:)                = 0.0E0_R8
+  W(:)                = 0.0E0_R8
+
+
+! +++ Set up local variables:
+  AMIX                = CONTROL%AMIX
+  TAU                 = CONTROL%TAU
+  SOLVER_TYPE         = CONTROL%SOLVER_TYPE 
+
+  BT                  = GEOMETRY%BGEO
+  BTM                 = EVOLUTION%BTM
+  BTPRIME             = (BT-BTM)/TAU
+  RGEO                = GEOMETRY%RGEO
+
+
+
+! +++ Set up boundary condition values:
+  PSI_BND_TYPE(2)       = PROFILES%PSI_BND_TYPE
+  PSI_BND(2,1)          = PROFILES%PSI_BND(1)
+  PSI_BND(2,2)          = PROFILES%PSI_BND(2)
+  PSI_BND(2,3)          = PROFILES%PSI_BND(3)
+
+
+
+! +++ Set up profiles:
+  RHO_LOOP4: DO IRHO=1,NRHO
+     RHO(IRHO)           = GEOMETRY%RHO(IRHO)
+     VPR(IRHO)           = GEOMETRY%VPR(IRHO)
+     FDIA(IRHO)          = GEOMETRY%FDIA(IRHO)
+     G3(IRHO)            = GEOMETRY%G3(IRHO)
+
+     PSI(IRHO)           = PROFILES%PSI(IRHO)
+     DPSI(IRHO)          = PROFILES%DPSI(IRHO) 
+     PSIM(IRHO)          = EVOLUTION%PSIM(IRHO)
+     DPSIM(IRHO)         = EVOLUTION%DPSIM(IRHO) 
+     QSF(IRHO)           = PROFILES%QSF(IRHO)
+
+     SIGMA(IRHO)         = TRANSPORT%SIGMA(IRHO)
+
+     CURR_TOR(IRHO)      = PROFILES%CURR_TOR(IRHO)
+     CURR_PAR(IRHO)      = PROFILES%CURR_PAR(IRHO)
+
+     CURR_NI_EXP(IRHO)   = 0.e0_R8
+     CURR_NI_IMP(IRHO)   = 0.e0_R8
+
+     CURR_NI_EXP(IRHO)   = CURR_NI_EXP(IRHO) + SOURCES%CURR_EXP(IRHO)
+     CURR_NI_IMP(IRHO)   = CURR_NI_IMP(IRHO) + SOURCES%CURR_IMP(IRHO)
+
+     FUN1(IRHO)          = SIGMA(IRHO)*ITM_MU0*(RHO(IRHO)/FDIA(IRHO))**2 
+     FUN2(IRHO)          = VPR(IRHO)*G3(IRHO)/4.e0_R8/ITM_PI**2
+
+  END DO RHO_LOOP4
+
+  CALL DERIVN(NRHO,RHO,FUN1,DFUN1)                        !Derivation of function FUN1
+
+
+
+
+! +++     Coefficients for for current diffusion         
+!         equation in form:                              
+!
+!         (A*Y-B*Y(t-1))/H + 1/C * (-D*Y' + E*Y) = F - G*Y
+
+  RHO_LOOP5: DO IRHO=1,NRHO
+     Y(IRHO)  = PSI(IRHO)
+     DY(IRHO) = DPSI(IRHO) !AF - 25.Sep.2014
+     YM(IRHO) = PSIM(IRHO)
+     DYM(IRHO)= DPSIM(IRHO) !AF - 25.Sep.2014
+
+     A(IRHO)  = SIGMA(IRHO)
+     B(IRHO)  = SIGMA(IRHO) 
+     C(IRHO)  = ITM_MU0*BT*RHO(IRHO)/FDIA(IRHO)**2
+     D(IRHO)  = VPR(IRHO)/4.e0_R8/ITM_PI**2*G3(IRHO)/FDIA(IRHO)
+     E(IRHO)  = -FUN1(IRHO)*BTPRIME/2.e0_R8
+     IF (RHO(IRHO).NE.0.e0_R8) THEN
+        F(IRHO)  =  VPR(IRHO)/2.e0_R8/ITM_PI/RHO(IRHO)*CURR_NI_EXP(IRHO) 
+        G(IRHO)  =  VPR(IRHO)/2.e0_R8/ITM_PI/RHO(IRHO)*CURR_NI_IMP(IRHO)        &
+             + BTPRIME/2.e0_R8*SIGMA(IRHO)*DFUN1(IRHO) 
+     ELSE
+        F(IRHO)  =  1.e0_R8/2.e0_R8/ITM_PI*CURR_NI_EXP(IRHO) 
+        G(IRHO)  =  1.e0_R8/2.e0_R8/ITM_PI*CURR_NI_IMP(IRHO)                    &
+             + BTPRIME/2.e0_R8*SIGMA(IRHO)*DFUN1(IRHO) 
+        
+     ENDIF
+  END DO RHO_LOOP5
+
+  H               = TAU
+
+
+
+! +++  Boundary conditions for current diffusion         
+!      equation in form:                                 
+!
+!     V*Y' + U*Y =W 
+!
+! +++ On axis:
+!     dpsi/drho(rho=0)=0
+  V(1)   = 1.e0_R8
+  U(1)   = 0.e0_R8
+  W(1)   = 0.e0_R8
+
+! +++ At the edge:
+
+!     FIXED psi
+  IF(PSI_BND_TYPE(2).EQ.1) THEN
+     V(2) = 0.e0_R8
+     U(2) = 1.e0_R8
+     W(2) = PSI_BND(2,1)
+  ENDIF
+
+!     FIXED total current
+  IF(PSI_BND_TYPE(2).EQ.2) THEN
+     V(2) = 1.e0_R8
+     U(2) = 0.e0_R8
+! dpc test (this could be wrong!
+     W(2) = - ITM_MU0/FUN2(NRHO)*PSI_BND(2,1)
+     write(*,*) 'Current equivalent current for B.C. ',  &
+          -(y(nrho)-y(nrho-1))/(rho(nrho)-rho(nrho-1))*FUN2(NRHO)/ITM_MU0
+! cpd
+  ENDIF
+
+!     FIXED loop voltage
+  IF(PSI_BND_TYPE(2).EQ.3) THEN
+     V(2) = 0.e0_R8
+     U(2) = 1.e0_R8
+     W(2) = TAU*PSI_BND(2,1)+PSIM(NRHO)
+  ENDIF
+
+!     Generic boundary condition
+  IF(PSI_BND_TYPE(2).EQ.4) THEN
+     V(2) = PSI_BND(2,1)
+     U(2) = PSI_BND(2,2)
+     W(2) = PSI_BND(2,3)
+  ENDIF
+
+
+
+! +++ Current equation is not solved:                         !Interpretative value of safety factor should be given
+  IF(PSI_BND_TYPE(2).EQ.0) THEN
+
+     RHO_LOOP6: DO IRHO =1,NRHO
+        IF (QSF(IRHO).NE.0.e0_R8) THEN
+           DY(IRHO)   = 2.e0_R8*ITM_PI*BT*RHO(IRHO)/QSF(IRHO)
+           FUN3(IRHO) = 2.e0_R8*ITM_PI*BT/QSF(IRHO)
+        END IF
+     END DO RHO_LOOP6
+
+     CALL INTEGR (NRHO,RHO,FUN3,Y)
+
+     FLAG         = 0
+
+     RHO_LOOP7: DO IRHO=1,NRHO
+        A(IRHO)    = 1.0E0_R8
+        B(IRHO)    = 1.0E0_R8
+        C(IRHO)    = 1.0E0_R8
+        D(IRHO)    = 0.0E0_R8
+        E(IRHO)    = 0.0E0_R8
+        F(IRHO)    = 0.0E0_R8
+        G(IRHO)    = 0.0E0_R8   
+     END DO RHO_LOOP7
+
+     V(2)         = 0.0E0_R8
+     U(2)         = 1.0E0_R8
+     W(2)         = Y(NRHO)
+  END IF
+
+
+
+
+
+
+! +++ Defining coefficients for numerical solver:    
+  SOLVER%TYPE                   = SOLVER_TYPE
+  SOLVER%EQ_FLAG(NDIM)          = FLAG
+  SOLVER%NDIM                   = NDIM
+  SOLVER%NRHO                   = NRHO
+  SOLVER%AMIX                   = AMIX
+
+  RHO_LOOP8: DO IRHO=1,NRHO
+
+     SOLVER%RHO(IRHO)            = RHO(IRHO)
+
+     SOLVER%Y(NDIM,IRHO)         = Y(IRHO)
+     SOLVER%DY(NDIM,IRHO)        = DY(IRHO)
+     SOLVER%YM(NDIM,IRHO)        = YM(IRHO)
+
+     SOLVER%A(NDIM,IRHO)         = A(IRHO)
+     SOLVER%B(NDIM,IRHO)         = B(IRHO) 
+     SOLVER%C(NDIM,IRHO)         = C(IRHO)
+     SOLVER%D(NDIM,IRHO)         = D(IRHO)
+     SOLVER%E(NDIM,IRHO)         = E(IRHO)
+     SOLVER%F(NDIM,IRHO)         = F(IRHO)
+     SOLVER%G(NDIM,IRHO)         = G(IRHO)
+
+  END DO RHO_LOOP8
+
+  SOLVER%H                      = H
+
+  SOLVER%V(NDIM,1)              = V(1)
+  SOLVER%U(NDIM,1)              = U(1)
+  SOLVER%W(NDIM,1)              = W(1)
+  SOLVER%V(NDIM,2)              = V(2)
+  SOLVER%U(NDIM,2)              = U(2)
+  SOLVER%W(NDIM,2)              = W(2)
+
+
+
+! +++ Solution of current diffusion equation:
+  CALL SOLUTION_INTERFACE (SOLVER, ifail)
+
+  solution_norm=max( &
+       maxval(abs( solver%c(ndim,:)*solver%a(ndim,:)*solver%y(ndim,:) )), &
+       maxval(abs( solver%c(ndim,:)*solver%b(ndim,:)*solver%ym(ndim,:) )), &
+       maxval(abs( solver%h*solver%d(ndim,:)*solver%dy(ndim,:) )), &
+       maxval(abs( solver%h*solver%e(ndim,:)*solver%y(ndim,:) )), &
+       maxval(abs( solver%h*solver%c(ndim,:)*solver%f(ndim,:) )), &
+       maxval(abs( solver%h*solver%c(ndim,:)*solver%g(ndim,:)*solver%y(ndim,:) )))
+
+  DPC1 = solver%c(ndim,:)*solver%a(ndim,:)*solver%y(ndim,:) &
+       - solver%c(ndim,:)*solver%b(ndim,:)*solver%ym(ndim,:) &
+       - solver%h*solver%d(ndim,:)*solver%dy(ndim,:) &
+       + solver%h*solver%e(ndim,:)*solver%y(ndim,:) &
+       - solver%h*solver%c(ndim,:)*solver%f(ndim,:) &
+       + solver%h*solver%c(ndim,:)*solver%g(ndim,:)*solver%y(ndim,:)
+
+!  write(*,*) 'CURRENT: SOLUTION_NORM = ', solution_norm
+!  write(*,*) 'CURRENT: RHS-LHS = ', DPC1
+!  write(*,*) 'CURRENT: norm(RHS-LHS) = ', DPC1/solution_norm
+
+  IF (PSI_BND_TYPE(2).NE.0) THEN
+! +++ New magnetic flux function and current density:  
+    INTFUN7                   = 0.D0
+
+    Y(:)                      = SOLVER%Y(NDIM,:)
+! the following is experimental
+    IF (FIX_AXIS.EQ.1) THEN !AF 5.Oct.2011
+      call F_par_AXIS(nrho,rho,y)
+    END IF
+! end of the experiment
+    RHO_LOOP9: DO IRHO=1,NRHO
+     IF (DY_FROM_SOLVER.EQ.0) THEN !AF 4.Oct.2011
+!dpc
+        DPC2(IRHO) = (C(IRHO)*((A(IRHO)*Y(IRHO)-B(IRHO)*YM(IRHO))/H   &
+                     + G(IRHO)*Y(IRHO) - F(IRHO)) + E(IRHO)*Y(IRHO)) / D(IRHO)
+!cpd
+       FUN7(IRHO)             = C(IRHO)*((A(IRHO)*Y(IRHO)-B(IRHO)*YM(IRHO))/H   &
+                                + G(IRHO)*Y(IRHO) - F(IRHO))
+       IF (RHO(IRHO).NE.0.E0_R8) THEN
+         INTFUN7(IRHO)        = INTFUN7(IRHO-1)                                 &
+                                + (FUN7(IRHO-1)+FUN7(IRHO))*(RHO(IRHO)-RHO(IRHO-1))/2.D0
+       END IF
+!DPC: try and prevent division by 0
+       IF(D(IRHO).NE.0.0_R8) THEN
+          DY(IRHO)            = INTFUN7(IRHO)/D(IRHO) + E(IRHO)/D(IRHO)*Y(IRHO)
+       ELSE
+          DY(IRHO)            = 0.0_R8
+          WRITE(*,*) 'Warning: DY(',irho,') set to 0'
+       END IF
+     ELSE !AF 4.Oct.2011
+!dpc-temp
+      DY(IRHO)                 = SOLVER%DY(NDIM,IRHO) !AF 4.Oct.2011
+!dpc-end
+     END IF !AF 4.Oct.2011
+     
+    END DO RHO_LOOP9
+
+  IF (DY_FROM_SOLVER.EQ.0) THEN !AF 5.Oct.2011 - this is useless if the solver DY is being used already
+!    write(*,*) '### ', DY(NRHO), ' replaced by ',SOLVER%DY(NDIM,NRHO)
+    DY(NRHO) = SOLVER%DY(NDIM,NRHO)
+  END IF
+
+    RHO_LOOP10: DO IRHO=1,NRHO
+       FUN4(IRHO)             = FUN2(IRHO)*DY(IRHO)
+       FUN5(IRHO)             = FUN2(IRHO)*DY(IRHO)*RGEO*BT/FDIA(IRHO)
+    END DO RHO_LOOP10
+
+    CALL DERIVN (NRHO, RHO, FUN4, DFUN4)                      !Derivation of function FUN4
+    CALL DERIVN (NRHO, RHO, FUN5, DFUN5)                      !Derivation of function FUN5
+
+! +++ New profiles of plasma parameters obtained 
+!     from current diffusion equation:  
+    RHO_LOOP11: DO IRHO=1,NRHO
+       PSI(IRHO)              = Y(IRHO)
+       if(rho(irho).ne.0.e0_R8) then
+          QSF(IRHO)              = 2.e0_R8*ITM_PI*BT*RHO(IRHO)/DY(IRHO)
+
+          IF(VPR(IRHO).NE.0.0_R8) THEN
+             CURR_TOR(IRHO)      = - 2.e0_R8*ITM_PI*RGEO/ITM_MU0/VPR(IRHO)*DFUN4(IRHO)
+             CURR_PAR(IRHO)      = - 2.e0_R8*ITM_PI/RGEO/ITM_MU0/VPR(IRHO)             &
+                  *(FDIA(IRHO)/BT)**2*DFUN5(IRHO)
+          END IF
+       endif
+    END DO RHO_LOOP11
+
+    IF (PSI(1).NE.0.0_R8) PSI = PSI - PSI(1)
+
+    IF(RHO(1).EQ.0.e0_R8) THEN
+      IF (FIX_AXIS.EQ.1) THEN !AF 5.Oct.2011
+       CALL F_AXIS            (NRHO, RHO, QSF)
+       CALL F_AXIS            (NRHO, RHO, CURR_PAR)
+       CALL F_AXIS            (NRHO, RHO, CURR_TOR)
+      END IF
+    END IF
+
+    DPSI = DY !AF - 25.Sep.2014
+
+  END IF
+
+
+
+! +++ New magnetic flux function if equation is not solved:  
+  IF (PSI_BND_TYPE(2).EQ.0) THEN
+    PSI                       = 0.D0
+    RHO_LOOP12: DO IRHO=1,NRHO
+       FUN7(IRHO)             = 2.e0_R8*ITM_PI*BT/QSF(IRHO)*RHO(IRHO)
+       IF (RHO(IRHO).NE.0.E0_R8) THEN
+         PSI(IRHO)            = PSI(IRHO-1)                                 &
+                                + (FUN7(IRHO-1)+FUN7(IRHO))*(RHO(IRHO)-RHO(IRHO-1))/2.D0
+       END IF
+    END DO RHO_LOOP12
+
+    IF(RHO(1).EQ.0.e0_R8) THEN
+      IF (FIX_AXIS.EQ.1) THEN !AF 5.Oct.2011
+       CALL F_AXIS            (NRHO, RHO, PSI)
+      END IF
+    END IF
+
+    CALL DERIVN (NRHO,RHO,PSI,DPSI) !AF - 25.Sep.2014
+
+  END IF
+
+
+
+
+! +++ Radial electric field and ohmic heating: 
+  RHO_LOOP13: DO IRHO=1,NRHO
+     E_PAR(IRHO)              = ( CURR_PAR(IRHO) - CURR_NI_EXP(IRHO)            &
+                               - CURR_NI_IMP(IRHO)*Y(IRHO) ) / SIGMA(IRHO)
+     QOH(IRHO)                = SIGMA(IRHO)*E_PAR(IRHO)**2 * control%ohmic_heating_multiplier
+  END DO RHO_LOOP13
+
+
+!+++ Current diagnostics:
+  FUN7                       =  VPR * CURR_PAR / 2.0E0_R8 / ITM_PI * BT / FDIA**2
+  CALL INTEGR2  (NRHO, RHO, FUN7, INTFUN7)
+  CURR_TOT                   =  INTFUN7(NRHO) * FDIA(NRHO)
+  FUN7                       =  VPR * (CURR_NI_EXP + CURR_NI_IMP * PSI) / 2.0E0_R8 / ITM_PI * BT / FDIA**2
+  CALL INTEGR2  (NRHO, RHO, FUN7, INTFUN7)
+  CURR_NI                    =  INTFUN7(NRHO) * FDIA(NRHO)
+
+  FUN7                       = QOH * VPR
+  CALL INTEGR2  (NRHO, RHO, FUN7, INTFUN7)                                  
+  QOH_TOT                    = INTFUN7(NRHO)     
+
+
+  WRITE (*,*) '*******************'
+  WRITE (*,*) '*******************'
+  WRITE (*,*) '***** QOH     =', QOH_TOT/1.D6, '[MW]' 
+  WRITE (*,*) '***** CURR    =', CURR_TOT/1.D6,'[MA]' 
+  WRITE (*,*) '***** CURR_NI =', CURR_NI/1.D6, '[MA]' 
+  WRITE (*,*) '***** F_NI    =', CURR_NI/CURR_TOT 
+  WRITE (*,*) '*******************'
+  WRITE (*,*) '*******************'
+
+
+
+! +++ Return new profiles to the work flow:                       
+
+  PROFILES%PSI               = PSI   
+  PROFILES%DPSI              = DPSI !AF - 25.Sep.2014
+  PROFILES%QSF               = QSF   
+  PROFILES%CURR_TOR          = CURR_TOR  
+  PROFILES%CURR_PAR          = CURR_PAR   
+  PROFILES%E_PAR             = E_PAR   
+  SOURCES%QOH                = QOH 
+  PROFILES%QOH               = QOH     ! added by request of AF; not sure if units are OK
+  PROFILES%INT_QOH           = INTFUN7 
+  PROFILES%JNI               = CURR_NI_EXP + CURR_NI_IMP * PSI
+  PROFILES%JOH               = CURR_PAR - CURR_NI_EXP - CURR_NI_IMP * PSI !AF - 25.Set.2014 - this is how it's done in 4.10a
+  PROFILES%SIGMA             = SIGMA   
+
+
+! +++ Deallocate types for interface with numerical solver:
+  CALL  DEALLOCATE_NUMERICS (SOLVER, ifail)
+
+
+! +++ Deallocate types for interface with PLASMA_COLLISIONS:
+  CALL DEALLOCATE_COLLISIONALITY (COLLISIONS, ifail)
+
+
+  RETURN
+
+
+
+END SUBROUTINE CURRENT
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+
+
+
+
+
+
+
+
+
+
+! +++          PARTICLE TRANSPORT EQUATIONS           +++
+
+
+
+
+
+
+
+
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+!> PARTICLE TRANSPORT EQUATIONS
+!>
+!> This subroutine solves ion particle transport
+!> equations for ion components from 1 to NION,
+!> and provides: density and flux of ion components 
+!> from 1 to NION
+!>
+!> \f[
+!> \left(\frac{\partial }{\partial t}-
+!>       \frac{{\dot{B}}_0}{2B_0}\cdot
+!>       \frac{\partial}{\partial\rho}\rho 
+!> \right)
+!> \left(V'n_i
+!> \right)+
+!> \frac{\partial }{\partial\rho }\Gamma_i=
+!> V'
+!> \left(S_{i\mathrm{,exp}}-S_{i,\mathrm{imp}}\cdot n_i
+!> \right)
+!> \f]
+!>
+!> These subroutines define generic numerical
+!> coefficients and boundary conditions, required by
+!> standardized interface to numerical solver
+!>
+!> \author D.Kalupin, R.Stankiewicz
+!>
+!> \version "$Id$"
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+SUBROUTINE ION_DENSITY          &
+!     (GEOMETRY,PROFILES,TRANSPORT,SOURCES,EVOLUTION,CONTROL,ifail,failstring)
+     (GEOMETRY,PROFILES,TRANSPORT,SOURCES,EVOLUTION,CONTROL,HYPER_DIFF_RATIO,ifail,failstring) !AF 25.Apr.2016
+
+!-------------------------------------------------------!
+!     This subroutine solves ion particle transport     !
+!     equations for ion components from 1 to NION,      !
+!     and provides: density and flux of ion components  !
+!     from 1 to NION                                    !
+!-------------------------------------------------------!
+
+  USE ETS_PLASMA
+  USE TYPE_SOLVER
+!!! dpc --- missing  USE PEDESTAL
+
+  USE S4_PARAMETERS !AF 12.Oct.2011 - to avoid a few interface blocks
+
+  IMPLICIT NONE
+
+  INTEGER, INTENT (INOUT)       :: ifail
+  CHARACTER(LEN=500)            :: failstring
+
+! +++ External parameters:
+  TYPE (MAGNETIC_GEOMETRY)      :: GEOMETRY               !contains all geometry quantities
+  TYPE (PLASMA_PROFILES)        :: PROFILES               !contains profiles of plasma parameters
+  TYPE (TRANSPORT_COEFFICIENTS) :: TRANSPORT              !contains profiles of trasport coefficients
+  TYPE (SOURCES_AND_SINKS)      :: SOURCES                !contains profiles of sources
+  TYPE (TIME_EVOLUTION)         :: EVOLUTION              !contains all parameters required by time evolution
+  TYPE (RUN_CONTROL)            :: CONTROL                !contains all parameters required by run
+!evolution and convergence loop
+! +++ Input/Output to numerical solver:
+  TYPE (NUMERICS)               :: SOLVER                 !contains all I/O quantities to numerics part
+
+! +++ Internal parameters:
+  INTEGER   :: IRHO,    NRHO                              !radius index, number of radial points
+  INTEGER   :: IION,    NION                              !index of ion component, number of considered ion components
+  INTEGER   :: IMODEL,  NMODEL                            !model index, number of transport modules used
+
+  REAL (R8) :: BT, BTM, BTPRIME                           !magnetic field from current time step, [T], previous time steps, [T], time derivative, [T/s]
+  REAL (R8) :: RHO(PROFILES%NRHO)                         !normalised minor radius,               [m]
+  REAL (R8) :: VPR(PROFILES%NRHO)                         !V',                                    [m^2]
+  REAL (R8) :: VPRM(PROFILES%NRHO)                        !V' (at previous time step),            [m^2]
+  REAL (R8) :: G1(PROFILES%NRHO)                          !<(nabla_rho)^2>,                       [-]
+
+  REAL (R8) :: NI(PROFILES%NRHO),NIM(PROFILES%NRHO)       !density from current ans previous time step,              [m^-3]
+  REAL (R8) :: DNI(PROFILES%NRHO)                         !density gradient,                                         [m^-4]
+  REAL (R8) :: DNIM(PROFILES%NRHO)                        !density gradient at previous time step,                   [m^-4] !AF - 25.Sep.2014
+  REAL (R8) :: FLUX(PROFILES%NRHO)                        !ion flux,                                                 [1/s]
+  REAL (R8) :: INT_SOURCE(PROFILES%NRHO)                  !integral of source                                        [1/s]
+  REAL (R8) :: FLUX_NI_CONV(PROFILES%NRHO)                !ion flux, contributing to convective heat transport       [1/s]
+
+  REAL (R8) :: DIFF(PROFILES%NRHO),VCONV(PROFILES%NRHO)   !diffusion coefficient and pinch velocity,                 [m^2/s] and [m/s]
+  REAL (R8) :: DIFF_MOD(TRANSPORT%NRHO,3)                 !diffusion coefficient due to particular transport model   [m^2/s]
+  REAL (R8) :: VCONV_MOD(TRANSPORT%NRHO,3)                !pinch velocity due to particular transport model          [m/s]
+  REAL (R8) :: C1(3)                                      !coefficient in front of convective term in energy balance equation
+
+  REAL (R8) :: SI_EXP(PROFILES%NRHO)                      !explicit particle source,                                 [1/(m^3*s)] 
+  REAL (R8) :: SI_IMP(PROFILES%NRHO)                      !implicit particle source (proportional to density),       [1/s]
+
+  REAL (R8) :: NI_BND(2,3)                                !boundary condition, value, [depends on NI_BND_TYPE]
+  INTEGER   :: NI_BND_TYPE(2)                             !boundary condition, type
+  REAL (R8) :: RHO_BND                                    !boundary location
+  INTEGER   :: NRHO_BND                                   !boundary location index
+
+  REAL (R8) :: AMIX, TAU                                  !mixing factor, time step,              [s]
+
+  INTEGER   :: FLAG                                       !flag for equation: 0 - interpretative (not solved), 1 - predictive (solved)
+  INTEGER   :: NDIM                                       !number of equations to be solved
+  INTEGER   :: SOLVER_TYPE                                !specifies the option for numerical solution
+  REAL (R8) :: Y(PROFILES%NRHO)                           !function at the current amd previous time steps
+  REAL (R8) :: YM(PROFILES%NRHO)                          !function at the current amd previous time steps
+  REAL (R8) :: DY(PROFILES%NRHO)                          !derivative of function
+  REAL (R8) :: DYM(PROFILES%NRHO)                         !derivative of function at previous time step !AF - 25.Sep.2014
+  REAL (R8) :: A(PROFILES%NRHO)                           !coefficients for numerical solver
+  REAL (R8) :: B(PROFILES%NRHO)                           !coefficients for numerical solver
+  REAL (R8) :: C(PROFILES%NRHO)                           !coefficients for numerical solver
+  REAL (R8) :: D(PROFILES%NRHO)                           !coefficients for numerical solver
+  REAL (R8) :: E(PROFILES%NRHO)                           !coefficients for numerical solver
+  REAL (R8) :: F(PROFILES%NRHO)                           !coefficients for numerical solver
+  REAL (R8) :: G(PROFILES%NRHO)                           !coefficients for numerical solver
+  REAL (R8) :: H                                          !coefficients for numerical solver
+  REAL (R8) :: V(2), U(2), W(2)                           !boundary conditions for numerical solver
+
+  REAL (R8) :: FUN1(PROFILES%NRHO), INTFUN1(PROFILES%NRHO)
+
+! +++ Stabilization scheme !AF 25.Apr.2016
+  REAL (R8) :: HYPER_DIFF_RATIO                           !ratio of hyper diffusivity to maximum diffusivity !AF 25.Apr.2016
+  REAL (R8) :: DIFF_HYPER                                 !additional diffusivity to remove profile oscillations !AF 25.Apr.2016
+
+!AF, 11.Oct.2011 - auxiliary variables to be used in the axis boundary condition of solver 4 
+REAL (R8), ALLOCATABLE  :: LOCAL_INT_SOURCE_S4(:) !auxiliary variable with the integral of sources divided by the metrics coefficients Vprime and G1
+REAL (R8)           :: LOCAL_FUN1_S4, LOCAL_INTFUN1_S4
+!AF - End
+
+
+! +++ Set up dimensions:
+  NDIM                  = 1                               !no coupling between density equations
+  NRHO                  = PROFILES%NRHO      
+  NION                  = PROFILES%NION      
+  NMODEL                = 3     
+
+!AF, 11.Oct.2011
+ALLOCATE(LOCAL_INT_SOURCE_S4(NION))
+LOCAL_INT_SOURCE_S4(:) = 0.0_R8
+!AF - End
+
+! +++ Allocate types for interface with numerical solver:
+  CALL  ALLOCATE_NUMERICS (NDIM, NRHO, SOLVER, ifail)
+
+
+
+! +++ Set up local variables:
+  AMIX                  = CONTROL%AMIX
+  TAU                   = CONTROL%TAU
+  SOLVER_TYPE           = CONTROL%SOLVER_TYPE 
+
+  BT                    = GEOMETRY%BGEO
+  BTM                   = EVOLUTION%BTM
+  BTPRIME               = (BT-BTM)/TAU
+
+
+  RHO_LOOP1: DO IRHO=1,NRHO
+     RHO(IRHO)           = GEOMETRY%RHO(IRHO)
+     VPR(IRHO)           = GEOMETRY%VPR(IRHO)
+     VPRM(IRHO)          = EVOLUTION%VPRM(IRHO)
+     G1(IRHO)            = GEOMETRY%G1(IRHO)
+  END DO RHO_LOOP1
+
+
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+!    solution of particle transport equation for
+!    individual ion species
+
+  ION_LOOP1: DO IION=1,NION
+
+! +++ Set equation to 'predictive' and all coefficients to zero:
+     FLAG                = 1
+     Y(:)                = 0.0E0_R8
+     DY(:)               = 0.0E0_R8
+     YM(:)               = 0.0E0_R8
+     DYM(:)              = 0.0E0_R8 !AF - 25.Sep.2014
+     A(:)                = 0.0E0_R8
+     B(:)                = 0.0E0_R8
+     C(:)                = 0.0E0_R8
+     D(:)                = 0.0E0_R8
+     E(:)                = 0.0E0_R8
+     F(:)                = 0.0E0_R8
+     G(:)                = 0.0E0_R8
+     H                   = 0.0E0_R8
+     V(:)                = 0.0E0_R8
+     U(:)                = 0.0E0_R8
+     W(:)                = 0.0E0_R8
+
+
+
+! +++ Set up boundary conditions for particular ion type:
+     NI_BND_TYPE(2)      = PROFILES%NI_BND_TYPE(IION)
+     NI_BND(2,1)         = PROFILES%NI_BND(1,IION)
+     NI_BND(2,2)         = PROFILES%NI_BND(2,IION)
+     NI_BND(2,3)         = PROFILES%NI_BND(3,IION)
+
+     RHO_BND             = PROFILES%NI_BND_RHO(IION)
+
+
+! +++ Set up local variables for particular ion type:
+     RHO_LOOP2: DO IRHO = 1,NRHO
+        NI(IRHO)          = PROFILES%NI(IRHO,IION)
+        DNI(IRHO)         = PROFILES%DNI(IRHO,IION) !AF - 25.Sep.2014
+        NIM(IRHO)         = EVOLUTION%NIM(IRHO,IION)
+        DNIM(IRHO)        = EVOLUTION%DNIM(IRHO,IION) !AF - 25.Sep.2014
+
+        DIFF(IRHO)        = 0.e0_R8
+        VCONV(IRHO)       = 0.e0_R8
+
+        MODEL_LOOP1: DO IMODEL = 1, NMODEL
+           C1(IMODEL)      = TRANSPORT%C1(IMODEL)
+
+           DIFF_MOD(IRHO,IMODEL)  = TRANSPORT%DIFF_NI(IRHO,IION,IMODEL)
+           VCONV_MOD(IRHO,IMODEL) = TRANSPORT%VCONV_NI(IRHO,IION,IMODEL) 
+
+           DIFF(IRHO)      = DIFF(IRHO)  + DIFF_MOD(IRHO,IMODEL)
+           VCONV(IRHO)     = VCONV(IRHO) + VCONV_MOD(IRHO,IMODEL) 
+        END DO MODEL_LOOP1
+
+        SI_EXP(IRHO)      = 0.e0_R8
+        SI_IMP(IRHO)      = 0.e0_R8
+
+        SI_EXP(IRHO)      = SI_EXP(IRHO) + SOURCES%SI_EXP(IRHO,IION)
+        SI_IMP(IRHO)      = SI_IMP(IRHO) + SOURCES%SI_IMP(IRHO,IION)
+
+     END DO RHO_LOOP2
+
+
+
+! +++ Coefficients for ion diffusion equation  in form:
+!
+!     (A*Y-B*Y(t-1))/H + 1/C * (-D*Y' + E*Y) = F - G*Y
+
+     DIFF_HYPER = HYPER_DIFF_RATIO*MAXVAL(DIFF) !AF 25.Apr.2016
+
+     RHO_LOOP3: DO IRHO=1,NRHO
+        Y(IRHO)           = NI(IRHO)
+        DY(IRHO)          = DNI(IRHO) !AF - 25.Sep.2014
+        YM(IRHO)          = NIM(IRHO)
+        DYM(IRHO)         = DNIM(IRHO) !AF - 25.Sep.2014
+
+        A(IRHO)           = VPR(IRHO)
+        B(IRHO)           = VPRM(IRHO) 
+        C(IRHO)           = 1.e0_R8
+!        D(IRHO)           = VPR(IRHO)*G1(IRHO)*DIFF(IRHO)
+        D(IRHO)           = VPR(IRHO)*G1(IRHO)*(DIFF(IRHO)+DIFF_HYPER) !AF 25.Apr.2016
+!        E(IRHO)           = VPR(IRHO)*G1(IRHO)*VCONV(IRHO)                    &
+        E(IRHO)           = VPR(IRHO)*G1(IRHO)*(VCONV(IRHO)+DIFF_HYPER*DNIM(IRHO)/NIM(IRHO)) & !AF 25.Apr.2016
+                            - BTPRIME/2.e0_R8/BT*RHO(IRHO)*VPR(IRHO)
+        F(IRHO)           = VPR(IRHO)*SI_EXP(IRHO)
+        G(IRHO)           = VPR(IRHO)*SI_IMP(IRHO)       
+     END DO RHO_LOOP3
+     H                    = TAU
+
+
+
+! +++ Boundary conditions for ion diffusion equation in form:
+!
+!     V*Y' + U*Y =W 
+!
+! +++ On axis:
+!       dNi/drho(rho=0)=0:
+     IF (SOLVER_TYPE.NE.4) THEN !AF 11.Oct.2011
+       V(1) = 1.e0_R8
+       U(1) = 0.e0_R8
+     ELSE !AF 11.Oct.2011 - Zero flux instead of zero gradient at the axis for solver 4
+!       IF (DIFF(1).GT.1.0E-6) THEN !AF 19.Mar.2012 - To avoid problems with the axis boundary condition
+       IF ((DIFF(1)+DIFF_HYPER).GT.1.0E-6) THEN !AF 19.Mar.2012 - To avoid problems with the axis boundary condition !AF 25.Apr.2016
+!         V(1) = -DIFF(1)
+         V(1) = -DIFF(1)-DIFF_HYPER !AF 25.Apr.2016
+       ELSE
+         V(1) = -1.0E-6
+       ENDIF
+!       U(1) = VCONV(1) !AF 25.Apr.2016
+       U(1) = VCONV(1)+DIFF_HYPER*DNIM(1)/NIM(1) !AF 25.Apr.2016
+     END IF !AF 11.Oct.2011
+     W(1) = 0.e0_R8
+
+! +++ At the edge:
+!       FIXED Ni
+     IF(NI_BND_TYPE(2).EQ.1) THEN
+        V(2) = 0.e0_R8
+        U(2) = 1.e0_R8
+        W(2) = NI_BND(2,1)
+     ENDIF
+
+!       FIXED grad_Ni
+     IF(NI_BND_TYPE(2).EQ.2) THEN
+        V(2) = 1.e0_R8
+        U(2) = 0.e0_R8
+        W(2) = -NI_BND(2,1)
+     ENDIF
+
+!       FIXED L_Ni
+     IF(NI_BND_TYPE(2).EQ.3) THEN
+        V(2) = NI_BND(2,1)
+        U(2) = 1.e0_R8
+        W(2) = 0.e0_R8
+     ENDIF
+
+!       FIXED Flux_Ni
+     IF(NI_BND_TYPE(2).EQ.4) THEN
+!        V(2) = -G(NRHO)*DIFF(NRHO)
+!        U(2) = G(NRHO)*VCONV(NRHO)
+        V(2) = -VPR(NRHO)*G1(NRHO)*DIFF(NRHO)
+        U(2) =  VPR(NRHO)*G1(NRHO)*VCONV(NRHO)
+        W(2) = NI_BND(2,1)
+     ENDIF
+
+!       Generic boundary condition
+     IF(NI_BND_TYPE(2).EQ.5) THEN
+        V(2) = NI_BND(2,1)
+        U(2) = NI_BND(2,2)
+        W(2) = NI_BND(2,3)
+     ENDIF
+
+
+
+! +++ Density equation is not solved:
+     IF(NI_BND_TYPE(2).EQ.0) THEN
+
+        CALL DERIVN (NRHO,RHO,Y,DY)                       
+
+        FLAG       = 0
+
+        RHO_LOOP4: DO IRHO=1,NRHO
+           A(IRHO)   = 1.0E0_R8
+           B(IRHO)   = 1.0E0_R8
+           C(IRHO)   = 1.0E0_R8
+           D(IRHO)   = 0.0E0_R8
+           E(IRHO)   = 0.0E0_R8
+           F(IRHO)   = 0.0E0_R8
+           G(IRHO)   = 0.0E0_R8   
+        END DO RHO_LOOP4
+
+        V(2)         = 0.0E0_R8
+        U(2)         = 1.0E0_R8
+        W(2)         = Y(NRHO)
+     END IF
+
+
+
+! +++ Defining coefficients for numerical solver:    
+     SOLVER%TYPE                   = SOLVER_TYPE
+     SOLVER%EQ_FLAG(NDIM)          = FLAG
+     SOLVER%NDIM                   = NDIM
+     SOLVER%NRHO                   = NRHO
+     SOLVER%AMIX                   = AMIX
+
+     RHO_LOOP5: DO IRHO=1,NRHO
+
+        SOLVER%RHO(IRHO)            = RHO(IRHO)
+
+        SOLVER%Y(NDIM,IRHO)         = Y(IRHO)
+        SOLVER%DY(NDIM,IRHO)        = DY(IRHO)
+        SOLVER%YM(NDIM,IRHO)        = YM(IRHO)
+
+        SOLVER%A(NDIM,IRHO)         = A(IRHO)
+        SOLVER%B(NDIM,IRHO)         = B(IRHO) 
+        SOLVER%C(NDIM,IRHO)         = C(IRHO)
+        SOLVER%D(NDIM,IRHO)         = D(IRHO)
+        SOLVER%E(NDIM,IRHO)         = E(IRHO)
+        SOLVER%F(NDIM,IRHO)         = F(IRHO)
+        SOLVER%G(NDIM,IRHO)         = G(IRHO)
+
+     END DO RHO_LOOP5
+
+     SOLVER%H                      = H
+
+     SOLVER%V(NDIM,1)              = V(1)
+     SOLVER%U(NDIM,1)              = U(1)
+     SOLVER%W(NDIM,1)              = W(1)
+     SOLVER%V(NDIM,2)              = V(2)
+     SOLVER%U(NDIM,2)              = U(2)
+     SOLVER%W(NDIM,2)              = W(2)
+
+
+
+! +++ Solution of density diffusion equation:            
+     CALL SOLUTION_INTERFACE (SOLVER, ifail)
+
+
+
+! +++ New ion density:  
+     RHO_LOOP6: DO IRHO=1,NRHO
+        Y(IRHO)                  = SOLVER%Y(NDIM,IRHO)
+        DY(IRHO)                 = SOLVER%DY(NDIM,IRHO)
+     END DO RHO_LOOP6
+
+     IF(NI_BND_TYPE(2).EQ.0) THEN
+        Y(:)                    = PROFILES%NI(:,IION)
+        CALL DERIVN (NRHO,RHO,Y,DY)   
+     END IF
+
+
+! +++ New profiles of ion density flux and integral source:                
+     RHO_LOOP7: DO IRHO=1,NRHO
+!        NI(IRHO)    = Y(IRHO)                                               
+!        DNI(IRHO)   = DY(IRHO)    
+!        IF (RHO(IRHO).NE.0.E0_R8) THEN
+!           FUN1(IRHO)  = 1.e0_R8/RHO(IRHO)*(VPR(IRHO)*SI_EXP(IRHO)          & !AF 11.Oct.2011 - the division by rho was needed because the routine INTEGR below actually integrates the function multiplied by rho
+!                +VPRM(IRHO)*NIM(IRHO)/TAU                                   &
+!                -NI(IRHO)*VPR(IRHO)*(1.e0_R8/TAU+SI_IMP(IRHO)))
+!        ELSE
+!           FUN1(IRHO) = 1.e0_R8*(SI_EXP(IRHO)+NIM(IRHO)/TAU-NI(IRHO)        & !AF 11.Oct.2011 - this is only OK with solver_test since Vprime.eq.rho in that case - get it fixed in the trunk!
+!                *(1.e0_R8/TAU+SI_IMP(IRHO)))
+!        ENDIF
+
+
+        NI(IRHO)    = Y(IRHO)                                               
+        DNI(IRHO)   = DY(IRHO)    
+        FUN1(IRHO)  = (VPR(IRHO)*SI_EXP(IRHO)                           & !AF 11.Oct.2011 - the division by rho was needed because the routine INTEGR below actually integrates the function multiplied by rho
+             +VPRM(IRHO)*NIM(IRHO)/TAU                                  &
+             -NI(IRHO)*VPR(IRHO)*(1.e0_R8/TAU+SI_IMP(IRHO)))
+     END DO RHO_LOOP7
+
+!     CALL INTEGR(NRHO,RHO,FUN1,INTFUN1)                                  !Integral source  !AF 11.Oct.2011
+     CALL INTEGR2(NRHO,RHO,FUN1,INTFUN1)                                  !Integral source  !AF 11.Oct.2011 - this routine simply integrates the function, not the function times rho as INTEGR was doing
+
+
+!AF 12.Oct.2011 - 
+     LOCAL_FUN1_S4  = (SI_EXP(1)                                       & !stripping Vprime by assuming that VPR and VPRM are approximately the same, which they are if, as usually, rho(1).eq.0
+             +NIM(1)/TAU                                               &
+             -NI(1)*(1.e0_R8/TAU+SI_IMP(1)))/G1(1)                       !stripping G1
+     LOCAL_INTFUN1_S4 = LOCAL_FUN1_S4*RHO(1)/2.e0_R8                     !stripped integral for the axis - from the INTEGR2 routine, first point only
+!AF - End
+
+
+     RHO_LOOP8: DO IRHO=1,NRHO
+        INT_SOURCE(IRHO)     = INTFUN1(IRHO)                          &
+             + BTPRIME/2.e0_R8/BT*RHO(IRHO)*VPR(IRHO)*NI(IRHO)
+        FLUX(IRHO)           = VPR(IRHO)*G1(IRHO)*                    &
+             ( Y(IRHO)*VCONV(IRHO) - DY(IRHO)*DIFF(IRHO) )
+
+
+
+! +++ Contribution to ion energy transport:         
+        FLUX_NI_CONV(IRHO)   = 0.e0_R8
+
+        MODEL_LOOP2: DO IMODEL = 1, NMODEL
+           FLUX_NI_CONV(IRHO) = FLUX_NI_CONV(IRHO)                     &
+                + C1(IMODEL)*VPR(IRHO)*G1(IRHO)                        &
+                *( Y(IRHO)*VCONV_MOD(IRHO,IMODEL)                      &
+                -DY(IRHO)*DIFF_MOD(IRHO,IMODEL) )
+        END DO MODEL_LOOP2
+
+
+
+! +++ If equation is not solved, flux is determined 
+!     by the integral of sources and transport coefficients
+!     are updated with effective values:                   
+        IF (NI_BND_TYPE(2).EQ.0) THEN                                                 
+           DIFF(IRHO)         = 1.D-6
+           FLUX(IRHO)         = INT_SOURCE(IRHO) 
+           FLUX_NI_CONV(IRHO) = 1.5E0_R8*INT_SOURCE(IRHO)
+           IF (VPR(IRHO)*G1(IRHO).NE.0.0_R8)                           &
+           DIFF(IRHO)         = - FLUX(IRHO) / DY(IRHO) / (VPR(IRHO)*G1(IRHO))
+           VCONV(IRHO)        = 0.0_R8
+           IF (DIFF(IRHO).LE.1.D-6 .AND. VPR(IRHO)*G1(IRHO) .NE. 0 ) THEN
+              DIFF(IRHO)      = 1.D-6
+              VCONV(IRHO)     = (FLUX(IRHO) / (VPR(IRHO)*G1(IRHO)) + DY(IRHO)*DIFF(IRHO)) / Y(IRHO)
+           END IF
+       END IF
+
+
+
+! +++ Return new ion density and flux profiles to the work flow:             
+        PROFILES%NI(IRHO,IION)              = NI(IRHO)    
+        PROFILES%DNI(IRHO,IION)             = DNI(IRHO) !AF - 25.Sep.2014
+        PROFILES%DIFF_NI(IRHO,IION)         = DIFF(IRHO)
+        PROFILES%VCONV_NI(IRHO,IION)        = VCONV(IRHO)
+        PROFILES%FLUX_NI(IRHO,IION)         = FLUX(IRHO)     
+        PROFILES%FLUX_NI_CONV(IRHO,IION)    = FLUX_NI_CONV(IRHO)
+        PROFILES%SOURCE_NI(IRHO,IION)       = SI_EXP(IRHO) + SI_IMP(IRHO) * NI(IRHO)
+        PROFILES%INT_SOURCE_NI(IRHO,IION)   = INT_SOURCE(IRHO)     
+
+
+     END DO RHO_LOOP8
+
+     FUN1=PROFILES%SOURCE_NI(:,IION)*VPR
+     CALL INTEGR2(NRHO,RHO,FUN1,INTFUN1)                                  
+     PROFILES%INT_SOURCE_NI(:,IION)   = INTFUN1     
+
+  !AF 11.Oct.2011 - local flux information for the axis boundary conditions in temperature and rotation equations
+
+  LOCAL_INT_SOURCE_S4(IION) = LOCAL_INTFUN1_S4                          & !AF 11.Oct.2011 - LOCAL_INT_SOURCE_S4 is also stripped from Vprime and G1 above, with a reasonable approximation in the case of Vprime
+                      + BTPRIME/2.e0_R8/BT*RHO(1)*NI(1)/G1(1)
+  LOCAL_FLUX_NI_S4(IION) = ( Y(1)*VCONV(1) - DY(1)*DIFF(1) )
+
+  LOCAL_FLUX_NI_CONV_S4(IION) = 0.e0_R8
+  MODEL_LOOP3: DO IMODEL = 1, NMODEL
+     LOCAL_FLUX_NI_CONV_S4(IION) = LOCAL_FLUX_NI_CONV_S4(IION)                     &
+          + C1(IMODEL)        &
+          *( Y(1)*VCONV_MOD(1,IMODEL)      &
+          -DY(1)*DIFF_MOD(1,IMODEL) )
+  END DO MODEL_LOOP3
+  
+  ! +++ If equation is not solved, flux is determined 
+  !     by the integral of sources:                   
+  !        IF (NI_BND_TYPE(2).EQ.0) THEN                                                 
+          IF (1.EQ.0) THEN ! AF - 7.Jul.2010, same post-treatment as in predictive mode, but using the analytical solution instead of the numerical one 
+             LOCAL_FLUX_NI_S4(IION) =  LOCAL_INT_SOURCE_S4(IION)
+             LOCAL_FLUX_NI_CONV_S4(IION) =  1.5E0_R8*LOCAL_INT_SOURCE_S4(IION)
+          END IF
+  !AF - End
+  
+  END DO ION_LOOP1
+
+
+
+! +++ Deallocate types for interface with numerical solver:
+  CALL  DEALLOCATE_NUMERICS (SOLVER, ifail)
+
+!AF, 11.Oct.2011
+DEALLOCATE(LOCAL_INT_SOURCE_S4)
+!AF - End
+
+  RETURN
+
+
+
+END SUBROUTINE ION_DENSITY
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+
+
+
+
+
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+SUBROUTINE ELECTRON_DENSITY          &
+     (GEOMETRY,PROFILES,TRANSPORT,SOURCES,EVOLUTION,CONTROL,HYPER_DIFF_RATIO,ifail,failstring) !AF 25.Apr.2016
+
+!-------------------------------------------------------!
+!     This subroutine solves electron transport         !
+!     equation and provides:                            !
+!     density and flux of electrons.                    !
+!-------------------------------------------------------!
+
+  USE ETS_PLASMA
+  USE TYPE_SOLVER
+
+  USE S4_PARAMETERS 
+
+  IMPLICIT NONE
+
+  INTEGER, INTENT (INOUT)       :: ifail
+  CHARACTER(LEN=500)            :: failstring
+
+! +++ External parameters:
+  TYPE (MAGNETIC_GEOMETRY)      :: GEOMETRY               !contains all geometry quantities
+  TYPE (PLASMA_PROFILES)        :: PROFILES               !contains profiles of plasma parameters
+  TYPE (TRANSPORT_COEFFICIENTS) :: TRANSPORT              !contains profiles of trasport coefficients
+  TYPE (SOURCES_AND_SINKS)      :: SOURCES                !contains profiles of sources
+  TYPE (TIME_EVOLUTION)         :: EVOLUTION              !contains all parameters required by time evolution
+  TYPE (RUN_CONTROL)            :: CONTROL                !contains all parameters required by run
+
+!evolution and convergence loop
+! +++ Input/Output to numerical solver:
+  TYPE (NUMERICS)               :: SOLVER                 !contains all I/O quantities to numerics part
+
+! +++ Internal parameters:
+  INTEGER   :: IRHO,    NRHO                              !radius index, number of radial points
+  INTEGER   :: IMODEL,  NMODEL                            !model index, number of transport modules used
+
+  REAL (R8) :: BT, BTM, BTPRIME                           !magnetic field from current time step, [T], previous time steps, [T], time derivative, [T/s]
+  REAL (R8) :: RHO(PROFILES%NRHO)                         !normalised minor radius,               [m]
+  REAL (R8) :: VPR(PROFILES%NRHO)                         !V',                                    [m^2]
+  REAL (R8) :: VPRM(PROFILES%NRHO)                        !V' (at previous time step),            [m^2]
+  REAL (R8) :: G1(PROFILES%NRHO)                          !<(nabla_rho)^2>,                       [-]
+
+  REAL (R8) :: NE(PROFILES%NRHO),NEM(PROFILES%NRHO)       !density from current ans previous time step,              [m^-3]
+  REAL (R8) :: DNE(PROFILES%NRHO)                         !density gradient,                                         [m^-4]
+  REAL (R8) :: DNEM(PROFILES%NRHO)                        !density gradient at previous time step,                   [m^-4] !AF - 25.Sep.2014
+  REAL (R8) :: FLUX(PROFILES%NRHO)                        !ion flux,                                                 [1/s]
+  REAL (R8) :: INT_SOURCE(PROFILES%NRHO)                  !integral of source                                        [1/s]
+  REAL (R8) :: FLUX_NE_CONV(PROFILES%NRHO)                !ion flux, contributing to convective heat transport       [1/s]
+
+  REAL (R8) :: DIFF(PROFILES%NRHO),VCONV(PROFILES%NRHO)   !diffusion coefficient and pinch velocity,                 [m^2/s] and [m/s]
+  REAL (R8) :: DIFF_MOD(TRANSPORT%NRHO,3)                 !diffusion coefficient due to particular transport model   [m^2/s]
+  REAL (R8) :: VCONV_MOD(TRANSPORT%NRHO,3)                !pinch velocity due to particular transport model          [m/s]
+  REAL (R8) :: C1(3)                                      !coefficient in front of convective term in energy balance equation
+
+  REAL (R8) :: SE_EXP(PROFILES%NRHO)                      !explicit particle source,                                 [1/(m^3*s)] 
+  REAL (R8) :: SE_IMP(PROFILES%NRHO)                      !implicit particle source (proportional to density),       [1/s]
+
+  REAL (R8) :: NE_BND(2,3)                                !boundary condition, value, [depends on NI_BND_TYPE]
+  INTEGER   :: NE_BND_TYPE(2)                             !boundary condition, type
+
+  REAL (R8) :: AMIX, TAU                                  !mixing factor, time step,              [s]
+
+  INTEGER   :: FLAG                                       !flag for equation: 0 - interpretative (not solved), 1 - predictive (solved)
+  INTEGER   :: NDIM                                       !number of equations to be solved
+  INTEGER   :: SOLVER_TYPE                                !specifies the option for numerical solution
+  REAL (R8) :: Y(PROFILES%NRHO)                           !function at the current amd previous time steps
+  REAL (R8) :: YM(PROFILES%NRHO)                          !function at the current amd previous time steps
+  REAL (R8) :: DY(PROFILES%NRHO)                          !derivative of function
+  REAL (R8) :: DYM(PROFILES%NRHO)                         !derivative of function at previous time step !AF - 25.Sep.2014
+  REAL (R8) :: A(PROFILES%NRHO)                           !coefficients for numerical solver
+  REAL (R8) :: B(PROFILES%NRHO)                           !coefficients for numerical solver
+  REAL (R8) :: C(PROFILES%NRHO)                           !coefficients for numerical solver
+  REAL (R8) :: D(PROFILES%NRHO)                           !coefficients for numerical solver
+  REAL (R8) :: E(PROFILES%NRHO)                           !coefficients for numerical solver
+  REAL (R8) :: F(PROFILES%NRHO)                           !coefficients for numerical solver
+  REAL (R8) :: G(PROFILES%NRHO)                           !coefficients for numerical solver
+  REAL (R8) :: H                                          !coefficients for numerical solver
+  REAL (R8) :: V(2), U(2), W(2)                           !boundary conditions for numerical solver
+
+  REAL (R8) :: FUN1(PROFILES%NRHO), INTFUN1(PROFILES%NRHO)
+
+! +++ Stabilization scheme !AF 25.Apr.2016
+  REAL (R8) :: HYPER_DIFF_RATIO                           !ratio of hyper diffusivity to maximum diffusivity !AF 25.Apr.2016
+  REAL (R8) :: DIFF_HYPER                                 !additional diffusivity to remove profile oscillations !AF 25.Apr.2016
+
+  REAL (R8) :: LOCAL_INT_SOURCE_S4                        !auxiliary variable with the integral of sources divided by the metrics coefficients Vprime and G1
+  REAL (R8) :: LOCAL_FUN1_S4, LOCAL_INTFUN1_S4
+
+
+! +++ Set up dimensions:
+  NDIM                  = 1                               !no coupling between density equations
+  NRHO                  = PROFILES%NRHO      
+  NMODEL                = 3     
+
+
+! +++ Allocate types for interface with numerical solver:
+  CALL  ALLOCATE_NUMERICS (NDIM, NRHO, SOLVER, ifail)
+
+
+
+! +++ Set up local variables:
+  AMIX                  = CONTROL%AMIX
+  TAU                   = CONTROL%TAU
+  SOLVER_TYPE           = CONTROL%SOLVER_TYPE 
+
+  BT                    = GEOMETRY%BGEO
+  BTM                   = EVOLUTION%BTM
+  BTPRIME               = (BT-BTM)/TAU
+
+
+  RHO_LOOP1: DO IRHO=1,NRHO
+     RHO(IRHO)           = GEOMETRY%RHO(IRHO)
+     VPR(IRHO)           = GEOMETRY%VPR(IRHO)
+     VPRM(IRHO)          = EVOLUTION%VPRM(IRHO)
+     G1(IRHO)            = GEOMETRY%G1(IRHO)
+  END DO RHO_LOOP1
+
+
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+!    solution of particle transport equation 
+
+! +++ Set equation to 'predictive' and all coefficients to zero:
+     FLAG                = 1
+     Y(:)                = 0.0E0_R8
+     DY(:)               = 0.0E0_R8
+     YM(:)               = 0.0E0_R8
+     DYM(:)              = 0.0E0_R8 !AF - 25.Sep.2014
+     A(:)                = 0.0E0_R8
+     B(:)                = 0.0E0_R8
+     C(:)                = 0.0E0_R8
+     D(:)                = 0.0E0_R8
+     E(:)                = 0.0E0_R8
+     F(:)                = 0.0E0_R8
+     G(:)                = 0.0E0_R8
+     H                   = 0.0E0_R8
+     V(:)                = 0.0E0_R8
+     U(:)                = 0.0E0_R8
+     W(:)                = 0.0E0_R8
+
+
+
+! +++ Set up boundary conditions for particular ion type:
+     NE_BND_TYPE(2)      = PROFILES%NE_BND_TYPE
+     NE_BND(2,1)         = PROFILES%NE_BND(1)
+     NE_BND(2,2)         = PROFILES%NE_BND(2)
+     NE_BND(2,3)         = PROFILES%NE_BND(3)
+
+
+
+! +++ Set up local variables for particular ion type:
+     RHO_LOOP2: DO IRHO = 1,NRHO
+        NE(IRHO)          = PROFILES%NE(IRHO)
+        DNE(IRHO)         = PROFILES%DNE(IRHO) !AF - 25.Sep.2014
+        NEM(IRHO)         = EVOLUTION%NEM(IRHO)
+        DNEM(IRHO)        = EVOLUTION%DNEM(IRHO) !AF - 25.Sep.2014
+
+        DIFF(IRHO)        = 0.e0_R8
+        VCONV(IRHO)       = 0.e0_R8
+
+        MODEL_LOOP1: DO IMODEL = 1, NMODEL
+           C1(IMODEL)      = TRANSPORT%C1(IMODEL)
+
+           DIFF_MOD(IRHO,IMODEL)  = TRANSPORT%DIFF_NE(IRHO,IMODEL)
+           VCONV_MOD(IRHO,IMODEL) = TRANSPORT%VCONV_NE(IRHO,IMODEL) 
+
+           DIFF(IRHO)      = DIFF(IRHO)  + DIFF_MOD(IRHO,IMODEL)
+           VCONV(IRHO)     = VCONV(IRHO) + VCONV_MOD(IRHO,IMODEL) 
+        END DO MODEL_LOOP1
+
+        SE_EXP(IRHO)      = SOURCES%SE_EXP(IRHO)
+        SE_IMP(IRHO)      = SOURCES%SE_IMP(IRHO)
+
+     END DO RHO_LOOP2
+
+
+
+! +++ Coefficients for electron diffusion equation in form:
+!
+!     (A*Y-B*Y(t-1))/H + 1/C * (-D*Y' + E*Y) = F - G*Y
+
+     DIFF_HYPER = HYPER_DIFF_RATIO*MAXVAL(DIFF) !AF 25.Apr.2016
+
+     RHO_LOOP3: DO IRHO=1,NRHO
+        Y(IRHO)           = NE(IRHO)
+        DY(IRHO)          = DNE(IRHO) !AF - 25.Sep.2014
+        YM(IRHO)          = NEM(IRHO)
+        DYM(IRHO)         = DNEM(IRHO) !AF - 25.Sep.2014
+
+        A(IRHO)           = VPR(IRHO)
+        B(IRHO)           = VPRM(IRHO) 
+        C(IRHO)           = 1.e0_R8
+!        D(IRHO)           = VPR(IRHO)*G1(IRHO)*DIFF(IRHO)
+        D(IRHO)           = VPR(IRHO)*G1(IRHO)*(DIFF(IRHO)+DIFF_HYPER) !AF 25.Apr.2016
+!        E(IRHO)           = VPR(IRHO)*G1(IRHO)*VCONV(IRHO)                    &
+        E(IRHO)           = VPR(IRHO)*G1(IRHO)*(VCONV(IRHO)+DIFF_HYPER*DNEM(IRHO)/NEM(IRHO)) & !AF 25.Apr.2016
+                            - BTPRIME/2.e0_R8/BT*RHO(IRHO)*VPR(IRHO)
+        F(IRHO)           = VPR(IRHO)*SE_EXP(IRHO)
+        G(IRHO)           = VPR(IRHO)*SE_IMP(IRHO)       
+     END DO RHO_LOOP3
+     H                  = TAU
+
+
+
+! +++ Boundary conditions for electron diffusion equation in form:
+!
+!     V*Y' + U*Y =W 
+!
+! +++ On axis:
+!       dNi/drho(rho=0)=0: !AF 25.Apr.2016 - this is Ne, not Ni
+     IF (SOLVER_TYPE.NE.4) THEN 
+       V(1) = 1.e0_R8
+       U(1) = 0.e0_R8
+     ELSE
+!       IF (DIFF(1).GT.1.0E-6) THEN 
+       IF ((DIFF(1)+DIFF_HYPER).GT.1.0E-6) THEN !AF 25.Apr.2016
+!         V(1) = -DIFF(1)
+         V(1) = -DIFF(1)-DIFF_HYPER !AF 25.Apr.2016
+       ELSE
+         V(1) = -1.0E-6
+       ENDIF
+!       U(1) = VCONV(1) 
+       U(1) = VCONV(1)+DIFF_HYPER*DNEM(1)/NEM(1) !AF 25.Apr.2016
+     END IF 
+     W(1) = 0.e0_R8
+
+! +++ At the edge:
+!       FIXED Ne
+     IF(NE_BND_TYPE(2).EQ.1) THEN
+        V(2) = 0.e0_R8
+        U(2) = 1.e0_R8
+        W(2) = NE_BND(2,1)
+     ENDIF
+
+!       FIXED grad_Ne
+     IF(NE_BND_TYPE(2).EQ.2) THEN
+        V(2) = 1.e0_R8
+        U(2) = 0.e0_R8
+        W(2) = -NE_BND(2,1)
+     ENDIF
+
+!       FIXED L_Ne
+     IF(NE_BND_TYPE(2).EQ.3) THEN
+        V(2) = NE_BND(2,1)
+        U(2) = 1.e0_R8
+        W(2) = 0.e0_R8
+     ENDIF
+
+!       FIXED Flux_Ne
+     IF(NE_BND_TYPE(2).EQ.4) THEN
+        V(2) = -VPR(NRHO)*G1(NRHO)*DIFF(NRHO)
+        U(2) =  VPR(NRHO)*G1(NRHO)*VCONV(NRHO)
+        W(2) = NE_BND(2,1)
+     ENDIF
+
+!       Generic boundary condition
+     IF(NE_BND_TYPE(2).EQ.5) THEN
+        V(2) = NE_BND(2,1)
+        U(2) = NE_BND(2,2)
+        W(2) = NE_BND(2,3)
+     ENDIF
+
+
+
+! +++ Density equation is not solved:
+     IF(NE_BND_TYPE(2).EQ.0) THEN
+
+        CALL DERIVN (NRHO,RHO,Y,DY)                       
+
+        FLAG       = 0
+
+        RHO_LOOP4: DO IRHO=1,NRHO
+           A(IRHO)   = 1.0E0_R8
+           B(IRHO)   = 1.0E0_R8
+           C(IRHO)   = 1.0E0_R8
+           D(IRHO)   = 0.0E0_R8
+           E(IRHO)   = 0.0E0_R8
+           F(IRHO)   = 0.0E0_R8
+           G(IRHO)   = 0.0E0_R8   
+        END DO RHO_LOOP4
+
+        V(2)         = 0.0E0_R8
+        U(2)         = 1.0E0_R8
+        W(2)         = Y(NRHO)
+     END IF
+
+
+
+! +++ Defining coefficients for numerical solver:    
+     SOLVER%TYPE                   = SOLVER_TYPE
+     SOLVER%EQ_FLAG(NDIM)          = FLAG
+     SOLVER%NDIM                   = NDIM
+     SOLVER%NRHO                   = NRHO
+     SOLVER%AMIX                   = AMIX
+
+     RHO_LOOP5: DO IRHO=1,NRHO
+
+        SOLVER%RHO(IRHO)            = RHO(IRHO)
+
+        SOLVER%Y(NDIM,IRHO)         = Y(IRHO)
+        SOLVER%DY(NDIM,IRHO)        = DY(IRHO)
+        SOLVER%YM(NDIM,IRHO)        = YM(IRHO)
+
+        SOLVER%A(NDIM,IRHO)         = A(IRHO)
+        SOLVER%B(NDIM,IRHO)         = B(IRHO) 
+        SOLVER%C(NDIM,IRHO)         = C(IRHO)
+        SOLVER%D(NDIM,IRHO)         = D(IRHO)
+        SOLVER%E(NDIM,IRHO)         = E(IRHO)
+        SOLVER%F(NDIM,IRHO)         = F(IRHO)
+        SOLVER%G(NDIM,IRHO)         = G(IRHO)
+
+     END DO RHO_LOOP5
+
+     SOLVER%H                      = H
+
+     SOLVER%V(NDIM,1)              = V(1)
+     SOLVER%U(NDIM,1)              = U(1)
+     SOLVER%W(NDIM,1)              = W(1)
+     SOLVER%V(NDIM,2)              = V(2)
+     SOLVER%U(NDIM,2)              = U(2)
+     SOLVER%W(NDIM,2)              = W(2)
+
+
+
+! +++ Solution of density diffusion equation:            
+     CALL SOLUTION_INTERFACE (SOLVER, ifail)
+
+
+
+! +++ New electron density:  
+     RHO_LOOP6: DO IRHO=1,NRHO
+        Y(IRHO)                  = SOLVER%Y(NDIM,IRHO)
+        DY(IRHO)                 = SOLVER%DY(NDIM,IRHO)
+     END DO RHO_LOOP6
+
+     IF(NE_BND_TYPE(2).EQ.0) THEN
+        Y(:)                    = PROFILES%NE(:)
+        CALL DERIVN (NRHO,RHO,Y,DY)   
+     END IF
+
+
+! +++ New profiles of electron density flux and integral source:                
+     RHO_LOOP7: DO IRHO=1,NRHO
+
+        NE(IRHO)             = Y(IRHO)                                               
+        DNE(IRHO)            = DY(IRHO)    
+        FUN1(IRHO)           = (VPR(IRHO)*SE_EXP(IRHO) + VPRM(IRHO)*NEM(IRHO)/TAU              &
+                               -NE(IRHO)*VPR(IRHO)*(1.e0_R8/TAU+SE_IMP(IRHO)))
+     END DO RHO_LOOP7
+
+     CALL INTEGR2(NRHO,RHO,FUN1,INTFUN1)                                  
+
+
+     LOCAL_FUN1_S4           = (SE_EXP(1) + NEM(1)/TAU - NE(1)*(1.e0_R8/TAU+SE_IMP(1)))/G1(1)                       
+     LOCAL_INTFUN1_S4        = LOCAL_FUN1_S4*RHO(1)/2.e0_R8      
+
+
+     RHO_LOOP8: DO IRHO=1,NRHO
+        INT_SOURCE(IRHO)     = INTFUN1(IRHO) + BTPRIME/2.e0_R8/BT*RHO(IRHO)*VPR(IRHO)*NE(IRHO)
+        FLUX(IRHO)           = VPR(IRHO)*G1(IRHO)* ( Y(IRHO)*VCONV(IRHO) - DY(IRHO)*DIFF(IRHO) )
+
+
+
+! +++ Contribution to electron energy transport:         
+        FLUX_NE_CONV(IRHO)   = 0.e0_R8
+
+        MODEL_LOOP2: DO IMODEL = 1, NMODEL
+           FLUX_NE_CONV(IRHO)  = FLUX_NE_CONV(IRHO) + C1(IMODEL)*VPR(IRHO)*G1(IRHO)   &
+                                *( Y(IRHO)*VCONV_MOD(IRHO,IMODEL)                     &
+                                -DY(IRHO)*DIFF_MOD(IRHO,IMODEL) )
+        END DO MODEL_LOOP2
+
+
+
+! +++ If equation is not solved, flux is determined 
+!     by the integral of sources:                   
+        IF (NE_BND_TYPE(2).EQ.0) THEN                                                 
+           DIFF(IRHO)         = 1.D-6
+           FLUX(IRHO)         = INT_SOURCE(IRHO) 
+           FLUX_NE_CONV(IRHO) = 1.5E0_R8*INT_SOURCE(IRHO)
+           IF (VPR(IRHO)*G1(IRHO).NE.0.0_R8)                           &
+           DIFF(IRHO)         = - FLUX(IRHO) / DY(IRHO) / (VPR(IRHO)*G1(IRHO))
+           VCONV(IRHO)        = 0.0_R8
+           IF (DIFF(IRHO).LE.1.D-6) THEN
+              DIFF(IRHO)      = 1.D-6
+              VCONV(IRHO)     = (FLUX(IRHO) / (VPR(IRHO)*G1(IRHO)) + DY(IRHO)*DIFF(IRHO)) / Y(IRHO)
+           END IF
+        END IF
+
+
+
+! +++ Return new ion density and flux profiles to the work flow:             
+        PROFILES%NE(IRHO)              = NE(IRHO)    
+        PROFILES%DNE(IRHO)             = DNE(IRHO) !AF - 25.Sep.2014
+        PROFILES%DIFF_NE(IRHO)         = DIFF(IRHO)
+        PROFILES%VCONV_NE(IRHO)        = VCONV(IRHO)
+        PROFILES%FLUX_NE(IRHO)         = FLUX(IRHO)     
+        PROFILES%FLUX_NE_CONV(IRHO)    = FLUX_NE_CONV(IRHO)
+        PROFILES%SOURCE_NE(IRHO)       = SE_EXP(IRHO) + SE_IMP(IRHO) * NE(IRHO)
+        PROFILES%INT_SOURCE_NE(IRHO)   = INT_SOURCE(IRHO)     
+
+
+     END DO RHO_LOOP8
+
+     FUN1                              = PROFILES%SOURCE_NE(:)*VPR
+     CALL INTEGR2                        (NRHO,RHO,FUN1,INTFUN1)                                  
+     PROFILES%INT_SOURCE_NE(:)         = INTFUN1     
+
+
+  LOCAL_INT_SOURCE_S4                  = LOCAL_INTFUN1_S4 + BTPRIME/2.e0_R8/BT*RHO(1)*NE(1)/G1(1)
+  LOCAL_FLUX_NE_S4                     = ( Y(1)*VCONV(1) - DY(1)*DIFF(1) )
+    
+  LOCAL_FLUX_NE_CONV_S4                = 0.e0_R8
+  MODEL_LOOP3: DO IMODEL = 1, NMODEL
+     LOCAL_FLUX_NE_CONV_S4             = LOCAL_FLUX_NE_CONV_S4 + C1(IMODEL)        &
+                                        *( Y(1)*VCONV_MOD(1,IMODEL) - DY(1)*DIFF_MOD(1,IMODEL) )
+  END DO MODEL_LOOP3
+  
+  IF (1.EQ.0) THEN  
+     LOCAL_FLUX_NE_S4                  = LOCAL_INT_SOURCE_S4
+     LOCAL_FLUX_NE_CONV_S4             = 1.5E0_R8*LOCAL_INT_SOURCE_S4
+  END IF
+  
+
+
+
+! +++ Deallocate types for interface with numerical solver:
+  CALL  DEALLOCATE_NUMERICS (SOLVER, ifail)
+
+
+  RETURN
+
+
+
+END SUBROUTINE ELECTRON_DENSITY
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+
+
+
+
+
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+!> QUASI NEUTRALITY
+!>
+!>  This subroutine calculates electron density,
+!>  electron flux plasma effective charge and
+!>  convective contribution to electron energy
+!>  transport from density and flux of background
+!>  ions (all ion components computed by the ETS)
+!>  and impurity ions (all ion components computed
+!>  by separate impurity routine)
+!>  using quasi-neutrality condition
+!>
+!> These subroutines define generic numerical
+!> coefficients and boundary conditions, required by
+!> standardized interface to numerical solver
+!>
+!> \author D.Kalupin, R.Stankiewicz
+!>
+!> \version "$Id$"
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+SUBROUTINE QUASI_NEUTRALITY &
+     (GEOMETRY,PROFILES,IMPURITY,CONTROL,ifail,failstring) 
+
+!-------------------------------------------------------!
+!     This subroutine calculates electron density,      !
+!     electron flux plasma effective charge and         !
+!     convective contribution to electron energy        !
+!     transport from density and flux of background     !
+!     ions (all ion components computed by the ETS)     !
+!     and impurity ions (all ion components computed    !
+!     by separate impurity routine)                     !
+!     using quasi-neutrality condition                  !
+!-------------------------------------------------------!
+
+  USE ETS_PLASMA
+
+  USE S4_PARAMETERS !AF 12.Oct.2011 - to avoid a few interface blocks
+
+  IMPLICIT NONE
+
+  TYPE (MAGNETIC_GEOMETRY)      :: GEOMETRY               !contains all geometry quantities
+  TYPE (PLASMA_PROFILES)        :: PROFILES               !contains profiles of plasma parameters
+  TYPE (IMPURITY_PROFILES)      :: IMPURITY               !contains profiles of impurities calculated
+  TYPE (RUN_CONTROL)            :: CONTROL                !contains all parameters required by run
+
+  INTEGER, INTENT (INOUT)       :: ifail
+  CHARACTER(LEN=500)            :: failstring
+
+! +++ Internal parameters:
+  INTEGER   :: IRHO, IION, IIMP, IZIMP                    !radial, ion, impurity and impurity ionisation state indexes
+  INTEGER   :: NRHO, NION, NIMP, NZIMP                    !maximum number of radial points,
+!total number of background ions, 
+!total number of impurity ions,maximum number of impurity ionisation states  
+
+  REAL (R8) :: RHO(PROFILES%NRHO)                         !normalised minor radius,           [m]
+
+  REAL (R8) :: ZION(PROFILES%NION)                        !charge of background ions
+  REAL (R8) :: ZION2(PROFILES%NION)                       !charge of background ions, squared
+
+  REAL (R8) :: NI(PROFILES%NRHO,PROFILES%NION)            !density of background ions,        [m^-3]
+  REAL (R8) :: DNI(PROFILES%NRHO,PROFILES%NION)           !AF - 25.Sep.2014 - derivative of density of background ions,        [m^-3]
+  REAL (R8) :: FLUX_NI(PROFILES%NRHO,PROFILES%NION)       !flux of background ions            [s-1]
+  REAL (R8) :: FLUX_NI_CONV(PROFILES%NRHO,PROFILES%NION)  !ion flux, contributing to convective heat transport       [1/s]
+
+  REAL (R8) :: ZIMP(IMPURITY%NRHO,IMPURITY%NIMP,IMPURITY%NZIMP)    !charge of impurity ions
+  REAL (R8) :: ZIMP2(IMPURITY%NRHO,IMPURITY%NIMP,IMPURITY%NZIMP)   !charge of impurity ions, squared
+
+  REAL (R8) :: NZ(IMPURITY%NRHO,IMPURITY%NIMP,IMPURITY%NZIMP)      !density of impurity ions, [m^-3]
+  REAL (R8) :: FLUX_NZ(IMPURITY%NRHO,IMPURITY%NIMP,IMPURITY%NZIMP) !flux ofimpurity ions,     [s-1]
+
+  REAL (R8) :: NE(PROFILES%NRHO)                          !density of electrons,              [m^-3]
+  REAL (R8) :: DNE(PROFILES%NRHO)                         !AF - 25.Sep.2014 - derivative of density of electrons,              [m^-4]
+  REAL (R8) :: FLUX_NE(PROFILES%NRHO)                     !flux of electrons                  [s-1]
+  REAL (R8) :: FLUX_NE_CONV(PROFILES%NRHO)                !electron flux, contributing to convective heat transport  [1/s]
+
+  REAL (R8) :: ZEFF(PROFILES%NRHO)                        !plasma effective charge
+  REAL (R8) :: NZ2(PROFILES%NRHO)                         !density*Z^2                        [m^-3]
+
+  REAL (R8) :: ZNION(PROFILES%NRHO)                       !total ion_density*Z                [m^-3]
+  REAL (R8) :: ZFLUX(PROFILES%NRHO)                       !total ion_flux*Z                   [s-1]
+  REAL (R8) :: ZTOT, FTOT
+  REAL (R8) :: FION(PROFILES%NION)                        
+
+  !AF 12.Oct.2011 
+  REAL (R8), ALLOCATABLE  :: LOCAL_INT_SOURCE_S4(:)       !auxiliary variable with the integral of sources divided by the metrics coefficients Vprime and G1
+  !AF - End
+
+  !AF - 25.Sep.2014
+  REAL (R8) :: AUX1(PROFILES%NRHO)   
+  REAL (R8) :: AUX2(PROFILES%NRHO)  
+  !AF - End
+
+
+! +++ Set up dimensions:
+  NRHO                             = PROFILES%NRHO
+  NION                             = PROFILES%NION
+  NIMP                             = IMPURITY%NIMP
+  NZIMP                            = IMPURITY%NZIMP
+
+
+! +++ Set up local variables:
+
+  RHO                              = GEOMETRY%RHO
+
+  NE                               = PROFILES%NE
+  DNE                              = PROFILES%DNE !AF, 25.Sep.2014
+  FLUX_NE                          = PROFILES%FLUX_NE
+  FLUX_NE_CONV                     = PROFILES%FLUX_NE_CONV
+
+
+  NI                               = PROFILES%NI
+  DNI                              = PROFILES%DNI !AF - 25.Sep.2014
+  FLUX_NI                          = PROFILES%FLUX_NI
+  FLUX_NI_CONV                     = PROFILES%FLUX_NI_CONV
+  ZION                             = PROFILES%ZION
+  ZION2                            = PROFILES%ZION2
+
+
+  NZ                               = IMPURITY%NZ
+  FLUX_NZ                          = IMPURITY%FLUX_NZ
+  ZIMP                             = IMPURITY%ZIMP
+  ZIMP2                            = IMPURITY%ZIMP2
+
+
+
+! +++ Quasineutrality condition:
+
+! +++ Calculate ELECTRON density
+  IF  (CONTROL%QUASI_NEUT.EQ.0) THEN
+     NE                               = 0.e0_R8 
+     DNE                              = 0.e0_R8 !AF - 25.Sep.2014
+     FLUX_NE                          = 0.e0_R8
+     NZ2                              = 0.e0_R8 
+     ZEFF                             = 1.e0_R8 
+     FLUX_NE_CONV                     = 0.e0_R8
+     RHO_LOOP2: DO IRHO=1,NRHO
+
+        ION_LOOP2: DO IION=1,NION
+           NE(IRHO)                   = NE(IRHO)           + ZION(IION)*NI(IRHO,IION)
+           NZ2(IRHO)                  = NZ2(IRHO)          + ZION2(IION)*NI(IRHO,IION)
+           FLUX_NE(IRHO)              = FLUX_NE(IRHO)      + ZION(IION)*FLUX_NI(IRHO,IION)
+           FLUX_NE_CONV(IRHO)         = FLUX_NE_CONV(IRHO) + ZION(IION)*FLUX_NI_CONV(IRHO,IION)
+        END DO ION_LOOP2
+
+        IMPURITY_LOOP2: DO IIMP=1,NIMP
+           IMPURITY_CHARGE_LOOP2: DO IZIMP=1,NZIMP
+              NE(IRHO)                = NE(IRHO)           + ZIMP(IRHO,IIMP,IZIMP)*NZ(IRHO,IIMP,IZIMP)
+              NZ2(IRHO)               = NZ2(IRHO)          + ZIMP2(IRHO,IIMP,IZIMP)*NZ(IRHO,IIMP,IZIMP)
+              FLUX_NE(IRHO)           = FLUX_NE(IRHO)      + ZIMP(IRHO,IIMP,IZIMP)*FLUX_NZ(IRHO,IIMP,IZIMP)
+           END DO IMPURITY_CHARGE_LOOP2
+        ENDDO IMPURITY_LOOP2
+
+! +++ Return electron density, flux and effective charge:
+        PROFILES%NE(IRHO)            = NE(IRHO)
+        PROFILES%ZEFF(IRHO)          = NZ2(IRHO)/NE(IRHO)
+
+        PROFILES%FLUX_NE(IRHO)       = FLUX_NE(IRHO)
+        PROFILES%FLUX_NE_CONV(IRHO)  = FLUX_NE_CONV(IRHO)
+
+     END DO RHO_LOOP2
+
+     !AF - 25.Sep.2014
+     CALL DERIVN (NRHO,RHO,NE,DNE)
+     PROFILES%DNE = DNE
+     !AF - End
+
+     LOCAL_FLUX_NE_CONV_S4 = 0.0_R8
+     ION_LOOP3: DO IION = 1, NION
+        LOCAL_FLUX_NE_CONV_S4        = LOCAL_FLUX_NE_CONV_S4 + ZION(IION)*LOCAL_FLUX_NI_CONV_S4(IION)
+     END DO ION_LOOP3
+
+  END IF
+
+
+
+
+  
+
+! +++ Calculate ION density
+  IF  (CONTROL%QUASI_NEUT.EQ.1.OR.CONTROL%QUASI_NEUT.EQ.2) THEN
+     NZ2                              = 0.e0_R8 
+     ZEFF                             = 1.e0_R8 
+
+     ZNION                            = NE
+     ZFLUX                            = FLUX_NE
+     ZTOT                             = 0.e0_R8
+     FTOT                             = 0.e0_R8
+
+
+     DO IION = 1, NION
+        IF (PROFILES%NI_BND_TYPE(IION).EQ.0) THEN
+           FTOT                       = FTOT + PROFILES%NI_BND(1,IION)
+        END IF
+     END DO
+     FION(:)                          = PROFILES%NI_BND(1,:)/FTOT
+
+     DO IION = 1, NION
+        IF (PROFILES%NI_BND_TYPE(IION).EQ.0) THEN
+           ZTOT                       = ZTOT + (FION(IION)*ZION(IION))
+           NI(:,IION)                 = 0.e0_R8 
+           FLUX_NI(:,IION)            = 0.e0_R8
+           FLUX_NI_CONV(:,IION)       = 0.e0_R8
+        END IF
+     END DO
+
+
+     RHO_LOOP3: DO IRHO=1,NRHO
+
+!       total ion density and flux multiplied by charge
+        IMPURITY_LOOP3: DO IIMP=1,NIMP
+           IMPURITY_CHARGE_LOOP3: DO IZIMP=1,NZIMP
+              ZNION(IRHO)             = ZNION(IRHO) - ZIMP(IRHO,IIMP,IZIMP)*NZ(IRHO,IIMP,IZIMP)
+              ZFLUX(IRHO)             = ZFLUX(IRHO) - ZIMP(IRHO,IIMP,IZIMP)*FLUX_NZ(IRHO,IIMP,IZIMP)
+              NZ2(IRHO)               = NZ2(IRHO)   + ZIMP2(IRHO,IIMP,IZIMP)*NZ(IRHO,IIMP,IZIMP)
+           END DO IMPURITY_CHARGE_LOOP3
+        ENDDO IMPURITY_LOOP3
+
+        ION_LOOP4: DO IION=1,NION
+           IF (PROFILES%NI_BND_TYPE(IION).GT.0.5) THEN
+              ZNION(IRHO)             = ZNION(IRHO) - ZION(IION)*NI(IRHO,IION)
+              ZFLUX(IRHO)             = ZFLUX(IRHO) - ZION(IION)*FLUX_NI(IRHO,IION)
+              FLUX_NE_CONV(IRHO)      = FLUX_NE_CONV(IRHO) - ZION(IION)*FLUX_NI_CONV(IRHO,IION)
+           END IF
+        ENDDO ION_LOOP4
+      
+
+! +++ Separation for individual species:
+
+!      proportional to boundary value
+       IF  (CONTROL%QUASI_NEUT.EQ.1) THEN
+          DO IION = 1, NION
+            IF (PROFILES%NI_BND_TYPE(IION).EQ.0) THEN
+              NI(IRHO,IION)           = ZNION(IRHO)/ZTOT*FION(IION) 
+              FLUX_NI(IRHO,IION)      = ZFLUX(IRHO)/ZTOT*FION(IION)
+              FLUX_NI_CONV(IRHO,IION) = FLUX_NE_CONV(IRHO)/ZTOT*FION(IION)
+            END IF
+          END DO 
+       END IF
+
+!      proportional to charge
+       IF  (CONTROL%QUASI_NEUT.EQ.2) THEN
+          DO IION = 1, NION
+            IF (PROFILES%NI_BND_TYPE(IION).EQ.0) THEN
+              NI(IRHO,IION)           = ZNION(IRHO)/NION/ZION(IION) 
+              FLUX_NI(IRHO,IION)      = ZFLUX(IRHO)/NION/ZION(IION)
+              FLUX_NI_CONV(IRHO,IION) = FLUX_NE_CONV(IRHO)/NION/ZION(IION)
+            END IF
+          END DO
+       END IF
+
+       DO IION = 1, NION
+          NZ2(IRHO)                   = NZ2(IRHO)   + ZION2(IION)*NI(IRHO,IION)
+ 
+
+
+! +++ Return ion density, flux and effective charge:
+         IF (PROFILES%NI_BND_TYPE(IION).EQ.0) THEN
+           IF (NI(IRHO,IION).LE.0.0_R8) THEN
+              WRITE(*,*)'=================================='
+              WRITE(*,*)'=================================='
+              WRITE(*,*)'== Quasi Neutrality is broken!  =='
+              WRITE(*,*)'== If you are solving electrons =='
+              WRITE(*,*)'== and ions simultaneously,     =='
+              WRITE(*,*)'== please check your transport  =='
+              WRITE(*,*)'== and source terms.            =='
+              WRITE(*,*)'=================================='
+              WRITE(*,*)'=================================='
+              ifail = -2 !none acceptable error!
+              failstring = TRIM(failstring)//'; Quasi Neutrality is broken!'
+           END IF
+           PROFILES%NI(IRHO,IION)            = NI(IRHO,IION)
+           PROFILES%FLUX_NI(IRHO,IION)       = FLUX_NI(IRHO,IION)
+           PROFILES%FLUX_NI_CONV(IRHO,IION)  = FLUX_NI_CONV(IRHO,IION)
+         END IF
+       END DO
+
+       PROFILES%ZEFF(IRHO)                   = NZ2(IRHO)/NE(IRHO)
+
+
+     END DO RHO_LOOP3 
+
+     !AF - 25.Sep.2014
+     DO IION = 1, NION
+        AUX1 = NI(:,IION)
+        AUX2 = 0.e0_R8
+        CALL DERIVN (NRHO,RHO,AUX1,AUX2)
+        PROFILES%DNI(:,IION) = AUX2
+     END DO 
+     !AF - End
+
+     LOCAL_FLUX_NI_CONV_S4 = 0.0_R8
+     DO IION = 1, NION
+        IF (PROFILES%NI_BND_TYPE(IION).EQ.0) THEN
+           IF  (CONTROL%QUASI_NEUT.EQ.1)     &
+           LOCAL_FLUX_NI_CONV_S4             = LOCAL_FLUX_NE_CONV_S4/ZTOT*FION(IION)
+           IF  (CONTROL%QUASI_NEUT.EQ.2)     &
+           LOCAL_FLUX_NI_CONV_S4             = LOCAL_FLUX_NE_CONV_S4/NION/ZION(IION)
+        END IF
+     END DO 
+
+  END IF
+
+
+  RETURN
+
+END SUBROUTINE QUASI_NEUTRALITY
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+
+
+
+
+
+
+
+
+
+! +++             HEAT TRANSPORT EQUATIONS            +++
+
+
+
+
+
+
+
+
+
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+!> HEAT TRANSPORT EQUATIONS
+!>
+!> This subroutine solves transport equations
+!> for ion components from 1 to NION and electrons,
+!> and provides: temperatures, heat fluxes and 
+!> its convective and conductive components
+!>
+!> \f[
+!> 
+!> \frac{3}{2}
+!> \left(\frac{\partial}{\partial t}-
+!>       \frac{{\dot{B}}_0}{2B_0}\cdot 
+!>       \frac{\partial}{\partial\rho}\rho
+!> \right)
+!> \left(n_iT_iV'^{\frac{5}{3}}
+!> \right)+
+!> V'^{\frac{2}{3}}
+!> \frac{\partial}{\partial\rho}
+!> \left(q_i+T_i\gamma_i
+!> \right)=
+!> V'^{\frac{5}{3}}
+!> \left[Q_{i\mathrm{,exp}}-Q_{i,\mathrm{imp}}\cdot
+!>       T_i+Q_\mathrm{ei}+Q_\mathrm{zi}+Q_\mathit{\gamma i}
+!> \right]
+!> \f]
+!> 
+!> \f[
+!> \frac{3}{2}
+!> \left(\frac{\partial }{\partial t}-
+!>       \frac{{\dot{B}}_0}{2B_0}\cdot
+!>       \frac{\partial }{\partial\rho}\rho
+!> \right)
+!> \left(n_eT_eV'^{\frac{5}{3}}\right)+
+!> V'^{\frac{2}{3}}\frac{\partial}{\partial\rho}
+!> \left(q_e+T_e\gamma_e
+!> \right)=
+!> V'^{\frac{5}{3}}
+!> \left[Q_{e\mathrm{,exp}}-Q_{e,{\mathrm{imp}}}\cdot
+!>       T_e+Q_{\mathrm{ie}}-Q_{\mathit{\gamma i}}
+!> \right]
+!> \f]
+!>
+!> These subroutines define generic numerical
+!> coefficients and boundary conditions, required by
+!> standardized interface to numerical solver
+!>
+!> \author D.Kalupin, R.Stankiewicz
+!>
+!> \version "$Id$"
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+SUBROUTINE TEMPERATURES                           &
+!     (GEOMETRY,PROFILES,TRANSPORT,SOURCES,EVOLUTION,CONTROL,ifail,failstring)
+     (GEOMETRY,PROFILES,TRANSPORT,SOURCES,EVOLUTION,CONTROL,HYPER_DIFF_RATIO,ifail,failstring) !AF 25.Apr.2016
+
+!-------------------------------------------------------!
+!     This subroutine solves transport equations        !
+!     for ion components from 1 to NION and electrons,  !
+!     and provides: temperatures, heat fluxes and       !
+!     its convective and conductive components          !
+!-------------------------------------------------------!
+
+  USE ETS_PLASMA
+  USE TYPE_SOLVER
+  USE ITM_CONSTANTS
+  USE PLASMA_COLLISIONALITY
+
+
+  USE S4_PARAMETERS !AF 12.Oct.2011 - to avoid a few interface blocks
+
+  IMPLICIT NONE
+
+  INTEGER, INTENT (INOUT)       :: ifail
+  CHARACTER(LEN=500)            :: failstring
+
+! +++ External parameters:
+  TYPE (MAGNETIC_GEOMETRY)      :: GEOMETRY               !contains all geometry quantities
+  TYPE (PLASMA_PROFILES)        :: PROFILES               !contains profiles of plasma parameters
+  TYPE (TRANSPORT_COEFFICIENTS) :: TRANSPORT              !contains profiles of trasport coefficients
+  TYPE (SOURCES_AND_SINKS)      :: SOURCES                !contains profiles of sources
+  TYPE (TIME_EVOLUTION)         :: EVOLUTION              !contains all parameters required by time evolution
+  TYPE (COLLISIONALITY)         :: COLLISIONS             !contains all parameters computed by module for plasma collision
+  TYPE (RUN_CONTROL)            :: CONTROL                !contains all parameters required by run
+!evolution and convergence loop
+! +++ Input/Output to numerical solver:
+  TYPE (NUMERICS)               :: SOLVER                 !contains all I/O quantities to numerics part
+
+! +++ Internal parameters:
+  INTEGER   :: IRHO,    NRHO                              !radius index, number of radial points
+  INTEGER   :: IION,    NION                              !index of ion component, number of considered ion components
+  INTEGER   :: ZION                                       !second index of ion component
+
+  REAL (R8) :: BT, BTM, BTPRIME                           !magnetic field, from current time step,[T], previous time steps, [T], time derivative, [T/s]
+  REAL (R8) :: RHO(PROFILES%NRHO)                         !normalised minor radius,               [m]
+  REAL (R8) :: VPR(PROFILES%NRHO)                         !V',                                    [m^2]
+  REAL (R8) :: DVPR(PROFILES%NRHO)                        !V'',                                   [m]
+  REAL (R8) :: VPRM(PROFILES%NRHO)                        !V' (at previous time step),            [m^2]
+  REAL (R8) :: G1(PROFILES%NRHO)                          !<(nabla_rho)^2>,                       [-]
+
+  REAL (R8) :: TI(PROFILES%NRHO),   NI(PROFILES%NRHO)     !ion temperature,            [eV],      ion density,             [m^-3]
+  REAL (R8) :: TIM(PROFILES%NRHO),  NIM(PROFILES%NRHO)    !ion temperature (at time-1),[eV],      ion density (at time-1), [m^-3]
+  REAL (R8) :: DTI(PROFILES%NRHO),  DTIM(PROFILES%NRHO) !AF - 25.Sep.2014
+  REAL (R8) :: DNI(PROFILES%NRHO),  DNIM(PROFILES%NRHO) !AF - 25.Sep.2014
+
+  REAL (R8) :: FLUX_TI(PROFILES%NRHO)                     !total ion heat flux,                                            [W]
+  REAL (R8) :: FLUX_TI_COND(PROFILES%NRHO)                !conductive ion heat flux,                                       [W]
+  REAL (R8) :: FLUX_TI_CONV(PROFILES%NRHO)                !convective ion heat flux,                                       [W]
+  REAL (R8) :: INT_SOURCE(PROFILES%NRHO)                  !integral ion heat source                                        [W]
+  REAL (R8) :: FLUX_NI(PROFILES%NRHO)                     !ion particle flux contributing to energy transport,             [1/s]
+
+  REAL (R8) :: QI_EXP(PROFILES%NRHO)                      !explicit external ion heat source,                              [eV/(m^3*s)]   
+  REAL (R8) :: QI_IMP(PROFILES%NRHO)                      !implicit external ion heat source,  (proportional Ti)           [1/(m^3*s)] 
+  REAL (R8) :: VEI(PROFILES%NRHO)                         !energy exchange between electrons and ions,                     [1/(m^3*s)]
+  REAL (R8) :: VZI(PROFILES%NRHO)                         !energy exchange to all other ion components,                    [1/(m^3*s)]
+  REAL (R8) :: VII(PROFILES%NRHO,PROFILES%NION)           !energy exchange between different ion components,               [1/(m^3*s)]
+  REAL (R8) :: QEI(PROFILES%NRHO)                         !ion heat source due to interaction with electrons,              [eV/(m^3*s)]
+  REAL (R8) :: QZI(PROFILES%NRHO)                         !ion heat source due to interaction with all other ion comp.,    [eV/(m^3*s)]
+  REAL (R8) :: QGI(PROFILES%NRHO)                         !flow-work term in energy exchange,                              [eV/(m^3*s)]
+
+  REAL (R8) :: TI_BND(2,3)                                !boundary condition, value, [depends on TI_BND_TYPE]
+  INTEGER   :: TI_BND_TYPE(2,PROFILES%NION)               !boundary condition, type
+
+  REAL (R8) :: TE(PROFILES%NRHO),   TEM(PROFILES%NRHO)    !electron temperature from current ans previous time step,       [eV]
+  REAL (R8) :: NE(PROFILES%NRHO),   NEM(PROFILES%NRHO)    !electron density from current and previous time step,           [m^-3]
+  REAL (R8) :: DTE(PROFILES%NRHO),  DTEM(PROFILES%NRHO) !AF - 25.Sep.2014
+  REAL (R8) :: DNE(PROFILES%NRHO),  DNEM(PROFILES%NRHO) !AF - 25.Sep.2014
+
+  REAL (R8) :: FLUX_TE(PROFILES%NRHO)                     !total electron heat flux,                                       [W]
+  REAL (R8) :: FLUX_TE_COND(PROFILES%NRHO)                !non convective electron heat flux,                              [W]
+  REAL (R8) :: FLUX_TE_CONV(PROFILES%NRHO)                !non convective electron heat flux,                              [W]
+  REAL (R8) :: FLUX_NE(PROFILES%NRHO)                     !electron particle flux,                                         [1/s]
+
+  REAL (R8) :: QE_EXP(PROFILES%NRHO)                      !explicit external electron heat source,                         [eV/(m^3*s)]  
+  REAL (R8) :: QE_IMP(PROFILES%NRHO)                      !implicit external electron heat source, (proportional Te)       [1/(m^3*s)] 
+  REAL (R8) :: VIE(PROFILES%NRHO)                         !energy exchange between electrons and ions,                     [1/(m^3*s)]
+  REAL (R8) :: QIE(PROFILES%NRHO)                         !ion heat source due to interaction with electrons,              [eV/(m^3*s)]
+
+  REAL (R8) :: TE_BND(2,3)                                !boundary condition, value, [depends on TE_BND_TYPE]
+  INTEGER   :: TE_BND_TYPE(2)                             !boundary condition, type
+
+!  REAL (R8) :: DIFF(PROFILES%NRHO), VCONV(PROFILES%NRHO)  !heat diffusion coefficient,   [m^2/s],   heat pinch velocity,   [m/s]
+  REAL (R8) :: DIFF_TE(PROFILES%NRHO), VCONV_TE(PROFILES%NRHO)  !heat diffusion coefficient,   [m^2/s],   heat pinch velocity,   [m/s]
+  REAL (R8) :: DIFF_TI(PROFILES%NRHO), VCONV_TI(PROFILES%NRHO)  !heat diffusion coefficient,   [m^2/s],   heat pinch velocity,   [m/s]
+
+  REAL (R8) :: AMIX, TAU                                  !mixing factor, time step,                                       [s]
+
+  INTEGER   :: FLAG                                       !flag for equation: 0 - interpretative (not solved), 1 - predictive (solved)
+  INTEGER   :: IDIM, NDIM                                 !index and total number of equations to be solved
+  INTEGER   :: SOLVER_TYPE                                !specifies the option for numerical solution
+  REAL (R8) :: Y(PROFILES%NRHO)                           !function at the current amd previous time steps
+  REAL (R8) :: YM(PROFILES%NRHO)                          !function at the current amd previous time steps
+  REAL (R8) :: DY(PROFILES%NRHO)                          !derivative of function
+  REAL (R8) :: DYM(PROFILES%NRHO)                         !derivative of function at previous time step !AF - 25.Sep.2014
+  REAL (R8) :: A(PROFILES%NRHO)                           !coefficients for numerical solver
+  REAL (R8) :: B(PROFILES%NRHO)                           !coefficients for numerical solver
+  REAL (R8) :: C(PROFILES%NRHO)                           !coefficients for numerical solver
+  REAL (R8) :: D(PROFILES%NRHO)                           !coefficients for numerical solver
+  REAL (R8) :: E(PROFILES%NRHO)                           !coefficients for numerical solver
+  REAL (R8) :: F(PROFILES%NRHO)                           !coefficients for numerical solver
+  REAL (R8) :: G(PROFILES%NRHO)                           !coefficients for numerical solver
+  REAL (R8) :: H                                          !coefficients for numerical solver
+  REAL (R8) :: V(2), U(2), W(2)                           !boundary conditions for numerical solver
+
+  REAL (R8) :: FUN1(PROFILES%NRHO), INTFUN1(PROFILES%NRHO)
+  REAL (R8) :: FUN2(PROFILES%NRHO), INTFUN2(PROFILES%NRHO)
+
+! +++ Stabilization scheme !AF 25.Apr.2016
+  REAL (R8) :: HYPER_DIFF_RATIO                           !ratio of hyper diffusivity to maximum diffusivity !AF 25.Apr.2016
+  REAL (R8) :: DIFF_HYPER                                 !additional diffusivity to remove profile oscillations !AF 25.Apr.2016
+
+  real (r8), parameter :: twothird = 2.0_R8/3.0_R8, &
+                          fivethird = 5.0_R8/3.0_R8
+!  real (r8), parameter :: twothird = 0.66667, &
+!                          fivethird = 1.66667
+
+! +++ Set up dimensions:
+  NRHO           = PROFILES%NRHO      
+  NION           = PROFILES%NION      
+  NDIM           = NION + 1
+
+
+! +++ Allocate types for interface with PLASMA_COLLISIONS:
+  CALL ALLOCATE_COLLISIONALITY (NRHO, NION, COLLISIONS, ifail)
+
+
+! +++ Allocate types for interface with numerical solver:
+  CALL  ALLOCATE_NUMERICS (NDIM, NRHO, SOLVER, ifail)
+
+
+
+! +++ Set up local variables:
+  AMIX           = CONTROL%AMIX
+  TAU            = CONTROL%TAU
+  SOLVER_TYPE    = CONTROL%SOLVER_TYPE 
+
+  BT             = GEOMETRY%BGEO
+  BTM            = EVOLUTION%BTM
+  BTPRIME        = (BT-BTM)/TAU
+
+
+  RHO_LOOP1: DO IRHO=1,NRHO
+     RHO(IRHO)    = GEOMETRY%RHO(IRHO)
+     VPR(IRHO)    = GEOMETRY%VPR(IRHO)
+     VPRM(IRHO)   = EVOLUTION%VPRM(IRHO)
+     G1(IRHO)     = GEOMETRY%G1(IRHO)
+  END DO RHO_LOOP1
+
+  CALL DERIVN(NRHO,RHO,VPR,DVPR)                          !Derivation of V'
+
+
+
+! +++ Energy exchange terms due to collisions 
+!     (defined from previous iteration):
+  CALL PLASMA_COLLISIONS (GEOMETRY,PROFILES,COLLISIONS,ifail) 
+
+  VIE = COLLISIONS%VIE               !DPC 2009-01-19
+
+
+! +++ Parameters for numerical solver 
+!     (common for all components):
+  SOLVER%TYPE             = SOLVER_TYPE
+  SOLVER%NDIM             = NDIM
+  SOLVER%NRHO             = NRHO
+  SOLVER%AMIX             = AMIX
+
+  RHO_LOOP2: DO IRHO=1,NRHO
+     SOLVER%RHO(IRHO)      = RHO(IRHO)
+  END DO RHO_LOOP2
+
+
+
+!-------------------------------------------------------!
+!                                                       !
+!                  ION HEAT TRANSPORT:                  !
+!                                                       !
+!-------------------------------------------------------!
+
+  ION_LOOP1: DO IION=1,NION
+
+! +++ Set equation to 'predictive' and all coefficients to zero:
+     FLAG                 = 1
+     Y(:)                 = 0.0E0_R8
+     DY(:)                = 0.0E0_R8
+     YM(:)                = 0.0E0_R8
+     DYM(:)               = 0.0E0_R8 !AF - 25.Sep.2014
+     A(:)                 = 0.0E0_R8
+     B(:)                 = 0.0E0_R8
+     C(:)                 = 0.0E0_R8
+     D(:)                 = 0.0E0_R8
+     E(:)                 = 0.0E0_R8
+     F(:)                 = 0.0E0_R8
+     G(:)                 = 0.0E0_R8
+     H                    = 0.0E0_R8
+     V(:)                 = 0.0E0_R8
+     U(:)                 = 0.0E0_R8
+     W(:)                 = 0.0E0_R8
+
+
+
+! +++ Set up boundary conditions for particular ion type:
+     TI_BND_TYPE(2,IION)  = PROFILES%TI_BND_TYPE(IION)
+     TI_BND(2,1)          = PROFILES%TI_BND(1,IION)
+     TI_BND(2,2)          = PROFILES%TI_BND(2,IION)
+     TI_BND(2,3)          = PROFILES%TI_BND(3,IION)
+
+
+
+! +++ Set up local variables for particular ion type:
+     RHO_LOOP3: DO IRHO = 1,NRHO
+        TI(IRHO)           = PROFILES%TI(IRHO,IION)
+        DTI(IRHO)          = PROFILES%DTI(IRHO,IION) !AF - 25.Sep.2014
+        TIM(IRHO)          = EVOLUTION%TIM(IRHO,IION)
+        DTIM(IRHO)         = EVOLUTION%DTIM(IRHO,IION) !AF - 25.Sep.2014
+        NI(IRHO)           = PROFILES%NI(IRHO,IION)
+        DNI(IRHO)          = PROFILES%DNI(IRHO,IION) !AF - 25.Sep.2014
+        NIM(IRHO)          = EVOLUTION%NIM(IRHO,IION)
+        DNIM(IRHO)         = EVOLUTION%DNIM(IRHO,IION) !AF - 25.Sep.2014
+
+        FLUX_TI(IRHO)      = PROFILES%FLUX_TI(IRHO,IION)
+        FLUX_TI_COND(IRHO) = PROFILES%FLUX_TI_COND(IRHO,IION)
+        FLUX_TI_CONV(IRHO) = PROFILES%FLUX_TI_CONV(IRHO,IION)
+        FLUX_NI(IRHO)      = PROFILES%FLUX_NI_CONV(IRHO,IION)
+
+        DIFF_TI(IRHO)      = TRANSPORT%DIFF_TI(IRHO,IION)
+        VCONV_TI(IRHO)     = TRANSPORT%VCONV_TI(IRHO,IION) 
+        QGI(IRHO)          = TRANSPORT%QGI(IRHO,IION)
+
+        QI_EXP(IRHO)       = SOURCES%QI_EXP(IRHO,IION) 
+        QI_IMP(IRHO)       = SOURCES%QI_IMP(IRHO,IION) 
+
+        VEI(IRHO)          = COLLISIONS%VEI(IRHO,IION)
+        QEI(IRHO)          = COLLISIONS%QEI(IRHO,IION)
+        VZI(IRHO)          = COLLISIONS%VZI(IRHO,IION)
+        QZI(IRHO)          = COLLISIONS%QZI(IRHO,IION)
+
+        ION_LOOP2: DO ZION = 1,NION
+!!DPC was           VII(IRHO,IION)   = COLLISIONS%VII(IRHO,IION,ZION)   !!! check if the following is what was intended
+           VII(IRHO,ZION)   = COLLISIONS%VII(IRHO,IION,ZION)         
+        END DO ION_LOOP2
+
+
+
+     END DO RHO_LOOP3
+
+
+
+! +++ Coefficients for ion heat transport equation in form:
+!
+!     (A*Y-B*Y(t-1))/H + 1/C * (-D*Y' + E*Y) = F - G*Y
+
+     DIFF_HYPER = HYPER_DIFF_RATIO*MAXVAL(DIFF_TI) !AF 25.Apr.2016
+
+     RHO_LOOP4: DO IRHO=NRHO,1,-1
+        Y(IRHO)   = TI(IRHO)
+        DY(IRHO)  = DTI(IRHO) !AF - 25.Sep.2014
+        YM(IRHO)  = TIM(IRHO)
+        DYM(IRHO) = DTIM(IRHO) !AF - 25.Sep.2014
+
+        A(IRHO)   = 1.5E0_R8*VPR(IRHO)*NI(IRHO)
+!DPC temporary "fix" for NaNs
+        if(VPR(IRHO).le.0.0_R8.and.irho.eq.1) then
+!           write(*,*) B(2:5)
+           B(IRHO)=0.0_R8
+        else
+           B(IRHO)   = 1.5E0_R8*VPRM(IRHO)**fivethird/VPR(IRHO)**twothird*NIM(IRHO) 
+        endif
+!DPC end of temporary fix
+        C(IRHO)   = 1.e0_R8
+!        D(IRHO)   = VPR(IRHO)*G1(IRHO)*NI(IRHO)*DIFF_TI(IRHO)
+        D(IRHO)   = VPR(IRHO)*G1(IRHO)*NI(IRHO)*(DIFF_TI(IRHO)+DIFF_HYPER)  !AF 25.Apr.2016
+ !       E(IRHO)   = VPR(IRHO)*G1(IRHO)*NI(IRHO)*VCONV_TI(IRHO)          &
+        E(IRHO)   = VPR(IRHO)*G1(IRHO)*NI(IRHO)*(VCONV_TI(IRHO)+DIFF_HYPER*DTIM(IRHO)/TIM(IRHO))          & !AF 25.Apr.2016
+             + FLUX_NI(IRHO)                                            &
+             - 1.5E0_R8*BTPRIME/2.e0_R8/BT*RHO(IRHO)*NI(IRHO)*VPR(IRHO)
+        F(IRHO)   = VPR(IRHO)                                           &
+             * (QI_EXP(IRHO) + QEI(IRHO) + QZI(IRHO) + QGI(IRHO))
+        G(IRHO)   = VPR(IRHO)*(QI_IMP(IRHO) + VEI(IRHO) + VZI(IRHO))     &
+             - BTPRIME/2.e0_R8/BT*RHO(IRHO)*NI(IRHO)*DVPR(IRHO)     
+     END DO RHO_LOOP4
+
+     H          = TAU
+
+
+
+! +++ Boundary conditions for ion heat transport equation in form:
+!
+!     V*Y' + U*Y =W 
+
+! +++ On axis:
+
+!       dTi/drho(rho=0)=0
+     IF (SOLVER_TYPE.NE.4) THEN !AF 11.Oct.2011
+       V(1)   = 1.e0_R8
+       U(1)   = 0.e0_R8
+     ELSE !AF 11.Oct.2011 - Zero flux instead of zero gradient at the axis for solver 4
+!       IF (DIFF_TI(1).GT.1.0E-6) THEN !AF 19.Mar.2012 - To avoid problems with the axis boundary condition
+       IF ((DIFF_TI(1)+DIFF_HYPER).GT.1.0E-6) THEN !AF 19.Mar.2012 - To avoid problems with the axis boundary condition !AF 25.Apr.2016
+ !        V(1) = -DIFF_TI(1)*NI(1)
+         V(1) = -(DIFF_TI(1)+DIFF_HYPER)*NI(1) !AF 25.Apr.2016
+       ELSE
+         V(1) = -1.0E-6*NI(1)
+       ENDIF
+!       U(1) = VCONV_TI(1)*NI(1)+LOCAL_FLUX_NI_CONV_S4(IION)
+       U(1) = (VCONV_TI(1)+DIFF_HYPER*DTIM(1)/TIM(1))*NI(1)+LOCAL_FLUX_NI_CONV_S4(IION) !AF 25.Apr.2016
+     END IF !AF 11.Oct.2011
+     W(1)   = 0.e0_R8
+
+! +++ At the edge:
+
+!       FIXED Ti
+     IF(TI_BND_TYPE(2,IION).EQ.1) THEN
+        V(2) = 0.e0_R8
+        U(2) = 1.e0_R8
+        W(2) = TI_BND(2,1)
+     ENDIF
+
+!       FIXED grad_Ti
+     IF(TI_BND_TYPE(2,IION).EQ.2) THEN
+        V(2) = 1.e0_R8
+        U(2) = 0.e0_R8
+        W(2) = -TI_BND(2,1)
+     ENDIF
+
+!       FIXED L_Ti
+     IF(TI_BND_TYPE(2,IION).EQ.3) THEN
+        V(2) = TI_BND(2,1)
+        U(2) = 1.e0_R8
+        W(2) = 0.e0_R8
+     ENDIF
+
+!       FIXED Flux_Ti
+     IF(TI_BND_TYPE(2,IION).EQ.4) THEN
+        V(2) = -VPR(NRHO)*G1(NRHO)*DIFF_TI(NRHO)*NI(NRHO)
+        U(2) = VPR(NRHO)*G1(NRHO)*VCONV_TI(NRHO)*NI(NRHO)+FLUX_NI(NRHO)
+        W(2) = TI_BND(2,1)
+     ENDIF
+
+!       Generic boundary condition
+     IF(TI_BND_TYPE(2,IION).EQ.5) THEN
+        V(2) = TI_BND(2,1)
+        U(2) = TI_BND(2,2)
+        W(2) = TI_BND(2,3)
+     ENDIF
+
+
+
+! +++ Temperature equation is not solved:
+     IF(TI_BND_TYPE(2,IION).EQ.0) THEN
+
+        CALL DERIVN (NRHO,RHO,Y,DY)                       !temperature gradient
+
+        FLAG       = 0
+
+        RHO_LOOP5: DO IRHO=1,NRHO
+           A(IRHO)   = 1.0E0_R8
+           B(IRHO)   = 1.0E0_R8
+           C(IRHO)   = 1.0E0_R8
+           D(IRHO)   = 0.0E0_R8
+           E(IRHO)   = 0.0E0_R8
+           F(IRHO)   = 0.0E0_R8
+           G(IRHO)   = 0.0E0_R8   
+        END DO RHO_LOOP5
+
+        V(2)         = 0.0E0_R8
+        U(2)         = 1.0E0_R8
+        W(2)         = Y(NRHO)
+     END IF
+
+
+
+! +++ Defining coefficients for numerical solver:    
+     SOLVER%EQ_FLAG(IION)           = FLAG
+
+     RHO_LOOP6: DO IRHO=1,NRHO
+        SOLVER%Y(IION,IRHO)          = Y(IRHO)
+        SOLVER%DY(IION,IRHO)         = DY(IRHO)
+        SOLVER%YM(IION,IRHO)         = YM(IRHO)
+
+        SOLVER%A(IION,IRHO)          = A(IRHO)
+        SOLVER%B(IION,IRHO)          = B(IRHO) 
+        SOLVER%C(IION,IRHO)          = C(IRHO)
+        SOLVER%D(IION,IRHO)          = D(IRHO)
+        SOLVER%E(IION,IRHO)          = E(IRHO)
+        SOLVER%F(IION,IRHO)          = F(IRHO)
+        SOLVER%G(IION,IRHO)          = G(IRHO)
+
+        SOLVER%CM1(NDIM,IION,IRHO)   = VIE(IRHO)
+        SOLVER%CM1(IION,NDIM,IRHO)   = VIE(IRHO)
+
+        ION_LOOP3: DO ZION = 1,NION
+           SOLVER%CM1(IION,ZION,IRHO) = VII(IRHO,ZION)
+        END DO ION_LOOP3
+
+     END DO RHO_LOOP6
+
+     SOLVER%H                      = H
+
+     SOLVER%V(IION,1)              = V(1)
+     SOLVER%U(IION,1)              = U(1)
+     SOLVER%W(IION,1)              = W(1)
+     SOLVER%V(IION,2)              = V(2)
+     SOLVER%U(IION,2)              = U(2)
+     SOLVER%W(IION,2)              = W(2)
+
+
+
+  END DO ION_LOOP1
+
+
+
+!-------------------------------------------------------!
+!                                                       !
+!               ELECTRON HEAT TRANSPORT:                !
+!                                                       !
+!-------------------------------------------------------!
+
+! +++ Set equation to 'predictive' and all coefficients to zero:
+  FLAG           = 1
+  Y(:)           = 0.0E0_R8
+  DY(:)          = 0.0E0_R8
+  YM(:)          = 0.0E0_R8
+  DYM(:)         = 0.0E0_R8 !AF - 25.Sep.2014
+  A(:)           = 0.0E0_R8
+  B(:)           = 0.0E0_R8
+  C(:)           = 0.0E0_R8
+  D(:)           = 0.0E0_R8
+  E(:)           = 0.0E0_R8
+  F(:)           = 0.0E0_R8
+  G(:)           = 0.0E0_R8
+  H              = 0.0E0_R8
+  V(:)           = 0.0E0_R8
+  U(:)           = 0.0E0_R8
+  W(:)           = 0.0E0_R8
+
+
+
+! +++ Set up local variables for electron heat transport equation:
+  RHO_LOOP7: DO IRHO=1,NRHO
+     TE(IRHO)       = PROFILES%TE(IRHO)
+     DTE(IRHO)      = PROFILES%DTE(IRHO) !AF - 25.Sep.2014
+     NE(IRHO)       = PROFILES%NE(IRHO)
+     DNE(IRHO)      = PROFILES%DNE(IRHO) !AF - 25.Sep.2014
+     TEM(IRHO)      = EVOLUTION%TEM(IRHO)
+     DTEM(IRHO)     = EVOLUTION%DTEM(IRHO) !AF - 25.Sep.2014
+     NEM(IRHO)      = EVOLUTION%NEM(IRHO)
+     DNEM(IRHO)     = EVOLUTION%DNEM(IRHO) !AF - 25.Sep.2014
+
+     FLUX_NE(IRHO)  = PROFILES%FLUX_NE_CONV(IRHO)
+
+     DIFF_TE(IRHO)  = TRANSPORT%DIFF_TE(IRHO)
+     VCONV_TE(IRHO) = TRANSPORT%VCONV_TE(IRHO)
+     QGI(IRHO)      = 0.e0_R8
+     ION_LOOP4: DO IION = 1, NION
+        QGI(IRHO)    = QGI(IRHO) + TRANSPORT%QGI(IRHO,IION)
+     END DO ION_LOOP4
+
+
+
+     QE_EXP(IRHO)   = SOURCES%QOH(IRHO) / itm_ev
+     QE_IMP(IRHO)   = 0.e0_R8
+
+     QE_EXP(IRHO)   = QE_EXP(IRHO) + SOURCES%QE_EXP(IRHO)
+     QE_IMP(IRHO)   = QE_IMP(IRHO) + SOURCES%QE_IMP(IRHO)
+
+     QIE(IRHO)      = COLLISIONS%QIE(IRHO)
+     VIE(IRHO)      = COLLISIONS%VIE(IRHO)
+
+  END DO RHO_LOOP7
+
+
+
+! +++ Set up boundary conditions for electron heat transport equation:
+  TE_BND_TYPE(2)       = PROFILES%TE_BND_TYPE
+  TE_BND(2,1)          = PROFILES%TE_BND(1)
+  TE_BND(2,2)          = PROFILES%TE_BND(2)
+  TE_BND(2,3)          = PROFILES%TE_BND(3)
+
+
+
+! +++ Coefficients for electron heat transport equation in form:
+!
+!     (A*Y-B*Y(t-1))/H + 1/C * (-D*Y' + E*Y) = F - G*Y
+
+  DIFF_HYPER = HYPER_DIFF_RATIO*MAXVAL(DIFF_TE) !AF 25.Apr.2016
+
+  RHO_LOOP8: DO IRHO=NRHO,1,-1
+     Y(IRHO)   = TE(IRHO)
+     DY(IRHO)  = DTE(IRHO) !AF - 25.Sep.2014
+     YM(IRHO)  = TEM(IRHO)
+     DYM(IRHO) = DTEM(IRHO) !AF - 25.Sep.2014
+
+     A(IRHO)   = 1.5E0_R8*VPR(IRHO)*NE(IRHO)
+!DPC temporary "fix" for NaNs
+     if(VPR(IRHO).le.0.0_R8.and.irho.eq.1) then
+!        write(*,*) B(2:5)
+        B(IRHO)=0.0_R8
+     else
+        B(IRHO)   = 1.5E0_R8*VPRM(IRHO)**fivethird/VPR(IRHO)**twothird*NEM(IRHO) 
+     endif
+!DPC end of temporary fix
+     C(IRHO)   = 1.e0_R8
+!     D(IRHO)   = VPR(IRHO)*G1(IRHO)*NE(IRHO)*DIFF_TE(IRHO)
+     D(IRHO)   = VPR(IRHO)*G1(IRHO)*NE(IRHO)*(DIFF_TE(IRHO)+DIFF_HYPER) !AF 25.Apr.2016
+!     E(IRHO)   = VPR(IRHO)*G1(IRHO)*NE(IRHO)*VCONV_TE(IRHO)                 &
+     E(IRHO)   = VPR(IRHO)*G1(IRHO)*NE(IRHO)*(VCONV_TE(IRHO)+DIFF_HYPER*DTEM(IRHO)/TEM(IRHO))                 & !AF 25.Apr.2016
+          + FLUX_NE(IRHO)                                   &
+          - 1.5E0_R8*BTPRIME/2.e0_R8/BT*RHO(IRHO)*NE(IRHO)*VPR(IRHO)
+     F(IRHO)   = VPR(IRHO) * ( QE_EXP(IRHO) + QIE(IRHO) - QGI(IRHO) )
+     G(IRHO)   = VPR(IRHO) * (QE_IMP(IRHO) + VIE(IRHO))                     &
+          - BTPRIME/2.e0_R8/BT*RHO(IRHO)*NE(IRHO)*DVPR(IRHO)      
+  END DO RHO_LOOP8
+
+  H          = TAU
+
+
+! +++ Boundary conditions for electron heat 
+!     transport equation in form:
+!
+!     V*Y' + U*Y =W 
+
+! +++ On axis
+!     dTe/drho(rho=0)=0:
+  IF (SOLVER_TYPE.NE.4) THEN !AF 11.Oct.2011
+    V(1)   = 1.e0_R8
+    U(1)   = 0.e0_R8
+  ELSE !AF 11.Oct.2011 - Zero flux instead of zero gradient at the axis for solver 4
+!    IF (DIFF_TE(1).GT.1.0E-6) THEN !AF 19.Mar.2012 - To avoid problems with the axis boundary condition
+    IF ((DIFF_TE(1)+DIFF_HYPER).GT.1.0E-6) THEN !AF 19.Mar.2012 - To avoid problems with the axis boundary condition !AF 25.Apr.2016
+!      V(1) = -DIFF_TE(1)*NE(1)
+      V(1) = -(DIFF_TE(1)+DIFF_HYPER)*NE(1) !AF 25.Apr.2016
+    ELSE
+      V(1) = -1.0E-6*NE(1)
+    ENDIF
+!    U(1) = VCONV_TE(1)*NE(1)+LOCAL_FLUX_NE_CONV_S4
+    U(1) = (VCONV_TE(1)+DIFF_HYPER*DTEM(1)/TEM(1))*NE(1)+LOCAL_FLUX_NE_CONV_S4 !AF 25.Apr.2016
+  END IF !AF 11.Oct.2011
+  W(1)   = 0.e0_R8
+  
+! +++ At the edge:
+
+!     FIXED Te
+  IF(TE_BND_TYPE(2).EQ.1) THEN
+     V(2) = 0.e0_R8
+     U(2) = 1.e0_R8
+     W(2) = TE_BND(2,1)
+  ENDIF
+
+!     FIXED grad_Te
+  IF(TE_BND_TYPE(2).EQ.2) THEN
+     V(2) = 1.e0_R8
+     U(2) = 0.e0_R8
+     W(2) = -TE_BND(2,1)
+  ENDIF
+
+!     FIXED L_Te
+  IF(TE_BND_TYPE(2).EQ.3) THEN
+     V(2) = TE_BND(2,1)
+     U(2) = 1.e0_R8
+     W(2) = 0.e0_R8
+  ENDIF
+
+!    FIXED Flux_Te
+  IF(TE_BND_TYPE(2).EQ.4) THEN
+!     V(2) = -G(NRHO)*DIFF(NRHO)*NE(NRHO)
+!     U(2) = G(NRHO)*VCONV(NRHO)*NE(NRHO)+FLUX_NE(NRHO)
+     V(2) = -VPR(NRHO)*G1(NRHO)*DIFF_TE(NRHO)*NE(NRHO)
+     U(2) = VPR(NRHO)*G1(NRHO)*VCONV_TE(NRHO)*NE(NRHO)+FLUX_NE(NRHO)
+     W(2) = TE_BND(2,1)
+  ENDIF
+
+!    Generic boundary condition
+  IF(TE_BND_TYPE(2).EQ.5) THEN
+     V(2) = TE_BND(2,1)
+     U(2) = TE_BND(2,2)
+     W(2) = TE_BND(2,3)
+  ENDIF
+
+
+
+! +++ Temperature equation is not solved:
+  IF(TE_BND_TYPE(2).EQ.0) THEN
+
+     CALL DERIVN (NRHO,RHO,Y,DY)                       !temperature gradient
+
+     FLAG       = 0
+
+     RHO_LOOP9: DO IRHO=1,NRHO
+        A(IRHO)   = 1.0E0_R8
+        B(IRHO)   = 1.0E0_R8
+        C(IRHO)   = 1.0E0_R8
+        D(IRHO)   = 0.0E0_R8
+        E(IRHO)   = 0.0E0_R8
+        F(IRHO)   = 0.0E0_R8
+        G(IRHO)   = 0.0E0_R8   
+     END DO RHO_LOOP9
+
+     V(2)         = 0.0E0_R8
+     U(2)         = 1.0E0_R8
+     W(2)         = Y(NRHO)
+  END IF
+
+
+
+! +++ Defining coefficients for numerical solver:    
+  SOLVER%TYPE                   = SOLVER_TYPE
+  SOLVER%EQ_FLAG(NDIM)          = FLAG
+  SOLVER%NDIM                   = NDIM
+  SOLVER%NRHO                   = NRHO
+  SOLVER%AMIX                   = AMIX
+
+  RHO_LOOP10: DO IRHO=1,NRHO
+
+     SOLVER%RHO(IRHO)            = RHO(IRHO)
+
+     SOLVER%Y(NDIM,IRHO)         = Y(IRHO)
+     SOLVER%DY(NDIM,IRHO)        = DY(IRHO)
+     SOLVER%YM(NDIM,IRHO)        = YM(IRHO)
+
+     SOLVER%A(NDIM,IRHO)         = A(IRHO)
+     SOLVER%B(NDIM,IRHO)         = B(IRHO) 
+     SOLVER%C(NDIM,IRHO)         = C(IRHO)
+     SOLVER%D(NDIM,IRHO)         = D(IRHO)
+     SOLVER%E(NDIM,IRHO)         = E(IRHO)
+     SOLVER%F(NDIM,IRHO)         = F(IRHO)
+     SOLVER%G(NDIM,IRHO)         = G(IRHO)
+
+     SOLVER%CM1(NDIM,NDIM,IRHO)  = 0.e0_R8
+
+  END DO RHO_LOOP10
+
+  SOLVER%H                      = H
+
+  SOLVER%V(NDIM,1)              = V(1)
+  SOLVER%U(NDIM,1)              = U(1)
+  SOLVER%W(NDIM,1)              = W(1)
+  SOLVER%V(NDIM,2)              = V(2)
+  SOLVER%U(NDIM,2)              = U(2)
+  SOLVER%W(NDIM,2)              = W(2)
+
+
+
+! +++ Solution of heat transport equations:
+  CALL SOLUTION_INTERFACE (SOLVER, ifail)
+
+
+! +++ New temperatures and heat fluxes:     
+!-------------------------------------------------------!
+!     IONS:                                             !
+!-------------------------------------------------------!
+  ION_LOOP5: DO IION = 1,NION
+
+! dpc 2011-08-11: I think we need most of the following
+     TI_BND_TYPE(2,IION)  = PROFILES%TI_BND_TYPE(IION)
+     TI_BND(2,1)          = PROFILES%TI_BND(1,IION)
+     TI_BND(2,2)          = PROFILES%TI_BND(2,IION)
+     TI_BND(2,3)          = PROFILES%TI_BND(3,IION)
+! dpc end
+
+     RHO_LOOP11: DO IRHO=1,NRHO
+
+! dpc 2011-08-11: I think we need most of the following
+        TI(IRHO)           = PROFILES%TI(IRHO,IION)
+        TIM(IRHO)          = EVOLUTION%TIM(IRHO,IION)
+        NI(IRHO)           = PROFILES%NI(IRHO,IION)
+        NIM(IRHO)          = EVOLUTION%NIM(IRHO,IION)
+        FLUX_TI(IRHO)      = PROFILES%FLUX_TI(IRHO,IION)
+        FLUX_TI_COND(IRHO) = PROFILES%FLUX_TI_COND(IRHO,IION)
+        FLUX_TI_CONV(IRHO) = PROFILES%FLUX_TI_CONV(IRHO,IION)
+        FLUX_NI(IRHO)      = PROFILES%FLUX_NI_CONV(IRHO,IION)
+        DIFF_TI(IRHO)      = TRANSPORT%DIFF_TI(IRHO,IION)
+        VCONV_TI(IRHO)     = TRANSPORT%VCONV_TI(IRHO,IION) 
+        QGI(IRHO)          = TRANSPORT%QGI(IRHO,IION)
+        QI_EXP(IRHO)       = SOURCES%QI_EXP(IRHO,IION) 
+        QI_IMP(IRHO)       = SOURCES%QI_IMP(IRHO,IION) 
+        VEI(IRHO)          = COLLISIONS%VEI(IRHO,IION)
+        QEI(IRHO)          = COLLISIONS%QEI(IRHO,IION)
+        VZI(IRHO)          = COLLISIONS%VZI(IRHO,IION)
+        QZI(IRHO)          = COLLISIONS%QZI(IRHO,IION)
+! dpc end
+
+        Y(IRHO)            = SOLVER%Y(IION,IRHO)
+        DY(IRHO)           = SOLVER%DY(IION,IRHO)
+
+        IF(TI_BND_TYPE(2,IION).EQ.0) THEN
+           Y(:)            = PROFILES%TI(:,IION)
+           CALL DERIVN (NRHO,RHO,Y,DY)   
+        END IF
+
+        TI(IRHO)            = Y(IRHO)
+        DTI(IRHO)           = DY(IRHO) !AF - 25.Sep.2014
+        IF (RHO(IRHO).NE.0.E0_R8) THEN
+           FUN1(IRHO)          = VPR(IRHO)/RHO(IRHO)*                                           &
+                ((1.5E0_R8*NIM(IRHO)*TIM(IRHO)/TAU*(VPRM(IRHO)/VPR(IRHO))**fivethird            &
+                + QI_EXP(IRHO) + QEI(IRHO) + QZI(IRHO) + QGI(IRHO))                             &
+                - (1.5E0_R8*NI(IRHO)/TAU + QI_IMP(IRHO) + VEI(IRHO) + VZI(IRHO)                 &
+                - BTPRIME/2.e0_R8/BT*RHO(IRHO)*NI(IRHO)*DVPR(IRHO)) * Y(IRHO))  
+        ELSE
+           FUN1(IRHO)          = ((1.5E0_R8*NIM(IRHO)*TIM(IRHO)/TAU                             &
+                + QI_EXP(IRHO) + QEI(IRHO) + QZI(IRHO) + QGI(IRHO))                             &
+                - (1.5E0_R8*NI(IRHO)/TAU + QI_IMP(IRHO) + VEI(IRHO) + VZI(IRHO)                 &
+                - BTPRIME/2.e0_R8/BT*RHO(IRHO)*NI(IRHO)*DVPR(IRHO)) * Y(IRHO))  
+        ENDIF
+     END DO RHO_LOOP11
+
+     CALL INTEGR(NRHO,RHO,FUN1,INTFUN1)                     !Integral source 
+
+     RHO_LOOP12: DO IRHO=1,NRHO
+        FLUX_TI_CONV(IRHO)  = Y(IRHO)*FLUX_NI(IRHO)
+
+        FLUX_TI_COND(IRHO)  = VPR(IRHO)*G1(IRHO)*NI(IRHO)                                     &
+             * ( Y(IRHO)*VCONV_TI(IRHO) - DY(IRHO)*DIFF_TI(IRHO) )
+
+        FLUX_TI(IRHO)       = FLUX_TI_CONV(IRHO) + FLUX_TI_COND(IRHO)
+
+        INT_SOURCE(IRHO)    = INTFUN1(IRHO)                                                   &
+             + Y(IRHO) * 1.5E0_R8*BTPRIME/2.e0_R8/BT*RHO(IRHO)*NI(IRHO)*VPR(IRHO)    
+
+
+
+! +++ If equation is not solved, total and conductive ion heat flux        
+!     are determined from the integral of sources:                            
+        IF (TI_BND_TYPE(2,IION).EQ.0) THEN                       
+
+           DIFF_TI(IRHO)      = 1.D-6
+           FLUX_TI(IRHO)      = INT_SOURCE(IRHO)        
+           FLUX_TI_COND(IRHO) = INT_SOURCE(IRHO) - FLUX_NI(IRHO)*Y(IRHO)              
+
+           IF (VPR(IRHO)*G1(IRHO).NE.0.0_R8)                           &
+           DIFF_TI(IRHO)      = - FLUX_TI_COND(IRHO) / DY(IRHO) / (VPR(IRHO)*G1(IRHO)*NI(IRHO))
+           VCONV_TI(IRHO)     = 0.0_R8
+           IF (DIFF_TI(IRHO).LE.1.D-6) THEN
+              DIFF_TI(IRHO)   = 1.D-6
+              VCONV_TI(IRHO)  = (FLUX_TI_COND(IRHO) / (VPR(IRHO)*G1(IRHO)*NI(IRHO)) + DY(IRHO)*DIFF_TI(IRHO)) / Y(IRHO)
+           END IF
+        END IF
+
+
+
+! +++ Return ion temperature and flux:        
+        PROFILES%TI(IRHO,IION)             = TI(IRHO)   
+        PROFILES%DTI(IRHO,IION)            = DTI(IRHO) !AF, 25.Sep.2014 
+        PROFILES%DIFF_TI(IRHO,IION)        = DIFF_TI(IRHO)
+        PROFILES%VCONV_TI(IRHO,IION)       = VCONV_TI(IRHO)
+        PROFILES%FLUX_TI_CONV(IRHO,IION)   = FLUX_TI_CONV(IRHO)      
+        PROFILES%FLUX_TI_COND(IRHO,IION)   = FLUX_TI_COND(IRHO)      
+        PROFILES%FLUX_TI(IRHO,IION)        = FLUX_TI(IRHO)  
+        PROFILES%SOURCE_TI(IRHO,IION)      = QI_EXP(IRHO) + QEI(IRHO) + QZI(IRHO) + QGI(IRHO) &
+                                             - (QI_IMP(IRHO) + VEI(IRHO) + VZI(IRHO)) * TI(IRHO)
+        PROFILES%INT_SOURCE_TI(IRHO,IION)  = INT_SOURCE(IRHO)  
+
+     END DO RHO_LOOP12
+
+     FUN1=PROFILES%SOURCE_TI(:,IION)*VPR
+     CALL INTEGR2(NRHO,RHO,FUN1,INTFUN1)                                  
+     PROFILES%INT_SOURCE_TI(:,IION)   = INTFUN1     
+
+  END DO ION_LOOP5
+
+
+
+!-------------------------------------------------------!
+!     ELECTRONS:                                        !
+!-------------------------------------------------------!
+  RHO_LOOP13: DO IRHO=1,NRHO
+
+! dpc 2011-08-11: I think we need most of the following
+     QGI(IRHO)      = 0.e0_R8
+     ION_LOOP6: DO IION = 1, NION
+        QGI(IRHO)    = QGI(IRHO) + TRANSPORT%QGI(IRHO,IION)
+     END DO ION_LOOP6
+! dpc end
+
+     Y(IRHO)              = SOLVER%Y(NDIM,IRHO)
+     DY(IRHO)             = SOLVER%DY(NDIM,IRHO)
+
+     IF(TE_BND_TYPE(2).EQ.0) THEN
+        Y(:)            = PROFILES%TE(:)
+        CALL DERIVN (NRHO,RHO,Y,DY)   
+     END IF
+
+     TE(IRHO)             = Y(IRHO)
+     DTE(IRHO)            = DY(IRHO) !AF - 25.Set.2014
+
+     IF (RHO(IRHO).NE.0.E0_R8) THEN
+        FUN2(IRHO)           = VPR(IRHO)/RHO(IRHO)*                                         &
+             ( 1.5E0_R8*NEM(IRHO)*TEM(IRHO)/TAU*(VPRM(IRHO)/VPR(IRHO))**fivethird           &
+             + QE_EXP(IRHO) + QIE(IRHO) - QGI(IRHO)                                         &
+             -  Y(IRHO) * ( 1.5E0_R8*NE(IRHO)/TAU + QE_IMP(IRHO) + VIE(IRHO)                &
+             - BTPRIME/2.e0_R8/BT*RHO(IRHO)*NE(IRHO)*DVPR(IRHO)/VPR(IRHO) ) )  
+     ELSE
+        FUN2(IRHO)         = ( 1.5E0_R8*NEM(IRHO)*TEM(IRHO)/TAU                             &
+             + QE_EXP(IRHO) + QIE(IRHO) - QGI(IRHO)                                         &
+             -  Y(IRHO) * ( 1.5E0_R8*NE(IRHO)/TAU + QE_IMP(IRHO) + VIE(IRHO)                &
+             - BTPRIME/2.e0_R8/BT*NE(IRHO)*DVPR(IRHO) ) )  
+     ENDIF
+  END DO RHO_LOOP13
+
+  CALL INTEGR(NRHO,RHO,FUN2,INTFUN2)                     !Integral source 
+
+  RHO_LOOP14: DO IRHO=1,NRHO
+     FLUX_TE_CONV(IRHO)  = Y(IRHO)*FLUX_NE(IRHO)
+
+     FLUX_TE_COND(IRHO)  = VPR(IRHO)*G1(IRHO)*NE(IRHO)                                      &
+          * ( Y(IRHO)*VCONV_TE(IRHO) - DY(IRHO)*DIFF_TE(IRHO) )
+
+     FLUX_TE(IRHO)       = FLUX_TE_CONV(IRHO) + FLUX_TE_COND(IRHO)
+
+     INT_SOURCE(IRHO)    = INTFUN2(IRHO)                                                    &
+          + Y(IRHO) * 1.5E0_R8*BTPRIME/2.e0_R8/BT*RHO(IRHO)*NE(IRHO)*VPR(IRHO)   
+
+
+! +++ If equation is not solved, conductive component of electron heat flux
+!     is determined from the integral of sources: 
+     IF (TE_BND_TYPE(2).EQ.0) THEN                       
+
+        DIFF_TE(IRHO)      = 1.D-6
+        FLUX_TE(IRHO)      = INT_SOURCE(IRHO)        
+
+        FLUX_TE_COND(IRHO) = INT_SOURCE(IRHO) - FLUX_NE(IRHO)*Y(IRHO)              
+
+        IF (VPR(IRHO)*G1(IRHO).NE.0.0_R8)                           &
+        DIFF_TE(IRHO)      = - FLUX_TE_COND(IRHO) / DY(IRHO) / (VPR(IRHO)*G1(IRHO)*NE(IRHO))
+        VCONV_TE(IRHO)     = 0.0_R8
+        IF (DIFF_TE(IRHO).LE.1.D-6) THEN
+           DIFF_TE(IRHO)   = 1.D-6
+           VCONV_TE(IRHO)  = (FLUX_TE_COND(IRHO) / (VPR(IRHO)*G1(IRHO)*NE(IRHO)) + DY(IRHO)*DIFF_TE(IRHO)) / Y(IRHO)
+        END IF
+     END IF
+
+
+
+! +++ Return electron temperature and flux:         
+     PROFILES%TE(IRHO)             = TE(IRHO)   
+     PROFILES%DTE(IRHO)            = DTE(IRHO) !AF, 25.Sep.2014   
+     PROFILES%DIFF_TE(IRHO)        = DIFF_TE(IRHO)
+     PROFILES%VCONV_TE(IRHO)       = VCONV_TE(IRHO)
+     PROFILES%FLUX_TE(IRHO)        = FLUX_TE(IRHO)  
+     PROFILES%FLUX_TE_CONV(IRHO)   = FLUX_TE_CONV(IRHO)      
+     PROFILES%FLUX_TE_COND(IRHO)   = FLUX_TE_COND(IRHO)      
+     PROFILES%SOURCE_TE(IRHO)      = QE_EXP(IRHO) + QIE(IRHO) - QGI(IRHO)                  &
+                                     - (QE_IMP(IRHO) + VIE(IRHO)) * TE(IRHO)
+     PROFILES%INT_SOURCE_TE(IRHO)  = INT_SOURCE(IRHO)  
+  END DO RHO_LOOP14
+
+  FUN1=PROFILES%SOURCE_TE*VPR
+  CALL INTEGR2(NRHO,RHO,FUN1,INTFUN1)                                  
+  PROFILES%INT_SOURCE_TE   = INTFUN1     
+
+
+! +++ Deallocate types for interface with numerical solver:
+  CALL  DEALLOCATE_NUMERICS      (SOLVER, ifail)
+
+
+! +++ Deallocate types for interface with PLASMA_COLLISIONS:
+  CALL DEALLOCATE_COLLISIONALITY (COLLISIONS, ifail)
+
+  RETURN
+
+
+
+END SUBROUTINE TEMPERATURES
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+
+
+
+
+
+
+
+
+! +++          ROTATION TRANSPORT EQUATIONS            +++
+
+
+
+
+
+
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+!> ROTATION TRANSPORT EQUATIONS
+!>
+!> This subroutine solves the momentum transport
+!> equations for ion components fron 1 to NION,
+!> and provides: ion toroidal rotation velocity, ion
+!> angular velocity, ion momentum (total and 
+!> individual per ion component), ion momentum flux
+!> (total and individual per ion component)
+!> 
+!> \f[
+!> \left(
+!>       \frac{\partial}{\partial t}-
+!>       \frac{{\dot{B}}_0}{2B_0}\cdot 
+!>       \frac{\partial }{\partial\rho }\rho
+!> \right)
+!> \left(V'
+!>       \left\langle R\right\rangle
+!>       m_in_iu_{i,\varphi}
+!> \right)+
+!> \frac{\partial }{\partial\rho}\Phi_i=
+!> V'
+!> \left(
+!>       U_{i,\varphi\mathrm{,exp}}-
+!>       U_{i,\varphi,\mathrm{imp}}\cdot u_{i,\varphi}+
+!>       U_{\mathrm{zi},\varphi}
+!> \right)
+!> \f]
+!>
+!> These subroutines define generic numerical
+!> coefficients and boundary conditions, required by
+!> standardized interface to numerical solver
+!>
+!> \author D.Kalupin, R.Stankiewicz
+!>
+!> \version "$Id$"
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+SUBROUTINE ROTATION &
+     (GEOMETRY,PROFILES,TRANSPORT,SOURCES,EVOLUTION,CONTROL,ifail,failstring)
+
+!-------------------------------------------------------!
+!     This subroutine solves the momentum transport     !
+!     equations for ion components fron 1 to NION,      !
+!     and provides: ion toroidal rotation velocity,ion  !
+!     angular velocity, ion momentum (total and         !
+!     individual per ion component), ion momentum flux  !
+!     (total and individual per ion component),         !
+!-------------------------------------------------------!
+
+  USE ETS_PLASMA
+  USE TYPE_SOLVER
+  USE ITM_CONSTANTS
+  USE PLASMA_COLLISIONALITY
+
+
+  USE S4_PARAMETERS !AF 12.Oct.2011 - to avoid a few interface blocks
+
+  IMPLICIT NONE
+
+  INTEGER, INTENT (INOUT)       :: ifail
+  CHARACTER(LEN=500)            :: failstring
+
+! +++ External parameters:
+  TYPE (MAGNETIC_GEOMETRY)      :: GEOMETRY               !contains all geometry quantities
+  TYPE (PLASMA_PROFILES)        :: PROFILES               !contains profiles of plasma parameters
+  TYPE (TRANSPORT_COEFFICIENTS) :: TRANSPORT              !contains profiles of trasport coefficients
+  TYPE (SOURCES_AND_SINKS)      :: SOURCES                !contains profiles of sources
+  TYPE (COLLISIONALITY)         :: COLLISIONS             !contains all parameters computed by module for plasma collision
+  TYPE (TIME_EVOLUTION)         :: EVOLUTION              !contains all parameters required by time evolution
+  TYPE (RUN_CONTROL)            :: CONTROL                !contains all parameters required by run
+!evolution and convergence loop
+! +++ Input/Output to numerical solver:
+  TYPE (NUMERICS)               :: SOLVER                 !contains all I/O quantities to numerics part
+
+! +++ Internal parameters:
+  INTEGER   :: IRHO,    NRHO                              !radius index, number of radial points
+  INTEGER   :: IION,    NION                              !index of ion component, number of considered ion components
+  INTEGER   :: ZION                                       !second index of ion component
+
+  REAL (R8) :: AION                                       !ion mass number                          [proton mass]
+  REAL (R8) :: MION                                       !ion mass                                 [kg]
+
+  REAL (R8) :: BT, BTM, BTPRIME                           !magnetic field, from current time step,  [T], previous time steps, [T], time derivative, [T/s]
+  REAL (R8) :: RHO(PROFILES%NRHO)                         !normalised minor radius,                 [m]
+  REAL (R8) :: VPR(PROFILES%NRHO)                         !V',                                      [m^2]
+  REAL (R8) :: VPRM(PROFILES%NRHO)                        !V' (at previous time step),              [m^2]
+  REAL (R8) :: G1(PROFILES%NRHO)                          !<(nabla_rho)^2>,                         [-]
+  REAL (R8) :: G2(PROFILES%NRHO), G2M(PROFILES%NRHO)      !<R> from current ans previous time step, [m]
+
+  REAL (R8) :: VTOR(PROFILES%NRHO)                        !ion toroidal velocity                    [m/s]
+  REAL (R8) :: DVTOR(PROFILES%NRHO)                       !derivative of ion toroidal velocity                    [m/s] !AF - 25.Sep.2014
+  REAL (R8) :: VTORM(PROFILES%NRHO)                       !ion toroidal velocity (at time-1)        [m/s]
+  REAL (R8) :: DVTORM(PROFILES%NRHO)                      !derivative of ion toroidal velocity at previous time    !AF - 25.Sep.2014
+  REAL (R8) :: WTOR(PROFILES%NRHO)                        !ion angular velocity                     [1/s]
+  REAL (R8) :: MTOR(PROFILES%NRHO)                        !ion toroidal momentum                    [kg*m/s]
+  REAL (R8) :: MTOR_TOT(PROFILES%NRHO)                    !total ion toroidal momentum              [kg*m/s]
+
+  REAL (R8) :: DIFF(PROFILES%NRHO),VCONV(PROFILES%NRHO)   !velocity diffusion coefficient,          [m^2/s],   and pinch velocity, [m/s]
+
+  REAL (R8) :: FLUX_MTOR(PROFILES%NRHO)                   !ion toroidal momentum flux                               [kg*m^2/s^2]
+  REAL (R8) :: FLUX_MTOR_CONV(PROFILES%NRHO)              !convective contribution to  ion toroidal momentum flux   [kg*m^2/s^2]
+  REAL (R8) :: FLUX_MTOR_COND(PROFILES%NRHO)              !conductive contribution ion toroidal momentum flux       [kg*m^2/s^2]
+  REAL (R8) :: FLUX_MTOR_TOT(PROFILES%NRHO)               !total ion toroidal momentum flux                         [kg*m^2/s^2]
+  REAL (R8) :: INT_SOURCE(PROFILES%NRHO)                  !integral of momentum sources                             [kg*m^2/s^2]
+  REAL (R8) :: FLUX_NI(PROFILES%NRHO)                     !ion particle flux                                        [1/s]
+
+  REAL (R8) :: VTOR_BND(2,3)                              !boundary condition, value                [depends on VTOR_BND_TYPE]
+  INTEGER   :: VTOR_BND_TYPE(2)                           !boundary condition, type
+
+  REAL (R8) :: TI(PROFILES%NRHO)                          !ion temperature,                         [eV]
+  REAL (R8) :: NI(PROFILES%NRHO)                          !ion density                              [m^-3]
+  REAL (R8) :: NIM(PROFILES%NRHO)                         !ion density (at time-1)                  [m^-3]
+  REAL (R8) :: DNI(PROFILES%NRHO),  DNIM(PROFILES%NRHO) !AF - 25.Sep.2014
+
+  REAL (R8) :: UI_EXP(PROFILES%NRHO)                      !external explicit ion momentum source                             [kg/m/s^2]
+  REAL (R8) :: UI_IMP(PROFILES%NRHO)                      !external implicit ion momentum source                             [kg/m^2/s]
+  REAL (R8) :: UZI(PROFILES%NRHO)                         !ion momentum source due to interaction with ions                  [kg/m/s^2]
+  REAL (R8) :: WZI(PROFILES%NRHO)                         !friction between different ion components (normalized frequency)  [kg/m^2/s]
+  REAL (R8) :: WII(PROFILES%NRHO,PROFILES%NION)           !momentum exchange between different ion components,               [kg/(m^2*s)]
+
+  REAL (R8) :: AMIX, TAU                                  !mixing factor, time step,                [s]
+
+  INTEGER   :: FLAG                                       !flag for equation: 0 - interpretative (not solved), 1 - predictive (solved)
+  INTEGER   :: IDIM, NDIM                                 !index and total number of equations to be solved
+  INTEGER   :: SOLVER_TYPE                                !specifies the option for numerical solution
+  REAL (R8) :: Y(PROFILES%NRHO), YM(PROFILES%NRHO)        !function at the current amd previous time steps
+  REAL (R8) :: DY(PROFILES%NRHO)                          !derivative of function
+  REAL (R8) :: DYM(PROFILES%NRHO)                         !derivative of function at previous time step !AF - 25.Sep.2014
+  REAL (R8) :: A(PROFILES%NRHO), B(PROFILES%NRHO)         !coefficients for numerical solver
+  REAL (R8) :: C(PROFILES%NRHO), D(PROFILES%NRHO)         !coefficients for numerical solver
+  REAL (R8) :: E(PROFILES%NRHO), F(PROFILES%NRHO)         !coefficients for numerical solver
+  REAL (R8) :: G(PROFILES%NRHO), H                        !coefficients for numerical solver
+  REAL (R8) :: V(2), U(2), W(2)                           !boundary conditions for numerical solver
+
+  REAL (R8) :: FUN1(PROFILES%NRHO), INTFUN1(PROFILES%NRHO)
+
+! +++ Set up dimensions:
+  NRHO           = PROFILES%NRHO      
+  NION           = PROFILES%NION      
+  NDIM           = NION
+
+
+! +++ Allocate types for interface with PLASMA_COLLISIONS:
+  CALL ALLOCATE_COLLISIONALITY (NRHO, NION, COLLISIONS, ifail)
+
+
+! +++ Allocate types for interface with numerical solver:
+  CALL  ALLOCATE_NUMERICS (NDIM, NRHO, SOLVER, ifail)
+
+
+
+! +++ Set up local variables:
+  AMIX                    = CONTROL%AMIX
+  TAU                     = CONTROL%TAU
+  SOLVER_TYPE             = CONTROL%SOLVER_TYPE 
+
+  BT                      = GEOMETRY%BGEO
+  BTM                     = EVOLUTION%BTM
+  BTPRIME                 = (BT-BTM)/TAU
+
+  RHO_LOOP1: DO IRHO=1,NRHO
+     RHO(IRHO)             = GEOMETRY%RHO(IRHO)
+     VPR(IRHO)             = GEOMETRY%VPR(IRHO)
+     VPRM(IRHO)            = EVOLUTION%VPRM(IRHO)
+     G1(IRHO)              = GEOMETRY%G1(IRHO)
+     G2(IRHO)              = GEOMETRY%G2(IRHO)
+     G2M(IRHO)             = EVOLUTION%G2M(IRHO)
+
+     MTOR_TOT(IRHO)        = 0.e0_R8
+     FLUX_MTOR_TOT(IRHO)   = 0.e0_R8
+  END DO RHO_LOOP1
+
+
+
+! +++ Exchange terms (defined on previous iteration):
+!      CALL PLASMA_COLLISIONS (GEOMETRY,PROFILES,COLLISIONS,ifail) 
+
+
+
+! +++ Numeric types common for all ions:
+  SOLVER%TYPE                   = SOLVER_TYPE
+  SOLVER%NDIM                   = NDIM
+  SOLVER%NRHO                   = NRHO
+  SOLVER%AMIX                   = AMIX
+
+
+
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+!     solution of rotation transport equation for
+!     individual ion species
+
+  ION_LOOP1: DO IION=1,NION
+
+     IDIM                 = IION
+
+! +++ Set equation to 'predictive' and all coefficients to zero:
+     FLAG                 = 1
+     Y(:)                 = 0.0E0_R8
+     DY(:)                = 0.0E0_R8
+     YM(:)                = 0.0E0_R8
+     DYM(:)               = 0.0E0_R8 !AF - 25.Sep.2014
+     A(:)                 = 0.0E0_R8
+     B(:)                 = 0.0E0_R8
+     C(:)                 = 0.0E0_R8
+     D(:)                 = 0.0E0_R8
+     E(:)                 = 0.0E0_R8
+     F(:)                 = 0.0E0_R8
+     G(:)                 = 0.0E0_R8
+     H                    = 0.0E0_R8
+     V(:)                 = 0.0E0_R8
+     U(:)                 = 0.0E0_R8
+     W(:)                 = 0.0E0_R8
+
+
+
+! +++ Set up ion mass:
+     MION                 = PROFILES%MION(IION)!*MP
+
+
+
+! +++ Set up boundary conditions for particular ion type:
+     VTOR_BND_TYPE(2)     = PROFILES%VTOR_BND_TYPE(IION)
+     VTOR_BND(2,1)        = PROFILES%VTOR_BND(1,IION)
+     VTOR_BND(2,2)        = PROFILES%VTOR_BND(2,IION)
+     VTOR_BND(2,3)        = PROFILES%VTOR_BND(3,IION)
+
+
+
+! +++ Set up local variables for particular ion type:
+     RHO_LOOP2: DO IRHO = 1,NRHO
+        VTOR(IRHO)         = PROFILES%VTOR(IRHO,IION)
+        DVTOR(IRHO)        = PROFILES%DVTOR(IRHO,IION) !AF - 25.Sep.2014
+        VTORM(IRHO)        = EVOLUTION%VTORM(IRHO,IION)
+        DVTORM(IRHO)       = EVOLUTION%DVTORM(IRHO,IION) !AF - 25.Sep.2014
+        WTOR(IRHO)         = PROFILES%WTOR(IRHO,IION)
+        NI(IRHO)           = PROFILES%NI(IRHO,IION)
+        DNI(IRHO)          = PROFILES%DNI(IRHO,IION) !AF - 25.Sep.2014
+        NIM(IRHO)          = EVOLUTION%NIM(IRHO,IION)
+        DNIM(IRHO)         = EVOLUTION%DNIM(IRHO,IION) !AF - 25.Sep.2014
+        MTOR(IRHO)         = PROFILES%MTOR(IRHO,IION)
+
+        FLUX_MTOR(IRHO)    = PROFILES%FLUX_MTOR(IRHO,IION)
+        FLUX_NI(IRHO)      = PROFILES%FLUX_NI(IRHO,IION)
+
+        DIFF(IRHO)        = TRANSPORT%DIFF_VTOR(IRHO,IION)
+        VCONV(IRHO)       = TRANSPORT%VCONV_VTOR(IRHO,IION) 
+
+        UI_EXP(IRHO)      = SOURCES%UI_EXP(IRHO,IION)
+        UI_IMP(IRHO)      = SOURCES%UI_IMP(IRHO,IION)
+
+        WZI(IRHO)         = COLLISIONS%WZI(IRHO,IION)
+        UZI(IRHO)         = COLLISIONS%UZI(IRHO,IION)
+
+        ION_LOOP2: DO ZION = 1,NION
+!!DPC was           WII(IRHO,IION)   = COLLISIONS%WII(IRHO,IION,ZION)   !!! check if the following is what was intended
+           WII(IRHO,ZION)   = COLLISIONS%WII(IRHO,IION,ZION)
+        END DO ION_LOOP2
+
+     END DO RHO_LOOP2
+
+
+! +++ Coefficients for rotation transport equation in form:
+!
+!     (A*Y-B*Y(t-1))/H + 1/C * (-D*Y' + E*Y) = F - G*Y
+
+     RHO_LOOP3: DO IRHO=1,NRHO
+        Y(IRHO)   = VTOR(IRHO)
+        DY(IRHO)  = DVTOR(IRHO) !AF - 25.Sep.2014
+        YM(IRHO)  = VTORM(IRHO)
+        DYM(IRHO) = DVTORM(IRHO) !AF - 25.Sep.2014
+
+        A(IRHO)   = VPR(IRHO)*G2(IRHO)*NI(IRHO)*MION
+        B(IRHO)   = VPRM(IRHO)*G2M(IRHO)*NIM(IRHO)*MION 
+        C(IRHO)   = 1.e0_R8
+        D(IRHO)   = VPR(IRHO)*G1(IRHO)*NI(IRHO)*MION*DIFF(IRHO)*G2(IRHO) !AF, 14.May.2011 - multipication by G2, which in analytics is 1
+        E(IRHO)   = (VPR(IRHO)*G1(IRHO)*NI(IRHO)*VCONV(IRHO)            &
+             + FLUX_NI(IRHO)                                            &
+             - BTPRIME/2.e0_R8/BT*RHO(IRHO)*NI(IRHO)*VPR(IRHO))         &
+             * G2(IRHO)*MION
+        F(IRHO)   = VPR(IRHO)*(UI_EXP(IRHO) + UZI(IRHO))
+        G(IRHO)   = VPR(IRHO)*(UI_IMP(IRHO) + WZI(IRHO))  
+     END DO RHO_LOOP3
+
+     H           = TAU
+
+
+
+! +++ Boundary conditions for numerical solver in form:
+!
+!     V*Y' + U*Y =W 
+
+! +++ On axis
+!     dVtor,i/drho(rho=0)=0: ! AF - 24.Jun.2010, replaces "!     dTi/drho(rho=0)=0:"
+      IF (SOLVER_TYPE.NE.4) THEN !AF 11.Oct.2011
+        V(1)   = 1.e0_R8
+        U(1)   = 0.e0_R8
+      ELSE !AF 11.Oct.2011 - Zero flux instead of zero gradient at the axis for solver 4
+        IF (DIFF(1).GT.1.0E-6) THEN !AF 19.Mar.2012 - To avoid problems with the axis boundary condition
+          V(1) = -DIFF(1)*NI(1)
+        ELSE
+          V(1) = -1.0E-6*NI(1)
+        ENDIF
+        U(1) =  VCONV(1)*NI(1)  & !AF 19.Jul.2011 - Roman found this one
+               +LOCAL_FLUX_NI_S4(IION) !AF 19.Jul.2011 - Roman found this one
+      END IF !AF 11.Oct.2011
+      W(1)   = 0.e0_R8
+
+! +++ At the edge:
+!     FIXED Vtor,i
+     IF(VTOR_BND_TYPE(2).EQ.1) THEN
+        V(2) = 0.e0_R8
+        U(2) = 1.e0_R8
+        W(2) = VTOR_BND(2,1)
+     ENDIF
+
+!     FIXED grad_Vtor,i
+     IF(VTOR_BND_TYPE(2).EQ.2) THEN
+        V(2) = 1.e0_R8
+        U(2) = 0.e0_R8
+        W(2) = -VTOR_BND(2,1)
+     ENDIF
+
+!     FIXED L_Vtor,i
+     IF(VTOR_BND_TYPE(2).EQ.3) THEN
+        V(2) = 1.e0_R8
+        U(2) = 1.e0_R8/VTOR_BND(2,1)
+        W(2) = 0.e0_R8
+     ENDIF
+
+!     FIXED Flux_Mtor,i
+     IF(VTOR_BND_TYPE(2).EQ.4) THEN
+        V(2) = -VPR(NRHO)*G1(NRHO)*G2(NRHO)*DIFF(NRHO)*NI(NRHO)*MION
+        U(2) = VPR(NRHO)*G1(NRHO)*G2(NRHO)*VCONV(NRHO)*NI(NRHO)*MION  &
+             +G2(NRHO)*FLUX_NI(NRHO)*MION
+        W(2) = VTOR_BND(2,1)
+     ENDIF
+
+!     Generic boundary condition
+     IF(VTOR_BND_TYPE(2).EQ.5) THEN
+        V(2) = VTOR_BND(2,1)
+        U(2) = VTOR_BND(2,2)
+        W(2) = VTOR_BND(2,3)
+     ENDIF
+
+
+
+! +++ Rotation equation is not solved:
+     IF(VTOR_BND_TYPE(2).EQ.0) THEN
+
+        CALL DERIVN (NRHO,RHO,Y,DY)                       
+
+        FLAG        = 0
+
+        RHO_LOOP4: DO IRHO=1,NRHO
+           A(IRHO)   = 1.0E0_R8
+           B(IRHO)   = 1.0E0_R8
+           C(IRHO)   = 1.0E0_R8
+           D(IRHO)   = 0.0E0_R8
+           E(IRHO)   = 0.0E0_R8
+           F(IRHO)   = 0.0E0_R8
+           G(IRHO)   = 0.0E0_R8   
+        END DO RHO_LOOP4
+
+        V(2)         = 0.0E0_R8
+        U(2)         = 1.0E0_R8
+        W(2)         = Y(NRHO)
+     END IF
+
+
+
+! +++ Defining coefficients for numerical solver:    
+     SOLVER%EQ_FLAG(IDIM)          = FLAG
+
+     RHO_LOOP5: DO IRHO=1,NRHO
+        SOLVER%RHO(IRHO)            = RHO(IRHO)
+
+        SOLVER%Y(IDIM,IRHO)         = Y(IRHO)
+        SOLVER%DY(IDIM,IRHO)        = DY(IRHO)
+        SOLVER%YM(IDIM,IRHO)        = YM(IRHO)
+
+        SOLVER%A(IDIM,IRHO)         = A(IRHO)
+        SOLVER%B(IDIM,IRHO)         = B(IRHO) 
+        SOLVER%C(IDIM,IRHO)         = C(IRHO)
+        SOLVER%D(IDIM,IRHO)         = D(IRHO)
+        SOLVER%E(IDIM,IRHO)         = E(IRHO)
+        SOLVER%F(IDIM,IRHO)         = F(IRHO)
+        SOLVER%G(IDIM,IRHO)         = G(IRHO)
+
+        SOLVER%CM1(IDIM,IDIM,IRHO)  = 0.e0_R8
+
+        ION_LOOP3: DO ZION = 1,NION
+           SOLVER%CM1(IION,ZION,IRHO)= WII(IRHO,ZION)
+        END DO ION_LOOP3
+
+     END DO RHO_LOOP5
+
+     SOLVER%H                      = H
+
+     SOLVER%V(IDIM,1)              = V(1)
+     SOLVER%U(IDIM,1)              = U(1)
+     SOLVER%W(IDIM,1)              = W(1)
+     SOLVER%V(IDIM,2)              = V(2)
+     SOLVER%U(IDIM,2)              = U(2)
+     SOLVER%W(IDIM,2)              = W(2)
+
+
+
+  END DO ION_LOOP1
+
+
+! +++ Solution of rotation transport equation:    
+  CALL SOLUTION_INTERFACE (SOLVER, ifail)
+
+
+
+  ION_LOOP4: DO IION = 1,NION
+
+
+     IDIM                    = IION
+
+! dpc 2011-08-11: I think we need most of the following
+     MION                 = PROFILES%MION(IION)!*MP
+     VTOR_BND_TYPE(2)     = PROFILES%VTOR_BND_TYPE(IION)
+     VTOR_BND(2,1)        = PROFILES%VTOR_BND(1,IION)
+     VTOR_BND(2,2)        = PROFILES%VTOR_BND(2,IION)
+     VTOR_BND(2,3)        = PROFILES%VTOR_BND(3,IION)
+! dpc end
+
+     RHO_LOOP6: DO IRHO=1,NRHO
+
+! dpc 2011-08-11: I think we need most of the following
+        VTOR(IRHO)        = PROFILES%VTOR(IRHO,IION)
+        VTORM(IRHO)       = EVOLUTION%VTORM(IRHO,IION)
+        WTOR(IRHO)        = PROFILES%WTOR(IRHO,IION)
+        NI(IRHO)          = PROFILES%NI(IRHO,IION)
+        NIM(IRHO)         = EVOLUTION%NIM(IRHO,IION)
+        MTOR(IRHO)        = PROFILES%MTOR(IRHO,IION)
+        FLUX_MTOR(IRHO)   = PROFILES%FLUX_MTOR(IRHO,IION)
+        FLUX_NI(IRHO)     = PROFILES%FLUX_NI(IRHO,IION)
+        DIFF(IRHO)        = TRANSPORT%DIFF_VTOR(IRHO,IION)
+        VCONV(IRHO)       = TRANSPORT%VCONV_VTOR(IRHO,IION) 
+        UI_EXP(IRHO)      = SOURCES%UI_EXP(IRHO,IION)
+        UI_IMP(IRHO)      = SOURCES%UI_IMP(IRHO,IION)
+        WZI(IRHO)         = COLLISIONS%WZI(IRHO,IION)
+        UZI(IRHO)         = COLLISIONS%UZI(IRHO,IION)
+! dpc end
+
+! +++ New solution and its derivative: 
+        Y(IRHO)           = SOLVER%Y(IDIM,IRHO)
+        DY(IRHO)          = SOLVER%DY(IDIM,IRHO)
+
+        IF(VTOR_BND_TYPE(2).EQ.0) THEN
+           Y(:)           = PROFILES%VTOR(:,IION)
+           CALL DERIVN (NRHO,RHO,Y,DY)   
+        END IF
+
+! +++ New rotation velocity and momentum flux: 
+        VTOR(IRHO)           = Y(IRHO)
+        DVTOR(IRHO)          = DY(IRHO) !AF - 25.Set.2014
+        WTOR(IRHO)           = Y(IRHO)/G2(NRHO)
+
+        MTOR(IRHO)           = G2(NRHO)*NI(NRHO)*MION*Y(IRHO)
+        MTOR_TOT(IRHO)       = MTOR_TOT(IRHO) + MTOR(IRHO)
+
+        IF (RHO(IRHO).NE.0.E0_R8) THEN
+           FUN1(IRHO)           = VPR(IRHO)/RHO(IRHO) * ( UI_EXP(IRHO) + UZI(IRHO)                  &
+                + ( WZI(IRHO) + G2(IRHO)*MION*NI(IRHO)/TAU- UI_IMP(IRHO)) * Y(IRHO) ) 
+        ELSE
+           FUN1(IRHO)         = ( UI_EXP(IRHO) + UZI(IRHO)+ ( WZI(IRHO)                             &
+                + G2(IRHO)*MION*NI(IRHO)/TAU- UI_IMP(IRHO)) * Y(IRHO) ) 
+        ENDIF
+     END DO RHO_LOOP6
+
+     CALL INTEGR(NRHO,RHO,FUN1,INTFUN1)                     !Integral source 
+
+     RHO_LOOP7: DO IRHO=1,NRHO
+        FLUX_MTOR_CONV(IRHO)  = G2(IRHO)*MION*FLUX_NI(IRHO)*Y(IRHO) 
+
+        FLUX_MTOR_COND(IRHO)  = VPR(IRHO)*G1(IRHO)*G2(IRHO)*MION*NI(IRHO)                          &
+             * ( Y(IRHO)*VCONV(IRHO) - DY(IRHO)*DIFF(IRHO) )
+
+        FLUX_MTOR(IRHO)       =  FLUX_MTOR_CONV(IRHO) + FLUX_MTOR_COND(IRHO)
+
+        INT_SOURCE(IRHO)      = INTFUN1(IRHO)                                                      &
+             + VPR(IRHO)*G2(IRHO)*BTPRIME/2.e0_R8/BT*RHO(IRHO)*MION*NI(IRHO)*Y(IRHO)                  
+
+        IF (VTOR_BND_TYPE(2).EQ.0) THEN                      !if equation is not solved, conductive component of electron heat flux is determined from the integral of sources 
+
+           DIFF(IRHO)          = 1.D-6
+           FLUX_MTOR(IRHO)     = INT_SOURCE(IRHO)        
+
+           FLUX_MTOR_COND(IRHO)= INT_SOURCE(IRHO) - G2(IRHO)*MION*FLUX_NI(IRHO)*Y(IRHO)            
+
+
+           IF (VPR(IRHO)*G1(IRHO).NE.0.0_R8)                           &
+           DIFF(IRHO)      = - FLUX_MTOR_COND(IRHO) / DY(IRHO) / (VPR(IRHO)*G1(IRHO)*G2(IRHO)*MION*NI(IRHO))
+           VCONV(IRHO)     = 0.0_R8
+           IF (DIFF(IRHO).LE.1.D-6) THEN
+              DIFF(IRHO)   = 1.D-6
+              VCONV(IRHO)  = (FLUX_MTOR_COND(IRHO) / (VPR(IRHO)*G1(IRHO)*G2(IRHO)*MION*NI(IRHO)) + DY(IRHO)*DIFF(IRHO)) / Y(IRHO)
+           END IF
+
+        END IF
+
+        FLUX_MTOR_TOT(IRHO)   = FLUX_MTOR_TOT(IRHO) + FLUX_MTOR(IRHO)
+
+
+
+! +++ Return new profiles to the work flow:         
+        PROFILES%VTOR(IRHO,IION)            = VTOR(IRHO)   
+        PROFILES%DVTOR(IRHO,IION)           = DVTOR(IRHO) !AF, 25.Sep.2014 
+        PROFILES%WTOR(IRHO,IION)            = WTOR(IRHO)      
+        PROFILES%MTOR(IRHO,IION)            = MTOR(IRHO)      
+        PROFILES%DIFF_VTOR(IRHO,IION)       = DIFF(IRHO)
+        PROFILES%VCONV_VTOR(IRHO,IION)      = VCONV(IRHO)
+        PROFILES%FLUX_MTOR(IRHO,IION)       = FLUX_MTOR(IRHO)      
+        PROFILES%FLUX_MTOR_CONV(IRHO,IION)  = FLUX_MTOR_CONV(IRHO)      
+        PROFILES%FLUX_MTOR_COND(IRHO,IION)  = FLUX_MTOR_COND(IRHO)      
+        PROFILES%SOURCE_MTOR(IRHO,IION)     = UI_EXP(IRHO) + UZI(IRHO) - (UI_IMP(IRHO) + WZI(IRHO)) * VTOR(IRHO)
+        PROFILES%INT_SOURCE_MTOR(IRHO,IION) = INT_SOURCE(IRHO)      
+     END DO RHO_LOOP7
+
+     FUN1=PROFILES%SOURCE_MTOR(:,IION)*VPR
+     CALL INTEGR2(NRHO,RHO,FUN1,INTFUN1)                                  
+     PROFILES%INT_SOURCE_MTOR(:,IION)   = INTFUN1     
+
+
+  END DO ION_LOOP4
+
+
+
+  RHO_LOOP8: DO IRHO=1,NRHO
+     PROFILES%MTOR_TOT(IRHO)              = MTOR_TOT(IRHO)     
+     PROFILES%FLUX_MTOR_TOT(IRHO)         = FLUX_MTOR_TOT(IRHO)
+  END DO RHO_LOOP8
+
+
+
+! +++ Deallocate types for interface with numerical solver:
+  CALL  DEALLOCATE_NUMERICS (SOLVER, ifail)
+
+
+
+! +++ Deallocate types for interface with PLASMA_COLLISIONS:
+  CALL DEALLOCATE_COLLISIONALITY (COLLISIONS, ifail)
+
+
+
+  RETURN
+
+
+
+END SUBROUTINE ROTATION
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+!-------------------------------------------------------!
+!                                                       !
+!______________  MATHEMATICAL SUBROUTINES: _____________!
+!                                                       !
+!-------------------------------------------------------!
+! These subroutines have been extracted from RITM code, !
+! and consist of derivation and integration routines    !
+!-------------------------------------------------------!
+
+
+
+
+
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+!> These subroutines calculate first and second derivatives, DY1 and DY2, of function Y respect to argument X  
+!>
+!> These subroutines have been extracted from RITM code
+!> and consist of derivation and integration routines
+!>
+!> \author D.Kalupin, R.Stankiewicz
+!>
+!> \version "$Id$"
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+SUBROUTINE DERIVN(N,X,Y,DY1)
+
+!-------------------------------------------------------!
+!       These subroutines calculate first and second    !
+!       derivatives, DY1 and DY2, of function Y respect !
+!       to argument X                                   !
+!-------------------------------------------------------!
+
+  use itm_types
+  IMPLICIT NONE
+
+  INTEGER :: N                                          ! number of radial points (input)
+  INTEGER :: I
+
+  REAL (R8) :: X(N), &                                  ! argument array (input)
+       Y(N), &                                  ! function array (input)
+       DY1(N)                                   ! function derivative array (output)
+  REAL (R8) :: H(N),DY2(N)
+
+  REAL (R8) :: DDY !AF 6.Oct.2011
+
+  DO I=1,N-1
+     H(I)=X(I+1)-X(I)
+  END DO
+
+  DO I=2,N-1
+     DY1(I)=((Y(I+1)-Y(I))*H(I-1)/H(I)+(Y(I)-Y(I-1))*H(I)/H(I-1)) &
+          /(H(I)+H(I-1))
+!     DY2(I)=2.e0_R8*((Y(I-1)-Y(I))/H(I-1)+(Y(I+1)-Y(I))/H(I)) & !AF 6.Oct.2011
+!          /(H(I)+H(I-1))
+  END DO
+
+!  DY1(1)=DY1(2)-DY2(2)*H(1) !AF 6.Oct.2011
+!  DY1(N)=DY1(N-1)+DY2(N-1)*H(N-1) !AF 6.Oct.2011
+
+   DDY = 2.e0_R8*((Y(1)-Y(2))/H(1)+(Y(3)-Y(2))/H(2))/(H(2)+H(1))
+   DY1(1) = DY1(2)-DDY*H(1)
+   DDY = 2.e0_R8*((Y(N-2)-Y(N-1))/H(N-2)+(Y(N)-Y(N-1))/H(N-1))/(H(N-1)+H(N-2))
+   DY1(N) = DY1(N-1)+DDY*H(N-1)
+
+  RETURN
+END SUBROUTINE DERIVN
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+
+
+
+
+
+
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+!> This subroutine calculates integral of function Y(X)*X from X=0 until X=X(N) 
+!>
+!> These subroutines have been extracted from RITM code
+!> and consist of derivation and integration routines
+!>
+!> \author D.Kalupin, R.Stankiewicz
+!>
+!> \version "$Id$"
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+SUBROUTINE INTEGR(N,X,Y,INTY)
+!-------------------------------------------------------!
+!  This subroutine calculates integral of function      !
+!  Y(X)*X from X=0 until X=X(N)                         !
+!-------------------------------------------------------!
+
+  use itm_types
+
+  IMPLICIT NONE
+
+  INTEGER :: N                                          ! number of radial points (input)
+  INTEGER :: I
+
+  REAL (R8) :: X(N), &                                  ! argument array (input)
+       Y(N), &                                  ! function array (input)
+       INTY(N)                                  ! function integral array (output)
+
+  INTY(1)=Y(1)*X(1)**2/2.e0_R8
+  DO I=2,N
+     INTY(I)=INTY(I-1)+(Y(I-1)*X(I-1)+Y(I)*X(I))*(X(I)-X(I-1))/2.e0_R8
+  END DO
+
+  RETURN
+END SUBROUTINE INTEGR
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+
+
+SUBROUTINE INTEGR2(N,X,Y,INTY) !AF 11.Oct.2011 - assumes that Y is zero f0r X.eq.0, just as INTEGR does too...
+!-------------------------------------------------------!
+!  This subroutine calculates integral of function      !
+!  Y(X) from X=0 until X=X(N)                         !
+!-------------------------------------------------------!
+
+  use itm_types
+
+  IMPLICIT NONE
+
+  INTEGER :: N                                          ! number of radial points (input)
+  INTEGER :: I
+
+  REAL (R8) :: X(N), &                                  ! argument array (input)
+       Y(N), &                                  ! function array (input)
+       INTY(N)                                  ! function integral array (output)
+
+  INTY(1)=Y(1)*X(1)/2.e0_R8
+  DO I=2,N
+     INTY(I)=INTY(I-1)+(Y(I-1)+Y(I))*(X(I)-X(I-1))/2.e0_R8
+  END DO
+
+  RETURN
+
+END SUBROUTINE INTEGR2
+
+
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+!>  This subroutine finds f(r_1=0) from f(r_2), f(r_3) and f(r_4)
+!>
+!> \author ??
+!>
+!> \version "$Id$"
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+SUBROUTINE F_AXIS(n, r, f)
+  !-------------------------------------------------------!
+  !                                                       !
+  !     This subroutine finds                             !
+  !     f(r_1=0) from f(r_2), f(r_3) and f(r_4)           !
+  !                                                       !
+  !-------------------------------------------------------!  
+
+  IMPLICIT NONE
+
+  INTEGER    n, i
+  REAL *8    h(n), r(n), f(n)
+
+
+  DO i=1,3
+     h(i)=r(i+1)-r(i)
+  END DO
+
+  f(1)     = ((f(2)*r(4)/h(2)+f(4)*r(2)/h(3))*r(3)        &
+       -f(3)*(r(2)/h(2)+r(4)/h(3))*r(2)*r(4)/r(3))  &
+       /(r(4)-r(2))
+
+
+  RETURN
+
+
+END SUBROUTINE F_AXIS
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+
+
+
+
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+!>  This subroutine finds f(r_1=0) from f(r_2), f(r_3) d/dr f(r_1)=0
+!>
+!> \author David Coster
+!>
+!> \version "$Id$"
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+
+SUBROUTINE F_par_AXIS(n, r, f)
+  use itm_types
+  implicit none
+  integer n
+  real(R8) r(n), f(n), d1, d2
+  if(n.lt.3) stop 'n too small in F_par_AXIS'
+  d1=r(2)-r(1)
+  if(d1.le.0.0_R8) stop 'd1 <= 0 in F_par_AXIS'
+  d2=r(3)-r(2)
+  if(d2.le.0.0_R8) stop 'd2 <= 0 in F_par_AXIS'
+  f(1)=f(2)-d1**2*(f(3)-f(2))/(d2**2+2*d1*d2)
+  return
+end SUBROUTINE F_par_AXIS

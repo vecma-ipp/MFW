@@ -1,0 +1,242 @@
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+!> Module provides the convergence check for the ETS
+!>
+!> \author D.Kalupin
+!>
+!> \version "$Id: convergence_check.f90 1619 2014-10-08 09:35:38Z denka $"
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+MODULE CONVERGENCE_CHECK
+
+CONTAINS
+
+
+
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+!> Convergence check
+!> This routine checks the convergence of plasma profiles.
+!> 
+!> \author D.Kalupin
+!>
+!> \version "$Id: convergence_check.f90 1619 2014-10-08 09:35:38Z denka $"
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +   
+  SUBROUTINE CHECK_CONVERGENCE (COREPROF_ITER, COREPROF_NEW, CONTROL_DOUBLE) 
+
+!-------------------------------------------------------!
+!     This routinechecks the convergence of plasma      !
+!     profiles.                                         !
+!-------------------------------------------------------!
+!     Source:       ---                                 !
+!     Developers:   D.Kalupin                           !
+!     Kontacts:     D.Kalupin@fz-juelich.de             !
+!                                                       !
+!     Comments:     ---                                 !
+!                                                       !
+!-------------------------------------------------------!
+
+
+! +++ Declaration of variables: 
+    USE EUITM_SCHEMAS
+    USE COPY_STRUCTURES
+    USE ETS_PLASMA
+    USE COPY_CPO_ETS
+
+
+    IMPLICIT NONE
+
+! +++ CPO derived types:
+    TYPE (TYPE_COREPROF), POINTER  :: COREPROF_ITER(:) !input/output CPO with internal ETS parameters profiles 
+    TYPE (TYPE_COREPROF), POINTER  :: COREPROF_NEW(:)  !input/output CPO with internal ETS parameters profiles 
+
+
+! +++ Internal ETS derived types:
+    REAL (R8)                      :: CONTROL_DOUBLE(5)!real control parameters
+    REAL (R8)                      :: CONV
+
+! +++ local
+
+    REAL (R8)                      :: err_psi, err_ni, err_te, err_ti, err_vtor
+    REAL (R8), PARAMETER           :: psi_0 = 1.0e-3_R8
+    REAL (R8), PARAMETER           :: ni_0 = 1.0e10_R8
+    REAL (R8), PARAMETER           :: te_0 = 1.0e-3_R8
+    REAL (R8), PARAMETER           :: ti_0 = 1.0e-3_R8
+    REAL (R8), PARAMETER           :: vtor_0 = 1.0e-3_R8
+ 
+! +++ Check convergence:
+
+    err_psi  = maxval(abs(1.0_R8 - (abs(COREPROF_ITER(1)%psi%value)+psi_0)/(abs(COREPROF_NEW(1)%psi%value)+psi_0)))
+    err_ni   = maxval(abs(1.0_R8 - (abs(COREPROF_ITER(1)%ni%value)+ni_0)/(abs(COREPROF_NEW(1)%ni%value)+ni_0)))
+    err_te   = maxval(abs(1.0_R8 - (abs(COREPROF_ITER(1)%te%value)+te_0)/(abs(COREPROF_NEW(1)%te%value)+te_0)))
+    err_ti   = maxval(abs(1.0_R8 - (abs(COREPROF_ITER(1)%ti%value)+ti_0)/(abs(COREPROF_NEW(1)%ti%value)+ti_0)))
+    err_vtor = maxval(abs(1.0_R8 - (abs(COREPROF_ITER(1)%vtor%value)+vtor_0)/(abs(COREPROF_NEW(1)%vtor%value)+vtor_0)))
+
+    !write(*,*) ' psi err ', err_psi
+    !write(*,*) '  ni err ', err_ni
+    !write(*,*) '  te err ', err_te
+    !write(*,*) '  ti err ', err_ti
+    !write(*,*) 'vtor err ', err_vtor
+
+    conv = max(err_psi, err_ni, err_te, err_ti, err_vtor)
+
+    CONTROL_DOUBLE(4)   = CONV
+
+    RETURN 
+
+
+
+  END SUBROUTINE CHECK_CONVERGENCE
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+
+
+
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+!> Convergence check neutrals
+!> This routine checks the convergence of plasma profiles.
+!> 
+!> Note that the routine also copies COREPROF_OUT to COREPROF_ITER
+!> after calculating the convergence criterium
+!>
+!> \author D. Coster
+!>
+!> \version "$Id: convergence_check.f90 1619 2014-10-08 09:35:38Z denka $"
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +   
+  SUBROUTINE CHECK_CONVERGENCE_NEUTRALS (CORENEUTRALS_ITER, CORENEUTRALS_NEW, CONV) 
+
+!-------------------------------------------------------!
+!     This routinechecks the convergence of plasma      !
+!     profiles.                                         !
+!-------------------------------------------------------!
+!     Source:       ---                                 !
+!     Developers:   D. Coster                           !
+!     Kontacts:     David.Coster@ipp.mpg.de             !
+!                                                       !
+!     Comments:     ---                                 !
+!                                                       !
+!-------------------------------------------------------!
+
+
+! +++ Declaration of variables: 
+    USE EUITM_SCHEMAS
+    USE COPY_STRUCTURES
+    USE ETS_PLASMA
+    USE COPY_CPO_ETS
+
+
+    IMPLICIT NONE
+
+    INTEGER                        :: INEUT, ITYPE
+
+! +++ CPO derived types:
+    TYPE (TYPE_CORENEUTRALS), POINTER  :: CORENEUTRALS_ITER(:) !input/output CPO with internal ETS parameters profiles 
+    TYPE (TYPE_CORENEUTRALS), POINTER  :: CORENEUTRALS_NEW(:)  !input/output CPO with internal ETS parameters profiles 
+
+
+! +++ Internal ETS derived types:
+    REAL (R8)                      :: CONV
+
+! +++ local
+
+    REAL (R8)                      :: err_neut
+    REAL (R8), PARAMETER           :: ni_0 = 1.0e10_R8
+ 
+! +++ Check convergence:
+
+    err_neut = 0.0
+
+    do ineut = 1, size(CORENEUTRALS_ITER(1)%PROFILES)
+       do itype = 1, size(CORENEUTRALS_ITER(1)%PROFILES(INEUT)%NEUTRALTYPE)
+          err_neut = max(err_neut, &
+               maxval(abs(1.0_R8 - (abs(CORENEUTRALS_ITER(1)%PROFILES(INEUT)%NEUTRALTYPE(ITYPE)%n0%value)+ni_0)/  &
+                                   (abs(CORENEUTRALS_NEW(1)%PROFILES(INEUT)%NEUTRALTYPE(ITYPE)%n0%value)+ni_0))))
+       enddo
+    enddo
+
+    !write(*,*) '  n0 err ', err_neut
+
+    conv = err_neut
+
+    RETURN 
+
+
+
+  END SUBROUTINE CHECK_CONVERGENCE_NEUTRALS
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+
+
+
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+!> Convergence check impurities
+!> This routine checks the convergence of plasma profiles.
+!> 
+!> \author D. Coster
+!>
+!> \version "$Id: convergence_check.f90 1619 2014-10-08 09:35:38Z denka $"
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +   
+  SUBROUTINE CHECK_CONVERGENCE_IMPURITIES (COREIMPUR_ITER, COREIMPUR_NEW, CONV) 
+
+!-------------------------------------------------------!
+!     This routinechecks the convergence of plasma      !
+!     profiles.                                         !
+!-------------------------------------------------------!
+!     Source:       ---                                 !
+!     Developers:   D. Coster                           !
+!     Kontacts:     David.Coster@ipp.mpg.de             !
+!                                                       !
+!     Comments:     ---                                 !
+!                                                       !
+!-------------------------------------------------------!
+
+
+! +++ Declaration of variables: 
+    USE EUITM_SCHEMAS
+    USE COPY_STRUCTURES
+    USE ETS_PLASMA
+    USE COPY_CPO_ETS
+
+
+    IMPLICIT NONE
+
+    INTEGER                        :: IIMP
+
+! +++ CPO derived types:
+    TYPE (TYPE_COREIMPUR), POINTER  :: COREIMPUR_ITER(:) !input/output CPO with internal ETS parameters profiles 
+    TYPE (TYPE_COREIMPUR), POINTER  :: COREIMPUR_NEW(:)  !input/output CPO with internal ETS parameters profiles 
+
+
+! +++ Internal ETS derived types:
+    REAL (R8)                      :: CONTROL_DOUBLE(5)!real control parameters
+    REAL (R8)                      :: CONV
+
+! +++ local
+
+    REAL (R8)                      :: err_imp
+    REAL (R8), PARAMETER           :: nz_0 = 1.0e10_R8
+
+! +++ Check convergence:
+
+    err_imp = 0.0_R8
+
+    do iimp = 1, size(COREIMPUR_ITER(1)%IMPURITY)
+       err_imp = max(err_imp, &
+            maxval(abs(1.0_R8 - (abs(COREIMPUR_ITER(1)%IMPURITY(IIMP)%NZ(:,:))+nz_0)/  &
+                                (abs(COREIMPUR_NEW(1)%IMPURITY(IIMP)%NZ(:,:))+nz_0))))
+       
+       
+    enddo
+
+    !write(*,*) 'nimp err ', err_imp
+
+    conv = err_imp
+
+    RETURN 
+
+
+
+  END SUBROUTINE CHECK_CONVERGENCE_IMPURITIES
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+
+
+
+END MODULE CONVERGENCE_CHECK

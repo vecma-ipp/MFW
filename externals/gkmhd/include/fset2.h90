@@ -1,0 +1,13 @@
+!...  allocate 2-D FFT arrays
+
+  nwork2=ny*nx*4
+  ntable2=2*(ny+nx)+100
+  nyp3=ny0+3
+
+  ALLOCATE(wk2(nwork2))
+  ALLOCATE(tg2(ntable2))
+  ALLOCATE(flucs(nyp3,nx0))
+  ALLOCATE(uk(0:nl,nx0))
+
+  flucs=0.
+  uk=0.

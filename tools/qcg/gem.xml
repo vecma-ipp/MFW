@@ -1,0 +1,68 @@
+ <?xml-stylesheet type="text/xsl" href="./input_gem.xsl"
+ charset="ISO-8859-1"?>
+ 
+ <parameters>
+
+   <write_cpos> false </write_cpos>
+
+   <equilibrium_parameters>
+     <geometric>
+       <ra0> 0.7 </ra0>
+     </geometric>
+   </equilibrium_parameters>
+
+   <local_parameters>
+     <physical>
+       <rkps> 0.025 </rkps>
+     </physical>
+     <dissipation>
+       <vpl> 1.e-2 </vpl>
+       <vpp> 1.e-2 </vpp>
+       <sflux> 0.3 </sflux>
+       <dflux> 0.0 </dflux>
+     </dissipation>
+   </local_parameters>
+ 
+   <grid_parameters>
+     <active_nodes>
+       <nx00> 128 </nx00>
+       <ny00> 128 </ny00>
+       <ns00> 32 </ns00>
+     </active_nodes>
+     <resolution_ratio>
+       <xres> 4. </xres>
+     </resolution_ratio>
+   </grid_parameters>
+
+   <step_parameters>
+     <step_counts>
+       <nstep> 100 </nstep>
+       <ndg> 25 </ndg>
+       <nplot> 1 </nplot>
+     </step_counts>
+     <time_step>
+       <tau0> 0.002 </tau0>
+     </time_step>
+   </step_parameters>
+
+   <cpu_parameters>
+     <domain_decomposition>
+       <npesx> 4 </npesx>
+       <npess> 32 </npess>
+     </domain_decomposition>
+     <parallel_cases>
+       <nftubes> 8 </nftubes>
+       <grid_type> spread </grid_type>	
+     </parallel_cases>
+   </cpu_parameters>
+
+   <switches>
+     <setup_scenario>
+       <istart> 0 </istart>
+       <initsnap> 1 </initsnap>
+       <ihamada> 1 </ihamada>
+     </setup_scenario>
+   </switches>
+
+ </parameters>
+ 

@@ -1,0 +1,767 @@
+!*DECK C3SB02
+!*CALL PROCESS
+SUBROUTINE WRTMAT
+  !        #################
+  !
+  !                                        AUTHORS:
+  !                                        H. LUTJENS,  CRPP-EPFL
+  !                                        A. BONDESON, CRPP-EPFL
+  !**********************************************************************
+  !                                                                     *
+  ! C3SB02  WRITE EQUILIBRIUM PLOT QUANTITIES INTO FILE chease.mat      *
+  !                                                                     *
+  !**********************************************************************
+  !
+  USE globals
+  USE interpol
+  IMPLICIT NONE
+  INCLUDE 'COMDAT.inc'
+  !
+  INTEGER          ::     J301
+  INTEGER          ::     I
+  INTEGER          ::     J
+  INTEGER          ::     J297
+  INTEGER          ::     INTEXT
+  INTEGER          ::     INR
+  INTEGER          ::     INS
+  INTEGER          ::     NNBBPP
+  INTEGER          ::     INSUR
+  REAL(RKIND)      ::     ZABISG
+  INTEGER          ::     J296
+  REAL(RKIND)      ::     ZCHI
+  REAL(RKIND)      ::     ZABIC
+  INTEGER          ::     J295
+  INTEGER          ::     J294
+  REAL(RKIND)      ::     ZABIPR
+  REAL(RKIND)      ::     ZCSIPR
+  REAL(RKIND)      ::     ZZCURV
+  REAL(RKIND)      ::     ZRCURV
+  INTEGER          ::     J293
+  INTEGER          ::     IBALL
+  INTEGER          ::     IMERCR
+  INTEGER          ::     IMERCI
+  INTEGER          ::     J289
+  INTEGER          ::     J287
+  INTEGER          ::     JNB
+  INTEGER          ::     J288
+  INTEGER          ::     JJ
+  INTEGER          ::     JSCHI
+  REAL(RKIND)      ::     ZOARS
+  REAL(RKIND)      ::     ZOSHS
+  REAL(RKIND)      ::     ZOBETS
+  REAL(RKIND)      ::     ZABS
+  INTEGER          ::     J285
+  REAL(RKIND)      ::     ZOJBSS
+  REAL(RKIND)      ::     ZOJPS
+  REAL(RKIND)      ::     ZOIPS
+  REAL(RKIND)      ::     ZOTS
+  REAL(RKIND)      ::     ZOTTS
+  REAL(RKIND)      ::     ZOPS
+  REAL(RKIND)      ::     ZOPPS
+  REAL(RKIND)      ::     ZODRS
+  REAL(RKIND)      ::     ZODIS
+  REAL(RKIND)      ::     ZOHS
+  REAL(RKIND)           ::      ZOJ1S
+  REAL(RKIND)           ::      ZOJ4S
+  REAL(RKIND)           ::      ZOJ5S
+  REAL(RKIND)           ::      ZOJ6S
+  REAL(RKIND)      ::     ZOTRS
+  REAL(RKIND)      ::     ZOJBS
+  REAL(RKIND)      ::     ZODQS
+  REAL(RKIND)      ::     ZOQS
+  REAL(RKIND)      ::     ZABIS
+  REAL(RKIND)      ::     ZABSM
+  REAL(RKIND)      ::     ZOTRR
+  REAL(RKIND)      ::     ZOJBSR
+  REAL(RKIND)      ::     ZOJPR
+  REAL(RKIND)      ::     ZOBETR
+  REAL(RKIND)      ::     ZOJR
+  REAL(RKIND)      ::     ZOFR
+  REAL(RKIND)      ::     ZOSHR
+  REAL(RKIND)      ::     ZODQR
+  REAL(RKIND)      ::     ZOJBR
+  REAL(RKIND)      ::     ZOIPR
+  REAL(RKIND)      ::     ZOTR
+  REAL(RKIND)      ::     ZOTTR
+  REAL(RKIND)      ::     ZOPR
+  REAL(RKIND)      ::     ZOPPR
+  REAL(RKIND)      ::     ZOQR
+  REAL(RKIND)      ::     ZABR
+  INTEGER          ::     I2
+  INTEGER          ::     I1
+  INTEGER          ::     J284
+  REAL(RKIND)      ::     ZTET1
+  REAL(RKIND)      ::     ZSIG1
+  REAL(RKIND)      ::     ZPAR
+  REAL(RKIND)      ::     ZZSUR
+  INTEGER          ::     J283
+  REAL(RKIND)      ::     ZBND2
+  REAL(RKIND)      ::     ZBND1
+  REAL(RKIND)      ::     ZRSUR
+  REAL(RKIND)      ::     ZTSUR
+  INTEGER          ::     J282
+  REAL(RKIND)      ::     ZDT
+  REAL(RKIND)      ::     ZZMIN
+  REAL(RKIND)      ::     ZZMAX
+  INTEGER          ::     ISMIN
+  REAL(RKIND)      ::     ZRMIN
+  INTEGER          ::     ISMAX
+  REAL(RKIND)      ::     ZRMAX
+  REAL(RKIND)      ::     ZTET
+  REAL(RKIND)      ::     ZZTET
+  REAL(RKIND)      ::     ZRTET
+  REAL(RKIND)      ::     ZZ
+  REAL(RKIND)      ::     ZR
+  INTEGER          ::     J281
+  REAL(RKIND)      ::     ZRHOS
+  REAL(RKIND)      ::     ZABIT
+  REAL(RKIND)      ::     ZOART
+  REAL(RKIND)      ::     ZBBS
+  REAL(RKIND)      ::     ZCBS2
+  REAL(RKIND)      ::     ZCBS1
+  REAL(RKIND)      ::     ZCBS
+  REAL(RKIND)      ::     ZBSFC
+  REAL(RKIND)      ::     ZBSF
+  REAL(RKIND)      ::     ZLI1
+  REAL(RKIND)      ::     ZBPOL1
+  REAL(RKIND)      ::     ZGMX
+  REAL(RKIND)      ::     ZGMSTA
+  REAL(RKIND)      ::     ZGM
+  REAL(RKIND)      ::     ZIBSNO
+  REAL(RKIND)      ::     ZINORM
+  REAL(RKIND)      ::     ZBXPER
+  REAL(RKIND)      ::     ZBSPER
+  REAL(RKIND)      ::     ZBPERC
+  REAL(RKIND)      ::     ZMU0
+  INTEGER          ::     J101
+  INTEGER          ::     J102
+  INTEGER          ::     J103
+  INTEGER          ::     J104
+  INTEGER          ::     J105
+  INTEGER          ::     J106
+  INTEGER          ::     J107
+  INTEGER          ::     J108
+  INTEGER          ::     J109
+  INTEGER          ::     J110
+  INTEGER          ::     J111
+  INTEGER          ::     J112
+  INTEGER          ::     J113
+  INTEGER          ::     J114
+  INTEGER          ::     J115
+  INTEGER          ::     J116
+  INTEGER          ::     J117
+  INTEGER          ::     J118
+  INTEGER          ::     J119
+  INTEGER          ::     J120
+  INTEGER          ::     J121
+  INTEGER          ::     J122
+  INTEGER          ::     J123
+  INTEGER          ::     J124
+  INTEGER          ::     J125
+  INTEGER          ::     J126
+  INTEGER          ::     J127
+  INTEGER          ::     J128
+  INTEGER          ::     J129
+  INTEGER          ::     J130
+  INTEGER          ::     J131
+  INTEGER          ::     J132
+  INTEGER          ::     J133
+  INTEGER          ::     J134
+  INTEGER          ::     J135
+  INTEGER          ::     J136
+  INTEGER          ::     J137
+  INTEGER          ::     J138
+  INTEGER          ::     J139
+  INTEGER          ::     J140
+  INTEGER          ::     J141
+  INTEGER          ::     J142
+  INTEGER          ::     J143
+  INTEGER          ::     J144
+  INTEGER          ::     J145
+  INTEGER          ::     J146
+  INTEGER          ::     J147
+  INTEGER          ::     J148
+  INTEGER          ::     J149
+  INTEGER          ::     J150
+  INTEGER          ::     J151
+  INTEGER          ::     J152
+  INTEGER          ::     J153
+  INTEGER          ::     J154
+  INTEGER          ::     J155
+  INTEGER          ::     J156
+  INTEGER          ::     J157
+  INTEGER          ::     J158
+  CHARACTER*180 TEXT(1:130)
+  CHARACTER*8   CDATE,   CCLOK
+  CHARACTER*24  CDATESUN
+  !
+  DIMENSION &
+       &   IMERCI(NPISOEFF),    IMERCR(NPISOEFF),   IBALL(NPISOEFF)
+  DIMENSION &
+       &   ZABIC(NPCHI1),     ZABIPR(NPISOEFF),   ZABIS(NPISOEFF), &
+       &   ZABISG(NSP1),      ZABIT(NTP1),       ZABR (2*NPISOEFF+1), &
+       &   ZABS (NPISOEFF),     ZABSM(NPISOEFF),   ZCHI(NPCHI1), &
+       &   ZCSIPR(NPISOEFF), &
+       &   ZOARS(NPISOEFF),     ZOART(NTP1),       ZOBETS(NPISOEFF), &
+       &   ZOSHR(2*NPISOEFF+1), ZOSHS(NPISOEFF),   ZOJBR(2*NPISOEFF+1), &
+       &   ZOJBS(NPISOEFF),   ZOJPR(2*NPISOEFF+1), ZOJPS(NPISOEFF), &
+       &   ZOJBSR(2*NPISOEFF+1,4),ZOJBSS(NPISOEFF,4),  ZODIS(NPISOEFF), &
+       &   ZODRS(NPISOEFF),   ZOBETR(2*NPISOEFF+1),ZOTRR(2*NPISOEFF+1), &
+       &   ZOTRS(NPISOEFF),   ZODQR(2*NPISOEFF+1), &
+       &   ZOFR (2*NPISOEFF+1), ZODQS(NPISOEFF),   ZOHS (NPISOEFF), &
+       &   ZOIPR(2*NPISOEFF+1), ZOIPS(NPISOEFF),   ZOJR (2*NPISOEFF+1), &
+       &   ZOPPR(2*NPISOEFF+1), ZOPPS(NPISOEFF),   ZOPR (2*NPISOEFF+1), &
+       &   ZOPS (NPISOEFF),   ZOQR (2*NPISOEFF+1), ZOQS (NPISOEFF), &
+       &   ZOTR(2*NPISOEFF+1),  ZOTS(NPISOEFF),    ZOTTR(2*NPISOEFF+1), &
+       &   ZOTTS(NPISOEFF),   ZPAR(2*NPISOEFF+1), &
+       &   ZR(12*NPT+1),      ZRCURV(4*2*NPISOEFF), &
+       &   ZRHOS(NTP1), &
+       &   ZRSUR(6*NPT),      ZRTET(NPT),        ZSIG1(NPISOEFF), &
+       &   ZTET(NTP1),        ZTET1(NPISOEFF),     ZTSUR(6*NPT), &
+       &   ZZ(12*NPT+1),      ZZCURV(4*2*NPISOEFF), &
+       &   ZZTET(NPT), &
+       &   ZZSUR(6*NPT), &
+       &   ZOJ1S(NPISOEFF),    ZOJ4S(NPISOEFF), &
+       &   ZOJ5S(NPISOEFF),    ZOJ6S(NPISOEFF)
+
+  !
+  !----*----*----*---*----*----*----*----*----*----*----*----*----*----*-
+  !  28. WRITE QUANTITIES FOR PLOTS
+  !
+  REWIND(NUMAT)
+  !
+  ZMU0 = 1.256_RKIND
+  ZBPERC = 100._RKIND * BETA
+  ZBSPER = 100._RKIND * BETAS
+  ZBXPER = 100._RKIND * BETAX
+  ZINORM = RINOR/ZMU0
+  ZIBSNO = RIBSNOR/ZMU0
+  ZGM    = ZBPERC/ZINORM
+  ZGMSTA = ZBSPER/ZINORM
+  ZGMX   = ZBXPER/ZINORM
+  ZBPOL1 = BETAP*CONVF
+  ZLI1   = eqchease_out(1)%profiles_1d%li(NISO1EFF1)*CONVF
+  ZBSF   = RITBS/RITOT
+  ZBSFC  = RITBSC/RITOT
+  ZCBS   = 0._RKIND
+  IF (BETA.GT.RC0P) ZCBS1 = ZIBSNO*ZINORM/(ZBXPER*SQRT(ASPCT))
+  IF (BETA.GT.RC0P) ZCBS2 = ZBSF/(SQRT(ASPCT)*ZBPOL1)
+  ZBBS  = ZBXPER * ZBSF
+  !
+  !  COMPUTE MAXIMUM AND MINIMUM OF R AND Z
+  !  REFERENCE IS THE MAGNETIC AXIS
+  !
+  ZOART(1) = 0._RKIND
+  ZABIT(1) = 0._RKIND
+  !
+  CALL BOUND(NT1,CT,ZRHOS)
+  !
+  DO J281=1,NT
+     !
+     ZR(J281)      = ZRHOS(J281) * COS(CT(J281))
+     ZZ(J281)      = ZRHOS(J281) * SIN(CT(J281))
+     ZRTET(J281)   = ZR(J281)
+     ZZTET(J281)   = ZZ(J281)
+     ZTET(J281)    = CT(J281) - CT(1)
+     ZOART(J281+1) = ZOART(J281) + .25_RKIND * (CT(J281+1) - CT(J281)) * &
+          &                   (ZRHOS(J281)**2 + ZRHOS(J281+1)**2)
+     ZABIT(J281+1) = REAL(J281,RKIND) / REAL(NT,RKIND)
+     !
+  END DO
+  !
+  ZTET(NT1) = 2._RKIND * CPI
+  !
+  ZRMAX = ZR(ISMAX(NT,ZR,1))
+  ZRMIN = ZR(ISMIN(NT,ZR,1))
+  ZZMAX = ZZ(ISMAX(NT,ZZ,1))
+  ZZMIN = ZZ(ISMIN(NT,ZZ,1))
+  !
+  !  COMPUTE THE SURFACE
+  !
+  BPS( 1) = RMAG
+  BPS(12) = RZMAG
+  !
+  IF (NSURF .NE. 1) BPS(3) = BPS(2) - BPS(1)
+  IF (NSURF .EQ. 6) CALL BNDSPL
+  !
+  ZDT = 2._RKIND * CPI / (6 * NT - 1)
+  !
+  DO J282=1,6*NT
+     !
+     ZTSUR(J282) = (J282 - 1) * ZDT
+     !
+  END DO
+  !
+  CALL BOUND(6*NT,ZTSUR,ZRSUR)
+  CALL BOUND(1,PANGLE    ,ZBND1)
+  CALL BOUND(1,PANGLE+CPI,ZBND2)
+  !
+  BPS( 1) = R0
+  BPS(12) = RZ0
+  !
+  IF (NSURF .NE. 1) BPS(3) = BPS(2) - BPS(1)
+  IF (NSURF .EQ. 6) CALL BNDSPL
+  !
+  DO J283=1,6*NT
+     !
+     ZZSUR(J283) = ZRSUR(J283) * SIN(ZTSUR(J283))
+     ZRSUR(J283) = ZRSUR(J283) * COS(ZTSUR(J283))
+     !
+  END DO
+  !
+  !  COMPUTE THE VALUES OF R ON RADIUS USED FOR PROFILE DEFINITION
+  !
+  CALL RMRAD(NISO1EFF,RC0P,CPSRF,PANGLE,ZPAR(1),ZSIG1,ZTET1,1)
+  CALL RMRAD(NISO1EFF,RC0P,CPSRF,PANGLE+CPI,ZPAR(NISO1EFF+1),ZSIG1, &
+       &              ZTET1,1)
+  !
+  DO J284=1,NISO1EFF
+     !
+     I1 = NISO1EFF + J284 + 1
+     I2 = NISO1EFF - J284 + 1
+     !
+     ZABR(I1)  =   ZPAR(J284)       * ZBND1
+     ZABR(I2)  = - ZPAR(NISO1EFF+J284) * ZBND2
+     ZOQR(I2)  = QPSI(J284)
+     ZOQR(I1)  = QPSI(J284)
+     ZOPPR(I2) = CPPR(J284)
+     ZOPPR(I1) = CPPR(J284)
+     ZOPR(I2)  = CPR(J284)
+     ZOPR(I1)  = CPR(J284)
+     ZOTTR(I2) = TTP(J284)
+     ZOTTR(I1) = TTP(J284)
+     ZOTR(I2)  = TMF(J284)
+     ZOTR(I1)  = TMF(J284)
+     ZOIPR(I2) = RIPR(J284)
+     ZOIPR(I1) = RIPR(J284)
+     ZOJBR(I2) = RJDOTB(J284)
+     ZOJBR(I1) = RJDOTB(J284)
+     ZODQR(I2) = CDQ(J284)
+     ZODQR(I1) = CDQ(J284)
+     ZOSHR(I2) = CDRQ(J284)
+     ZOSHR(I1) = CDRQ(J284)
+     ZOFR(I2)  = SMISO(J284)**2 * CPSRF
+     ZOFR(I1)  = SMISO(J284)**2 * CPSRF
+     ZOJR(I1)  = - (ZABR(I1) + RMAG) * ZOPPR(I1) - &
+          &                  ZOTTR(I1) / (ZABR(I1) + RMAG)
+     ZOJR(I2)  = - (ZABR(I2) + RMAG) * ZOPPR(I2) - &
+          &                  ZOTTR(I2) / (ZABR(I2) + RMAG)
+     ZOBETR(I2) = BETAB(J284)
+     ZOBETR(I1) = BETAB(J284)
+     ZOJPR(I2)  = RJPAR(J284)
+     ZOJPR(I1)  = RJPAR(J284)
+     ZOJBSR(I2,1:4) = RJBSOS(J284,1:4)
+     ZOJBSR(I1,1:4) = RJBSOS(J284,1:4)
+     ZOTRR(I2)  = 1._RKIND - RFCIRC(J284)
+     ZOTRR(I1)  = 1._RKIND - RFCIRC(J284)
+     !
+  END DO
+  !
+  ZABR(NISO1EFF+1)  = 0._RKIND
+  ZOQR(NISO1EFF+1)  = Q0
+  ZOJBR(NISO1EFF+1) = RJDTB0
+  ZOPPR(NISO1EFF+1) = DPDP0
+  ZOPR(NISO1EFF+1)  = CP0
+  ZOTTR(NISO1EFF+1) = DTTP0
+  ZOTR(NISO1EFF+1)  = T0
+  ZOIPR(NISO1EFF+1) = RIPR0
+  ZOFR(NISO1EFF+1)   = 0._RKIND
+  ZOJR(NISO1EFF+1)   = - (RMAG * DPDP0 + DTTP0 / RMAG)
+  ZODQR(NISO1EFF+1)  = DQDP0
+  ZOSHR(NISO1EFF+1)  = 0._RKIND
+  ZOBETR(NISO1EFF+1) = BETAB(1)
+  ZOTRR(NISO1EFF+1)  = 0._RKIND
+  ZOJPR(NISO1EFF+1)  = RJPAR(1)
+  ZOJBSR(NISO1EFF+1,1:4) = 0._RKIND
+  !
+  !  SET S-VALUES IN ZABS
+  !
+  ZABSM(1) = 0._RKIND
+  ZABIS(1) = 0._RKIND
+  ZOQS(1)  = Q0
+  ZODQS(1) = DQDP0
+  ZOJBS(1) = RJDTB0
+  ZOTRS(1) = 0._RKIND
+  ZOHS(1)  = FCCCC0(HMERCR(1),HMERCR(2),HMERCR(3),HMERCR(4), &
+       &                     SMISO(1),SMISO(2),SMISO(3),SMISO(4),RC0P)
+  ZODIS(1) = FCCCC0(SMERCI(1),SMERCI(2),SMERCI(3),SMERCI(4), &
+       &                     SMISO(1),SMISO(2),SMISO(3),SMISO(4),RC0P)
+  ZODRS(1) = FCCCC0(SMERCR(1),SMERCR(2),SMERCR(3),SMERCR(4), &
+       &                     SMISO(1),SMISO(2),SMISO(3),SMISO(4),RC0P)
+  !  ZOJ1456S ADDED FOR NEOCLASSICAL TEARING MODE STUDIES
+  ZOJ1S(1)  = FCCCC0(RJ1(1),RJ1(2),RJ1(3),RJ1(4), &
+       &                     SMISO(1),SMISO(2),SMISO(3),SMISO(4),RC0P)
+  ZOJ4S(1)  = FCCCC0(RJ4(1),RJ4(2),RJ4(3),RJ4(4), &
+       &                     SMISO(1),SMISO(2),SMISO(3),SMISO(4),RC0P)
+  ZOJ5S(1)  = FCCCC0(RJ5(1),RJ5(2),RJ5(3),RJ5(4), &
+       &                     SMISO(1),SMISO(2),SMISO(3),SMISO(4),RC0P)
+  ZOJ6S(1)  = FCCCC0(RJ6(1),RJ6(2),RJ6(3),RJ6(4), &
+       &                     SMISO(1),SMISO(2),SMISO(3),SMISO(4),RC0P)
+  ZOPPS(1) = DPDP0
+  ZOPS(1)  = CP0
+  ZOTTS(1) = DTTP0
+  ZOTS(1)  = T0
+  ZOIPS(1) = RIPR0
+  ZOIPS(1) = RIPR0
+  ZOJPS(1) = RJPAR(1)
+  ZOJBSS(1,:) = 0._RKIND
+  !
+  DO J285=1,NISO1EFF
+     !
+     ZABSM(J285+1) = SMISO(J285)
+     ZABS(J285)    = SMISO(J285)
+     ZABIS(J285+1) = (J285 - .5_RKIND) / REAL(NISO1EFF-1,RKIND)
+     ZOHS(J285+1)  = HMERCR(J285)
+     ZODIS(J285+1) = SMERCI(J285)
+     ZODRS(J285+1) = SMERCR(J285)
+     ZOJ1S(J285+1)  = RJ1(J285)
+     ZOJ4S(J285+1)  = RJ4(J285)
+     ZOJ5S(J285+1)  = RJ5(J285)
+     ZOJ6S(J285+1)  = RJ6(J285)
+     ZOBETS(J285)  = BETAB(J285)
+     ZOQS(J285+1)  = QPSI(J285)
+     ZODQS(J285+1) = CDQ(J285)
+     ZOSHS(J285)   = CDRQ(J285)
+     ZOPPS(J285+1) = CPPR(J285)
+     ZOPS(J285+1)  = CPR(J285)
+     ZOTTS(J285+1) = TTP(J285)
+     ZOTS(J285+1)  = TMF(J285)
+     ZOIPS(J285+1) = RIPR(J285)
+     ZOJBS(J285+1) = RJDOTB(J285)
+     ZOARS(J285)   = eqchease_out(1)%profiles_1d%rho_vol(J285)
+     ZOJPS(J285+1) = RJPAR(J285)
+     ZOJBSS(J285+1,1:4)= RJBSOS(J285,1:4)
+     ZOTRS(J285+1) = 1._RKIND - RFCIRC(J285)
+     !
+  END DO
+  !
+  ZABIS(NISO1EFF+1) = 1._RKIND
+  !
+  !  Write CHI-lines to unit 14 with full resolution
+  do jj=1,nchi
+     write(14,'(a,i5,a,i5,a)') ' jchi = ',jj,' ipsi=1,',niso1eff,':'
+     write(14,'(1p2e13.5)') (cr(jj,j288),cz(jj,j288),j288=1,niso1eff)
+  end do
+  !
+  !  BALLOONING AND MERCIER
+  !
+  DO J289=1,NISO1EFF
+     !
+     IMERCI(J289) = 0
+     IMERCR(J289) = 0
+     IBALL(J289) = 0
+     !
+     IF (SMERCI(J289) .LT. RC0P) IMERCI(J289) = 1
+     IF (SMERCR(J289) .LT. RC0P) IMERCR(J289) = 1
+     IF (NCBAL(J289) .GT. 0)  IBALL(J289) = 1
+     !
+  END DO
+  !
+  DO J293=1,NCURV
+     !
+     ZRCURV(J293) = RRCURV(J293) - R0
+     ZZCURV(J293) = RZCURV(J293) - RZ0
+     !
+  END DO
+  !
+  ZCSIPR(1)      = 0._RKIND
+  ZABIPR(NISO+1) = 1._RKIND
+  !
+  DO J294=1,NISO
+     !
+     ZABIPR(J294)   = REAL(J294-1,RKIND) / REAL(NISO,RKIND)
+     ZCSIPR(J294+1) = CSIPR(J294)
+     !
+  END DO
+  !
+  DO J295=1,NCHI1
+     !
+     ZABIC(J295) = REAL(J295-1,RKIND) / REAL(NCHI,RKIND)
+     ZCHI(J295)  = CHI(J295) - CHI(1)
+     !
+  END DO
+  !
+  DO J296=1,NS1
+     !
+     ZABISG(J296) = REAL(J296-1,RKIND) / REAL(NS,RKIND)
+     !
+  END DO
+  !
+  INSUR  = 6 * NT
+  INS    = NISO1EFF + 1
+  INR    = 2 * NISO1EFF + 1
+  INTEXT = 121
+  !
+  !  WRITE DATA NECESSARY FOR PLOT ON THE FILE chease.dat
+  !
+  !  VECTOR AND MATRIX DIMENSIONS
+  !
+  NNBBPP = NMGAUS*NT1
+  WRITE(NUMAT,1100) NISO1EFF
+  WRITE(NUMAT,1100) INSUR
+  WRITE(NUMAT,1100) INS
+  WRITE(NUMAT,1100) INR
+  WRITE(NUMAT,1100) NNBBPP
+  WRITE(NUMAT,1100) NCURV
+  WRITE(NUMAT,1100) NCHI
+  !
+  !  BALLOONING (IN)STABILITY FLAG ON EACH FLUX SURFACE: (1)0 -> IBALL(NISO1EFF)
+  DO J101=1,NISO1EFF
+     WRITE(NUMAT,1100) IBALL(J101)
+  END DO
+  !  IDEAL INTERCHANGE (IN)STABILITY FLAG: (1)0 -> IMERCI(NISO1EFF)
+  DO J102=1,NISO1EFF
+     WRITE(NUMAT,1100) IMERCI(J102)
+  END DO
+  !  RESISTIVE INTERCHANGE (IN)STABILITY FLAG: (1)0 -> IMERCR(NISO1EFF)
+  DO J103=1,NISO1EFF
+     WRITE(NUMAT,1100) IMERCR(J103)
+  END DO
+  !
+  !  R-VECTOR FOR PLASMA SURFACE -> ZRSUR(INSUR)
+  DO J104=1,INSUR
+     WRITE(NUMAT,1100) ZRSUR(J104)
+  END DO
+  !  Z-VECTOR FOR PLASMA SURFACE -> ZZSUR(INSUR)
+  DO J105=1,INSUR
+     WRITE(NUMAT,1100) ZZSUR(J105)
+  END DO
+  !
+  !  S-VECTOR FOR PROFILES -> ZABS(NISO1EFF) (S_k mesh)
+  DO J106=1,NISO1EFF
+     WRITE(NUMAT,1100) ZABS(J106)
+  END DO
+  !  S-VECTOR FOR PROFILES -> ZABSM(INS) (S_(k+1/2) mesh)
+  DO J107=1,INS
+     WRITE(NUMAT,1100) ZABSM(J107)
+  END DO
+  !  R-VECTOR FOR PROFILES -> ZABR(INR)
+  DO J108=1,INR
+     WRITE(NUMAT,1100) ZABR(J108)
+  END DO
+  !%OS
+  WRITE(21,*) INS,' = INS; SMISO(J),J=1,INS MESH, TO HAVE R(S)', &
+       &     ' CORRESPONDANCE'
+  WRITE(21,1006) (ZABSM (J),J=1,INS)
+  WRITE(21,*) INR,' = INR; R(J),J=1,INR MESH OF SMISO AT Z=ZMAG'
+  WRITE(21,1006) (ZABR (J),J=1,INR)
+  !%OS
+  !  Q(S)-PROFILE -> ZOQS(INS)
+  DO J109=1,INS
+     WRITE(NUMAT,1100) ZOQS(J109)
+  END DO
+  !  Q(R)-PROFILE -> ZOQR(INR)
+  DO J110=1,INR
+     WRITE(NUMAT,1100) ZOQR(J110)
+  END DO
+  !  Q'(S)-PROFILE -> ZODQS(INS)
+  DO J111=1,INS
+     WRITE(NUMAT,1100) ZODQS(J111)
+  END DO
+  !  Q'(R)-PROFILE -> ZODQR(INR)
+  DO J112=1,INR
+     WRITE(NUMAT,1100) ZODQR(J112)
+  END DO
+  !  SHEAR S(S)-PROFILE -> ZOSHS(INS)
+  DO J113=1,INS
+     WRITE(NUMAT,1100) ZOSHS(J113)
+  END DO
+  !  SHEAR S(R)-PROFILE -> ZOSHR(INR)
+  DO J114=1,INR
+     WRITE(NUMAT,1100) ZOSHR(J114)
+  END DO
+  !  <J.B>/<B.GRAD-PHI> S-PROFILE -> ZOJBS(INS)
+  DO J115=1,INS
+     WRITE(NUMAT,1100) ZOJBS(J115)
+  END DO
+  !  <J.B>/<B.GRAD-PHI> R-PROFILE -> ZOJBR(INR)
+  DO J116=1,INR
+     WRITE(NUMAT,1100) ZOJBR(J116)
+  END DO
+
+  ! BOOTSTRAP CURRENT <JBOOT.B> S-PROFILE -> ZOJBSS(INS,4)
+  DO J117=1,4
+     DO J118=1,INS
+        WRITE(NUMAT,1100) ZOJBSS(J118,J117)
+     END DO
+  END DO
+  ! BOOTSTRAP CURRENT <JBOOT.B> R-PROFILE -> ZOJBSR(INR,4)
+  DO J119=1,4
+     DO J120=1,INR
+        WRITE(NUMAT,1100) ZOJBSR(J120,J119)
+     END DO
+  END DO
+  !
+  ! TOTAL CURRENT <JTOT.B> S-PROFILE -> ZOJPS(INS)
+  DO J121=1,INS
+     WRITE(NUMAT,1100) ZOJPS(J121)
+  END DO
+  ! TOTAL CURRENT <JTOT.B> R-PROFILE -> ZOJPR(INR)
+  DO J122=1,INR
+     WRITE(NUMAT,1100) ZOJPR(J122)
+  END DO
+  !
+  ! TRAPPED FRACTION S-PROFILE -> ZOTRS(INS)
+  DO J123=1,INS
+     WRITE(NUMAT,1100) ZOTRS(J123)
+  END DO
+  !  TRAPPED FRACTION R-PROFILE -> ZOTRR(INR)
+  DO J124=1,INR
+     WRITE(NUMAT,1100) ZOTRR(J124)
+  END DO
+  !
+  !  H OF GLASSER-GREENE-JOHNSON S-PROFILE -> ZOHS(INS)
+  DO J125=1,INS
+     WRITE(NUMAT,1100) ZOHS(J125)
+  END DO
+  !  IDEAL MERCIER COEFFICIENT -DI(S) -> ZODIS(INS)
+  DO J126=1,INS
+     WRITE(NUMAT,1100) ZODIS(J126)
+  END DO
+  !  RESISTIVE MERCIER COEFFICIENT -DR(S) -> ZODRS(INS)
+  DO J127=1,INS
+     WRITE(NUMAT,1100) ZODRS(J127)
+  END DO
+  !  J1 INTEGRAL S-PROFILE -> ZOJ1S(INS)
+  DO J128=1,INS
+     WRITE(NUMAT,1100) ZOJ1S(J128)
+  END DO
+  !  J4 INTEGRAL S-PROFILE -> ZOJ4S(INS)
+  DO J129=1,INS
+     WRITE(NUMAT,1100) ZOJ4S(J129)
+  END DO
+  !  J5 INTEGRAL S-PROFILE -> ZOJ5S(INS)
+  DO J130=1,INS
+     WRITE(NUMAT,1100) ZOJ5S(J130)
+  END DO
+  !  J6 INTEGRAL S-PROFILE -> ZOJ6S(INS)
+  DO J131=1,INS
+     WRITE(NUMAT,1100) ZOJ6S(J131)
+  END DO
+  !
+  !  P'(S)-PROFILE -> ZOPPS(INS)
+  DO J132=1,INS
+     WRITE(NUMAT,1100) ZOPPS(J132)
+  END DO
+  !  P'(R)-PROFILE -> ZOPPR(INR)
+  DO J133=1,INR
+     WRITE(NUMAT,1100) ZOPPR(J133)
+  END DO
+  !  P(S)-PROFILE -> ZOPS(INS)
+  DO J134=1,INS
+     WRITE(NUMAT,1100) ZOPS(J134)
+  END DO
+  !  P(R)-PROFILE -> ZOPR(INR)
+  DO J135=1,INR
+     WRITE(NUMAT,1100) ZOPR(J135)
+  END DO
+  !
+  !  TT'(S)-PROFILE -> ZOTTS(INS)
+  DO J136=1,INS
+     WRITE(NUMAT,1100) ZOTTS(J136)
+  END DO
+  !  TT'(R)-PROFILE -> ZOTTR(INR)
+  DO J137=1,INR
+     WRITE(NUMAT,1100) ZOTTR(J137)
+  END DO
+  !  T(S)-PROFILE -> ZOTS(INS)
+  DO J138=1,INS
+     WRITE(NUMAT,1100) ZOTS(J138)
+  END DO
+  !  T(R)-PROFILE -> ZOTR(INR)
+  DO J139=1,INR
+     WRITE(NUMAT,1100) ZOTR(J139)
+  END DO
+  !
+  !  I*(S)-PROFILE -> ZOIPS(INS)
+  DO J140=1,INS
+     WRITE(NUMAT,1100) ZOIPS(J140)
+  END DO
+  !  I*(R)-PROFILE -> ZOIPR(INR)
+  DO J141=1,INR
+     WRITE(NUMAT,1100) ZOIPR(J141)
+  END DO
+  !
+  !  BETA POLOIDAL R-PROFILE -> ZOBETR(INR)
+  DO J142=1,INR
+     WRITE(NUMAT,1100) ZOBETR(J142)
+  END DO
+  !  BETA POLOIDAL S-PROFILE -> ZOBETS(INS)
+  DO J143=1,INS
+     WRITE(NUMAT,1100) ZOBETS(J143)
+  END DO
+  !
+  !  POLOIDAL FLUX R-PROFILE -> ZOFR(INR)
+  DO J144=1,INR
+     WRITE(NUMAT,1100) ZOFR(J144)
+  END DO
+  !
+  !  SQRT(VOLUME OF FLUX TUBE) S-PROFILE -> ZOARS(NISO1EFF)
+  DO J145=1,INS
+     WRITE(NUMAT,1100) ZOARS(J145)
+  END DO
+  !
+  !  TOROIDAL CURRENT DENSITY R-PROFILE -> ZOJR(INR)
+  DO J146=1,INR
+     WRITE(NUMAT,1100) ZOJR(J146)
+  END DO
+  !
+  ! substract mesh center coordinates to (R,Z) coordinates for plotting
+  !
+  RRISO(:,1:NISO1EFF)=RRISO(:,1:NISO1EFF) - R0
+  RZISO(:,1:NISO1EFF)=RZISO(:,1:NISO1EFF) - RZ0
+  CR(:,:)=CR(:,:) - R0
+  CZ(:,:)=CZ(:,:) - RZ0
+  !
+  !  R-MATRIX FOR ISOPSI-SURFACES -> RRISO(NNBBPP,NISO1EFF)
+  DO J147=1,NNBBPP
+     DO J148=1,NISO1EFF
+        WRITE(NUMAT,1100) RRISO(J147,J148)
+     END DO
+  END DO
+  !  Z-MATRIX FOR ISOPSI-SURFACES -> RZISO(NNBBPP,NISO1EFF)
+  DO J149=1,NNBBPP
+     DO J150=1,NISO1EFF
+        WRITE(NUMAT,1100) RZISO(J149,J150)
+     END DO
+  END DO
+  !
+  !  R-VECTOR FOR ZERO-CURVATURE CURVE -> ZRCURV(NCURV)
+  DO J151=1,NCURV
+     WRITE(NUMAT,1100) ZRCURV(J151)
+  END DO
+  !  Z-VECTOR FOR ZERO-CURVATURE CURVE -> ZZCURV(NCURV)
+  DO J152=1,NCURV
+     WRITE(NUMAT,1100) ZZCURV(J152)
+  END DO
+  !
+  !  LOCAL_SHEAR-MATRIX ON (CR,CZ) MESH -> RSHEAR,CR&CZ(NCHI,NISO1EFF)
+  DO J153=1,NCHI
+     DO J154=1,NISO1EFF
+        WRITE(NUMAT,1100) RSHEAR(J153,J154)
+     END DO
+  END DO
+  DO J155=1,NCHI
+     DO J156=1,NISO1EFF
+        WRITE(NUMAT,1100) CR(J155,J156)
+     END DO
+  END DO
+  DO J157=1,NCHI
+     DO J158=1,NISO1EFF
+        WRITE(NUMAT,1100) CZ(J157,J158)
+     END DO
+  END DO
+  !
+  ! Restore (R,Z) coodinates
+  !
+  RRISO(:,1:NISO1EFF)=RRISO(:,1:NISO1EFF) + R0
+  RZISO(:,1:NISO1EFF)=RZISO(:,1:NISO1EFF) + RZ0
+  CR(:,:)=CR(:,:) + R0
+  CZ(:,:)=CZ(:,:) + RZ0
+  !
+  RETURN
+  !
+1006 FORMAT((1X,8(1PE15.6)))
+1100 FORMAT(G15.5)
+  !       
+END SUBROUTINE WRTMAT

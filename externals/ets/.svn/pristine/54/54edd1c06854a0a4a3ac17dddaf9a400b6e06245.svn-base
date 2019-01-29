@@ -1,0 +1,50 @@
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+!> wrapper for EMEQ
+!>
+!> \author D.Kalupin 
+!>
+!> \version "$Id$"
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+module ets_wrapper_emeq_e3m
+
+  use euitm_schemas
+  implicit none
+  
+contains
+
+  subroutine emeq_e3m_wrapper(EQUILIBRIUM_in,  EQUILIBRIUM_out)
+
+    use xml_file_reader
+    use write_structures
+    use emeq
+
+    implicit none
+
+    TYPE (TYPE_EQUILIBRIUM), POINTER :: EQUILIBRIUM_in(:)
+    TYPE (TYPE_EQUILIBRIUM), POINTER :: EQUILIBRIUM_out(:)
+    type (type_param), save  :: code_parameters
+    logical, save :: first = .true.
+    integer, save :: ncall = 0
+    character*32 :: filename = 'EQ_######'
+
+    if(first) then
+       call fill_param(code_parameters, 'XML/emeq.xml', '', 'XML/emeq.xsd')
+       first=.false.
+    endif
+
+    write(filename(4:9),'(I6.6)') ncall
+!    call open_write_file(1, trim(filename)//'.IN')
+!    call write_cpo(equilibrium_in(1), 'equilibrium')
+!    call close_write_file
+    write(*,*) 'associated(euitm_equilibrium_out) ', associated(equilibrium_out)
+    CALL EMEQ_E3M(EQUILIBRIUM_in, EQUILIBRIUM_out, code_parameters)
+!    call open_write_file(1, trim(filename)//'.OUT')
+!    call write_cpo(equilibrium_out(1), 'equilibrium')
+!    call close_write_file
+    ncall=ncall+1
+
+    return
+
+  end subroutine emeq_e3m_wrapper
+
+end module ets_wrapper_emeq_e3m

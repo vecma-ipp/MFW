@@ -1,0 +1,81 @@
+
+
+Plot routines for chease with UNIRAS and NCAR interfaces:
+-----------------------------------------------------------
+(for BNDFIT and PROFFIT plots, see creapict below)
+
+files:
+
+1) pchease.V12.f
+
+2) pchease_uni.f
+
+3) uni_to_ncar.f
+
+4) uni_to_fort8.f
+
+5) compile.pchease.ncar
+
+6) compile.pchease.uni
+
+7) compile.pchease.fort8
+
+8) readpict.f
+
+9) load.readpict
+
+The file (1) is the standard pchease, except that one changes the name of the
+subroutine statement for GRAPHE (to GRAPHE2 for example) and GRAPHEN. In this way
+the routines in the interface files are used.
+
+
+NCAR:
+=====
+
+compile pchease with the file (5), which uses the files 1, 2 and 3
+(with this option, it will create the metafile gmeta which you can
+process with ctrans, gplot or others)
+
+
+UNIRAS:
+=======
+
+compile pchease with the file (6), which uses the files 1 and 2
+compile readpict with the file (9)
+(with this option, it will create a unipict file, which you can process with
+the program readpict)
+
+fort.8:
+=======
+
+compile pchease with the file (7), which uses the files 1, 2 and 4
+(with this option, it will create an ascii file fort.8 which can be
+used by creapict also)
+
+
+C-----------------------------------------------------------------------
+C-----------------------------------------------------------------------
+
+
+Other files:
+============
+
+creapict.*.f:
+------------
+
+creates a gmeta or unipict file from an ascii file fort.13 which
+has the same format as fort.8 above. It general use as follow:
+
+cp fort.8 fort.13  (for example fort.8 is obtained from BNDFIT and PROFFIT codes)
+creapict.exe  (=> gmeta or unipict to be used with ctrans or readpict)
+
+compile.creapict.ncar:
+---------------------
+
+to compile creapict.*.f for NCAR
+
+compile.creapict.uniras:
+-----------------------
+
+same but for UNIRAS
+

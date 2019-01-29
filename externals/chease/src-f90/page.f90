@@ -1,0 +1,14 @@
+!*DECK U1
+!*CALL PROCESS
+SUBROUTINE PAGE
+  !        ---------------
+  !
+  !  FETCH A NEW PAGE
+  !
+  USE globals
+  IMPLICIT NONE
+  WRITE (6,9900)
+  !
+  RETURN
+9900 FORMAT('1')
+END SUBROUTINE PAGE

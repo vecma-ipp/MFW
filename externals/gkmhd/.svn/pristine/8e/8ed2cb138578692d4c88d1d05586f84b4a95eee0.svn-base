@@ -1,0 +1,32 @@
+!...  open files and get parms
+
+  OPEN (15,file='hdw.dat',form='formatted',status='old')
+  READ (15,parm)
+  CLOSE (15)
+
+!...  adjust dimensions
+
+  npesx0=npesx
+
+  npesx=1
+
+!...  fix screen width
+
+  dxdif = 0.15
+
+!...  set geometry
+
+  CALL Metric
+  nk=nx0/2
+
+!...  set time
+
+  time=0.
+
+!...  allocations
+
+  DO i=1,nx
+     ALLOCATE(fsfc(i)%fuu(neqs,fsfc(i)%ny))
+     fsfc(i)%fuu=0.
+  END DO
+

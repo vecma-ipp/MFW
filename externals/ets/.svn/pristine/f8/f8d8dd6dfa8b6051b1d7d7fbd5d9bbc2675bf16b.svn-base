@@ -1,0 +1,875 @@
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+      MODULE ANALYTICS1
+
+       INTERFACE MANUFACTURED_PLASMA     
+          MODULE PROCEDURE ANALYTICAL_PLASMA
+        END INTERFACE
+
+      CONTAINS
+
+
+
+
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+
+
+      SUBROUTINE ANALYTICAL_PLASMA                                  &
+      (ITIME,TIME,GEOMETRY,PROFILES,TRANSPORT,SOURCES,CONTROL,IMPURITY,ERROR)     
+
+  
+!-------------------------------------------------------!
+!     This routine manufactures the solution for the    !
+!     set of transport equations describing the main    !
+!     plasma. It provides sources and transport         !
+!     coefficients for all transport equations.         !
+!-------------------------------------------------------!
+!     Source:       ---                                 !
+!     Developers:   D.Kalupin, R.Stankiewicz            !
+!     Kontacts:     D.Kalupin@fz-juelich.de             !
+!                   Roman.Stankiewich@gmail.com         !
+!                                                       !
+!     Comments:     equation are derived following      !
+!                   Hinton&Hazeltine, Rev. Mod. Phys.   !
+!                   vol. 48 (1976), pp.239-308          !
+!                                                       !
+!-------------------------------------------------------!
+
+
+      USE TYPEDEC
+
+      USE ANALYTICAL_FUNCTIONS
+
+
+      IMPLICIT NONE
+
+
+      REAL (DP)                     :: TIME                          !Time
+      TYPE (SOLUTION_ERROR)         :: ERROR
+      TYPE (MAGNETIC_GEOMETRY)      :: GEOMETRY                      !contains all geometry quantities
+      TYPE (PLASMA_PROFILES)        :: PROFILES                      !contains profiles of plasma parameters
+      TYPE (TRANSPORT_COEFFICIENTS) :: TRANSPORT                     !contains profiles of trasport coefficients
+      TYPE (SOURCES_AND_SINKS)      :: SOURCES                       !contains profiles of sources
+      TYPE (RUN_CONTROL)            :: CONTROL                       !contains all parameters required by run
+      TYPE (IMPURITY_PROFILES)      :: IMPURITY                      !contains profiles of impurities calculated
+      TYPE (PLASMA_PROFILES)        :: PROFILES1
+      TYPE (COLLISIONALITY)         :: COLLISION1
+
+      INTEGER                       :: NRHO                          !number of radial points    (input)
+      INTEGER                       :: NION                          !number of ion species      (input)
+      INTEGER                       :: NIMP                          !number of impurity species (input)
+      INTEGER                       :: NTIME,N,ITIME                 !number of time points      (input)
+      INTEGER                       :: NMODEL                        !number of transport models attached
+      INTEGER                       :: NSOURCE                       !number of source inctancies attached
+      iNTEGER                       :: SIGMA_SOURCE                     
+      INTEGER                       :: IRHO,IFAIL                    !current radial knot
+      INTEGER                       :: IION                          !current ion type
+      INTEGER                       :: SOLVER_TYPE                   !representation of transport equations 
+                                                                     !1-"standard"; 2-"integral"(default)
+      INTEGER                       :: PSI_BDN_TYPE(2)               !Type of boundary condition  psi
+      INTEGER                       :: NI_BND_TYPE(2,PROFILES%NION)  !Type of boundary conditions ion density 
+      INTEGER                       :: TI_BND_TYPE(2,PROFILES%NION)  !Type of boundary conditions ion temperature
+      INTEGER                       :: TE_BND_TYPE(2)                !Type of boundary conditions electron temperature
+      INTEGER                       :: VTOR_BND_TYPE(2,PROFILES%NION)!Type of boundary conditions toroidal rotation
+
+      REAL  (DP)                    :: X,T,AVAL1,AVAL2,AVAL3,AVAL4,AVAL5,AVAL6,AVAL7
+      REAL  (DP)                    :: GAMMA(PROFILES%NION,GEOMETRY%NRHO),DGAMMA(PROFILES%NION,GEOMETRY%NRHO)
+      REAL  (DP)                    :: GAMMAE(GEOMETRY%NRHO),DGAMMAE(GEOMETRY%NRHO)
+      REAL  (DP)                    :: NE(GEOMETRY%NRHO),DNE(GEOMETRY%NRHO)
+      REAL  (DP)                    :: VIE(GEOMETRY%NRHO),VEI(GEOMETRY%NRHO)
+      REAL  (DP)                    :: QIE(GEOMETRY%NRHO),QEI(GEOMETRY%NRHO)
+      REAL  (DP)                    :: VZI(GEOMETRY%NRHO),UZI(GEOMETRY%NRHO)
+      REAL  (DP)                    :: QZI(GEOMETRY%NRHO),WZI(GEOMETRY%NRHO)
+      REAL  (DP)                    :: RHO(GEOMETRY%NRHO),VPR(GEOMETRY%NRHO)
+      REAL  (DP)                    :: G1(GEOMETRY%NRHO),G2(GEOMETRY%NRHO)
+      REAL  (DP)                    :: G3(GEOMETRY%NRHO),FDIA(GEOMETRY%NRHO),HRHO(GEOMETRY%NRHO)
+      REAL  (DP)                    :: TE(GEOMETRY%NRHO),PSI(GEOMETRY%NRHO) 
+      REAL  (DP)                    :: SIGMA(GEOMETRY%NRHO) 
+      REAL  (DP)                    :: TI(GEOMETRY%NRHO,PROFILES%NION),VTOR(GEOMETRY%NRHO,PROFILES%NION)
+      REAL (DP)                     :: NI(GEOMETRY%NRHO,PROFILES%NION)
+      REAL (DP)                     :: MION(PROFILES%NION),ZION(PROFILES%NION)
+
+      REAL (DP) ,DIMENSION (GEOMETRY%NRHO,1)                :: DIFF_TE,VCONV_TE
+      REAL (DP) ,DIMENSION (GEOMETRY%NRHO,PROFILES%NION,1)  :: DIFF_TI,VCONV_TI
+      REAL (DP) ,DIMENSION (GEOMETRY%NRHO,PROFILES%NION,1)  :: DIFF_VTOR,VCONV_VTOR
+      REAL (DP) ,DIMENSION (GEOMETRY%NRHO,PROFILES%NION,1)  :: DIFF_NI,VCONV_NI
+      REAL(DP)  ,DIMENSION(GEOMETRY%NRHO)                   :: DTNE
+
+      REAL(DP)                      :: C1
+      REAL (DP)                     :: PI,MU,BT,R                                  
+
+      CHARACTER*4        EXT4
+      CHARACTER*3        EXT3
+      CHARACTER*2        EXT2
+      CHARACTER*1        EXT1                    
+
+      CHARACTER(20)      FILENAME
+	  
+	  
+	  
+	  
+       NRHO                    = GEOMETRY%NRHO
+       NION                    = PROFILES%NION
+	  
+	  
+       CALL ALLOCATE_PLASMA_PROFILES (NRHO, NION, PROFILES1,  ifail)
+       CALL ALLOCATE_COLLISIONALITY  (NRHO, NION, COLLISION1, ifail)
+
+       PSI_BDN_TYPE            = PROFILES%PSI_BND_TYPE
+       NI_BND_TYPE             = PROFILES%NI_BND_TYPE
+       PROFILES1%TI_BND_TYPE   = PROFILES%TI_BND_TYPE
+       TI_BND_TYPE             = PROFILES%TI_BND_TYPE
+       PROFILES1%TE_BND_TYPE   = PROFILES%TE_BND_TYPE
+       TE_BND_TYPE             = PROFILES%TE_BND_TYPE
+       VTOR_BND_TYPE           = PROFILES%VTOR_BND_TYPE
+       PROFILES1%VTOR_BND_TYPE = PROFILES%VTOR_BND_TYPE
+       NMODEL                  = TRANSPORT%NMODEL
+       NSOURCE                 = SOURCES%NSOURCE
+       SIGMA_SOURCE            = TRANSPORT%SIGMA_SOURCE
+
+
+       PI                      = 3.14159265D0
+       MU                      = 1.2566D-6 
+
+
+
+! +++ MAGNETIC GEOMETRY:       
+       T                       = TIME 
+
+
+       DO IRHO=1,NRHO
+         X                     = ARHO(IRHO,NRHO)
+         RHO(IRHO)             = X
+         GEOMETRY%RHO(IRHO)    = X
+         VPR(IRHO)             = AVPR(X,T)
+         GEOMETRY%VPR(IRHO)    = VPR(IRHO)  
+         G1(IRHO)              = AG1(X,T)
+         GEOMETRY%G1(IRHO)     = G1(IRHO)  
+         G2(IRHO)              = AG2(X,T)
+         GEOMETRY%G2(IRHO)     = G2(IRHO)  
+         G3(IRHO)              = AG3(X,T)
+         GEOMETRY%G3(IRHO)     = G3(IRHO)  
+         FDIA(IRHO)            = AFDIA(X,T)
+         GEOMETRY%FDIA(IRHO)   = FDIA (IRHO)
+
+         IF (IRHO.LT.NRHO) THEN
+           HRHO(IRHO)          = ARHO(IRHO+1,NRHO) - ARHO(IRHO,NRHO)
+           GEOMETRY%HRHO(IRHO) = HRHO(IRHO)
+         ENDIF
+       ENDDO
+ 
+       BT                      = ABT(T)
+       GEOMETRY%BT             = ABT(T)
+       R                       = 1.0_DP
+       GEOMETRY%R0             = R
+
+       IF (ITIME.EQ.0) THEN
+         DO IRHO=1,NRHO
+           GEOMETRY%RHO(IRHO)  = RHO(IRHO) 
+         ENDDO  
+       ENDIF
+	   
+	   
+	   
+   
+ 
+! +++ PROFILES
+       T=TIME
+
+       DO IION=1,NION
+         ZION(IION)                  = PROFILES%ZION(IION)
+         MION(IION)                  = PROFILES%MION(IION)
+         PROFILES1%MION(IION)        = PROFILES%MION(IION)
+         PROFILES1%ZION(IION)        = PROFILES%ZION(IION)
+       ENDDO    
+
+
+      DO IRHO=1,NRHO
+        X                            = RHO(IRHO)
+        AVAL1                        = ATE(X,T)
+        TE(IRHO)                     = AVAL1
+        PROFILES1%TE(IRHO)           = AVAL1
+!        ASOLUTION%TE(IRHO)=AVAL1
+        AVAL1                        = APSI(X,T)
+        PSI(IRHO)                    = AVAL1
+!		   ASOLUTION%PSI(IRHO)=AVAL1
+        PROFILES1%PSI(IRHO)          = AVAL1
+        PROFILES1%NE(IRHO)           = 0._DP
+
+        DO IION=1,NION
+          aval1                      = ATI(IION,X,T)
+          TI(IRHO,IION)              = AVAL1
+          PROFILES1%TI(IRHO,IION)    = AVAL1
+!        ASOLUTION%TI(IRHO,IION)=AVAL1
+          AVAL1=ANI(IION,X,T)
+          NI(IRHO,IION)=AVAL1
+          PROFILES1%NE(IRHO)         = PROFILES1%NE(IRHO)+PROFILES%ZION(IION)*AVAL1
+          PROFILES1%NI(IRHO,IION)    = AVAL1
+       
+!        ASOLUTION%NI(IRHO,IION)=AVAL1
+          aVAL1                      = AVTOR(IION,X,T)
+          VTOR(IRHO,IION)            = AVAL1
+          PROFILES1%VTOR(IRHO,IION)  = AVAL1 
+!        ASOLUTION%VTOR(IRHO,IION)= AVAL1       
+        ENDDO
+
+      ENDDO
+!	    ASOLUTION%NE=PROFILES1%NE
+
+
+! +++ INITIAL CONDITION 
+      IF(ITIME.EQ.1) THEN 
+
+        DO IRHO=1,NRHO
+          PROFILES%PSI(IRHO)         = PROFILES1%PSI(IRHO)
+          PROFILES%TE(IRHO)          = PROFILES1%TE(IRHO)
+          PROFILES%NE(IRHO)          = PROFILES1%NE(IRHO)
+
+          DO IION=1,NION
+            PROFILES%TI(IRHO,IION)   = PROFILES1%TI(IRHO,IION)
+            PROFILES%NI(IRHO,IION)   = PROFILES1%NI(IRHO,IION)
+            PROFILES%VTOR(IRHO,IION) = PROFILES1%VTOR(IRHO,IION)
+          ENDDO
+
+        ENDDO
+
+      ENDIF
+
+
+      ERROR%NI_ERR(ITIME)            = 0._DP
+      ERROR%NE_ERR(ITIME)            = 0._DP
+      ERROR%TI_ERR(ITIME)            = 0._DP
+      ERROR%TE_ERR(ITIME)            = 0._DP
+      ERROR%PSI_ERR(ITIME)           = 0._DP
+      ERROR%VTOR_ERR(ITIME)          = 0._DP 
+
+
+      DO IRHO=1,NRHO
+        ERROR%NE_ERR(ITIME)          = ERROR%NE_ERR(ITIME)  + (PROFILES1%NE(IRHO)-PROFILES%NE(IRHO))**2
+        ERROR%TE_ERR(ITIME)          = ERROR%TE_ERR(ITIME)  + (PROFILES1%TE(IRHO)-PROFILES%TE(IRHO))**2
+        ERROR%PSI_ERR(ITIME)         = ERROR%PSI_ERR(ITIME) + (PROFILES1%PSI(IRHO)-PROFILES%PSI(IRHO))**2
+
+        DO IION=1,NION
+          ERROR%NI_ERR(ITIME)        = ERROR%NI_ERR(ITIME)  + (PROFILES1%NI(IRHO,IION)-PROFILES1%NI(IRHO,IION))**2
+          ERROR%TI_ERR(ITIME)        = ERROR%TI_ERR(ITIME)  + (PROFILES1%TI(IRHO,IION)-PROFILES1%TI(IRHO,IION))**2       
+          ERROR%VTOR_ERR(ITIME)      = ERROR%VTOR_ERR(ITIME)+ (PROFILES1%VTOR(IRHO,IION)-PROFILES1%VTOR(IRHO,IION))**2        
+        ENDDO
+
+      ENDDO
+ 
+
+! +++ WRITING PSI ANALYTICAL, PSI,TE ANALYTICAL,TE
+      IF (ITIME.LE.9)    WRITE(EXT1,'(I1)') ITIME
+      IF (ITIME.GE.10)   WRITE(EXT2,'(I2)') ITIME
+      IF (ITIME.GE.100)  WRITE(EXT3,'(I3)') ITIME
+      IF (ITIME.GE.1000) WRITE(EXT4,'(I4)') ITIME
+      IF (ITIME.LE.9)    FILENAME='OUTPUT/OUT_PSI_TE'//EXT1//'.DAT'
+      IF (ITIME.GE.10)   FILENAME='OUTPUT/OUT_PSI_TE'//EXT2//'.DAT'
+      IF(ITIME.GE.100)   FILENAME='OUTPUT/OUT_PSI_TE'//EXT3//'.DAT'
+      IF (ITIME.GE.1000) FILENAME='OUTPUT/OUT_PSI_TE'//EXT4//'.DAT'
+
+
+      OPEN(UNIT=20,FILE=FILENAME)
+      WRITE(20,'(8(1X,E14.8))')  ERROR%PSI_ERR(ITIME),ERROR%TE_ERR(ITIME)
+
+
+      DO IRHO=1,NRHO
+        WRITE(20,'(8(1X,E14.8))')                                   &
+        GEOMETRY%RHO(IRHO),PROFILES1%PSI(IRHO),PROFILES%PSI(IRHO),PROFILES1%TE(IRHO),PROFILES%TE(IRHO),FDIA(iRHO),ASIGMA(rho(IRHO),t)
+      ENDDO
+	
+ 
+      IF (ITIME.LE.9)    FILENAME='OUTPUT/OUT_NI'//EXT1//'.DAT'
+      IF (ITIME.GE.10)   FILENAME='OUTPUT/OUT_NI'//EXT2//'.DAT'
+      IF (ITIME.GE.100)  FILENAME='OUTPUT/OUT_NI'//EXT3//'.DAT'
+      IF (ITIME.GE.1000) FILENAME='OUTPUT/OUT_NI'//EXT4//'.DAT'
+
+
+      OPEN(UNIT=20,FILE=FILENAME)
+      WRITE(20,'(8(1X,E14.8))')  ERROR%NI_ERR(ITIME)
+
+
+      DO IRHO=1,NRHO
+        WRITE(20,'(8(1X,E14.8))')                             &
+             GEOMETRY%RHO(IRHO),(PROFILES1%NI(IRHO,IION),PROFILES%NI(IRHO,IION),IION=1,NION)
+      ENDDO
+
+      CLOSE(20)
+
+
+! +++ WRITING TI ANALYTICAL, TI   FOR I=1,NION
+      IF (ITIME.LE.9)    WRITE(EXT1,'(I1)') ITIME
+      IF (ITIME.GE.10)   WRITE(EXT2,'(I2)') ITIME
+      IF (ITIME.GE.100)  WRITE(EXT3,'(I3)') ITIME
+      IF (ITIME.GE.1000) WRITE(EXT4,'(I4)') ITIME
+      IF (ITIME.LE.9)    FILENAME='OUTPUT/OUT_TI'//EXT1//'.DAT'
+      IF (ITIME.GE.10)   FILENAME='OUTPUT/OUT_TI'//EXT2//'.DAT'
+      IF (ITIME.GE.100)  FILENAME='OUTPUT/OUT_TI'//EXT3//'.DAT'
+      IF (ITIME.GE.1000) FILENAME='OUTPUT/OUT_TI'//EXT4//'.DAT'
+
+
+      OPEN(UNIT=20,FILE=FILENAME)
+      WRITE(20,'(8(1X,E14.8))')  ERROR%TI_ERR(ITIME)
+	   
+
+      DO IRHO=1,NRHO
+        WRITE(20,'(8(1X,E14.8))')                                   &
+              GEOMETRY%RHO(IRHO),(PROFILES1%TI(IRHO,IION),PROFILES%TI(IRHO,IION),IION=1,NION)
+      ENDDO
+
+
+      CLOSE (20)
+
+
+! +++ WRITING VTOR ANALYTICAL,VTOR   FOR I=1,NION
+      IF (ITIME.LE.9)    WRITE(EXT1,'(I1)') ITIME
+      IF (ITIME.GE.10)   WRITE(EXT2,'(I2)') ITIME
+      IF (ITIME.GE.100)  WRITE(EXT3,'(I3)') ITIME
+      IF (ITIME.GE.1000) WRITE(EXT4,'(I4)') ITIME
+      IF (ITIME.LE.9)    FILENAME='OUTPUT/OUT_VTOR'//EXT1//'.DAT'
+      IF (ITIME.GE.10)   FILENAME='OUTPUT/OUT_VTOR'//EXT2//'.DAT'
+      IF (ITIME.GE.100)  FILENAME='OUTPUT/OUT_VTOR'//EXT3//'.DAT'
+      IF (ITIME.GE.1000) FILENAME='OUTPUT/OUT_VTOR'//EXT4//'.DAT'
+
+
+      OPEN(UNIT=20,FILE=FILENAME)
+      WRITE(20,'(8(1X,E14.8))')  ERROR%VTOR_ERR(ITIME)
+	 
+
+      DO IRHO=1,NRHO
+        WRITE(20,'(8(1X,E14.8))')                                   &
+             GEOMETRY%RHO(IRHO),(PROFILES1%VTOR(IRHO,IION),PROFILES%VTOR(IRHO,IION),IION=1,NION)
+      ENDDO
+       
+ 
+      CLOSE(20)
+
+
+      OPEN(40,FILE ='beforecoll')
+
+      DO IRHO=1,NRHO
+        WRITE(40,*) irho
+        WRITE(40,'(8(1X,E14.8))') profiles1%ne(irho),profiles1%te(irho),profiles1%psi(irho)
+        WRITE(40,'(8(1X,E14.8))') profiles1%NI(IRHO,1),PROFILES1%TI(IRHO,1),PROFILES1%VTOR(IRHO,1)
+      ENDDO
+
+      CLOSE(40)
+
+
+      CALL PLASMA_COLLISIONS (GEOMETRY,PROFILES1,COLLISION1,ifail) 
+ 
+      OPEN(25,FILE='IN_FULL')
+
+      WRITE(25,'(8(1X,E14.8))') COLLISION1%UZI(2,1)
+      WRITE(25,*)  COLLISION1%NION,COLLISION1%NRHO
+
+      DO IRHO=1,NRHO
+        DO IION=1,NION
+          WRITE(25,*) IRHO,IION
+          WRITE(25,'(8(1X,E14.8))') COLLISION1%VEI(IRHO,IION),COLLISION1%QZI(IRHO,IION),COLLISION1%QEI(IRHO,IION)
+          WRITE(25,'(8(1X,E14.8))') COLLISION1%VZI(IRHO,IION),COLLISION1%WZI(IRHO,IION),COLLISION1%UZI(IRHO,IION)
+        ENDDO
+      ENDDO
+
+      CLOSE(25)
+ 
+ 
+ 
+ 
+!=================================================================================      
+ 
+! +++ TRANSPORT_COEFFICIENT
+      OPEN(27,file='sigmacol')
+
+      DO IRHO=1,NRHO
+        X                                   = RHO(IRHO)
+
+        WRITE(27,*) 'sigma', collision1%sigma(irho)
+
+        IF(SIGMA_SOURCE.EQ.1) THEN
+          AVAL1                             = ASIGMA(X,T)
+          SIGMA(IRHO)                       = AVAL1
+          TRANSPORT%SIGMA(IRHO,1)           = AVAL1
+        ENDIF
+
+
+        IF(SIGMA_SOURCE.EQ.0) THEN
+          AVAL1                             = COLLISION1%SIGMA(IRHO) 
+          SIGMA(IRHO)                       = AVAL1
+        ENDIF	
+
+      ENDDO
+
+
+      CLOSE(27)       
+ 
+ 
+      IRHOLOOP11: DO IRHO=1,NRHO
+        X                                   = RHO(IRHO)
+        AVAL1                               = AKATE(X,T)
+        TRANSPORT%DIFF_TE(IRHO,1)           = AVAL1
+        DIFF_TE(IRHO,1)                     = AVAL1
+        AVAL1                               = AVTE(X,T)
+        VCONV_TE(IRHO,1)                    = AVAL1
+        TRANSPORT%VCONV_TE(IRHO,1)          = AVAL1
+ 
+        IONLOOP1: DO IION=1,NION
+          AVAL1                             = AD(IION,X,T)
+          TRANSPORT%DIFF_NI(IRHO,IION,1)    = AVAL1 
+          DIFF_NI(IRHO,IION,1)              = AVAL1 
+		
+          AVAL1                             = AV(IION,X,T)
+          VCONV_NI(IRHO,IION,1)             = AVAL1
+          TRANSPORT%VCONV_NI(IHO,IION,1)    = AVAL1
+        
+          AVAL1                             = AKAPPAE(IION,X,T)
+          DIFF_TI(IRHO,IION,1)              = AVAL1
+          TRANSPORT%DIFF_TI(IRHO,IION,1)    = AVAL1 
+        
+          AVAL1                             = AVTI(IION,X,T)
+          VCONV_TI(IRHO,IION,1)             = AVAL1
+          TRANSPORT%VCONV_TI(IRHO,IION,1)   = AVAL1
+        
+          AVAL1                             = ADVTOR(IION,X,T)
+          DIFF_VTOR(IRHO,IION,1)            = AVAL1
+          TRANSPORT%DIFF_VTOR(IRHO,IION,1)  = AVAL1        
+        
+          AVAL1                             = ACONVTOR(IION,X,T)
+          VCONV_VTOR(IRHO,IION,1)           = AVAL1
+          TRANSPORT%VCONV_VTOR(IRHO,IION,1) = AVAL1  
+        ENDDO IONLOOP1
+
+      ENDDO IRHOLOOP11
+
+
+
+!=================================================================================        
+        
+! +++ SOURCES_AND_SINKS 
+!     CALCULATION OF EXPLICIT SOURCES FROM TRANSPORT EQUATION USING THE ANALATICAL FORMULAE FOR SOLUTIONS
+!     AND TRANSPORT COEFFICIENTS        
+
+
+
+
+ 
+!CURRENT EQUATION
+       T=TIME
+ 
+
+       OPEN(26,FILE='PSISPORCE')
+
+
+       IRHOLOOP2: DO IRHO=2,NRHO
+       X                        = RHO(IRHO)
+        
+! +++ TIME DERIVATIVE        
+       AVAL1                    = SIGMA(IRHO)*DTAPSI(X,T)
+
+       AVAL2                    = -X*DTABT(T)/2.0_DP/ABT(T)*DAPSI(X,T)*SIGMA(IRHO)
+       AVAL3                    = FDIA(IRHO)**2/MU/ABT(T)/X
+
+       AVAL4                    = VPR(IRHO)/(4.0_DP*PI**2)*G3(IRHO)/FDIA(IRHO)
+       AVAL5                    = DAVPR(X,T)/(4.0_DP*PI**2)*G3(IRHO)/FDIA(IRHO)      
+       AVAL5                    = AVAL5+AVPR(X,T)/(4.0_DP*PI**2)*DAG3(X,T)/FDIA(IRHO)
+       AVAL5                    = AVAL5-AVPR(X,T)/(4.0_DP*PI**2)*G3(IRHO)/FDIA(IRHO)**2*DAFDIA(X,T)
+       AVAL1                    = AVAL1+AVAL2-AVAL3*AVAL4*DDAPSI(X,T)-AVAL3*AVAL5*DAPSI(X,T)
+
+       WRITE(26,*) AVAL3,AVAL4,AVAL5
+       WRITE(26,*)AVAL1
+		
+       AVAL1                    = AVAL1*(2._DP*PI*X)/VPR(IRHO)+ACURR_IMP(X,T)*PSI(IRHO)
+        
+       WRITE(26,*)AVAL1
+	  
+       SOURCES%CURR_EXP(IRHO,1) = -AVAL1
+       SOURCES%CURR_IMP(IRHO,1) = ACURR_IMP(X,T)
+  
+       ENDDO IRHOLOOP2
+ 
+
+      CLOSE(26)      
+	
+
+      SOURCES%CURR_EXP(1,1)      = SOURCES%CURR_EXP(2,1)
+      SOURCES%CURR_IMP(1,1)      = ACURR_IMP(0._DP,T)
+
+
+! +++ BOUNDARY CONDITION
+      IF(PSI_BDN_TYPE(2).EQ.0) THEN
+        DO IRHO=2,NRHO
+          PROFILES%QSF(IRHO)     = 2._DP*PI*RHO(IRHO)*ABT(T)/DAPSI(RHO(IRHO),T)
+!        PROFILES%QSF_INTERP(IRHO)=PROFILES%QSF(IRHO)
+        ENDDO
+		
+        PROFILES%QSF(1)          = 2._DP*PI*ABT(T)/DDAPSI(RHO(1),T)		
+		
+      ENDIF
+
+
+!        PROFILES%QSF_INTERP(1)=PROFILES%QSF(1)
+        IF(PSI_BDN_TYPE(2).EQ.1) THEN
+       PROFILES%PSI_BND(2,1)    = PSI(NRHO)
+!        write(*,*) profiles%psi_bnd(2,1)        
+	ENDIF
+
+        IF(PSI_BDN_TYPE(2).EQ.2) THEN
+       PROFILES%PSI_BND(2,1)    = VPR(NRHO)*G3(NRHO)*DAPSI(RHO(NRHO),T)/4._DP/PI**2/MU
+       	ENDIF
+
+        IF(PSI_BDN_TYPE(2).EQ.3) THEN
+       PROFILES%PSI_BND(3,1) = DTAPSI(RHO(NRHO),T)
+        ENDIF
+
+!            IF(PSI_BND_TYPE(2).EQ.4) THEN
+!           PROFILES%PSI_BND(2,3)=DAPSI(RHO(NRHO),T)*PROFILES%PSI_BND(2,1)+APSI(RHO(NRHO),T)*PROFILES%PSI_BND(2,2)
+!            ENDIF
+
+!OHMIC HEATING
+
+
+!END CURRENT EQUATION
+
+
+
+
+! +++ PARTICLE TRANSPORT
+
+        DO IION=1,NION
+       T                          = TIME
+
+       DO IRHO=2,NRHO
+         X                           = RHO(IRHO)
+         AVAL1                       = DTAVPR(X,T)*ANI(IION,X,T)+AVPR(X,T)*DTANI(IION,X,T)
+         AVAL2                       = -DTABT(T)/2._DP/ABT(T)*(AVPR(X,T)* ANI(IION,X,T)+X *(DAVPR(X,T)* ANI(IION,X,T)+AVPR(X,T)* DANI(IION,X,T)))
+         GAMMA(IION,IRHO)            = AVPR(X,T)* AG1(X,T)*(-AD(IION,X,T)* DANI(IION,X,T)+ANI(IION,X,T)*AV(IION,X,T))
+            DGAMMA(IION,IRHO)        = AVPR(X,T)* AG1(X,T)*(-AD(IION,X,T)* DDANI(IION,X,T)+DANI(IION,X,T)*AV(IION,X,T))  
+        
+	    DGAMMA(IION,IRHO)           = DGAMMA(IION,IRHO)+DAVPR(X,T)* AG1(X,T)*(-AD(IION,X,T)* DANI(IION,X,T)+AV(IION,X,T)*ANI(IION,X,T))       
+         DGAMMA(IION,IRHO)           = DGAMMA(IION,IRHO)+AVPR(X,T)* DAG1(X,T)*(-AD(IION,X,T)* DANI(IION,X,T)+AV(IION,X,T)*ANI(IION,X,T))         
+         DGAMMA(IION,IRHO)           = DGAMMA(IION,IRHO)+AVPR(X,T)* AG1(X,T)*(-DAD(IION,X,T)* DANI(IION,X,T)+DAV(IION,X,T)*ANI(IION,X,T))           
+
+         AVAL1                       = AVAL1+AVAL2+DGAMMA(IION,IRHO)+AVPR(X,T)*ANI(IION,X,T)*ASI_IMP(IION,X,T)
+            SOURCES%SI_EXP(IRHO,IION,1) = AVAL1/AVPR(X,T)
+         SOURCES%SI_IMP(IRHO,IION,1) = ASI_IMP(IION,X,T)
+       ENDDO
+
+
+       SOURCES%SI_EXP(1,IION,1)      = SOURCES%SI_EXP(2,IION,1)
+       SOURCES%SI_IMP(1,IION,1)      = ASI_IMP(IION,0._DP,T)
+
+ 
+! +++ BOUNDARY CONDITION
+       IF (NI_BND_TYPE(2,IION).EQ.1)THEN
+         PROFILES%NI_BND(2,1,IION)   = ANI(IION,RHO(NRHO),T)    
+       ENDIF 
+
+       IF (NI_BND_TYPE(2,IION).EQ.2)THEN
+         PROFILES%NI_BND(2,1,IION)   = -DANI(IION,RHO(NRHO),T)    
+       ENDIF
+
+       IF (NI_BND_TYPE(2,IION).EQ.3)THEN
+         PROFILES%NI_BND(2,1,IION)   = -ANI(IION,RHO(NRHO),T)/DANI(IION,RHO(NRHO),T)    
+       ENDIF
+
+       IF (NI_BND_TYPE(2,IION).EQ.4)THEN
+         PROFILES%NI_BND(2,1,IION)   = GAMMA(IION,NRHO)   
+       ENDIF 
+  
+        ENDDO
+ !IIONLOOP2
+
+! +++ ELECTRON DENSISTY AND FLUXES
+        DO IRHO =1,NRHO
+	  X                           = RHO(IRHO)
+	  NE(IRHO)                    = 0._DP
+	  DNE(IRHO)                   = 0._DP
+	  DTNE(IRHO)                  = 0._DP
+	  GAMMAE(IRHO)                = 0._DP
+	  DGAMMAE(IRHO)               = 0._DP
+
+ 	  DO IION=1,NION
+	    NE(IRHO)                  = NE(IRHO)+ZION(IION)*NI(IRHO,IION)
+	    DTNE(IRHO)                = DTNE(IRHO)+ZION(IION)*DTANI(IION,X,T)
+	    DNE(IRHO)                 = DNE(IRHO)+ZION(IION)*DANI(IION,X,T)
+            GAMMAE(IRHO)              = GAMMAE(IRHO) +GAMMA(IION,IRHO)*ZION(IION)
+         DGAMMAE(IRHO)             = DGAMMAE(IRHO)+DGAMMA(IION,IRHO)*ZION(IION)
+       ENDDO
+
+	ENDDO
+
+
+
+
+!         TI_ENERGY_SOURCE=0.0_DP
+
+
+! +++ ION ENERGY TRANSPORT
+!IIONLOOP3
+        DO IION=1,NION
+       T=TIME
+!IRHOLOOP3
+          DO IRHO=2,NRHO
+         X                           = RHO(IRHO)
+         AVAL1                       = DTAVPR(X,T)*AVPR(X,T)**(2._DP/3._DP)*ANI(IION,X,T)*ATI(IION,X,T)
+         AVAL1                       = AVAL1+AVPR(X,T)**(5._DP/3._DP)*DTANI(IION,X,T)*ATI(IION,X,T)
+         AVAL1                       = AVAL1+AVPR(X,T)**(5._DP/3._DP)*ANI(IION,X,T)*DTATI(IION,X,T)
+
+         AVAL2                       = -DTABT(T)/2._DP/ABT(T)
+
+         AVAL3                       = ANI(IION,X,T)*ATI(IION,X,T)*AVPR(X,T)**(5._DP/3._DP)
+         AVAL3                       = AVAL3+ X*DANI(IION,X,T)*ATI(IION,X,T)*AVPR(X,T)**(5._DP/3._DP)
+         AVAL3                       = AVAL3+ X*ANI(IION,X,T)*DATI(IION,X,T)*AVPR(X,T)**(5._DP/3._DP)
+         AVAL3                       = AVAL3+ X*ANI(IION,X,T)*ATI(IION,X,T)*AVPR(X,T)**(2._DP/3._DP)*DAVPR(X,T)
+
+         AVAL1                       = AVAL1+AVAL2*AVAL3
+         AVAL1                    = AVAL1*3._DP/2._DP
+
+            AVAL2                    = AVPR(X,T)*AG1(X,T)*ANI(IION,X,T)                                    
+
+         AVAL3                       = -AKAPPAE(IION,X,T)*DATI(IION,X,T)+ATI(IION,X,T)*AVTI(IION,X,T)
+
+         AVAL4                       = DAVPR(X,T)*AG1(X,T)*ANI(IION,X,T)+AVPR(X,T)*DAG1(X,T)*ANI(IION,X,T)+AVPR(X,T)*AG1(X,T)*DANI(IION,X,T)
+
+         AVAL5                       = -DAKAPPAE(IION,X,T)*DATI(IION,X,T)+ATI(IION,X,T)*DAVTI(IION,X,T)
+         AVAL5                       = AVAL5-AKAPPAE(IION,X,T)*DDATI(IION,X,T)+DATI(IION,X,T)*AVTI(IION,X,T)
+
+         AVAL6                       = AVAL2*AVAL5+AVAL4*AVAL3
+
+         AVAL1                       = AVAL1+AVAL6*AVPR(X,T)**(2._DP/3._DP)
+
+         C1                          = 5._DP/2._DP
+	    C1                          = 0._DP
+
+	    AVAL2                       = DATI(IION,X,T)*GAMMA(IION,IRHO)+ATI(IION,X,T)*DGAMMA(IION,IRHO)
+
+	    AVAL1                       = AVAL1+C1*AVAL2*AVPR(X,T)**(2._DP/3._DP)
+         AVAL1                       = AVAL1/AVPR(X,T)**(5._DP/3._DP)
+
+!       AVAL2=C1*G2(X,T)*GAMMAE(IRHO)/ANE(IRHO)*AVPR(X,T)**(5._DP/3._DP)
+         VEI(IRHO)                   = COLLISION1%VEI(IRHO,IION)
+         QEI(IRHO)                   = COLLISION1%QEI(IRHO,IION)
+         VZI(IRHO)                   = COLLISION1%VZI(IRHO,IION)
+         QZI(IRHO)                   = COLLISION1%QZI(IRHO,IION)
+
+         AVAL2                       = (AQI_IMP(IION,X,T) + VEI(IRHO) + VZI(IRHO) )                                         
+
+         SOURCES%QI_EXP(IRHO,IION,1) = AVAL1- QEI(IRHO) - QZI(IRHO) +AVAL2*ATI(IION,X,T)
+            SOURCES%QI_IMP(IRHO,IION,1) = AQI_IMP(IION,X,T)
+       ENDDO
+
+          SOURCES%QI_EXP(1,IION,1)      = SOURCES%QI_EXP(2,IION,1)
+       SOURCES%QI_IMP(1,IION,1)      = AQI_IMP(IION,0._DP,T)
+        ENDDO
+
+ !BOUNDARY CONDITION
+ 
+ !BOUNDARY CONDITION
+         DO IION=1,NION
+           IF (TI_BND_TYPE(2,IION).EQ.1)THEN
+          PROFILES%TI_BND(2,1,IION)  = ATI(IION,RHO(NRHO),T)    
+        ENDIF
+
+        IF (TI_BND_TYPE(2,IION).EQ.2)THEN
+          PROFILES%TI_BND(2,1,IION)  = -DATI(IION,RHO(NRHO),T)    
+        ENDIF
+
+        IF (TI_BND_TYPE(2,IION).EQ.3)THEN
+          PROFILES%TI_BND(2,1,IION)  = -ATI(IION,RHO(NRHO),T)/DATI(IION,RHO(NRHO),T)    
+        ENDIF
+
+        IF (TI_BND_TYPE(2,IION).EQ.4)THEN
+          X                          = RHO(NRHO)
+          AVAL2                      = AVPR(X,T)*AG1(X,T)*ANI(IION,X,T) 
+          AVAL3                      = (-AKAPPAE(IION,X,T)*DTATI(IION,X,T)+ATI(IION,X,T)*AVTI(IION,X,T))*AVAL2+C1*ATI(IION,X,T)*GAMMA(IION,NRHO)
+          PROFILES%TI_BND(2,1,IION)  = AVAL3   
+           ENDIF 
+
+      ENDDO
+        
+ ! ELECTRON ENERGY
+ 
+
+        T=TIME
+!IRHOLOOP3
+        
+        DO IRHO=2,NRHO
+          X                             = RHO(IRHO)
+       AVAL1                         = DTAVPR(X,T)*AVPR(X,T)**(2._DP/3._DP)*NE(IRHO)*ATE(X,T)
+       AVAL1                         = AVAL1+AVPR(X,T)**(5._DP/3._DP)*DTNE(IRHO)*ATE(X,T)
+       AVAL1                         = AVAL1+AVPR(X,T)**(5._DP/3._DP)*NE(IRHO)*DTATE(X,T)
+       AVAL2                         = -DTABT(T)/2._DP/ABT(T)
+       AVAL3                         = NE(IRHO)*ATE(X,T)*AVPR(X,T)**(5._DP/3._DP)
+       AVAL3                         = AVAL3+ X*DNE(IRHO)*ATE(X,T)*AVPR(X,T)**(5._DP/3._DP)
+       AVAL3                         = AVAL3+ X*NE(IRHO)*DATE(X,T)*AVPR(X,T)**(5._DP/3._DP)
+       AVAL3                         = AVAL3+ X*NE(IRHO)*ATE(X,T)*AVPR(X,T)**(2._DP/3._DP)*DAVPR(X,T)
+       AVAL1                         = AVAL1+AVAL2*AVAL3
+       AVAL1                         = AVAL1*3._DP/2._DP
+       AVAL2                         = AVPR(X,T)*AG1(X,T)*NE(IRHO)                        
+       AVAL3                         = -AKATE(X,T)*DATE(X,T)+ATE(X,T)*AVTE(X,T)
+       AVAL4                         = DAVPR(X,T)*AG1(X,T)*NE(IRHO)+AVPR(X,T)*DAG1(X,T)*NE(IRHO)+AVPR(X,T)*AG1(X,T)*DNE(IRHO)
+       AVAL5                         = -DAKATE(X,T)*DATE(X,T)+ATE(X,T)*DAVTE(X,T)
+       AVAL5                         = AVAL5-AKATE(X,T)*DDATE(X,T)+DATE(X,T)*AVTE(X,T)
+       AVAL6                         = AVAL2*AVAL5+AVAL4*AVAL3
+       AVAL1                         = AVAL1+AVAL6*AVPR(X,T)**(2._DP/3._DP)
+       C1                            = 0._DP
+       AVAL2                         = C1*(AVPR(X,T)**(2._DP/3._DP)*(DATE(X,T)*GAMMAE(IRHO)+ ATE(X,T)*DGAMMAE(IRHO)))
+       AVAL1                         = AVAL1+AVAL2
+	  AVAL1                         = AVAL1/AVPR(X,T)**(5._DP/3._DP)
+!        AVAL2=C2*G2(X,T)*GAMMAE(IRHO)/ANE(IRHO)*AVPR(X,T)**(5._DP/3._DP)
+       VIE(IRHO)                     = COLLISION1%VIE(IRHO)
+       QIE(IRHO)                     = COLLISION1%QIE(IRHO)
+!          VIZ(IRHO)          = COLLISION1%VIZ(IRHO)
+!       QIZ(IRHO)          = COLLISION1%QZI(IRHO)
+       AVAL2                         = (AQE_IMP(X,T) + VIE(IRHO)  )                                         
+       SOURCES%QE_EXP(IRHO,1)        = AVAL1 +AVAL2*ATE(X,T)-QIE(IRHO)
+       SOURCES%QE_IMP(IRHO,1)        = AQE_IMP(X,T)
+        ENDDO
+
+        SOURCES%QE_EXP(1,1)             = SOURCES%QE_EXP(2,1)
+        SOURCES%QE_IMP(1,1)             = SOURCES%QE_IMP(2,1)
+ !IRHOLOOP2       
+ 
+ !IIONLOOP2
+         
+        IF (TE_BND_TYPE(2).EQ.1)THEN
+ !BOUNDARY CONDITION
+       PROFILES%TE_BND(2,1)          = TE(NRHO)    
+        ENDIF
+        
+        IF (TE_BND_TYPE(2).EQ.2)THEN
+       PROFILES%TE_BND(2,1)          = -DATE(RHO(NRHO),T)   
+        ENDIF
+       
+        IF (TE_BND_TYPE(2).EQ.3)THEN
+       PROFILES%TE_BND(2,1)          = -TE(NRHO)/DATE(RHO(NRHO),T)    
+        ENDIF
+      
+        IF (TE_BND_TYPE(2).EQ.4)THEN
+       X                             = RHO(NRHO)
+       AVAL2                         = AVPR(X,T)*AG1(X,T)*NE(NRHO) 
+       AVAL3                         = -AKATE(X,T)*DATE(X,T)+ATE(RHO(NRHO),T)*AVTE(X,T)
+       PROFILES%TE_BND(2,1)          = AVAL2*AVAL3+5._DP/2._DP*ATE(RHO(NRHO),T)*GAMMAE(NRHO)   
+        ENDIF 
+         
+
+! ROTATION 
+!ROTATION TRANSPORT
+!IIONLOOP3
+        DO IION=1,NION
+       T                             = TIME
+!IRHOLOOP3
+        OPEN(9,FILE='COLL')
+
+       DO IRHO=2,NRHO
+            X                          = RHO(IRHO)
+         AVAL1                      = DTAVPR(X,T)*ANI(IION,X,T)*AVTOR(IION,X,T)*AG2(X,T)
+         AVAL1                      = AVAL1+AVPR(X,T)*DTANI(IION,X,T)*AVTOR(IION,X,T)*AG2(X,T)
+         AVAL1                      = AVAL1+AVPR(X,T)*ANI(IION,X,T)*DTAVTOR(IION,X,T)*AG2(X,T)
+         AVAL1                      = AVAL1+AVPR(X,T)*ANI(IION,X,T)*AVTOR(IION,X,T)*DTAG2(X,T)
+!        AVAL1=AVAL1+AVPR(X,T)*ANI(IION,X,T)*AVTOR(IION,X,T)*AG2(X,T)*DTAG1(X,T)
+
+	    AVAL2                      = -DTABT(T)/2._DP/ABT(T)
+
+         AVAL3                      = ANI(IION,X,T)*AVTOR(IION,X,T)*AVPR(X,T)*AG2(X,T)
+         AVAL3                      = AVAL3+ X*DANI(IION,X,T)*AVTOR(IION,X,T)*AVPR(X,T)*AG2(X,T)
+         AVAL3                      = AVAL3+ X*ANI(IION,X,T)*DAVTOR(IION,X,T)*AVPR(X,T)*AG2(X,T)
+         AVAL3                      = AVAL3+ X*ANI(IION,X,T)*AVTOR(IION,X,T)*DAVPR(X,T)*AG2(X,T)
+         AVAL3                      = AVAL3+ X*ANI(IION,X,T)*AVTOR(IION,X,T)*DAVPR(X,T)*DAG2(X,T)
+
+         AVAL1                      = AVAL1+AVAL2*AVAL3
+        
+         AVAL2                      = AVPR(X,T)*AG2(X,T)*ANI(IION,X,T)*AG1(X,T)                                    
+
+         AVAL3                      = -ADVTOR(IION,X,T)*DAVTOR(IION,X,T)+AVTOR(IION,X,T)*ACONVTOR(IION,X,T)
+
+         AVAL4                      = DAVPR(X,T)*AG2(X,T)*ANI(IION,X,T)+AVPR(X,T)*DAG2(X,T)*ANI(IION,X,T)+AVPR(X,T)*AG2(X,T)*DANI(IION,X,T)
+         AVAL4                      = AVAL4*AG1(X,T)+AVPR(X,T)*AG2(X,T)*ANI(IION,X,T)*DAG1(X,T)
+		        
+         AVAL5                      = -DADVTOR(IION,X,T)*DAVTOR(IION,X,T)+AVTOR(IION,X,T)*DACONVTOR(IION,X,T)
+         AVAL5                      = AVAL5-ADVTOR(IION,X,T)*DDAVTOR(IION,X,T)+DAVTOR(IION,X,T)*ACONVTOR(IION,X,T)
+
+         AVAL6                      = AVAL2*AVAL5+AVAL4*AVAL3 +DAG2(X,T)*GAMMA(IION,IRHO)*AVTOR(IION,X,T)!*AVAL4
+	    AVAL6                      = AVAL6+(AG2(X,T)*DGAMMA(IION,IRHO)*AVTOR(IION,X,T)+AG2(X,T)*GAMMA(IION,IRHO)*DAVTOR(IION,X,T))!*AVAL4
+
+         AVAL1                      = AVAL1+AVAL6
+         AVAL1                      = AVAL1*PROFILES%MION(IION)/AVPR(X,T)
+
+         WRITE(9,*) AVAL1,AVPR(X,T)
+
+!        AVAL2=C1*AVPR(X,T)**(2._DP/3._DP)*(DATI(IION,X,T)*GAMMA(IION,X,T)+ ATI(IION,X,T)*DGAMMA(IION,X,T))
+!        AVAL1=AVAL1+AVAL2
+!        AVAL2=C2*G2(X,T)*GAMMAE(IRHO)/ANE(IRHO)*AVPR(X,T)**(5._DP/3._DP)
+      
+            UZI(IRHO)                  = COLLISION1%UZI(IRHO,IION)
+         WZI(IRHO)                  = COLLISION1%WZI(IRHO,IION)
+         AVAL2                      = AUI_IMP(IION,X,T)  + WZI(IRHO)                                        
+
+         SOURCES%UI_EXP(IRHO,IION,1)= AVAL1 +AVAL2*AVTOR(IION,X,T) - UZI(IRHO)
+            SOURCES%UI_IMP(IRHO,IION,1)=  AUI_IMP(IION,X,T)
+
+         WRITE(9,*) AVAL1,AVPR(X,T),COLLISION1%UZI(IRHO,IION),COLLISION1%WZI(IRHO,IION),COLLISION1%VZI(IRHO,IION),COLLISION1%QZI(IRHO,iioN)
+
+       ENDDO
+       SOURCES%UI_EXP(1,IION,1)     = SOURCES%UI_EXP(2,IION,1)
+       SOURCES%UI_EXP(1,IION,1)     = AUI_IMP(IION,0._DP,T)
+ !IRHOLOOP2       
+        ENDDO
+
+
+        CLOSE(9)
+ 
+
+ ! +++ BOUNDARY CONDITION
+      DO IION=1,NION
+        IF (VTOR_BND_TYPE(2,IION).EQ.1)THEN
+          PROFILES%VTOR_BND(2,1,IION) = AVTOR(IION,RHO(NRHO),T)    
+        ENDIF
+      
+        IF (VTOR_BND_TYPE(2,IION).EQ.2)THEN
+          PROFILES%VTOR_BND(2,1,IION) = -DAVTOR(IION,RHO(NRHO),T)    
+        ENDIF
+
+        IF (VTOR_BND_TYPE(2,IION).EQ.3)THEN
+          PROFILES%VTOR_BND(2,1,IION) = -AVTOR(IION,RHO(NRHO),T)/DAVTOR(IION,RHO(NRHO),T)    
+        ENDIF
+        
+        IF (VTOR_BND_TYPE(2,IION).EQ.4)THEN
+          X                           = RHO(NRHO)
+          AVAL2                       = AVPR(X,T)*AG2(X,T)*ANI(IION,X,T)*AG1(X,T) 
+          AVAL3                       = -ADVTOR(IION,X,T)*DAVTOR(IION,X,T)+AVTOR(IION,RHO(NRHO),T)*ACONVTOR(IION,X,T)
+          PROFILES%VTOR_BND(2,IION,1) = AVAL2*AVAL3 +AVTOR(IION,RHO(NRHO),T)*AG2(X,T)*GAMMA(RHO(NRHO),IION)
+	     PROFILES%VTOR_BND(2,1,IION) = PROFILES%VTOR_BND(2,1,IION)*MION(IION)  
+           ENDIF
+ 
+      ENDDO
+
+
+         OPEN(31,file='IN TI')
+
+         DO IRHO=1,NRHO
+	   WRITE(31,'(8(1X,E14.8))') (sources%qi_exp(irho,iion,1),iion=1,nion),(sources%Ui_EXP(irho,iion,1),iion=1,nion),&
+                                  (sources%Si_EXP(irho,iion,1),iion=1,nion),sources%QE_EXP(irho,1),sources%CURR_EXP(irho,1)
+         ENDDO
+		
+         CLOSE(31)        
+
+
+         CALL DEALLOCATE_PLASMA_PROFILES (PROFILES1, ifail) 
+      CALL DEALLOCATE_COLLISIONALITY (COLLISION1, ifail) 
+      
+
+      RETURN
+
+
+
+      END SUBROUTINE ANALYTICAL_PLASMA
+ 
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+
+
+
+
+      END MODULE ANALYTICS1

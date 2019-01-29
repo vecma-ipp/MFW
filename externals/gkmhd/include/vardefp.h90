@@ -1,0 +1,10 @@
+!...  define vars from fuu
+
+  psi=fsfc(i)%fuu(mupsi,j)
+  theta=fsfc(i)%fuu(mutheta,j)
+  current=fsfc(i)%fuu(muj,j)
+  pressure=fsfc(i)%fuu(mupressure,j)
+  phi=fsfc(i)%fuu(muphi,j)
+  phige=fsfc(i)%fuu(muphige,j)
+  rtor=fsfc(i)%fuu(nvars-4,j)
+  ztor=fsfc(i)%fuu(nvars-3,j)

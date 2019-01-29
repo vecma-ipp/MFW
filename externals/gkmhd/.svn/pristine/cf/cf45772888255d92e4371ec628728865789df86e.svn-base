@@ -1,0 +1,12 @@
+!...  initialise fluctuations too
+
+  INCLUDE 'pinit.h90'
+
+!...  allocate fluctuations
+
+  npvarsfl=nvars
+
+  ALLOCATE (cx(ny0,npvarsfl))
+
+  ALLOCATE (uufl(0:nl,nx0,npvarsfl))
+

@@ -1,0 +1,14 @@
+ <?xml-stylesheet type="text/xsl" href="./bdseq.xsl"
+ charset="ISO-8859-1"?>
+ 
+ <parameters>
+
+   <symmetry_coords> true </symmetry_coords>
+   <write_cpos> false </write_cpos>
+   <write_diags> false </write_diags>
+
+   <nr_eq> 0 </nr_eq>
+   <neta_eq> 0 </neta_eq>
+
+ </parameters>
+ 

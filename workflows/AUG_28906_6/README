@@ -1,0 +1,6 @@
+This input comes from db shot=28906,run=6,g2olivh,aug,4.10b at time 1.0 (equilibrium being set at same time)
+This pulsefile is made of:
+- equilibrium coming from shot=28906,run=21,g2dpc,aug,4.10b (obtained from CLISTE->HELENA->CHEASE)
+- and other CPOs coming from shot=28906,run=4,g2denka,aug,4.10b
+
+MUSCLE workflow calling UAL (works on GW only) is ual.cxa.rb (path to kernels might require update before running)

@@ -1,0 +1,18 @@
+SVN revision 20 did the following:
+
+incorporate equpdate and eqpostdate into the build and fc2k system
+these actors are now bundled with gkmhd
+
+SVN revision 15 did the following:
+
+update trunk to new actor release system
+it should simply require ./build.sh to make the library
+and fc2k -gui fc2k/gkmhd.xml to make the actor
+
+old Makefile is in Makefile_orig
+the new one is for this system only and strips redundant elements
+
+changes to the code itself were minimal -- just had to add
+USE L3interps in several places in three routines:
+metric, dwaux, and putequil
+

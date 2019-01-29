@@ -1,0 +1,22 @@
+!...  open h files
+
+  OPEN (12,file='hpl.dat',form='formatted',status='old')
+  OPEN (15,file='hdw.dat',form='formatted',status='old')
+
+!...  get parms, options
+
+  READ (15,parm)
+  READ (12,plotin)
+
+!...  adjust dimensions
+
+  npesx0=npesx
+
+  npesx=1
+
+  nx0=nx00
+  ny0=ny00
+
+  nx=nx0+2*ngdx
+  ny=ny0+2*ngdy
+

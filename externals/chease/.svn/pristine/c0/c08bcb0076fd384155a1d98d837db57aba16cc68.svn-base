@@ -1,0 +1,139 @@
+# 18jan07 - DJS makefile; should work at LLNL on amd machines.
+##
+# To make futils, do:
+# 1. make clean distclean
+# 2. make all
+# 3. make install
+#
+# Note that you should make code on machine you run; two machines
+# w/ same hardware may have different libraries.
+# In particular, zeus and yana use different mpi libs.
+# In the future, maybe we should have a separate version for each machine.
+
+OS:=$(shell uname -s)
+ARCH:=$(shell uname -m)
+
+ifeq ($(OS), Linux)
+  F90FLAGS    = -I${HDF5}/lib 
+  CFLAGS      = 
+  LDFLAGS     = -L. -L${HDF5}/lib
+  LIBS        = -lfutils -lhdf5_fortran -lhdf5 -lz -lgcc_s
+  MPIRUN      = srun -n 4 -ppdebug
+
+ifeq ($(ARCH),ia64) 
+  F90      = /usr/local/bin/mpiifort
+  CC       = icc
+  HDF5     = /usr/local/hdf5/hdf5-1.6.5/parallel
+  OPTLEVEL = O0
+  CFLAGS_EXTRA = -tpp2 
+  FFLAGS_EXTRA = $(CFLAGS_EXTRA) -fpe0 -nocheck
+endif   
+
+ifeq ($(ARCH), i686)
+  F90      = /usr/local/bin/mpiifort
+  CC       = icc
+  HDF5     = /usr/local/hdf5/hdf5-1.6.5/parallel
+  OPTLEVEL = O3 
+  CFLAGS_EXTRA = -tpp7 -unroll 
+  FFLAGS_EXTRA = $(CFLAGS_EXTRA) -ip -pad -nocheck
+endif
+
+# DJS 18dec06 - these values are based on zeus w/ mpipathf90 compiler.
+# HDF5 libraries made w/ pathscale.
+# Note that pathf90 outputs UPPERCASE.mod files, so install
+# handles this.
+ifeq ($(ARCH), x86_64)
+  F90          = /usr/local/bin/mpipathf90
+  CC           = pathcc
+  HDF5         = /usr/local/tools/hdf5/hdf5-1.6.5/parallel
+### These defs are for optimized compilation
+#  OPTLEVEL     = Ofast
+#  CFLAGS_EXTRA = -march=auto
+#  FFLAGS_EXTRA = -march=auto
+#  LDFLAGS_EXTRA= -ipa
+### These defs for debug mode
+# If you want a plethora of comments, use fullwarn
+  OPTLEVEL     = g
+  CFLAGS_EXTRA = -O0 -Wall
+  FFLAGS_EXTRA = -O0 -Wall -ffortran-bounds-check
+  LDFLAGS_EXTRA=
+endif
+
+  F90FLAGS:= -$(OPTLEVEL) $(F90FLAGS) $(FFLAGS_EXTRA)
+  CFLAGS:= -$(OPTLEVEL) $(CFLAGS) $(CFLAGS_EXTRA)
+endif   
+
+# Compiled lib installed here when you do >make install
+LIBDIR = ../lib/$(OS)/$(ARCH)/$(OPTLEVEL)
+
+SERIAL = ex1 ex2 ex3 ex4 ex5 ex7 ex8 ex9 ex10 ex11
+PARA   = pex1 pex3 pex4 pex5 pex6 pex7 pex8 pex9
+
+.SUFFIXES:
+.SUFFIXES: .o .c .f90
+
+.f90.o:
+	$(F90) $(F90FLAGS) -c $<
+
+all: $(SERIAL) ex6 $(PARA) pex5r 
+lib: libfutils.a getfile
+
+ex%:	ex%.o
+	$(F90) $(LDFLAGS) $(LDFLAGS_EXTRA) -o $@ $<  $(LIBS)
+
+pex%:	pex%.o
+	$(F90) $(LDFLAGS) $(LDFLAGS_EXTRA) -o $@ $<  $(LIBS)
+
+getfile: getfile.o
+	$(F90) $(LDFLAGS) $(LDFLAGS_EXTRA) -o $@ $<  $(LIBS)
+
+testmem: testmem.o cutils.o
+	$(F90) $(LDFLAGS) -o $@ $< cutils.o
+
+libfutils.a: futils.o cutils.o buffer.o vis3d.o
+	ar r $@ $?
+	ranlib $@
+
+futils.o: append.tpl zappend.tpl \
+          putarr.tpl cputarr.tpl \
+          getarr.tpl cgetarr.tpl
+
+buffer.o: futils.o
+
+vis3d.o: futils.o
+
+test_s:	$(SERIAL)
+	@for x in $(SERIAL); do \
+	echo === Running $$x ===;\
+	./$$x ;\
+        echo ;\
+	done
+
+test_p:	$(PARA)
+	@for x in $(PARA); do \
+	echo === Running $$x ===;\
+	$(MPIRUN) ./$$x ;\
+        echo ;\
+	done
+
+$(SERIAL):	libfutils.a
+$(PARALLEL):	libfutils.a
+getfile.o:	libfutils.a
+
+# 5jan07 - For reasons I don't understand, pathf90 wants
+# mod files in the form UPPERCASE.mod.  Keep this, don't change,
+# since when we compile in the src/ dir it wants FUTILS.mod.
+# Since we use and only use pathf0 on amd64, use that as a surrogate
+# for compiler.
+install: $(LIBDIR)
+	cp -f libfutils.a *.mod $(LIBDIR)
+
+$(LIBDIR): 
+	mkdir -p $(LIBDIR)
+
+clean:
+	rm -f *.o *~ a.out
+
+distclean: clean
+	rm -f $(SERIAL) ex6 $(PARA) pex5r  getfile *.h5 *.a *.mod
+

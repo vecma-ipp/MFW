@@ -1,0 +1,134 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<model id="TTE" name="turbulence-transport-equilibrium workflow" xmml_version="0.4" xmlns="http://www.mapper-project.eu/xmml">
+  <!--
+      xMML description of Fusion coupled application composed of  
+      turbulence-transport-equilibrium submodels. 
+      @version: 0.2
+      @author: olivier.hoenen@ipp.mpg.de
+      gMML:
+      - finit = inititialization               (white diamond) 
+      - Oi    = intermediate observation       (black circle)
+      - B     = boundary condition calculation (white triangle)
+      - S     = solving step                   (white circle)
+      - Of    = final observation              (black diamond)
+      TODO:
+      - check/add timescales/spacescales to submodels
+      - does equilibrium has scales?
+      - inputs for turbulence are finit or S?
+      - last/up-to-date definition/description of MML/xMML?
+      - documentation/usage of jmml?
+  -->
+  <description>
+    The application simulates the time evolution of electron and ion
+    temperature profiles (macro) in the core of the plasma and the effects
+    of turbulence at micro scales. The application consists of 3 submodels
+    (transport, equilibrium and turbulence) and one numerical tool (to convert
+    heat fluxes coming from the turbulence submodel into coefficients taken
+    into account by the transport submodel to evolve the temperature profiles).
+    The turbulence code (GEM, 3D gyrofluid fluxtube approximation) is our
+    primary submodel and all other codes (ETS for 1D transport, CHEASE for
+    2D equilibrium and imp4dv to convert fluxes) are auxiliaries in this
+      extreme scaling scenario.
+  </description>
+  
+  <definitions>
+    
+    <mapper id="dupEquil" type="fan-out">
+      <ports>
+	<in id="equilibrium_in" />
+	<out id="equilibrium_out1"/>
+	<out id="equilibrium_out2"/>
+	<out id="equilibrium_out3"/>
+      </ports>
+    </mapper>
+    
+    <mapper id="dupCorep" type="fan-out">
+      <ports>
+	<in id="coreprof_in"/>
+	<out id="coreprof_out1"/>
+	<out id="coreprof_out2"/>
+	<out id="coreprof_out3"/>
+      </ports>
+    </mapper>
+    
+    <submodel id="init">
+      <timescale delta="0" total="0"/>
+      <spacescale delta="0" total="0"/>
+      <ports>
+	<out id="inputCPOs" operator="Of"/>
+      </ports>
+    </submodel>
+    
+    <submodel id="transp">
+      <timescale delta="1E-0" total="1E+1"/>
+      <spacescale delta="1E-2" total="1E+1"/>
+      <ports>
+	<in id="inputCPOs" operator="finit"/>
+	<in id="coreprof_in" operator="S"/>
+	<in id="coretransp_in" operator="S"/>
+	<in id="equilibrium_in" operator="S"/>
+	<out id="coreprof_out" operator="Oi"/>
+	<out id="equilibrium_out" operator="Oi"/>
+      </ports>
+    </submodel>
+    
+    <submodel id="turb" stateful="yes">
+      <timescale delta="1E-6" total="1E-4"/>
+      <spacescale delta="1E-3" total="1E-2"/>
+      <ports>
+	<in id="coreprof_in" operator="finit"/>
+	<in id="equilibrium_in" operator="finit"/>
+	<out id="coretransp_out" operator="Of"/>
+      </ports>
+    </submodel>
+    
+    <submodel id="equil">
+      <timescale delta="0" total="0"/>
+      <ports>
+	<in id="equilibrium_in" operator="finit"/>
+	<out id="equilibrium_out" operator="Of"/>
+      </ports>    
+    </submodel>
+      
+    <submodel id="f2dv">
+      <timescale delta="0" total="0"/>
+      <ports>
+	<in id="coreprof_in" operator="finit"/>
+	<in id="equilibrium_in" operator="finit"/>
+	<in id="coretransp_in" operator="finit"/>
+	<out id="coretransp_out" operator="Of"/>
+      </ports>
+    </submodel>
+    
+  </definitions>
+  
+  <topology>
+    <instance id="INIT" submodel="init"/>
+    <instance id="TRANSP" submodel="transp"/>
+    <instance id="TURB" submodel="turb"/>
+    <instance id="EQUIL" submodel="equil"/>
+    <instance id="x3EQUIL" mapper="dupEquil"/>
+    <instance id="x3COREP" mapper="dupCorep"/>
+    <instance id="F2DV" submodel="f2dv"/>
+    
+    <coupling from="INIT.inputCPOs" to="TRANSP.inputCPOs"/>
+    
+    <coupling from="TRANSP.coreprof_out" to="x3COREP.coreprof_in"/>
+    <coupling from="TRANSP.equilibrium_out" to="EQUIL.equilibrium_in"/>
+    
+    <coupling from="x3COREP.coreprof_out1" to="TURB.coreprof_in"/>
+    <coupling from="x3COREP.coreprof_out2" to="F2DV.coreprof_in"/>
+    <coupling from="x3COREP.coreprof_out3" to="TRANSP.coreprof_in"/>
+    
+    <coupling from="EQUIL.equilibrium_out" to="x3EQUIL.equilibrium_in"/>
+    
+    <coupling from="x3EQUIL.equilibrium_out1" to="TURB.equilibrium_in"/>
+    <coupling from="x3EQUIL.equilibrium_out2" to="F2DV.equilibrium_in"/>
+    <coupling from="x3EQUIL.equilibrium_out3" to="TRANSP.equilibrium_in"/>
+      
+    <coupling from="TURB.coretransp_out" to="F2DV.coretransp_in"/>
+    
+    <coupling from="F2DV.coretransp_out" to="TRANSP.coretransp_in"/>
+  </topology>
+  
+</model>

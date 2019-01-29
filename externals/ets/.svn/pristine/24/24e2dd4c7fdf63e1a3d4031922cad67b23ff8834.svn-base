@@ -1,0 +1,6 @@
+GOT_PERFLIB = 'yes'
+FC=g95 -fno-second-underscore -ffree-line-length-huge
+FCOPTS=-g
+MOD=mod
+LIBS=-llapack -lblas
+

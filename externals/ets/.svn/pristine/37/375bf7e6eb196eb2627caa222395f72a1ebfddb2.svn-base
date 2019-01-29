@@ -1,0 +1,6 @@
+GOT_PERFLIB = 'yes'
+FC=g95
+FCOPTS=-g -ftrace=full
+MOD=mod
+LIBS=-llapack -lblas
+

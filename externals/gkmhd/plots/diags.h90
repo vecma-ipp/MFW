@@ -1,0 +1,26 @@
+           IF (i0*j0 == 1) THEN
+              DO mu=1,nvars
+                 Write (0,*) 'mu duu ',mu,duu(:,mu)
+                 Write (0,*) 'puu ',puu(mu)
+              END DO
+           END IF
+
+           Write (0,*) 'rr0 = ',rr0
+           Write (0,*) 'area2 = ',fsfc(i)%area2(j)
+           Write (0,*) 'thxm = ',thxm
+           IF (thxm /= thxm) Write (0,*) 'NaN in arakawa i0 j0 = ',i0,j0
+           IF (thxm /= thxm) STOP
+
+              div=duu(m0,nvars-4)
+              IF (div /= div) Write (0,*) 'NaN in R m0 = ',m0,div
+              div=duu(m0,nvars-3)
+              IF (div /= div) Write (0,*) 'NaN in Z m0 = ',m0,div
+
+              div=puu(5)
+              IF (div /= div) Write (0,*) 'NaN in p5 m0 mp mm = ',m0,mp,mm
+
+           div=puu(5)
+           IF (div /= div) Write (0,*) 'NaN in p5 i0 j0 = ',i0,j0
+           div=puu(6)
+           IF (div /= div) Write (0,*) 'NaN in p6 i0 j0 = ',i0,j0
+           IF (div /= div) STOP

@@ -1,0 +1,38 @@
+!...  open h files
+
+  OPEN (12,file='hpl.dat',form='formatted',status='old')
+  OPEN (15,file='hdw.dat',form='formatted',status='old')
+
+!...  get parms, options
+
+  READ (15,parm)
+  READ (12,plotin)
+
+!...  adjust dimensions
+
+  npesx0=npesx
+
+  npesx=1
+
+!...  open p files
+
+  CALL Pfopen(iu,nfiles)
+
+!...  geometry
+
+  CALL Metric
+
+!...  allocate vars and plotting auxiliaries
+
+  DO i=1,nx
+     ALLOCATE(fsfc(i)%fuu(neqs,fsfc(i)%ny))
+     fsfc(i)%fuu=0.
+  END DO
+
+  IF (ix0 == 0) ix0=ngdx+3*nx0/4
+  IF (ix1 == 0) ix1=ngdx+1
+  IF (ix2 == 0) ix2=ngdx+nx0
+  IF (ll1 == 0) ll1=1
+  IF (ll2 == 0) ll2=nl
+  ll1=MAX(ll1,1)
+  ll2=MIN(ll2,nl)

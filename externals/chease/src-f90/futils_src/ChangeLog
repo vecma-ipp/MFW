@@ -1,0 +1,49 @@
+2012-08-02  Trach-Minh Tran  <trach-minh.tran@epfl.ch>
+
+	* vis3d.f90 (write_onefile_xmf): Some fixes in order to compile
+	with gfortran-4.6.2.
+
+	* futils.f90 (openf): Add optional real_prec for accessing files
+	not created by FUTILS and this missing this attribute.
+	(isgroup): Fix the group closing call.
+
+2011-05-24  T.M. Tran  <trach-minh.tran@epfl.ch>
+
+	* futils.f90 (openf): Fall back to older version for files created
+	with older versions of FUTILS
+	(creatf): Add the "h5ver" file attribute specifying the HDF5
+	library version used.
+	(putarr6): Extend "putarr" and "getarr" up to 6 dimensions.
+
+2011-05-23  T.M. Tran  <trach-minh.tran@epfl.ch>
+
+	* futils.f90 (geth5ver): Routine to get the HDF5 library version.
+	(creatf): The file attribute "precision of reals" is now saved as
+	a character "s" or "d" for real or double precision) instead of
+	the HDF5 datatypes (H5T_NATIVE_DOUBLE for example), which are
+	version and platform dependent!
+	(getatt_i): Add optional argument "err" for atttribute "Not found"
+	(-1) and "Wrong type" (-2).
+
+2011-05-17  Trach-Minh Tran  <ttran@bg-fe1.epfl.ch>
+
+	* futils.f90 (creatf): Change precision of REAL data written to
+	file from "IEEE little endian" to NATIVE in order to obtain parallel
+	IO performances on both big and little endian platforms.
+
+2011-05-03  T.M. Tran  <trach-minh.tran@epfl.ch>
+
+	* futils.f90 (getdims): get rank and dimensions of data set
+
+2010-06-24  Trach-Minh Tran  <ttran@bg-fe1.epfl.ch>
+
+	* Makefile.bgp (BGP_FLOOR): Update makefile for BGP.
+
+	* cutils_bgl.c (seconds): Add functions seconds.
+
+2010-05-21  T.M. Tran  <trach-minh.tran@epfl.ch>
+
+	* futils.f90 (futils): Add 5D and 6D versions for
+	putarrnd/getarrnd, as requested by Anders Nielsen (ahnie@risoe.dtu.dk)
+	from ITM.
+

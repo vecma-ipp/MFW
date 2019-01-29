@@ -1,0 +1,11 @@
+MODULE FFTs2
+
+  USE Dim
+
+  IMPLICIT NONE
+
+  INTEGER :: nwork2,ntable2,nyp3
+
+  REAL, DIMENSION(:), ALLOCATABLE :: wk2,tg2
+
+END MODULE FFTs2

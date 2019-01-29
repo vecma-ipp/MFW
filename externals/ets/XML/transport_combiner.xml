@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?jaxfront version=2.66;time=2015-06-30 11:32:54.401?>
+<parameters xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+       <CURRENT>
+              <conductivity>
+                     <Multipliers_for_conductivity_from>
+                            <Data_Base>0</Data_Base>
+                            <Anomalous>0</Anomalous>
+                            <Neoclassical>1</Neoclassical>
+                            <Background>1</Background>
+                            <Spitzer>1</Spitzer>
+                     </Multipliers_for_conductivity_from>
+              </conductivity>
+       </CURRENT>
+       <NE>
+              <diffusion>
+                     <Multipliers_for_contributions_from>
+                            <Data_Base>0</Data_Base>
+                            <Anomalous>1</Anomalous>
+                            <Neoclassical>1</Neoclassical>
+                            <Background>1</Background>
+                     </Multipliers_for_contributions_from>
+              </diffusion>
+              <convective_velocity>
+                     <OFF>all transport coefficients for this channel will be nulified</OFF>
+              </convective_velocity>
+       </NE>
+       <TE>
+              <diffusion>
+                     <Multipliers_for_contributions_from>
+                            <Data_Base>0</Data_Base>
+                            <Anomalous>1</Anomalous>
+                            <Neoclassical>1</Neoclassical>
+                            <Background>1</Background>
+                     </Multipliers_for_contributions_from>
+              </diffusion>
+              <convective_velocity>
+                     <OFF>all transport coefficients for this channel will be nulified</OFF>
+              </convective_velocity>
+       </TE>
+       <NI>
+              <diffusion>
+                     <Multipliers_for_contributions_from>
+                            <Data_Base>0</Data_Base>
+                            <Anomalous>1</Anomalous>
+                            <Neoclassical>1</Neoclassical>
+                            <Background>1</Background>
+                     </Multipliers_for_contributions_from>
+              </diffusion>
+              <convective_velocity>
+                     <OFF>all transport coefficients for this channel will be nulified</OFF>
+              </convective_velocity>
+       </NI>
+       <TI>
+              <diffusion>
+                     <Multipliers_for_contributions_from>
+                            <Data_Base>0</Data_Base>
+                            <Anomalous>1</Anomalous>
+                            <Neoclassical>1</Neoclassical>
+                            <Background>1</Background>
+                     </Multipliers_for_contributions_from>
+              </diffusion>
+              <convective_velocity>
+                     <OFF>all transport coefficients for this channel will be nulified</OFF>
+              </convective_velocity>
+       </TI>
+       <VTOR>
+              <diffusion>
+                     <OFF>all transport coefficients for this channel will be nulified</OFF>
+              </diffusion>
+              <convective_velocity>
+                     <OFF>all transport coefficients for this channel will be nulified</OFF>
+              </convective_velocity>
+       </VTOR>
+       <NZ>
+              <diffusion>
+                     <Multipliers_for_contributions_from>
+                            <Data_Base>0</Data_Base>
+                            <Anomalous>1</Anomalous>
+                            <Neoclassical>1</Neoclassical>
+                            <Background>1</Background>
+                     </Multipliers_for_contributions_from>
+              </diffusion>
+              <convective_velocity>
+                     <OFF>all transport coefficients for this channel will be nulified</OFF>
+              </convective_velocity>
+       </NZ>
+       <TZ>
+              <diffusion>
+                     <OFF>all transport coefficients for this channel will be nulified</OFF>
+              </diffusion>
+              <convective_velocity>
+                     <OFF>all transport coefficients for this channel will be nulified</OFF>
+              </convective_velocity>
+       </TZ>
+       <CHECKs>
+              <remove_negative_diffusion>true</remove_negative_diffusion>
+       </CHECKs>
+</parameters>

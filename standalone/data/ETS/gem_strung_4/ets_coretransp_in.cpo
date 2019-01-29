@@ -1,0 +1,497 @@
+ used schema version 4.10b.10        
+ coretransp%datainfo%dataprovider
+          -1
+ coretransp%datainfo%putdate
+          -1
+ coretransp%datainfo%source
+          -1
+ coretransp%datainfo%comment
+          -1
+ coretransp%datainfo%cocos
+          -1
+ coretransp%datainfo%id
+          -1
+ coretransp%datainfo%isref
+          -1
+ coretransp%datainfo%whatref%user
+          -1
+ coretransp%datainfo%whatref%machine
+          -1
+ coretransp%datainfo%whatref%shot
+          -1
+ coretransp%datainfo%whatref%run
+          -1
+ coretransp%datainfo%whatref%occurrence
+          -1
+ coretransp%datainfo%putinfo%putmethod
+          -1
+ coretransp%datainfo%putinfo%putaccess
+          -1
+ coretransp%datainfo%putinfo%putlocation
+          -1
+ coretransp%datainfo%putinfo%rights
+          -1
+ coretransp%composition%amn
+          -1
+ coretransp%composition%zn
+          -1
+ coretransp%composition%zion
+          -1
+ coretransp%composition%imp_flag
+          -1
+ coretransp%composition%label
+          -1
+ coretransp%desc_impur%amn
+          -1
+ coretransp%desc_impur%zn
+          -1
+ coretransp%desc_impur%i_ion
+          -1
+ coretransp%desc_impur%nzimp
+          -1
+ coretransp%desc_impur%zmin
+          -1
+ coretransp%desc_impur%zmax
+          -1
+ coretransp%desc_impur%label
+          -1
+ coretransp%compositions%nuclei
+           1
+           2
+ coretransp%compositions%nuclei%zn
+           0
+   1.00000000000000     
+ coretransp%compositions%nuclei%amn
+           0
+   2.00000000000000     
+ coretransp%compositions%nuclei%label
+           1
+           1
+                                                                                                                                    
+ coretransp%compositions%nuclei%zn
+           0
+   6.00000000000000     
+ coretransp%compositions%nuclei%amn
+           0
+   12.0000000000000     
+ coretransp%compositions%nuclei%label
+           1
+           1
+                                                                                                                                    
+ coretransp%compositions%ions
+           1
+           1
+ coretransp%compositions%ions%nucindex
+           0
+           1
+ coretransp%compositions%ions%zion
+           0
+   1.00000000000000     
+ coretransp%compositions%ions%imp_flag
+           0
+           0
+ coretransp%compositions%ions%label
+           1
+           1
+                                                                                                                                    
+ coretransp%compositions%impurities
+           1
+           1
+ coretransp%compositions%impurities%nucindex
+           0
+           2
+ coretransp%compositions%impurities%i_ion
+           0
+           0
+ coretransp%compositions%impurities%nzimp
+           0
+           6
+ coretransp%compositions%impurities%zmin
+           1
+           6
+   1.00000000000000        2.00000000000000        3.00000000000000     
+   4.00000000000000        5.00000000000000        6.00000000000000     
+ coretransp%compositions%impurities%zmax
+           1
+           6
+   1.00000000000000        2.00000000000000        3.00000000000000     
+   4.00000000000000        5.00000000000000        6.00000000000000     
+ coretransp%compositions%impurities%label
+           1
+           6
+                                                                                                                                 
+                                                                                                                                    
+                                                                                                                                    
+                                                                                                                                    
+                                                                                                                                    
+                                                                                                                                   
+ coretransp%compositions%neutralscomp
+           1
+           2
+ coretransp%compositions%neutralscomp%neutcomp
+           1
+           1
+ coretransp%compositions%neutralscomp%neutcomp%nucindex
+           0
+           1
+ coretransp%compositions%neutralscomp%neutcomp%multiplicity
+           0
+           1
+ coretransp%compositions%neutralscomp%type
+           1
+           2
+ coretransp%compositions%neutralscomp%type%id
+           1
+           1
+c                                                                                                                                   
+ coretransp%compositions%neutralscomp%type%flag
+           0
+           0
+ coretransp%compositions%neutralscomp%type%description
+           1
+           1
+c                                                                                                                                   
+ coretransp%compositions%neutralscomp%type%id
+           1
+           1
+t                                                                                                                                   
+ coretransp%compositions%neutralscomp%type%flag
+           0
+           1
+ coretransp%compositions%neutralscomp%type%description
+           1
+           1
+t                                                                                                                                   
+ coretransp%compositions%neutralscomp%label
+          -1
+ coretransp%compositions%neutralscomp%neutcomp
+           1
+           1
+ coretransp%compositions%neutralscomp%neutcomp%nucindex
+           0
+           2
+ coretransp%compositions%neutralscomp%neutcomp%multiplicity
+           0
+           1
+ coretransp%compositions%neutralscomp%type
+           1
+           2
+ coretransp%compositions%neutralscomp%type%id
+           1
+           1
+c                                                                                                                                   
+ coretransp%compositions%neutralscomp%type%flag
+           0
+           0
+ coretransp%compositions%neutralscomp%type%description
+           1
+           1
+c                                                                                                                                   
+ coretransp%compositions%neutralscomp%type%id
+           1
+           1
+t                                                                                                                                   
+ coretransp%compositions%neutralscomp%type%flag
+           0
+           1
+ coretransp%compositions%neutralscomp%type%description
+           1
+           1
+t                                                                                                                                   
+ coretransp%compositions%neutralscomp%label
+          -1
+ coretransp%compositions%edgespecies
+          -1
+ coretransp%compositions%signature%id
+          -1
+ coretransp%compositions%signature%flag
+          -1
+ coretransp%compositions%signature%description
+          -1
+ coretransp%values
+           1
+           1
+ coretransp%values%transportid%id
+          -1
+ coretransp%values%transportid%flag
+          -1
+ coretransp%values%transportid%description
+          -1
+ coretransp%values%rho_tor_norm
+           1
+           4
+  0.400000000000000       0.500000000000000       0.600000000000000     
+  0.700000000000000     
+ coretransp%values%rho_tor
+           1
+           4
+  0.274457595455273       0.343071994319091       0.411686393182909     
+  0.480300792046727     
+ coretransp%values%psi
+          -1
+ coretransp%values%volume
+          -1
+ coretransp%values%area
+          -1
+ coretransp%values%sigma
+           1
+           4
+  2.372194934366661E-316  2.420921664622108E-322  2.322069835055854E-310
+  2.372292956990796E-316
+ coretransp%values%ni_transp%diff_eff
+           3
+           4           1           3
+  0.000000000000000E+000  0.000000000000000E+000  0.000000000000000E+000
+  0.000000000000000E+000  1.070752877298493E-002   3.79755485622650     
+  0.873447895116574        1.17760837763555       0.000000000000000E+000
+  0.000000000000000E+000  0.000000000000000E+000  0.000000000000000E+000
+ coretransp%values%ni_transp%vconv_eff
+           3
+           4           1           3
+  0.000000000000000E+000  0.000000000000000E+000  0.000000000000000E+000
+  0.000000000000000E+000  5.068556765732906E-003   1.77417578303633     
+  0.404510513715174       0.544800924484849       0.000000000000000E+000
+  0.000000000000000E+000  0.000000000000000E+000  0.000000000000000E+000
+ coretransp%values%ni_transp%flux
+           2
+           4           1
+  3.187951822362081E+017  1.166883013345729E+020  2.737929799740526E+019
+  3.773516808943886E+019
+ coretransp%values%ni_transp%off_diagonal%d_ni
+          -1
+ coretransp%values%ni_transp%off_diagonal%d_ti
+          -1
+ coretransp%values%ni_transp%off_diagonal%d_ne
+          -1
+ coretransp%values%ni_transp%off_diagonal%d_te
+          -1
+ coretransp%values%ni_transp%off_diagonal%d_epar
+          -1
+ coretransp%values%ni_transp%off_diagonal%d_mtor
+          -1
+ coretransp%values%ni_transp%flag
+          -1
+ coretransp%values%ne_transp%diff_eff
+           2
+           4           3
+  0.000000000000000E+000  0.000000000000000E+000  0.000000000000000E+000
+  0.000000000000000E+000  1.070752877298493E-002   3.79755485622650     
+  0.873447895116574        1.17760837763555       0.000000000000000E+000
+  0.000000000000000E+000  0.000000000000000E+000  0.000000000000000E+000
+ coretransp%values%ne_transp%vconv_eff
+           2
+           4           3
+  0.000000000000000E+000  0.000000000000000E+000  0.000000000000000E+000
+  0.000000000000000E+000  5.068556765732906E-003   1.77417578303633     
+  0.404510513715174       0.544800924484849       0.000000000000000E+000
+  0.000000000000000E+000  0.000000000000000E+000  0.000000000000000E+000
+ coretransp%values%ne_transp%flux
+           1
+           4
+  3.187951822362081E+017  1.166883013345729E+020  2.737929799740526E+019
+  3.773516808943886E+019
+ coretransp%values%ne_transp%off_diagonal%d_ni
+          -1
+ coretransp%values%ne_transp%off_diagonal%d_ti
+          -1
+ coretransp%values%ne_transp%off_diagonal%d_ne
+          -1
+ coretransp%values%ne_transp%off_diagonal%d_te
+          -1
+ coretransp%values%ne_transp%off_diagonal%d_epar
+          -1
+ coretransp%values%ne_transp%off_diagonal%d_mtor
+          -1
+ coretransp%values%ne_transp%flag
+          -1
+ coretransp%values%nz_transp
+          -1
+ coretransp%values%ti_transp%diff_eff
+           2
+           4           1
+  3.447447453481892E-003   20.7120338966635        4.12052494169465     
+   8.52089485914450     
+ coretransp%values%ti_transp%vconv_eff
+           2
+           4           1
+  0.000000000000000E+000  0.000000000000000E+000  0.000000000000000E+000
+  0.000000000000000E+000
+ coretransp%values%ti_transp%exchange
+          -1
+ coretransp%values%ti_transp%qgi
+          -1
+ coretransp%values%ti_transp%flux
+           2
+           4           1
+   309.370216802759        416883.629113060        75395.4723643061     
+   122851.069803069     
+ coretransp%values%ti_transp%off_diagonal%d_ni
+          -1
+ coretransp%values%ti_transp%off_diagonal%d_ti
+          -1
+ coretransp%values%ti_transp%off_diagonal%d_ne
+          -1
+ coretransp%values%ti_transp%off_diagonal%d_te
+          -1
+ coretransp%values%ti_transp%off_diagonal%d_epar
+          -1
+ coretransp%values%ti_transp%off_diagonal%d_mtor
+          -1
+ coretransp%values%ti_transp%flag
+          -1
+ coretransp%values%te_transp%diff_eff
+           1
+           4
+  7.549824778935932E-003   7.91004507015382        1.82755317000598     
+   2.89640370653824     
+ coretransp%values%te_transp%vconv_eff
+           1
+           4
+  0.000000000000000E+000 -1.776356839400250E-015  0.000000000000000E+000
+ -8.881784197001252E-016
+ coretransp%values%te_transp%flux
+           1
+           4
+   314.767322609255        196576.332531805        38452.4246531769     
+   70100.4473163647     
+ coretransp%values%te_transp%off_diagonal%d_ni
+          -1
+ coretransp%values%te_transp%off_diagonal%d_ti
+          -1
+ coretransp%values%te_transp%off_diagonal%d_ne
+          -1
+ coretransp%values%te_transp%off_diagonal%d_te
+          -1
+ coretransp%values%te_transp%off_diagonal%d_epar
+          -1
+ coretransp%values%te_transp%off_diagonal%d_mtor
+          -1
+ coretransp%values%te_transp%flag
+          -1
+ coretransp%values%tz_transp
+          -1
+ coretransp%values%vtor_transp%diff_eff
+           2
+           4           1
+  1.693554078144620E-003   7.36243924665638        1.63941395793427     
+   3.93381757267296     
+ coretransp%values%vtor_transp%vconv_eff
+           2
+           4           1
+ -4.516992563173951E-004 -4.760636329592672E-015  0.000000000000000E+000
+  0.000000000000000E+000
+ coretransp%values%vtor_transp%flux
+           2
+           4           1
+  0.000000000000000E+000  0.000000000000000E+000  0.000000000000000E+000
+  0.000000000000000E+000
+ coretransp%values%vtor_transp%off_diagonal%d_ni
+          -1
+ coretransp%values%vtor_transp%off_diagonal%d_ti
+          -1
+ coretransp%values%vtor_transp%off_diagonal%d_ne
+          -1
+ coretransp%values%vtor_transp%off_diagonal%d_te
+          -1
+ coretransp%values%vtor_transp%off_diagonal%d_epar
+          -1
+ coretransp%values%vtor_transp%off_diagonal%d_mtor
+          -1
+ coretransp%values%vtor_transp%flag
+          -1
+ coretransp%values%codeparam%codename
+          -1
+ coretransp%values%codeparam%codeversion
+          -1
+ coretransp%values%codeparam%parameters
+          -1
+ coretransp%values%codeparam%output_diag
+          -1
+ coretransp%values%codeparam%output_flag
+          -1
+ coretransp%codeparam%codename
+           1
+           1
+GEM                                                                                                                                 
+ coretransp%codeparam%codeversion
+           1
+           1
+Jul 2016                                                                                                                            
+ coretransp%codeparam%parameters
+           1
+          68
+ <?xml-stylesheet type="text/xsl" href="./input_gem.xsl"                                                                            
+ charset="ISO-8859-1"?>                                                                                                             
+                                                                                                                                    
+ <parameters>                                                                                                                       
+                                                                                                                                    
+   <write_cpos> false </write_cpos>                                                                                                 
+                                                                                                                                    
+   <equilibrium_parameters>                                                                                                         
+     <geometric>                                                                                                                    
+       <ra0> 0.7 </ra0>                                                                                                             
+     </geometric>                                                                                                                   
+   </equilibrium_parameters>                                                                                                        
+                                                                                                                                    
+   <local_parameters>                                                                                                               
+     <physical>                                                                                                                     
+       <rkps> 0.025 </rkps>                                                                                                         
+     </physical>                                                                                                                    
+     <dissipation>                                                                                                                  
+       <vpl> 1.e-2 </vpl>                                                                                                           
+       <vpp> 1.e-2 </vpp>                                                                                                           
+       <sflux> 0.3 </sflux>                                                                                                         
+       <dflux> 0.0 </dflux>                                                                                                         
+     </dissipation>                                                                                                                 
+   </local_parameters>                                                                                                              
+                                                                                                                                    
+   <grid_parameters>                                                                                                                
+     <active_nodes>                                                                                                                 
+       <nx00> 128 </nx00>                                                                                                           
+       <ny00> 128 </ny00>                                                                                                           
+       <ns00> 32 </ns00>                                                                                                            
+     </active_nodes>                                                                                                                
+     <resolution_ratio>                                                                                                             
+       <xres> 4. </xres>                                                                                                            
+     </resolution_ratio>                                                                                                            
+   </grid_parameters>                                                                                                               
+                                                                                                                                    
+   <step_parameters>                                                                                                                
+     <step_counts>                                                                                                                  
+       <nstep> 100 </nstep>                                                                                                         
+       <ndg> 50 </ndg>                                                                                                              
+       <nplot> 1 </nplot>                                                                                                           
+     </step_counts>                                                                                                                 
+     <time_step>                                                                                                                    
+       <tau0> 0.002 </tau0>                                                                                                         
+     </time_step>                                                                                                                   
+   </step_parameters>                                                                                                               
+                                                                                                                                    
+   <cpu_parameters>                                                                                                                 
+     <domain_decomposition>                                                                                                         
+       <npesx> 2 </npesx>                                                                                                           
+       <npess> 32 </npess>                                                                                                          
+     </domain_decomposition>                                                                                                        
+     <parallel_cases>                                                                                                               
+       <nftubes> 4 </nftubes>                                                                                                       
+       <grid_type> strung </grid_type>	                                                                                             
+     </parallel_cases>                                                                                                              
+   </cpu_parameters>                                                                                                                
+                                                                                                                                    
+   <switches>                                                                                                                       
+     <setup_scenario>                                                                                                               
+       <istart> 0 </istart>                                                                                                         
+       <initsnap> 1 </initsnap>                                                                                                     
+       <ihamada> 1 </ihamada>                                                                                                       
+     </setup_scenario>                                                                                                              
+   </switches>                                                                                                                      
+                                                                                                                                    
+ </parameters>                                                                                                                      
+                                                                                                                                    
+ coretransp%codeparam%output_diag
+          -1
+ coretransp%codeparam%output_flag
+          -1
+ coretransp%time
+           0
+   509.999999999980     

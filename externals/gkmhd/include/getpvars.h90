@@ -1,0 +1,11 @@
+!...  get pvars
+
+  DO i=1,nx
+     j0=fsfc(i)%ny0
+     j1=1+ngdy
+     j2=j0+ngdy
+
+     fsfc(i)%fuu(nvars-1,:)=fsfc(i)%fuu(1,:)-fsfc(i)%fuu(muphi,:)
+     fsfc(i)%fuu(nvars,:)=fsfc(i)%fuu(1,:)-fsfc(i)%fuu(2,:)
+  END DO
+

@@ -1,0 +1,24 @@
+Build the Python High-level interface for the UAL with an empty back-end 
+(equivalent of euitm_schemas only). Defines also a "ascii_cpo" module to 
+read CPO data stored in ASCII files through cjk routines.
+
+NOTE: this version is compatible with xsl transforms from UAL engine R2.3 
+(with cython wrappers)
+
+
+i) you can specify the install dir for the ual and ascii_cpo modules by:
+
+ make INSTALL_DIR=<path to dir> install
+
+   either it will be installed under a local python_pk directory.
+
+
+ii) you can specify the version of the CPO XML description by specifying 
+    as an additional argument:
+
+ CPODEF=<name/path to the XML file containing the CPO description>
+
+
+
+If installation is completed, set your PYTHONPATH env variable to the install
+directory you choose (or to the default python_pk).

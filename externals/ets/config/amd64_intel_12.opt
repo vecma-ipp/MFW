@@ -1,0 +1,61 @@
+GOT_PERFLIB = 'no'
+FC=ifort
+FCOPTS=-g -mcmodel=medium -shared-intel
+FCOPTS=-g -assume no2underscore -fPIC -module ${OBJECTCODE}
+FCOPTS=-g -assume no2underscore -fPIC -module ${OBJECTCODE} -C -traceback
+FCOPTS=-g -O0 -assume no2underscore -fPIC -module ${OBJECTCODE} -C -traceback -debug all
+FCOPTS=-g -O1 -assume no2underscore -fPIC -module ${OBJECTCODE} -traceback
+FCOPTS=-g -O3 -assume no2underscore -fPIC -module ${OBJECTCODE} -traceback
+
+MOD=mod
+LIBS += -llapack
+INCLUDE=
+DEFINES += -DUAL
+
+AMNS=yes
+ifeq ($(AMNS),yes)
+INCLUDE  += ${shell eval-pkg-config --cflags amns-ifort}
+LIBS     += ${shell eval-pkg-config --libs amns-ifort}
+endif
+
+CJK=yes
+ifeq ($(CJK),yes)
+endif
+
+ITMTYPES=yes
+ifeq ($(ITMTYPES),yes)
+INCLUDE  += ${shell eval-pkg-config --cflags itmtypes-ifort}
+LIBS     += ${shell eval-pkg-config --libs itmtypes-ifort}
+endif
+
+ITMCONSTANTS=yes
+ifeq ($(ITMCONSTANTS),yes)
+INCLUDE  += ${shell eval-pkg-config --cflags itmconstants-ifort}
+LIBS     += ${shell eval-pkg-config --libs itmconstants-ifort}
+endif
+
+XMLLIB=yes
+ifeq ($(XMLLIB),yes)
+INCLUDE  += ${shell eval-pkg-config --cflags xmllib-amd64_intel_12}
+LIBS     += ${shell eval-pkg-config --libs xmllib-amd64_intel_12}
+endif
+
+ifeq ($(CORE_EDGE),yes)
+  DEBUG =# .debug
+  SOLPSTOP = ${HOME}/SVN/ETS/trunk/Core-Edge/SOLPS/solps5.0-ITM-restructure
+  SOLPS_LIB = ${SOLPSTOP}/src/lib/linux.ifort64${DEBUG}
+  B2LIB = ${SOLPSTOP}/src/Braams/b2/base/linux.ifort64${DEBUG}
+  NAG = -lnag
+  LIBS += -Wl,-rpath=${B2LIB} -L${B2LIB} -lb2 -lb2 -leirene ${B2LIB}/grlib.o -Wl,-rpath=${SOLPS_LIB} -L${SOLPS_LIB} ${NAG} ${NAG} -lnetcdf -L${SOLPS_LIB}/silo/lib -lsiloh5
+  LIBS += $(shell eval-pkg-config --libs itmggd-debug-${ITM_INTEL_OBJECTCODE})
+  LIBS += $(shell eval-pkg-config --libs itmassert-${ITM_INTEL_OBJECTCODE})
+endif
+
+UAL=yes
+ifeq ($(UAL),yes)
+  INCLUDE += ${shell eval-pkg-config --cflags ual-ifort}
+  LIBSCHEMAS =
+  LIBS += ${shell eval-pkg-config --libs ual-ifort}
+endif
+
+LIBS += ${shell eval-pkg-config --libs lapack-amd64_intel_12 blas-amd64_intel_12}

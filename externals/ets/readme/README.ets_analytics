@@ -1,0 +1,41 @@
+This README describes the version of the code implementing analytic
+test cases using thye method of manufactured solutions.
+
+The main code for this is "solver_test" and this can be run sith and
+without the UAL.
+
+"make" by itself will attempt to compile and run "solver_test" using
+the default compiler choice (to see what this is, type "make SYS").
+
+Available SYS options include
+
+g95
+g95_32
+g95_UAL
+g95_UAL.local
+gfortran
+gfortran_32
+GRID
+GRID_UAL.local
+GW
+GW_UAL
+GW_UAL.local
+JET
+linux.Fujitsu
+linux.Fujitsu.debug
+linux.Fujitsu.debug_UAL.local
+linux.Intel
+linux.Intel64
+linux.Nag
+
+Options with "UAL" use the UAL for output (in addition to the files
+produced in "data/OUTPUT").
+
+Options with "UAL.local" compile the UAL locally, enabling the code to
+be run outside of the Gateway.  This does, however, require a recent
+local compilation of MDSplus.
+
+When running remotely, the environment variable "euitm_path" will need
+to be set appropriately --- see "README.MDSPLUS".
+
+Input for the code comes from "ets_analytics.xml".

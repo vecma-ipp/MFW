@@ -1,0 +1,50 @@
+#/* -*- makefile -*- */
+
+
+# paths ########################################################################
+SRCDIR = imp4dv
+OBJDIR = imp4dv/${SYS}
+
+
+# set up the VPATH for searching for source files ##############################
+VPATH = ${SRCDIR}/main ${SRCDIR}/include
+
+
+# additional flags #############################################################
+INCLUDES = -I${OBJDIR} -I${INC_UAL} -I${INC_TYPES} -I${INC_CONSTANTS} -I${INC_BDS}
+
+FC90FLAGS += ${INCLUDES} ${MODSPEC}${OBJDIR} 
+
+
+# objects files ################################################################
+OBJ = ${OBJDIR}/imp4dv_coeff.o ${OBJDIR}/imp4dv.o
+
+
+# rules ########################################################################
+.PHONY: all ${SYS} clean
+
+
+${OBJDIR}/%.o: %.f90
+	$(FC90) -o $@ -c $< $(FC90FLAGS)
+
+
+%.f90: %.h90
+	$(FPP) $(FPPFLAGS) $< $@ 
+
+
+all: ${SYS} ${OBJDIR}/libimp4dv.a
+
+
+${OBJDIR}/libimp4dv.a: ${OBJ}
+	ar -r $@ $^ 
+	ranlib $@
+
+
+${SYS}:
+	@mkdir -p ${OBJDIR}
+
+
+clean:
+	rm -rf ${OBJDIR}
+
+

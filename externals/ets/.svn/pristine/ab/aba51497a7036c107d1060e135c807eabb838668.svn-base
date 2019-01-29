@@ -1,0 +1,154 @@
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+!> ??
+!>
+!> \author ???
+!>
+!> \version "$Id$"
+      MODULE CONVERT_NEUTRALS
+
+      CONTAINS
+
+
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+
+!> ??
+!>
+!> \author ???
+!>
+!> \version "$Id$"
+      SUBROUTINE CONVERT_CPO_TO_NEUTRALS_TYPES                                  &
+                 (EQUILIBRIUM, COREPROF, CONTROL_INTEGER, CONTROL_DOUBLE, &
+                  GEOMETRY,    PROFILES, CONTROL)
+
+!-------------------------------------------------------!
+!     This routine converts CPOs into NEUTRALS          !
+!     derived types.                                    !
+!-------------------------------------------------------!
+!     Source:       ---                                 !
+!     Developers:   D.Kalupin                           !
+!     Kontacts:     D.Kalupin@fz-juelich.de             !
+!                                                       !
+!     Comments:     ---                                 !
+!                                                       !
+!-------------------------------------------------------!
+
+
+      USE EUITM_SCHEMAS
+
+      USE ETS_PLASMA
+
+      IMPLICIT NONE
+
+! +++ CPO derived types:
+      TYPE (TYPE_EQUILIBRIUM),    POINTER       :: EQUILIBRIUM(:)
+      TYPE (TYPE_COREPROF),       POINTER       :: COREPROF(:)
+      INTEGER,                    INTENT(IN)    :: CONTROL_INTEGER(2)  !integer control parameters
+      REAL (R8),                  INTENT(IN)    :: CONTROL_DOUBLE(5)   !real control parameters
+
+! +++ NEUTRALS derived types:
+      TYPE (MAGNETIC_GEOMETRY),   INTENT(INOUT) :: GEOMETRY          !contains all geometry quantities
+      TYPE (PLASMA_PROFILES),     INTENT(INOUT) :: PROFILES          !contains profiles of plasma parameters
+      TYPE (RUN_CONTROL),         INTENT(INOUT) :: CONTROL           !contains all parameters required by run
+
+      INTEGER                                   :: NRHO, NEQ
+
+      NRHO                     = SIZE(COREPROF(1)%rho_tor)
+      NEQ                      = SIZE(EQUILIBRIUM(1)%profiles_1d%rho_tor)
+
+
+! +++ Convert geometry:
+      GEOMETRY%RHO             = COREPROF(1)%rho_tor
+
+      CALL L3deriv(EQUILIBRIUM(1)%profiles_1d%volume, EQUILIBRIUM(1)%profiles_1d%rho_tor, NEQ,  &
+               GEOMETRY%VPR, GEOMETRY%RHO, NRHO)
+
+
+! +++ Convert profiles:
+      PROFILES%ZION            = COREPROF(1)%composition%zion 
+      PROFILES%MION            = COREPROF(1)%composition%amn
+
+      PROFILES%NI              = COREPROF(1)%ni%value
+      PROFILES%NE              = COREPROF(1)%ne%value 
+      PROFILES%TI              = COREPROF(1)%ti%value
+      PROFILES%TE              = COREPROF(1)%te%value
+
+! +++ Convert control parameters:
+      CONTROL%SOLVER_TYPE      = CONTROL_INTEGER(1)
+      CONTROL%SIGMA_SOURCE     = CONTROL_INTEGER(2)
+      CONTROL%TAU              = CONTROL_DOUBLE(1)
+      CONTROL%AMIX             = CONTROL_DOUBLE(2) 
+      CONTROL%AMIXTR           = CONTROL_DOUBLE(3)
+      CONTROL%CONV             = CONTROL_DOUBLE(4) 
+      CONTROL%CONVREC          = CONTROL_DOUBLE(5)
+
+
+      RETURN
+
+
+      END SUBROUTINE CONVERT_CPO_TO_NEUTRALS_TYPES
+
+
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+
+
+
+
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+
+!> ??
+!>
+!> \author ???
+!>
+!> \version "$Id$"
+      SUBROUTINE CONVERT_NEUTRALS_TO_CPO_TYPES                  &
+                 (SOURCES, CORESOURCE)
+
+!-------------------------------------------------------!
+!     This routine converts NEUTRALS into the CPO       !
+!     derived types.                                    !
+!-------------------------------------------------------!
+!     Source:       ---                                 !
+!     Developers:   D.Kalupin                           !
+!     Kontacts:     D.Kalupin@fz-juelich.de             !
+!                                                       !
+!     Comments:     ---                                 !
+!                                                       !
+!-------------------------------------------------------!
+
+
+      USE EUITM_SCHEMAS
+
+      USE ETS_PLASMA
+
+      IMPLICIT NONE
+
+! +++ CPO derived types:
+      TYPE (TYPE_CORESOURCE), POINTER  :: CORESOURCE(:)    !input CPO with sources
+
+! +++ NEUTRALS derived types:
+      TYPE (SOURCES_AND_SINKS)         :: SOURCES          !contains profiles of sources
+
+
+! +++ Convert profiles of sources:
+      CORESOURCE(1)%VALUES(1)%qe%exp    = SOURCES%QE_EXP
+      CORESOURCE(1)%VALUES(1)%si%exp    = SOURCES%SI_EXP
+      CORESOURCE(1)%VALUES(1)%qi%exp    = SOURCES%QI_EXP
+
+
+
+      RETURN
+
+
+      END SUBROUTINE CONVERT_NEUTRALS_TO_CPO_TYPES
+
+
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+
+
+
+      END MODULE CONVERT_NEUTRALS

@@ -1,0 +1,22 @@
+GOT_PERFLIB = 'yes'
+FC=g95 -fno-second-underscore -fPIC -ffree-line-length-huge
+FCOPTS=-g ${INCLUDE}
+MOD=mod
+LIBS=-llapack -lblas
+DEFINES = -DUAL
+
+UAL=local
+ifeq ($(UAL),yes)
+  INCLUDE=-I /afs/efda-itm.eu/project/switm/ual/${UAL_VERSION}/include/amd64_g95
+  LIBSCHEMAS = 
+  LIBS += -L/afs/efda-itm.eu/project/switm/ual/${UAL_VERSION}/lib -lUALFORTRANInterface_g95
+else
+ifeq ($(UAL),local)
+  INCLUDE = -I $(MDSPLUS_DIR)/include -I $(JAVA_HOME)/include -I $(JAVA_HOME)/include/linux
+  LIBSCHEMAS = 
+  LIBS += # -L/afs/efda-itm.eu/project/switm/ual/${UAL_VERSION}/lib -lUALLowLevel
+  LIBS += -L$(MDSPLUS_DIR)/lib64 -lTreeShr -lTdiShr -lMdsShr -lXTreeShr -lCacheShr # -ljava
+#  LIBS += -L/afs/efda-itm.eu/project/switm/hdf5/amd64_pgi/lib
+endif
+endif
+

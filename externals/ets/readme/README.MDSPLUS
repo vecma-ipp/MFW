@@ -1,0 +1,23 @@
+This document will describe the local installation of MDSPLUS and
+options for running various codes using the UAL on machines other than
+the Gateway.
+
+If you want to write using the UAL to local files, you will need to have the
+"MODEL_TREE" information (stored in "MODEL_TREE") and to set the "euitm_path"
+environment variable:
+
+setenv euitm_path "$PWD/MDSPLUS;$PWD/MODEL_TREE"
+
+If you want to use data on the Gateway, you will need to start an mdsip server
+on one of the login nodes, and then set the path approriately:
+
+setenv euitm_path "enea142.efda-itm.eu::/pfs/work/imp3/coster/itmdb/itm_trees/test/4.06d/mdsplus/0;enea142.efda-itm.eu::/pfs/itmdb/itm_trees/public/models/4.06d/mdsplus"
+
+The above line assumes:
+  the server was started on enea142
+  your public UAL directory is
+  "/pfs/work/imp3/coster/itmdb/itm_trees/test/4.06d/mdsplus/0;enea142.efda-itm.eu" 
+  the public UAL directory (containing the MODEL_TREE) is
+  "/pfs/itmdb/itm_trees/public/models/4.06d/mdsplus"
+Appropriate substitutions will need to be made if this is not the case!
+

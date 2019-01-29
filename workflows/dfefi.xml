@@ -1,0 +1,76 @@
+ <?xml-stylesheet type="text/xsl" href="./input_dfefi.xsl"
+ charset="ISO-8859-1"?>
+ 
+ <parameters>
+
+   <write_cpos> true </write_cpos>
+   <delta_or_rkps> rkps </delta_or_rkps>
+
+   <equilibrium_parameters>
+     <geometric>
+       <ra0> 0.7 </ra0>
+     </geometric>
+   </equilibrium_parameters>
+
+   <local_parameters>
+     <physical>
+       <rkps> 0.035 </rkps>
+     </physical>
+     <dissipation>
+       <vpl> 1.e-4 </vpl>
+       <vpp> 1.e-2 </vpp>
+       <vpz> 1.e-5 </vpz>
+       <sflux> 0.1 </sflux>
+       <dflux> 0.0 </dflux>
+       <sbndy> 1.0 </sbndy>
+     </dissipation>
+   </local_parameters>
+ 
+   <grid_parameters>
+     <active_nodes>
+       <nx00> 32 </nx00>
+       <ny00> 16 </ny00>
+       <ns00> 16 </ns00>
+       <nz00> 32 </nz00>
+       <nw00> 16 </nw00>
+     </active_nodes>
+     <resolution_ratio>
+       <xres> 8. </xres>
+       <zmax> 5. </zmax>
+       <wmax> 10. </wmax>
+     </resolution_ratio>
+   </grid_parameters>
+
+   <step_parameters>
+     <step_counts>
+       <nstep> 2 </nstep>
+       <ndg> 5 </ndg>
+       <nplot> 1 </nplot>
+       <nfplot> 1 </nfplot>
+     </step_counts>
+     <time_step>
+       <tau0> 0.001 </tau0>
+     </time_step>
+   </step_parameters>
+
+   <cpu_parameters>
+     <domain_decomposition>
+       <npesx> 1 </npesx>
+       <npess> 4 </npess>
+       <npesz> 1 </npesz>
+     </domain_decomposition>
+     <parallel_cases>
+       <nftubes> 8 </nftubes>
+     </parallel_cases>
+   </cpu_parameters>
+
+   <switches>
+     <setup_scenario>
+       <istart> 1 </istart>
+       <initsnap> 1 </initsnap>
+       <ihamada> 1 </ihamada>
+     </setup_scenario>
+   </switches>
+
+ </parameters>
+ 

@@ -1,0 +1,6 @@
+GOT_PERFLIB = 'yes'
+FC=/opt/intel/Compiler/11.0/083/bin/ia32/ifort
+FCOPTS=-g
+MOD=mod
+LIBS=-llapack -lblas
+

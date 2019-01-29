@@ -1,0 +1,94 @@
+0) Defining the variables $(CHEASE_MACHINE), $(CHEASE_F90) and the compilation options
+1) make commands within CHEASE/src-f90 directory
+2) links required for chease_itm related to the EU-ITM and the main chease executable
+3) links required for IMAS chease version chease_imas
+4) Notes running with itm or imas database
+
+-----------------------------------------------------------------------
+0) Defining the variables $(CHEASE_MACHINE), $(CHEASE_F90) and the compilation options
+
+The Makefile is the same for all hardware.
+It uses:
+Makefile.define_MACHINE : 
+	to define $(CHEASE_MACHINE) on which make is executed (default: linux_nohdf5)
+Makefile.define_CHEASEF90: 
+	to define $(CHEASE_F90) the compiler to use on this $(CHEASE_MACHINE) machine (default: ifort)
+Makefile.define_FLAGS: 
+	to define the compilation and loader specific options for the given $(CHEASE_MACHINE), $(CHEASE_F90)
+
+To install CHEASE on a new hardware, change the above files, typically by copy pasting a similar set-up as on an existing options. The default linux/ifort works for most cases. You might need to change the compiler to gfortran
+
+-----------------------------------------------------------------------
+1) make commands within CHEASE/src-f90 directory
+
+At the top of the Makefile file you can see all the basic targets to make the program executable or the library for the chease subroutine (if called from another code or within KEPLER):
+make chease: to create the standard "chease" executable
+make chease_hdf5: to create "chease_hdf5" with the links to the hdf5 libraries, required for interfaces with codes reading the hdf5 output files (ORB5 for example)
+make chease_itm: to create "chease_itm" with links to the EU-ITM database (only on the EU-gateway at this stage)
+make chease_imas: to create "chease_imas" with links to the ITER database (only on the ITER machine at this stage)
+make chease_itm_hdf5: same as chease_itm but including the hdf5 libraries
+make libchease_kepler: to create the chease library (as "chease_itm" but without "prog..chease.f90" file)
+make libchease_kepler_lapack: as libchease_kepler but adding the lapack local files, in case the lapack routines are not available
+make libchease_kepler_imas: same as libchease_kepler but for the ITER-IMAS database/kepler environment
+
+Two new test commands, which require "matlab -nodesktop" to work as well:
+make test_chease: runs the script ../WK/TESTCASES/NIDEAL10/script_test_chease_from_src-f90, executing "chease" twice and plotting metric coefficients versus rho to compare with a previous run (test case prepared by Y. Camenen for GKW/nideal=10 option).
+make test_chease_imas: Same as above but running "chease_imas". Thus assumes "make chease_imas" has been executed successfully
+
+Other useful make commands:
+
+make clean: to clear all objects and making sure all files are compiled in the correct order
+make source: creates a chease_V... .f90 file in the parent directory with all the files used by "make chease" concatenated together
+make source_imas: same but for "chease_imas" source files
+
+Another make for hdf5 cases:
+The "_hdf5" need to comile the futils library as well in futils_src. This requires the following command to work, with $(Makefile_futils) defined in Makefile.define_FLAGS:
+cd futils_src; make -f $(Makefile_futils)
+
+-----------------------------------------------------------------------
+2) links required for chease_itm related to the EU-ITM and the main chease executable
+CHEASE uses the EU-ITM equilibrium CPO structure to store important outputs which are needed for standard outputs and as mapping information for many codes
+
+The "type" definitions are provided by the file linked onto euitm_schemas.f90. This can be seen with:
+ls -l euitm_schemas.f90
+
+The latest CHEASE trunk version will be linked with the relevant euitm_schemas.f90 version and work only for that one. To run CHEASE with on older CPO_version, one needs to check out an older CHEASE revision
+
+
+-----------------------------------------------------------------------
+3) links required for IMAS chease version chease_imas
+Now the "chease" subroutines is: subroutine chease(equil_cpo_in,equil_cpo_out,in_params_ala_cpo)
+
+If CHEASE needs to be interfaced with another database or libraries like the IMAS with a different equilibrium structure, in this case the equilibrium IDS (interface data structure), one needs to modify the chease subroutine file to:
+subroutine chease(equil_ids_cpo,equil_ids_out,in_params_ala_ids)
+
+In this way it will be callable from kepler within IMAS for example
+
+To do this, we have to then copy_ids_to_itm, execute the core CHEASE code and then copy_itm_to_ids before ending the chease subroutine
+These copy of itm_cpo to/from imas_ids will depend on the versions of the respective structures (data models). This is performed by linking to the correct files.
+
+For example to run with V3.0 of the IMAS datamodel with CHEASE using v4_10a of the itm:
+(assuming we have as explained above: ln -s euitm_schemas_v4.10a.f90 euitm_schemas.f90)
+
+rm ids_schemas.f90 chease_imas.f90 chease_prog_imas_ids.f90 copy_ids_to_itm_equilibrium.f90 copy_itm_to_ids_equilibrium.f90
+ln -s ids_schemas_vDD3_0.0PUAL3_0.0.f90 ids_schemas.f90 # for the "type" definitions of IDS structures
+ln -s chease_imas_vDD3_0.0PUAL3_0.0.f90 chease_imas.f90 # for the chease subroutine
+ln -s chease_prog_imas_ids_vDD3_0.0PUAL3_0.0.f90 chease_prog_imas_ids.f90 # for the chease program
+ln -s copy_ids_vDD3_0.0PUAL3_0.0_to_itm_v4_10a_equilibrium.f90 copy_ids_to_itm_equilibrium.f90
+ln -s copy_itm_v4_10a_to_ids_vDD3_0.0PUAL3_0.0_equilibrium.f90 copy_itm_to_ids_equilibrium.f90
+
+For using V1.1 one needs to do:
+rm ids_schemas.f90 ; ln -s ids_schemas_v1.1.f90 ids_schemas.f90
+rm chease_imas.f90 ; ln -s chease_imas_v1.1.f90 chease_imas.f90
+rm chease_prog_imas_ids.f90 ; ln -s chease_prog_imas_ids_v1.1.f90 chease_prog_imas_ids.f90
+rm copy_ids_to_itm_equilibrium.f90 ; ln -s copy_ids_v1_1_to_itm_v4_10a_equilibrium.f90 copy_ids_to_itm_equilibrium.f90
+rm copy_itm_to_ids_equilibrium.f90 ; ln -s copy_itm_v4_10a_to_ids_v1_1_equilibrium.f90 copy_itm_to_ids_equilibrium.f90
+
+Note that $(UAL) will give the correct paths for other libraries and modules for both ITM and IMAS environment, given that the correct "source ...config... kepler exp version" has been executed, if not do a make clean, redo source and re-compile
+
+4) Notes running with itm or imas database
+CHEASE read and/or write equilibrium structures on the ITM or IMAS databases. This is determined by the NITMOPT, NITMSHOT, NITMRUN and TREEITM input variables as explained in COMDAT.inc
+
+Of course this can only be done with chease_itm or chease_imas codes (make chease_itm) and the respective kepler libraries.
+
+Note that reading inputs from the database

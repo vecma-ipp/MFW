@@ -1,0 +1,143 @@
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:element name="parameters">
+    <xs:annotation>
+      <xs:documentation>
+        GLOBAL: Parameters for delta combiner
+      </xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="PSI"/>
+        <xs:element ref="NE"/>
+        <xs:element ref="TE"/>
+        <xs:element ref="NI"/>
+        <xs:element ref="TI"/>
+        <xs:element ref="VTOR"/>
+        <xs:element ref="NZ"/>
+        <xs:element ref="TZ"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="PSI">
+    <xs:annotation>
+      <xs:documentation>Contributions to PSI profile</xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:choice>
+        <xs:element ref="COMBINE_CONTRIBUTIONS_WITH_WEIGHTS"/>
+        <xs:element ref="OFF"/>
+      </xs:choice>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="NE">
+    <xs:annotation>
+      <xs:documentation>Contributions to NE profile</xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:choice>
+        <xs:element ref="COMBINE_CONTRIBUTIONS_WITH_WEIGHTS"/>
+        <xs:element ref="OFF"/>
+      </xs:choice>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="TE">
+    <xs:annotation>
+      <xs:documentation>Contributions to TE profile</xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:choice>
+        <xs:element ref="COMBINE_CONTRIBUTIONS_WITH_WEIGHTS"/>
+        <xs:element ref="OFF"/>
+      </xs:choice>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="NI">
+    <xs:annotation>
+      <xs:documentation>Contributions to NI profile</xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:choice>
+        <xs:element ref="COMBINE_CONTRIBUTIONS_WITH_WEIGHTS"/>
+        <xs:element ref="OFF"/>
+      </xs:choice>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="TI">
+    <xs:annotation>
+      <xs:documentation>Contributions to TI profile</xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:choice>
+        <xs:element ref="COMBINE_CONTRIBUTIONS_WITH_WEIGHTS"/>
+        <xs:element ref="OFF"/>
+      </xs:choice>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="VTOR">
+    <xs:annotation>
+      <xs:documentation>Contributions to VTOR profile</xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:choice>
+        <xs:element ref="COMBINE_CONTRIBUTIONS_WITH_WEIGHTS"/>
+        <xs:element ref="OFF"/>
+      </xs:choice>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="NZ">
+    <xs:annotation>
+      <xs:documentation>Contributions to NZ profile</xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:choice>
+        <xs:element ref="COMBINE_CONTRIBUTIONS_WITH_WEIGHTS"/>
+        <xs:element ref="OFF"/>
+      </xs:choice>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="TZ">
+    <xs:annotation>
+      <xs:documentation>Contributions to TZ profile</xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:choice>
+        <xs:element ref="COMBINE_CONTRIBUTIONS_WITH_WEIGHTS"/>
+        <xs:element ref="OFF"/>
+      </xs:choice>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="COMBINE_CONTRIBUTIONS_WITH_WEIGHTS">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="from_pellet"/>
+        <xs:element ref="from_sawtooth"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element fixed="Contributions to the profile from all instanteneous events will be removed"
+    name="OFF" type="xs:string">
+    <xs:annotation>
+      <xs:documentation>Contributions to the profile will be removed</xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:element default="1" name="from_pellet" type="xs:float">
+    <xs:annotation>
+      <xs:documentation>Multiplier for DELTAs provided by pellet, single value for all ions, single value for all impurities</xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:element default="1" name="from_sawtooth" type="xs:float">
+    <xs:annotation>
+      <xs:documentation>Multiplier for DELTAs provided by sawtooth, single value for all ions, single value for all impurities</xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:simpleType name="FloatList">
+    <xs:list itemType="xs:float"/>
+  </xs:simpleType>
+</xs:schema>

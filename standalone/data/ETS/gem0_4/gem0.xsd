@@ -1,0 +1,68 @@
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <!-- document element -->
+  <xs:element name="parameters">
+    <xs:complexType>
+      <xs:all>
+        <xs:element ref="flags" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="physical" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="grid" minOccurs="0" maxOccurs="1"/>
+      </xs:all>
+    </xs:complexType>
+  </xs:element>
+
+  <!-- flags -->
+  <xs:element name="flags">
+    <xs:complexType>
+      <xs:all>
+        <xs:element ref="write_diags" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="write_cpos" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="q_choice" minOccurs="0" maxOccurs="1"/>
+      </xs:all>
+    </xs:complexType>
+  </xs:element>
+
+<xs:element name="write_diags" type="xs:boolean"/>
+<xs:element name="write_cpos" type="xs:boolean"/>
+
+<xs:element name="q_choice">
+  <xs:simpleType>
+     <xs:restriction base="xs:string">
+        <xs:pattern value="equilibrium|coreprof|jtot"/>
+     </xs:restriction>
+  </xs:simpleType>
+</xs:element>
+
+  <!-- physical parameters -->
+  <xs:element name="physical">
+    <xs:complexType>
+      <xs:all>
+        <xs:element ref="thresh" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="beta_reduction" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="etae_pinch" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="chi_d" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="chiratio_phi" minOccurs="0" maxOccurs="1"/>
+      </xs:all>
+    </xs:complexType>
+  </xs:element>
+
+<xs:element name="thresh" type="xs:float"/>
+<xs:element name="beta_reduction" type="xs:float"/>
+<xs:element name="etae_pinch" type="xs:float"/>
+<xs:element name="chi_d" type="xs:float"/>
+<xs:element name="chiratio_phi" type="xs:float"/>
+
+  <!-- grid parameters -->
+  <xs:element name="grid">
+    <xs:complexType>
+      <xs:all>
+        <xs:element ref="nrho_transp" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="nion" minOccurs="0" maxOccurs="1"/>
+      </xs:all>
+    </xs:complexType>
+  </xs:element>
+
+<xs:element name="nrho_transp" type="xs:integer"/>
+<xs:element name="nion" type="xs:integer"/>
+
+</xs:schema>
+

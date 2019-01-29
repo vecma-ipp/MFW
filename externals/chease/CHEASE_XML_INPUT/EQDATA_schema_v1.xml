@@ -1,0 +1,1376 @@
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <!-- document element -->
+  <xs:element name="parameters">
+    <xs:complexType>
+      <xs:all>
+        <xs:element ref="AFBS" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="AFBS2" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="AP" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="APLACE" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="AP2" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="ASPCT" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="AT" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="AT2" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="AT3" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="AT4" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="AWIDTH" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="BEANS" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="bentaxis" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="bentqprofile" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="bentradius" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="BPLACE" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="BSFRAC" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="BWIDTH" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="B0EXP" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="CETA" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="CFBAL" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="CFNRESS" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="CFNRESSO" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="COMPTYP" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="CPLACE" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="CPRESS" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="CPRESSO" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="CQ0" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="CSSPEC" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="CURRT" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="CWIDTH" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="DELTA" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="DPLACE" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="DWIDTH" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="ELONG" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="EPLACE" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="ETAEI" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="EWIDTH" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="EPSLON" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="GAMMA" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="PANGLE" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="PREDGE" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="PSISCL" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="QSPEC" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="QPLACE" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="QWIDTH" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="QVALNEO" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="RBOXLEN" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="RBOXLFT" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="RC" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="RELAX" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="REXT" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="RNU" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="RPEOP" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="RZION" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="RZ0" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="RZ0W" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="R0" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="R0EXP" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="R0W" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="SCALNE" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="SCEXP" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="SIGNB0XP" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="SIGNIPXP" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="SGMA" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="slimit" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="snumber" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="SOLPDA" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="SOLPDB" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="SOLPDC" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="SOLPDD" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="SOLPDE" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="spitzer" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="THETA0" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="TREEITM" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="TRIANG" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="TRIPLT" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="XI" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="ZBOXLEN" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="MSMAX" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="NANAL" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="NBAL" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="NBLC0" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="NBLOPT" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="NBPSOUT" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="NBSEXPQ" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="NBSFUN" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="NBSOPT" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="NBSTRP" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="NCHI" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="NCSCAL" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="NDIAGOP" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="NDIFPS" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="NDIFT" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="NEGP" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="NEONBQS" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="NEQDSK" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="NER" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="NITMOPT" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="NITMRUN" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="NITMSHOT" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="NFFTOPT" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="NFUNC" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="NFUNRHO" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="NIDEAL" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="NINMAP" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="NINSCA" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="NIPR" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="NISO" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="NMESHA" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="NMESHB" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="NMESHC" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="NMESHD" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="NMESHE" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="NMGAUS" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="NOPT" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="NPLOT" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="NPOIDA" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="NPOIDB" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="NPOIDC" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="NPOIDD" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="NPOIDE" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="NPOIDQ" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="NPP" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="NPPFUN" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="NPPR" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="NPROFZ" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="NPROPT" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="NPRPSI" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="NPSI" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="NRBOX" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="NRFP" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="NRSCAL" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="NS" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="NSGAUS" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="NSMOOTH" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="NSOUR" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="NSTTP" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="NSURF" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="NSYM" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="NT" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="NTCASE" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="NTGAUS" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="NTEST" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="NTMF0" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="NTNOVA" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="NTURN" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="NV" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="NVEXP" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="NZBOX" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="NEQDXTPO" minOccurs="0" maxOccurs="1"/>
+      </xs:all>
+    </xs:complexType>
+  </xs:element>
+
+<!-- Integer constant data: -->
+  <xs:element name="MSMAX">
+    <xs:simpleType>
+      <xs:restriction base="xs:integer">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="NANAL">
+    <xs:simpleType>
+      <xs:restriction base="xs:integer">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="NBAL">
+    <xs:simpleType>
+      <xs:restriction base="xs:integer">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="NBLC0">
+    <xs:simpleType>
+      <xs:restriction base="xs:integer">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="NBLOPT">
+    <xs:simpleType>
+      <xs:restriction base="xs:integer">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="NBPSOUT">
+    <xs:simpleType>
+      <xs:restriction base="xs:integer">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="NBSEXPQ">
+    <xs:simpleType>
+      <xs:restriction base="xs:integer">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="NBSFUN">
+    <xs:simpleType>
+      <xs:restriction base="xs:integer">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="NBSOPT">
+    <xs:simpleType>
+      <xs:restriction base="xs:integer">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="NBSTRP">
+    <xs:simpleType>
+      <xs:restriction base="xs:integer">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="NCHI">
+    <xs:simpleType>
+      <xs:restriction base="xs:integer">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="NCSCAL">
+    <xs:simpleType>
+      <xs:restriction base="xs:integer">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="NDIAGOP">
+    <xs:simpleType>
+      <xs:restriction base="xs:integer">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="NDIFPS">
+    <xs:simpleType>
+      <xs:restriction base="xs:integer">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="NDIFT">
+    <xs:simpleType>
+      <xs:restriction base="xs:integer">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="NEGP">
+    <xs:simpleType>
+      <xs:restriction base="xs:integer">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="NEONBQS">
+    <xs:simpleType>
+      <xs:restriction base="xs:integer">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="NEQDSK">
+    <xs:simpleType>
+      <xs:restriction base="xs:integer">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="NER">
+    <xs:simpleType>
+      <xs:restriction base="xs:integer">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="NITMOPT">
+    <xs:simpleType>
+      <xs:restriction base="xs:integer">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="NFFTOPT">
+    <xs:simpleType>
+      <xs:restriction base="xs:integer">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="NFUNC">
+    <xs:simpleType>
+      <xs:restriction base="xs:integer">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="NFUNRHO">
+    <xs:simpleType>
+      <xs:restriction base="xs:integer">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="NIDEAL">
+    <xs:simpleType>
+      <xs:restriction base="xs:integer">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="NINMAP">
+    <xs:simpleType>
+      <xs:restriction base="xs:integer">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="NINSCA">
+    <xs:simpleType>
+      <xs:restriction base="xs:integer">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="NIPR">
+    <xs:simpleType>
+      <xs:restriction base="xs:integer">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="NISO">
+    <xs:simpleType>
+      <xs:restriction base="xs:integer">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="NMESHA">
+    <xs:simpleType>
+      <xs:restriction base="xs:integer">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="NMESHB">
+    <xs:simpleType>
+      <xs:restriction base="xs:integer">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="NMESHC">
+    <xs:simpleType>
+      <xs:restriction base="xs:integer">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="NMESHD">
+    <xs:simpleType>
+      <xs:restriction base="xs:integer">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="NMESHE">
+    <xs:simpleType>
+      <xs:restriction base="xs:integer">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="NMGAUS">
+    <xs:simpleType>
+      <xs:restriction base="xs:integer">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="NOPT">
+    <xs:simpleType>
+      <xs:restriction base="xs:integer">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="NPLOT">
+    <xs:simpleType>
+      <xs:restriction base="xs:integer">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="NPOIDA">
+    <xs:simpleType>
+      <xs:restriction base="xs:integer">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="NPOIDB">
+    <xs:simpleType>
+      <xs:restriction base="xs:integer">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="NPOIDC">
+    <xs:simpleType>
+      <xs:restriction base="xs:integer">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="NPOIDD">
+    <xs:simpleType>
+      <xs:restriction base="xs:integer">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="NPOIDE">
+    <xs:simpleType>
+      <xs:restriction base="xs:integer">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="NPOIDQ">
+    <xs:simpleType>
+      <xs:restriction base="xs:integer">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="NPP">
+    <xs:simpleType>
+      <xs:restriction base="xs:integer">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="NPPFUN">
+    <xs:simpleType>
+      <xs:restriction base="xs:integer">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="NPPR">
+    <xs:simpleType>
+      <xs:restriction base="xs:integer">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="NPROFZ">
+    <xs:simpleType>
+      <xs:restriction base="xs:integer">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="NPROPT">
+    <xs:simpleType>
+      <xs:restriction base="xs:integer">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="NPRPSI">
+    <xs:simpleType>
+      <xs:restriction base="xs:integer">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="NPSI">
+    <xs:simpleType>
+      <xs:restriction base="xs:integer">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="NRBOX">
+    <xs:simpleType>
+      <xs:restriction base="xs:integer">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="NRFP">
+    <xs:simpleType>
+      <xs:restriction base="xs:integer">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="NRSCAL">
+    <xs:simpleType>
+      <xs:restriction base="xs:integer">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="NS">
+    <xs:simpleType>
+      <xs:restriction base="xs:integer">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="NSGAUS">
+    <xs:simpleType>
+      <xs:restriction base="xs:integer">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="NSMOOTH">
+    <xs:simpleType>
+      <xs:restriction base="xs:integer">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="NSOUR">
+    <xs:simpleType>
+      <xs:restriction base="xs:integer">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="NSTTP">
+    <xs:simpleType>
+      <xs:restriction base="xs:integer">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="NSURF">
+    <xs:simpleType>
+      <xs:restriction base="xs:integer">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="NSYM">
+    <xs:simpleType>
+      <xs:restriction base="xs:integer">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="NT">
+    <xs:simpleType>
+      <xs:restriction base="xs:integer">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="NTCASE">
+    <xs:simpleType>
+      <xs:restriction base="xs:integer">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="NTGAUS">
+    <xs:simpleType>
+      <xs:restriction base="xs:integer">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="NTEST">
+    <xs:simpleType>
+      <xs:restriction base="xs:integer">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="NTMF0">
+    <xs:simpleType>
+      <xs:restriction base="xs:integer">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="NTNOVA">
+    <xs:simpleType>
+      <xs:restriction base="xs:integer">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="NTURN">
+    <xs:simpleType>
+      <xs:restriction base="xs:integer">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="NV">
+    <xs:simpleType>
+      <xs:restriction base="xs:integer">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="NVEXP">
+    <xs:simpleType>
+      <xs:restriction base="xs:integer">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="NZBOX">
+    <xs:simpleType>
+      <xs:restriction base="xs:integer">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="NEQDXTPO">
+    <xs:simpleType>
+      <xs:restriction base="xs:integer">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+
+<!-- real constants data: -->
+  <xs:element name="ASPCT">
+    <xs:simpleType>
+      <xs:restriction base="xs:float">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="BEANS">
+    <xs:simpleType>
+      <xs:restriction base="xs:float">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="bentaxis">
+    <xs:simpleType>
+      <xs:restriction base="xs:float">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="bentqprofile">
+    <xs:simpleType>
+      <xs:restriction base="xs:float">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="bentradius">
+    <xs:simpleType>
+      <xs:restriction base="xs:float">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="BSFRAC">
+    <xs:simpleType>
+      <xs:restriction base="xs:float">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="B0EXP">
+    <xs:simpleType>
+      <xs:restriction base="xs:float">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="CETA">
+    <xs:simpleType>
+      <xs:restriction base="xs:float">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="CFBAL">
+    <xs:simpleType>
+      <xs:restriction base="xs:float">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="CFNRESS">
+    <xs:simpleType>
+      <xs:restriction base="xs:float">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="CFNRESSO">
+    <xs:simpleType>
+      <xs:restriction base="xs:float">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="CPRESS">
+    <xs:simpleType>
+      <xs:restriction base="xs:float">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="CPRESSO">
+    <xs:simpleType>
+      <xs:restriction base="xs:float">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="CQ0">
+    <xs:simpleType>
+      <xs:restriction base="xs:float">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="CSSPEC">
+    <xs:simpleType>
+      <xs:restriction base="xs:float">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="CURRT">
+    <xs:simpleType>
+      <xs:restriction base="xs:float">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="DELTA">
+    <xs:simpleType>
+      <xs:restriction base="xs:float">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="ELONG">
+    <xs:simpleType>
+      <xs:restriction base="xs:float">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="ETAEI">
+    <xs:simpleType>
+      <xs:restriction base="xs:float">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="EPSLON">
+    <xs:simpleType>
+      <xs:restriction base="xs:float">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="GAMMA">
+    <xs:simpleType>
+      <xs:restriction base="xs:float">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="PANGLE">
+    <xs:simpleType>
+      <xs:restriction base="xs:float">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="PREDGE">
+    <xs:simpleType>
+      <xs:restriction base="xs:float">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="PSISCL">
+    <xs:simpleType>
+      <xs:restriction base="xs:float">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="QSPEC">
+    <xs:simpleType>
+      <xs:restriction base="xs:float">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="RBOXLEN">
+    <xs:simpleType>
+      <xs:restriction base="xs:float">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="RBOXLFT">
+    <xs:simpleType>
+      <xs:restriction base="xs:float">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="RC">
+    <xs:simpleType>
+      <xs:restriction base="xs:float">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="RELAX">
+    <xs:simpleType>
+      <xs:restriction base="xs:float">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="REXT">
+    <xs:simpleType>
+      <xs:restriction base="xs:float">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="RNU">
+    <xs:simpleType>
+      <xs:restriction base="xs:float">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="RPEOP">
+    <xs:simpleType>
+      <xs:restriction base="xs:float">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="RZION">
+    <xs:simpleType>
+      <xs:restriction base="xs:float">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="RZ0">
+    <xs:simpleType>
+      <xs:restriction base="xs:float">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="RZ0W">
+    <xs:simpleType>
+      <xs:restriction base="xs:float">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="R0">
+    <xs:simpleType>
+      <xs:restriction base="xs:float">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="R0EXP">
+    <xs:simpleType>
+      <xs:restriction base="xs:float">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="R0W">
+    <xs:simpleType>
+      <xs:restriction base="xs:float">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="SCALNE">
+    <xs:simpleType>
+      <xs:restriction base="xs:float">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="SCEXP">
+    <xs:simpleType>
+      <xs:restriction base="xs:float">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="SIGNB0XP">
+    <xs:simpleType>
+      <xs:restriction base="xs:float">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="SIGNIPXP">
+    <xs:simpleType>
+      <xs:restriction base="xs:float">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="SGMA">
+    <xs:simpleType>
+      <xs:restriction base="xs:float">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="slimit">
+    <xs:simpleType>
+      <xs:restriction base="xs:float">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="snumber">
+    <xs:simpleType>
+      <xs:restriction base="xs:float">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="SOLPDA">
+    <xs:simpleType>
+      <xs:restriction base="xs:float">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="SOLPDB">
+    <xs:simpleType>
+      <xs:restriction base="xs:float">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="SOLPDC">
+    <xs:simpleType>
+      <xs:restriction base="xs:float">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="SOLPDD">
+    <xs:simpleType>
+      <xs:restriction base="xs:float">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="SOLPDE">
+    <xs:simpleType>
+      <xs:restriction base="xs:float">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="spitzer">
+    <xs:simpleType>
+      <xs:restriction base="xs:float">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="THETA0">
+    <xs:simpleType>
+      <xs:restriction base="xs:float">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="TRIANG">
+    <xs:simpleType>
+      <xs:restriction base="xs:float">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="TRIPLT">
+    <xs:simpleType>
+      <xs:restriction base="xs:float">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="XI">
+    <xs:simpleType>
+      <xs:restriction base="xs:float">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="ZBOXLEN">
+    <xs:simpleType>
+      <xs:restriction base="xs:float">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+
+<!-- integer array data -->
+  <xs:element name="NITMRUN">
+    <xs:simpleType>
+      <xs:restriction base="xs:integer">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="2"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="NITMSHOT">
+    <xs:simpleType>
+      <xs:restriction base="xs:integer">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="2"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+
+<!-- real array data ->
+  <xs:element name="AFBS">
+    <xs:simpleType>
+      <xs:restriction base="xs:float">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="15"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="AFBS2">
+    <xs:simpleType>
+      <xs:restriction base="xs:float">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="15"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="AP">
+    <xs:simpleType>
+      <xs:restriction base="xs:float">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="15"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="APLACE">
+    <xs:simpleType>
+      <xs:restriction base="xs:float">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="10"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="AP2">
+    <xs:simpleType>
+      <xs:restriction base="xs:float">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="15"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="AT">
+    <xs:simpleType>
+      <xs:restriction base="xs:float">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="15"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="AT2">
+    <xs:simpleType>
+      <xs:restriction base="xs:float">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="15"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="AT3">
+    <xs:simpleType>
+      <xs:restriction base="xs:float">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="15"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="AT4">
+    <xs:simpleType>
+      <xs:restriction base="xs:float">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="15"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="AWIDTH">
+    <xs:simpleType>
+      <xs:restriction base="xs:float">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="10"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="BPLACE">
+    <xs:simpleType>
+      <xs:restriction base="xs:float">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="10"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="BWIDTH">
+    <xs:simpleType>
+      <xs:restriction base="xs:float">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="10"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="CPLACE">
+    <xs:simpleType>
+      <xs:restriction base="xs:float">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="10"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="CWIDTH">
+    <xs:simpleType>
+      <xs:restriction base="xs:float">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="10"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="DPLACE">
+    <xs:simpleType>
+      <xs:restriction base="xs:float">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="10"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="DWIDTH">
+    <xs:simpleType>
+      <xs:restriction base="xs:float">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="10"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="EPLACE">
+    <xs:simpleType>
+      <xs:restriction base="xs:float">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="10"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="EWIDTH">
+    <xs:simpleType>
+      <xs:restriction base="xs:float">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="10"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="QPLACE">
+    <xs:simpleType>
+      <xs:restriction base="xs:float">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="10"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="QVALNEO">
+    <xs:simpleType>
+      <xs:restriction base="xs:float">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="10"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="QWIDTH">
+    <xs:simpleType>
+      <xs:restriction base="xs:float">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="10"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+
+<!-- character types -->
+  <xs:element name="COMPTYP">
+    <xs:simpleType>
+      <xs:restriction base="xs:string">
+      <xs:maxLength value="8"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="TREEITM">
+    <xs:simpleType>
+      <xs:restriction base="xs:string">
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+
+</xs:schema>

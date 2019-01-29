@@ -1,0 +1,20 @@
+ <?xml-stylesheet type="text/xsl" href="./input_gkmhd.xsl"
+ charset="ISO-8859-1"?>
+ 
+ <parameters>
+
+   <nx00> 64 </nx00>
+   <npesx> 1 </npesx>
+   <nr_eq> 65 </nr_eq>
+   <nchi_eq> 128 </nchi_eq>
+   <niter_eq> 40 </niter_eq>
+
+   <grid_choice> rho_pol </grid_choice>
+   <j_choice> jphi </j_choice>
+   <cpo_choice> SFL </cpo_choice>
+   <write_snaps> true </write_snaps>
+   <write_diags> true </write_diags>
+   <write_cpos> false </write_cpos>
+
+ </parameters>
+ 

@@ -1,0 +1,720 @@
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+!> Framework for testing equilibrium codes.
+!>
+!> Calls bdseq, helena (ITM), helena (21) [if available], emeq, chease [if available]
+!>
+!> \author D. Coster
+!>
+!> \version "$Id$"
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+program eq_test
+
+  use itm_constants
+  use euitm_routines
+  USE EUITM_SCHEMAS
+  use euitm_routines
+#ifdef GOT_E3EMEQ
+  USE ets_wrapper_emeq_e3m
+#endif
+#ifdef GOT_HELENA
+  USE ets_wrapper_helena
+#endif
+#ifdef GOT_CHEASE
+  USE ets_wrapper_chease
+#endif
+#ifdef GOT_SPIDER
+  USE ets_wrapper_spider
+#endif
+  USE ets_wrapper_bdseq
+  use ets_version
+  use xml_file_reader
+  use write_structures
+
+  implicit none
+
+  integer, parameter :: nrho=100
+  integer            :: nrho1
+
+  TYPE (TYPE_EQUILIBRIUM), POINTER :: EQ_OLD(:), EQ_NEW(:), EQ_HELENA(:), EQ_E3ASTR(:), EQ_CHEASE(:), EQ_SPIDER(:)
+  TYPE (TYPE_COREPROF), POINTER :: COREPROF(:)
+  TYPE (TYPE_PARAM) :: code_parameters
+  integer :: irho
+  real (R8) :: a0, R0, Z0, B0, rho
+  integer eq_code
+  integer :: shot_no
+  integer idx
+  integer iargc
+  character*256 arg
+  integer case
+  integer, parameter :: no_of_cases=4
+  real (R8) :: case_p0(no_of_cases)
+  integer case_shot(no_of_cases)
+
+  data case_p0 /5000.0_R8, 500.0_R8, 50.0_R8, 5.0_R8/
+  data case_shot /7, 8, 9, 10/
+
+  interface
+     SUBROUTINE Helena21itm (euitm_eq_in, euitm_eq_out)
+       USE Euitm_schemas
+       IMPLICIT NONE
+       type (type_equilibrium), pointer :: euitm_eq_in(:)
+       type (type_equilibrium), pointer :: euitm_eq_out(:)
+     end SUBROUTINE Helena21itm
+  end interface
+
+  if(iargc().eq.0) then 
+     case = 1
+  else if(iargc().eq.1) then
+     call getarg(1,arg)
+     read(arg,*) case
+     if(case.lt.1.or.case.gt.no_of_cases) then
+        write(*,*) 'Only cases 1 to ',no_of_cases,' have been coded'
+        stop 'Case index out of range'
+     endif
+  else
+     write(*,*) 'Too many arguments'
+     stop 'Too many arguments'
+  endif
+
+  write(*,*) 'Doing case ', case
+
+  call perfinit
+  call perfon ('whole')
+  allocate(EQ_OLD(1))
+  allocate(EQ_OLD(1)%profiles_1d%rho_tor(nrho))
+  allocate(EQ_OLD(1)%profiles_1d%pressure(nrho))
+  allocate(EQ_OLD(1)%profiles_1d%jparallel(nrho))
+  allocate(EQ_OLD(1)%profiles_1d%jphi(nrho))
+
+  allocate(coreprof(1))
+  allocate(coreprof(1)%rho_tor(nrho))
+  allocate(coreprof(1)%te%value(nrho))
+
+! initialize plasma
+
+  a0 =  0.1_R8
+  R0 = 10.0_R8
+  Z0 =  0.0_R8
+  B0 =  2.0_R8
+  
+  EQ_OLD(1)%eqgeometry%geom_axis%r           = R0
+  EQ_OLD(1)%eqgeometry%geom_axis%z           = Z0
+  EQ_OLD(1)%eqgeometry%a_minor               = a0
+  EQ_OLD(1)%global_param%mag_axis%bphi       = B0
+  EQ_OLD(1)%global_param%mag_axis%position%r = R0
+  EQ_OLD(1)%global_param%mag_axis%position%Z = Z0
+  EQ_OLD(1)%global_param%toroid_field%b0     = B0
+  EQ_OLD(1)%global_param%toroid_field%r0     = R0
+
+  do irho=1, nrho
+     rho = real((irho-1), kind=R8)/real((nrho-1), kind=R8)
+     EQ_OLD(1)%profiles_1d%rho_tor(irho)       = rho*a0
+     EQ_OLD(1)%profiles_1d%pressure(irho)      = (1.0_R8 - rho**2.0_R8) * case_p0(case)
+     EQ_OLD(1)%profiles_1d%jparallel(irho)     = (1.0_R8 - rho**2.0_R8) * 1e4_R8 / (a0**2 * itm_pi)
+     coreprof(1)%rho_tor(irho)                          = rho*a0
+     coreprof(1)%te%value(irho)                         = sqrt(1.0_R8 - rho**2.0_R8) * case_p0(case)/1e19_R8/itm_ev
+  enddo
+  EQ_OLD(1)%profiles_1d%jphi=EQ_OLD(1)%profiles_1d%jparallel
+
+  shot_no = case_shot(case)
+
+  call open_write_file(10, 'eq_test.in.cpo')
+  call write_cpo(EQ_OLD(1), 'equilibrium')
+  call close_write_file
+  open(10,file='eq_test.in')
+  write(10,'(''# rho pressure jparallel jphi'')')
+  do irho=1,nrho
+     write(10,'(30f20.6)') &
+          EQ_OLD(1)%profiles_1d%rho_tor(irho),      &
+          EQ_OLD(1)%profiles_1d%pressure(irho),     &
+          EQ_OLD(1)%profiles_1d%jparallel(irho),    &
+          EQ_OLD(1)%profiles_1d%jphi(irho)
+  enddo
+  close(10)
+
+! call bdseq (twice for testing) and then write results to 'eq_test.out'
+
+  call perfon ('bdseq1')
+  call bdseq_wrapper(EQ_OLD, EQ_NEW)
+  call perfoff
+  call euitm_deallocate(EQ_NEW)
+  call perfon ('bdseq2')
+  call perfoff
+  call bdseq_wrapper(EQ_OLD, EQ_NEW)
+  write(*,*) 'CODE: BDSEQ'
+  call output_eq_info(EQ_NEW(1))
+  write(*,*)
+
+  call open_write_file(10, 'eq_test.out.cpo')
+  call write_cpo(EQ_NEW(1), 'equilibrium')
+  call close_write_file
+  open(10,file='eq_test.out')
+  write(10,'(''# rho pressure jparallel jphi volume q rhovol psi phi vprime gm1 gm2 gm3 gm4 gm5 gm6 gm7 pprime ffprime F_dia'')')
+  do irho=1,size(EQ_NEW(1)%profiles_1d%rho_vol)
+     write(10,'(30f20.6)') &
+          EQ_NEW(1)%profiles_1d%rho_tor(irho),    &
+          EQ_NEW(1)%profiles_1d%pressure(irho),   &
+          EQ_NEW(1)%profiles_1d%jparallel(irho),  &
+          EQ_NEW(1)%profiles_1d%jphi(irho),       &
+          EQ_NEW(1)%profiles_1d%volume(irho),     &
+          EQ_NEW(1)%profiles_1d%q(irho),          &
+          EQ_NEW(1)%profiles_1d%rho_vol(irho),    &
+          EQ_NEW(1)%profiles_1d%psi(irho),        &
+          EQ_NEW(1)%profiles_1d%phi(irho),        &
+          EQ_NEW(1)%profiles_1d%vprime(irho),     &
+          EQ_NEW(1)%profiles_1d%gm1(irho),        &
+          EQ_NEW(1)%profiles_1d%gm2(irho),        &
+          EQ_NEW(1)%profiles_1d%gm3(irho),        &
+          EQ_NEW(1)%profiles_1d%gm4(irho),        &
+          EQ_NEW(1)%profiles_1d%gm5(irho),        &
+          EQ_NEW(1)%profiles_1d%gm6(irho),        &
+          EQ_NEW(1)%profiles_1d%gm7(irho),        &
+          EQ_NEW(1)%profiles_1d%pprime(irho),     &
+          EQ_NEW(1)%profiles_1d%ffprime(irho),    &
+          EQ_NEW(1)%profiles_1d%F_dia(irho)
+  enddo
+  close(10)
+
+  EQ_NEW(1)%eqconstraint%bvac_r%measured =   &
+       EQ_OLD(1)%global_param%mag_axis%bphi *   &
+       EQ_OLD(1)%global_param%mag_axis%position%r
+  call euitm_deallocate(EQ_OLD)
+
+#ifdef UAL
+! for BDSEQ, run_no = 1
+  call perfon ('ualw1')
+  write(*,*) 'Calling euitm_create for BDSEQ'
+  call euitm_create('euitm',shot_no,1,0,0,idx)
+  write(*,*) EQ_NEW(1)%time
+  EQ_NEW(1)%time=0.0_R8
+  if(.not.associated(EQ_NEW(1)%codeparam%codename)) then
+     allocate(EQ_NEW(1)%codeparam%codename(1))
+     EQ_NEW(1)%codeparam%codename(1)='BDSEQ'
+  endif
+  if(.not.associated(EQ_NEW(1)%codeparam%codeversion)) then
+     allocate(EQ_NEW(1)%codeparam%codeversion(1))
+     EQ_NEW(1)%codeparam%codeversion(1)=version
+  endif
+  if(.not.associated(EQ_NEW(1)%codeparam%parameters)) then
+     allocate(EQ_NEW(1)%codeparam%parameters(1))
+     EQ_NEW(1)%codeparam%parameters(1)='NONE'
+  endif
+  if(.not.associated(EQ_NEW(1)%codeparam%output_diag)) then
+     allocate(EQ_NEW(1)%codeparam%output_diag(1))
+     EQ_NEW(1)%codeparam%output_diag(1)='NONE'
+  endif
+  EQ_NEW(1)%codeparam%output_flag=0
+!     write(*,*) 'Calling euitm_put_non_timed for BDSEQ'
+!     call euitm_put_non_timed(idx,"equilibrium",EQ_NEW(1))
+!     write(*,*) 'Calling euitm_put_slice for BDSEQ'
+!     call euitm_put_slice(idx,"equilibrium",EQ_NEW(1))
+  call euitm_put(idx,"equilibrium",EQ_NEW)
+  write(*,*) 'Calling euitm_close for BDSEQ'
+  call euitm_close(idx)
+  write(*,*) 'Finished with euitm UAL for BDSEQ'
+  call perfoff
+#endif
+
+  do eq_code = 1,5
+
+     if(eq_code.eq.1) then
+
+#ifdef GOT_HELENA
+
+! call helena and write results to 'eq_helena.out'
+
+!!! now in wrapper        EQ_NEW(1)%profiles_1d%jphi=-EQ_NEW(1)%profiles_1d%jphi
+        call perfon ('helena')
+        call helena_wrapper(EQ_NEW, EQ_HELENA)
+        call perfoff
+!!! now in wrapper        EQ_NEW(1)%profiles_1d%jphi=-EQ_NEW(1)%profiles_1d%jphi
+        write(*,*) 'CODE: HELENA'
+        call output_eq_info(EQ_HELENA(1))
+        write(*,*)
+
+        call open_write_file(10, 'eq_helena.out.cpo')
+        call write_cpo(EQ_HELENA(1), 'equilibrium')
+        call close_write_file
+        open(10,file='eq_helena.out')
+!  write(10,'(''# rho pressure jparallel jphi volume q rhovol psi phi vprime gm1 gm2 gm3 gm4 gm5 gm6 gm7'')')
+        write(10,'(''# pressure jphi q psi volume rho_vol F_dia pprime ffprime area rho_tor phi vprime gm1 gm2 gm3 gm4 gm5 gm6 gm7'')')
+        do irho=1,size(EQ_HELENA(1)%profiles_1d%psi)
+           write(10,'(30f20.6)') &
+                EQ_HELENA(1)%profiles_1d%pressure(irho),   &
+                EQ_HELENA(1)%profiles_1d%jphi(irho),       &
+                EQ_HELENA(1)%profiles_1d%q(irho),          &
+                EQ_HELENA(1)%profiles_1d%psi(irho),        &
+                EQ_HELENA(1)%profiles_1d%volume(irho),     &
+                EQ_HELENA(1)%profiles_1d%rho_vol(irho),    &
+                EQ_HELENA(1)%profiles_1d%F_dia(irho),      &
+                EQ_HELENA(1)%profiles_1d%pprime(irho),     &
+                EQ_HELENA(1)%profiles_1d%ffprime(irho),    &
+                EQ_HELENA(1)%profiles_1d%area(irho),       &
+                EQ_HELENA(1)%profiles_1d%rho_tor(irho),    &
+                EQ_HELENA(1)%profiles_1d%phi(irho),        &
+                EQ_HELENA(1)%profiles_1d%vprime(irho),    &
+                EQ_HELENA(1)%profiles_1d%gm1(irho),        &
+                EQ_HELENA(1)%profiles_1d%gm2(irho),        &
+                EQ_HELENA(1)%profiles_1d%gm3(irho),        &
+                EQ_HELENA(1)%profiles_1d%gm4(irho),        &
+                EQ_HELENA(1)%profiles_1d%gm5(irho),        &
+                EQ_HELENA(1)%profiles_1d%gm6(irho),        &
+                EQ_HELENA(1)%profiles_1d%gm7(irho)
+!          EQ_HELENA(1)%profiles_1d%jparallel(irho),  &
+        enddo
+        close(10)
+
+#ifdef UAL
+! for HELENA, run_no = 3
+        call perfon ('ualw2')
+        write(*,*) 'Calling euitm_create for HELENA'
+        call euitm_create('euitm',shot_no,3,0,0,idx)
+        write(*,*) EQ_HELENA(1)%time
+        EQ_HELENA(1)%time=0.0_R8
+        if(.not.associated(EQ_HELENA(1)%codeparam%codename)) then
+           allocate(EQ_HELENA(1)%codeparam%codename(1))
+           EQ_HELENA(1)%codeparam%codename(1)='HELENA'
+        endif
+        if(.not.associated(EQ_HELENA(1)%codeparam%codeversion)) then
+           allocate(EQ_HELENA(1)%codeparam%codeversion(1))
+           EQ_HELENA(1)%codeparam%codeversion(1)=version
+        endif
+        if(.not.associated(EQ_HELENA(1)%codeparam%parameters)) then
+           allocate(EQ_HELENA(1)%codeparam%parameters(1))
+           EQ_HELENA(1)%codeparam%parameters(1)='NONE'
+        endif
+        if(.not.associated(EQ_HELENA(1)%codeparam%output_diag)) then
+           allocate(EQ_HELENA(1)%codeparam%output_diag(1))
+           EQ_HELENA(1)%codeparam%output_diag(1)='NONE'
+        endif
+        EQ_HELENA(1)%codeparam%output_flag=0
+        write(*,*) 'Calling euitm_put_non_timed for HELENA'
+        call euitm_put_non_timed(idx,"equilibrium",EQ_HELENA(1))
+        write(*,*) 'Calling euitm_put_slice for HELENA'
+        call euitm_put_slice(idx,"equilibrium",EQ_HELENA(1))
+        write(*,*) 'Calling euitm_closee for HELENA'
+        call euitm_close(idx)
+        write(*,*) 'Finished with euitm UAL for HELENA'
+        call perfoff
+#endif
+
+        call euitm_deallocate(EQ_HELENA)
+
+#endif
+
+     else if (eq_code.eq.2) then
+     
+! call helena21 and write results to 'eq_helena21.out'
+     
+        call perfon ('helena21')
+        call helena21itm(EQ_NEW, EQ_HELENA)
+        call perfoff
+        write(*,*) 'CODE: HELENA21'
+        call output_eq_info(EQ_HELENA(1))
+        write(*,*)
+
+        call open_write_file(10, 'eq_helena21.out.cpo')
+        call write_cpo(EQ_HELENA(1), 'equilibrium')
+        call close_write_file
+        open(10,file='eq_helena21.out')
+ !  write(10,'(''# rho pressure jparallel jphi volume q rhovol psi phi vprime gm1 gm2 gm3 gm4 gm5 gm6 gm7'')')
+        write(10,'(''# pressure jphi volume q psi phi vprime gm1 gm2 gm3 gm4 gm5 gm6 gm7 rho_vol pprime ffprime F_dia area'')')
+        do irho=1,size(EQ_HELENA(1)%profiles_1d%psi)
+           write(10,'(30f20.6)') &
+ !          EQ_HELENA(1)%profiles_1d%rho_tor(irho),    &
+                EQ_HELENA(1)%profiles_1d%pressure(irho),   &
+ !          EQ_HELENA(1)%profiles_1d%jparallel(irho),  &
+                EQ_HELENA(1)%profiles_1d%jphi(irho),       &
+                EQ_HELENA(1)%profiles_1d%volume(irho),     &
+                EQ_HELENA(1)%profiles_1d%q(irho),          &
+                EQ_HELENA(1)%profiles_1d%psi(irho),        &
+                EQ_HELENA(1)%profiles_1d%phi(irho),        &
+                EQ_HELENA(1)%profiles_1d%vprime(irho),     &
+                EQ_HELENA(1)%profiles_1d%gm1(irho),        &
+                EQ_HELENA(1)%profiles_1d%gm2(irho),        &
+                EQ_HELENA(1)%profiles_1d%gm3(irho),        &
+                EQ_HELENA(1)%profiles_1d%gm4(irho),        &
+                EQ_HELENA(1)%profiles_1d%gm5(irho),        &
+                EQ_HELENA(1)%profiles_1d%gm6(irho),        &
+                EQ_HELENA(1)%profiles_1d%gm7(irho),        &
+                EQ_HELENA(1)%profiles_1d%rho_vol(irho),    &
+                EQ_HELENA(1)%profiles_1d%pprime(irho),     &
+                EQ_HELENA(1)%profiles_1d%ffprime(irho),    &
+                EQ_HELENA(1)%profiles_1d%f_dia(irho),      &
+                EQ_HELENA(1)%profiles_1d%area(irho)
+        enddo
+        close(10)
+
+#ifdef UAL
+! for HELENA21, run_no = 2
+        call perfon ('ualw3')
+        write(*,*) 'Calling euitm_create for HELENA21'
+        call euitm_create('euitm',shot_no,2,0,0,idx)
+        write(*,*) EQ_HELENA(1)%time
+        EQ_HELENA(1)%time=0.0_R8
+        if(.not.associated(EQ_HELENA(1)%codeparam%codename)) then
+           allocate(EQ_HELENA(1)%codeparam%codename(1))
+           EQ_HELENA(1)%codeparam%codename(1)='HELENA21'
+        endif
+        if(.not.associated(EQ_HELENA(1)%codeparam%codeversion)) then
+           allocate(EQ_HELENA(1)%codeparam%codeversion(1))
+           EQ_HELENA(1)%codeparam%codeversion(1)=version
+        endif
+        if(.not.associated(EQ_HELENA(1)%codeparam%parameters)) then
+           allocate(EQ_HELENA(1)%codeparam%parameters(1))
+           EQ_HELENA(1)%codeparam%parameters(1)='NONE'
+        endif
+        if(.not.associated(EQ_HELENA(1)%codeparam%output_diag)) then
+           allocate(EQ_HELENA(1)%codeparam%output_diag(1))
+           EQ_HELENA(1)%codeparam%output_diag(1)='NONE'
+        endif
+        EQ_HELENA(1)%codeparam%output_flag=0
+        write(*,*) 'Calling euitm_put_non_timed for HELENA21'
+        call euitm_put_non_timed(idx,"equilibrium",EQ_HELENA(1))
+        write(*,*) 'Calling euitm_put_slice for HELENA21'
+        call euitm_put_slice(idx,"equilibrium",EQ_HELENA(1))
+        write(*,*) 'Calling euitm_close for HELENA21'
+        call euitm_close(idx)
+        write(*,*) 'Finished with euitm UAL for HELENA21'
+        call perfoff
+#endif
+
+        call euitm_deallocate(EQ_HELENA)
+
+     else if (eq_code.eq.3) then
+
+#ifdef GOT_E3EMEQ
+
+! call E3EMEQ and then write results to 'eq_emeq.out'
+
+!dpc
+	EQ_new(1)%global_param%i_plasma=5000.0_R8
+!dpc
+!!        EQ_NEW(1)%profiles_1d%jparallel=-EQ_NEW(1)%profiles_1d%jparallel
+        call perfon ('emeq')
+        call EMEQ_E3M_wrapper(EQ_new, EQ_E3ASTR)
+        call perfoff
+!!        EQ_NEW(1)%profiles_1d%jparallel=-EQ_NEW(1)%profiles_1d%jparallel
+        write(*,*) 'CODE: E3EMEQ'
+        call output_eq_info(EQ_E3ASTR(1))
+
+        nrho1=size(EQ_E3ASTR(1)%profiles_1d%rho_tor) 
+
+        call open_write_file(10, 'eq_emeq.out.cpo')
+        call write_cpo(EQ_E3ASTR(1), 'equilibrium')
+        call close_write_file
+        open(10,file='eq_emeq.out')
+        write(10,'(''# rho pressure jparallel q gm1 gm2 gm3 gm4 gm5 gm6 gm7 volume vprime area aprime f_dia rho_vol'')')
+
+        do irho=1,nrho1
+           write(10,'(30f20.6)') &
+                EQ_E3ASTR(1)%profiles_1d%rho_tor(irho),    &
+                EQ_E3ASTR(1)%profiles_1d%pressure(irho),   &
+                EQ_E3ASTR(1)%profiles_1d%jparallel(irho),  &
+                EQ_E3ASTR(1)%profiles_1d%q(irho),          &
+                EQ_E3ASTR(1)%profiles_1d%gm1(irho),        &
+                EQ_E3ASTR(1)%profiles_1d%gm2(irho),        &
+                EQ_E3ASTR(1)%profiles_1d%gm3(irho),        &
+                EQ_E3ASTR(1)%profiles_1d%gm4(irho),        &
+                EQ_E3ASTR(1)%profiles_1d%gm5(irho),        &
+                EQ_E3ASTR(1)%profiles_1d%gm6(irho),        &
+                EQ_E3ASTR(1)%profiles_1d%gm7(irho),        &
+                EQ_E3ASTR(1)%profiles_1d%volume(irho),     &
+                EQ_E3ASTR(1)%profiles_1d%vprime(irho),     &
+                EQ_E3ASTR(1)%profiles_1d%area(irho),       &
+                EQ_E3ASTR(1)%profiles_1d%aprime(irho),     &
+                EQ_E3ASTR(1)%profiles_1d%f_dia(irho),     &
+                EQ_E3ASTR(1)%profiles_1d%rho_vol(irho)
+        enddo
+        close(10)
+
+#ifdef UAL
+! for E3ASTR, run_no=4
+        call perfon ('ualw4')
+        write(*,*) 'Calling euitm_create for E3ASTR'
+        call euitm_create('euitm',shot_no,4,0,0,idx)
+        write(*,*) EQ_E3ASTR(1)%time
+        EQ_E3ASTR(1)%time=0.0_R8
+        if(.not.associated(EQ_E3ASTR(1)%codeparam%codename)) then
+           allocate(EQ_E3ASTR(1)%codeparam%codename(1))
+           EQ_E3ASTR(1)%codeparam%codename(1)='E3ASTR'
+        endif
+        if(.not.associated(EQ_E3ASTR(1)%codeparam%codeversion)) then
+           allocate(EQ_E3ASTR(1)%codeparam%codeversion(1))
+           EQ_E3ASTR(1)%codeparam%codeversion(1)=version
+        endif
+        if(.not.associated(EQ_E3ASTR(1)%codeparam%parameters)) then
+           allocate(EQ_E3ASTR(1)%codeparam%parameters(1))
+           EQ_E3ASTR(1)%codeparam%parameters(1)='NONE'
+        endif
+        if(.not.associated(EQ_E3ASTR(1)%codeparam%output_diag)) then
+           allocate(EQ_E3ASTR(1)%codeparam%output_diag(1))
+           EQ_E3ASTR(1)%codeparam%output_diag(1)='NONE'
+        endif
+        EQ_E3ASTR(1)%codeparam%output_flag=0
+        write(*,*) 'Calling euitm_put_non_timed for E3ASTR'
+        call euitm_put_non_timed(idx,"equilibrium",EQ_E3ASTR(1))
+        write(*,*) 'Calling euitm_put_slice for E3ASTR'
+        call euitm_put_slice(idx,"equilibrium",EQ_E3ASTR(1))
+        write(*,*) 'Calling euitm_close for E3ASTR'
+        call euitm_close(idx)
+        write(*,*) 'Finished with euitm UAL for E3ASTR'
+        call perfoff
+#endif
+
+        call euitm_deallocate(EQ_E3ASTR)
+
+#endif
+
+     else if(eq_code.eq.4) then
+
+#ifdef GOT_CHEASE
+
+! call chease and write results to 'eq_chease.out'
+
+        EQ_NEW(1)%profiles_1d%jphi=-EQ_NEW(1)%profiles_1d%jphi
+        call perfon ('chease')
+        call chease_wrapper(EQ_NEW, EQ_CHEASE)
+        call perfoff
+        EQ_NEW(1)%profiles_1d%jphi=-EQ_NEW(1)%profiles_1d%jphi
+        write(*,*) 'CODE: CHEASE'
+        call output_eq_info(EQ_CHEASE(1))
+        write(*,*)
+
+        call open_write_file(10, 'eq_chease.out.cpo')
+        call write_cpo(EQ_CHEASE(1), 'equilibrium')
+        call close_write_file
+        open(10,file='eq_chease.out')
+!  write(10,'(''# rho pressure jparallel jphi volume q rhovol psi phi vprime gm1 gm2 gm3 gm4 gm5 gm6 gm7'')')
+        write(10,'(''# pressure jphi q psi volume rho_vol F_dia pprime ffprime area rho_tor phi vprime gm1 gm2 gm3 gm4 gm5 gm6 gm7'')')
+        do irho=1,size(EQ_CHEASE(1)%profiles_1d%psi)
+           write(10,'(30f20.6)') &
+                EQ_CHEASE(1)%profiles_1d%pressure(irho),   &
+                EQ_CHEASE(1)%profiles_1d%jphi(irho),       &
+                EQ_CHEASE(1)%profiles_1d%q(irho),          &
+                EQ_CHEASE(1)%profiles_1d%psi(irho),        &
+                EQ_CHEASE(1)%profiles_1d%volume(irho),     &
+                EQ_CHEASE(1)%profiles_1d%rho_vol(irho),    &
+                EQ_CHEASE(1)%profiles_1d%F_dia(irho),      &
+                EQ_CHEASE(1)%profiles_1d%pprime(irho),     &
+                EQ_CHEASE(1)%profiles_1d%ffprime(irho),    &
+                EQ_CHEASE(1)%profiles_1d%area(irho),       &
+                EQ_CHEASE(1)%profiles_1d%rho_tor(irho),    &
+                EQ_CHEASE(1)%profiles_1d%phi(irho),        &
+                EQ_CHEASE(1)%profiles_1d%vprime(irho),    &
+                EQ_CHEASE(1)%profiles_1d%gm1(irho),        &
+                EQ_CHEASE(1)%profiles_1d%gm2(irho),        &
+                EQ_CHEASE(1)%profiles_1d%gm3(irho),        &
+                EQ_CHEASE(1)%profiles_1d%gm4(irho),        &
+                EQ_CHEASE(1)%profiles_1d%gm5(irho),        &
+                EQ_CHEASE(1)%profiles_1d%gm6(irho),        &
+                EQ_CHEASE(1)%profiles_1d%gm7(irho)
+!          EQ_CHEASE(1)%profiles_1d%jparallel(irho),  &
+        enddo
+        close(10)
+
+#ifdef UAL
+! for CHEASE, run_no=5
+        call perfon ('ualw5')
+        write(*,*) 'Calling euitm_create for CHEASE'
+        call euitm_create('euitm',shot_no,5,0,0,idx)
+        write(*,*) EQ_CHEASE(1)%time
+        EQ_CHEASE(1)%time=0.0_R8
+        if(.not.associated(EQ_CHEASE(1)%codeparam%codename)) then
+           allocate(EQ_CHEASE(1)%codeparam%codename(1))
+           EQ_CHEASE(1)%codeparam%codename(1)='CHEASE'
+        endif
+        if(.not.associated(EQ_CHEASE(1)%codeparam%codeversion)) then
+           allocate(EQ_CHEASE(1)%codeparam%codeversion(1))
+           EQ_CHEASE(1)%codeparam%codeversion(1)=version
+        endif
+        if(.not.associated(EQ_CHEASE(1)%codeparam%parameters)) then
+           allocate(EQ_CHEASE(1)%codeparam%parameters(1))
+           EQ_CHEASE(1)%codeparam%parameters(1)='NONE'
+        endif
+        if(.not.associated(EQ_CHEASE(1)%codeparam%output_diag)) then
+           allocate(EQ_CHEASE(1)%codeparam%output_diag(1))
+           EQ_CHEASE(1)%codeparam%output_diag(1)='NONE'
+        endif
+        EQ_CHEASE(1)%codeparam%output_flag=0
+        write(*,*) 'Calling euitm_put_non_timed for CHEASE'
+        call euitm_put_non_timed(idx,"equilibrium",EQ_CHEASE(1))
+        write(*,*) 'Calling euitm_put_slice for CHEASE'
+        call euitm_put_slice(idx,"equilibrium",EQ_CHEASE(1))
+        write(*,*) 'Calling euitm_closee for CHEASE'
+        call euitm_close(idx)
+        write(*,*) 'Finished with euitm UAL for CHEASE'
+        call perfoff
+#endif
+
+        call euitm_deallocate(EQ_CHEASE)
+
+#endif
+
+     else if (eq_code.eq.5) then
+
+#ifdef GOT_SPIDER
+
+! call SPIDER and then write results to 'spider.out'
+
+!dpc
+	EQ_new(1)%global_param%i_plasma=5000.0_R8
+!dpc
+!!        EQ_NEW(1)%profiles_1d%jparallel=-EQ_NEW(1)%profiles_1d%jparallel
+        call perfon ('emeq')
+        call spider_wrapper(EQ_new, coreprof, EQ_SPIDER)
+        call perfoff
+!!        EQ_NEW(1)%profiles_1d%jparallel=-EQ_NEW(1)%profiles_1d%jparallel
+        write(*,*) 'CODE: SPIDER'
+        call output_eq_info(EQ_SPIDER(1))
+
+        nrho1=size(EQ_SPIDER(1)%profiles_1d%rho_tor) 
+
+        call open_write_file(10, 'eq_emeq.out.cpo')
+        call write_cpo(EQ_SPIDER(1), 'equilibrium')
+        call close_write_file
+        open(10,file='eq_emeq.out')
+        write(10,'(''# rho pressure jparallel q gm1 gm2 gm3 gm4 gm5 gm6 gm7 volume vprime area aprime f_dia rho_vol'')')
+
+        do irho=1,nrho1
+           write(10,'(30f20.6)') &
+                EQ_SPIDER(1)%profiles_1d%rho_tor(irho),    &
+                EQ_SPIDER(1)%profiles_1d%pressure(irho),   &
+                EQ_SPIDER(1)%profiles_1d%jparallel(irho),  &
+                EQ_SPIDER(1)%profiles_1d%q(irho),          &
+                EQ_SPIDER(1)%profiles_1d%gm1(irho),        &
+                EQ_SPIDER(1)%profiles_1d%gm2(irho),        &
+                EQ_SPIDER(1)%profiles_1d%gm3(irho),        &
+                EQ_SPIDER(1)%profiles_1d%gm4(irho),        &
+                EQ_SPIDER(1)%profiles_1d%gm5(irho),        &
+                EQ_SPIDER(1)%profiles_1d%gm6(irho),        &
+                EQ_SPIDER(1)%profiles_1d%gm7(irho),        &
+                EQ_SPIDER(1)%profiles_1d%volume(irho),     &
+                EQ_SPIDER(1)%profiles_1d%vprime(irho),     &
+                EQ_SPIDER(1)%profiles_1d%area(irho),       &
+                EQ_SPIDER(1)%profiles_1d%aprime(irho),     &
+                EQ_SPIDER(1)%profiles_1d%f_dia(irho),     &
+                EQ_SPIDER(1)%profiles_1d%rho_vol(irho)
+        enddo
+        close(10)
+
+#ifdef UAL
+! for SPIDER, run_no=6
+        call perfon ('ualw4')
+        write(*,*) 'Calling euitm_create for SPIDER'
+        call euitm_create('euitm',shot_no,6,0,0,idx)
+        write(*,*) EQ_SPIDER(1)%time
+        EQ_SPIDER(1)%time=0.0_R8
+        if(.not.associated(EQ_SPIDER(1)%codeparam%codename)) then
+           allocate(EQ_SPIDER(1)%codeparam%codename(1))
+           EQ_SPIDER(1)%codeparam%codename(1)='SPIDER'
+        endif
+        if(.not.associated(EQ_SPIDER(1)%codeparam%codeversion)) then
+           allocate(EQ_SPIDER(1)%codeparam%codeversion(1))
+           EQ_SPIDER(1)%codeparam%codeversion(1)=version
+        endif
+        if(.not.associated(EQ_SPIDER(1)%codeparam%parameters)) then
+           allocate(EQ_SPIDER(1)%codeparam%parameters(1))
+           EQ_SPIDER(1)%codeparam%parameters(1)='NONE'
+        endif
+        if(.not.associated(EQ_SPIDER(1)%codeparam%output_diag)) then
+           allocate(EQ_SPIDER(1)%codeparam%output_diag(1))
+           EQ_SPIDER(1)%codeparam%output_diag(1)='NONE'
+        endif
+        EQ_SPIDER(1)%codeparam%output_flag=0
+        write(*,*) 'Calling euitm_put_non_timed for SPIDER'
+        call euitm_put_non_timed(idx,"equilibrium",EQ_SPIDER(1))
+        write(*,*) 'Calling euitm_put_slice for SPIDER'
+        call euitm_put_slice(idx,"equilibrium",EQ_SPIDER(1))
+        write(*,*) 'Calling euitm_close for SPIDER'
+        call euitm_close(idx)
+        write(*,*) 'Finished with euitm UAL for SPIDER'
+        call perfoff
+#endif
+
+        call euitm_deallocate(EQ_SPIDER)
+
+#endif
+
+     endif
+
+  enddo
+
+  call euitm_deallocate(EQ_NEW)
+  call perfoff
+  call perfout ('whole')
+
+end program eq_test
+
+subroutine output_eq_info(eq_in)
+  use itm_constants
+  use euitm_routines
+  USE EUITM_SCHEMAS
+
+  implicit none
+
+  TYPE (TYPE_EQUILIBRIUM) :: eq_in
+  integer iprof
+
+  write(*,*)  &
+       'psi ',associated(eq_in%profiles_1d%psi),        &
+       'phi ',associated(eq_in%profiles_1d%phi),        &
+       'pressure ',associated(eq_in%profiles_1d%pressure),   &
+       'F_dia ',associated(eq_in%profiles_1d%F_dia),      &
+       'pprime ',associated(eq_in%profiles_1d%pprime),     &
+       'ffprime ',associated(eq_in%profiles_1d%ffprime),    &
+       'jphi ',associated(eq_in%profiles_1d%jphi),       &
+       'jparallel ',associated(eq_in%profiles_1d%jparallel),  &
+       'q ',associated(eq_in%profiles_1d%q),          &
+       'r_inboard ',associated(eq_in%profiles_1d%r_inboard),  &
+       'r_outboard ',associated(eq_in%profiles_1d%r_outboard), &
+       'rho_vol ',associated(eq_in%profiles_1d%rho_vol),    &
+       'rho_tor ',associated(eq_in%profiles_1d%rho_tor),    &
+       'elongation ',associated(eq_in%profiles_1d%elongation), &
+       'tria_upper ',associated(eq_in%profiles_1d%tria_upper), &
+       'tria_lower ',associated(eq_in%profiles_1d%tria_lower), &
+       'volume ',associated(eq_in%profiles_1d%volume),     &
+       'vprime ',associated(eq_in%profiles_1d%vprime),     &
+       'area ',associated(eq_in%profiles_1d%area),       &
+       'aprime ',associated(eq_in%profiles_1d%aprime),     &
+       'gm1 ',associated(eq_in%profiles_1d%gm1),        &
+       'gm2 ',associated(eq_in%profiles_1d%gm2),        &
+       'gm3 ',associated(eq_in%profiles_1d%gm3),        &
+       'gm4 ',associated(eq_in%profiles_1d%gm4),        &
+       'gm5 ',associated(eq_in%profiles_1d%gm5),        &
+       'gm6 ',associated(eq_in%profiles_1d%gm6),        &
+       'gm7 ',associated(eq_in%profiles_1d%gm7),        &
+       'ftrap ',associated(eq_in%profiles_1d%ftrap)
+
+
+  write(*,1000) '       AREA ',eq_in%global_param%area
+  write(*,1000) '     VOLUME ',eq_in%global_param%volume
+  write(*,1000) '      Raxis ',eq_in%global_param%mag_axis%position%r
+  write(*,1000) '      Zaxis ',eq_in%global_param%mag_axis%position%z
+  write(*,1000) '      Baxis ',eq_in%global_param%mag_axis%bphi
+  write(*,1000) '       Rgeo ',eq_in%eqgeometry%geom_axis%r
+  write(*,1000) '       Zgeo ',eq_in%eqgeometry%geom_axis%z
+  write(*,1000) '          a ',eq_in%eqgeometry%a_minor
+  write(*,1000) '         R0 ',eq_in%global_param%toroid_field%b0
+  write(*,1000) '         B0 ',eq_in%global_param%toroid_field%r0
+
+  write(*,1000) '   beta_pol ',eq_in%global_param%beta_pol
+  write(*,1000) '   beta_tor ',eq_in%global_param%beta_tor
+  write(*,1000) 'beta_normal ',eq_in%global_param%beta_normal
+  write(*,1000) '   i_plasma ',eq_in%global_param%i_plasma
+  write(*,1000) '         li ',eq_in%global_param%li
+  write(*,1000) '     psi_ax ',eq_in%global_param%psi_ax
+  write(*,1000) '  psi_bound ',eq_in%global_param%psi_bound
+  write(*,1000) '       q_95 ',eq_in%global_param%q_95
+  write(*,1000) '      q_min ',eq_in%global_param%q_min
+  if(associated(eq_in%profiles_2d)) then
+     do iprof = 1, size(eq_in%profiles_2d)
+        if(associated(eq_in%profiles_2d(iprof)%grid_type)) then
+           write(*,1000) iprof, eq_in%profiles_2d(iprof)%grid_type(:)
+        endif
+     enddo
+  endif
+
+1000 format(a,1pg20.10)
+
+end subroutine output_eq_info

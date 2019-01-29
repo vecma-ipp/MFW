@@ -1,0 +1,12 @@
+ &PLOTIN  
+  time0 = -1.,  time9 = 9999.,  timeav = 50.,  
+  ll1 = 1,  ll2 = 999,  
+  nfiles = 1,  ndfiles = 1,   
+  nframe = -1,  ntplot = -1,  istride = 1,  
+  ntstart = -299,  ntstop = -9301,  nfstart = -1,  nfstop = 999,  
+  ntsnap = -1000,  nfsnap = 9999,  
+  itprobe = -1,  
+  ipprofs = 0,  
+  ivplot = 0,  ivcor1 = 0,  ivcor2 = 0,  
+  iptype = 1,  
+ /

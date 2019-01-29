@@ -1,0 +1,9 @@
+MODULE Vconv
+
+  USE Dim
+  
+  IMPLICIT NONE
+
+  REAL, DIMENSION(:,:,:), ALLOCATABLE :: fuu,fuu1,fuu2,suu,suu1,suu2
+
+END MODULE Vconv

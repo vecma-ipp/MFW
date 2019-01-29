@@ -1,0 +1,216 @@
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+!> ??
+!>
+!> \author ???
+!>
+!> \version "$Id$"
+      MODULE NEUTRALS_SETTINGS
+
+
+
+      CONTAINS
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+!> ??
+!>
+!> \author ???
+!>
+!> \version "$Id$"
+      SUBROUTINE GET_NEUTRALS_SETTINGS   (COREPROF, NEUTRALS, codeparameters)
+    
+!-------------------------------------------------------!
+!     This subroutine reads settings for NEUTRALS       !
+!     from XML file                                     !
+!-------------------------------------------------------!
+!     Source:       ---                                 !
+!     Developers:   D.Kalupin                           !
+!     Contacts:     D.Kalupin@fz-juelich.de             !
+!                                                       !
+!     Comments:     ---                                 !
+!                                                       !
+!-------------------------------------------------------!
+
+      USE TYPE_NEUTRALS
+      USE ITM_CONSTANTS
+      USE ITM_TYPES
+      USE EUITM_SCHEMAS
+      USE EUITM_XML_PARSER  
+
+      IMPLICIT NONE
+
+! +++ External derived types and CPO
+      TYPE (TYPE_COREPROF),    POINTER  :: COREPROF(:)         !input CPO with internal ETS parameters profiles 
+      TYPE (NEUTRAL_PROFILES)           :: NEUTRALS            !contains profiles of incoming neutrals
+      TYPE (TYPE_PARAM)                 :: codeparameters
+
+
+! +++ Boundary conditions:
+      INTEGER                           :: NEU_BND_TYPE        !type of boundary conditions    
+      INTEGER                           :: NRHO                    
+      REAL (R8)                         :: N0_BND              !boundary conditions (value)
+      REAL (R8)                         :: T0_BND              !boundary conditions (value)
+
+! +++ Coefficients:
+      REAL (R8)                         :: COEF_RECYCLE        !recycling coefficient 
+
+      INTEGER                           :: return_status
+
+      NRHO     = SIZE (COREPROF(1)%rho_tor, DIM=1)
+
+      CALL ASSIGN_neutrals_PARAMETERS(codeparameters, return_status)
+
+      IF (return_status /= 0) THEN
+         WRITE(*,*) 'ERROR: Could not assign NEUTRALS settings.'
+      END IF
+
+      
+
+
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+! +++ Copy settings into NEUTRALS derived type:
+
+!  from XML:
+        NEUTRALS%NEU_BND_TYPE(1)               = NEU_BND_TYPE
+        NEUTRALS%NEU_BND(1,1)                  = N0_BND
+        NEUTRALS%N0(NRHO,1,1)                  = N0_BND
+        NEUTRALS%T0(NRHO,1,1)                  = T0_BND
+        NEUTRALS%COEF_RECYCLE                  = COEF_RECYCLE
+
+!  from CPO:
+        NEUTRALS%MION                          = COREPROF(1)%composition%amn
+
+ 
+     
+
+  RETURN
+
+
+CONTAINS
+
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+!> ??
+!>
+!> \author ???
+!>
+!> \version "$Id$"
+SUBROUTINE ASSIGN_neutrals_PARAMETERS(codeparameters, return_status)
+
+  !-------------------------------------------------------!
+  !     This subroutine calls the XML parser for          !
+  !     the neutrals settings and assign the              !
+  !     resulting values to the corresponding variables   !
+  !-------------------------------------------------------!
+  !     Source:       ---                                 !
+  !     Developers:   D.Kalupin                           !
+  !     Kontacts:     Denis.Kalupin@efda.org              !
+  !                                                       !
+  !     Comments:     created for V&V between ETS and     !
+  !                   ASTRA                               !
+  !                                                       !
+  !-------------------------------------------------------!
+  
+  USE ITM_TYPES
+  USE EUITM_SCHEMAS
+  USE EUITM_XML_PARSER  
+
+  IMPLICIT NONE
+
+
+  TYPE(type_param)              :: codeparameters
+  INTEGER(ITM_I4)                   :: return_status 
+
+  TYPE(tree)                        :: parameter_list
+  TYPE(element),        POINTER     :: temp_pointer
+  INTEGER(ITM_I4)                   :: i, nparm, n_values
+  CHARACTER(len = 132)              :: cname
+
+
+  return_status          = 0      ! no error
+
+!-- parse xml-string codeparameters%parameters
+
+  WRITE(6,*) 'Calling euitm_xml_parse'
+  CALL EUITM_XML_PARSE  (codeparameters, nparm, parameter_list)
+  WRITE(6,*) 'Called euitm_xml_parse'
+
+!-- assign variables
+
+  temp_pointer => parameter_list%first
+
+  outer: do
+    cname = char2str(temp_pointer%cname)   ! necessary for AIX
+    select case (cname)
+
+
+!--   parameters overall
+      case ("parameters")
+         temp_pointer => temp_pointer%child
+         cycle
+
+!--   boundary conditions for neutrals
+        case ("boundary_conditions")
+           temp_pointer => temp_pointer%child
+           cycle
+
+          case ("n0_bnd")
+             if (allocated(temp_pointer%cvalue)) &
+                  call char2num(temp_pointer%cvalue, n0_bnd)
+          case ("t0_bnd")
+             if (allocated(temp_pointer%cvalue)) &
+                  call char2num(temp_pointer%cvalue, t0_bnd)
+          case ("neu_bnd_type")
+             if (allocated(temp_pointer%cvalue)) &
+                  call char2num(temp_pointer%cvalue, neu_bnd_type)
+  
+
+!--   Coefficients
+        case ("coefficients")
+           temp_pointer => temp_pointer%child
+           cycle
+
+          case ("coef_recycle")
+             if (allocated(temp_pointer%cvalue)) &
+                  call char2num(temp_pointer%cvalue, coef_recycle)
+  
+
+      case default
+        write(*, *) 'ERROR: invalid parameter', cname
+        return_status = 1
+        exit
+    end select
+
+
+    do
+      if (associated(temp_pointer%sibling)) then
+        temp_pointer => temp_pointer%sibling
+        exit
+      end if
+      if (associated(temp_pointer%parent, parameter_list%first )) &
+        exit outer
+      if (associated(temp_pointer%parent)) then
+        temp_pointer => temp_pointer%parent
+      else
+        write(*, *) 'ERROR: broken list.'
+        return
+      end if
+    end do
+  end do outer
+
+!-- destroy tree
+  CALL DESTROY_XML_TREE(parameter_list)
+
+
+  RETURN
+
+END SUBROUTINE ASSIGN_NEUTRALS_PARAMETERS
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+
+
+END SUBROUTINE GET_NEUTRALS_SETTINGS
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+
+
+END MODULE NEUTRALS_SETTINGS

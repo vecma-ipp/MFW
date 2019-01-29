@@ -1,0 +1,102 @@
+# Makefile.Gateway for generic actor release
+
+FPP	= cpp
+FC	= ifort
+
+LDFLAGS	= 
+
+MOD	= $(HDR:%.h90=%.o)
+PMOD	= $(PHDR:%.h90=%.o)
+
+FPPFLAGS = -P -traditional -DLinux
+
+FPPFLAGS += -DPGPLOT
+AUXOBJ	+= pgpolar.o pgxs.o pgxy.o pglogy.o
+
+FC90	= $(FC)
+
+ifeq ($(DOMPI),yes)
+  FC90	= mpiifort
+  FPPFLAGS += -DMPI -DMPI2 
+  FPPFLAGS += -DMPI_REAL=MPI_DOUBLE_PRECISION
+  FPPFLAGS += -DMPI_COMPLEX=MPI_DOUBLE_COMPLEX
+  TFILE	= $(RSER)/t00.dat
+  PFILE	= $(RSER)/p00.dat
+  DFILE	= $(RSER)/d00.dat
+endif
+
+IFLAGS	+= $(foreach IDIR, $(IDIRS), -I$(IDIR) )
+
+FPPFLAGS += $(IFLAGS)
+
+FFLAGS	+= $(IFLAGS) 
+
+
+# optimisation
+
+ifeq ($(DODEBUG),yes)
+  FFLAGS	+= -r8 -debug all -check all -g -traceback
+else
+  ifeq ($(DOOPT),yes)
+    FFLAGS	+= -r8 -O3 -no-prec-div -mtune=pentium4 -xHost
+  else
+    FFLAGS	+= -r8 -O2
+  endif
+endif
+
+F90FLAGS= $(FFLAGS) 
+
+#LDFLAGS	+= -L$(PERFLIB_HOME) -lperf_r -lpfm
+# LDFLAGS	+= -L$(PERFLIB_HOME) -lperf
+
+#  LDFLAGS	+= -Wl,-verbose
+
+ifeq ($(SOLVER),WSMP)
+ifeq ($(DOMPI),yes)
+#  LDFLAGS	+= -L$(WSMP_HOME)/mpich2 -lpwsmp64
+  LDFLAGS	+= -L$(WSMP_HOME) -lpwsmp64
+else
+  LDFLAGS	+= -L$(WSMP_HOME) -lwsmp64
+endif
+#  LDFLAGS       += -L$(MKL_HOME)/lib/em64t
+#  LDFLAGS       += -lmkl_em64t -Bstatic -lguide -Bdynamic -lpthread
+  LDFLAGS       += -Wl,--start-group \
+  /afs/ipp/common/soft/intel/Compiler/11.1/c/mkl/lib/em64t/libmkl_intel_lp64.a \
+  /afs/ipp/common/soft/intel/Compiler/11.1/c/mkl/lib/em64t/libmkl_sequential.a \
+  /afs/ipp/common/soft/intel/Compiler/11.1/c/mkl/lib/em64t/libmkl_core.a \
+  -Wl,--end-group -lpthread
+endif
+
+ifeq ($(SOLVER),PETSC)
+  NDIR  += petsc
+  PETSC_ARCH = cluster-hypre
+  PETSC_DIR = $(HOME)/src/petsc-3.1-p3
+  include ${PETSC_DIR}/conf/variables
+  FPPFLAGS      += $(PETSC_INCLUDE)
+  LDFLAGS       += $(PETSC_LIB)
+  mg2d.f90: mg2d.F90
+	$(FPP) $(PETSC_INCLUDE) -DPERF $< $@
+  plmg2d.f90: plmg2d.F90
+	$(FPP) $(PETSC_INCLUDE) -DPERF $< $@
+endif
+
+LFLAGS	= $(MOD) $(LDFLAGS)
+PFLAGS	= $(PMOD) $(LDFLAGS)
+PFLAGS	+= $(HOME)/public/pgplot/libpgplot.a
+
+.SUFFIXES:
+
+.SUFFIXES: .f90 .o .h90 .f .h .F .F90
+
+.h90.f90:
+	cp $< $@
+
+.f.o:
+	$(FC) $(FFLAGS) -c $<
+
+.F90.f90:
+	$(FPP) $(FPPFLAGS) $< $@
+
+.f90.o:
+	$(FC90) $(F90FLAGS) -c $<
+

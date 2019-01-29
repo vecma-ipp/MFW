@@ -1,0 +1,74 @@
+Dear Olivier,
+
+according to the attached chease_namelist, I have used NRBOX = NZBOX.
+
+Thank you for answering my questions.
+
+Best wishes,
+Alexey
+
+
+***    ORB5 ASP 2.2
+***    CIRCULAR cross-section with 0% beta
+***    ultimate scan: varying aspect ratio
+***    Flat current profile: AT(1) (2) .ne. 0   
+ &EQDATA
+
+!############################################
+!             T h e   G r i d 
+!############################################
+   NS=40, NT=40,            ! Gridding of B in s, theta (internal in CHEASE)  
+   NRBOX =100, NZBOX =100,  ! Gridding in cyl. coords. (R,Z) - output 
+
+!############################################
+!    M a g n e t i c    f i e l d
+!############################################
+   B0EXP = 3.0,    ! magnetic field on the axis
+   R0EXP = 10.0,    ! major radius
+   ASPCT=0.1,      ! inverse aspect ratio
+   NCSCAL=1,  ! 1 -> fix value of q ; 2 -> fix the total tor. current 
+   CSSPEC=0.5,     ! Surface s0 where q is spesified
+   QSPEC=1.75,       ! q(s0)
+   CURRT = 6.9e-2  ! Total tor. current (is not used for NSCAL=1)
+   TRIANG=0.0,     ! triangularity (no for TRIANG = 1)
+   ELONG = 1.0     ! elongation    (no for ELONG = 1)
+   CETA=0.00,
+
+!############################################
+!   C u r r e n t     p r o f i l e
+!############################################
+   NFUNC=1,  ! Choose polynomial profile? (check it)
+   NSOUR=4,  ! Profile is given by a polynomial of 4th power
+   NSTTP=2,   !  choose I* to define the current
+   !AT= 0.095, 1.0, 0.0, 0.0, ! Parabolic profile
+   AT= 4.5, 1.0, 0.0, 0.0, 
+  
+!###########################################################
+!   P r e s s u r e   g r a d i e n t    p r o f i l e
+!###########################################################
+   NPPFUN=1,    ! Choose polynomila profile
+   AP= 0.0, 0.0,  0.0,   0.0,    ! Pressure profile
+
+ 
+!############################################
+!   I n t e r n a l    p a r a m e t e r s 
+!############################################
+   NSURF=2, 
+   NIDEAL = 7,NRSCAL=0, NTMF0=1,
+   NPSI=140, NCHI=140, NISO=140,   NV=1,
+   NMESHA=0, NDIFPS=0, NSMOOTH=1,
+   EPSLON=1.0E-8, 
+   MSMAX=1, NINMAP=20, NINSCA=25,
+   NOPT = 0, NPLOT = 1, NBAL=0,
+
+
+!  
+!###############################################################
+!   E x p e r i m e n t a l     E q u i l i b r i a
+!###############################################################
+!
+!  The equilibrium is written in EXPEQ
+!
+NEQDSK=1
+!
+/

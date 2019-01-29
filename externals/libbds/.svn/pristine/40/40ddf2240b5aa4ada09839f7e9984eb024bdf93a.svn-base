@@ -1,0 +1,5 @@
+FC       = ifort 
+FFLAGS   = -r8 -fPIC -assume no2underscore -module include
+DBGFLAGS = -g -O0 -traceback -warn all -debug all -check all
+OPTFLAGS = -O2 
+

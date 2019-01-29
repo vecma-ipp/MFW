@@ -1,0 +1,146 @@
+!> derivative calculation  of y=f(x) : dy/dx
+!>
+!>----------------------------------------------------------------
+!>    dydx = ITM_derive(x,y,c0,c1,d,o); 
+!> input
+!>   x  = radial coordinate   
+!>   y  = function to derive 
+!>__________________________________________________________
+!>   c0 = boundary condition at the center
+!>        scalar
+!>        for dy/dx
+!>                 0 -> = 0
+!>                 1 -> use two points for the center value 
+!>                 2 -> prolongation   
+!>        for d2y / dx2
+!>                 0 -> d2y/dx2 = 0
+!>                 1 -> dy/dx = 0 
+!>                 2 -> prolongation      
+!>__________________________________________________________     
+!>   c1 = edge boundary condition   (idem c0 for the edge)
+!>
+!>__________________________________________________________
+!>   d = dimension of the derivation
+!>__________________________________________________________
+!>   o = order of the derivation (1 ou 2)
+!>__________________________________________________________
+!> output   
+!>
+!>  dy / dx
+!> sample 
+!> 
+!>   x=0:pi/2
+!>   y=cos(x)
+!>   dydx  = ITM_derive(x,y,0,1,2,1)
+!>   dydx  = -sin(x)
+!>*******************************************************************************
+!>
+!> \author COS
+!>
+!> \version "$Id$"
+module cos_rpdederive_interface
+  interface
+  subroutine cos_rpdederive(dydx,K,x,y,c0,c1,d,o)
+    use cos_precision
+    implicit none
+    integer,intent(in)          :: K
+    real(kind=dp),intent(inout) :: dydx(K)
+    real(kind=dp),intent(in)    :: x(K),y(K)
+    integer,intent(in)          :: c0,c1,d,o
+    real(kind=dp),dimension(K)  :: dx,dy,K0,K1
+    real(kind=dp)               :: y0,y1,x1,x0
+  end subroutine cos_rpdederive
+  end interface
+end module cos_rpdederive_interface
+!*******************************************************************************
+subroutine cos_rpdederive(dydx,K,x,y,c0,c1,d,o)
+
+  use cos_precision
+  implicit none
+  integer,intent(in)          :: K
+  real(kind=dp),intent(inout) :: dydx(K)
+  real(kind=dp),intent(in)    :: x(K),y(K)
+  integer,intent(in)          :: c0,c1,d,o
+
+  real(kind=dp),dimension(K)  :: dx,dy,K0,K1
+  real(kind=dp)               :: y0,y1,x1,x0
+  integer                     :: i
+  
+  ! space dimension 
+  !K  = size(x) 
+  do i=1,K-1
+     k0(i) = i
+     k1(i) = i+1
+  enddo
+  !
+  ! calculation of  dx
+  !
+  x1 = 2.0 * x(K) - x(K-1)
+  x0 = 2.0 * x(1) - x(2)
+
+  do i=3,K
+     dx(i-1) = (x(i)-x(i-2)) / 2.0
+  enddo
+  dx(K)   = (x1 - x(K-1))/2.0
+  dx(1)   = (x(2) - x0)/2.0
+  !write(*,*) '-------------dans pdederive--------------'
+  !print*,"dx(101)= ", dx(101),' x1=',x1,' x(K)=',x(K),K
+  !print*,"y(101)= ",y(101)
+  !print*,"o= ",o
+  !write(*,*) '---------------------------'
+  ! 
+  ! dy calculation
+  !
+  if (o.eq.1) then
+
+     if (c1 .ne. 2.0) then
+        y1 = 2.0 * y(K) - y(K-1)
+        y0 = 2.0 * y(1) - y(2)
+     else
+        y1 = 4.0 * y(K) - 6.0 * y(K-1) + 4.0 * y(K-2) - y(K-3)
+        y0 = 4.0 * y(1) - 6.0 * y(2) + 4.0 * y(3) - y(4)
+     endif
+     do i=3,K
+        dy(i-1) = y(i)-y(i-2)
+     enddo
+
+     dy(K)   = y1   - y(K-1)
+     dy(1)   = y(2) - y0
+
+  else
+
+     if (c1 .ne. 2.0) then
+        y1 = y(K-1) 
+        y0 = y(2)
+     else
+        y1 = 4.0 * y(K) - 6.0 * y(K-1) + 4.0 * y(K-2) - y(K-3)
+        y0 = 4.0 * y(1) - 6.0 * y(2) + 4.0 * y(3) - y(4)
+     endif
+
+     do i=2,K-1
+        dy(i) = y(i+1)-2.0*y(i)+y(i-1)
+     enddo
+     dy(K)   = y1   - 2.0*y(K) + y(K-1)
+     dy(1)   = y(2) - 2.0*y(1) + y0
+
+  endif
+  
+  do i=1,K
+     if (o.eq. 1) then
+	dydx(i)  = dy(i) / (2.0 * dx(i)) 
+     else
+	dydx(i)  = dy(i) / (dx(i) ** 2.0)
+     endif
+  enddo
+
+  if (c1 .eq. 0) then
+     dydx(K) = c1 * dydx(K)
+  endif
+  if (c0 .eq. 0) then
+     dydx(1) = c0 * dydx(1)
+  endif
+
+  !print*,"dx   = ",dx(100:101)
+  !print*,"dy   = ",dy(100:101)
+  !print*,"dydx = ",dydx(100:101)
+end subroutine cos_rpdederive

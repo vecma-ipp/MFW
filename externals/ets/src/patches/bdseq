@@ -1,0 +1,85 @@
+Index: src/bdseq/bdseq.F90
+===================================================================
+--- src/bdseq/bdseq.F90	(revision 15)
++++ src/bdseq/bdseq.F90	(working copy)
+@@ -2,7 +2,7 @@
+ !>
+ !> \author Bruce Scott
+ !>
+-!> \version "$Id: bdseq.f90 $"
++!> \version "$Id$"
+ SUBROUTINE Bdseq (eq_in, eq_out, code_parameters)
+ 
+ !...  simple 1D equilibrium module, a set of integrals
+@@ -56,12 +56,6 @@
+   character(len = 132), target :: codename(1) = 'BDSEQ'
+   character(len = 132), target :: codeversion(1) = '0'
+ 
+-  character(len = 132), allocatable :: parameters(:)
+-  target :: parameters
+-  character(len = 132) :: xml_line
+-  integer(ITM_I4) :: file_length, i_line, n_lines
+-  integer(ITM_I4) :: ios
+-
+ !...  if running MPI you need these
+ 
+ #ifdef MPI
+@@ -73,6 +67,7 @@
+ !...  allocations
+ 
+   IF (.NOT. ASSOCIATED(eq_out)) THEN
++  END IF
+ 
+ !...  assign parms
+ 
+@@ -107,7 +102,25 @@
+ !...  set grid size for equilibrium calculation and output
+ !...  idiot protection
+ 
++  IF (nr_eq == 0) then
++     if(associated(eq_in(1)%profiles_1d%rho_tor)) then
++        nr_eq = size(eq_in(1)%profiles_1d%rho_tor)
++        write(*,*) 'nr_eq set on the basis of eq_in%profiles_1d%rho_tor to ', nr_eq
++     endif
++  endif
++  IF (nr_eq == 0) then
++     if(associated(eq_in(1)%profiles_1d%psi)) then
++        nr_eq = size(eq_in(1)%profiles_1d%psi)
++        write(*,*) 'nr_eq set on the basis of eq_in%profiles_1d%psi to ', nr_eq
++     endif
++  endif
+   IF (nr_eq == 0) nr_eq = 33
++  IF (nchi_eq == 0) then
++     if(associated(eq_in(1)%coord_sys%position%R)) then
++        nchi_eq = SIZE (eq_in(1)%coord_sys%position%R, DIM=2)
++        write(*,*) 'nchi_eq set on the basis of eq_in%coord_sys%position%R to ', nchi_eq
++     endif
++  endif
+   IF (nchi_eq == 0) nchi_eq = 256
+   IF (niter == 0) niter = 10
+ 
+@@ -173,7 +186,6 @@
+ 
+ !...  done initialisation
+ 
+-  END IF
+ 
+ !...  this is a zero-epsilon model, no distinction between jtor and jpar
+ !...  jtor is called jphi in this CPO and jpar is called jparallel
+@@ -434,6 +446,8 @@
+ 
+   END DO
+ 
++  eq_out(1)%eqgeometry%boundary%npoints=nchi_eq
++
+   IF (symmetry_coords) THEN
+      dtheta => g_13
+      theta => g_23
+
+Property changes on: src/bdseq/bdseq.F90
+___________________________________________________________________
+Added: svn:keywords
+   + Id
+Added: svn:eol-style
+   + native
+

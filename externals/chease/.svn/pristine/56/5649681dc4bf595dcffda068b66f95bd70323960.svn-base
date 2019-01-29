@@ -1,0 +1,64 @@
+BGP_FLOOR = /opt/ibmcmp/xlf/bg/14.1
+
+BGCC      = mpixlc_r
+BGCPP     = mpixlcxx_r
+BGF90     = mpixlf90_r
+BGFC      = mpixlf77_r
+
+HDF5=/bgsys/local/hdf5/1.8.10
+
+BGFLAGS=  -O3 -qarch=qp -qtune=qp -I$(BGP_FLOOR)/include 
+#-I$(BGP_FLOOR)/arch/include
+
+F90      = $(BGF90)
+F90FLAGS =  -qsuffix=f=f90 $(BGFLAGS) -I$(HDF5)/include
+FC       = $(BGFC)
+FCFLAGS  = $(BGFLAGS)
+CC       = $(BGCC)
+CFLAGS  = $(BGFLAGS)
+LDFLAGS  = -Wl,--allow-multiple-definition -L. -L$(HDF5)/lib -L/bgsys/local/lib64
+
+LLIBS =
+
+#LIBS =  -lfutils -lhdf5_fortran -lhdf5 $(LLIBS) -lc -lnss_dns -lnss_files -lresolv
+LIBS =  -lfutils -lhdf5_fortran -lhdf5 $(LLIBS) -lc -lresolv -lz
+
+SERIAL = ex1 ex2 ex3 ex4 ex5 ex7 ex8 ex9 ex11 ex12
+PARA   = pex1 pex3 pex4 pex5 pex6 pex7 pex8 pex9 ex10 
+
+.SUFFIXES:
+.SUFFIXES: .o .c .f90
+
+.f90.o:
+	$(F90) $(F90FLAGS) -c $<
+
+lib: libfutils.a getfile
+
+getfile: getfile.o
+	$(F90) $(LDFLAGS) -o $@ $<  $(LIBS)
+
+h5types: h5types.o
+	$(F90) $(LDFLAGS) -o $@ $<  $(LIBS)
+
+libfutils.a: futils.o cutils_bgq.o buffer.o vis3d.o
+	ar r $@ $?
+	ranlib $@
+
+futils.o: append.tpl zappend.tpl \
+          putarr.tpl cputarr.tpl putarrnd.tpl cputarrnd.tpl \
+          getarr.tpl cgetarr.tpl getarrnd.tpl cgetarrnd.tpl
+
+buffer.o: futils.o
+
+vis3d.o: futils.o
+
+test:
+	make -C ../examples test_s test_p
+
+getfile.o:	libfutils.a
+
+clean:
+	rm -f *.o *~ a.out
+
+distclean: clean
+	rm -f getfile *.h5 *.a *.mod TAGS

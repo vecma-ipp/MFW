@@ -1,0 +1,207 @@
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+!> The module declares types of variables used by numerical solvers
+!>
+!> \author ???
+!>
+!> \version "$Id: type_solver.f90 1507 2013-05-27 08:39:26Z denka $"
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+MODULE TYPE_SOLVER
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + !  
+!     The module declares types of variables            !
+!     used by numerical ssolvers                        !
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + !  
+
+  use itm_types
+
+  IMPLICIT NONE
+
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+  TYPE NUMERICS
+
+     INTEGER :: TYPE                                       !options for numerical solver 
+!1-"standard" RITM;
+!2-"integral" RITM;
+!3-"PROGONKA"
+
+     INTEGER :: NRHO                                       !number of radial points
+     INTEGER :: NDIM                                       !number of equations to solve
+
+     INTEGER, POINTER ::EQ_FLAG(:)                         !flag for equations 
+!0-interpretative, not solved
+!1-predictive, solved
+     REAL (R8), POINTER ::                           &
+          AMIX,                                      &     !mixing fraction
+! + + radii and function: 
+          RHO(:),                                    &     !radii 
+          Y(:,:),                                    &     !function 
+          DY(:,:),                                   &     !derivative of function
+          DDY(:,:),                                  &     !2nd derivative of function
+          YM(:,:),                                   &     !function at previous time step
+          FLUX(:,:),                                 &     !flux
+! + + coefficients (common for all solvers):
+          A(:,:),                                    &     !
+          B(:,:),                                    &     !
+          C(:,:),                                    &     !
+          D(:,:),                                    &     !
+          E(:,:),                                    &     !
+          F(:,:),                                    &     !
+          G(:,:),                                    &     !
+          H,                                         &     !
+! + + coefficients (optional for matrix solver):
+          CM1(:,:,:),                                &     !
+! + + boundary conditions:
+          V(:,:),                                    &     !
+          U(:,:),                                    &     !
+          W(:,:)                                           
+
+
+  END TYPE  NUMERICS
+
+
+
+
+
+
+
+
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + 
+CONTAINS
+
+
+
+! --------- INTERFACE TO NUMERICS --------------- !
+
+
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+!> Allocate parameters required by data exchange with numerical part 
+!>
+!> \author ???
+!>
+!> \version "$Id: type_solver.f90 1507 2013-05-27 08:39:26Z denka $"
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+
+  SUBROUTINE ALLOCATE_NUMERICS (NDIM, NRHO, SOLVER, ifail)
+
+! +++ Input/Output:
+    TYPE (NUMERICS)              :: SOLVER
+    INTEGER, INTENT (INOUT)      :: ifail
+
+    INTEGER                      :: NRHO
+    INTEGER                      :: NDIM
+    INTEGER                      :: TYPE
+
+    INTEGER                      :: ISTAT
+
+    ALLOCATE (SOLVER%EQ_FLAG(NDIM),                 &
+         SOLVER%RHO(NRHO),                     &
+         SOLVER%AMIX,                          &
+         SOLVER%Y(NDIM,NRHO),                  &
+         SOLVER%DY(NDIM,NRHO),                 &
+         SOLVER%YM(NDIM,NRHO),                 &
+         SOLVER%A(NDIM,NRHO),                  &
+         SOLVER%B(NDIM,NRHO),                  &
+         SOLVER%C(NDIM,NRHO),                  &
+         SOLVER%D(NDIM,NRHO),                  &
+         SOLVER%E(NDIM,NRHO),                  &
+         SOLVER%F(NDIM,NRHO),                  &
+         SOLVER%G(NDIM,NRHO),                  &
+         SOLVER%CM1(NDIM,NDIM,NRHO),           &
+         SOLVER%H,                             &
+         SOLVER%V(NDIM,2),                     &
+         SOLVER%U(NDIM,2),                     &
+         SOLVER%W(NDIM,2),                     &
+         STAT=ISTAT)
+
+! +++ Error checking and reporting:
+    IF (ISTAT /= 0) THEN
+       ifail = MAX(ifail,1)    ! Failure to allocate
+       RETURN
+    ELSE
+       ifail = MAX(ifail,0)    ! Normal return
+    END IF
+
+! +++ Set control parameters:
+    SOLVER%TYPE         = 0                               
+    SOLVER%EQ_FLAG(:)   = 1                               
+    SOLVER%AMIX         = 1.0_R8
+    SOLVER%Y(:,:)       = 0.0_R8
+    SOLVER%DY(:,:)      = 0.0_R8
+    SOLVER%YM(:,:)      = 0.0_R8
+    SOLVER%A(:,:)       = 0.0_R8
+    SOLVER%B(:,:)       = 0.0_R8
+    SOLVER%C(:,:)       = 0.0_R8
+    SOLVER%D(:,:)       = 0.0_R8
+    SOLVER%E(:,:)       = 0.0_R8
+    SOLVER%F(:,:)       = 0.0_R8
+    SOLVER%G(:,:)       = 0.0_R8
+    SOLVER%CM1(:,:,:)   = 0.0_R8
+    SOLVER%H            = 0.0_R8
+    SOLVER%V(:,:)       = 0.0_R8
+    SOLVER%U(:,:)       = 0.0_R8
+    SOLVER%W(:,:)       = 0.0_R8
+
+  END SUBROUTINE ALLOCATE_NUMERICS
+
+
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+!> Deallocate plasma profiles needed by the transport solver
+!>
+!> \author ???
+!>
+!> \version "$Id: type_solver.f90 1507 2013-05-27 08:39:26Z denka $"
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+  SUBROUTINE DEALLOCATE_NUMERICS (SOLVER, ifail)
+
+! +++ Input/Output:
+    TYPE (NUMERICS)              :: SOLVER
+    INTEGER, INTENT (INOUT)      :: ifail
+
+    INTEGER                      :: ISTAT
+
+    DEALLOCATE (SOLVER%EQ_FLAG,                   &
+         SOLVER%RHO,                       &
+         SOLVER%AMIX,                      &
+         SOLVER%Y,                         &
+         SOLVER%DY,                        &
+         SOLVER%YM,                        &
+         SOLVER%A,                         &
+         SOLVER%B,                         &
+         SOLVER%C,                         &
+         SOLVER%D,                         &
+         SOLVER%E,                         &
+         SOLVER%F,                         &
+         SOLVER%G,                         &
+         SOLVER%H,                         &
+         SOLVER%CM1,                       &
+         SOLVER%V,                         &
+         SOLVER%U,                         &
+         SOLVER%W,                         &
+         STAT=ISTAT)
+
+
+! +++ Error checking and reporting
+    IF (ISTAT /= 0) THEN
+       ifail = MAX(ifail,1)    ! Failure to allocate
+       RETURN
+    ELSE
+       ifail = MAX(ifail,0)    ! Normal return
+    END IF
+
+  END SUBROUTINE DEALLOCATE_NUMERICS
+
+
+
+
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+
+END MODULE TYPE_SOLVER
+
+
+
+
+
+
+

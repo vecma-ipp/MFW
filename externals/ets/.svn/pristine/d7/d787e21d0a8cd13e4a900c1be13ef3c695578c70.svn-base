@@ -1,0 +1,13 @@
+GOT_PERFLIB = 'yes'
+FC=/afs/efda-itm.eu/backup/user/g/guillerm/public/konz/g95/g95-install/bin/g95
+FCOPTS=-g ${INCLUDE}
+MOD=mod
+LIBS=obj/${SYS}/liblapack.a obj/${SYS}/libblas.a
+# DEFINES = -DUAL
+
+UAL=no
+ifeq ($(UAL),yes)
+  INCLUDE=-I /afs/efda-itm.eu/project/switm/ual/${UAL_VERSION}/include/amd64_pgi
+  LIBSCHEMAS = 
+  LIBS += -L/afs/efda-itm.eu/project/switm/ual/${UAL_VERSION}/lib -lUALFORTRANInterface_pgi
+endif

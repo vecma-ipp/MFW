@@ -1,0 +1,7837 @@
+         PROGRAM CREAPICT
+C        ----------------
+C
+C     READS PLOT DATA FROM FILE FORT.13 (UNIT 13), PROCESSES THEM AND
+C     CREATES THE FILE UNIPICT
+C
+C***********************************************************************
+C     UNIRAS SUBROUTINES CALLED BY PROGRAM CREAPICT:
+C
+C     GOPEN                       :   OPEN UNIRAS
+C     GCLOSE                      :   CLOSE UNIRAS
+C     GROUTE('SEL driver ; EXIT') :   CHOOSE PLOT DRIVER
+C     GSEGCR(IPAGE)               :   OPEN SEGMENT (AND CREATE FILE UNIPICT)
+C     GSEGCL(IPAGE)               :   CLOSE SEGMENT
+C     GCLEAR                      :   JUMP TO NEXT PAGE ON OUTPUT DEVICE
+C
+C        ACTUAL PLOTTING ROUTINES
+C     GVECT(X,Y,N)                :   PLOT POLYLINE
+C     GDOT (X,Y,N)                :   PLOT DOTS AT GIVEN (X,Y) ARRAYS
+C     GCHAR(TEXT,X,Y,HCHAR)       :   DRAW A CHARACTER STRING
+C     GDASH(J)                    :   SPECIFY TYPE OF LINE
+C     GCHARA(IANGLE)              :   SET CHARACTER ANGLE
+C     GWICOL(-SIZE,1)             :   SET LINE WIDTH
+C***********************************************************************
+C
+C     THIS PROGRAM, RUN WITH THE UNIRAS PACKAGE, CREATES A FILE UNIPICT
+C     WHICH IS THEN PROCESSED BY THE PROGRAM READPICT. READPICT ENABLES
+C     ONE TO CHOOSE WHICH PAGE ONE WANTS TO PLOT AND ON WHICH DEVICE 
+C     (SCREEN, POSTCRIPT, ETC.).
+C
+C***********************************************************************
+C
+         PARAMETER(MNX1=3001)
+         CHARACTER*10 CSUBROU
+         DIMENSION   ZBX(5),  ZBY(5)
+C-----------------------------------------------------------------------
+         DATA    NPLOT/13/
+C-----------------------------------------------------------------------
+C
+C  READ  DATA NECESSARY FOR PLOT ON THE FILE INUPLO
+C
+         NIN = 5
+         NOUT = 6
+         NNIN = 13
+         NGARB = 12
+C----------------------------------------------------------------------
+C  PREPARATION
+C
+C  DIMENSION OF AN A4 PAGE 210*297 MM*MM
+C----------------------------------------------------------------------
+C  PLOTTING SECTION
+C
+C  SELECT THE DRIVER
+C  INTERROGATION INTERACTIVE DU DRIVER
+C        CALL GROUTE('LIST')
+C  TEKTRONIX 40XX
+C        CALL GROUTE('SEL MT40XX ; EXIT')
+C  VERSATEC
+C        CALL GROUTE('SEL GVC3236; EXIT')
+C  DUMMY DRIVER (UNRAS METAFILE)
+         CALL GROUTE('SEL LDUMMY ; EXIT')
+C
+C%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+C     USE PROGRAM FROM O.SAUTER TO DISPLAY THE PLOT : READPICT %
+C%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+C
+C  OPEN UNIRAS
+C
+CC         CALL GSHMES('SUP','SUP')
+         CALL GOPEN
+C
+         READ(NNIN,'(A)') CSUBROU
+         PRINT *,' SUBROUTINE = ',CSUBROU
+      IF (CSUBROU.NE.'PLOTS' .AND. CSUBROU.NE.' PLOTS') 
+     +        PRINT *,' WARNING PLOTS NOT FIRS'
+         ZXMX = 210.
+         ZYMX = 297.
+      IF (CSUBROU.EQ.'PLOTS' .OR. CSUBROU.EQ.' PLOTS') THEN
+            READ(NNIN,*) ZXMX,ZYMX
+            ZXMX = ZXMX*10.
+            ZYMX = ZYMX*10.
+      PRINT *,' BORDER ',ZXMX,ZYMX
+      ENDIF
+      PRINT *,' BORDER ',ZXMX,ZYMX
+C  MESAGES OF UNIRAS ARE WRITTEN ON UNIT 4
+C         CALL GUNIT(1,4)
+C
+CL    1.  LOOP OVER PAGES
+C
+         IREAD = 0
+         IPAG = 0
+ 10      IPAG = IPAG + 1
+C
+C  CREATE SEGMENT IPAG = PAGE IPAG
+C
+         CALL GSEGCR(IPAG)
+C
+C  INITIALIZATION
+C
+C        THE FOLLOWING SUBROUTINES HAVE BEEN COMMENTED OUT
+C
+C     GWBOX    :   DEFINE WORKING BOX LIMITS (NOT USED)
+C     GVPORT   :   DEFINE THE VIEWPORT DIMENSIONS (NOT USED)
+C     GLIMIT   :   SET PROGRAM SIZE LIMITS (NOT USED)
+C
+C        CALL GCLEAR
+CC         CALL GLIMIT(0.,ZXMX,0.,ZYMX,0.,0.)
+C%%%%%%%
+CNCAR 210, 297 instead of 21. 29.7
+         ZYWB = 210.0 * ZYMX / ZXMX
+         ZXWB = 210.0
+         IF (ZYWB .GT. 297.) THEN
+            ZXWB = 297. * ZXMX / ZYMX
+            ZYWB = 297.
+         ENDIF
+CC         CALL GWBOX(ZXWB,ZYWB,0.)
+C%%%%%%%%%%%%%
+C%%%%         CALL GWBOX(ZXMX,ZYMX,0.)
+
+CNCAR
+C     NEXT LINE UNCOMMENTED FOR NCAR
+c%OS         this would transform A4 vertical to A4 horizontal
+c%OS         CALL GVPORT(0.,0.,ZXWB,ZYWB)
+         CALL GVPORT(0.,0.,ZXMX,ZYMX)
+C
+C  DRAW A BOX OF DIMENSION A4
+C
+         ZBX(1) = 0.0
+         ZBX(2) = ZXMX
+         ZBX(3) = ZXMX
+         ZBX(4) = 0.0
+         ZBX(5) = 0.0
+         ZBY(1) = 0.0
+         ZBY(2) = 0.0
+         ZBY(3) = ZYMX
+         ZBY(4) = ZYMX
+         ZBY(5) = 0.0
+C%%      CALL GVECT(ZBX,ZBY,5)
+C
+C  PLOT TITLE, DATE AND TIME
+C
+C%%      CALL GCHAR(TEXT(1), 20.,287.,3.)
+C%%      CALL GCHAR(TEXT(2), 80.,287.,3.)
+C%%      CALL GCHAR(TEXT(3),140.,287.,3.)
+C
+         IJUSTCLR = 0
+ 50      CONTINUE
+         IF (IREAD .EQ. 0) THEN
+            READ(NNIN,'(A)',END=999) CSUBROU
+            PRINT *,' SUBROUTINE = ',CSUBROU
+         ENDIF
+
+C     IF CALL TO CLEAR AND PLOTF SUBSEQUENT, DON'T CALL CLEAR TO AVOID
+C     WHITE PAGES AT THE END. THUS THE CALL TO CLEAR WAS POSTPONED UP TO NOW
+C
+         IF (CSUBROU.EQ.'PLOTF'  .OR. CSUBROU.EQ.' PLOTF' ) THEN
+         ELSE IF (IJUSTCLR .EQ. 1) THEN
+C
+C     CLOSE SEGMENT IPAG
+CNCAR CALL GCLEAR (AS GSEGCL DOES NOT CALL GCLEAR)
+            CALL GCLEAR
+C
+            CALL GSEGCL(IPAG)
+            IREAD = 1
+            GO TO 10
+         ENDIF
+         IJUSTCLR = 0
+         IREAD = 0
+C
+         IF (CSUBROU.EQ.'MULPLT' .OR. CSUBROU.EQ.' MULPLT') GO TO 100
+         IF (CSUBROU.EQ.'MULPLD' .OR. CSUBROU.EQ.' MULPLD') GO TO 105
+         IF (CSUBROU.EQ.'MULPDO' .OR. CSUBROU.EQ.' MULPDO') GO TO 107
+         IF (CSUBROU.EQ.'GRAPHE' .OR. CSUBROU.EQ.' GRAPHE') GO TO 110
+         IF (CSUBROU.EQ.'GRAPHN' .OR. CSUBROU.EQ.' GRAPHN') GO TO 111
+         IF (CSUBROU.EQ.'GRAPHNM'.OR.CSUBROU.EQ.' GRAPHNM') GO TO 1110
+         IF (CSUBROU.EQ.'GRAPHMB'.OR.CSUBROU.EQ.' GRAPHMB') GO TO 1111
+         IF (CSUBROU.EQ.'GRAPNMB'.OR.CSUBROU.EQ.' GRAPNMB') GO TO 1112
+         IF (CSUBROU.EQ.'GRADOT' .OR. CSUBROU.EQ.' GRADOT') GO TO 112
+         IF (CSUBROU.EQ.'GRADOTO') GO TO 1122
+         IF (CSUBROU.EQ.'GRAPDN' .OR. CSUBROU.EQ.' GRAPDN') GO TO 113
+         IF (CSUBROU.EQ.'GXIGRN' .OR. CSUBROU.EQ.' GXIGRN') GO TO 114
+         IF (CSUBROU.EQ.'GXIGDNM') GO TO 1142
+         IF (CSUBROU.EQ.'GRALLG' .OR. CSUBROU.EQ.' GRALLG') GO TO 115
+         IF (CSUBROU.EQ.'GRLLGN' .OR. CSUBROU.EQ.' GRLLGN') GO TO 1152
+         IF (CSUBROU.EQ.'GRALGL' .OR. CSUBROU.EQ.' GRALGL') GO TO 116
+         IF (CSUBROU.EQ.'GRLGLG' .OR. CSUBROU.EQ.' GRLGLG') GO TO 117
+         IF (CSUBROU.EQ.'GLASHN' .OR. CSUBROU.EQ.' GLASHN') GO TO 118
+         IF (CSUBROU.EQ.'GCUSHN' .OR. CSUBROU.EQ.' GCUSHN') GO TO 1182
+         IF (CSUBROU.EQ.'GCUSDN' .OR. CSUBROU.EQ.' GCUSDN') GO TO 1183
+         IF (CSUBROU.EQ.'GXISHN' .OR. CSUBROU.EQ.' GXISHN') GO TO 1184
+         IF (CSUBROU.EQ.'GLASHMB'.OR.CSUBROU.EQ.' GLASHMB') GO TO 1185
+         IF (CSUBROU.EQ.'GLASNMB'.OR.CSUBROU.EQ.' GLASNMB') GO TO 1186
+         IF (CSUBROU.EQ.'PGTXNB' .OR. CSUBROU.EQ.' PGTXNB') GO TO 120
+         IF (CSUBROU.EQ.'GTX'    .OR. CSUBROU.EQ.' GTX'   ) GO TO 130
+         IF (CSUBROU.EQ.'GCHAR'  .OR. CSUBROU.EQ.' GCHAR' ) GO TO 132
+         IF (CSUBROU.EQ.'GVECLN' .OR. CSUBROU.EQ.' GVECLN') GO TO 134
+         IF (CSUBROU.EQ.'GVECT'  .OR. CSUBROU.EQ.' GVECT' ) GO TO 135
+         IF (CSUBROU.EQ.'GWICOL' .OR. CSUBROU.EQ.' GWICOL') GO TO 1351
+         IF (CSUBROU.EQ.'GDOT'   .OR. CSUBROU.EQ.' GDOT' )  GO TO 136
+         IF (CSUBROU.EQ.'GCLRWK' .OR. CSUBROU.EQ.' GCLRWK') GO TO 140
+         IF (CSUBROU.EQ.'GCLEAR' .OR. CSUBROU.EQ.' GCLEAR') GO TO 141
+         IF (CSUBROU.EQ.'PLOTS'  .OR. CSUBROU.EQ.' PLOTS' ) GO TO 150
+         IF (CSUBROU.EQ.'FRAMCON' ) GO TO 160
+         IF (CSUBROU.EQ.'CONTOUR'.OR. CSUBROU.EQ.' CONTOUR')GO TO 170
+         IF (CSUBROU.EQ.'CONTRLV'.OR. CSUBROU.EQ.' CONTRLV')GO TO 171
+         IF (CSUBROU.EQ.'PLOTF'  .OR. CSUBROU.EQ.' PLOTF' ) GO TO 199
+C
+         WRITE(6,*) ' UNKNOWN SUBROUTINE : ',CSUBROU
+         GO TO 50
+C     MULPLT
+ 100     CONTINUE
+         CALL XMULPLT
+         GO TO 50
+C     MULPLD
+ 105     CONTINUE
+         CALL XMULPLD
+         GO TO 50
+C
+C     MULPDO
+ 107     CONTINUE
+         CALL XMULPDO
+         GO TO 50
+C
+C     GRAPHE
+ 110     CONTINUE
+         CALL XGRAPHE
+         GO TO 50
+C
+C     GRAPHN
+ 111     CONTINUE
+         CALL XGRAPHN
+         GO TO 50
+C
+C     GRAPHNM
+ 1110    CONTINUE
+         CALL XGRAPHNM
+         GO TO 50
+C
+C     GRAPHMB
+ 1111    CONTINUE
+         CALL XGRAPHMB
+         GO TO 50
+C
+C     GRAPNMB
+ 1112    CONTINUE
+         CALL XGRAPNMB
+         GO TO 50
+C
+C     GRADOT
+ 112     CONTINUE
+         CALL XGRADOT
+         GO TO 50
+C
+C     GRADOT
+ 1122    CONTINUE
+         CALL XGRADOTO
+         GO TO 50
+C
+C     GRAPDN
+ 113     CONTINUE
+         CALL XGRAPDN
+         GO TO 50
+C
+C     GXIGRN
+ 114     CONTINUE
+         CALL XGXIGRN
+         GO TO 50
+C
+C     GXIGDNM
+ 1142    CONTINUE
+         CALL XGXIGDNM
+         GO TO 50
+C
+C     GRALLG
+ 115     CONTINUE
+         CALL XGRALLG
+CC       PRINT *,' GRALLG WAS CALLED BUT NOT YET READY '
+CC       STOP 'GRALLG'
+         GO TO 50
+C
+C     GRLLGN
+ 1152    CONTINUE
+         CALL XGRLLGN
+CC       PRINT *,' GRALLG WAS CALLED BUT NOT YET READY '
+CC       STOP 'GRALLG'
+         GO TO 50
+C
+C     GRALGL
+ 116     CONTINUE
+         CALL XGRALGL
+         GO TO 50
+C
+C     GRLGLG
+ 117     CONTINUE
+         CALL XGRLGLG
+         GO TO 50
+C
+C     GLASHN
+ 118     CONTINUE
+         CALL XGLASHN
+         GO TO 50
+C
+C     GCUSHN
+ 1182    CONTINUE
+         CALL XGCUSHN
+         GO TO 50
+C
+C     GCUSDN
+ 1183    CONTINUE
+         CALL XGCUSDN
+         GO TO 50
+C
+C     GXISHN
+ 1184    CONTINUE
+         CALL XGXISHN
+         GO TO 50
+C
+C     GLASHMB
+ 1185    CONTINUE
+         CALL XGLASHMB
+         GO TO 50
+C
+C     GLASNMB
+ 1186    CONTINUE
+         CALL XGLASNMB
+         GO TO 50
+C
+C     PGTXNB
+ 120     CONTINUE
+         CALL XPGTXNB
+CC       PRINT *,' PGTXNB WAS CALLED BUT NOT YET READY '
+CC       STOP 'PGTXNB'
+         GO TO 50
+C
+C     GTX
+ 130     CONTINUE
+         CALL XGTX
+CC       PRINT *,' GTX    WAS CALLED BUT NOT YET READY '
+CC       STOP 'GTX   '
+         GO TO 50
+C
+C     GCHAR
+ 132     CONTINUE
+         CALL XGCHAR
+         GO TO 50
+C
+C     GVECLN
+ 134     CONTINUE
+         CALL XGVECLN
+         GO TO 50
+C
+C     GVECT
+ 135     CONTINUE
+         CALL XGVECT
+         GO TO 50
+C
+C     GWICOL
+ 1351    CONTINUE
+         READ(NPLOT,*) PSIZE,KCOL
+         CALL GWICOL(PSIZE,KCOL)
+         GO TO 50
+C     GDOT
+ 136     CONTINUE
+         CALL XGDOT
+         GO TO 50
+C
+C
+C     GCLRWK
+ 140     CONTINUE
+C%%      CALL XGCLRWK
+         READ (NNIN,*) II,IJ
+         IJUSTCLR = 1
+         GO TO 50
+C
+C     GCLEAR
+ 141     CONTINUE
+C%%      CALL GCLEAR
+         IJUSTCLR = 1
+         GO TO 50
+C
+C     PLOTS
+ 150     CONTINUE
+C%%      CALL XPLOTS
+         READ(NNIN,*) II
+         GO TO 50
+C     FRAMCON
+ 160     CONTINUE
+         CALL XFRAMCON
+         GO TO 50
+C     CONTOUR
+ 170     CONTINUE
+         CALL XCONTOUR
+         GO TO 50
+C     CONTRLV
+ 171     CONTINUE
+         CALL XCONTRLV
+         GO TO 50
+C
+C     PLOTF
+ 199     CONTINUE
+C%%      CALL XPLOTF
+         PRINT *,' PLOTF WAS NORMALLY CALLED '
+         PRINT *,' NUMBER OF PAGES = ',IPAG
+         GO TO 200
+C
+C     END FORT.8
+C
+ 999     CONTINUE
+         PRINT *,' FOUND END OF FILE'
+C
+C  CLOSE UNIRAS
+C
+ 200     CALL GCLOSE
+C
+         STOP
+C
+         END
+      SUBROUTINE GRAPHER(PXMAX,PXMIN,PYMAX,PYMIN,PX,PY,KN,PXOR,PYOR,
+     S  PXLE,PYLE,KCTX,KCTY,KTITL,KROX,KROY)
+C%ARC
+C%ARC  KROX = 0 FIRST VALUE OF THE X-AXIS IS NOT A ROUNDED VALUE
+C%ARC         1 FIRST VALUE OF THE X-AXIS IS A ROUNDED VALUE
+C%ARC  KROY   SAME BUT FOR THE Y AXIS
+C%ARC
+C%AR         DIMENSION PX(KN),PY(KN)
+C%ARC
+C%ARC------------------------------------------------------------------------
+C%ARC  TEST AND CORRECT SOME INPUT VALUES
+C%ARC
+C%ARC  MAKE SHURE THAT PYMAX AND PYMIN ARE DIFFERENT
+C%ARC
+C%AR         IF (PYMAX.EQ.PYMIN.AND.PYMIN.EQ.0.0) PYMAX = 0.99
+C%AR         IF (PYMAX.EQ.PYMIN.AND.PYMIN.NE.0.0) THEN
+C%AR           IF (PYMIN.LT.0.0) PYMAX = 0.0
+C%AR           IF (PYMIN.GT.0.0) PYMIN = 0.0
+C%AR         ENDIF
+C%ARC        IF (PYMAX.GE.0.0.AND.PYMIN.GE.0.0) PYMIN = PYMIN-1.0E-10
+C%ARC        IF (PYMAX.LE.0.0.AND.PYMIN.LT.0.0) PYMIN = PYMIN-1.0E-10
+C%ARC
+C%ARC------------------------------------------------------------------------
+C%ARC  DEFINITION SECTION
+C%ARC
+C%ARC  DEFINE THE THICKNESS OF THE LINE OF THE FUNCTION THAT IS PLOTTED
+C%ARC  (POSITIVE ----> IN MM)
+C%ARC  (NEGATIVE ----> IN PIXELS UNIT)
+C%ARC
+C%AR         ZLIW = -2.
+C%ARC
+C%ARC  DEFINE THE THICKNESS OF THE LINE OF THE FRAME
+C%ARC  (POSITIVE ----> IN MM)
+C%ARC  (NEGATIVE ----> IN PIXELS UNIT)
+C%ARC
+C%AR         ZFRAW = -2.
+C%ARC
+C%ARC  TEXT HEIGHT OF THE TITLE OF THE AXIS
+C%ARC
+C%AR         ZAXHET = 2.
+C%ARC
+C%ARC  TEXT HEIGHT OF THE NUMBER LABELLING THE AXIS
+C%ARC
+C%AR         ZAXHEN = 2.
+C%ARC
+C%ARC  NUMBER OF DIGITS AFTER THE DECIMAL POINT IN THE NUMBERS PLOTTED WITH
+C%ARC  THE AXIS
+C%ARC
+C%AR         IDECX = 2
+C%AR         IDECY = 2
+C%ARC
+C%ARC  APPROXIMATIVE NUMBER OF VALUE THAT ARE PLOTTED ALONG THE AXIS
+C%ARC
+C%AR         INUX = 5
+C%AR         INUY = 5
+C%ARC
+C%ARC  DEFINE THE GRIDING
+C%ARC  IGRIX > 0 VERTICAL GRID LINES WILL BE PLOTTED AT EVERY IX'TH VALUE
+C%ARC            ALONG THE X-AXIS
+C%ARC  IGRIX = 0 NO VERTICAL GRID LINES
+C%ARC  IGRIX < 0 (IX-1) GRID LINES ARE PLOTTED BETWEEN EVERY IX'TH VALUE
+C%ARC            ALONG THE X-AXIS
+C%ARC  IGRIY : SAME BUT FOR THE Y-AXIS
+C%ARC
+C%AR         IGRIX = 1
+C%AR         IGRIY = 1
+C%ARC
+C%ARC  SPECIFY THE THICKNESS OF THE GRID LINES (<0  IN PIXEL , >0 IN MM)
+C%ARC
+C%AR         ZGRITH = -1
+C%ARC
+C%ARC  SPECIFY THE LINE STYLE OF THE GRID (SEE PAGE 6.20 OF MANUAL BIZPAK)
+C%ARC
+C%AR         IGRITY = 3
+C%ARC
+C%ARC  SPECIFY THE TYPE OF THE THICKS OF THE AXIS
+C%ARC  ITICX = 0 ---> THE TICKS ARE ON THE SAME SIDE OF THE LINE AS THE TEXT
+C%ARC  ITICX = 1 ---> THE TICKS ARE ON BOTH SIDE OF THE LINE
+C%ARC  ITICX = 2 ---> THE TICKS ARE ON THE OTHER SIDE OF THE LINE AS THE TEXT
+C%ARC
+C%AR         ITICX = 2
+C%AR         ITICY = 2
+C%ARC
+C%ARC  SET UP THE HEIGTH OF THE CHARACTER OF THE TITLE OF THE GRAPH
+C%ARC  AND THE NUMBER OF LINE OF THE TITLE
+C%ARC
+C%AR         ZHTI = 4.0
+C%AR         INLTI = 1
+C%ARC
+C%ARC  EXPONENT OF THE X VALUES
+C%ARC
+C%AR         ZIM  = ALOG10(ABS(PXMIN)+1.0E-14)
+C%AR         ZIMM = ALOG10(ABS(PXMAX)+1.0E-14)
+C%AR         IF (ZIMM.GT.ZIM) ZIM = ZIMM
+C%AR         IX = INT(ZIM)
+C%ARC
+C%ARC  EXPONENT OF THE Y VALUES
+C%ARC
+C%AR         ZIM  = ALOG10(ABS(PYMIN)+1.0E-14)
+C%AR         ZIMM = ALOG10(ABS(PYMAX)+1.0E-14)
+C%AR         IF (ZIMM.GT.ZIM) ZIM = ZIMM
+C%AR         IY = INT(ZIM)
+C%ARC
+C%ARC------------------------------------------------------------------------
+C%ARC  BEGINNING OF THE PLOTTING SECTION
+C%ARC
+C%ARC  DEFINE THE GRAF TRANSFORMATION AND POSITION
+C%ARC
+C%AR         CALL BGRAF(PXOR,PYOR,PXLE,PYLE)
+C%ARC
+C%ARC  PLOT X AXIS
+C%ARC
+C%AR         CALL BAXANG(0)
+C%AR         CALL BAXLAB(ZAXHET,ZAXHEN,IDECX ,IX)
+C%AR         CALL BTICKJ(ITICX)
+C%AR         IF (KROX.EQ.0) THEN
+C%AR           ZMI = PXMIN
+C%AR           ZMA = PXMAX
+C%AR         ELSE
+C%AR           CALL BSCLIN(1,PXMIN,PXMAX,ZMI,ZMA,NST)
+C%AR         ENDIF
+C%AR         CALL BAXIS(1,ZMI,(ZMA-ZMI)/INUX,ZMA,KCTX)
+C%ARC
+C%ARC  PLOT Y AXIS
+C%ARC
+C%AR         CALL BAXLAB(ZAXHET,ZAXHEN,IDECY,IY)
+C%AR         CALL BTICKJ(ITICX)
+C%AR         IF (KROY.EQ.0) THEN
+C%AR           ZMI = PYMIN
+C%AR           ZMA = PYMAX
+C%AR         ELSE
+C%AR           CALL BSCLIN(2,PYMIN,PYMAX,ZMI,ZMA,NST)
+C%AR         ENDIF
+C%AR         CALL BAXIS(2,ZMI,(ZMA-ZMI)/INUY,ZMA,KCTY)
+C%ARC
+C%ARC  PLOT THE FRAME, THE GRID AND THE LINE OF THE FUNCTION
+C%ARC
+C%AR         CALL BFRAME(ZFRAW)
+C%AR         CALL BDASH(IGRITY)
+C%AR         CALL BLIWDH(ZGRITH)
+C%AR         CALL BGRID(IGRIX,IGRIY)
+C%AR         CALL BLIWDH(ZLIW)
+C%AR         CALL BLINE(PX,PY,KN)
+C%ARC
+C%ARC  PLOT THE TITLE
+C%ARC
+C%AR         CALL BTITLE(KTITL,ZHTI,INLTI)
+C%ARC
+      RETURN
+      END
+         SUBROUTINE MULPLT(P,PFUN,KPTS,KDIM,KPLOT,KFDIM,KNRFUN,TITLE
+     +                    ,KNTIT,LABEL1,LABEL2,LABEL3,LABEL4,NCHLAB
+     +                    ,PHCHAR,PX0,PY0,PLX,PLY)
+C        **************************************************************
+C
+C      SEVERAL PLOTS ONE ON THE TOP OF THE OTHER :
+C
+C        THE PICTURE IS DIVIDED IN KPLOT RECTANGLES HORIZONTALLY.
+C        IN EACH IPLOT (IPLOT=1,KPLOT) RECTANGLE, KNRFUN(IPLOT) FUNCTIONS
+C        ARE PLOTTED.
+C
+C     P(KDIM)          : ABSCISSE ARRAY
+C     PFUN(KDIM,KFDIM) : FUNCTIONS TO PLOT
+C     KPTS             : NUMBER OF POINT TO PLOT (IF KPTS.GT.MNX1 CHANGE MNX1)
+C     KDIM             : DIMENSION OF P AND PFUN(., )
+C     KPLOT            : NUMBER OF RECTANGLES IN WHICH FUNCTIONS ARE PLOTTED
+C     KFDIM            : DIMENSION OF       PFUN( ,.)
+C     KNRFUN(IPLOT)    : NUMBER OF CURVES TO PLOT IN THE IPLOT RECTANGLE
+C     TITLE(IPLOT)     : TITLE OF THE IPLOT RECTANGLE
+C     KNTIT(IPLOT)     : NUMBER OF CHARACTER OF TITLE(IPLOT)
+C     LABEL1,2,3,4    : TEXT*72 LABELLING THE PLOT
+C     NCHLAB           : NUMBER OF CHARACTERS IN LABELJ, USED TO CENTER LABELS
+C     PHCHAR           : HEIGHT OF CHARACTERS
+C     PX0,PY0,PLX,PLY  : BOX OF PLOT
+C-----------------------------------------------------------------------
+       CHARACTER*(*)       TITLE(KPLOT)
+       CHARACTER*(*)       LABEL1,LABEL2,LABEL3,LABEL4
+       CHARACTER*9         ZTEXT
+       DIMENSION
+     +   P(KDIM),          PFUN(KDIM,KFDIM),   ZYORIG(20)
+     +  ,ZYSCAL(20),       ZYMAX(20),          ZYMIN(20)
+     +  ,KNRFUN(20),         KNTIT(KPLOT)
+C-----------------------------------------------------------------------
+       DATA    IPLT/0/
+C-----------------------------------------------------------------------
+C
+CL       DEFINE BASIC ATTRIBUTES
+C
+C                      FOR TEXT
+C&    CALL GSTXFP(2,2)
+C%%   CALL GSCHSP(0.0)
+C%%   CALL GSCHXP(1.0)
+C%%   CALL GSTXP(0)
+C%%   CALL GSTXAL(0,0)
+C                      FOR POLYLINE
+C%%   CALL GSLN(1)
+CL           1. DIMENSIONS AND SCALES
+C
+C     LENGTH AND HEIGHT IN CM OF TOTAL PLOT
+C     SPECIFY PARAMETERS
+C%%%%%%%%%%%%%%%%%%%
+CC       ZHCRAT = 0.85
+         ZHCRAT = 1.0
+C%%%%%%%%%%%%%%%%%%
+C
+         PARORX = PX0 + 5.*PHCHAR
+         PARORY = PY0 + 6.*PHCHAR
+         ZENDX  = 9.0*ZHCRAT*PHCHAR
+         ZENDY  = 9.0*PHCHAR
+         ZLONG  = PLX - (PARORX-PX0) - ZENDX
+         ZHIGH  = PLY - (PARORY-PY0) - ZENDY
+C     THE CURVES SHOULD NOT REACH THE TOP NOR THE BOTTOM
+C     KEEP "ZFREE" PERCENT FREE
+         ZFREE=0.05
+C
+C     SCALES: VARIATION PER CM
+C
+      ZXMAX = P(KPTS)
+      ZXMIN = P(1)
+      IZERO = 0
+      IF (ZXMAX.EQ.0.0 .OR. ZXMIN.EQ.0.0) IZERO = 1
+      IF ( (ABS(ZXMAX-ZXMIN).LT.1.0E-12*ABS(ZXMAX) .AND. IZERO.EQ.0)
+     +      .OR.  (ZXMAX.EQ.ZXMIN       .AND. IZERO.EQ.1)       ) THEN
+         IF(ZXMAX .NE. 0.0) ZXMIN = ZXMIN/2.
+         IF(ZXMAX .NE. 0.0) ZXMAX = ZXMAX + ZXMIN
+         IF(ZXMAX .EQ. 0.0) ZXMIN = -1.
+         IF(ZXMAX .EQ. 0.0) ZXMAX =  1.
+      ENDIF
+C
+C%%         ZDX = P(KPTS) - P(1)
+         ZDX = ZXMAX - ZXMIN
+C%%         ZXMIN = P(1)
+         ZXSCAL= ZDX / ZLONG
+         IFUN=0
+         ZYHIGH=ZHIGH/KPLOT
+         DO 110 JPLOT=1,KPLOT
+         ZYORIG(JPLOT)=(JPLOT-1)*ZYHIGH
+C
+         ZMAX=PFUN(1,IFUN+1)
+         ZMIN=PFUN(1,IFUN+1)
+         INUM=KNRFUN(JPLOT)
+         DO 100 JNUM=1,INUM
+         IFUN=IFUN+1
+         DO 100 J=1,KPTS
+         ZMAX=AMAX1(ZMAX,PFUN(J,IFUN))
+         ZMIN=AMIN1(ZMIN,PFUN(J,IFUN))
+  100    CONTINUE
+C
+      IZERO = 0
+      IF (ZMAX.EQ.0.0 .OR. ZMIN.EQ.0.0) IZERO = 1
+      IF ( (ABS(ZMAX-ZMIN).LT.1.0E-12*ABS(ZMAX) .AND. IZERO.EQ.0)
+     +      .OR.  (ZMAX.EQ.ZMIN .AND. IZERO.EQ.1)       ) THEN
+            ZDNX = 0.0
+            IF (ZMIN .EQ. 0.0) ZDNX = 1.
+            ZMIN = ZMAX - ZMAX/2. - ZDNX
+            ZMAX = ZMAX + ZMAX/2. + ZDNX
+         ENDIF
+         ZYMIN(JPLOT)=ZMIN
+         ZYMAX(JPLOT)=ZMAX
+         ZYSCAL(JPLOT)=(ZMAX-ZMIN)/(ZYHIGH*(1.-ZFREE))
+  110    CONTINUE
+C
+C     SCALES IN THE PLOTS
+         IPLT=IPLT+1
+         WRITE(6   ,9000) IPLT,P(1),P(KPTS),(ZYMIN(JPLOT),
+     +                    ZYMAX(JPLOT),JPLOT=1,KPLOT)
+C
+C-----------------------------------------------------------------------
+CL              2.        FRAMES
+C
+C     DRAW OUTERMOST EDGES
+C
+C%%      CALL GSLWSC(2.0)
+         CALL GDASH(0)
+         CALL GWICOL(-2.0,1)
+C%%
+         CALL CADRE(PX0*10.,PY0*10.,PLX*10.,PLY*10.,1)
+C
+C     NEW ORIGIN: BOTTOM/LEFT EDGE
+         ZDXORIG = PARORX
+         ZDYORIG = PARORY
+         CALL GPLOT(ZDXORIG*10.,ZDYORIG*10.,-3)
+C
+C     INNER FRAMES
+C%%      CALL GSLWSC(2.0)
+         CALL GWICOL(-2.0,1)
+C%%
+         CALL GPLOT(0.,0.,3)
+         CALL GPLOT(0.,ZHIGH*10.,2)
+         CALL GPLOT(ZLONG*10.,ZHIGH*10.,3)
+         CALL GPLOT(ZLONG*10.,0.0,2)
+C
+C     SEPERATE THE PLOTS
+         DO 210 JPLOT=2,KPLOT
+         CALL GPLOT(0.,ZYORIG(JPLOT)*10.,3)
+         CALL GPLOT(ZLONG*10.,ZYORIG(JPLOT)*10.,2)
+  210    CONTINUE
+C
+C-----------------------------------------------------------------------
+CL              3.        INDIVIDUAL CURVE
+C
+C%%      CALL GSLWSC(1.5)
+         CALL GWICOL(-1.5,1)
+C%%
+C
+         ZFYGH = 0.5*ZFREE*ZYHIGH
+         ZPREV=ZYORIG(1)
+         IFUN=0
+C
+         DO 330 JPLOT=1,KPLOT
+C     NEW ORIGIN
+         CALL GPLOT(0.,ZYORIG(JPLOT)*10.-ZPREV*10.,-3)
+         ZDYORIG = ZDYORIG +ZYORIG(JPLOT)-ZPREV
+         ZPREV=ZYORIG(JPLOT)
+C     DRAW AXIS Y=0 IF IN THE FRAME
+         IF(ZYMIN(JPLOT).GT.0.) GO TO 310
+         IF(ZYMAX(JPLOT).LT.0.) GO TO 310
+         ZY=-ZYMIN(JPLOT)/ZYSCAL(JPLOT)+ZFYGH
+         ZX=0.
+         CALL GPLOT(ZX*10.,ZY*10.,3)
+         CALL GPLOT(ZLONG*10.,ZY*10.,2)
+  310    CONTINUE
+C
+C     PLOT THE TITLE
+         ZYTIT = ZYHIGH/2.-KNTIT(JPLOT)/2.*0.25+ZFYGH/2.
+         ZXTIT = (PARORX - PX0)/2. - 0.5*PHCHAR
+C%%      CALL GSCHH(PHCHAR)
+C%%      CALL GSCHUP(-1.,0.)
+C%%      CALL GTX(ZDXORIG-ZXTIT,ZDYORIG+ZYTIT,TITLE(JPLOT))
+C%%      CALL GSCHUP( 0.,1.)
+         CALL GCHARA(90 )
+         CALL GCHAR(TITLE(JPLOT),(ZDXORIG-ZXTIT)*10.,
+     +                           (ZDYORIG+ZYTIT)*10.,PHCHAR*10.)
+C%%
+C
+C     PLOT MAX. AND MIN. OF PLOT  TO THE RIGHT
+         ZHMXMN = PHCHAR*ZHCRAT
+C%%      CALL GSCHH(ZHMXMN)
+C
+         ZDELMIN = 0.4 * ZHMXMN
+C
+         ZX = ZHMXMN + ZDXORIG + ZLONG
+         ZY = ZFYGH
+         CALL GPLOT((-PHCHAR*0.5+ZLONG)*10.,ZY*10.,3)
+         CALL GPLOT( 0.0       +ZLONG*10.,ZY*10.,2)
+         WRITE(ZTEXT,'(1PE8.1,"$")') ZYMIN(JPLOT)
+         IF (ZYMIN(JPLOT) .GE. 0.0) ZX = ZX + ZDELMIN
+CC         CALL GTX(ZX,ZY    +ZDYORIG,ZTEXT)
+         CALL GCHAR(ZTEXT,ZX*10.,(ZY+ZDYORIG)*10.,ZHMXMN*10.)
+CC         CALL GNUMBO(5,'E')
+CC         CALL GNUMB(ZYMIN(JPLOT),ZX*10.,(ZY+ZDYORIG)*10.,ZHMXMN*10.,1)
+         IF (ZYMIN(JPLOT) .GE. 0.0) ZX = ZX - ZDELMIN
+C%%
+C%%      ZX = ZX + ZDELMIN
+C
+         ZYMXSC = (ZYMAX(JPLOT)-ZYMIN(JPLOT))/ZYSCAL(JPLOT)+ZFYGH
+         CALL GPLOT((-0.1 +ZLONG)*10.,ZYMXSC*10.,3)
+         CALL GPLOT( 0.0 +ZLONG*10.,ZYMXSC*10.,2)
+         WRITE(ZTEXT,'(1PE8.1,"$")') ZYMAX(JPLOT)
+         IF (ZYMAX(JPLOT) .GE. 0.0) ZX = ZX + ZDELMIN
+         ZYMXSC = ZYMXSC - ZHMXMN
+CC         CALL GTX(ZX,ZYMXSC+ZDYORIG,ZTEXT)
+         CALL GCHAR(ZTEXT,ZX*10.,(ZYMXSC+ZDYORIG)*10.,ZHMXMN*10.)
+CC         CALL GNUMBO(5,'E')
+CC       CALL GNUMB(ZYMAX(JPLOT),ZX*10.,(ZYMXSC+ZDYORIG)*10.,ZHMXMN*10.,1)
+C%%
+C%%      ZX = ZX + ZDELMIN
+C
+C     DRAW THE CURVE
+         INUM=KNRFUN(JPLOT)
+C
+         DO 325 JNUM=1,INUM
+         IFUN=IFUN+1
+C
+         DO 320 J=1,KPTS
+         P(J) =(P(J)-ZXMIN)/ZXSCAL + ZDXORIG
+         PFUN(J,IFUN) =(PFUN(J,IFUN)-ZYMIN(JPLOT))/ZYSCAL(JPLOT)+ZFYGH
+     +           + ZDYORIG
+      P(J) = P(J) * 10.
+      PFUN(J,IFUN) = PFUN(J,IFUN) * 10.
+  320    CONTINUE
+C
+         JJNUM = MOD(JNUM-1,4) + 1
+C%%      CALL GSLN(JJNUM)
+C%%      CALL GPL(KPTS,P,PFUN(1,IFUN))
+C%%      CALL GSLN(1    )
+         JJJ = (JJNUM-1)*3 + 1/(5-JJNUM)
+         CALL GDASH(JJJ)
+         CALL GVECT(P,PFUN(1,IFUN),KPTS)
+C%%
+C
+         DO 321 J=1,KPTS
+      P(J) = P(J) / 10.
+      PFUN(J,IFUN) = PFUN(J,IFUN) / 10.
+         P(J) =(P(J)-ZDXORIG)*ZXSCAL + ZXMIN
+         PFUN(J,IFUN) = (PFUN(J,IFUN)-ZFYGH-ZDYORIG)*ZYSCAL(JPLOT) +
+     +                  ZYMIN(JPLOT)
+  321    CONTINUE
+C
+  325    CONTINUE
+  330    CONTINUE
+C
+         CALL GPLOT((-ZDXORIG+PARORX)*10.,(-ZDYORIG+PARORY)*10.,-3)
+         ZDXORIG = PARORX
+         ZDYORIG = PARORY
+C     
+C     DRAW X-AXIS      ****  USE OLD HOME-MADE AXIS SUBROUTINE  *****
+         CALL AXES(PARORX*10.,PARORY*10.,ZLONG*10.,ZXMIN,ZXMAX,0.,
+     +                             PHCHAR*10.,'X$',1,0,0,-ZHIGH*10.,0.0)
+CC         ZEXP1 = 0.
+CC         IF (P(1) .NE. 0.0) ZEXP1 = ALOG10(ABS(P(1)))
+CC         ZEXP2 = 0.
+CC         IF (P(KPTS) .NE. 0.0) ZEXP2 = ALOG10(ABS(P(KPTS)))
+CC         IF (ZEXP2.GT.ZEXP1 .AND. ZEXP2.NE.0.0) ZEXP1 = ZEXP2
+CC         IF (ZEXP1.EQ. 0.0) ZEXP1 = ZEXP2
+CC         IF (ZEXP1 .GE. 0.0) IEXP = INT(ZEXP1)
+CC         IF (ZEXP1 .LT. 0.0) IEXP = INT(ZEXP1) - 1
+C%%      IEXP = 999
+CC         NDEC = 2
+CC         NTIC = 2
+CC      PRINT *,' P(1) P(LAST) ',P(1),P(KPTS)
+CC      PRINT *,' ZDXO,Y,LO,HI ',ZDXORIG,ZDYORIG,ZLONG,ZHIGH
+CC         CALL BGRAF(ZDXORIG*10.,ZDYORIG*10.,ZLONG*10.,ZHIGH*10.)
+CC         CALL BAXLAB(PHCHAR*10.,PHCHAR*10.,NDEC,IEXP)
+CC         CALL BTICKJ(NTIC)
+C     INTERVAL
+CC         INTX = 5
+CC         CALL BAXIS(1,P(1)    ,(P(KPTS)-P(1))/INTX    ,P(KPTS)    ,'X$')
+CC         CALL BAXLAB(0.0       ,0.0       ,999 ,999 )
+CC         CALL BTICKJ(NTIC)
+CC      PRINT *,' INTX ',INTX
+CC         INTX = 5
+CC         CALL BAXORI(ZDXORIG*10.,(ZDYORIG+ZHIGH)*10.)
+CC        CALL BAXIS(-1,P(1)    ,(P(KPTS)-P(1))/INTX    ,P(KPTS)    ,'$')
+C%%
+C
+C     WRITE LABELS
+C%%%%%%%%%%%%%%%%%%%%%%
+         ZXL = - PARORX + PX0 + PHCHAR
+CC%%%%     ZXL = ZLONG/2.-NCHLAB/2.*0.9475*PHCHAR
+         ZYLAB = PARORY + ZHIGH + 7.*PHCHAR
+C
+C%%      CALL GSCHH(PHCHAR)
+C%%      CALL GTX(ZXL+PARORX,ZYLAB            ,LABEL1)
+C%%      CALL GTX(ZXL+PARORX,ZYLAB-2.*PHCHAR  ,LABEL2)
+C%%      CALL GTX(ZXL+PARORX,ZYLAB-4.*PHCHAR  ,LABEL3)
+C%%      CALL GTX(ZXL+PARORX,ZYLAB-6.*PHCHAR  ,LABEL4)
+         CALL GCHAR(LABEL1,(ZXL+PARORX)*10.,(ZYLAB          )*10.
+     +    ,PHCHAR*10.)
+         CALL GCHAR(LABEL2,(ZXL+PARORX)*10.,(ZYLAB-2.*PHCHAR)*10.
+     +    ,PHCHAR*10.)
+         CALL GCHAR(LABEL3,(ZXL+PARORX)*10.,(ZYLAB-4.*PHCHAR)*10.
+     +           ,PHCHAR*10.)
+         CALL GCHAR(LABEL4,(ZXL+PARORX)*10.,(ZYLAB-6.*PHCHAR)*10.
+     +         ,PHCHAR*10.)
+C%%
+C     RESET PARAMETERS
+         CALL GPLOT(-ZDXORIG*10.       ,-ZDYORIG*10.       ,-3)
+C%%      CALL GSLN(1)
+C%%      CALL GSLWSC(1.0)
+         CALL GDASH(0)
+         CALL GWICOL(-1.0,1)
+C%%
+C&&&     CALL GPLOT(0.,0., 999)
+C
+         RETURN
+C
+C-----------------------------------------------------------------------
+CL              9.        FORMATS
+C
+ 9000    FORMAT(////1X,I3,'. PLOT FROM SUBROUTINE MULPLT'//
+     +           10X,'RANGE  IN X   (',1PE14.7,' / ',E14.7,')'//
+     +           10X,'RANGES IN Y   (',E14.7,' / ',E14.7,')'/
+     +          ,(24X,'(',E14.7,' / ',E14.7,')'))
+C
+         END
+         SUBROUTINE MULPDO(P,PFUN,KPTS,KDIM,KPLOT,KFDIM,KNRFUN,TITLE
+     +                    ,KNTIT,LABEL1,LABEL2,LABEL3,LABEL4,NCHLAB
+     +                    ,PHCHAR,PX0,PY0,PLX,PLY)
+C        **************************************************************
+C
+C        (LINE + DOTS)
+C      SEVERAL PLOTS ONE ON THE TOP OF THE OTHER :
+C
+C        THE PICTURE IS DIVIDED IN KPLOT RECTANGLES HORIZONTALLY.
+C        IN EACH IPLOT (IPLOT=1,KPLOT) RECTANGLE, KNRFUN(IPLOT) FUNCTIONS
+C        ARE PLOTTED.
+C
+C     P(KDIM)          : ABSCISSE ARRAY
+C     PFUN(KDIM,KFDIM) : FUNCTIONS TO PLOT
+C     KPTS             : NUMBER OF POINT TO PLOT (IF KPTS.GT.MNX1 CHANGE MNX1)
+C     KDIM             : DIMENSION OF P AND PFUN(., )
+C     KPLOT            : NUMBER OF RECTANGLES IN WHICH FUNCTIONS ARE PLOTTED
+C     KFDIM            : DIMENSION OF       PFUN( ,.)
+C     KNRFUN(IPLOT)    : NUMBER OF CURVES TO PLOT IN THE IPLOT RECTANGLE
+C     TITLE(IPLOT)     : TITLE OF THE IPLOT RECTANGLE
+C     KNTIT(IPLOT)     : NUMBER OF CHARACTER OF TITLE(IPLOT)
+C     LABEL1,2,3,4    : TEXT*72 LABELLING THE PLOT
+C     NCHLAB           : NUMBER OF CHARACTERS IN LABELJ, USED TO CENTER LABELS
+C     PHCHAR           : HEIGHT OF CHARACTERS
+C     PX0,PY0,PLX,PLY  : BOX OF PLOT
+C-----------------------------------------------------------------------
+       CHARACTER*(*)       TITLE(KPLOT)
+       CHARACTER*(*)       LABEL1,LABEL2,LABEL3,LABEL4
+       CHARACTER*9         ZTEXT
+       DIMENSION
+     +   P(KDIM),          PFUN(KDIM,KFDIM),   ZYORIG(20)
+     +  ,ZYSCAL(20),       ZYMAX(20),          ZYMIN(20)
+     +  ,KNRFUN(20),         KNTIT(KPLOT)
+C-----------------------------------------------------------------------
+       DATA    IPLT/0/
+C-----------------------------------------------------------------------
+C
+CL       DEFINE BASIC ATTRIBUTES
+C
+C                      FOR TEXT
+C&    CALL GSTXFP(2,2)
+C%%   CALL GSCHSP(0.0)
+C%%   CALL GSCHXP(1.0)
+C%%   CALL GSTXP(0)
+C%%   CALL GSTXAL(0,0)
+C                      FOR POLYLINE
+C%%   CALL GSLN(1)
+CL           1. DIMENSIONS AND SCALES
+C
+C     LENGTH AND HEIGHT IN CM OF TOTAL PLOT
+C     SPECIFY PARAMETERS
+C%%%%%%%%%%%%%%%%%%%
+CC       ZHCRAT = 0.85
+         ZHCRAT = 1.0
+C%%%%%%%%%%%%%%%%%%
+C
+         PARORX = PX0 + 5.*PHCHAR
+         PARORY = PY0 + 6.*PHCHAR
+         ZENDX  = 9.0*ZHCRAT*PHCHAR
+         ZENDY  = 9.0*PHCHAR
+         ZLONG  = PLX - (PARORX-PX0) - ZENDX
+         ZHIGH  = PLY - (PARORY-PY0) - ZENDY
+C     THE CURVES SHOULD NOT REACH THE TOP NOR THE BOTTOM
+C     KEEP "ZFREE" PERCENT FREE
+         ZFREE=0.05
+C
+C     SCALES: VARIATION PER CM
+C
+      ZXMAX = P(KPTS)
+      ZXMIN = P(1)
+      IZERO = 0
+      IF (ZXMAX.EQ.0.0 .OR. ZXMIN.EQ.0.0) IZERO = 1
+      IF ( (ABS(ZXMAX-ZXMIN).LT.1.0E-12*ABS(ZXMAX) .AND. IZERO.EQ.0)
+     +      .OR.  (ZXMAX.EQ.ZXMIN       .AND. IZERO.EQ.1)       ) THEN
+         IF(ZXMAX .NE. 0.0) ZXMIN = ZXMIN/2.
+         IF(ZXMAX .NE. 0.0) ZXMAX = ZXMAX + ZXMIN
+         IF(ZXMAX .EQ. 0.0) ZXMIN = -1.
+         IF(ZXMAX .EQ. 0.0) ZXMAX =  1.
+      ENDIF
+C
+C%%         ZDX = P(KPTS) - P(1)
+         ZDX = ZXMAX - ZXMIN
+C%%         ZXMIN = P(1)
+         ZXSCAL= ZDX / ZLONG
+         IFUN=0
+         ZYHIGH=ZHIGH/KPLOT
+         DO 110 JPLOT=1,KPLOT
+         ZYORIG(JPLOT)=(JPLOT-1)*ZYHIGH
+C
+         ZMAX=PFUN(1,IFUN+1)
+         ZMIN=PFUN(1,IFUN+1)
+         INUM=KNRFUN(JPLOT)
+         DO 100 JNUM=1,INUM
+         IFUN=IFUN+1
+         DO 100 J=1,KPTS
+         ZMAX=AMAX1(ZMAX,PFUN(J,IFUN))
+         ZMIN=AMIN1(ZMIN,PFUN(J,IFUN))
+  100    CONTINUE
+C
+      IZERO = 0
+      IF (ZMAX.EQ.0.0 .OR. ZMIN.EQ.0.0) IZERO = 1
+      IF ( (ABS(ZMAX-ZMIN).LT.1.0E-12*ABS(ZMAX) .AND. IZERO.EQ.0)
+     +      .OR.  (ZMAX.EQ.ZMIN .AND. IZERO.EQ.1)       ) THEN
+            ZDNX = 0.0
+            IF (ZMIN .EQ. 0.0) ZDNX = 1.
+            ZMIN = ZMAX - ZMAX/2. - ZDNX
+            ZMAX = ZMAX + ZMAX/2. + ZDNX
+         ENDIF
+         ZYMIN(JPLOT)=ZMIN
+         ZYMAX(JPLOT)=ZMAX
+         ZYSCAL(JPLOT)=(ZMAX-ZMIN)/(ZYHIGH*(1.-ZFREE))
+  110    CONTINUE
+C
+C     SCALES IN THE PLOTS
+         IPLT=IPLT+1
+         WRITE(6   ,9000) IPLT,P(1),P(KPTS),(ZYMIN(JPLOT),
+     +                    ZYMAX(JPLOT),JPLOT=1,KPLOT)
+C
+C-----------------------------------------------------------------------
+CL              2.        FRAMES
+C
+C     DRAW OUTERMOST EDGES
+C
+C%%      CALL GSLWSC(2.0)
+         CALL GDASH(0)
+         CALL GWICOL(-2.0,1)
+C%%
+         CALL CADRE(PX0*10.,PY0*10.,PLX*10.,PLY*10.,1)
+C
+C     NEW ORIGIN: BOTTOM/LEFT EDGE
+         ZDXORIG = PARORX
+         ZDYORIG = PARORY
+         CALL GPLOT(ZDXORIG*10.,ZDYORIG*10.,-3)
+C
+C     INNER FRAMES
+C%%      CALL GSLWSC(2.0)
+         CALL GWICOL(-2.0,1)
+C%%
+         CALL GPLOT(0.,0.,3)
+         CALL GPLOT(0.,ZHIGH*10.,2)
+         CALL GPLOT(ZLONG*10.,ZHIGH*10.,3)
+         CALL GPLOT(ZLONG*10.,0.0,2)
+C
+C     SEPERATE THE PLOTS
+         DO 210 JPLOT=2,KPLOT
+         CALL GPLOT(0.,ZYORIG(JPLOT)*10.,3)
+         CALL GPLOT(ZLONG*10.,ZYORIG(JPLOT)*10.,2)
+  210    CONTINUE
+C
+C-----------------------------------------------------------------------
+CL              3.        INDIVIDUAL CURVE
+C
+C%%      CALL GSLWSC(1.5)
+         CALL GWICOL(-1.5,1)
+C%%
+C
+         ZFYGH = 0.5*ZFREE*ZYHIGH
+         ZPREV=ZYORIG(1)
+         IFUN=0
+C
+         DO 330 JPLOT=1,KPLOT
+C     NEW ORIGIN
+         CALL GPLOT(0.,ZYORIG(JPLOT)*10.-ZPREV*10.,-3)
+         ZDYORIG = ZDYORIG +ZYORIG(JPLOT)-ZPREV
+         ZPREV=ZYORIG(JPLOT)
+C     DRAW AXIS Y=0 IF IN THE FRAME
+         IF(ZYMIN(JPLOT).GT.0.) GO TO 310
+         IF(ZYMAX(JPLOT).LT.0.) GO TO 310
+         ZY=-ZYMIN(JPLOT)/ZYSCAL(JPLOT)+ZFYGH
+         ZX=0.
+         CALL GPLOT(ZX*10.,ZY*10.,3)
+         CALL GPLOT(ZLONG*10.,ZY*10.,2)
+  310    CONTINUE
+C
+C     PLOT THE TITLE
+         ZYTIT = ZYHIGH/2.-KNTIT(JPLOT)/2.*0.25+ZFYGH/2.
+         ZXTIT = (PARORX - PX0)/2. - 0.5*PHCHAR
+C%%      CALL GSCHH(PHCHAR)
+C%%      CALL GSCHUP(-1.,0.)
+C%%      CALL GTX(ZDXORIG-ZXTIT,ZDYORIG+ZYTIT,TITLE(JPLOT))
+C%%      CALL GSCHUP( 0.,1.)
+         CALL GCHARA(90 )
+         CALL GCHAR(TITLE(JPLOT),(ZDXORIG-ZXTIT)*10.,
+     +                           (ZDYORIG+ZYTIT)*10.,PHCHAR*10.)
+C%%
+C
+C     PLOT MAX. AND MIN. OF PLOT  TO THE RIGHT
+         ZHMXMN = PHCHAR*ZHCRAT
+C%%      CALL GSCHH(ZHMXMN)
+C
+         ZDELMIN = 0.4 * ZHMXMN
+C
+         ZX = ZHMXMN + ZDXORIG + ZLONG
+         ZY = ZFYGH
+         CALL GPLOT((-PHCHAR*0.5+ZLONG)*10.,ZY*10.,3)
+         CALL GPLOT( 0.0       +ZLONG*10.,ZY*10.,2)
+         WRITE(ZTEXT,'(1PE8.1,"$")') ZYMIN(JPLOT)
+         IF (ZYMIN(JPLOT) .GE. 0.0) ZX = ZX + ZDELMIN
+CC         CALL GTX(ZX,ZY    +ZDYORIG,ZTEXT)
+         CALL GCHAR(ZTEXT,ZX*10.,(ZY+ZDYORIG)*10.,ZHMXMN*10.)
+CC         CALL GNUMBO(5,'E')
+CC         CALL GNUMB(ZYMIN(JPLOT),ZX*10.,(ZY+ZDYORIG)*10.,ZHMXMN*10.,1)
+         IF (ZYMIN(JPLOT) .GE. 0.0) ZX = ZX - ZDELMIN
+C%%
+C%%      ZX = ZX + ZDELMIN
+C
+         ZYMXSC = (ZYMAX(JPLOT)-ZYMIN(JPLOT))/ZYSCAL(JPLOT)+ZFYGH
+         CALL GPLOT((-0.1 +ZLONG)*10.,ZYMXSC*10.,3)
+         CALL GPLOT( 0.0 +ZLONG*10.,ZYMXSC*10.,2)
+         WRITE(ZTEXT,'(1PE8.1,"$")') ZYMAX(JPLOT)
+         IF (ZYMAX(JPLOT) .GE. 0.0) ZX = ZX + ZDELMIN
+         ZYMXSC = ZYMXSC - ZHMXMN
+CC         CALL GTX(ZX,ZYMXSC+ZDYORIG,ZTEXT)
+         CALL GCHAR(ZTEXT,ZX*10.,(ZYMXSC+ZDYORIG)*10.,ZHMXMN*10.)
+CC         CALL GNUMBO(5,'E')
+CC       CALL GNUMB(ZYMAX(JPLOT),ZX*10.,(ZYMXSC+ZDYORIG)*10.,ZHMXMN*10.,1)
+C%%
+C%%      ZX = ZX + ZDELMIN
+C
+C     DRAW THE CURVE
+         INUM=KNRFUN(JPLOT)
+C
+         DO 325 JNUM=1,INUM
+         IFUN=IFUN+1
+C
+         DO 320 J=1,KPTS
+         P(J) =(P(J)-ZXMIN)/ZXSCAL + ZDXORIG
+         PFUN(J,IFUN) =(PFUN(J,IFUN)-ZYMIN(JPLOT))/ZYSCAL(JPLOT)+ZFYGH
+     +           + ZDYORIG
+      P(J) = P(J) * 10.
+      PFUN(J,IFUN) = PFUN(J,IFUN) * 10.
+  320    CONTINUE
+C
+         JJNUM = MOD(JNUM-1,4) + 1
+         JJJ = (JJNUM-1)*3 + 1/(5-JJNUM)
+         CALL GDASH(JJJ)
+         CALL GVECT(P,PFUN(1,IFUN),KPTS)
+         CALL GWICOL(1.25,1)
+         CALL GDOT(P,PFUN(1,IFUN),KPTS)
+         CALL GWICOL(-1.5,1)
+C%%
+C
+         DO 321 J=1,KPTS
+      P(J) = P(J) / 10.
+      PFUN(J,IFUN) = PFUN(J,IFUN) / 10.
+         P(J) =(P(J)-ZDXORIG)*ZXSCAL + ZXMIN
+         PFUN(J,IFUN) = (PFUN(J,IFUN)-ZFYGH-ZDYORIG)*ZYSCAL(JPLOT) +
+     +                  ZYMIN(JPLOT)
+  321    CONTINUE
+C
+  325    CONTINUE
+  330    CONTINUE
+C
+         CALL GPLOT((-ZDXORIG+PARORX)*10.,(-ZDYORIG+PARORY)*10.,-3)
+         ZDXORIG = PARORX
+         ZDYORIG = PARORY
+C     
+C     DRAW X-AXIS      ****  USE OLD HOME-MADE AXIS SUBROUTINE  *****
+         CALL AXES(PARORX*10.,PARORY*10.,ZLONG*10.,ZXMIN,ZXMAX,0.,
+     +                             PHCHAR*10.,'X$',1,0,0,-ZHIGH*10.,0.0)
+C
+C     WRITE LABELS
+C%%%%%%%%%%%%%%%%%%%%%%
+         ZXL = - PARORX + PX0 + PHCHAR
+CC%%%%     ZXL = ZLONG/2.-NCHLAB/2.*0.9475*PHCHAR
+         ZYLAB = PARORY + ZHIGH + 7.*PHCHAR
+C
+C%%      CALL GSCHH(PHCHAR)
+C%%      CALL GTX(ZXL+PARORX,ZYLAB            ,LABEL1)
+C%%      CALL GTX(ZXL+PARORX,ZYLAB-2.*PHCHAR  ,LABEL2)
+C%%      CALL GTX(ZXL+PARORX,ZYLAB-4.*PHCHAR  ,LABEL3)
+C%%      CALL GTX(ZXL+PARORX,ZYLAB-6.*PHCHAR  ,LABEL4)
+         CALL GCHAR(LABEL1,(ZXL+PARORX)*10.,(ZYLAB          )*10.
+     +    ,PHCHAR*10.)
+         CALL GCHAR(LABEL2,(ZXL+PARORX)*10.,(ZYLAB-2.*PHCHAR)*10.
+     +    ,PHCHAR*10.)
+         CALL GCHAR(LABEL3,(ZXL+PARORX)*10.,(ZYLAB-4.*PHCHAR)*10.
+     +           ,PHCHAR*10.)
+         CALL GCHAR(LABEL4,(ZXL+PARORX)*10.,(ZYLAB-6.*PHCHAR)*10.
+     +         ,PHCHAR*10.)
+C%%
+C     RESET PARAMETERS
+         CALL GPLOT(-ZDXORIG*10.       ,-ZDYORIG*10.       ,-3)
+C%%      CALL GSLN(1)
+C%%      CALL GSLWSC(1.0)
+         CALL GDASH(0)
+         CALL GWICOL(-1.0,1)
+C%%
+C&&&     CALL GPLOT(0.,0., 999)
+C
+         RETURN
+C
+C-----------------------------------------------------------------------
+CL              9.        FORMATS
+C
+ 9000    FORMAT(////1X,I3,'. PLOT FROM SUBROUTINE MULPDO'//
+     +           10X,'RANGE  IN X   (',1PE14.7,' / ',E14.7,')'//
+     +           10X,'RANGES IN Y   (',E14.7,' / ',E14.7,')'/
+     +          ,(24X,'(',E14.7,' / ',E14.7,')'))
+C
+         END
+         SUBROUTINE GPLOT(X,Y,I)
+C        ***********************
+C
+C- FROM  USUAL PLOT SUBROUTINE IN VERSAPLOT PACKAGE (PLOTGKS)
+C%
+C%    INTERFACE FOR UNIRAS
+C
+C     (X,Y)            : POINT TO JOIN
+C       I   =  1 OR 2  : DRAW THE SEGMENT
+C       I   =  3       : DO NOT DRAW THE SEGMENT
+C       I   <  0       : MOVE THE ORIGIN
+C       I   =  999     : CALL GCLRWK(1,1) , I.E. SEPERATES PLOTS
+C
+C * POSITION ET ORIGINE COURANTES, EXTREMITES DU DESSIN (ABSOLUES)
+      REAL XGKS(2),YGKS(2)
+      SAVE   XOR,YOR,XGKS,YGKS
+      DATA   XOR,YOR/0.0,0.0/
+C
+C * CAS DU TRAIT
+      IPLUS=IABS(I)
+      IF(IPLUS.EQ.999) GO TO 2
+      XA=XOR+X
+      YA=YOR+Y
+      IF(IPLUS.EQ.3) THEN
+        XGKS(1)=XA
+        YGKS(1)=YA
+      ELSE
+        XGKS(2)=XA
+        YGKS(2)=YA
+C%%     CALL GPL(2,XGKS,YGKS)
+        CALL GVECT(XGKS,YGKS,2)
+        XGKS(1)=XA
+        YGKS(1)=YA
+      ENDIF
+C * CHANGER D'ORIGINE SI I EST NEGATIF
+      IF(I.GT.0) RETURN
+      XOR=XA
+      YOR=YA
+      RETURN
+2     CONTINUE
+C * CAS DE LA FIN DE DESSIN
+      XOR=0.
+      YOR=0.
+C%%   CALL GCLRWK(1,1)
+      CALL GCLEAR
+      RETURN
+      END
+         SUBROUTINE CADRE(PX,PY,PLX,PLY,KCONT)
+C        *************************************
+C
+C     KCONT = 1 : CADRE COMPLET
+C             2 : COINS DU CADRE UNIQUEMENT
+C             0 : PAS DE CADRE
+C---------------------------------------------------------
+         IF (KCONT .EQ. 0) RETURN
+         GO TO (100,200) KCONT
+C
+CL    DESSINE UN CADRE COMPLET
+C
+ 100     CALL GPLOT(PX    ,PY    ,3)
+         CALL GPLOT(PX    ,PY+PLY,2)
+         CALL GPLOT(PX+PLX,PY+PLY,2)
+         CALL GPLOT(PX+PLX,PY    ,2)
+         CALL GPLOT(PX    ,PY    ,2)
+C
+         RETURN
+C
+CL    LEFT/BOTTOM CORNER
+C
+ 200     CALL GPLOT(PX       ,PY+1.    ,3)
+         CALL GPLOT(PX       ,PY       ,2)
+         CALL GPLOT(PX+1.    ,PY       ,2)
+C     LEFT/TOP CORNER
+         CALL GPLOT(PX       ,PY+PLY-1.,3)
+         CALL GPLOT(PX       ,PY+PLY   ,2)
+         CALL GPLOT(PX+1.    ,PY+PLY   ,2)
+C     RIGHT/TOP CORNER
+         CALL GPLOT(PX+PLX-1.,PY+PLY   ,3)
+         CALL GPLOT(PX+PLX   ,PY+PLY   ,2)
+         CALL GPLOT(PX+PLX   ,PY+PLY-1.,2)
+C     RIGHT/BOTTOM CORNER
+         CALL GPLOT(PX+PLX   ,PY+1.    ,3)
+         CALL GPLOT(PX+PLX   ,PY       ,2)
+         CALL GPLOT(PX+PLX-1.,PY       ,2)
+C
+         RETURN
+         END
+         SUBROUTINE GRAPHE(PX,PY,KN,PX0,PDX,PY0,PDY,PHCHAR,PXIBCD,PYIBCD
+     +                    ,KX,KY,PSIZLN,KCADRE,KGRID)
+C        ***************************************************************
+C
+C     DRAW THE GRAPH OF A FONCTION GIVEN BY KN POINTS (PX(I),PY(I))
+C     IN A RECTANGULAR BOX ((PX0,PY0) ; (PX0+PDX,PY0+PDY)
+C
+C        PX         : VECTOR OF X-COORDINATES, OF DIMENSION KN
+C        PY         : VECTOR OF Y-COORDINATES, OF DIMENSION KN
+C        (PX0,PY0)  : BOTTOM LEFT CORNER OF THE BOX
+C        (PDX,PDY)  : LENGTH IN X- AND Y-DIRECTION OF THE BOX
+C        PHCHAR     : CHARACTER HEIGHT (TYPICAL VALUE: 0.30)
+C        PXIBCD     : TITLE OF X-AXIS
+C        PYIBCD     : TITLE OF Y-AXIS
+C        KX,KY      : NUMBER OF CHARACTERS IN PXIBCD,PYIBCD
+C        PSIZLN     : LINE WIDTH OF CURVE
+C        KCADRE     : DRAW BOX OPTION :(0=NO, 1=YES,CONT., 2=YES,ONLY CORNERS)
+C        KGRID      : DRAW GRID OPTION : (0=NO, 1=Y-GRID, 2=X-GRID, 3=XY-GRID)
+C
+      CHARACTER PXIBCD*(*),PYIBCD*(*)
+      DIMENSION  PX(KN),PY(KN)
+C
+C%%      CALL GSLN(1)
+C%%      CALL GSLWSC(2.0)
+         CALL GDASH(0)
+         CALL GWICOL(-2.0,1)
+C%%
+      IF (KCADRE .NE. 0) CALL CADRE(PX0*10.,PY0*10.,PDX*10.,PDY*10.
+     +                              ,KCADRE)
+C%%   CALL GSLWSC(1.0)
+      CALL GWICOL(-1.0,1)
+C%%
+C     CACUL DES EXTREMAS
+C
+      CALL MAXAR(PX,KN,ZXMAX,ZXMIN)
+      CALL MAXAR(PY,KN,ZYMAX,ZYMIN)
+C
+      IZERO = 0
+      IF (ZXMAX.EQ.0.0 .OR. ZXMIN.EQ.0.0) IZERO = 1
+      IF ( (ABS(ZXMAX-ZXMIN).LT.1.0E-12*ABS(ZXMAX) .AND. IZERO.EQ.0)
+     +      .OR.  (ZXMAX.EQ.ZXMIN       .AND. IZERO.EQ.1)       ) THEN
+         IF(ZXMAX .NE. 0.0) ZXMIN = ZXMIN/2.
+         IF(ZXMAX .NE. 0.0) ZXMAX = ZXMAX + ZXMIN
+         IF(ZXMAX .EQ. 0.0) ZXMIN = -1.
+         IF(ZXMAX .EQ. 0.0) ZXMAX =  1.
+      ENDIF
+C
+      IZERO = 0
+      IF (ZYMAX.EQ.0.0 .OR. ZYMIN.EQ.0.0) IZERO = 1
+      IF ( (ABS(ZYMAX-ZYMIN).LT.1.0E-12*ABS(ZYMAX) .AND. IZERO.EQ.0)
+     +      .OR.  (ZYMAX.EQ.ZYMIN       .AND. IZERO.EQ.1)       ) THEN
+         IF(ZYMAX .NE. 0.0) ZYMIN = ZYMIN/2.
+         IF(ZYMAX .NE. 0.0) ZYMAX = ZYMAX + ZYMIN
+         IF(ZYMAX .EQ. 0.0) ZYMIN = -1.
+         IF(ZYMAX .EQ. 0.0) ZYMAX =  1.
+      ENDIF
+C
+      ZDX = ZXMAX-ZXMIN
+      ZDY = ZYMAX-ZYMIN
+C
+C     LONGUEUR DES AXES
+         ZHCHMN =       PHCHAR
+         ZLX=PDX - 11.5 * ZHCHMN
+         IF (ABS(ZDY) .LT. 0.05*AMAX1(ABS(ZYMIN),ABS(ZYMAX)))
+     +                                             ZLX = ZLX - 2.*ZHCHMN
+         ZLY=PDY - 7.0 * ZHCHMN
+C
+C     DESSIN DES AXES
+         ZX0=PX0+ 8.0 * ZHCHMN
+         IF (ABS(ZDY) .LT. 0.05*AMAX1(ABS(ZYMIN),ABS(ZYMAX)))
+     +                                             ZX0 = ZX0 + 2.*ZHCHMN
+         ZY0=PY0+ 5.0 * ZHCHMN
+C
+C     ECHELLES
+C
+      ZECHX = ZLX/ZDX
+      ZECHY = ZLY/ZDY
+C
+C     GRID OPTION
+         ZGRIDX = 0.0
+         ZGRIDY = 0.0
+         IF (KGRID.EQ.1 .OR. KGRID.EQ.3) ZGRIDY =  ZLX
+         IF (KGRID.EQ.2 .OR. KGRID.EQ.3) ZGRIDX =  ZLY
+C
+         CALL AXES(ZX0*10.,ZY0*10.,ZLX*10.,ZXMIN,ZXMAX, 0.,PHCHAR*10.,
+     +             PXIBCD, KX, 0, 0,-ZLY*10.,-ZGRIDX*10.)
+         CALL AXES(ZX0*10.,ZY0*10.,ZLY*10.,ZYMIN,ZYMAX,90.,PHCHAR*10.,
+     +             PYIBCD,-KY, 1, 0, ZLX*10., ZGRIDY*10.)
+C     
+      DO 100 J=1,KN 
+         PX(J) = ((PX(J)-ZXMIN)*ZECHX + ZX0) *10.
+         PY(J) = ((PY(J)-ZYMIN)*ZECHY + ZY0) *10.
+ 100  CONTINUE
+C
+C%%      CALL GSLN(1)
+C%%      CALL GSLWSC(PSIZLN)
+         CALL GDASH(0)
+         CALL GWICOL(-PSIZLN,1)
+C%%         CALL GPL(KN,PX,PY)
+         CALL GVECT(PX,PY,KN)
+C
+      DO 110 J=1,KN 
+         PX(J) = (PX(J)/10.-ZX0)/ZECHX + ZXMIN
+         PY(J) = (PY(J)/10.-ZY0)/ZECHY + ZYMIN
+ 110  CONTINUE
+C
+      IF (ZYMIN*ZYMAX .LT. 0.0) THEN
+         CALL GDASH(1)
+         CALL GWICOL(-1.0,1)
+         CALL GPLOT(ZX0*10.      ,(ZY0-ZYMIN*ZECHY)*10.,3)
+         CALL GPLOT((ZX0+ZLX)*10.,(ZY0-ZYMIN*ZECHY)*10.,2)
+      ENDIF
+C
+C%%      CALL GSLWSC(1.)
+         CALL GWICOL(-1.0,1)
+C
+C     DEFINE GRAF AREA
+CC         CALL BGRAF(ZX0*10.,ZY0*10.,ZLX*10.,ZLY*10.)
+C     NUMBER OF DECIMAL POINTS
+CC         NDEC = 2
+C     EXPONENT
+CC         ZIM = 0.
+CC         IF (ZXMIN .NE. 0.0) ZIM = ALOG10(ABS(ZXMIN))
+CC         ZIMM = 0.
+CC         IF (ZXMAX .NE. 0.0) ZIMM = ALOG10(ABS(ZXMAX))
+CC         IF (ZIMM.GT.ZIM .AND. ZIMM.NE.0.0) ZIM = ZIMM
+CC         IF (ZIM .EQ. 0.0) ZIM = ZIMM
+CC         IF (ZIM   .GE. 0.0) IEXP = INT(ZIM  )
+CC         IF (ZIM   .LT. 0.0) IEXP = INT(ZIM  ) - 1
+CC         CALL BAXLAB(PHCHAR*10.,PHCHAR*10.,NDEC,IEXP)
+C     TICK PLACE
+CC         NTIC = 2
+CC         CALL BTICKJ(NTIC)
+C     X,Y INTERVALS
+CC         INTX = 5
+CC         INTY = 5
+C     X-AXIS
+CC         CALL BAXIS(1,ZXMIN,(ZXMAX-ZXMIN)/INTX,ZXMAX,PXIBCD)
+C     Y-AXIS
+CC         ZIM = 0.
+CC         IF (ZYMIN .NE. 0.0) ZIM = ALOG10(ABS(ZYMIN))
+CC         ZIMM = 0.
+CC         IF (ZYMAX .NE. 0.0) ZIMM = ALOG10(ABS(ZYMAX))
+CC         IF (ZIMM.GT.ZIM .AND. ZIMM.NE.0.0) ZIM = ZIMM
+CC         IF (ZIM .EQ. 0.0) ZIM = ZIMM
+CC         IF (ZIM   .GE. 0.0) IEXP = INT(ZIM  )
+CC         IF (ZIM   .LT. 0.0) IEXP = INT(ZIM  ) - 1
+CC         CALL BAXLAB(PHCHAR*10.,PHCHAR*10.,NDEC,IEXP)
+CC         CALL BTICKJ(NTIC)
+CC         CALL BAXIS(2,ZYMIN,(ZYMAX-ZYMIN)/INTY,ZYMAX,PYIBCD)
+C     FRAME WIDTH
+CC         ZFRAWTH = -2.0
+CC         CALL BFRAME(ZFRAWTH)
+C     CURVE WIDTH
+CC         ZCURWTH = -PSIZLN
+CC         CALL BLIWDH(ZCURWTH)
+CC         CALL BLINE(PX,PY,KN)
+C     GRID LINE KIND AND WIDTH
+CC         IGRID = 2
+CC         ZGRIWTH = -1.0
+CC         CALL BDASH(IGRID)
+CC         CALL BLIWDH(ZGRIWTH)
+C     DEFINE GRID STYLE IN BOTH DIRECTION
+CC         IGRISTX = 0
+CC         IGRISTY = 0
+CC         IF (KGRID .EQ. 1) IGRISTY =  1
+CC         IF (KGRID .EQ. 2) IGRISTX =  1
+CC         IF (KGRID .EQ. 3) IGRISTX =  1
+CC         IF (KGRID .EQ. 3) IGRISTY =  1
+CC         CALL BGRID(IGRISTX,IGRISTY)
+C
+C     ECHELLES
+C
+C%%   ZECHX = ZLX/ZDX
+C%%   ZECHY = ZLY/ZDY
+C
+C%%   IF (ZYMIN*ZYMAX .LT. 0.0) THEN
+C%%      CALL GPLOT(ZX0    ,ZY0-ZYMIN*ZECHY,3)
+C%%      CALL GPLOT(ZX0+ZLX,ZY0-ZYMIN*ZECHY,2)
+C%%   ENDIF
+C
+C%%   CALL GSLWSC(1.)
+         CALL GWICOL(-1.0,1)
+C
+      RETURN
+      END
+         SUBROUTINE GRAPHN(PX,PY,KN,MKN,KPLOT,PX0,PDX,PY0,PDY,PHCHAR,
+     +                     PXIBCD,PYIBCD,KX,KTIT,PSIZLN,KCADRE,KGRID)
+C        ***************************************************************
+C
+C     PLOT SEVERAL CURVES ON SAME GRAPHE
+C
+C     DRAW THE GRAPH OF A FONCTION GIVEN BY KN POINTS (PX(I),PY(I,J))
+C     IN A RECTANGULAR BOX ((PX0,PY0) ; (PX0+PDX,PY0+PDY)
+C
+C        PX         : VECTOR OF X-COORDINATES, OF DIMENSION KN
+C        PY(I,J)    : VECTOR OF Y-COORDINATES FOR EACH J LINE
+C        (PX0,PY0)  : BOTTOM LEFT CORNER OF THE BOX
+C        (PDX,PDY)  : LENGTH IN X- AND Y-DIRECTION OF THE BOX
+C        PHCHAR     : CHARACTER HEIGHT (TYPICAL VALUE: 0.30)
+C        PXIBCD     : TITLE OF X-AXIS
+C        PYIBCD(J)  : TITLE OF EACH CURVE
+C        PYIBCD(KPLOT+1) : TITLE OF PLOT
+C        KX,KTIT(J) : NUMBER OF CHARACTERS IN PXIBCD,PYIBCD(J)
+C        PSIZLN     : LINE WIDTH OF CURVE
+C        KCADRE     : DRAW BOX OPTION :(0=NO, 1=YES,CONT., 2=YES,ONLY CORNERS)
+C        KGRID      : DRAW GRID OPTION : (0=NO, 1=Y-GRID, 2=X-GRID, 3=XY-GRID)
+C
+      CHARACTER PXIBCD*(*),PYIBCD(KPLOT+1)*(*)
+      DIMENSION  PX(KN),PY(MKN,KPLOT), KTIT(KPLOT+1), ZXLAB(2), ZYLAB(2)
+     +     ,JTYPLIN(0:8)
+      DATA  JTYPLIN/0,3,7,2,10,1,6,9,4/
+C
+         CALL GDASH(0)
+         CALL GWICOL(-2.0,1)
+C
+      IF (KCADRE .NE. 0) CALL CADRE(PX0*10.,PY0*10.,PDX*10.,PDY*10.
+     +                              ,KCADRE)
+      CALL GWICOL(-1.0,1)
+C
+C     CACUL DES EXTREMAS
+C
+      CALL MAXAR(PX,KN,ZXMAX,ZXMIN)
+      CALL MAXAR(PY(1,1),KN,ZYMAX,ZYMIN)
+      DO 10 I=2,KPLOT
+         CALL MAXAR(PY(1,I),KN,ZYMAXI,ZYMINI)
+         ZYMAX = MAX(ZYMAX,ZYMAXI)
+         ZYMIN = MIN(ZYMIN,ZYMINI)
+ 10   CONTINUE
+C
+      IZERO = 0
+      IF (ZXMAX.EQ.0.0 .OR. ZXMIN.EQ.0.0) IZERO = 1
+      IF ( (ABS(ZXMAX-ZXMIN).LT.1.0E-12*ABS(ZXMAX) .AND. IZERO.EQ.0)
+     +      .OR.  (ZXMAX.EQ.ZXMIN       .AND. IZERO.EQ.1)       ) THEN
+         IF(ZXMAX .NE. 0.0) ZXMIN = ZXMIN/2.
+         IF(ZXMAX .NE. 0.0) ZXMAX = ZXMAX + ZXMIN
+         IF(ZXMAX .EQ. 0.0) ZXMIN = -1.
+         IF(ZXMAX .EQ. 0.0) ZXMAX =  1.
+      ENDIF
+C
+      IZERO = 0
+      IF (ZYMAX.EQ.0.0 .OR. ZYMIN.EQ.0.0) IZERO = 1
+      IF ( (ABS(ZYMAX-ZYMIN).LT.1.0E-12*ABS(ZYMAX) .AND. IZERO.EQ.0)
+     +      .OR.  (ZYMAX.EQ.ZYMIN       .AND. IZERO.EQ.1)       ) THEN
+         IF(ZYMAX .NE. 0.0) ZYMIN = ZYMIN/2.
+         IF(ZYMAX .NE. 0.0) ZYMAX = ZYMAX + ZYMIN
+         IF(ZYMAX .EQ. 0.0) ZYMIN = -1.
+         IF(ZYMAX .EQ. 0.0) ZYMAX =  1.
+      ENDIF
+C
+      ZDX = ZXMAX-ZXMIN
+      ZDY = ZYMAX-ZYMIN
+C
+C     LONGUEUR DES AXES
+         ZHCHMN =       PHCHAR
+         ZLX=PDX - 11.5 * ZHCHMN
+         IF (ABS(ZDY) .LT. 0.05*AMAX1(ABS(ZYMIN),ABS(ZYMAX)))
+     +                                             ZLX = ZLX - 2.*ZHCHMN
+C%%%%%%         ZLY=PDY - 7.0 * ZHCHMN
+         ZLAB = 0.7 + ZHCHMN
+         ZLY=PDY - 7.0 * ZHCHMN - ZLAB
+C
+C     DESSIN DES AXES
+         ZX0=PX0+ 8.0 * ZHCHMN
+         IF (ABS(ZDY) .LT. 0.05*AMAX1(ABS(ZYMIN),ABS(ZYMAX)))
+     +                                             ZX0 = ZX0 + 2.*ZHCHMN
+         ZY0=PY0+ 5.0 * ZHCHMN
+C
+C     ECHELLES
+C
+      ZECHX = ZLX/ZDX
+      ZECHY = ZLY/ZDY
+C
+C     GRID OPTION
+         ZGRIDX = 0.0
+         ZGRIDY = 0.0
+         IF (KGRID.EQ.1 .OR. KGRID.EQ.3) ZGRIDY =  ZLX
+         IF (KGRID.EQ.2 .OR. KGRID.EQ.3) ZGRIDX =  ZLY
+C
+         CALL AXES(ZX0*10.,ZY0*10.,ZLX*10.,ZXMIN,ZXMAX, 0.,PHCHAR*10.,
+     +             PXIBCD, KX, 0, 0,-ZLY*10.,-ZGRIDX*10.)
+         CALL AXES(ZX0*10.,ZY0*10.,ZLY*10.,ZYMIN,ZYMAX,90.,PHCHAR*10.,
+     +        PYIBCD(KPLOT+1),-KTIT(KPLOT+1), 1, 0, ZLX*10., ZGRIDY*10.)
+C     
+      DO 100 J=1,KN 
+         PX(J) = ((PX(J)-ZXMIN)*ZECHX + ZX0) *10.
+ 100  CONTINUE
+C
+      DO 101 IP=1,KPLOT
+      DO 101 J=1,KN 
+         PY(J,IP) = ((PY(J,IP)-ZYMIN)*ZECHY + ZY0) *10.
+ 101  CONTINUE
+C
+         CALL GWICOL(-PSIZLN,1)
+      DO 105 IP=1,KPLOT
+         CALL GDASH(JTYPLIN(MOD(IP-1,9)))
+         CALL GVECT(PX,PY(1,IP),KN)
+ 105  CONTINUE
+C
+CL    LABEL THE CURVES
+C
+         ZY = ZY0 + ZLY + 0.5
+         ZYLAB(1) = ZY*10.
+         ZYLAB(2) = ZY*10.
+         ZX = PX0 + PHCHAR
+      DO 107 IP=1,KPLOT
+         ZXLAB(1) = ZX*10.
+         ZXLAB(2) = (ZX + 0.8) * 10.
+         CALL GDASH(JTYPLIN(MOD(IP-1,9)))
+         CALL GVECT(ZXLAB,ZYLAB,2)
+         CALL GCHAR(PYIBCD(IP),ZXLAB(2)+0.2*10.,ZY*10.,PHCHAR*10.)
+C
+         ZDEL = 0.8 + KTIT(IP) * PHCHAR * 0.80
+         ZX = ZX + ZDEL
+ 107  CONTINUE
+C
+      DO 110 J=1,KN 
+         PX(J) = (PX(J)/10.-ZX0)/ZECHX + ZXMIN
+ 110  CONTINUE
+C
+      DO 111 IP=1,KPLOT
+      DO 111 J=1,KN 
+         PY(J,IP) = (PY(J,IP)/10.-ZY0)/ZECHY + ZYMIN
+ 111  CONTINUE
+C
+      IF (ZYMIN*ZYMAX .LT. 0.0) THEN
+         CALL GDASH(1)
+         CALL GWICOL(-1.0,1)
+         CALL GPLOT(ZX0*10.      ,(ZY0-ZYMIN*ZECHY)*10.,3)
+         CALL GPLOT((ZX0+ZLX)*10.,(ZY0-ZYMIN*ZECHY)*10.,2)
+      ENDIF
+         CALL GWICOL(-1.0,1)
+C
+      RETURN
+      END
+         SUBROUTINE GRAPHNM(PX,PY,KN,MKN,KPLOT,PX0,PDX,PY0,PDY,PHCHAR,
+     +     PXIBCD,PYIBCD,KX,KTIT,PSIZLN,KCADRE,KGRID,
+     +     PXMIN,PXMAX,PYMIN,PYMAX)
+C        ***************************************************************
+C
+C     PLOT SEVERAL CURVES ON SAME GRAPHE SPECIFYING THE LIMITS
+C
+C     DRAW THE GRAPH OF A FONCTION GIVEN BY KN POINTS (PX(I),PY(I,J))
+C     IN A RECTANGULAR BOX ((PX0,PY0) ; (PX0+PDX,PY0+PDY)
+C
+C        PX         : VECTOR OF X-COORDINATES, OF DIMENSION KN
+C        PY(I,J)    : VECTOR OF Y-COORDINATES FOR EACH J LINE
+C        (PX0,PY0)  : BOTTOM LEFT CORNER OF THE BOX
+C        (PDX,PDY)  : LENGTH IN X- AND Y-DIRECTION OF THE BOX
+C        PHCHAR     : CHARACTER HEIGHT (TYPICAL VALUE: 0.30)
+C        PXIBCD     : TITLE OF X-AXIS
+C        PYIBCD(J)  : TITLE OF EACH CURVE
+C        PYIBCD(KPLOT+1) : TITLE OF PLOT
+C        KX,KTIT(J) : NUMBER OF CHARACTERS IN PXIBCD,PYIBCD(J)
+C        PSIZLN     : LINE WIDTH OF CURVE
+C        KCADRE     : DRAW BOX OPTION :(0=NO, 1=YES,CONT., 2=YES,ONLY CORNERS)
+C        KGRID      : DRAW GRID OPTION : (0=NO, 1=Y-GRID, 2=X-GRID, 3=XY-GRID)
+C        PXMIN,PXMAX: MIN AND MAX DESIRED VALUES FOR X-AXIS
+C        PYMIN,PYMAX: MIN AND MAX DESIRED VALUES FOR Y-AXIS
+C        .            IF P(X,Y)MIN/MAX = -99.9 THEN DO NOT SPECIFY IT
+C
+      CHARACTER PXIBCD*(*),PYIBCD(KPLOT+1)*(*)
+      DIMENSION  PX(KN),PY(MKN,KPLOT), KTIT(KPLOT+1), ZXLAB(2), ZYLAB(2)
+     +     ,JTYPLIN(0:8)
+      DATA  JTYPLIN/0,3,7,2,10,1,6,9,4/
+C
+         CALL GDASH(0)
+         CALL GWICOL(-2.0,1)
+C
+      IF (KCADRE .NE. 0) CALL CADRE(PX0*10.,PY0*10.,PDX*10.,PDY*10.
+     +                              ,KCADRE)
+      CALL GWICOL(-1.0,1)
+C
+C     CACUL DES EXTREMAS
+C
+      CALL MAXAR(PX,KN,ZZXMAX,ZZXMIN)
+
+      CALL MAXAR(PY(1,1),KN,ZZYMAX,ZZYMIN)
+      DO 10 I=2,KPLOT
+         CALL MAXAR(PY(1,I),KN,ZYMAXI,ZYMINI)
+         ZZYMAX = MAX(ZZYMAX,ZYMAXI)
+         ZZYMIN = MIN(ZZYMIN,ZYMINI)
+ 10   CONTINUE
+C
+      IZERO = 0
+      IF (ZZXMAX.EQ.0.0 .OR. ZZXMIN.EQ.0.0) IZERO = 1
+      IF ( (ABS(ZZXMAX-ZZXMIN).LT.1.0E-12*ABS(ZZXMAX) .AND. IZERO.EQ.0)
+     +      .OR.  (ZZXMAX.EQ.ZZXMIN       .AND. IZERO.EQ.1)       ) THEN
+         IF(ZZXMAX .NE. 0.0) ZZXMIN = ZZXMIN/2.
+         IF(ZZXMAX .NE. 0.0) ZZXMAX = ZZXMAX + ZZXMIN
+         IF(ZZXMAX .EQ. 0.0) ZZXMIN = -1.
+         IF(ZZXMAX .EQ. 0.0) ZZXMAX =  1.
+      ENDIF
+C
+      IZERO = 0
+      IF (ZZYMAX.EQ.0.0 .OR. ZZYMIN.EQ.0.0) IZERO = 1
+      IF ( (ABS(ZZYMAX-ZZYMIN).LT.1.0E-12*ABS(ZZYMAX) .AND. IZERO.EQ.0)
+     +      .OR.  (ZZYMAX.EQ.ZZYMIN       .AND. IZERO.EQ.1)       ) THEN
+         IF(ZZYMAX .NE. 0.0) ZZYMIN = ZZYMIN/2.
+         IF(ZZYMAX .NE. 0.0) ZZYMAX = ZZYMAX + ZZYMIN
+         IF(ZZYMAX .EQ. 0.0) ZZYMIN = -1.
+         IF(ZZYMAX .EQ. 0.0) ZZYMAX =  1.
+      ENDIF
+
+      IF (ABS(PXMIN+99.9) .LE. 1.0E-10) THEN
+        ZXMIN = ZZXMIN
+      ELSE
+        ZXMIN = PXMIN
+      ENDIF
+      IF (ABS(PXMAX+99.9) .LE. 1.0E-10) THEN
+        ZXMAX = ZZXMAX
+      ELSE
+        ZXMAX = PXMAX
+      ENDIF
+      IF (ABS(PYMIN+99.9) .LE. 1.0E-10) THEN
+        ZYMIN = ZZYMIN
+      ELSE
+        ZYMIN = PYMIN
+      ENDIF
+      IF (ABS(PYMAX+99.9) .LE. 1.0E-10) THEN
+        ZYMAX = ZZYMAX
+      ELSE
+        ZYMAX = PYMAX
+      ENDIF
+C
+      ZDX = ZXMAX-ZXMIN
+      ZDY = ZYMAX-ZYMIN
+C
+C     LONGUEUR DES AXES
+         ZHCHMN =       PHCHAR
+         ZLX=PDX - 11.5 * ZHCHMN
+         IF (ABS(ZDY) .LT. 0.05*AMAX1(ABS(ZYMIN),ABS(ZYMAX)))
+     +                                             ZLX = ZLX - 2.*ZHCHMN
+C%%%%%%         ZLY=PDY - 7.0 * ZHCHMN
+         ZLAB = 0.7 + ZHCHMN
+         ZLY=PDY - 7.0 * ZHCHMN - ZLAB
+C
+C     DESSIN DES AXES
+         ZX0=PX0+ 8.0 * ZHCHMN
+         IF (ABS(ZDY) .LT. 0.05*AMAX1(ABS(ZYMIN),ABS(ZYMAX)))
+     +                                             ZX0 = ZX0 + 2.*ZHCHMN
+         ZY0=PY0+ 5.0 * ZHCHMN
+C
+C     ECHELLES
+C
+      ZECHX = ZLX/ZDX
+      ZECHY = ZLY/ZDY
+C
+C     GRID OPTION
+         ZGRIDX = 0.0
+         ZGRIDY = 0.0
+         IF (KGRID.EQ.1 .OR. KGRID.EQ.3) ZGRIDY =  ZLX
+         IF (KGRID.EQ.2 .OR. KGRID.EQ.3) ZGRIDX =  ZLY
+C
+         CALL AXES(ZX0*10.,ZY0*10.,ZLX*10.,ZXMIN,ZXMAX, 0.,PHCHAR*10.,
+     +             PXIBCD, KX, 0, 0,-ZLY*10.,-ZGRIDX*10.)
+         CALL AXES(ZX0*10.,ZY0*10.,ZLY*10.,ZYMIN,ZYMAX,90.,PHCHAR*10.,
+     +        PYIBCD(KPLOT+1),-KTIT(KPLOT+1), 1, 0, ZLX*10., ZGRIDY*10.)
+C     
+      ZZXXMAX=((ZXMAX-ZXMIN)*ZECHX + ZX0) * 10.
+      ZZXXMIN=ZX0 * 10.
+      DO 100 J=1,KN 
+        IF (PX(J) .GE. ZXMAX) THEN
+          PX(J) = ZZXXMAX
+        ELSE IF (PX(J) .LE. ZXMIN) THEN
+          PX(J) = ZZXXMIN
+        ELSE
+          PX(J) = ((PX(J)-ZXMIN)*ZECHX + ZX0) *10.
+        ENDIF
+ 100  CONTINUE
+C
+      ZZYYMAX=((ZYMAX-ZYMIN)*ZECHY + ZY0) * 10.
+      ZZYYMIN=ZY0 * 10.
+      DO 101 IP=1,KPLOT
+      DO 101 J=1,KN 
+        IF (PY(J,IP) .GE. ZYMAX) THEN
+          PY(J,IP) = ZZYYMAX
+        ELSE IF (PY(J,IP) .LE. ZYMIN) THEN
+          PY(J,IP) = ZZYYMIN
+        ELSE
+          PY(J,IP) = ((PY(J,IP)-ZYMIN)*ZECHY + ZY0) *10.
+        ENDIF
+ 101  CONTINUE
+C
+         CALL GWICOL(-PSIZLN,1)
+      DO 105 IP=1,KPLOT
+         CALL GDASH(JTYPLIN(MOD(IP-1,9)))
+         CALL GVECT(PX,PY(1,IP),KN)
+ 105  CONTINUE
+C
+CL    LABEL THE CURVES
+C
+         ZY = ZY0 + ZLY + 0.5
+         ZYLAB(1) = ZY*10.
+         ZYLAB(2) = ZY*10.
+         ZX = PX0 + PHCHAR
+      DO 107 IP=1,KPLOT
+         ZXLAB(1) = ZX*10.
+         ZXLAB(2) = (ZX + 0.8) * 10.
+         CALL GDASH(JTYPLIN(MOD(IP-1,9)))
+         CALL GVECT(ZXLAB,ZYLAB,2)
+         CALL GCHAR(PYIBCD(IP),ZXLAB(2)+0.2*10.,ZY*10.,PHCHAR*10.)
+C
+         ZDEL = 0.8 + KTIT(IP) * PHCHAR * 0.80
+         ZX = ZX + ZDEL
+ 107  CONTINUE
+C
+      DO 110 J=1,KN 
+         PX(J) = (PX(J)/10.-ZX0)/ZECHX + ZXMIN
+ 110  CONTINUE
+C
+      DO 111 IP=1,KPLOT
+      DO 111 J=1,KN 
+         PY(J,IP) = (PY(J,IP)/10.-ZY0)/ZECHY + ZYMIN
+ 111  CONTINUE
+C
+      IF (ZYMIN*ZYMAX .LT. 0.0) THEN
+         CALL GDASH(1)
+         CALL GWICOL(-1.0,1)
+         CALL GPLOT(ZX0*10.      ,(ZY0-ZYMIN*ZECHY)*10.,3)
+         CALL GPLOT((ZX0+ZLX)*10.,(ZY0-ZYMIN*ZECHY)*10.,2)
+      ENDIF
+         CALL GWICOL(-1.0,1)
+C
+      RETURN
+      END
+         SUBROUTINE GLASHN(PX,PY,KN,MKN,KPLOT,PX0,PDX,PY0,PDY,PHCHAR,
+     +                     PXIBCD,PYIBCD,KX,KTIT,PSIZLN,KCADRE,KGRID)
+C        ***************************************************************
+C
+C     PLOT SEVERAL CURVES ON SAME GRAPHE
+C
+C     WITH ASINH AS Y-AXIS
+C
+C     DRAW THE GRAPH OF A FONCTION GIVEN BY KN POINTS (PX(I),PY(I,J))
+C     IN A RECTANGULAR BOX ((PX0,PY0) ; (PX0+PDX,PY0+PDY)
+C
+C        PX         : VECTOR OF X-COORDINATES, OF DIMENSION KN
+C        PY(I,J)    : VECTOR OF Y-COORDINATES FOR EACH J LINE
+C        (PX0,PY0)  : BOTTOM LEFT CORNER OF THE BOX
+C        (PDX,PDY)  : LENGTH IN X- AND Y-DIRECTION OF THE BOX
+C        PHCHAR     : CHARACTER HEIGHT (TYPICAL VALUE: 0.30)
+C        PXIBCD     : TITLE OF X-AXIS
+C        PYIBCD(J)  : TITLE OF EACH CURVE
+C        PYIBCD(KPLOT+1) : TITLE OF PLOT
+C        KX,KTIT(J) : NUMBER OF CHARACTERS IN PXIBCD,PYIBCD(J)
+C        PSIZLN     : LINE WIDTH OF CURVE
+C        KCADRE     : DRAW BOX OPTION :(0=NO, 1=YES,CONT., 2=YES,ONLY CORNERS)
+C        KGRID      : DRAW GRID OPTION : (0=NO, 1=Y-GRID, 2=X-GRID, 3=XY-GRID)
+C
+      CHARACTER PXIBCD*(*),PYIBCD(KPLOT+1)*(*)
+      DIMENSION  PX(KN),PY(MKN,KPLOT), KTIT(KPLOT+1), ZXLAB(2), ZYLAB(2)
+C
+         CALL GDASH(0)
+         CALL GWICOL(-2.0,1)
+C
+      IF (KCADRE .NE. 0) CALL CADRE(PX0*10.,PY0*10.,PDX*10.,PDY*10.
+     +                              ,KCADRE)
+      CALL GWICOL(-1.0,1)
+C
+C     CACUL DES EXTREMAS
+C
+      CALL MAXAR(PX,KN,ZXMAX,ZXMIN)
+      CALL MAXAR(PY(1,1),KN,ZYMAX,ZYMIN)
+      DO 10 I=2,KPLOT
+         CALL MAXAR(PY(1,I),KN,ZYMAXI,ZYMINI)
+         ZYMAX = MAX(ZYMAX,ZYMAXI)
+         ZYMIN = MIN(ZYMIN,ZYMINI)
+ 10   CONTINUE
+C
+      IZERO = 0
+      IF (ZXMAX.EQ.0.0 .OR. ZXMIN.EQ.0.0) IZERO = 1
+      IF ( (ABS(ZXMAX-ZXMIN).LT.1.0E-12*ABS(ZXMAX) .AND. IZERO.EQ.0)
+     +      .OR.  (ZXMAX.EQ.ZXMIN       .AND. IZERO.EQ.1)       ) THEN
+         IF(ZXMAX .NE. 0.0) ZXMIN = ZXMIN/2.
+         IF(ZXMAX .NE. 0.0) ZXMAX = ZXMAX + ZXMIN
+         IF(ZXMAX .EQ. 0.0) ZXMIN = -1.
+         IF(ZXMAX .EQ. 0.0) ZXMAX =  1.
+      ENDIF
+C
+      IZERO = 0
+      IF (ZYMAX.EQ.0.0 .OR. ZYMIN.EQ.0.0) IZERO = 1
+      IF ( (ABS(ZYMAX-ZYMIN).LT.1.0E-12*ABS(ZYMAX) .AND. IZERO.EQ.0)
+     +      .OR.  (ZYMAX.EQ.ZYMIN       .AND. IZERO.EQ.1)       ) THEN
+         IF(ZYMAX .NE. 0.0) ZYMIN = ZYMIN/2.
+         IF(ZYMAX .NE. 0.0) ZYMAX = ZYMAX + ZYMIN
+         IF(ZYMAX .EQ. 0.0) ZYMIN = -1.
+         IF(ZYMAX .EQ. 0.0) ZYMAX =  1.
+      ENDIF
+C
+C     LONGUEUR DES AXES
+         ZHCHMN =       PHCHAR
+C%%         ZLX=PDX - 11.5 * ZHCHMN
+         ZLX=PDX - 11.5 * ZHCHMN - 2.*PHCHAR
+CC         IF (ABS(ZDY) .LT. 0.05*AMAX1(ABS(ZYMIN),ABS(ZYMAX)))
+CC     +                                             ZLX = ZLX - 2.*ZHCHMN
+C%%%%%%         ZLY=PDY - 7.0 * ZHCHMN
+         ZLAB = 0.7 + ZHCHMN
+         ZLY=PDY - 7.0 * ZHCHMN - ZLAB
+C
+C     DESSIN DES AXES
+C%%         ZX0=PX0+ 8.0 * ZHCHMN
+         ZX0=PX0+ 8.0 * ZHCHMN + 2.*PHCHAR
+CC         IF (ABS(ZDY) .LT. 0.05*AMAX1(ABS(ZYMIN),ABS(ZYMAX)))
+CC     +                                             ZX0 = ZX0 + 2.*ZHCHMN
+         ZY0=PY0+ 5.0 * ZHCHMN
+C
+C     GRID OPTION
+         ZGRIDX = 0.0
+         ZGRIDY = 0.0
+         IF (KGRID.EQ.1 .OR. KGRID.EQ.3) ZGRIDY =  ZLX
+         IF (KGRID.EQ.2 .OR. KGRID.EQ.3) ZGRIDX =  ZLY
+C
+         CALL AXES(ZX0*10.,ZY0*10.,ZLX*10.,ZXMIN,ZXMAX, 0.,PHCHAR*10.,
+     +             PXIBCD, KX, 0, 0,-ZLY*10.,-ZGRIDX*10.)
+         CALL AXASNH(ZX0*10.,ZY0*10.,ZLY*10.,ZYMIN,ZYMAX,90.,PHCHAR*10.,
+     +        PYIBCD(KPLOT+1),-KTIT(KPLOT+1), 1, 0, ZLX*10., ZGRIDY*10.)
+C
+C     ECHELLES
+      ZDX = ZXMAX - ZXMIN
+      ZDY = ASINH(ZYMAX) - ASINH(ZYMIN)
+      ZECHX = ZLX/ZDX
+      ZECHY = ZLY/ZDY
+C    
+      DO 100 J=1,KN 
+         PX(J) = ((PX(J)-ZXMIN)*ZECHX + ZX0) *10.
+ 100  CONTINUE
+C
+      ZYMNAS = ASINH(ZYMIN)
+      DO 101 IP=1,KPLOT
+      DO 101 J=1,KN 
+         PY(J,IP) = ((ASINH(PY(J,IP))-ZYMNAS)*ZECHY + ZY0) *10.
+ 101  CONTINUE
+C
+         CALL GDASH(0)
+         CALL GWICOL(-PSIZLN,1)
+      DO 105 IP=1,KPLOT
+         CALL GDASH((IP-1)*2)
+         CALL GVECT(PX,PY(1,IP),KN)
+ 105  CONTINUE
+C
+CL    LABEL THE CURVES
+C
+         ZY = ZY0 + ZLY + 0.5
+         ZYLAB(1) = ZY*10.
+         ZYLAB(2) = ZY*10.
+         ZX = PX0 + PHCHAR
+      DO 107 IP=1,KPLOT
+         ZXLAB(1) = ZX*10.
+         ZXLAB(2) = (ZX + 1.) * 10.
+         CALL GDASH((IP-1)*2)
+         CALL GVECT(ZXLAB,ZYLAB,2)
+         CALL GCHAR(PYIBCD(IP),ZXLAB(2)+0.2*10.,ZY*10.,PHCHAR*10.)
+C
+         ZDEL = 1.4 + KTIT(IP) * PHCHAR * 0.90
+         ZX = ZX + ZDEL
+ 107  CONTINUE
+C
+      DO 110 J=1,KN 
+         PX(J) = (PX(J)/10.-ZX0)/ZECHX + ZXMIN
+ 110  CONTINUE
+C
+      DO 111 IP=1,KPLOT
+      DO 111 J=1,KN 
+         PY(J,IP) = SINH((PY(J,IP)/10.-ZY0)/ZECHY + ZYMNAS)
+ 111  CONTINUE
+C
+      IF (ZYMIN*ZYMAX .LT. 0.0) THEN
+         CALL GDASH(1)
+         CALL GWICOL(-1.0,1)
+         CALL GPLOT(ZX0*10.      ,(ZY0-ZYMNAS*ZECHY)*10.,3)
+         CALL GPLOT((ZX0+ZLX)*10.,(ZY0-ZYMNAS*ZECHY)*10.,2)
+      ENDIF
+         CALL GWICOL(-1.0,1)
+C
+      RETURN
+      END
+         SUBROUTINE GRAPDN(PX,PY,KN,MKN,KPLOT,PX0,PDX,PY0,PDY,PHCHAR,
+     +                     PXIBCD,PYIBCD,KX,KTIT,PSIZLN,KCADRE,KGRID)
+C        ***************************************************************
+C
+C     PLOT SEVERAL CURVES ON SAME GRAPHE + DOTS
+C
+C     DRAW THE GRAPH OF A FONCTION GIVEN BY KN POINTS (PX(I),PY(I,J))
+C     IN A RECTANGULAR BOX ((PX0,PY0) ; (PX0+PDX,PY0+PDY)
+C
+C        PX         : VECTOR OF X-COORDINATES, OF DIMENSION KN
+C        PY(I,J)    : VECTOR OF Y-COORDINATES FOR EACH J LINE
+C        (PX0,PY0)  : BOTTOM LEFT CORNER OF THE BOX
+C        (PDX,PDY)  : LENGTH IN X- AND Y-DIRECTION OF THE BOX
+C        PHCHAR     : CHARACTER HEIGHT (TYPICAL VALUE: 0.30)
+C        PXIBCD     : TITLE OF X-AXIS
+C        PYIBCD(J)  : TITLE OF EACH CURVE
+C        PYIBCD(KPLOT+1) : TITLE OF PLOT
+C        KX,KTIT(J) : NUMBER OF CHARACTERS IN PXIBCD,PYIBCD(J)
+C        PSIZLN     : LINE WIDTH OF CURVE
+C        KCADRE     : DRAW BOX OPTION :(0=NO, 1=YES,CONT., 2=YES,ONLY CORNERS)
+C        KGRID      : DRAW GRID OPTION : (0=NO, 1=Y-GRID, 2=X-GRID, 3=XY-GRID)
+C
+      CHARACTER PXIBCD*(*),PYIBCD(KPLOT+1)*(*)
+      DIMENSION  PX(KN),PY(MKN,KPLOT), KTIT(KPLOT+1), ZXLAB(2), ZYLAB(2)
+C
+         CALL GDASH(0)
+         CALL GWICOL(-2.0,1)
+C
+      IF (KCADRE .NE. 0) CALL CADRE(PX0*10.,PY0*10.,PDX*10.,PDY*10.
+     +                              ,KCADRE)
+      CALL GWICOL(-1.0,1)
+C
+C     CACUL DES EXTREMAS
+C
+      CALL MAXAR(PX,KN,ZXMAX,ZXMIN)
+      CALL MAXAR(PY(1,1),KN,ZYMAX,ZYMIN)
+      DO 10 I=2,KPLOT
+         CALL MAXAR(PY(1,I),KN,ZYMAXI,ZYMINI)
+         ZYMAX = MAX(ZYMAX,ZYMAXI)
+         ZYMIN = MIN(ZYMIN,ZYMINI)
+ 10   CONTINUE
+C
+      IZERO = 0
+      IF (ZXMAX.EQ.0.0 .OR. ZXMIN.EQ.0.0) IZERO = 1
+      IF ( (ABS(ZXMAX-ZXMIN).LT.1.0E-12*ABS(ZXMAX) .AND. IZERO.EQ.0)
+     +      .OR.  (ZXMAX.EQ.ZXMIN       .AND. IZERO.EQ.1)       ) THEN
+         IF(ZXMAX .NE. 0.0) ZXMIN = ZXMIN/2.
+         IF(ZXMAX .NE. 0.0) ZXMAX = ZXMAX + ZXMIN
+         IF(ZXMAX .EQ. 0.0) ZXMIN = -1.
+         IF(ZXMAX .EQ. 0.0) ZXMAX =  1.
+      ENDIF
+C
+      IZERO = 0
+      IF (ZYMAX.EQ.0.0 .OR. ZYMIN.EQ.0.0) IZERO = 1
+      IF ( (ABS(ZYMAX-ZYMIN).LT.1.0E-12*ABS(ZYMAX) .AND. IZERO.EQ.0)
+     +      .OR.  (ZYMAX.EQ.ZYMIN       .AND. IZERO.EQ.1)       ) THEN
+         IF(ZYMAX .NE. 0.0) ZYMIN = ZYMIN/2.
+         IF(ZYMAX .NE. 0.0) ZYMAX = ZYMAX + ZYMIN
+         IF(ZYMAX .EQ. 0.0) ZYMIN = -1.
+         IF(ZYMAX .EQ. 0.0) ZYMAX =  1.
+      ENDIF
+C
+      ZDX = ZXMAX-ZXMIN
+      ZDY = ZYMAX-ZYMIN
+C
+C     LONGUEUR DES AXES
+         ZHCHMN =       PHCHAR
+         ZLX=PDX - 11.5 * ZHCHMN
+         IF (ABS(ZDY) .LT. 0.05*AMAX1(ABS(ZYMIN),ABS(ZYMAX)))
+     +                                             ZLX = ZLX - 2.*ZHCHMN
+C%%%%%%         ZLY=PDY - 7.0 * ZHCHMN
+         ZLAB = 0.4 + ZHCHMN
+         ZLY=PDY - 7.0 * ZHCHMN - ZLAB
+C
+C     DESSIN DES AXES
+         ZX0=PX0+ 8.0 * ZHCHMN
+         IF (ABS(ZDY) .LT. 0.05*AMAX1(ABS(ZYMIN),ABS(ZYMAX)))
+     +                                             ZX0 = ZX0 + 2.*ZHCHMN
+         ZY0=PY0+ 5.0 * ZHCHMN
+C
+C     ECHELLES
+C
+      ZECHX = ZLX/ZDX
+      ZECHY = ZLY/ZDY
+C
+C     GRID OPTION
+         ZGRIDX = 0.0
+         ZGRIDY = 0.0
+         IF (KGRID.EQ.1 .OR. KGRID.EQ.3) ZGRIDY =  ZLX
+         IF (KGRID.EQ.2 .OR. KGRID.EQ.3) ZGRIDX =  ZLY
+C
+         CALL AXES(ZX0*10.,ZY0*10.,ZLX*10.,ZXMIN,ZXMAX, 0.,PHCHAR*10.,
+     +             PXIBCD, KX, 0, 0,-ZLY*10.,-ZGRIDX*10.)
+         CALL AXES(ZX0*10.,ZY0*10.,ZLY*10.,ZYMIN,ZYMAX,90.,PHCHAR*10.,
+     +        PYIBCD(KPLOT+1),-KTIT(KPLOT+1), 1, 0, ZLX*10., ZGRIDY*10.)
+C     
+      DO 100 J=1,KN 
+         PX(J) = ((PX(J)-ZXMIN)*ZECHX + ZX0) *10.
+ 100  CONTINUE
+C
+      DO 101 IP=1,KPLOT
+      DO 101 J=1,KN 
+         PY(J,IP) = ((PY(J,IP)-ZYMIN)*ZECHY + ZY0) *10.
+ 101  CONTINUE
+C
+         CALL GDASH(0)
+         CALL GWICOL(-PSIZLN,1)
+      DO 105 IP=1,KPLOT
+         CALL GDASH((IP-1)*2)
+         CALL GVECT(PX,PY(1,IP),KN)
+         CALL GWICOL(PSIZLN+0.5,1)
+         CALL GDOT (PX,PY(1,IP),KN)
+         CALL GWICOL(-PSIZLN,1)
+ 105  CONTINUE
+C
+CL    LABEL THE CURVES
+C
+         ZY = ZY0 + ZLY + 0.2
+         ZYLAB(1) = ZY*10.
+         ZYLAB(2) = ZY*10.
+         ZX = PX0 + PHCHAR
+      DO 107 IP=1,KPLOT
+         ZXLAB(1) = ZX*10.
+         ZXLAB(2) = (ZX + 1.) * 10.
+         CALL GDASH((IP-1)*2)
+         CALL GVECT(ZXLAB,ZYLAB,2)
+         CALL GCHAR(PYIBCD(IP),ZXLAB(2)+0.2*10.,ZY*10.,PHCHAR*10.)
+C
+         ZDEL = 1.4 + KTIT(IP) * PHCHAR * 0.90
+         ZX = ZX + ZDEL
+ 107  CONTINUE
+C
+      DO 110 J=1,KN 
+         PX(J) = (PX(J)/10.-ZX0)/ZECHX + ZXMIN
+ 110  CONTINUE
+C
+      DO 111 IP=1,KPLOT
+      DO 111 J=1,KN 
+         PY(J,IP) = (PY(J,IP)/10.-ZY0)/ZECHY + ZYMIN
+ 111  CONTINUE
+C
+      IF (ZYMIN*ZYMAX .LT. 0.0) THEN
+         CALL GDASH(1)
+         CALL GWICOL(-1.0,1)
+         CALL GPLOT(ZX0*10.      ,(ZY0-ZYMIN*ZECHY)*10.,3)
+         CALL GPLOT((ZX0+ZLX)*10.,(ZY0-ZYMIN*ZECHY)*10.,2)
+      ENDIF
+         CALL GWICOL(-1.0,1)
+C
+      RETURN
+      END
+         SUBROUTINE GRADOT(PX,PY,KN,PX0,PDX,PY0,PDY,PHCHAR,PXIBCD,PYIBCD
+     +                    ,KX,KY,PSIZLN,KCADRE,KGRID)
+C        ***************************************************************
+C
+C     DRAW THE GRAPH OF A FONCTION GIVEN BY KN POINTS (PX(I),PY(I))
+C     IN A RECTANGULAR BOX ((PX0,PY0) ; (PX0+PDX,PY0+PDY)
+C
+C        PX         : VECTOR OF X-COORDINATES, OF DIMENSION KN
+C        PY         : VECTOR OF Y-COORDINATES, OF DIMENSION KN
+C        (PX0,PY0)  : BOTTOM LEFT CORNER OF THE BOX
+C        (PDX,PDY)  : LENGTH IN X- AND Y-DIRECTION OF THE BOX
+C        PHCHAR     : CHARACTER HEIGHT (TYPICAL VALUE: 0.30)
+C        PXIBCD     : TITLE OF X-AXIS
+C        PYIBCD     : TITLE OF Y-AXIS
+C        KX,KY      : NUMBER OF CHARACTERS IN PXIBCD,PYIBCD
+C        PSIZLN     : LINE WIDTH OF CURVE
+C        KCADRE     : DRAW BOX OPTION :(0=NO, 1=YES,CONT., 2=YES,ONLY CORNERS)
+C        KGRID      : DRAW GRID OPTION : (0=NO, 1=Y-GRID, 2=X-GRID, 3=XY-GRID)
+C
+      CHARACTER PXIBCD*(*),PYIBCD*(*)
+      DIMENSION  PX(KN),PY(KN)
+C
+C%%      CALL GSLN(1)
+C%%      CALL GSLWSC(2.0)
+         CALL GDASH(0)
+         CALL GWICOL(-2.0,1)
+C%%
+      IF (KCADRE .NE. 0) CALL CADRE(PX0*10.,PY0*10.,PDX*10.,PDY*10.
+     +                              ,KCADRE)
+C%%   CALL GSLWSC(1.0)
+      CALL GWICOL(-1.0,1)
+C%%
+C     CACUL DES EXTREMAS
+C
+      CALL MAXAR(PX,KN,ZXMAX,ZXMIN)
+      CALL MAXAR(PY,KN,ZYMAX,ZYMIN)
+C
+      IZERO = 0
+      IF (ZXMAX.EQ.0.0 .OR. ZXMIN.EQ.0.0) IZERO = 1
+      IF ( (ABS(ZXMAX-ZXMIN).LT.1.0E-12*ABS(ZXMAX) .AND. IZERO.EQ.0)
+     +      .OR.  (ZXMAX.EQ.ZXMIN       .AND. IZERO.EQ.1)       ) THEN
+         IF(ZXMAX .NE. 0.0) ZXMIN = ZXMIN/2.
+         IF(ZXMAX .NE. 0.0) ZXMAX = ZXMAX + ZXMIN
+         IF(ZXMAX .EQ. 0.0) ZXMIN = -1.
+         IF(ZXMAX .EQ. 0.0) ZXMAX =  1.
+      ENDIF
+C
+      IZERO = 0
+      IF (ZYMAX.EQ.0.0 .OR. ZYMIN.EQ.0.0) IZERO = 1
+      IF ( (ABS(ZYMAX-ZYMIN).LT.1.0E-12*ABS(ZYMAX) .AND. IZERO.EQ.0)
+     +      .OR.  (ZYMAX.EQ.ZYMIN       .AND. IZERO.EQ.1)       ) THEN
+         IF(ZYMAX .NE. 0.0) ZYMIN = ZYMIN/2.
+         IF(ZYMAX .NE. 0.0) ZYMAX = ZYMAX + ZYMIN
+         IF(ZYMAX .EQ. 0.0) ZYMIN = -1.
+         IF(ZYMAX .EQ. 0.0) ZYMAX =  1.
+      ENDIF
+C
+      ZDX = ZXMAX-ZXMIN
+      ZDY = ZYMAX-ZYMIN
+C
+C     LONGUEUR DES AXES
+         ZHCHMN =       PHCHAR
+         ZLX=PDX - 11.5 * ZHCHMN
+         IF (ABS(ZDY) .LT. 0.05*AMAX1(ABS(ZYMIN),ABS(ZYMAX)))
+     +                                             ZLX = ZLX - 2.*ZHCHMN
+         ZLY=PDY - 7.0 * ZHCHMN
+C
+C     DESSIN DES AXES
+         ZX0=PX0+ 8.0 * ZHCHMN
+         IF (ABS(ZDY) .LT. 0.05*AMAX1(ABS(ZYMIN),ABS(ZYMAX)))
+     +                                             ZX0 = ZX0 + 2.*ZHCHMN
+         ZY0=PY0+ 5.0 * ZHCHMN
+C
+C     ECHELLES
+C
+      ZECHX = ZLX/ZDX
+      ZECHY = ZLY/ZDY
+C
+C     GRID OPTION
+         ZGRIDX = 0.0
+         ZGRIDY = 0.0
+         IF (KGRID.EQ.1 .OR. KGRID.EQ.3) ZGRIDY =  ZLX
+         IF (KGRID.EQ.2 .OR. KGRID.EQ.3) ZGRIDX =  ZLY
+C
+         CALL AXES(ZX0*10.,ZY0*10.,ZLX*10.,ZXMIN,ZXMAX, 0.,PHCHAR*10.,
+     +             PXIBCD, KX, 0, 0,-ZLY*10.,-ZGRIDX*10.)
+         CALL AXES(ZX0*10.,ZY0*10.,ZLY*10.,ZYMIN,ZYMAX,90.,PHCHAR*10.,
+     +             PYIBCD,-KY, 1, 0, ZLX*10., ZGRIDY*10.)
+C     
+      DO 100 J=1,KN 
+         PX(J) = ((PX(J)-ZXMIN)*ZECHX + ZX0) *10.
+         PY(J) = ((PY(J)-ZYMIN)*ZECHY + ZY0) *10.
+ 100  CONTINUE
+C
+C%%      CALL GSLN(1)
+C%%      CALL GSLWSC(PSIZLN)
+         CALL GDASH(0)
+         CALL GWICOL(-PSIZLN,1)
+C%%         CALL GPL(KN,PX,PY)
+         CALL GVECT(PX,PY,KN)
+         CALL GWICOL(PSIZLN+0.5,1)
+         CALL GDOT (PX,PY,KN)
+         CALL GWICOL(-PSIZLN,1)
+C
+      DO 110 J=1,KN 
+         PX(J) = (PX(J)/10.-ZX0)/ZECHX + ZXMIN
+         PY(J) = (PY(J)/10.-ZY0)/ZECHY + ZYMIN
+ 110  CONTINUE
+C
+      IF (ZYMIN*ZYMAX .LT. 0.0) THEN
+         CALL GDASH(1)
+         CALL GWICOL(-1.0,1)
+         CALL GPLOT(ZX0*10.      ,(ZY0-ZYMIN*ZECHY)*10.,3)
+         CALL GPLOT((ZX0+ZLX)*10.,(ZY0-ZYMIN*ZECHY)*10.,2)
+      ENDIF
+C
+C%%      CALL GSLWSC(1.)
+         CALL GWICOL(-1.0,1)
+C
+      RETURN
+      END
+         SUBROUTINE GRADOTO(PX,PY,KN,PX0,PDX,PY0,PDY,PHCHAR,PXIBCD,
+     +                      PYIBCD,KX,KY,PSIZLN,KCADRE,KGRID)
+C        ***************************************************************
+C
+C
+C     DRAW DOTS ONLY
+C
+C     DRAW THE GRAPH OF A FONCTION GIVEN BY KN POINTS (PX(I),PY(I))
+C     IN A RECTANGULAR BOX ((PX0,PY0) ; (PX0+PDX,PY0+PDY)
+C
+C        PX         : VECTOR OF X-COORDINATES, OF DIMENSION KN
+C        PY         : VECTOR OF Y-COORDINATES, OF DIMENSION KN
+C        (PX0,PY0)  : BOTTOM LEFT CORNER OF THE BOX
+C        (PDX,PDY)  : LENGTH IN X- AND Y-DIRECTION OF THE BOX
+C        PHCHAR     : CHARACTER HEIGHT (TYPICAL VALUE: 0.30)
+C        PXIBCD     : TITLE OF X-AXIS
+C        PYIBCD     : TITLE OF Y-AXIS
+C        KX,KY      : NUMBER OF CHARACTERS IN PXIBCD,PYIBCD
+C        PSIZLN     : LINE WIDTH OF CURVE
+C        KCADRE     : DRAW BOX OPTION :(0=NO, 1=YES,CONT., 2=YES,ONLY CORNERS)
+C        KGRID      : DRAW GRID OPTION : (0=NO, 1=Y-GRID, 2=X-GRID, 3=XY-GRID)
+C
+      CHARACTER PXIBCD*(*),PYIBCD*(*)
+      DIMENSION  PX(KN),PY(KN)
+C
+C%%      CALL GSLN(1)
+C%%      CALL GSLWSC(2.0)
+         CALL GDASH(0)
+         CALL GWICOL(-2.0,1)
+C%%
+      IF (KCADRE .NE. 0) CALL CADRE(PX0*10.,PY0*10.,PDX*10.,PDY*10.
+     +                              ,KCADRE)
+C%%   CALL GSLWSC(1.0)
+      CALL GWICOL(-1.0,1)
+C%%
+C     CACUL DES EXTREMAS
+C
+      CALL MAXAR(PX,KN,ZXMAX,ZXMIN)
+      CALL MAXAR(PY,KN,ZYMAX,ZYMIN)
+C
+      IZERO = 0
+      IF (ZXMAX.EQ.0.0 .OR. ZXMIN.EQ.0.0) IZERO = 1
+      IF ( (ABS(ZXMAX-ZXMIN).LT.1.0E-12*ABS(ZXMAX) .AND. IZERO.EQ.0)
+     +      .OR.  (ZXMAX.EQ.ZXMIN       .AND. IZERO.EQ.1)       ) THEN
+         IF(ZXMAX .NE. 0.0) ZXMIN = ZXMIN/2.
+         IF(ZXMAX .NE. 0.0) ZXMAX = ZXMAX + ZXMIN
+         IF(ZXMAX .EQ. 0.0) ZXMIN = -1.
+         IF(ZXMAX .EQ. 0.0) ZXMAX =  1.
+      ENDIF
+C
+      IZERO = 0
+      IF (ZYMAX.EQ.0.0 .OR. ZYMIN.EQ.0.0) IZERO = 1
+      IF ( (ABS(ZYMAX-ZYMIN).LT.1.0E-12*ABS(ZYMAX) .AND. IZERO.EQ.0)
+     +      .OR.  (ZYMAX.EQ.ZYMIN       .AND. IZERO.EQ.1)       ) THEN
+         IF(ZYMAX .NE. 0.0) ZYMIN = ZYMIN/2.
+         IF(ZYMAX .NE. 0.0) ZYMAX = ZYMAX + ZYMIN
+         IF(ZYMAX .EQ. 0.0) ZYMIN = -1.
+         IF(ZYMAX .EQ. 0.0) ZYMAX =  1.
+      ENDIF
+C
+      ZDX = ZXMAX-ZXMIN
+      ZDY = ZYMAX-ZYMIN
+C
+C     LONGUEUR DES AXES
+         ZHCHMN =       PHCHAR
+         ZLX=PDX - 11.5 * ZHCHMN
+         IF (ABS(ZDY) .LT. 0.05*AMAX1(ABS(ZYMIN),ABS(ZYMAX)))
+     +                                             ZLX = ZLX - 2.*ZHCHMN
+         ZLY=PDY - 7.0 * ZHCHMN
+C
+C     DESSIN DES AXES
+         ZX0=PX0+ 8.0 * ZHCHMN
+         IF (ABS(ZDY) .LT. 0.05*AMAX1(ABS(ZYMIN),ABS(ZYMAX)))
+     +                                             ZX0 = ZX0 + 2.*ZHCHMN
+         ZY0=PY0+ 5.0 * ZHCHMN
+C
+C     ECHELLES
+C
+      ZECHX = ZLX/ZDX
+      ZECHY = ZLY/ZDY
+C
+C     GRID OPTION
+         ZGRIDX = 0.0
+         ZGRIDY = 0.0
+         IF (KGRID.EQ.1 .OR. KGRID.EQ.3) ZGRIDY =  ZLX
+         IF (KGRID.EQ.2 .OR. KGRID.EQ.3) ZGRIDX =  ZLY
+C
+         CALL AXES(ZX0*10.,ZY0*10.,ZLX*10.,ZXMIN,ZXMAX, 0.,PHCHAR*10.,
+     +             PXIBCD, KX, 0, 0,-ZLY*10.,-ZGRIDX*10.)
+         CALL AXES(ZX0*10.,ZY0*10.,ZLY*10.,ZYMIN,ZYMAX,90.,PHCHAR*10.,
+     +             PYIBCD,-KY, 1, 0, ZLX*10., ZGRIDY*10.)
+C     
+      DO 100 J=1,KN 
+         PX(J) = ((PX(J)-ZXMIN)*ZECHX + ZX0) *10.
+         PY(J) = ((PY(J)-ZYMIN)*ZECHY + ZY0) *10.
+ 100  CONTINUE
+C
+C%%      CALL GSLN(1)
+C%%      CALL GSLWSC(PSIZLN)
+         CALL GDASH(0)
+c%OS         CALL GWICOL(-PSIZLN,1)
+c%OS         CALL GVECT(PX,PY,KN)
+         CALL GWICOL(PSIZLN+0.5,1)
+         CALL GDOT (PX,PY,KN)
+         CALL GWICOL(-PSIZLN,1)
+C
+      DO 110 J=1,KN 
+         PX(J) = (PX(J)/10.-ZX0)/ZECHX + ZXMIN
+         PY(J) = (PY(J)/10.-ZY0)/ZECHY + ZYMIN
+ 110  CONTINUE
+C
+      IF (ZYMIN*ZYMAX .LT. 0.0) THEN
+         CALL GDASH(1)
+         CALL GWICOL(-1.0,1)
+         CALL GPLOT(ZX0*10.      ,(ZY0-ZYMIN*ZECHY)*10.,3)
+         CALL GPLOT((ZX0+ZLX)*10.,(ZY0-ZYMIN*ZECHY)*10.,2)
+      ENDIF
+C
+C%%      CALL GSLWSC(1.)
+         CALL GWICOL(-1.0,1)
+C
+      RETURN
+      END
+      SUBROUTINE GRALLGU(PX,PY,KN,PX0,PDX,PY0,PDY,PHCHAR,PXIBCD,PYIBCD
+     +  ,KX,KY,PSIZLN,KCADRE,KGRID)
+C%ARC        ***************************************************************
+C%ARC
+C%ARC     DRAW THE GRAPH OF A FONCTION GIVEN BY KN POINTS (PX(I),PY(I))
+C%ARC     IN A RECTANGULAR BOX ((PX0,PY0) ; (PX0+PDX,PY0+PDY),
+C%ARC     WITH A LINEAR SCALE ALONG THE X-AXIS AND A LOGARITHMIC SCALE ALONG
+C%ARC     THE Y-AXIS.
+C%ARC
+C%ARC        PX         : VECTOR OF X-COORDINATES, OF DIMENSION KN
+C%ARC        PY         : VECTOR OF Y-COORDINATES, OF DIMENSION KN
+C%ARC        (PX0,PY0)  : BOTTOM LEFT CORNER OF THE BOX
+C%ARC        (PDX,PDY)  : LENGTH IN X- AND Y-DIRECTION OF THE BOX
+C%ARC        PHCHAR     : CHARACTER HEIGHT (TYPICAL VALUE: 0.30)
+C%ARC        PXIBCD     : TITLE OF X-AXIS
+C%ARC        PYIBCD     : TITLE OF Y-AXIS
+C%ARC        KX,KY      : NUMBER OF CHARACTERS IN PXIBCD,PYIBCD
+C%ARC        PSIZLN     : LINE WIDTH OF CURVE
+C%ARC        KCADRE     : DRAW BOX OPTION :(0=NO, 1=YES,CONT., 2=YES,ONLY CORNERS)
+C%ARC        KGRID      : DRAW GRID OPTION : (0=NO, 1=Y-GRID, 2=X-GRID, 3=XY-GRID)
+C%ARC
+C%AR      CHARACTER PXIBCD*(*),PYIBCD*(*)
+C%AR      DIMENSION  PX(KN),PY(KN)
+C%ARC
+C%ARC%%      CALL GSLN(1)
+C%ARC%%      CALL GSLWSC(2.0)
+C%AR         CALL GDASH(0)
+C%AR         CALL GWICOL(-2.0,1)
+C%ARC%%
+C%AR      IF (KCADRE .NE. 0) CALL CADRE(PX0*10.,PY0*10.,PDX*10.,PDY*10.
+C%AR     +                              ,KCADRE)
+C%ARC%%   CALL GSLWSC(1.0)
+C%AR      CALL GWICOL(-1.0,1)
+C%ARC%%
+C%ARC
+C%ARC        CALCULE LES ECHELLES
+C%ARC
+C%AR      CALL MAXAR(PX,KN,ZXMAX,ZXMIN)
+C%AR      CALL MAXAR(PY,KN,ZYMAX,ZYMIN)
+C%ARCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+C%ARC     ZYMAX = 1000.0
+C%ARC     ZYMIN = 1.0
+C%ARCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+C%AR      IZERO = 0
+C%AR      IF (ZXMAX.EQ.0.0 .OR. ZXMIN.EQ.0.0) IZERO = 1
+C%AR      IF ( (ABS(ZXMAX-ZXMIN).LT.1.0E-12*ABS(ZXMAX) .AND. IZERO.EQ.0)
+C%AR     +      .OR.  (ZXMAX.EQ.ZXMIN       .AND. IZERO.EQ.1)       ) THEN
+C%AR         IF(ZXMAX .NE. 0.0) ZXMIN = ZXMIN/2.
+C%AR         IF(ZXMAX .NE. 0.0) ZXMAX = ZXMAX + ZXMIN
+C%AR         IF(ZXMAX .EQ. 0.0) ZXMIN = -1.
+C%AR         IF(ZXMAX .EQ. 0.0) ZXMAX =  1.
+C%AR      ENDIF
+C%ARC
+C%AR      IZERO = 0
+C%AR      IF (ZYMAX.EQ.0.0 .OR. ZYMIN.EQ.0.0) IZERO = 1
+C%AR      IF ( (ABS(ZYMAX-ZYMIN).LT.1.0E-12*ABS(ZYMAX) .AND. IZERO.EQ.0)
+C%AR     +      .OR.  (ZYMAX.EQ.ZYMIN       .AND. IZERO.EQ.1)       ) THEN
+C%AR         IF(ZYMAX .NE. 0.0) ZYMIN = ZYMIN/2.
+C%AR         IF(ZYMAX .NE. 0.0) ZYMAX = ZYMAX + ZYMIN
+C%AR         IF(ZYMAX .EQ. 0.0) ZYMIN = -1.
+C%AR         IF(ZYMAX .EQ. 0.0) ZYMAX =  1.
+C%AR      ENDIF
+C%ARC
+C%AR      ZDX = ZXMAX-ZXMIN
+C%ARC
+C%ARC     LONGUEUR DES AXES
+C%AR         ZHCHMN =       PHCHAR
+C%AR         Z1 = IFIX(ALOG10(ZYMIN)) +  SIGN(1.,ZYMIN)
+C%AR         Z1 = (IFIX(ALOG10(ABS(Z1))) + 1.)* SIGN(1.,Z1)
+C%AR         Z1 = ABS(Z1) + (1. - SIGN(1.,Z1))/2.
+C%AR         Z2 = IFIX(ALOG10(ZYMAX)) +  SIGN(1.,ZYMAX)
+C%AR         Z2 = (IFIX(ALOG10(ABS(Z2))) + 1.)* SIGN(1.,Z2)
+C%AR         Z2 = ABS(Z2) + (1. - SIGN(1.,Z2))/2.
+C%AR         ZZ = AMAX1(Z1,Z2)
+C%ARC
+C%AR         ZLX=PDX -  (9.+ZZ) * ZHCHMN
+C%AR         IF (ABS(ZDX) .LT. 0.05*AMAX1(ABS(ZXMIN),ABS(ZXMAX)))
+C%AR     +                                                 ZLX = ZLX-ZHCHMN
+C%ARC
+C%AR         ZLY=PDY -  7.0 * ZHCHMN
+C%ARC
+C%ARC        DESSIN DES AXES
+C%ARC
+C%AR      ZX0=PX0+  (5.5+ZZ) * ZHCHMN
+C%AR      ZY0=PY0+  5.0      * ZHCHMN
+C%ARC
+C%ARC
+C%ARC     DEFINE GRAF AREA
+C%AR         CALL BGRAF(ZX0*10.,ZY0*10.,ZLX*10.,ZLY*10.)
+C%ARC     X-AXIS LINEAR
+C%ARC
+C%ARC     NUMBER OF DECIMAL POINTS
+C%AR         NDEC = 2
+C%ARC     EXPONENT
+C%AR         ZIM = 0.
+C%AR         IF (ZXMIN .NE. 0.0) ZIM = ALOG10(ABS(ZXMIN))
+C%AR         ZIMM = 0.
+C%AR         IF (ZXMAX .NE. 0.0) ZIMM = ALOG10(ABS(ZXMAX))
+C%AR         IF (ZIMM.GT.ZIM .AND. ZIMM.NE.0.0) ZIM = ZIMM
+C%AR         IF (ZIM .EQ. 0.0) ZIM = ZIMM
+C%AR         IF (ZIM   .GE. 0.0) IEXP = INT(ZIM  )
+C%AR         IF (ZIM   .LT. 0.0) IEXP = INT(ZIM  ) - 1
+C%AR         CALL BAXLAB(PHCHAR*10.,PHCHAR*10.,NDEC,IEXP)
+C%ARC     TICK PLACE
+C%AR         NTIC = 2
+C%AR         CALL BTICKJ(NTIC)
+C%ARC     X,Y INTERVALS
+C%AR         INTX = 5
+C%AR         INTY = 5
+C%ARC     X-AXIS
+C%AR         CALL BAXIS(1,ZXMIN,(ZXMAX-ZXMIN)/INTX,ZXMAX,PXIBCD)
+C%ARC
+C%ARC%%   CALL AXES  (ZX0,ZY0,ZLX,ZXMIN,ZXMAX, 0.,PHCHAR,PXIBCD, KX
+C%ARC%%  +           ,0,0,-ZLY,-ZGRIDX)
+C%ARC
+C%ARC     Y-AXIS LOGARITHMIC
+C%ARC
+C%ARC     Y-AXIS
+C%AR         ZIM = 0.
+C%AR         IF (ZYMIN .NE. 0.0) ZIM = ALOG10(ABS(ZYMIN))
+C%AR         ZIMM = 0.
+C%AR         IF (ZYMAX .NE. 0.0) ZIMM = ALOG10(ABS(ZYMAX))
+C%AR         IF (ZIMM.GT.ZIM .AND. ZIMM.NE.0.0) ZIM = ZIMM
+C%AR         IF (ZIM .EQ. 0.0) ZIM = ZIMM
+C%AR         IF (ZIM   .GE. 0.0) IEXP = INT(ZIM  )
+C%AR         IF (ZIM   .LT. 0.0) IEXP = INT(ZIM  ) - 1
+C%AR         CALL BLOGAX(2)
+C%AR         CALL BAXLAB(PHCHAR*10.,PHCHAR*10.,NDEC,IEXP)
+C%AR         CALL BTICKJ(NTIC)
+C%AR         CALL BSCLIN(2,ZYMIN,ZYMAX,ZRYMN,ZRYMX,NSTEPY)
+C%AR      ZRYMN = 1.0E-16
+C%ARCC    ZRYMX = 1.0E-08
+C%ARCC    NSTEPY = 8
+C%AR      PRINT *,ZYMIN,ZYMAX,ZRYMN,ZRYMX,NSTEPY
+C%ARCC       CALL BAXIS(2,ZYMIN,(ZYMAX-ZYMIN)/INTY,ZYMAX,PYIBCD)
+C%ARC%%
+C%ARCC       CALL BLOGLB(1.0,4,2)
+C%ARC%
+C%ARCC    CALL BCALC(2,ZRYMN,0.0,ZRYMX,ZSCAL,ZSTEP,ZLOW)
+C%ARCC    WRITE(6,*) 'ZRYMN= ',ZRYMN,' ZRYMX= ',ZRYMX
+C%ARCC    WRITE(6,*) 'ZSCAL= ',ZSCAL,' ZSTEP= ',ZSTEP,' ZLOW= ',ZLOW
+C%AR         CALL BAXIS(2,ZRYMN,(ZRYMX-ZRYMN)/NSTEPY,ZRYMX,PYIBCD)
+C%ARC%%   CALL LGAXIS(ZX0,ZY0,ZLY,ZYMIN,ZYMAX,90.,PHCHAR,PYIBCD,-KY
+C%ARC%%  +           ,1,0, ZLX, ZGRIDY)
+C%ARC
+C%ARC     FRAME WIDTH
+C%AR         ZFRAWTH = -2.0
+C%AR         CALL BFRAME(ZFRAWTH)
+C%ARC     GRID LINE KIND AND WIDTH
+C%AR         IGRID = 2
+C%AR         ZGRIWTH = -1.0
+C%AR         CALL BDASH(IGRID)
+C%AR         CALL BLIWDH(ZGRIWTH)
+C%ARC     DEFINE GRID STYLE IN BOTH DIRECTION
+C%ARC%%      ZGRIDX = 0.0
+C%ARC%%      ZGRIDY = 0.0
+C%ARC%%      IF (KGRID.EQ.1 .OR. KGRID.EQ.3) ZGRIDY = ZLX
+C%ARC%%      IF (KGRID.EQ.2 .OR. KGRID.EQ.3) ZGRIDX = ZLY
+C%AR         IGRISTX = 0
+C%AR         IGRISTY = 0
+C%AR         IF (KGRID .EQ. 1) IGRISTY =  1
+C%AR         IF (KGRID .EQ. 2) IGRISTX =  1
+C%AR         IF (KGRID .EQ. 3) IGRISTX =  1
+C%AR         IF (KGRID .EQ. 3) IGRISTY =  1
+C%AR         CALL BGRID(IGRISTX,IGRISTY)
+C%ARC     CURVE WIDTH
+C%AR         ZCURWTH = -PSIZLN
+C%AR         CALL BLIWDH(ZCURWTH)
+C%AR         CALL BLINE(PX,PY,KN)
+C%ARC
+C%ARC%    ZLGMIN = ALOG10(ZYMIN)
+C%ARC%    ZDY = ALOG10(ZYMAX) - ZLGMIN
+C%ARC
+C%ARC     ECHELLES
+C%ARC
+C%ARC%    ZECHX = ZLX/ZDX
+C%ARC%    ZECHY = ZLY/ZDY
+C%ARC
+C%ARC%    DO 100 J=1,KN
+C%ARC%       PX(J) = (PX(J)-ZXMIN)*ZECHX + ZX0
+C%ARC%       PY(J) = (ALOG10(PY(J)) - ZLGMIN)*ZECHY + ZY0
+C%ARC100  CONTINUE
+C%ARC
+C%ARC%    CALL GSLN(1)
+C%ARC%    CALL GSLWSC(PSIZLN)
+C%ARC%    CALL GPL(KN,PX,PY)
+C%ARC
+C%ARC%    DO 110 J=1,KN
+C%ARC%       PX(J) = (PX(J)-ZX0)/ZECHX + ZXMIN
+C%ARC%       PY(J) = 10**((PY(J)-ZY0)/ZECHY + ZLGMIN)
+C%ARC110  CONTINUE
+C%ARC
+C%ARC%    CALL GSLWSC(1.)
+C%AR         CALL BLIWDH(-1.0)
+C%ARC
+      RETURN
+      END
+         SUBROUTINE GRALLG(PX,PY,KN,PX0,PDX,PY0,PDY,PHCHAR,PXIBCD,PYIBCD
+     +                    ,KX,KY,PSIZLN,KCADRE,KGRID)
+C        ***************************************************************
+C              IDENTICAL TO PLTSBNW , I.E. USING LGAXIS
+C
+C     DRAW THE GRAPH OF A FONCTION GIVEN BY KN POINTS (PX(I),PY(I))
+C     IN A RECTANGULAR BOX ((PX0,PY0) ; (PX0+PDX,PY0+PDY),
+C     WITH A LINEAR SCALE ALONG THE X-AXIS AND A LOGARITHMIC SCALE ALONG
+C     THE Y-AXIS.
+C
+C        PX         : VECTOR OF X-COORDINATES, OF DIMENSION KN
+C        PY         : VECTOR OF Y-COORDINATES, OF DIMENSION KN
+C        (PX0,PY0)  : BOTTOM LEFT CORNER OF THE BOX
+C        (PDX,PDY)  : LENGTH IN X- AND Y-DIRECTION OF THE BOX
+C        PHCHAR     : CHARACTER HEIGHT (TYPICAL VALUE: 0.30)
+C        PXIBCD     : TITLE OF X-AXIS
+C        PYIBCD     : TITLE OF Y-AXIS
+C        KX,KY      : NUMBER OF CHARACTERS IN PXIBCD,PYIBCD
+C        PSIZLN     : LINE WIDTH OF CURVE
+C        KCADRE     : DRAW BOX OPTION :(0=NO, 1=YES,CONT., 2=YES,ONLY CORNERS)
+C        KGRID      : DRAW GRID OPTION : (0=NO, 1=Y-GRID, 2=X-GRID, 3=XY-GRID)
+C
+      CHARACTER PXIBCD*(*),PYIBCD*(*)
+      DIMENSION  PX(KN),PY(KN)
+C
+C%%      CALL GSLN(1)
+C%%      CALL GSLWSC(2.0)
+         CALL GDASH(0)
+         CALL GWICOL(-2.0,1)
+C%%
+CC    IF (KCADRE .NE. 0) CALL CADRE(PX0*10.,PY0*10.,PDX*10.,PDY*10.
+CC   +                              ,KCADRE)
+C%%   CALL GSLWSC(1.0)
+      CALL GWICOL(-1.0,1)
+C%%
+C
+C        CALCULE LES ECHELLES
+C
+      CALL MAXAR(PX,KN,ZXMAX,ZXMIN)
+      CALL MAXAR(PY,KN,ZYMAX,ZYMIN)
+CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+CC    ZYMAX = 6.5E-08
+CC    ZYMIN = 1.0E-15
+C
+         ZZYMX = ZYMAX
+         ZZYMN = ZYMIN
+         CALL RNDMXLG(ZYMAX)
+         CALL RNDMNLG(ZYMIN)
+      WRITE(6,*) 'ZYMIN: OLD= ',ZZYMN,'  NEW= ',ZYMIN
+      WRITE(6,*) 'ZYMAX: OLD= ',ZZYMX,'  NEW= ',ZYMAX
+CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+      IZERO = 0
+      IF (ZXMAX.EQ.0.0 .OR. ZXMIN.EQ.0.0) IZERO = 1
+      IF ( (ABS(ZXMAX-ZXMIN).LT.1.0E-12*ABS(ZXMAX) .AND. IZERO.EQ.0)
+     +      .OR.  (ZXMAX.EQ.ZXMIN       .AND. IZERO.EQ.1)       ) THEN
+         IF(ZXMAX .NE. 0.0) ZXMIN = ZXMIN/2.
+         IF(ZXMAX .NE. 0.0) ZXMAX = ZXMAX + ZXMIN
+         IF(ZXMAX .EQ. 0.0) ZXMIN = -1.
+         IF(ZXMAX .EQ. 0.0) ZXMAX =  1.
+      ENDIF
+C
+      IZERO = 0
+      IF (ZYMAX.EQ.0.0 .OR. ZYMIN.EQ.0.0) IZERO = 1
+      IF ( (ABS(ZYMAX-ZYMIN).LT.1.0E-12*ABS(ZYMAX) .AND. IZERO.EQ.0)
+     +      .OR.  (ZYMAX.EQ.ZYMIN       .AND. IZERO.EQ.1)       ) THEN
+         IF(ZYMAX .NE. 0.0) ZYMIN = ZYMIN/2.
+         IF(ZYMAX .NE. 0.0) ZYMAX = ZYMAX + ZYMIN
+         IF(ZYMAX .EQ. 0.0) ZYMIN = -1.
+         IF(ZYMAX .EQ. 0.0) ZYMAX =  1.
+      ENDIF
+C
+      ZDX = ZXMAX-ZXMIN
+C
+C     LONGUEUR DES AXES
+         ZHCHMN =       PHCHAR
+         Z1 = IFIX(ALOG10(ZYMIN)) +  SIGN(1.,ZYMIN)
+         Z1 = (IFIX(ALOG10(ABS(Z1))) + 1.)* SIGN(1.,Z1)
+         Z1 = ABS(Z1) + (1. - SIGN(1.,Z1))/2.
+         Z2 = IFIX(ALOG10(ZYMAX)) +  SIGN(1.,ZYMAX)
+         Z2 = (IFIX(ALOG10(ABS(Z2))) + 1.)* SIGN(1.,Z2)
+         Z2 = ABS(Z2) + (1. - SIGN(1.,Z2))/2.
+         ZZ = AMAX1(Z1,Z2)
+C
+         ZLX=PDX -  (9.+ZZ) * ZHCHMN
+         IF (ABS(ZDX) .LT. 0.05*AMAX1(ABS(ZXMIN),ABS(ZXMAX)))
+     +                                                 ZLX = ZLX-ZHCHMN
+C
+         ZLY=PDY -  7.0 * ZHCHMN
+C
+C        DESSIN DES AXES
+C
+      ZX0=PX0+  (5.5+ZZ) * ZHCHMN
+      ZY0=PY0+  5.0      * ZHCHMN
+C
+C     GRID OPTION
+         ZGRIDX = 0.0
+         ZGRIDY = 0.0
+         IF (KGRID.EQ.1 .OR. KGRID.EQ.3) ZGRIDY = ZLX
+         IF (KGRID.EQ.2 .OR. KGRID.EQ.3) ZGRIDX = ZLY
+C
+      CALL AXES  (ZX0*10.,ZY0*10.,ZLX*10.,ZXMIN,ZXMAX, 0.,PHCHAR*10.
+     +           ,PXIBCD, KX,0,0,-ZLY*10.,-ZGRIDX*10.)
+      CALL LGAXIS(ZX0*10.,ZY0*10.,ZLY*10.,ZYMIN,ZYMAX,90.,PHCHAR*10.
+     +           ,PYIBCD,-KY,1,0, ZLX*10., ZGRIDY*10.)
+C
+      ZLGMIN = ALOG10(ZYMIN)
+      ZDY = ALOG10(ZYMAX) - ZLGMIN
+C
+C     ECHELLES
+C
+      ZECHX = ZLX/ZDX
+      ZECHY = ZLY/ZDY
+C
+      DO 100 J=1,KN
+         PX(J) = ( (PX(J)-ZXMIN)*ZECHX + ZX0 ) * 10.
+         PY(J) = ( (ALOG10(PY(J)) - ZLGMIN)*ZECHY + ZY0 ) * 10.
+ 100  CONTINUE
+C
+C%%   CALL GSLN(1)
+      CALL GDASH(0)
+C%%   CALL GSLWSC(PSIZLN)
+      CALL GWICOL(-PSIZLN,1)
+C%%   CALL GPL(KN,PX,PY)
+      CALL GVECT(PX,PY,KN)
+C
+      DO 110 J=1,KN
+         PX(J) = (PX(J)/10. -ZX0)/ZECHX + ZXMIN
+         PY(J) = 10**((PY(J)/10. -ZY0)/ZECHY + ZLGMIN)
+ 110  CONTINUE
+C
+C%%   CALL GSLWSC(1.)
+      CALL GWICOL(-1.0,1)
+C
+      RETURN
+      END
+         SUBROUTINE GRLLGN(PX,PY,KN,MKN,KPLOT,PX0,PDX,PY0,PDY,PHCHAR,
+     +                     PXIBCD,PYIBCD,KX,KTIT,PSIZLN,KCADRE,KGRID)
+C        ***************************************************************
+C
+C     PLOT SEVERAL CURVES ON SAME GRAPHE, WITH LOGARITHMIC Y-AXIS
+C
+C     DRAW THE GRAPH OF A FONCTION GIVEN BY KN POINTS (PX(I),PY(I,J))
+C     IN A RECTANGULAR BOX ((PX0,PY0) ; (PX0+PDX,PY0+PDY)
+C
+C        PX         : VECTOR OF X-COORDINATES, OF DIMENSION KN
+C        PY(I,J)    : VECTOR OF Y-COORDINATES FOR EACH J LINE
+C        (PX0,PY0)  : BOTTOM LEFT CORNER OF THE BOX
+C        (PDX,PDY)  : LENGTH IN X- AND Y-DIRECTION OF THE BOX
+C        PHCHAR     : CHARACTER HEIGHT (TYPICAL VALUE: 0.30)
+C        PXIBCD     : TITLE OF X-AXIS
+C        PYIBCD(J)  : TITLE OF EACH CURVE
+C        PYIBCD(KPLOT+1) : TITLE OF PLOT
+C        KX,KTIT(J) : NUMBER OF CHARACTERS IN PXIBCD,PYIBCD(J)
+C        PSIZLN     : LINE WIDTH OF CURVE
+C        KCADRE     : DRAW BOX OPTION :(0=NO, 1=YES,CONT., 2=YES,ONLY CORNERS)
+C        KGRID      : DRAW GRID OPTION : (0=NO, 1=Y-GRID, 2=X-GRID, 3=XY-GRID)
+C
+      CHARACTER PXIBCD*(*),PYIBCD(KPLOT+1)*(*)
+      DIMENSION  PX(KN),PY(MKN,KPLOT), KTIT(KPLOT+1), ZXLAB(2), ZYLAB(2)
+C
+         CALL GDASH(0)
+         CALL GWICOL(-2.0,1)
+C
+      IF (KCADRE .NE. 0) CALL CADRE(PX0*10.,PY0*10.,PDX*10.,PDY*10.
+     +                              ,KCADRE)
+      CALL GWICOL(-1.0,1)
+C
+C     CACUL DES EXTREMAS
+C
+      CALL MAXAR(PX,KN,ZXMAX,ZXMIN)
+      CALL MAXAR(PY(1,1),KN,ZYMAX,ZYMIN)
+      DO 10 I=2,KPLOT
+         CALL MAXAR(PY(1,I),KN,ZYMAXI,ZYMINI)
+         ZYMAX = MAX(ZYMAX,ZYMAXI)
+         ZYMIN = MIN(ZYMIN,ZYMINI)
+ 10   CONTINUE
+CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+CC    ZYMAX = 6.5E-08
+CC    ZYMIN = 1.0E-15
+C
+         ZZYMX = ZYMAX
+         ZZYMN = ZYMIN
+         CALL RNDMXLG(ZYMAX)
+         CALL RNDMNLG(ZYMIN)
+      WRITE(6,*) 'ZYMIN: OLD= ',ZZYMN,'  NEW= ',ZYMIN
+      WRITE(6,*) 'ZYMAX: OLD= ',ZZYMX,'  NEW= ',ZYMAX
+CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+C
+      IZERO = 0
+      IF (ZXMAX.EQ.0.0 .OR. ZXMIN.EQ.0.0) IZERO = 1
+      IF ( (ABS(ZXMAX-ZXMIN).LT.1.0E-12*ABS(ZXMAX) .AND. IZERO.EQ.0)
+     +      .OR.  (ZXMAX.EQ.ZXMIN       .AND. IZERO.EQ.1)       ) THEN
+         IF(ZXMAX .NE. 0.0) ZXMIN = ZXMIN/2.
+         IF(ZXMAX .NE. 0.0) ZXMAX = ZXMAX + ZXMIN
+         IF(ZXMAX .EQ. 0.0) ZXMIN = -1.
+         IF(ZXMAX .EQ. 0.0) ZXMAX =  1.
+      ENDIF
+C
+      IZERO = 0
+      IF (ZYMAX.EQ.0.0 .OR. ZYMIN.EQ.0.0) IZERO = 1
+      IF ( (ABS(ZYMAX-ZYMIN).LT.1.0E-12*ABS(ZYMAX) .AND. IZERO.EQ.0)
+     +      .OR.  (ZYMAX.EQ.ZYMIN       .AND. IZERO.EQ.1)       ) THEN
+         IF(ZYMAX .NE. 0.0) ZYMIN = ZYMIN/2.
+         IF(ZYMAX .NE. 0.0) ZYMAX = ZYMAX + ZYMIN
+         IF(ZYMAX .EQ. 0.0) ZYMIN = -1.
+         IF(ZYMAX .EQ. 0.0) ZYMAX =  1.
+      ENDIF
+C
+      ZDX = ZXMAX-ZXMIN
+C
+C     LONGUEUR DES AXES
+         ZHCHMN =       PHCHAR
+         Z1 = IFIX(ALOG10(ZYMIN)) +  SIGN(1.,ZYMIN)
+         Z1 = (IFIX(ALOG10(ABS(Z1))) + 1.)* SIGN(1.,Z1)
+         Z1 = ABS(Z1) + (1. - SIGN(1.,Z1))/2.
+         Z2 = IFIX(ALOG10(ZYMAX)) +  SIGN(1.,ZYMAX)
+         Z2 = (IFIX(ALOG10(ABS(Z2))) + 1.)* SIGN(1.,Z2)
+         Z2 = ABS(Z2) + (1. - SIGN(1.,Z2))/2.
+         ZZ = AMAX1(Z1,Z2)
+C
+         ZLX=PDX -  (9.+ZZ) * ZHCHMN
+         IF (ABS(ZDX) .LT. 0.05*AMAX1(ABS(ZXMIN),ABS(ZXMAX)))
+     +                                                 ZLX = ZLX-ZHCHMN
+C
+         ZLAB = 0.5 + ZHCHMN
+         ZLY=PDY -  7.0 * ZHCHMN - ZLAB
+C
+C     DESSIN DES AXES
+      ZX0=PX0+  (5.5+ZZ) * ZHCHMN
+      ZY0=PY0+  5.0      * ZHCHMN
+C
+C     GRID OPTION
+         ZGRIDX = 0.0
+         ZGRIDY = 0.0
+         IF (KGRID.EQ.1 .OR. KGRID.EQ.3) ZGRIDY =  ZLX
+         IF (KGRID.EQ.2 .OR. KGRID.EQ.3) ZGRIDX =  ZLY
+C
+      CALL AXES  (ZX0*10.,ZY0*10.,ZLX*10.,ZXMIN,ZXMAX, 0.,PHCHAR*10.
+     +           ,PXIBCD, KX,0,0,-ZLY*10.,-ZGRIDX*10.)
+      CALL LGAXIS(ZX0*10.,ZY0*10.,ZLY*10.,ZYMIN,ZYMAX,90.,PHCHAR*10.,
+     +        PYIBCD(KPLOT+1),-KTIT(KPLOT+1), 1, 0, ZLX*10., ZGRIDY*10.)
+C
+      ZLGMIN = ALOG10(ZYMIN)
+      ZDY = ALOG10(ZYMAX) - ZLGMIN
+C
+C     ECHELLES
+C
+      ZECHX = ZLX/ZDX
+      ZECHY = ZLY/ZDY
+C     
+      DO 100 J=1,KN 
+         PX(J) = ((PX(J)-ZXMIN)*ZECHX + ZX0) *10.
+ 100  CONTINUE
+C
+      DO 101 IP=1,KPLOT
+      DO 101 J=1,KN 
+         PY(J,IP) = ((ALOG10(PY(J,IP))-ZLGMIN)*ZECHY + ZY0) *10.
+ 101  CONTINUE
+C
+         CALL GWICOL(-PSIZLN,1)
+      DO 105 IP=1,KPLOT
+         CALL GDASH((IP-1)*2)
+         CALL GVECT(PX,PY(1,IP),KN)
+ 105  CONTINUE
+C
+CL    LABEL THE CURVES
+C
+         ZY = ZY0 + ZLY + 0.3
+         ZYLAB(1) = ZY*10.
+         ZYLAB(2) = ZY*10.
+         ZX = PX0 + PHCHAR
+      DO 107 IP=1,KPLOT
+         ZXLAB(1) = ZX*10.
+         ZXLAB(2) = (ZX + 1.) * 10.
+         CALL GDASH((IP-1)*2)
+         CALL GVECT(ZXLAB,ZYLAB,2)
+         CALL GCHAR(PYIBCD(IP),ZXLAB(2)+0.2*10.,ZY*10.,PHCHAR*10.)
+C
+         ZDEL = 1.4 + KTIT(IP) * PHCHAR * 0.90
+         ZX = ZX + ZDEL
+ 107  CONTINUE
+C
+      DO 110 J=1,KN 
+         PX(J) = (PX(J)/10.-ZX0)/ZECHX + ZXMIN
+ 110  CONTINUE
+C
+      DO 111 IP=1,KPLOT
+      DO 111 J=1,KN 
+         PY(J,IP) = 10**((PY(J,IP)/10.-ZY0)/ZECHY + ZLGMIN)
+ 111  CONTINUE
+C
+CC      IF (ZYMIN*ZYMAX .LT. 0.0) THEN
+CC         CALL GPLOT(ZX0*10.      ,(ZY0-ZYMIN*ZECHY)*10.,3)
+CC         CALL GPLOT((ZX0+ZLX)*10.,(ZY0-ZYMIN*ZECHY)*10.,2)
+CC      ENDIF
+         CALL GWICOL(-1.0,1)
+C
+      RETURN
+      END
+         SUBROUTINE GRALGL(PX,PY,KN,PX0,PDX,PY0,PDY,PHCHAR,PXIBCD,PYIBCD
+     +                    ,KX,KY,PSIZLN,KCADRE,KGRID)
+C        ***************************************************************
+C              IDENTICAL TO PLTSBNW , I.E. USING LGAXIS
+C
+C     DRAW THE GRAPH OF A FONCTION GIVEN BY KN POINTS (PX(I),PY(I))
+C     IN A RECTANGULAR BOX ((PX0,PY0) ; (PX0+PDX,PY0+PDY),
+C     WITH A LINEAR SCALE ALONG THE Y-AXIS AND A LOGARITHMIC SCALE ALONG
+C     THE X-AXIS.
+C
+C        PX         : VECTOR OF X-COORDINATES, OF DIMENSION KN
+C        PY         : VECTOR OF Y-COORDINATES, OF DIMENSION KN
+C        (PX0,PY0)  : BOTTOM LEFT CORNER OF THE BOX
+C        (PDX,PDY)  : LENGTH IN X- AND Y-DIRECTION OF THE BOX
+C        PHCHAR     : CHARACTER HEIGHT (TYPICAL VALUE: 0.30)
+C        PXIBCD     : TITLE OF X-AXIS
+C        PYIBCD     : TITLE OF Y-AXIS
+C        KX,KY      : NUMBER OF CHARACTERS IN PXIBCD,PYIBCD
+C        PSIZLN     : LINE WIDTH OF CURVE
+C        KCADRE     : DRAW BOX OPTION :(0=NO, 1=YES,CONT., 2=YES,ONLY CORNERS)
+C        KGRID      : DRAW GRID OPTION : (0=NO, 1=Y-GRID, 2=X-GRID, 3=XY-GRID)
+C
+      CHARACTER PXIBCD*(*),PYIBCD*(*)
+      DIMENSION  PX(KN),PY(KN)
+C
+C%%      CALL GSLN(1)
+C%%      CALL GSLWSC(2.0)
+         CALL GDASH(0)
+         CALL GWICOL(-2.0,1)
+C%%
+CC    IF (KCADRE .NE. 0) CALL CADRE(PX0*10.,PY0*10.,PDX*10.,PDY*10.
+CC   +                              ,KCADRE)
+C%%   CALL GSLWSC(1.0)
+      CALL GWICOL(-1.0,1)
+C%%
+C
+C        CALCULE LES ECHELLES
+C
+      CALL MAXAR(PX,KN,ZXMAX,ZXMIN)
+      CALL MAXAR(PY,KN,ZYMAX,ZYMIN)
+CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+CC    ZYMAX = 6.5E-08
+CC    ZYMIN = 1.0E-15
+C
+         ZZYMX = ZYMAX
+         ZZYMN = ZYMIN
+         CALL RNDMXLG(ZYMAX)
+         CALL RNDMNLG(ZYMIN)
+      WRITE(6,*) 'ZYMIN: OLD= ',ZZYMN,'  NEW= ',ZYMIN
+      WRITE(6,*) 'ZYMAX: OLD= ',ZZYMX,'  NEW= ',ZYMAX
+CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+      IZERO = 0
+      IF (ZXMAX.EQ.0.0 .OR. ZXMIN.EQ.0.0) IZERO = 1
+      IF ( (ABS(ZXMAX-ZXMIN).LT.1.0E-12*ABS(ZXMAX) .AND. IZERO.EQ.0)
+     +      .OR.  (ZXMAX.EQ.ZXMIN       .AND. IZERO.EQ.1)       ) THEN
+         IF(ZXMAX .NE. 0.0) ZXMIN = ZXMIN/2.
+         IF(ZXMAX .NE. 0.0) ZXMAX = ZXMAX + ZXMIN
+         IF(ZXMAX .EQ. 0.0) ZXMIN = -1.
+         IF(ZXMAX .EQ. 0.0) ZXMAX =  1.
+      ENDIF
+C
+      IZERO = 0
+      IF (ZYMAX.EQ.0.0 .OR. ZYMIN.EQ.0.0) IZERO = 1
+      IF ( (ABS(ZYMAX-ZYMIN).LT.1.0E-12*ABS(ZYMAX) .AND. IZERO.EQ.0)
+     +      .OR.  (ZYMAX.EQ.ZYMIN       .AND. IZERO.EQ.1)       ) THEN
+         IF(ZYMAX .NE. 0.0) ZYMIN = ZYMIN/2.
+         IF(ZYMAX .NE. 0.0) ZYMAX = ZYMAX + ZYMIN
+         IF(ZYMAX .EQ. 0.0) ZYMIN = -1.
+         IF(ZYMAX .EQ. 0.0) ZYMAX =  1.
+      ENDIF
+C
+      ZDY = ZYMAX-ZYMIN
+C
+C     LONGUEUR DES AXES
+         ZHCHMN =       PHCHAR
+C
+         ZLX=PDX -  11.5 * ZHCHMN
+         IF (ABS(ZDY) .LT. 0.05*AMAX1(ABS(ZYMIN),ABS(ZYMAX)))
+     +                                              ZLX = ZLX-2.*ZHCHMN
+C
+         ZLY=PDY -  6.5 * ZHCHMN
+C
+C        DESSIN DES AXES
+C
+      ZX0=PX0+  8.0 * ZHCHMN
+         IF (ABS(ZDY) .LT. 0.05*AMAX1(ABS(ZYMIN),ABS(ZYMAX)))
+     +                                             ZX0 = ZX0 + 2.*ZHCHMN
+      ZY0=PY0+  4.5 * ZHCHMN
+C
+C     GRID OPTION
+         ZGRIDX = 0.0
+         ZGRIDY = 0.0
+         IF (KGRID.EQ.1 .OR. KGRID.EQ.3) ZGRIDY = ZLX
+         IF (KGRID.EQ.2 .OR. KGRID.EQ.3) ZGRIDX = ZLY
+C
+      CALL LGAXIS(ZX0*10.,ZY0*10.,ZLX*10.,ZXMIN,ZXMAX, 0.,PHCHAR*10.
+     +           ,PXIBCD, KX,0,0,-ZLY*10.,-ZGRIDX*10.)
+      CALL AXES  (ZX0*10.,ZY0*10.,ZLY*10.,ZYMIN,ZYMAX,90.,PHCHAR*10.
+     +           ,PYIBCD,-KY,1,0, ZLX*10., ZGRIDY*10.)
+C
+      ZLGMIN = ALOG10(ZXMIN)
+      ZDX = ALOG10(ZXMAX) - ZLGMIN
+C
+C     ECHELLES
+C
+      ZECHX = ZLX/ZDX
+      ZECHY = ZLY/ZDY
+C
+      DO 100 J=1,KN
+         PX(J) = ( (ALOG10(PX(J)) - ZLGMIN)*ZECHX + ZX0 ) * 10.
+         PY(J) = ( (PY(J)-ZYMIN)*ZECHY + ZY0 ) * 10.
+ 100  CONTINUE
+C
+C%%   CALL GSLN(1)
+      CALL GDASH(0)
+C%%   CALL GSLWSC(PSIZLN)
+      CALL GWICOL(-PSIZLN,1)
+C%%   CALL GPL(KN,PX,PY)
+      CALL GVECT(PX,PY,KN)
+C
+      DO 110 J=1,KN
+         PX(J) = 10**((PX(J)/10. -ZX0)/ZECHX + ZLGMIN)
+         PY(J) = (PY(J)/10. -ZY0)/ZECHY + ZYMIN
+ 110  CONTINUE
+C
+C%%   CALL GSLWSC(1.)
+      CALL GWICOL(-1.0,1)
+C
+      RETURN
+      END
+         SUBROUTINE GRLGLG(PX,PY,KN,PX0,PDX,PY0,PDY,PHCHAR,PXIBCD,PYIBCD
+     +                    ,KX,KY,PSIZLN,KCADRE,KGRID)
+C        ***************************************************************
+C              IDENTICAL TO PLTSBNW , I.E. USING LGAXIS
+C
+C     DRAW THE GRAPH OF A FONCTION GIVEN BY KN POINTS (PX(I),PY(I))
+C     IN A RECTANGULAR BOX ((PX0,PY0) ; (PX0+PDX,PY0+PDY),
+C     WITH A LOGARITHMIC SCALE ALONG BOTH AXIS.
+C
+C        PX         : VECTOR OF X-COORDINATES, OF DIMENSION KN
+C        PY         : VECTOR OF Y-COORDINATES, OF DIMENSION KN
+C        (PX0,PY0)  : BOTTOM LEFT CORNER OF THE BOX
+C        (PDX,PDY)  : LENGTH IN X- AND Y-DIRECTION OF THE BOX
+C        PHCHAR     : CHARACTER HEIGHT (TYPICAL VALUE: 0.30)
+C        PXIBCD     : TITLE OF X-AXIS
+C        PYIBCD     : TITLE OF Y-AXIS
+C        KX,KY      : NUMBER OF CHARACTERS IN PXIBCD,PYIBCD
+C        PSIZLN     : LINE WIDTH OF CURVE
+C        KCADRE     : DRAW BOX OPTION :(0=NO, 1=YES,CONT., 2=YES,ONLY CORNERS)
+C        KGRID      : DRAW GRID OPTION : (0=NO, 1=Y-GRID, 2=X-GRID, 3=XY-GRID)
+C
+      CHARACTER PXIBCD*(*),PYIBCD*(*)
+      DIMENSION  PX(KN),PY(KN)
+C
+C%%      CALL GSLN(1)
+C%%      CALL GSLWSC(2.0)
+         CALL GDASH(0)
+         CALL GWICOL(-2.0,1)
+C%%
+CC    IF (KCADRE .NE. 0) CALL CADRE(PX0*10.,PY0*10.,PDX*10.,PDY*10.
+CC   +                              ,KCADRE)
+C%%   CALL GSLWSC(1.0)
+      CALL GWICOL(-1.0,1)
+C%%
+C
+C        CALCULE LES ECHELLES
+C
+      CALL MAXAR(PX,KN,ZXMAX,ZXMIN)
+      CALL MAXAR(PY,KN,ZYMAX,ZYMIN)
+CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+CC    ZYMAX = 6.5E-08
+CC    ZYMIN = 1.0E-15
+C
+         ZZYMX = ZYMAX
+         ZZYMN = ZYMIN
+         CALL RNDMXLG(ZYMAX)
+         CALL RNDMNLG(ZYMIN)
+      WRITE(6,*) 'ZYMIN: OLD= ',ZZYMN,'  NEW= ',ZYMIN
+      WRITE(6,*) 'ZYMAX: OLD= ',ZZYMX,'  NEW= ',ZYMAX
+CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+      IZERO = 0
+      IF (ZXMAX.EQ.0.0 .OR. ZXMIN.EQ.0.0) IZERO = 1
+      IF ( (ABS(ZXMAX-ZXMIN).LT.1.0E-12*ABS(ZXMAX) .AND. IZERO.EQ.0)
+     +      .OR.  (ZXMAX.EQ.ZXMIN       .AND. IZERO.EQ.1)       ) THEN
+         IF(ZXMAX .NE. 0.0) ZXMIN = ZXMIN/2.
+         IF(ZXMAX .NE. 0.0) ZXMAX = ZXMAX + ZXMIN
+         IF(ZXMAX .EQ. 0.0) ZXMIN = -1.
+         IF(ZXMAX .EQ. 0.0) ZXMAX =  1.
+      ENDIF
+C
+      IZERO = 0
+      IF (ZYMAX.EQ.0.0 .OR. ZYMIN.EQ.0.0) IZERO = 1
+      IF ( (ABS(ZYMAX-ZYMIN).LT.1.0E-12*ABS(ZYMAX) .AND. IZERO.EQ.0)
+     +      .OR.  (ZYMAX.EQ.ZYMIN       .AND. IZERO.EQ.1)       ) THEN
+         IF(ZYMAX .NE. 0.0) ZYMIN = ZYMIN/2.
+         IF(ZYMAX .NE. 0.0) ZYMAX = ZYMAX + ZYMIN
+         IF(ZYMAX .EQ. 0.0) ZYMIN = -1.
+         IF(ZYMAX .EQ. 0.0) ZYMAX =  1.
+      ENDIF
+C
+C     LONGUEUR DES AXES
+         ZHCHMN =       PHCHAR
+         Z1 = IFIX(ALOG10(ZYMIN)) +  SIGN(1.,ZYMIN)
+         Z1 = (IFIX(ALOG10(ABS(Z1))) + 1.)* SIGN(1.,Z1)
+         Z1 = ABS(Z1) + (1. - SIGN(1.,Z1))/2.
+         Z2 = IFIX(ALOG10(ZYMAX)) +  SIGN(1.,ZYMAX)
+         Z2 = (IFIX(ALOG10(ABS(Z2))) + 1.)* SIGN(1.,Z2)
+         Z2 = ABS(Z2) + (1. - SIGN(1.,Z2))/2.
+         ZZ = AMAX1(Z1,Z2)
+C
+         ZLX=PDX -  (9.+ZZ) * ZHCHMN
+C
+         ZLY=PDY -  6.5 * ZHCHMN
+C
+C        DESSIN DES AXES
+C
+      ZX0=PX0+  (5.5+ZZ) * ZHCHMN
+      ZY0=PY0+  4.5      * ZHCHMN
+C
+C     GRID OPTION
+         ZGRIDX = 0.0
+         ZGRIDY = 0.0
+         IF (KGRID.EQ.1 .OR. KGRID.EQ.3) ZGRIDY = ZLX
+         IF (KGRID.EQ.2 .OR. KGRID.EQ.3) ZGRIDX = ZLY
+C
+      CALL LGAXIS(ZX0*10.,ZY0*10.,ZLX*10.,ZXMIN,ZXMAX, 0.,PHCHAR*10.
+     +           ,PXIBCD, KX,0,0,-ZLY*10.,-ZGRIDX*10.)
+      CALL LGAXIS(ZX0*10.,ZY0*10.,ZLY*10.,ZYMIN,ZYMAX,90.,PHCHAR*10.
+     +           ,PYIBCD,-KY,1,0, ZLX*10., ZGRIDY*10.)
+C
+      ZLGMNX = ALOG10(ZXMIN)
+      ZLGMNY = ALOG10(ZYMIN)
+      ZDX = ALOG10(ZXMAX) - ZLGMNX
+      ZDY = ALOG10(ZYMAX) - ZLGMNY
+C
+C     ECHELLES
+C
+      ZECHX = ZLX/ZDX
+      ZECHY = ZLY/ZDY
+C
+      DO 100 J=1,KN
+         PX(J) = ((ALOG10(PX(J)) - ZLGMNX)*ZECHX + ZX0) * 10.
+         PY(J) = ((ALOG10(PY(J)) - ZLGMNY)*ZECHY + ZY0) * 10.
+ 100  CONTINUE
+C
+C%%   CALL GSLN(1)
+      CALL GDASH(0)
+C%%   CALL GSLWSC(PSIZLN)
+      CALL GWICOL(-PSIZLN,1)
+C%%   CALL GPL(KN,PX,PY)
+      CALL GVECT(PX,PY,KN)
+C
+      DO 110 J=1,KN
+         PX(J) = 10**((PX(J)/10.-ZX0)/ZECHX + ZLGMNX) 
+         PY(J) = 10**((PY(J)/10.-ZY0)/ZECHY + ZLGMNY) 
+ 110  CONTINUE
+C
+C%%   CALL GSLWSC(1.)
+      CALL GWICOL(-1.0,1)
+C
+      RETURN
+      END
+         SUBROUTINE AXES(X,Y,SIZE,XMIN,XMAX,THETA,PHCHAR,IBCD,N
+     +                  ,KCHDIR,KTITDIR,PDIST,SIZ2)
+C        ******************************************************
+C     DRAWS A LINEAR AXIS
+C
+C     X,Y     WORLD COORDINATES AT BEGINNING OF AXIS
+C     SIZE    AXIS LENGTH
+C     XMIN    VALUE OF THE VARIABLE AT THE BEGINNING OF THE AXIS
+C     XMAX      "   "   "     "     "   "  END       OF THE AXIS
+C     THETA   ANGLE IN DEGREES
+C     PHCHAR  HEIGHT OF CHARACTERS
+C     IBCD    NAME OF AXIS
+C     N       LENGTH OF NAME (NB OF CHARACTERS)
+C             IF POSITIVE, NAME WILL BE PRINTED ON THE RIGHT SIDE
+C             IF NEGATIVE,  "    "        "            LEFT   "
+C     KCHDIR  DIRECTION OF AXIS NUMBERS (VERTICAL AXIS ONLY)
+C             = 0 : CHARACTER PERP. TO AXIS (I.E. WRITING VERTICALLY  )
+C             = 1 :    "   PARALLEL TO AXIS (I.E.    "    HORIZONTALLY)
+C     KTITDIR DIRECTION OF CHARACTERS FOR THE TITLE (VERTICAL AXIS ONLY)
+C             = 0 : CHARACTER PERP. TO AXIS (I.E. WRITING VERTICALLY  )
+C             = 1 :    "   PARALLEL TO AXIS (I.E.    "    HORIZONTALLY)
+C     PDIST   DISTANCE IN PERPEND. DIRECT. AT WHICH AXIS AND TICKS ARE RE-DRAWN
+C             PDIST > 0  => ON THE RIGHT SIDE OF THE AXIS
+C             PDIST < 0  => ON THE LEFT  SIDE "   "   "
+C             IN GENERAL PDIST=SIZ2 IF (SIZ2 .NE. 0.)
+C     SIZ2    GRID LENGTH
+C             SIZ2  > 0  => ON THE RIGHT SIDE OF THE AXIS
+C             SIZ2  < 0  => ON THE LEFT  SIDE "   "   "
+C
+C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C
+C     FOR A SIMPLE AXIS FILL IN THE FIRST SIX PARAMETERS AS WELL AS IBCD
+C     AND N, AND SET THE OTHERS TO THE FOLLOWING VALUES :
+C           PHCHAR  = 0.30  OR  0.25
+C           PDIST   = 0.0 OR SIZE OF OTHER AXIS
+C           SIZ2    = 0.0
+C           KCHDIR  = 0  FOR THETA=0.(ALWAYS)
+C                   = 1  FOR THETA=90.
+C           KTITDIR = 0  (ALWAYS FOR THETA=0)
+C    !!! PDIST AND SIZ2 SHOULD HAVE SAME SIGN AND OPPOSITE TO SIGN OF N
+C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C
+C
+      DIMENSION ZXN(2),      ZYN(2)
+      CHARACTER TEXT*10 ,IBCD*(*)
+C     DATA SIZEN,SIZEL,TICK/0.02,0.04,0.02/
+      DX = XMAX - XMIN
+      S = SIZE
+C
+CL       DEFINE BASIC ATTRIBUTES
+C
+C                      FOR TEXT
+C&    CALL GSTXFP(2,2)
+C%%   CALL GSCHSP(0.0)
+C%%   CALL GSCHXP(1.0)
+C%%   CALL GSTXP(0)
+C%%   CALL GSTXAL(0,0)
+C%%   CALL GSCHH(PHCHAR)
+C                      FOR POLYLINE
+C%%   CALL GSLN(1)
+      CALL GDASH(0)
+C%%   CALL GSLWSC(2.)
+      CALL GWICOL(-2.0,1)
+CC     CALL GQTXX(1,X,Y,'ABCDEFGHIJ',IERR,CPX,CPY,TX,TY)
+C     SIZEW = (TX(3)-TX(1))/10.
+C     SIZEL = (TY(3)-TY(1))*0.5
+      SIZEW = 0.947*PHCHAR
+      SIZEH = PHCHAR
+      TICK  = SIZEH/2.0
+      ZTHETA = 0.
+C%%
+      IANGLE = 0
+      IF (THETA .EQ. 90.) ZTHETA = -1.
+C%%   IF (KCHDIR .EQ. 0) CALL GSCHUP(0.+ZTHETA,1.+ZTHETA)
+      IF (KCHDIR.EQ.0 .AND. THETA.EQ.90.) IANGLE = 90
+      I1MKCH = 1 - KCHDIR
+      I1MKTIT = 1 - KTITDIR
+C     ADX=ABS(DX)
+C%      ADX = AMAX1(ABS(XMIN),ABS(DX),ABS(XMIN+DX))
+      ADX = AMAX1(ABS(XMIN),ABS(XMIN+DX))
+      NFLOAT = 2
+      IF (ABS(DX) .LT. 0.05 *ADX) NFLOAT = 3
+      IF (ABS(DX) .LT. 0.005*ADX) NFLOAT = 4
+C--------------RETURN IF DX=0
+      IF(ADX.NE.0.) GO TO 30
+      GO TO 99
+30    CONTINUE
+      ANG=THETA*0.017453292
+      CTH=COS(ANG)
+      STH=SIN(ANG)
+C--    FIND THE RIGHT SCALE
+      EX=0.0
+3     CONTINUE
+      IF(ADX.LT.10.0)GO TO 5
+      ADX=ADX*0.10
+      EX=EX+1.0
+      GO TO 3
+    6 ADX=ADX*10.0
+      EX=EX-1.0
+    5 IF(ADX.LT.1.00) GO TO 6
+      ADX=10.0**(-EX)
+      X0=XMIN*ADX
+      ADX=DX*ADX
+C
+C  (NTIC-1) = NUMBER OF INTERVALS
+      NTIC = 11
+      CHDEC = SIZE / (SIZEW*(NFLOAT+3.)*I1MKCH + PHCHAR*(1.+2.*KCHDIR))
+      IF (CHDEC.GE.45.                   ) NTIC = 51
+      IF (CHDEC.GE.35. .AND. CHDEC.LT.45.) NTIC = 41
+      IF (CHDEC.GE.25. .AND. CHDEC.LT.35.) NTIC = 31
+      IF (CHDEC.GE.15. .AND. CHDEC.LT.25.) NTIC = 21
+      IF (CHDEC.GE.3.8 .AND. CHDEC.LT.4.8) NTIC = 9
+      IF (CHDEC.GE.2.8 .AND. CHDEC.LT.3.8) NTIC = 7
+      IF (CHDEC.GE.1.8 .AND. CHDEC.LT.2.8) NTIC = 5
+      IF (                   CHDEC.LT.1.8) NTIC = 3
+      KN=N
+      A=-1.0
+C--------------POSITIVE N FOR ANNOTATION ON CLOCKWISE SIDE OF AXIS
+      IF(ISIGN(1,KN).GE.0) GO TO 2
+      A=-A
+      KN=-KN
+C--------------DETERMINE POSITION OF ANNOTATION
+ 2    ZCTH = CTH*S/(NTIC-1.)
+      ZSTH = STH*S/(NTIC-1.)
+      DXN=-SIZEW*2.0
+C        ZA0 = 1 IF TITLE ON LEFT SIDE, 0 OTHERWISE
+      ZA0 = (A+1.)/2.
+      IF(X0.GE.10.)DXN=DXN-SIZEW
+      IF(X0.GE.100.)DXN=DXN-SIZEW
+      DYN= 1.5*TICK*A - (1.-ZA0)*SIZEH
+C
+      XN = X +  DXN*CTH - (DYN             )*STH -
+     -     (ZA0*(NFLOAT+2) + (1.-ZA0)*2.5)*KCHDIR*STH*SIZEW
+      IF (XMIN .LT. 0.0) XN = XN + STH*(1.-ZA0)*SIZEW*1.05*KCHDIR
+C
+      YN = Y + (DYN*CTH+DXN*STH)*I1MKCH -
+     -         SIZEH/2.*KCHDIR*STH
+      NT=NTIC/2
+C--------------WRITE NUMERIC   INTERVALS
+      ZDX0 = ADX/(NTIC-1.)
+      DO 8 I=1,NTIC,2
+      WRITE(TEXT,'(F7.4)') X0
+      IF (TEXT(2:2) .EQ. ' ') TEXT(2:2) = '0'
+C
+CL       SPECIAL TREATMENT FOR CYBER ONLY
+C
+C&    IF (TEXT(2:2) .EQ. '-') THEN
+C&       TEXT(1:1) = '-'
+C&       TEXT(2:2) = '0'
+C&    ENDIF
+C        END OF SPECIAL TREATMENT FOR CYBER
+C
+C     RATIO WIDTH '-' OVER ' '
+      ZRAT = 18./35.
+      IF (TEXT(1:1) .EQ. '-') XN = XN - ZRAT*SIZEW*(CTH+KCHDIR)
+      IF (TEXT(1:1) .EQ. '-') YN = YN - ZRAT*SIZEW*STH*I1MKCH
+C%%   CALL GTX(XN,YN,TEXT(1:NFLOAT+3))
+      ITLEN = NFLOAT+4
+      TEXT(ITLEN:ITLEN) = '$'
+      CALL GCHARA(IANGLE)
+      CALL GCHAR(TEXT,XN,YN,PHCHAR)
+      IF (TEXT(1:1) .EQ. '-') XN = XN + ZRAT*SIZEW*(CTH+KCHDIR)
+      IF (TEXT(1:1) .EQ. '-') YN = YN + ZRAT*SIZEW*STH*I1MKCH
+      X0=X0+2.*ZDX0
+      XN=XN+2.*ZCTH
+      YN=YN+2.*ZSTH
+ 8    CONTINUE
+C--------------WRITE AXIS LABEL
+      Z=KN
+      IF(EX.NE.0.0) Z=Z+7.
+      ZZ = KN
+      Z=Z/2.
+      DXB=S*0.5-Z*SIZEW
+      DYB=(0.8*TICK+SIZEW*3.5)*A -0.5*SIZEW
+      ZDYY = FLOAT(NFLOAT-2)*0.4*SIZEW * A * KCHDIR
+C
+      XT= X+DXB*CTH-(DYB-2.*ZA0*SIZEW+ZDYY+(1.-ZA0)*(SIZEW-2.*TICK))*STH
+     -   - (ZA0*SIZEW*(ZZ-3.*KCHDIR) + (1.-ZA0)*1.0*SIZEW)*KTITDIR*STH -
+     -                (A*(NFLOAT+3)*SIZEW+(1.-ZA0)*3.2*SIZEW)*KCHDIR*STH
+      XT = XT - I1MKCH*SIZEW*(1.4+0.5*A-(3.20+0.20*A)*SIZEW*KTITDIR)*STH
+      XT = XT + I1MKTIT*STH*SIZEW*(I1MKCH*(1.-ZA0) + KCHDIR*ZA0*1.2)
+      IF (XMIN .LT. 0.0) XT = XT - A*KCHDIR*SIZEW*STH
+C
+      YT = Y + DYB*CTH + DXB*STH *I1MKTIT + (0.5*S-SIZEH/2.)*KTITDIR*STH
+C%%
+      IANGLE = 0
+      IF (THETA.EQ.90.  .AND.  KTITDIR.EQ.0) IANGLE = 90
+C%%   CALL GSCHUP(0.+ZTHETA*I1MKTIT,1.+ZTHETA*I1MKTIT)
+C%%   IF(KN.GT.0) CALL GTX(XT,YT,IBCD(1:KN))
+      CALL GCHARA(IANGLE)
+      IF(KN.GT.0) CALL GCHAR(IBCD,XT,YT,PHCHAR)
+      IF(EX.EQ.0.0) GO TO 9
+C--------------WRITE DECIMAL EXPONENT
+      Z=KN
+      ZDLKTIT = KTITDIR * (Z/2. - 4.) * SIZEW * STH
+      IF (KTITDIR.EQ.1 .AND. Z.LE.7.) ZDLKTIT = (Z-7.)*SIZEW * STH
+C
+      XT=XT+Z*SIZEW*CTH + ZDLKTIT
+      YT=YT+Z*SIZEW*STH*I1MKTIT - KTITDIR*STH*2.5*SIZEW
+C
+C%%   CALL GTX (XT,YT,' * 10')
+      CALL GCHARA(IANGLE)
+      CALL GCHAR(' * 10$',XT,YT,PHCHAR)
+      XT=XT+5.1*SIZEW*(CTH+KTITDIR*STH) - 0.5*SIZEH*STH*I1MKTIT
+      YT=YT+5.1*SIZEW*STH*I1MKTIT + 0.5*SIZEH*(CTH+KTITDIR*STH)
+      KEX = -EX
+      WRITE(TEXT,'(I3)') KEX
+C&&&& CALL GSCHH(0.9*PHCHAR)
+      IF (TEXT(1:2) .EQ. '  ') TEXT(1:2) = '+ '
+      IF (TEXT(1:2) .EQ. ' -') TEXT(1:2) = '- '
+      IF (TEXT(1:1) .EQ. ' ') TEXT(1:1) = '+'
+      IF (TEXT(2:2) .EQ. ' ') THEN
+           TEXT(2:2) = TEXT(3:3)
+           TEXT(3:3) = ' '
+      ENDIF
+C%%   CALL GTX(XT,YT,TEXT)
+      TEXT(4:4) = '$'
+      CALL GCHARA(IANGLE)
+      CALL GCHAR(TEXT,XT,YT,PHCHAR)
+CC    CALL GSCHH(PHCHAR)
+   9  CONTINUE
+C--------------DRAW TICK MARKS AND AXIS
+      ZXN(1) =X
+      ZYN(1) =Y
+      ZXN(2) =X+ S*CTH
+      ZYN(2) =Y+ S*STH
+C%%   CALL GPL(2,ZXN,ZYN)
+      CALL GVECT(ZXN,ZYN,2)
+      DXB= TICK*A*STH
+      DYB=-TICK*A*CTH
+      ZXN(1) = ZXN(1) - ZCTH
+      ZYN(1) = ZYN(1) - ZSTH
+      DO 13 I=1,NTIC
+      ZXN(1) = ZXN(1) + ZCTH
+      ZYN(1) = ZYN(1) + ZSTH
+      ZXN(2) = ZXN(1) + DXB
+      ZYN(2) = ZYN(1) + DYB
+C%%   CALL GPL(2,ZXN,ZYN)
+      CALL GVECT(ZXN,ZYN,2)
+   13 CONTINUE
+C
+C                      DRAW GRID
+      IF (SIZ2 .EQ. 0.0) GO TO  20
+C%%   CALL GSLN(3)
+C%%   CALL GSLWSC(1.)
+      CALL GWICOL(-1.0,1)
+      DGX= SIZ2 * STH
+      DGY=-SIZ2 * CTH
+      ZXN(1) = X - ZCTH
+      ZYN(1) = Y - ZSTH
+      DO 25 I=1,NTIC
+      ZXN(1) = ZXN(1) + ZCTH
+      ZYN(1) = ZYN(1) + ZSTH
+      ZXN(2) = ZXN(1) + DGX
+      ZYN(2) = ZYN(1) + DGY
+C%%   CALL GPL(2,ZXN,ZYN)
+      CALL GDASH(2)
+      CALL GVECT(ZXN,ZYN,2)
+   25 CONTINUE
+C%%   CALL GSLN(1)
+      CALL GDASH(0)
+C%%   CALL GSLWSC(2.)
+      CALL GWICOL(-2.0,1)
+   20 CONTINUE
+C
+C--------------RE-DRAW THE MARKS AND AXIS AT PDIST IN PERPENDICULAR DIR.
+      IF (PDIST .EQ. 0.0) GO TO 15
+      ZXN(1) =X + PDIST*STH
+      ZYN(1) =Y - PDIST*CTH
+      ZXN(2) =ZXN(1) + S*CTH
+      ZYN(2) =ZYN(1) + S*STH
+C%%   CALL GPL(2,ZXN,ZYN)
+      CALL GVECT(ZXN,ZYN,2)
+      DXB=-TICK*A*STH
+      DYB= TICK*A*CTH
+      ZXN(1) = ZXN(1) - ZCTH
+      ZYN(1) = ZYN(1) - ZSTH
+      DO 14 I=1,NTIC
+      ZXN(1) = ZXN(1) + ZCTH
+      ZYN(1) = ZYN(1) + ZSTH
+      ZXN(2) = ZXN(1) + DXB
+      ZYN(2) = ZYN(1) + DYB
+C%%   CALL GPL(2,ZXN,ZYN)
+      CALL GVECT(ZXN,ZYN,2)
+   14 CONTINUE
+C
+ 15   CONTINUE
+C%%   CALL GSCHUP(0.,1.)
+C%%   CALL GSLN(1)
+      CALL GDASH(0)
+C%%   CALL GSLWSC(1.0)
+      CALL GWICOL(-1.0,1)
+C     CALL GSTXFP(1,2)
+   99 RETURN
+      END
+         SUBROUTINE AXASNH(X,Y,SIZE,XMIN,XMAX,THETA,PHCHAR,IBCD,N
+     +                  ,KCHDIR,KTITDIR,PDIST,SIZ2)
+C        ******************************************************
+C     DRAWS A ASINH AXIS FROM ASINH(XMIN) TO ASINH(XMAX), LINEARLY
+C
+C     X,Y     WORLD COORDINATES AT BEGINNING OF AXIS
+C     SIZE    AXIS LENGTH
+C     XMIN    VALUE OF THE VARIABLE AT THE BEGINNING OF THE AXIS
+C     XMAX      "   "   "     "     "   "  END       OF THE AXIS
+C     THETA   ANGLE IN DEGREES
+C     PHCHAR  HEIGHT OF CHARACTERS
+C     IBCD    NAME OF AXIS
+C     N       LENGTH OF NAME (NB OF CHARACTERS)
+C             IF POSITIVE, NAME WILL BE PRINTED ON THE RIGHT SIDE
+C             IF NEGATIVE,  "    "        "            LEFT   "
+C     KCHDIR  DIRECTION OF AXIS NUMBERS (VERTICAL AXIS ONLY)
+C             = 0 : CHARACTER PERP. TO AXIS (I.E. WRITING VERTICALLY  )
+C             = 1 :    "   PARALLEL TO AXIS (I.E.    "    HORIZONTALLY)
+C     KTITDIR DIRECTION OF CHARACTERS FOR THE TITLE (VERTICAL AXIS ONLY)
+C             = 0 : CHARACTER PERP. TO AXIS (I.E. WRITING VERTICALLY  )
+C             = 1 :    "   PARALLEL TO AXIS (I.E.    "    HORIZONTALLY)
+C     PDIST   DISTANCE IN PERPEND. DIRECT. AT WHICH AXIS AND TICKS ARE RE-DRAWN
+C             PDIST > 0  => ON THE RIGHT SIDE OF THE AXIS
+C             PDIST < 0  => ON THE LEFT  SIDE "   "   "
+C             IN GENERAL PDIST=SIZ2 IF (SIZ2 .NE. 0.)
+C     SIZ2    GRID LENGTH
+C             SIZ2  > 0  => ON THE RIGHT SIDE OF THE AXIS
+C             SIZ2  < 0  => ON THE LEFT  SIDE "   "   "
+C
+C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C
+C     FOR A SIMPLE AXIS FILL IN THE FIRST SIX PARAMETERS AS WELL AS IBCD
+C     AND N, AND SET THE OTHERS TO THE FOLLOWING VALUES :
+C           PHCHAR  = 0.30  OR  0.25
+C           PDIST   = 0.0 OR SIZE OF OTHER AXIS
+C           SIZ2    = 0.0
+C           KCHDIR  = 0  FOR THETA=0.(ALWAYS)
+C                   = 1  FOR THETA=90.
+C           KTITDIR = 0  (ALWAYS FOR THETA=0)
+C    !!! PDIST AND SIZ2 SHOULD HAVE SAME SIGN AND OPPOSITE TO SIGN OF N
+C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C
+C
+      DIMENSION ZXN(2),      ZYN(2)
+      CHARACTER TEXT*10 ,IBCD*(*)
+C     DATA SIZEN,SIZEL,TICK/0.02,0.04,0.02/
+      ZXMAX = XMAX
+      ZXMIN = XMIN
+      DX = ZXMAX - ZXMIN
+      DXASH = ASINH(ZXMAX) - ASINH(ZXMIN)
+      S = SIZE
+C
+CL       DEFINE BASIC ATTRIBUTES
+C
+C                      FOR POLYLINE
+      CALL GDASH(0)
+      CALL GWICOL(-2.0,1)
+C     CALL GQTXX(1,X,Y,'ABCDEFGHIJ',IERR,CPX,CPY,TX,TY)
+C     SIZEW = (TX(3)-TX(1))/10.
+C     SIZEL = (TY(3)-TY(1))*0.5
+      SIZEW = 0.947*PHCHAR
+      SIZEH = PHCHAR
+      TICK  = SIZEH/2.0
+      ZTHETA = 0.
+C%%
+      IANGLE = 0
+      IF (THETA .EQ. 90.) ZTHETA = -1.
+      IF (KCHDIR.EQ.0 .AND. THETA.EQ.90.) IANGLE = 90
+      I1MKCH = 1 - KCHDIR
+      I1MKTIT = 1 - KTITDIR
+      ADX = AMAX1(ABS(XMIN),ABS(DX),ABS(XMIN+DX))
+C--------------RETURN IF DX=0
+      IF(ADX.NE.0.) GO TO 30
+      GO TO 99
+30    CONTINUE
+      ANG=THETA*0.017453292
+      CTH=COS(ANG)
+      STH=SIN(ANG)
+C
+C  (NTIC-1) = NUMBER OF INTERVALS
+      NTIC = 11
+      CHDEC = SIZE / (SIZEW*(9.)*I1MKCH + PHCHAR*(1.+2.*KCHDIR))
+      IF (CHDEC.GE.45.                   ) NTIC = 51
+      IF (CHDEC.GE.35. .AND. CHDEC.LT.45.) NTIC = 41
+      IF (CHDEC.GE.25. .AND. CHDEC.LT.35.) NTIC = 31
+      IF (CHDEC.GE.15. .AND. CHDEC.LT.25.) NTIC = 21
+      IF (CHDEC.GE.3.8 .AND. CHDEC.LT.4.8) NTIC = 9
+      IF (CHDEC.GE.2.8 .AND. CHDEC.LT.3.8) NTIC = 7
+      IF (CHDEC.GE.1.8 .AND. CHDEC.LT.2.8) NTIC = 5
+      IF (                   CHDEC.LT.1.8) NTIC = 3
+      KN=N
+      A=-1.0
+C--------------POSITIVE N FOR ANNOTATION ON CLOCKWISE SIDE OF AXIS
+      IF(ISIGN(1,KN).GE.0) GO TO 2
+      A=-A
+      KN=-KN
+C--------------DETERMINE POSITION OF ANNOTATION
+ 2    ZCTH = CTH*S/(NTIC-1.)
+      ZSTH = STH*S/(NTIC-1.)
+      DXN=-SIZEW*4.0
+C        ZA0 = 1 IF TITLE ON LEFT SIDE, 0 OTHERWISE
+      ZA0 = (A+1.)/2.
+      DYN= 1.5*TICK*A - (1.-ZA0)*SIZEH + 3.*SIZEW*KCHDIR
+C
+      XN = X +  DXN*CTH - (DYN             )*STH -
+     -     (ZA0*(4.) + (1.-ZA0)*2.5)*KCHDIR*STH*SIZEW
+      IF (XMIN .LT. 0.0) XN = XN + STH*(1.-ZA0)*SIZEW*1.05*KCHDIR
+C
+      YN = Y + (DYN*CTH+DXN*STH)*I1MKCH -
+     -         SIZEH/2.*KCHDIR*STH
+      NT=NTIC/2
+C--------------WRITE NUMERIC   INTERVALS
+      X0 = ZXMIN
+      ZDX0 = DXASH/(NTIC-1.)
+      DO 8 I=1,NTIC,2
+      WRITE(TEXT,'(1PE8.1,"$")') X0
+C
+C     RATIO WIDTH '-' OVER ' '
+      ZRAT = 18./35.
+      IF (TEXT(1:1) .EQ. '-') XN = XN - ZRAT*SIZEW*(CTH+KCHDIR)
+      IF (TEXT(1:1) .EQ. '-') YN = YN - ZRAT*SIZEW*STH*I1MKCH
+C
+C     RATIO WIDTH '1' OVER '2'
+      ZRAT12 = 1./4.
+      IF (TEXT(2:2) .EQ. '1') XN = XN + ZRAT12*SIZEW*(CTH+KCHDIR)
+      IF (TEXT(2:2) .EQ. '1') YN = YN + ZRAT12*SIZEW*STH*I1MKCH
+C
+      CALL GCHARA(IANGLE)
+      CALL GCHAR(TEXT,XN,YN,PHCHAR)
+      IF (TEXT(1:1) .EQ. '-') XN = XN + ZRAT*SIZEW*(CTH+KCHDIR)
+      IF (TEXT(1:1) .EQ. '-') YN = YN + ZRAT*SIZEW*STH*I1MKCH
+      IF (TEXT(2:2) .EQ. '1') XN = XN - ZRAT12*SIZEW*(CTH+KCHDIR)
+      IF (TEXT(2:2) .EQ. '1') YN = YN - ZRAT12*SIZEW*STH*I1MKCH
+      X0 = SINH(ASINH(X0) + 2.*ZDX0)
+      XN=XN+2.*ZCTH
+      YN=YN+2.*ZSTH
+ 8    CONTINUE
+C--------------WRITE AXIS LABEL
+      Z=KN
+      ZZ = KN
+      Z=Z/2.
+      DXB=S*0.5-Z*SIZEW
+      DYB=(0.8*TICK+SIZEW*3.5)*A -0.5*SIZEW
+      ZDYY = 7.*0.4*SIZEW * A * KCHDIR
+C
+      XT= X+DXB*CTH-(DYB-2.*ZA0*SIZEW+ZDYY+(1.-ZA0)*(SIZEW-2.*TICK))*STH
+     -   - (ZA0*SIZEW*(ZZ-3.*KCHDIR) + (1.-ZA0)*1.0*SIZEW)*KTITDIR*STH -
+     -                (A*(5.)*SIZEW+(1.-ZA0)*3.2*SIZEW)*KCHDIR*STH
+      XT = XT - I1MKCH*SIZEW*(1.4+0.5*A-(3.20+0.20*A)*SIZEW*KTITDIR)*STH
+      XT = XT + I1MKTIT*STH*SIZEW*(I1MKCH*(1.-ZA0) + KCHDIR*ZA0*1.2)
+      IF (XMIN .LT. 0.0) XT = XT - A*KCHDIR*SIZEW*STH
+C
+      YT = Y + DYB*CTH + DXB*STH *I1MKTIT + (0.5*S-SIZEH/2.)*KTITDIR*STH
+C%%
+      IANGLE = 0
+      IF (THETA.EQ.90.  .AND.  KTITDIR.EQ.0) IANGLE = 90
+      CALL GCHARA(IANGLE)
+      IF(KN.GT.0) CALL GCHAR(IBCD,XT,YT,PHCHAR)
+C--------------DRAW TICK MARKS AND AXIS
+      ZXN(1) =X
+      ZYN(1) =Y
+      ZXN(2) =X+ S*CTH
+      ZYN(2) =Y+ S*STH
+      CALL GVECT(ZXN,ZYN,2)
+      DXB= TICK*A*STH
+      DYB=-TICK*A*CTH
+      ZXN(1) = ZXN(1) - ZCTH
+      ZYN(1) = ZYN(1) - ZSTH
+      DO 13 I=1,NTIC
+      ZXN(1) = ZXN(1) + ZCTH
+      ZYN(1) = ZYN(1) + ZSTH
+      ZXN(2) = ZXN(1) + DXB
+      ZYN(2) = ZYN(1) + DYB
+      CALL GVECT(ZXN,ZYN,2)
+   13 CONTINUE
+C
+C                      DRAW GRID
+      IF (SIZ2 .EQ. 0.0) GO TO  20
+      CALL GWICOL(-1.0,1)
+      DGX= SIZ2 * STH
+      DGY=-SIZ2 * CTH
+      ZXN(1) = X - ZCTH
+      ZYN(1) = Y - ZSTH
+      DO 25 I=1,NTIC
+      ZXN(1) = ZXN(1) + ZCTH
+      ZYN(1) = ZYN(1) + ZSTH
+      ZXN(2) = ZXN(1) + DGX
+      ZYN(2) = ZYN(1) + DGY
+      CALL GDASH(2)
+      CALL GVECT(ZXN,ZYN,2)
+   25 CONTINUE
+      CALL GDASH(0)
+      CALL GWICOL(-2.0,1)
+   20 CONTINUE
+C
+C--------------RE-DRAW THE MARKS AND AXIS AT PDIST IN PERPENDICULAR DIR.
+      IF (PDIST .EQ. 0.0) GO TO 15
+      ZXN(1) =X + PDIST*STH
+      ZYN(1) =Y - PDIST*CTH
+      ZXN(2) =ZXN(1) + S*CTH
+      ZYN(2) =ZYN(1) + S*STH
+      CALL GVECT(ZXN,ZYN,2)
+      DXB=-TICK*A*STH
+      DYB= TICK*A*CTH
+      ZXN(1) = ZXN(1) - ZCTH
+      ZYN(1) = ZYN(1) - ZSTH
+      DO 14 I=1,NTIC
+      ZXN(1) = ZXN(1) + ZCTH
+      ZYN(1) = ZYN(1) + ZSTH
+      ZXN(2) = ZXN(1) + DXB
+      ZYN(2) = ZYN(1) + DYB
+      CALL GVECT(ZXN,ZYN,2)
+   14 CONTINUE
+C
+ 15   CONTINUE
+      CALL GDASH(0)
+      CALL GWICOL(-1.0,1)
+C     CALL GSTXFP(1,2)
+   99 RETURN
+      END
+         SUBROUTINE LGAXIS(XB,YB,SIZE,UMIN,UMAX,THETA,PHCHAR,NAME,KL
+     +                    ,KCHDIR,KTITDIR,PDIST,SIZ2)
+C        ***********************************************************
+C
+C     DRAWS A LOGARITHMIC AXIS
+C
+C     XB,YB   WORLD COORDINATES AT BEGINNING OF AXIS
+C     SIZE    AXIS LENGTH
+C     UMIN    VALUE OF THE VARIABLE AT THE BEGINNING OF THE AXIS
+C     UMAX    VALUE OF THE VARIABLE AT THE END       "   "   "
+C     THETA   ANGLE IN DEGREES (ONLY 0. AND 90. WILL WORK)
+C     PHCHAR  HEIGHT OF CHARACTERS
+C     NAME    NAME OF AXIS
+C     KL      LENGTH OF NAME (NB OF CHARACTERS)
+C             IF POSITIVE, NAME WILL BE PRINTED ON THE RIGHT SIDE
+C             IF NEGATIVE,  "    "        "            LEFT   "
+C     KCHDIR  DIRECTION OF AXIS NUMBERS (VERTICAL AXIS ONLY)
+C             = 0 : CHARACTER PERP. TO AXIS (I.E. WRITING VERTICALLY  )
+C             = 1 :    "   PARALLEL TO AXIS (I.E.    "    HORIZONTALLY)
+C     KTITDIR DIRECTION OF CHARACTERS FOR THE TITLE (VERTICAL AXIS ONLY)
+C             = 0 : CHARACTER PERP. TO AXIS (I.E. WRITING VERTICALLY  )
+C             = 1 :    "   PARALLEL TO AXIS (I.E.    "    HORIZONTALLY)
+C     PDIST   DISTANCE IN PERPEND. DIRECT. AT WHICH AXIS AND TICKS ARE RE-DRAWN
+C             PDIST > 0  => ON THE RIGHT SIDE OF THE AXIS
+C             PDIST < 0  => ON THE LEFT  SIDE "   "   "
+C             IN GENERAL PDIST=SIZ2 IF (SIZ2 .NE. 0.)
+C     SIZ2    GRID LENGTH
+C             SIZ2  > 0  => ON THE RIGHT SIDE OF THE AXIS
+C             SIZ2  < 0  => ON THE LEFT  SIDE "   "   "
+C
+C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C
+C     TO DRAW A SIMPLE AXIS YOU NEED TO FILL IN ONLY THE FIRST EIGHT
+C     PARAMETERS AND SET THE NEXT ONES TO :
+C           SIZ2    = 0.0
+C           PHCHAR  = 0.3 (OR 0.25)
+C           KCHDIR  = 0 FOR THETA=0. (ALWAYS)
+C                   = 1 FOR THETA=90.
+C           KTITDIR = 0   (ALWAYS FOR THETA= 0.)
+C           PDIST   = 0.
+C    !!! PDIST AND SIZ2 SHOULD HAVE SAME SIGN AND OPPOSITE TO SIGN OF KL
+C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C
+C
+      CHARACTER NAME*(*), CH*10
+      LOGICAL HORIZ
+C
+C     SET PARAMETERS
+      IPR = KL/ABS(KL)
+      IF (SIZ2 .NE. 0.0) IPR = 2*IPR
+      L = ABS(KL)
+C
+C  1. SELECT LINE TYPE AND MOVE TO BEGINNING OF AXIS
+CL       DEFINE BASIC ATTRIBUTES
+C                      FOR TEXT
+C%%   CALL GSCHSP(0.0)
+C%%   CALL GSCHXP(1.0)
+C%%   CALL GSTXP(0)
+C%%   CALL GSTXAL(0,0)
+C%%   CALL GSCHH(PHCHAR)
+C                      FOR POLYLINE
+C%%   CALL GSLN(1)
+      CALL GDASH(0)
+C
+      CALL GPLOT(XB,YB,3)
+C                                 SUBDIVISION SIZE
+      SUBL=-PHCHAR/2.0
+      IF (IPR.LT.0) SUBL=-SUBL
+      HORIZ = THETA.NE.90.
+C                                 SELECT CHARACTER FOR NUMBERS
+C     CALL SCHAR(0.25,1,2,CT,CW)
+      CT = PHCHAR
+      CW = CT*0.947
+      I1MKDIR = 1 - KCHDIR
+      I1MKTIT = 1 - KTITDIR
+      IANGLE = 0
+      IF (HORIZ) THEN
+C%%     CALL GSCHUP(0.,1.)
+         IANGLE = 0
+      ELSE
+C%%     IF (KCHDIR .EQ. 0) CALL GSCHUP(-1.,0.)
+        IF (KCHDIR .EQ. 0) IANGLE = 90
+C%%     IF (KCHDIR .EQ. 1) CALL GSCHUP( 0.,1.)
+        IF (KCHDIR .EQ. 1) IANGLE = 0
+      ENDIF
+C
+C  2. DRAW AXIS
+C                                 LINE WIDTH = 2
+C%%   CALL GSLWSC(2.)
+      CALL GWICOL(-2.0,1)
+      IF (HORIZ) THEN
+        CALL GPLOT(XB+SIZE,YB,2)
+        CALL GPLOT(XB,YB-PDIST,3)
+        IF (PDIST .NE. 0.0) CALL GPLOT(XB+SIZE,YB-PDIST,2)
+      ELSE
+        CALL GPLOT(XB,YB+SIZE,2)
+        CALL GPLOT(XB+PDIST,YB,3)
+        IF (PDIST .NE. 0.0) CALL GPLOT(XB+PDIST,YB+SIZE,2)
+      ENDIF
+C
+C  3. ROUND UMIN AND UMAX
+C
+      WRITE (CH,'(1PE8.1)') UMIN
+C                                        U1 IN [1.0, 9.9]
+      READ (CH,'(F4.1,1X,I3)') U1,IEXP1
+C                                        START AXIS WITH 10**IEXP1
+      IUM1=1
+C                                        OR WITH 3*10**IEXP1
+      IF (U1.GE.3.) IUM1=3
+C                                        U2 IN [1.0, 9.9]
+      WRITE (CH,'(1PE8.1)') UMAX
+      READ (CH,'(F4.1,1X,I3)') U2,IEXP2
+      IF (U2.EQ.1.) THEN
+C                                        FINISH AXIS WITH 10**IEXP2
+        IUM2=1
+      ELSE
+        IF (U2.LE.3.) THEN
+C                                        OR WITH 3*10**IEXP2
+          IUM2=3
+        ELSE
+C                                        OR WITH 10**(IEXP2+1)
+          IUM2=1
+          IEXP2=IEXP2+1
+        ENDIF
+      ENDIF
+C                                        NUMBER OF DECADES
+      ND = IEXP2 - IEXP1
+C                                        IF MORE THAN 4 DECADES
+      IF (ND.GE.4) THEN
+C                                        START WITH 10**IEXP1
+        IUM1=1
+        IF (IUM2.EQ.3) THEN
+C                                        AND FINISH WITH 10**IEXP2
+          IUM2=1
+          IEXP2=IEXP2+1
+        ENDIF
+      ENDIF
+C                                        ROUNDED VALUES
+      UMINR=IUM1*10.**IEXP1
+      UMAXR=IUM2*10.**IEXP2
+         IF (ABS(UMAXR-UMINR) .LT. 1.0E-10) THEN
+            IF (IUM1 .EQ. 1) IUM2  = 3
+            IF (IUM1 .EQ. 3) IEXP2 = IEXP2 + 1
+            IF (IUM1 .EQ. 3) IUM2  = 1
+            UMAXR=IUM2*10.**IEXP2
+         ENDIF
+C
+      DECA=ALOG10(UMAXR/UMINR)
+C                                        NUMBER OF CHARACTERS/DECADE
+      CHDEC=SIZE/(DECA*CT)
+CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+CC                               NEXT LINE TO HAVE ONLY LINES 2,3 AND 5
+C        IF (CHDEC .GE.16.)  CHDEC=16.
+CC
+CC                               NEXT LINE TO HAVE ONLY LINE    3
+C        IF (CHDEC .GE. 9.)  CHDEC= 9.
+CC
+CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+C
+C 4.1 PUT SUBDIVISIONS
+C
+C     CALCULATE NDIGIT
+         DO 39 IJ=1,2
+            IF (IJ .EQ. 1) IEXP = IEXP1
+            IF (IJ .EQ. 2) IEXP = IEXP2
+            IF      (IEXP.LE.-100) THEN
+               NDIGIT=4
+            ELSE IF (IEXP.GE. -99 .AND. IEXP.LE.-10) THEN
+               NDIGIT=3
+            ELSE IF (IEXP.GE.  -9 .AND. IEXP.LE. -1) THEN
+               NDIGIT=2
+            ELSE IF (IEXP.GE.   0 .AND. IEXP.LE.  9) THEN
+               NDIGIT=1
+            ELSE IF (IEXP.GE.  10) THEN
+               NDIGIT=2
+            ELSE IF (IEXP.GE. 100) THEN
+               NDIGIT=3
+            ENDIF
+C
+            IF (IJ .EQ. 1) NDIGIT1 = NDIGIT
+            IF (IJ .EQ. 2) NDIGIT2 = NDIGIT
+ 39      CONTINUE
+C
+         NDIGIT = MAX0(NDIGIT1,NDIGIT2)
+C
+      IUM=IUM1
+      IEXP=IEXP1
+      UVAR=UMINR
+      ALUMIN=ALOG(UMINR)
+      FAC=SIZE/(ALOG(UMAXR)-ALUMIN)
+40    IF (UVAR.GT.UMAXR) GOTO 50
+      IF (HORIZ) THEN
+C                                        HORIZONTAL AXIS
+        XSUB = XB + FAC*(ALOG(UVAR)-ALUMIN)
+        CALL GPLOT(XSUB,YB,3)
+        CALL GPLOT(XSUB,YB-SUBL,2)
+        CALL GPLOT(XSUB,YB-PDIST,3)
+        IF (PDIST .NE. 0.0) CALL GPLOT(XSUB,YB-PDIST+SUBL,2)
+C                                        GRID, IF ANY
+        IF (ABS(IPR).EQ.2) THEN
+C%%       CALL GSLN(3)
+         CALL GDASH(2)
+C%%       CALL GSLWSC(1.)
+         CALL GWICOL(-1.0,1)
+          CALL GPLOT(XSUB,YB-SUBL     ,3)
+          IF (PDIST .EQ. 0.0)  CALL GPLOT(XSUB,YB-SIZ2     ,2)
+          IF (PDIST .NE. 0.0)  CALL GPLOT(XSUB,YB-SIZ2+SUBL,2)
+C%%       CALL GSLN(1)
+         CALL GDASH(0)
+C%%       CALL GSLWSC(2.)
+         CALL GWICOL(-2.0,1)
+        ENDIF
+      ELSE
+C                                        VERTICAL AXIS
+        YSUB = YB +FAC*(ALOG(UVAR)-ALUMIN)
+        CALL GPLOT(XB,YSUB,3)
+        CALL GPLOT(XB+SUBL,YSUB,2)
+        CALL GPLOT(XB+PDIST,YSUB,3)
+        IF (PDIST .NE. 0.0) CALL GPLOT(XB+PDIST-SUBL,YSUB,2)
+C                                        GRID, IF ANY
+        IF (ABS(IPR) .EQ. 2) THEN
+C%%       CALL GSLN(3)
+         CALL GDASH(2)
+C%%       CALL GSLWSC(1.)
+         CALL GWICOL(-1.0,1)
+          CALL GPLOT(XB+SUBL     ,YSUB,3)
+          IF (PDIST .EQ. 0.0)  CALL GPLOT(XB+SIZ2     ,YSUB,2)
+          IF (PDIST .NE. 0.0)  CALL GPLOT(XB+SIZ2-SUBL,YSUB,2)
+C%%       CALL GSLN(0)
+         CALL GDASH(1)
+C%%       CALL GSLWSC(2.)
+         CALL GWICOL(-2.0,1)
+        ENDIF
+      ENDIF
+C
+C 4.2 PUT NUMBERS NEAR SUBDIVISIONS
+C
+      IF (L.EQ.0) GOTO 43
+      IF (IUM.EQ.1) THEN
+C                                          WRITE 10**EXP
+        IF      (IEXP.LE.-100) THEN
+           WRITE (CH,'(I4)') IEXP
+           JDIGIT=4
+        ELSE IF (IEXP.GE. -99 .AND. IEXP.LE.-10) THEN
+           WRITE (CH,'(I3)') IEXP
+           JDIGIT=3
+        ELSE IF (IEXP.GE.  -9 .AND. IEXP.LE. -1) THEN
+           WRITE (CH,'(I2)') IEXP
+           JDIGIT=2
+        ELSE IF (IEXP.GE.   0 .AND. IEXP.LE.  9) THEN
+           WRITE (CH,'(I1)') IEXP
+           JDIGIT=1
+        ELSE IF (IEXP.GE.  10) THEN
+           WRITE (CH,'(I2)') IEXP
+           JDIGIT=2
+        ELSE IF (IEXP.GE. 100) THEN
+           WRITE (CH,'(I3)') IEXP
+           JDIGIT=3
+        ENDIF
+C
+        IF (HORIZ) THEN
+          XSUB = XSUB - CW
+          IF (IPR.GE.0) THEN
+C           YSUB = YB - 1.5*CT
+            YSUB = YB + 1.8*SUBL - 1.0*CT
+          ELSE
+            YSUB = YB + 1.8*SUBL
+          ENDIF
+        ELSE
+          YSUB = YSUB - 1.5*CW*I1MKDIR -CT/2.*KCHDIR
+          IF (IPR.GE.0) THEN
+            XSUB = XB - 1.8*SUBL + 1.0*CT*I1MKDIR
+          ELSE
+C           XSUB = XB - 0.25*CT
+            XSUB = XB - SUBL*(1.0 + I1MKDIR) -(2.5+NDIGIT)*CW*KCHDIR
+CC          IF (NDIGIT .GE. 3) XSUB = XSUB - CW*KCHDIR
+          ENDIF
+        ENDIF
+C%%     CALL GTX(XSUB,YSUB,'10')
+         CALL GCHARA(IANGLE)
+        CALL GCHAR('10$',XSUB,YSUB,PHCHAR)
+        IF (HORIZ) THEN
+          XA = XSUB + 2.1*CW
+          YA = YSUB + 0.5*CT
+        ELSE
+          XA = XSUB - 0.5*CT*I1MKDIR +2.1*CW*KCHDIR
+          YA = YSUB + 2.1*CW*I1MKDIR + 0.5*CT*KCHDIR
+        ENDIF
+C%%     CALL GTX(XA,YA,CH(1:JDIGIT))
+         CH(JDIGIT+1:JDIGIT+1) = '$'
+         CALL GCHARA(IANGLE)
+         CALL GCHAR(CH,XA,YA,PHCHAR)
+      ELSE
+C                                         WRITE NUMBER
+        IF (HORIZ) THEN
+          XSUB = XSUB - CW/2.
+          IF (IPR.GE.0) THEN
+            YSUB = YB + 1.8*SUBL - 1.0*CT
+          ELSE
+            YSUB = YB + 1.8*SUBL
+          ENDIF
+        ELSE
+          YSUB = YSUB - CW/2.*I1MKDIR -CT/2.*KCHDIR
+          IF (IPR.GE.0) THEN
+            XSUB = XB - 1.8*SUBL + 1.0*CT*I1MKDIR
+          ELSE
+            XSUB = XB - SUBL*(1.0+I1MKDIR) - (1.5+NDIGIT)*CW*KCHDIR
+          ENDIF
+        ENDIF
+        WRITE (CH,'(I1)') IUM
+C%%     CALL GTX(XSUB,YSUB,CH(1:1))
+         CH(2:2) = '$'
+         CALL GCHARA(IANGLE)
+         CALL GCHAR(CH,XSUB,YSUB,PHCHAR)
+      ENDIF
+C
+C 4.3 NEXT VALUE
+C
+43    IF (CHDEC.GE.26.) THEN
+C                                   TEST NUMBER OF CHAR./DECADE
+C                                     -31                   -30
+C                                    10     2 3 4 5 6 7 8 10
+        IF (IUM.LT.8) THEN
+          IUM=IUM+1
+        ELSE
+          IUM=1
+          IEXP=IEXP+1
+        ENDIF
+      ELSE IF (CHDEC.GE.16. .AND. CHDEC.LT.26.) THEN
+C                                     -31             -30
+C                                   10     2  3 5   10
+        IF (IUM.EQ.1) THEN
+          IUM=2
+        ELSE IF (IUM.EQ.2) THEN
+          IUM=3
+        ELSE IF (IUM.EQ.3) THEN
+          IUM=5
+        ELSE
+          IUM=1
+          IEXP=IEXP+1
+        ENDIF
+      ELSE IF (CHDEC.GE. 9. .AND. CHDEC.LT.16.) THEN
+C                                         -31        -30
+C                                       10      3  10
+        IF (IUM.EQ.1) THEN
+          IUM=3
+        ELSE
+          IUM=1
+          IEXP=IEXP+1
+        ENDIF
+      ELSE IF (CHDEC.GE.6. .AND. CHDEC.LT. 9.) THEN
+C                                         -31   -30
+C                                       10    10
+        IEXP=IEXP+1
+      ELSE IF (CHDEC.LT.6.) THEN
+        INCR=6.*CW/SIZE*ND+1
+        IEXP=IEXP+INCR
+      ENDIF
+      UVAR=IUM*10.**IEXP
+      GOTO 40
+C
+C  5. WRITE THE NAME OF THE AXIS
+C
+50    LEN=IABS(L)
+      IF (LEN.EQ.0) GOTO 100
+      ZLEN = LEN
+      IF (LEN .GE.19) ZLEN = ZLEN + 1.
+      IF (LEN .GE.10) ZLEN = ZLEN + 1.
+C     CALL SCHAR(0.3,2,2,CT,CW)
+      CT = PHCHAR
+      CW = CT*0.947
+      IF (HORIZ) THEN
+        IF (IPR.GE.0) THEN
+          YSUB = YB - 3.0*CT + 1.8*SUBL
+        ELSE
+          YSUB = YB + 2.0*CT + 1.8*SUBL
+        ENDIF
+        XA = XB + (SIZE-ZLEN*CW)/2.
+        YA = YSUB
+      ELSE
+C%%     IF (KTITDIR .EQ. 0) CALL GSCHUP(-1.,0.)
+        IF (KTITDIR .EQ. 0) IANGLE = 90
+C%%     IF (KTITDIR .EQ. 1) CALL GSCHUP( 0.,1.)
+        IF (KTITDIR .EQ. 1) IANGLE = 0
+        IF (IPR.GE.0) THEN
+          XSUB = XB - 1.8*SUBL +
+     +           ((3.+NDIGIT)*CW*KCHDIR+2.5*CT*I1MKDIR)*KTITDIR
+     +         + (KCHDIR*(3.0+NDIGIT)*CW + 3.*CT*I1MKDIR+CT)*I1MKTIT
+        ELSE
+          ZDELTX =  3.5*CT*I1MKDIR+KCHDIR*(3.5+NDIGIT)*CW
+          XSUB = XB - 1.0*SUBL - ZDELTX * I1MKTIT -
+     -              ((ZLEN-2.0)*CW+ZDELTX) * KTITDIR
+        ENDIF
+        XA = XSUB
+        YA = YB + (SIZE-LEN*CW*I1MKTIT)/2. - 0.5*CT*KTITDIR
+      ENDIF
+C%%   CALL GTX(XA,YA,NAME(1:LEN))
+      CALL GCHARA(IANGLE)
+      CALL GCHAR(NAME,XA,YA,PHCHAR)
+100   CONTINUE
+C%%   CALL GSLN(1)
+      CALL GDASH(0)
+C%%   CALL GSLWSC(1.)
+      CALL GWICOL(-1.0,1)
+C%%   CALL GSCHUP(0.,1.)
+      UMIN = UMINR
+      UMAX = UMAXR
+      END
+         SUBROUTINE XMULPLT
+C        ******************
+C
+C      SEVERAL PLOTS ONE ON THE TOP OF THE OTHER :
+C
+C        THE PICTURE IS DIVIDED IN KPLOT RECTANGLES HORIZONTALLY.
+C        IN EACH IPLOT (IPLOT=1,KPLOT) RECTANGLE, KNRFUN(IPLOT) FUNCTIONS
+C        ARE PLOTTED.
+C
+C     P(KDIM)          : ABSCISSE ARRAY
+C     PFUN(KDIM,KFDIM) : FUNCTIONS TO PLOT
+C     KPTS             : NUMBER OF POINT TO PLOT (IF KPTS.GT.MNX1 CHANGE MNX1)
+C     KDIM             : DIMENSION OF P AND PFUN(., )
+C     KPLOT            : NUMBER OF RECTANGLES IN WHICH FUNCTIONS ARE PLOTTED
+C     KFDIM            : DIMENSION OF       PFUN( ,.)
+C     KNRFUN(IPLOT)    : NUMBER OF CURVES TO PLOT IN THE IPLOT RECTANGLE
+C     TITLE(IPLOT)     : TITLE OF THE IPLOT RECTANGLE
+C     KNTIT(IPLOT)     : NUMBER OF CHARACTER OF TITLE(IPLOT)
+C     LABEL1,2,3,4    : TEXT*72 LABELLING THE PLOT
+C     NCHLAB           : NUMBER OF CHARACTERS IN LABELJ, USED TO CENTER LABELS
+C     PHCHAR           : HEIGHT OF CHARACTERS
+C     PX0,PY0,PLX,PLY  : BOX OF PLOT
+C-----------------------------------------------------------------------
+C
+         PARAMETER(MNX1=3531 , MPLT=10)
+C
+       CHARACTER*82        TITLE(MPLT )
+       CHARACTER*82        ZTIT
+       CHARACTER*81        LABEL1,LABEL2,LABEL3,LABEL4
+       DIMENSION
+     +   P(MNX1),          PFUN(MNX1,MPLT)
+     +  ,KNRFUN(20),       KNTIT(MPLT )
+C-----------------------------------------------------------------------
+C
+C     WRITE ARGUMENTS OF SUBROUTINES
+C
+         NPLT = 13
+C
+         READ(NPLT,*) KPTS , KDIM , KPLOT , KFDIM
+C
+         READ(NPLT,*) (P(I),I=1,KPTS)
+C
+         READ(NPLT,*) (KNRFUN(I),KNTIT(I),I=1,KPLOT)
+C
+C
+         ISTART = 0
+         DO 10 IPLT=1,KPLOT
+         DO 10 J=1,KNRFUN(IPLT)
+            ISTART = ISTART + 1
+            READ(NPLT,*) (PFUN(I,ISTART),I=1,KPTS)
+ 10      CONTINUE
+C
+CC       READ(NPLT,*      ) (ZTITLE(I),I=1,KPLOT)
+C
+         DO  99 I=1,KPLOT
+CC         READ(NPLT,'(A80)')   TITLE(I)
+         READ(NPLT,'(A)')   TITLE(I)
+         KCH = KNTIT(I)
+         ZTIT        = TITLE(I)
+         ZTIT(KCH+1:KCH+1) = '$'
+         TITLE(I) = ZTIT
+ 99      CONTINUE
+C
+C
+         READ(NPLT,*) NCHLAB , PHCHAR , PX0 , PY0 , PLX , PLY
+C
+         READ(NPLT,'(A)') LABEL1
+         LABEL1(81:81) = '$'
+         READ(NPLT,'(A)') LABEL2
+         LABEL2(81:81) = '$'
+         READ(NPLT,'(A)') LABEL3
+         LABEL3(81:81) = '$'
+         READ(NPLT,'(A)') LABEL4
+         LABEL4(81:81) = '$'
+C
+         CALL MULPLT(P,PFUN,KPTS,MNX1,KPLOT,MPLT ,KNRFUN,TITLE
+     +                    ,KNTIT,LABEL1,LABEL2,LABEL3,LABEL4,NCHLAB
+     +                    ,PHCHAR,PX0,PY0,PLX,PLY)
+C
+         RETURN
+         END
+         SUBROUTINE XMULPLD
+C        ******************
+C
+C      SEVERAL PLOTS ONE ON THE TOP OF THE OTHER :
+C
+C        THE PICTURE IS DIVIDED IN KPLOT RECTANGLES HORIZONTALLY.
+C        IN EACH IPLOT (IPLOT=1,KPLOT) RECTANGLE, KNRFUN(IPLOT) FUNCTIONS
+C        ARE PLOTTED.
+C
+C     P(KDIM)          : ABSCISSE ARRAY
+C     PFUN(KDIM,KFDIM) : FUNCTIONS TO PLOT
+C     KPTS             : NUMBER OF POINT TO PLOT (IF KPTS.GT.MNX1 CHANGE MNX1)
+C     KDIM             : DIMENSION OF P AND PFUN(., )
+C     KPLOT            : NUMBER OF RECTANGLES IN WHICH FUNCTIONS ARE PLOTTED
+C     KFDIM            : DIMENSION OF       PFUN( ,.)
+C     KNRFUN(IPLOT)    : NUMBER OF CURVES TO PLOT IN THE IPLOT RECTANGLE
+C     TITLE(IPLOT)     : TITLE OF THE IPLOT RECTANGLE
+C     KNTIT(IPLOT)     : NUMBER OF CHARACTER OF TITLE(IPLOT)
+C     LABEL1,2,3,4    : TEXT*72 LABELLING THE PLOT
+C     NCHLAB           : NUMBER OF CHARACTERS IN LABELJ, USED TO CENTER LABELS
+C     PHCHAR           : HEIGHT OF CHARACTERS
+C     PX0,PY0,PLX,PLY  : BOX OF PLOT
+C-----------------------------------------------------------------------
+C
+         PARAMETER(MNX1=1531 , MPLT=10)
+C
+       CHARACTER*82        TITLE(MPLT )
+       CHARACTER*82        ZTIT
+       CHARACTER*81        LABEL1,LABEL2,LABEL3,LABEL4
+       DIMENSION
+     +   P(MNX1),          PFUN(MNX1,MPLT)
+     +  ,KNRFUN(20),       KNTIT(MPLT )
+C-----------------------------------------------------------------------
+C
+C     WRITE ARGUMENTS OF SUBROUTINES
+C
+         NPLT = 13
+C
+         READ(NPLT,*) KPTS , KDIM , KPLOT , KFDIM
+C
+C-----------------------------------------------------------------------
+         READ(NPLT,*) (P(I),I=1,KPTS)
+C-----------------------------------------------------------------------
+C
+         READ(NPLT,*) (KNRFUN(I),KNTIT(I),I=1,KPLOT)
+C
+C
+         ISTART = 0
+         DO 10 IPLT=1,KPLOT
+         DO 10 J=1,KNRFUN(IPLT)
+            ISTART = ISTART + 1
+            READ(NPLT,*) (PFUN(I,ISTART),I=1,KPTS)
+ 10      CONTINUE
+C
+CC       READ(NPLT,*      ) (ZTITLE(I),I=1,KPLOT)
+C
+         DO  99 I=1,KPLOT
+CC         READ(NPLT,'(A80)')   TITLE(I)
+         READ(NPLT,'(A)')   TITLE(I)
+         KCH = KNTIT(I)
+         ZTIT        = TITLE(I)
+         ZTIT(KCH+1:KCH+1) = '$'
+         TITLE(I) = ZTIT
+ 99      CONTINUE
+C
+C
+         READ(NPLT,*) NCHLAB , PHCHAR , PX0 , PY0 , PLX , PLY
+C
+         READ(NPLT,'(A)') LABEL1
+         LABEL1(81:81) = '$'
+         READ(NPLT,'(A)') LABEL2
+         LABEL2(81:81) = '$'
+         READ(NPLT,'(A)') LABEL3
+         LABEL3(81:81) = '$'
+         READ(NPLT,'(A)') LABEL4
+         LABEL4(81:81) = '$'
+C
+         CALL MULPDO(P,PFUN,KPTS,MNX1,KPLOT,MPLT ,KNRFUN,TITLE
+     +                    ,KNTIT,LABEL1,LABEL2,LABEL3,LABEL4,NCHLAB
+     +                    ,PHCHAR,PX0,PY0,PLX,PLY)
+C
+         RETURN
+         END
+         SUBROUTINE XMULPDO
+C        ******************
+C
+C      SEVERAL PLOTS ONE ON THE TOP OF THE OTHER :
+C
+C        THE PICTURE IS DIVIDED IN KPLOT RECTANGLES HORIZONTALLY.
+C        IN EACH IPLOT (IPLOT=1,KPLOT) RECTANGLE, KNRFUN(IPLOT) FUNCTIONS
+C        ARE PLOTTED.
+C
+C     P(KDIM)          : ABSCISSE ARRAY
+C     PFUN(KDIM,KFDIM) : FUNCTIONS TO PLOT
+C     KPTS             : NUMBER OF POINT TO PLOT (IF KPTS.GT.MNX1 CHANGE MNX1)
+C     KDIM             : DIMENSION OF P AND PFUN(., )
+C     KPLOT            : NUMBER OF RECTANGLES IN WHICH FUNCTIONS ARE PLOTTED
+C     KFDIM            : DIMENSION OF       PFUN( ,.)
+C     KNRFUN(IPLOT)    : NUMBER OF CURVES TO PLOT IN THE IPLOT RECTANGLE
+C     TITLE(IPLOT)     : TITLE OF THE IPLOT RECTANGLE
+C     KNTIT(IPLOT)     : NUMBER OF CHARACTER OF TITLE(IPLOT)
+C     LABEL1,2,3,4    : TEXT*72 LABELLING THE PLOT
+C     NCHLAB           : NUMBER OF CHARACTERS IN LABELJ, USED TO CENTER LABELS
+C     PHCHAR           : HEIGHT OF CHARACTERS
+C     PX0,PY0,PLX,PLY  : BOX OF PLOT
+C-----------------------------------------------------------------------
+C
+         PARAMETER(MNX1=3531 , MPLT=10)
+C
+       CHARACTER*82        TITLE(MPLT )
+       CHARACTER*82        ZTIT
+       CHARACTER*81        LABEL1,LABEL2,LABEL3,LABEL4
+       DIMENSION
+     +   P(MNX1),          PFUN(MNX1,MPLT)
+     +  ,KNRFUN(20),       KNTIT(MPLT )
+C-----------------------------------------------------------------------
+C
+C     WRITE ARGUMENTS OF SUBROUTINES
+C
+         NPLT = 13
+C
+         READ(NPLT,*) KPTS , KDIM , KPLOT , KFDIM
+C
+C%%%%%%%%%         READ(NPLT,'(1P10E12.5)') (P(I),I=1,KPTS)
+C-----------------------------------------------------------------------
+c%OS         READ(NPLT,'(1P6E22.15)') (P(I),I=1,KPTS)
+         READ(NPLT,*) (P(I),I=1,KPTS)
+C-----------------------------------------------------------------------
+C
+         READ(NPLT,*) (KNRFUN(I),KNTIT(I),I=1,KPLOT)
+C
+C
+         ISTART = 0
+         DO 10 IPLT=1,KPLOT
+         DO 10 J=1,KNRFUN(IPLT)
+            ISTART = ISTART + 1
+            READ(NPLT,*) (PFUN(I,ISTART),I=1,KPTS)
+ 10      CONTINUE
+C
+CC       READ(NPLT,*      ) (ZTITLE(I),I=1,KPLOT)
+C
+         DO  99 I=1,KPLOT
+CC         READ(NPLT,'(A80)')   TITLE(I)
+         READ(NPLT,'(A)')   TITLE(I)
+         KCH = KNTIT(I)
+         ZTIT        = TITLE(I)
+         ZTIT(KCH+1:KCH+1) = '$'
+         TITLE(I) = ZTIT
+ 99      CONTINUE
+C
+C
+         READ(NPLT,*) NCHLAB , PHCHAR , PX0 , PY0 , PLX , PLY
+C
+         READ(NPLT,'(A)') LABEL1
+         LABEL1(81:81) = '$'
+         READ(NPLT,'(A)') LABEL2
+         LABEL2(81:81) = '$'
+         READ(NPLT,'(A)') LABEL3
+         LABEL3(81:81) = '$'
+         READ(NPLT,'(A)') LABEL4
+         LABEL4(81:81) = '$'
+C
+         CALL MULPDO(P,PFUN,KPTS,MNX1,KPLOT,MPLT ,KNRFUN,TITLE
+     +                    ,KNTIT,LABEL1,LABEL2,LABEL3,LABEL4,NCHLAB
+     +                    ,PHCHAR,PX0,PY0,PLX,PLY)
+C
+         RETURN
+         END
+         SUBROUTINE XGRAPHE
+C        ******************
+CC    THEN CALL
+C
+C     DRAW THE GRAPH OF A FONCTION GIVEN BY KN POINTS (PX(I),PY(I))
+C     IN A RECTANGULAR BOX ((PX0,PY0) ; (PX0+PDX,PY0+PDY)
+C
+C        PX         : VECTOR OF X-COORDINATES, OF DIMENSION KN
+C        PY         : VECTOR OF Y-COORDINATES, OF DIMENSION KN
+C        (PX0,PY0)  : BOTTOM LEFT CORNER OF THE BOX
+C        (PDX,PDY)  : LENGTH IN X- AND Y-DIRECTION OF THE BOX
+C        PHCHAR     : CHARACTER HEIGHT (TYPICAL VALUE: 0.30)
+C        PXIBCD     : TITLE OF X-AXIS
+C        PYIBCD     : TITLE OF Y-AXIS
+C        KX,KY      : NUMBER OF CHARACTERS IN PXIBCD,PYIBCD
+C        PSIZLN     : LINE WIDTH OF CURVE
+C        KCADRE     : DRAW BOX OPTION :(0=NO, 1=YES,CONT., 2=YES,ONLY CORNERS)
+C        KGRID      : DRAW GRID OPTION : (0=NO, 1=Y-GRID, 2=X-GRID, 3=XY-GRID)
+C
+C
+         PARAMETER(MNX1=3531 , MPLT=10)
+C
+         CHARACTER PXIBCD*82 ,PYIBCD*82
+         CHARACTER ZXIBCD*82 ,ZYIBCD*82
+         DIMENSION  PX(MNX1),PY(MNX1)
+C
+         NPLT = 13
+C
+         READ(NPLT,*) KN , PX0 , PDX , PY0 , PDY , PHCHAR
+         READ(NPLT,*) (PX(I),I=1,KN)
+         READ(NPLT,*) (PY(I),I=1,KN)
+         READ(NPLT,'(A)') PXIBCD
+         READ(NPLT,'(A)') PYIBCD
+         READ(NPLT,*) KX , KY , PSIZLN , KCADRE , KGRID
+C
+         IX = 1
+         IY = 1
+         IF (PXIBCD(1:1) .EQ. ' ') IX = 2
+         IF (PYIBCD(1:1) .EQ. ' ') IY = 2
+         ZXIBCD(1:KX) = PXIBCD(IX:KX+IX-1)
+         ZYIBCD(1:KY) = PYIBCD(IY:KY+IY-1)
+         ZXIBCD(KX+1:KX+1) = '$'
+         ZYIBCD(KY+1:KY+1) = '$'
+C%%%
+         CALL GRAPHE(PX,PY,KN,PX0,PDX,PY0,PDY,PHCHAR,ZXIBCD
+     +                     ,ZYIBCD,KX,KY,PSIZLN,KCADRE,KGRID)
+C
+         RETURN
+         END
+         SUBROUTINE XGRAPHN
+C        ******************
+C
+C     DRAW THE GRAPH OF A FONCTION GIVEN BY KN POINTS (PX(I),PY(I))
+C     IN A RECTANGULAR BOX ((PX0,PY0) ; (PX0+PDX,PY0+PDY)
+C
+C        PX         : VECTOR OF X-COORDINATES, OF DIMENSION KN
+C        PY         : VECTOR OF Y-COORDINATES, OF DIMENSION KN
+C        (PX0,PY0)  : BOTTOM LEFT CORNER OF THE BOX
+C        (PDX,PDY)  : LENGTH IN X- AND Y-DIRECTION OF THE BOX
+C        PHCHAR     : CHARACTER HEIGHT (TYPICAL VALUE: 0.30)
+C        PXIBCD     : TITLE OF X-AXIS
+C        PYIBCD     : TITLE OF Y-AXIS
+C        KX,KY      : NUMBER OF CHARACTERS IN PXIBCD,PYIBCD
+C        PSIZLN     : LINE WIDTH OF CURVE
+C        KCADRE     : DRAW BOX OPTION :(0=NO, 1=YES,CONT., 2=YES,ONLY CORNERS)
+C        KGRID      : DRAW GRID OPTION : (0=NO, 1=Y-GRID, 2=X-GRID, 3=XY-GRID)
+C
+C
+         PARAMETER(MNX1=3531 , MKPLOT=10)
+C
+         CHARACTER PXIBCD*82 ,PYIBCD(MKPLOT+1)*82
+         CHARACTER ZXIBCD*82 ,ZYIBCD*82
+         DIMENSION  PX(MNX1),PY(MNX1,MKPLOT), KTIT(MKPLOT+1)
+C
+         NPLT = 13
+C
+         READ(NPLT,*) KN , KPLOT , PX0 , PDX , PY0 , PDY , PHCHAR
+         READ(NPLT,*) (PX(I),I=1,KN)
+         DO 100 IP=1,KPLOT
+            READ(NPLT,*) (PY(I,IP),I=1,KN)
+ 100     CONTINUE
+         READ(NPLT,'(A)') PXIBCD
+         READ(NPLT,'(A)') (PYIBCD(I),I=1,KPLOT+1)
+         READ(NPLT,*) KX , (KTIT(I),I=1,KPLOT+1) , PSIZLN , KCADRE,KGRID
+C
+C
+         IX = 1
+         IF (PXIBCD(1:1) .EQ. ' ') IX = 2
+         ZXIBCD(1:KX) = PXIBCD(IX:KX+IX-1)
+         ZXIBCD(KX+1:KX+1) = '$'
+         PXIBCD = ZXIBCD
+         DO 110 I=1,KPLOT+1
+            IY = 1
+            KY = KTIT(I)
+            ZYIBCD = PYIBCD(I)
+            IF (ZYIBCD(1:1) .EQ. ' ') IY = 2
+            ZXIBCD(1:KY) = ZYIBCD(IY:KY+IY-1)
+            ZXIBCD(KY+1:KY+1) = '$'
+            PYIBCD(I) = ZXIBCD
+ 110     CONTINUE
+C%%%
+         CALL GRAPHN(PX,PY,KN,MNX1,KPLOT,PX0,PDX,PY0,PDY,PHCHAR,PXIBCD
+     +                     ,PYIBCD,KX,KTIT,PSIZLN,KCADRE,KGRID)
+C
+         RETURN
+         END
+         SUBROUTINE XGRAPHNM
+C        *******************
+C
+C     PLOT SEVERAL CURVES ON SAME GRAPHE SPECIFYING THE LIMITS
+C
+C     DRAW THE GRAPH OF A FONCTION GIVEN BY KN POINTS (PX(I),PY(I))
+C     IN A RECTANGULAR BOX ((PX0,PY0) ; (PX0+PDX,PY0+PDY)
+C
+C        PX         : VECTOR OF X-COORDINATES, OF DIMENSION KN
+C        PY         : VECTOR OF Y-COORDINATES, OF DIMENSION KN
+C        (PX0,PY0)  : BOTTOM LEFT CORNER OF THE BOX
+C        (PDX,PDY)  : LENGTH IN X- AND Y-DIRECTION OF THE BOX
+C        PHCHAR     : CHARACTER HEIGHT (TYPICAL VALUE: 0.30)
+C        PXIBCD     : TITLE OF X-AXIS
+C        PYIBCD     : TITLE OF Y-AXIS
+C        KX,KY      : NUMBER OF CHARACTERS IN PXIBCD,PYIBCD
+C        PSIZLN     : LINE WIDTH OF CURVE
+C        KCADRE     : DRAW BOX OPTION :(0=NO, 1=YES,CONT., 2=YES,ONLY CORNERS)
+C        KGRID      : DRAW GRID OPTION : (0=NO, 1=Y-GRID, 2=X-GRID, 3=XY-GRID)
+C
+C
+         PARAMETER(MNX1=3531 , MKPLOT=10)
+C
+         CHARACTER PXIBCD*82 ,PYIBCD(MKPLOT+1)*82
+         CHARACTER ZXIBCD*82 ,ZYIBCD*82
+         DIMENSION  PX(MNX1),PY(MNX1,MKPLOT), KTIT(MKPLOT+1)
+C
+         NPLT = 13
+C
+         READ(NPLT,*) KN , KPLOT , PX0 , PDX , PY0 , PDY , PHCHAR
+         READ(NPLT,*) (PX(I),I=1,KN)
+         DO 100 IP=1,KPLOT
+            READ(NPLT,*) (PY(I,IP),I=1,KN)
+ 100     CONTINUE
+         READ(NPLT,'(A)') PXIBCD
+         READ(NPLT,'(A)') (PYIBCD(I),I=1,KPLOT+1)
+         READ(NPLT,*) KX , (KTIT(I),I=1,KPLOT+1) , PSIZLN , KCADRE,KGRID
+         READ(NPLT,*) PXMIN,PXMAX,PYMIN,PYMAX
+C
+C
+         IX = 1
+         IF (PXIBCD(1:1) .EQ. ' ') IX = 2
+         ZXIBCD(1:KX) = PXIBCD(IX:KX+IX-1)
+         ZXIBCD(KX+1:KX+1) = '$'
+         PXIBCD = ZXIBCD
+         DO 110 I=1,KPLOT+1
+            IY = 1
+            KY = KTIT(I)
+            ZYIBCD = PYIBCD(I)
+            IF (ZYIBCD(1:1) .EQ. ' ') IY = 2
+            ZXIBCD(1:KY) = ZYIBCD(IY:KY+IY-1)
+            ZXIBCD(KY+1:KY+1) = '$'
+            PYIBCD(I) = ZXIBCD
+ 110     CONTINUE
+C%%%
+         CALL GRAPHNM(PX,PY,KN,MNX1,KPLOT,PX0,PDX,PY0,PDY,PHCHAR,PXIBCD
+     +        ,PYIBCD,KX,KTIT,PSIZLN,KCADRE,KGRID
+     +        ,PXMIN,PXMAX,PYMIN,PYMAX)
+C
+         RETURN
+         END
+         SUBROUTINE XGLASHN
+C        ******************
+C
+C     DRAW THE GRAPH OF A FONCTION GIVEN BY KN POINTS (PX(I),PY(I))
+C     IN A RECTANGULAR BOX ((PX0,PY0) ; (PX0+PDX,PY0+PDY)
+C
+C     WITH ASINH Y-AXIS
+C
+C        PX         : VECTOR OF X-COORDINATES, OF DIMENSION KN
+C        PY         : VECTOR OF Y-COORDINATES, OF DIMENSION KN
+C        (PX0,PY0)  : BOTTOM LEFT CORNER OF THE BOX
+C        (PDX,PDY)  : LENGTH IN X- AND Y-DIRECTION OF THE BOX
+C        PHCHAR     : CHARACTER HEIGHT (TYPICAL VALUE: 0.30)
+C        PXIBCD     : TITLE OF X-AXIS
+C        PYIBCD     : TITLE OF Y-AXIS
+C        KX,KY      : NUMBER OF CHARACTERS IN PXIBCD,PYIBCD
+C        PSIZLN     : LINE WIDTH OF CURVE
+C        KCADRE     : DRAW BOX OPTION :(0=NO, 1=YES,CONT., 2=YES,ONLY CORNERS)
+C        KGRID      : DRAW GRID OPTION : (0=NO, 1=Y-GRID, 2=X-GRID, 3=XY-GRID)
+C
+C
+         PARAMETER(MNX1=3531 , MPLT=10, MKPLOT=7)
+C
+         CHARACTER PXIBCD*82 ,PYIBCD(MKPLOT+1)*82
+         CHARACTER ZXIBCD*82 ,ZYIBCD*82
+         DIMENSION  PX(MNX1),PY(MNX1,MKPLOT), KTIT(MKPLOT+1)
+C
+         NPLT = 13
+C
+         READ(NPLT,*) KN , KPLOT , PX0 , PDX , PY0 , PDY , PHCHAR
+         READ(NPLT,*) (PX(I),I=1,KN)
+         DO 100 IP=1,KPLOT
+            READ(NPLT,*) (PY(I,IP),I=1,KN)
+ 100     CONTINUE
+         READ(NPLT,'(A)') PXIBCD
+         READ(NPLT,'(A)') (PYIBCD(I),I=1,KPLOT+1)
+         READ(NPLT,*) KX , (KTIT(I),I=1,KPLOT+1) , PSIZLN , KCADRE,KGRID
+C
+C
+         IX = 1
+         IF (PXIBCD(1:1) .EQ. ' ') IX = 2
+         ZXIBCD(1:KX) = PXIBCD(IX:KX+IX-1)
+         ZXIBCD(KX+1:KX+1) = '$'
+         PXIBCD = ZXIBCD
+         DO 110 I=1,KPLOT+1
+            IY = 1
+            KY = KTIT(I)
+            ZYIBCD = PYIBCD(I)
+            IF (ZYIBCD(1:1) .EQ. ' ') IY = 2
+            ZXIBCD(1:KY) = ZYIBCD(IY:KY+IY-1)
+            ZXIBCD(KY+1:KY+1) = '$'
+            PYIBCD(I) = ZXIBCD
+ 110     CONTINUE
+C%%%
+         CALL GLASHN(PX,PY,KN,MNX1,KPLOT,PX0,PDX,PY0,PDY,PHCHAR,PXIBCD
+     +                     ,PYIBCD,KX,KTIT,PSIZLN,KCADRE,KGRID)
+C
+         RETURN
+         END
+         SUBROUTINE XGRAPDN
+C        ******************
+C
+C     DRAW THE GRAPH OF A FONCTION GIVEN BY KN POINTS (PX(I),PY(I))
+C     IN A RECTANGULAR BOX ((PX0,PY0) ; (PX0+PDX,PY0+PDY)
+C
+C        PX         : VECTOR OF X-COORDINATES, OF DIMENSION KN
+C        PY         : VECTOR OF Y-COORDINATES, OF DIMENSION KN
+C        (PX0,PY0)  : BOTTOM LEFT CORNER OF THE BOX
+C        (PDX,PDY)  : LENGTH IN X- AND Y-DIRECTION OF THE BOX
+C        PHCHAR     : CHARACTER HEIGHT (TYPICAL VALUE: 0.30)
+C        PXIBCD     : TITLE OF X-AXIS
+C        PYIBCD     : TITLE OF Y-AXIS
+C        KX,KY      : NUMBER OF CHARACTERS IN PXIBCD,PYIBCD
+C        PSIZLN     : LINE WIDTH OF CURVE
+C        KCADRE     : DRAW BOX OPTION :(0=NO, 1=YES,CONT., 2=YES,ONLY CORNERS)
+C        KGRID      : DRAW GRID OPTION : (0=NO, 1=Y-GRID, 2=X-GRID, 3=XY-GRID)
+C
+C
+         PARAMETER(MNX1=3531 , MPLT=10, MKPLOT=7)
+C
+         CHARACTER PXIBCD*82 ,PYIBCD(MKPLOT+1)*82
+         CHARACTER ZXIBCD*82 ,ZYIBCD*82
+         DIMENSION  PX(MNX1),PY(MNX1,MKPLOT), KTIT(MKPLOT+1)
+C
+         NPLT = 13
+C
+         READ(NPLT,*) KN , KPLOT , PX0 , PDX , PY0 , PDY , PHCHAR
+         READ(NPLT,*) (PX(I),I=1,KN)
+         DO 100 IP=1,KPLOT
+            READ(NPLT,*) (PY(I,IP),I=1,KN)
+ 100     CONTINUE
+         READ(NPLT,'(A)') PXIBCD
+         READ(NPLT,'(A)') (PYIBCD(I),I=1,KPLOT+1)
+         READ(NPLT,*) KX , (KTIT(I),I=1,KPLOT+1) , PSIZLN , KCADRE,KGRID
+C
+C
+         IX = 1
+         IF (PXIBCD(1:1) .EQ. ' ') IX = 2
+         ZXIBCD(1:KX) = PXIBCD(IX:KX+IX-1)
+         ZXIBCD(KX+1:KX+1) = '$'
+         PXIBCD = ZXIBCD
+         DO 110 I=1,KPLOT+1
+            IY = 1
+            KY = KTIT(I)
+            ZYIBCD = PYIBCD(I)
+            IF (ZYIBCD(1:1) .EQ. ' ') IY = 2
+            ZXIBCD(1:KY) = ZYIBCD(IY:KY+IY-1)
+            ZXIBCD(KY+1:KY+1) = '$'
+            PYIBCD(I) = ZXIBCD
+ 110     CONTINUE
+C%%%
+         CALL GRAPDN(PX,PY,KN,MNX1,KPLOT,PX0,PDX,PY0,PDY,PHCHAR,PXIBCD
+     +                     ,PYIBCD,KX,KTIT,PSIZLN,KCADRE,KGRID)
+C
+         RETURN
+         END
+         SUBROUTINE XGRADOT
+C        ******************
+C
+C     DRAW THE GRAPH OF A FONCTION GIVEN BY KN POINTS (PX(I),PY(I))
+C     IN A RECTANGULAR BOX ((PX0,PY0) ; (PX0+PDX,PY0+PDY)
+C
+C        PX         : VECTOR OF X-COORDINATES, OF DIMENSION KN
+C        PY         : VECTOR OF Y-COORDINATES, OF DIMENSION KN
+C        (PX0,PY0)  : BOTTOM LEFT CORNER OF THE BOX
+C        (PDX,PDY)  : LENGTH IN X- AND Y-DIRECTION OF THE BOX
+C        PHCHAR     : CHARACTER HEIGHT (TYPICAL VALUE: 0.30)
+C        PXIBCD     : TITLE OF X-AXIS
+C        PYIBCD     : TITLE OF Y-AXIS
+C        KX,KY      : NUMBER OF CHARACTERS IN PXIBCD,PYIBCD
+C        PSIZLN     : LINE WIDTH OF CURVE
+C        KCADRE     : DRAW BOX OPTION :(0=NO, 1=YES,CONT., 2=YES,ONLY CORNERS)
+C        KGRID      : DRAW GRID OPTION : (0=NO, 1=Y-GRID, 2=X-GRID, 3=XY-GRID)
+C
+C
+         PARAMETER(MNX1=3531 , MPLT=10)
+C
+         CHARACTER PXIBCD*82 ,PYIBCD*82
+         CHARACTER ZXIBCD*82 ,ZYIBCD*82
+         DIMENSION  PX(MNX1),PY(MNX1)
+C
+         NPLT = 13
+C
+         READ(NPLT,*) KN , PX0 , PDX , PY0 , PDY , PHCHAR
+         READ(NPLT,*) (PX(I),I=1,KN)
+         READ(NPLT,*) (PY(I),I=1,KN)
+         READ(NPLT,'(A)') PXIBCD
+         READ(NPLT,'(A)') PYIBCD
+         READ(NPLT,*) KX , KY , PSIZLN , KCADRE , KGRID
+C
+         IX = 1
+         IY = 1
+         IF (PXIBCD(1:1) .EQ. ' ') IX = 2
+         IF (PYIBCD(1:1) .EQ. ' ') IY = 2
+         ZXIBCD(1:KX) = PXIBCD(IX:KX+IX-1)
+         ZYIBCD(1:KY) = PYIBCD(IY:KY+IY-1)
+         ZXIBCD(KX+1:KX+1) = '$'
+         ZYIBCD(KY+1:KY+1) = '$'
+C%%%
+         CALL GRADOT(PX,PY,KN,PX0,PDX,PY0,PDY,PHCHAR,ZXIBCD
+     +                     ,ZYIBCD,KX,KY,PSIZLN,KCADRE,KGRID)
+C
+         RETURN
+         END
+         SUBROUTINE XGRADOTO
+C        ******************
+C
+C     DRAW THE GRAPH OF A FONCTION GIVEN BY KN POINTS (PX(I),PY(I))
+C     IN A RECTANGULAR BOX ((PX0,PY0) ; (PX0+PDX,PY0+PDY)
+C
+C        PX         : VECTOR OF X-COORDINATES, OF DIMENSION KN
+C        PY         : VECTOR OF Y-COORDINATES, OF DIMENSION KN
+C        (PX0,PY0)  : BOTTOM LEFT CORNER OF THE BOX
+C        (PDX,PDY)  : LENGTH IN X- AND Y-DIRECTION OF THE BOX
+C        PHCHAR     : CHARACTER HEIGHT (TYPICAL VALUE: 0.30)
+C        PXIBCD     : TITLE OF X-AXIS
+C        PYIBCD     : TITLE OF Y-AXIS
+C        KX,KY      : NUMBER OF CHARACTERS IN PXIBCD,PYIBCD
+C        PSIZLN     : LINE WIDTH OF CURVE
+C        KCADRE     : DRAW BOX OPTION :(0=NO, 1=YES,CONT., 2=YES,ONLY CORNERS)
+C        KGRID      : DRAW GRID OPTION : (0=NO, 1=Y-GRID, 2=X-GRID, 3=XY-GRID)
+C
+C
+         PARAMETER(MNX1=3531 , MPLT=10)
+C
+         CHARACTER PXIBCD*82 ,PYIBCD*82
+         CHARACTER ZXIBCD*82 ,ZYIBCD*82
+         DIMENSION  PX(MNX1),PY(MNX1)
+C
+         NPLT = 13
+C
+         READ(NPLT,*) KN , PX0 , PDX , PY0 , PDY , PHCHAR
+         READ(NPLT,*) (PX(I),I=1,KN)
+         READ(NPLT,*) (PY(I),I=1,KN)
+         READ(NPLT,'(A)') PXIBCD
+         READ(NPLT,'(A)') PYIBCD
+         READ(NPLT,*) KX , KY , PSIZLN , KCADRE , KGRID
+C
+         IX = 1
+         IY = 1
+         IF (PXIBCD(1:1) .EQ. ' ') IX = 2
+         IF (PYIBCD(1:1) .EQ. ' ') IY = 2
+         ZXIBCD(1:KX) = PXIBCD(IX:KX+IX-1)
+         ZYIBCD(1:KY) = PYIBCD(IY:KY+IY-1)
+         ZXIBCD(KX+1:KX+1) = '$'
+         ZYIBCD(KY+1:KY+1) = '$'
+C%%%
+         CALL GRADOTO(PX,PY,KN,PX0,PDX,PY0,PDY,PHCHAR,ZXIBCD
+     +                     ,ZYIBCD,KX,KY,PSIZLN,KCADRE,KGRID)
+C
+         RETURN
+         END
+         SUBROUTINE XGRALLG
+C        ******************
+CC    LIN-LOG AXIS
+C
+C     DRAW THE GRAPH OF A FONCTION GIVEN BY KN POINTS (PX(I),PY(I))
+C     IN A RECTANGULAR BOX ((PX0,PY0) ; (PX0+PDX,PY0+PDY)
+C
+C        PX         : VECTOR OF X-COORDINATES, OF DIMENSION KN
+C        PY         : VECTOR OF Y-COORDINATES, OF DIMENSION KN
+C        (PX0,PY0)  : BOTTOM LEFT CORNER OF THE BOX
+C        (PDX,PDY)  : LENGTH IN X- AND Y-DIRECTION OF THE BOX
+C        PHCHAR     : CHARACTER HEIGHT (TYPICAL VALUE: 0.30)
+C        PXIBCD     : TITLE OF X-AXIS
+C        PYIBCD     : TITLE OF Y-AXIS
+C        KX,KY      : NUMBER OF CHARACTERS IN PXIBCD,PYIBCD
+C        PSIZLN     : LINE WIDTH OF CURVE
+C        KCADRE     : DRAW BOX OPTION :(0=NO, 1=YES,CONT., 2=YES,ONLY CORNERS)
+C        KGRID      : DRAW GRID OPTION : (0=NO, 1=Y-GRID, 2=X-GRID, 3=XY-GRID)
+C
+C
+         PARAMETER(MNX1=5531 , MPLT=10)
+C
+         CHARACTER PXIBCD*82 ,PYIBCD*82
+         CHARACTER ZXIBCD*82 ,ZYIBCD*82
+         DIMENSION  PX(MNX1),PY(MNX1)
+C
+         NPLT = 13
+C
+         READ(NPLT,*) KN , PX0 , PDX , PY0 , PDY , PHCHAR
+         READ(NPLT,*) (PX(I),I=1,KN)
+         READ(NPLT,*) (PY(I),I=1,KN)
+         READ(NPLT,'(A)') PXIBCD
+         READ(NPLT,'(A)') PYIBCD
+         READ(NPLT,*) KX , KY , PSIZLN , KCADRE , KGRID
+C
+         ZXIBCD(1:KX) = PXIBCD(1:KX)
+         ZYIBCD(1:KY) = PYIBCD(1:KY)
+         ZXIBCD(KX+1:KX+1) = '$'
+         ZYIBCD(KY+1:KY+1) = '$'
+C%%%
+         CALL GRALLG(PX,PY,KN,PX0,PDX,PY0,PDY,PHCHAR,ZXIBCD
+     +                     ,ZYIBCD,KX,KY,PSIZLN,KCADRE,KGRID)
+C
+         RETURN
+         END
+         SUBROUTINE XGRLLGN
+C        ******************
+C
+C     DRAW THE GRAPH OF A FONCTION GIVEN BY KN POINTS (PX(I),PY(I))
+C     IN A RECTANGULAR BOX ((PX0,PY0) ; (PX0+PDX,PY0+PDY)
+C
+C     WITH LOGARITHMIC SCALE FOR Y AXIS
+C
+C        PX         : VECTOR OF X-COORDINATES, OF DIMENSION KN
+C        PY         : VECTOR OF Y-COORDINATES, OF DIMENSION KN
+C        (PX0,PY0)  : BOTTOM LEFT CORNER OF THE BOX
+C        (PDX,PDY)  : LENGTH IN X- AND Y-DIRECTION OF THE BOX
+C        PHCHAR     : CHARACTER HEIGHT (TYPICAL VALUE: 0.30)
+C        PXIBCD     : TITLE OF X-AXIS
+C        PYIBCD     : TITLE OF Y-AXIS
+C        KX,KY      : NUMBER OF CHARACTERS IN PXIBCD,PYIBCD
+C        PSIZLN     : LINE WIDTH OF CURVE
+C        KCADRE     : DRAW BOX OPTION :(0=NO, 1=YES,CONT., 2=YES,ONLY CORNERS)
+C        KGRID      : DRAW GRID OPTION : (0=NO, 1=Y-GRID, 2=X-GRID, 3=XY-GRID)
+C
+C
+         PARAMETER(MNX1=5531 , MPLT=10, MKPLOT=15)
+C
+         CHARACTER PXIBCD*82 ,PYIBCD(MKPLOT+1)*82
+         CHARACTER ZXIBCD*82 ,ZYIBCD*82
+         DIMENSION  PX(MNX1),PY(MNX1,MKPLOT), KTIT(MKPLOT+1)
+C
+         NPLT = 13
+C
+         READ(NPLT,*) KN , KPLOT , PX0 , PDX , PY0 , PDY , PHCHAR
+         READ(NPLT,*) (PX(I),I=1,KN)
+            INEG = 0
+         DO 100 IP=1,KPLOT
+            READ(NPLT,*) (PY(I,IP),I=1,KN)
+            ZYMN = 1.0E+99
+            ZYMX = 1.0E-99
+            DO 101 IX=1,KN
+               IF (PY(IX,IP) .GT. 0.0) THEN
+                   ZYMN = MIN(ZYMN,PY(IX,IP))
+                   ZYMX = MAX(ZYMX,PY(IX,IP))
+               ENDIF
+ 101        CONTINUE
+            IF (ZYMN .GT. ZYMX) PRINT *,'  WARNING IN GRALLG, ZYMN>ZYMX'
+            DO 102 IX=1,KN
+               IF (PY(IX,IP) .LE. 0.0) THEN
+                   PY(IX,IP) = ZYMN
+                   INEG = 1
+               ENDIF
+ 102        CONTINUE
+ 100     CONTINUE
+         IF (INEG .EQ. 1)
+     +    PRINT *,' WARNING IN GRALLG: SOME NEGATIVE VALUES FOUND IN PY'
+C
+         READ(NPLT,'(A)') PXIBCD
+         READ(NPLT,'(A)') (PYIBCD(I),I=1,KPLOT+1)
+         READ(NPLT,*) KX , (KTIT(I),I=1,KPLOT+1) , PSIZLN , KCADRE,KGRID
+C
+C
+         IX = 1
+         IF (PXIBCD(1:1) .EQ. ' ') IX = 2
+         ZXIBCD(1:KX) = PXIBCD(IX:KX+IX-1)
+         ZXIBCD(KX+1:KX+1) = '$'
+         PXIBCD = ZXIBCD
+         DO 110 I=1,KPLOT+1
+            IY = 1
+            KY = KTIT(I)
+            ZYIBCD = PYIBCD(I)
+            IF (ZYIBCD(1:1) .EQ. ' ') IY = 2
+            ZXIBCD(1:KY) = ZYIBCD(IY:KY+IY-1)
+            ZXIBCD(KY+1:KY+1) = '$'
+            PYIBCD(I) = ZXIBCD
+ 110     CONTINUE
+C%%%
+         CALL GRLLGN(PX,PY,KN,MNX1,KPLOT,PX0,PDX,PY0,PDY,PHCHAR,PXIBCD
+     +                     ,PYIBCD,KX,KTIT,PSIZLN,KCADRE,KGRID)
+C
+         RETURN
+         END
+         SUBROUTINE XGRALGL
+C        ******************
+CC    LOG-LIN AXIS
+C
+C     DRAW THE GRAPH OF A FONCTION GIVEN BY KN POINTS (PX(I),PY(I))
+C     IN A RECTANGULAR BOX ((PX0,PY0) ; (PX0+PDX,PY0+PDY)
+C
+C        PX         : VECTOR OF X-COORDINATES, OF DIMENSION KN
+C        PY         : VECTOR OF Y-COORDINATES, OF DIMENSION KN
+C        (PX0,PY0)  : BOTTOM LEFT CORNER OF THE BOX
+C        (PDX,PDY)  : LENGTH IN X- AND Y-DIRECTION OF THE BOX
+C        PHCHAR     : CHARACTER HEIGHT (TYPICAL VALUE: 0.30)
+C        PXIBCD     : TITLE OF X-AXIS
+C        PYIBCD     : TITLE OF Y-AXIS
+C        KX,KY      : NUMBER OF CHARACTERS IN PXIBCD,PYIBCD
+C        PSIZLN     : LINE WIDTH OF CURVE
+C        KCADRE     : DRAW BOX OPTION :(0=NO, 1=YES,CONT., 2=YES,ONLY CORNERS)
+C        KGRID      : DRAW GRID OPTION : (0=NO, 1=Y-GRID, 2=X-GRID, 3=XY-GRID)
+C
+C
+         PARAMETER(MNX1=3531 , MPLT=10)
+C
+         CHARACTER PXIBCD*82 ,PYIBCD*82
+         CHARACTER ZXIBCD*82 ,ZYIBCD*82
+         DIMENSION  PX(MNX1),PY(MNX1)
+C
+         NPLT = 13
+C
+         READ(NPLT,*) KN , PX0 , PDX , PY0 , PDY , PHCHAR
+         READ(NPLT,*) (PX(I),I=1,KN)
+         READ(NPLT,*) (PY(I),I=1,KN)
+         READ(NPLT,'(A)') PXIBCD
+         READ(NPLT,'(A)') PYIBCD
+         READ(NPLT,*) KX , KY , PSIZLN , KCADRE , KGRID
+C
+         ZXIBCD(1:KX) = PXIBCD(1:KX)
+         ZYIBCD(1:KY) = PYIBCD(1:KY)
+         ZXIBCD(KX+1:KX+1) = '$'
+         ZYIBCD(KY+1:KY+1) = '$'
+C%%%
+         CALL GRALGL(PX,PY,KN,PX0,PDX,PY0,PDY,PHCHAR,ZXIBCD
+     +                     ,ZYIBCD,KX,KY,PSIZLN,KCADRE,KGRID)
+C
+         RETURN
+         END
+         SUBROUTINE XGRLGLG
+C        ******************
+CC    LOG-LOG AXIS
+C
+C     DRAW THE GRAPH OF A FONCTION GIVEN BY KN POINTS (PX(I),PY(I))
+C     IN A RECTANGULAR BOX ((PX0,PY0) ; (PX0+PDX,PY0+PDY)
+C
+C        PX         : VECTOR OF X-COORDINATES, OF DIMENSION KN
+C        PY         : VECTOR OF Y-COORDINATES, OF DIMENSION KN
+C        (PX0,PY0)  : BOTTOM LEFT CORNER OF THE BOX
+C        (PDX,PDY)  : LENGTH IN X- AND Y-DIRECTION OF THE BOX
+C        PHCHAR     : CHARACTER HEIGHT (TYPICAL VALUE: 0.30)
+C        PXIBCD     : TITLE OF X-AXIS
+C        PYIBCD     : TITLE OF Y-AXIS
+C        KX,KY      : NUMBER OF CHARACTERS IN PXIBCD,PYIBCD
+C        PSIZLN     : LINE WIDTH OF CURVE
+C        KCADRE     : DRAW BOX OPTION :(0=NO, 1=YES,CONT., 2=YES,ONLY CORNERS)
+C        KGRID      : DRAW GRID OPTION : (0=NO, 1=Y-GRID, 2=X-GRID, 3=XY-GRID)
+C
+C
+         PARAMETER(MNX1=3531 , MPLT=10)
+C
+         CHARACTER PXIBCD*82 ,PYIBCD*82
+         CHARACTER ZXIBCD*82 ,ZYIBCD*82
+         DIMENSION  PX(MNX1),PY(MNX1)
+C
+         NPLT = 13
+C
+         READ(NPLT,*) KN , PX0 , PDX , PY0 , PDY , PHCHAR
+         READ(NPLT,*) (PX(I),I=1,KN)
+         READ(NPLT,*) (PY(I),I=1,KN)
+         READ(NPLT,'(A)') PXIBCD
+         READ(NPLT,'(A)') PYIBCD
+         READ(NPLT,*) KX , KY , PSIZLN , KCADRE , KGRID
+C
+         ZXIBCD(1:KX) = PXIBCD(1:KX)
+         ZYIBCD(1:KY) = PYIBCD(1:KY)
+         ZXIBCD(KX+1:KX+1) = '$'
+         ZYIBCD(KY+1:KY+1) = '$'
+C%%%
+         CALL GRLGLG(PX,PY,KN,PX0,PDX,PY0,PDY,PHCHAR,ZXIBCD
+     +                     ,ZYIBCD,KX,KY,PSIZLN,KCADRE,KGRID)
+C
+         RETURN
+         END
+         SUBROUTINE MAXAR(PA,KN,PMAX,PMIN)
+C        *******************************
+C
+C     CALCULATES THE EXTREMAL VALUES OF PA(I),I=1,KN
+C
+      DIMENSION PA(KN)
+      Z=PA(1)
+      ZZ=PA(1)
+      DO 10 I=2,KN
+      IF (PA(I).GE.Z) Z=PA(I)
+      IF (PA(I).LT.ZZ) ZZ=PA(I)
+ 10   CONTINUE
+      PMAX=Z
+      PMIN=ZZ
+      RETURN
+      END
+         SUBROUTINE XPGTXNB
+C        ******************
+C
+C     DRAWS A TEXT AND A NUMBER NEXT TO EACH OTHER.THE TEXT CAN BE
+C     OMITTED, SETTING KCTEXT=0, BUT THE NUMBER CANNOT. TO DRAW ONLY
+C     A TEXT, USE GKS SUBROUTINE "GTX".
+C
+C        PX0,PY0       : STARTING POINT
+C        PTEXT         : TEXT TO PLOT
+C        KCTEXT        : NUMBER OF CHARACTERS OF PTEXT.
+C                        = 0 : NO TEXT IS WRITTEN AND (PX0,PY0) IS THE STARTING
+C                        POINT FOR THE NUMBER.
+C        PNUMB         : NUMBER TO PLOT
+C        PFORNB        : FORMAT FOR THE NUMBER. FOR EXAMPLE: '(1PE12.4)'
+C        PHCHAR        : HEIGTH OF CHARACTERS
+C        PTHETA        : ANGLE FOR THE DIRECTION OF THE TEXT
+C
+         CHARACTER*80   PTEXT,PFORNB
+         CHARACTER*80   ZTEXT
+C
+         NPLT = 13
+C
+         READ(NPLT,*) PX0 , PY0 , KCTEXT , PNUMB , PHCHAR , PTHETA
+         READ(NPLT,'(A)') ZTEXT
+         READ(NPLT,'(A)') PFORNB
+C
+c%OS         IL = 81 - KCTEXT
+c%OS            PTEXT    = '
+c%OS     +                                '
+c%OS         PTEXT(1:KCTEXT) = ZTEXT(IL:80)
+C
+         CALL PGTXNB(PX0,PY0,ZTEXT,KCTEXT,PNUMB,PFORNB,PHCHAR
+     +                    ,PTHETA)
+C
+         RETURN
+         END
+         SUBROUTINE XGTX
+C
+         CHARACTER    PCTEXT*80,ZTXT*81
+C
+         NPLT = 13
+C
+         READ(NPLT,*)       PX0 , PY0
+         READ(NPLT,'(A)') PCTEXT
+         DO 10 I=80,1,-1
+            IF (PCTEXT(I:I) .NE. ' ') GO TO 11
+ 10      CONTINUE
+ 11      ILAST = I
+CC      PRINT *,' ILAST IN GTX = ',ILAST
+CC      PRINT *,PCTEXT
+         ZTXT(1:80) = PCTEXT(1:80)
+         ZTXT  (ILAST+1:ILAST+1) = '$'
+C
+         CALL GCHAR(ZTXT  ,PX0*10.,PY0*10.,3.0)
+C
+         RETURN
+         END
+         SUBROUTINE PGTXNB(PX0,PY0,PTEXT,KCTEXT,PNUMB,PFORNB,PHCHAR
+     +                    ,PTHETA)
+C        **********************************************************
+C
+C     DRAWS A TEXT AND A NUMBER NEXT TO EACH OTHER.THE TEXT CAN BE
+C     OMITTED, SETTING KCTEXT=0, BUT THE NUMBER CANNOT. TO DRAW ONLY
+C     A TEXT, USE GKS SUBROUTINE "GTX".
+C
+C        PX0,PY0       : STARTING POINT
+C        PTEXT         : TEXT TO PLOT
+C        KCTEXT        : NUMBER OF CHARACTERS OF PTEXT.
+C                        = 0 : NO TEXT IS WRITTEN AND (PX0,PY0) IS THE STARTING
+C                        POINT FOR THE NUMBER.
+C        PNUMB         : NUMBER TO PLOT
+C        PFORNB        : FORMAT FOR THE NUMBER. FOR EXAMPLE: '(1PE12.4)'
+C        PHCHAR        : HEIGTH OF CHARACTERS
+C        PTHETA        : ANGLE FOR THE DIRECTION OF THE TEXT
+C
+         CHARACTER*(*)  PTEXT,PFORNB
+         CHARACTER*82   ZTEXTN
+C
+CL    1. PLOT PTEXT AND PNUMB NEXT TO EACH OTHER
+C
+         ZANG = PTHETA* ATAN(1.)/ 45.
+         ZCTH = COS(ZANG)
+         ZSTH = SIN(ZANG)
+C
+C%%      CALL GSCHUP(-ZSTH,ZCTH)
+C%%      CALL GSCHH(PHCHAR)
+         CALL GCHARA(PTHETA)
+C
+C%%      IF (KCTEXT .NE. 0) CALL GTX(PX0,PY0,PTEXT          )
+         IF (KCTEXT .NE. 0) PTEXT(KCTEXT+1:KCTEXT+1) = '$'
+         IF (KCTEXT .NE. 0) CALL GCHAR(PTEXT,PX0*10.,PY0*10.,PHCHAR*10.)
+C&&      IF (KCTEXT .NE. 0) CALL GTX(PX0,PY0,PTEXT(1:KCTEXT))
+C
+C     INQUIRE CURRENT EXPANSION FACTOR AND SPACING
+C%%      CALL GQCHXP(IER,ZCHXP)
+C%%      CALL GQCHSP(JER,ZCHSP)
+         ZCHXP = 1.0
+         ZCHSP = 0.03
+C
+         SIZEW = (0.9 + ZCHSP) * PHCHAR * ZCHXP
+C
+         ZXNB = PX0 + ZCTH * KCTEXT * SIZEW
+         ZYNB = PY0 + ZSTH * KCTEXT * SIZEW
+         ZTEXTN = '
+     +                             '
+         WRITE(ZTEXTN,PFORNB) PNUMB
+         DO 10 I=82,1,-1
+            IF (ZTEXTN(I:I) .NE. ' ') GO TO 11
+ 10      CONTINUE
+ 11      ILAST = I
+         ZTEXTN(ILAST+1:ILAST+1) = '$'
+C
+         CALL GCHARA(PTHETA)
+C%%      CALL GTX(ZXNB,ZYNB,ZTEXTN)
+         CALL GCHAR(ZTEXTN,ZXNB*10.,ZYNB*10.,PHCHAR*10.)
+C     DECIDE FOR EXPONENTIAL FORMAT WITH 3 DECIMALS
+CC         CALL GNUMBO(5,'E')
+CC         CALL GNUMB(PNUMB,ZXNB*10.,ZYNB*10.,PHCHAR*10.,5)
+C
+C%%      CALL GSCHUP(0.,1.)
+C
+         RETURN
+         END
+         SUBROUTINE RNDMXLG(PMAX)
+C***********************************************************************
+C
+C        ROUND PMAX TO NEXT ((N*10)**K) INTEGER VALUE
+C
+         IF (PMAX .LE. 0.0) THEN
+            WRITE(6,*) ' WARNING IN RNDMXLG: PMAX .LE. 0.0 : ',PMAX
+            RETURN
+         ENDIF
+C
+         ZMAXLOG = ALOG10(PMAX)
+         IF (ZMAXLOG .GT. 0.0) ZMAXLOG = INT(ZMAXLOG) + 1
+         IF (ZMAXLOG .LT. 0.0) ZMAXLOG = INT(ZMAXLOG)
+C
+         PMAX = 10**ZMAXLOG
+C
+         RETURN
+         END
+         SUBROUTINE RNDMNLG(PMIN)
+C
+C        ROUND PMIN TO PREVIOUS " INTEGER " LOGARITHM VALUE
+C
+         IF (PMIN .LE. 0.0) THEN
+            WRITE(6,*) ' WARNING IN RNDMNLG: PMIN .LE. 0.0 : ',PMIN
+            RETURN
+         ENDIF
+C
+         ZMINLOG = ALOG10(PMIN)
+         IF (ZMINLOG .GT. 0.0) ZMINLOG = INT(ZMINLOG)
+         IF (ZMINLOG .LT. 0.0) ZMINLOG = INT(ZMINLOG) - 1.
+C
+         PMIN = 10**ZMINLOG
+C
+CC       WRITE(NNIN,'(" MISTAKE IN RNDMIN ")')
+         RETURN
+         END
+         FUNCTION ASINH(PX)
+C        ******************
+C
+C     COMPUTE HYPERBOLIC ARG SINUS
+C
+         IF (PX.GE.0) THEN
+            ASINH =   LOG( PX + SQRT(PX*PX+1.0))
+         ELSE
+            ASINH = - LOG(-PX + SQRT(PX*PX+1.0))
+         ENDIF
+C
+         RETURN
+         END
+         SUBROUTINE JNINT
+C
+         PRINT *,' DUMMY SUBROUTINE USED FOR LINKING '
+C
+         RETURN
+         END
+         SUBROUTINE XGCUSHN
+C        ******************
+C
+C     DRAW THE GRAPH OF N CURVES HAVING DIFFERENT X-COORDINATES AND NUMBER OF POINTS.
+C     THE POINTS FOR EACH CURVE J (J=1,KPLOT) ARE GIVEN BY (PX(I,J),PY(I,J)),I=1,KNJ(J)
+C     THE GRAPH IS DRAWN INSIDE A RECTANGULAR BOX ((PX0,PY0) ; (PX0+PDX,PY0+PDY)
+C
+C     THE CURVES ARE CUT SUCH THAT THE POINTS HAVING (0.0,0.0) AS COORDINATES ARE NOT
+C     DRAWN.
+C
+C     USE AN ASINH Y-AXIS
+C
+C        PX(I,J)    : VECTOR OF X-COORDINATES OF EACH CURVE, OF DIMENSION (MKN,KPLOT)
+C        PY(I,J)    : VECTOR OF Y-COORDINATES, FOR EACH CURVE J, OF "      "    "
+C        KNJ(KPLOT) : NUMBER OF POINTS FOR EACH CURVE
+C        MKN        : FIRST DIMENSION OF PX AND PY
+C        KPLOT      : NUMBER OF CURVES
+C        (PX0,PY0)  : BOTTOM LEFT CORNER OF THE BOX
+C        (PDX,PDY)  : LENGTH IN X- AND Y-DIRECTION OF THE BOX
+C        PHCHAR     : CHARACTER HEIGHT (TYPICAL VALUE: 0.30)
+C        PXIBCD     : TITLE OF X-AXIS
+C        PYIBCD(J)  : TITLE OF EACH CURVE
+C        PYIBCD(KPLOT+1) : TITLE OF PLOT
+C        KX,KTIT(J) : NUMBER OF CHARACTERS IN PXIBCD,PYIBCD(J)
+C        PSIZLN     : LINE WIDTH OF CURVE
+C        KCADRE     : DRAW BOX OPTION :(0=NO, 1=YES,CONT., 2=YES,ONLY CORNERS)
+C        KGRID      : DRAW GRID OPTION : (0=NO, 1=Y-GRID, 2=X-GRID, 3=XY-GRID)
+C
+C
+         PARAMETER(MNX1=3531 , MPLT=10, MKPLOT=10)
+C
+         CHARACTER PXIBCD*82,                    PYIBCD(MKPLOT+1)*82
+         CHARACTER ZXIBCD*82 ,ZYIBCD*82
+         DIMENSION PX(MNX1,MKPLOT), PY(MNX1,MKPLOT),    KTIT(MKPLOT+1),
+     +             KNJ(MNX1)
+C
+         NPLT = 13
+C
+         READ(NPLT,*) KPLOT , PX0 , PDX , PY0 , PDY , PHCHAR
+         READ(NPLT,*) (KNJ(J),J=1,KPLOT)
+C
+         DO 100 IP=1,KPLOT
+            READ(NPLT,*) (PX(I,IP),I=1,KNJ(IP))
+            READ(NPLT,*) (PY(I,IP),I=1,KNJ(IP))
+ 100     CONTINUE
+C
+         READ(NPLT,'(A)') PXIBCD
+         READ(NPLT,'(A)') (PYIBCD(I),I=1,KPLOT+1)
+         READ(NPLT,*) KX, (KTIT(I),I=1,KPLOT+1), PSIZLN, KCADRE,KGRID
+C
+         IX = 1
+         IF (PXIBCD(1:1) .EQ. ' ') IX = 2
+         ZXIBCD(1:KX) = PXIBCD(IX:KX+IX-1)
+         ZXIBCD(KX+1:KX+1) = '$'
+         PXIBCD = ZXIBCD
+         DO 110 I=1,KPLOT+1
+            IY = 1
+            KY = KTIT(I)
+            ZYIBCD = PYIBCD(I)
+            IF (ZYIBCD(1:1) .EQ. ' ') IY = 2
+            ZXIBCD(1:KY) = ZYIBCD(IY:KY+IY-1)
+            ZXIBCD(KY+1:KY+1) = '$'
+            PYIBCD(I) = ZXIBCD
+ 110     CONTINUE
+C
+         CALL GCUSHN(PX,PY,KNJ,MNX1,KPLOT,PX0,PDX,PY0,PDY,PHCHAR,
+     +                     PXIBCD,PYIBCD,KX,KTIT,PSIZLN,KCADRE,KGRID)
+C
+         RETURN
+         END
+         SUBROUTINE GCUSHN(PX,PY,KNJ,MKN,KPLOT,PX0,PDX,PY0,PDY,PHCHAR,
+     +                     PXIBCD,PYIBCD,KX,KTIT,PSIZLN,KCADRE,KGRID  )
+C        **************************************************************
+C
+C     PLOT SEVERAL CURVES ON SAME GRAPHE
+C
+C     DRAW THE GRAPH OF N CURVES HAVING DIFFERENT X-COORDINATES AND NUMBER OF POINTS.
+C     THE POINTS FOR EACH CURVE J (J=1,KPLOT) ARE GIVEN BY (PX(I,J),PY(I,J)),I=1,KNJ(J)
+C     THE GRAPH IS DRAWN INSIDE A RECTANGULAR BOX ((PX0,PY0) ; (PX0+PDX,PY0+PDY)
+C
+C     THE CURVES ARE CUT SUCH THAT THE POINTS HAVING (0.0,0.0) AS COORDINATES ARE NOT
+C     DRAWN.
+C
+C     USE AN ASINH Y-AXIS
+C
+C        PX(I,J)    : VECTOR OF X-COORDINATES OF EACH CURVE, OF DIMENSION (MKN,KPLOT)
+C        PY(I,J)    : VECTOR OF Y-COORDINATES, FOR EACH CURVE J, OF "      "    "
+C        KNJ(KPLOT) : NUMBER OF POINTS FOR EACH CURVE
+C        MKN        : FIRST DIMENSION OF PX AND PY
+C        KPLOT      : NUMBER OF CURVES
+C        (PX0,PY0)  : BOTTOM LEFT CORNER OF THE BOX
+C        (PDX,PDY)  : LENGTH IN X- AND Y-DIRECTION OF THE BOX
+C        PHCHAR     : CHARACTER HEIGHT (TYPICAL VALUE: 0.30)
+C        PXIBCD     : TITLE OF X-AXIS
+C        PYIBCD(J)  : TITLE OF EACH CURVE
+C        PYIBCD(KPLOT+1) : TITLE OF PLOT
+C        KX,KTIT(J) : NUMBER OF CHARACTERS IN PXIBCD,PYIBCD(J)
+C        PSIZLN     : LINE WIDTH OF CURVE
+C        KCADRE     : DRAW BOX OPTION :(0=NO, 1=YES,CONT., 2=YES,ONLY CORNERS)
+C        KGRID      : DRAW GRID OPTION : (0=NO, 1=Y-GRID, 2=X-GRID, 3=XY-GRID)
+C
+C
+         CHARACTER PXIBCD*(*),                   PYIBCD(KPLOT+1)*(*)
+         DIMENSION PX(MKN,KPLOT),  PY(MKN,KPLOT),      KTIT(KPLOT+1),
+     +             ZXLAB(2), ZYLAB(2),           KNJ(MKN)
+C
+         CALL GDASH(0)
+         CALL GWICOL(-2.0,1)
+C
+      IF (KCADRE .NE. 0) CALL CADRE(PX0*10.,PY0*10.,PDX*10.,PDY*10.
+     +                              ,KCADRE)
+      CALL GWICOL(-1.0,1)
+C
+C     CACUL DES EXTREMAS
+C
+      CALL MAXAR(PX(1,1),KNJ(1),ZXMAX,ZXMIN)
+C
+CC      CALL MAXAR(PY(1,1),KNJ(1),ZYMAX,ZYMIN)
+      DO 7 IXS=1,KNJ(1)
+         IF (PY(IXS,1) .NE. 0.0) THEN
+            ZYMIN = PY(IXS,1)
+            ZYMAX = PY(IXS,1)
+            GO TO 8
+         ENDIF
+ 7    CONTINUE
+      ZYMIN = 0.0
+      ZYMAX = 0.0
+C
+ 8    DO 9 IX=IXS,KNJ(1)
+         IF (PY(IX,1) .NE. 0.0) THEN
+            ZYMAX = MAX(ZYMAX,PY(IX,1))
+            ZYMIN = MIN(ZYMIN,PY(IX,1))
+         ENDIF
+ 9    CONTINUE
+C
+      DO 10 I=2,KPLOT
+         CALL MAXAR(PX(1,I),KNJ(I),ZXMAXI,ZXMINI)
+         ZXMAX = MAX(ZXMAX,ZXMAXI)
+         ZXMIN = MIN(ZXMIN,ZXMINI)
+CC         CALL MAXAR(PY(1,I),KNJ(I),ZYMAXI,ZYMINI)
+      DO 101 IX=1,KNJ(I)
+         IF (PY(IX,I) .NE. 0.0) THEN
+            ZYMAX = MAX(ZYMAX,PY(IX,I))
+            ZYMIN = MIN(ZYMIN,PY(IX,I))
+         ENDIF   
+ 101  CONTINUE
+ 10   CONTINUE
+C
+      IZERO = 0
+      IF (ZXMAX.EQ.0.0 .OR. ZXMIN.EQ.0.0) IZERO = 1
+      IF ( (ABS(ZXMAX-ZXMIN).LT.1.0E-12*ABS(ZXMAX) .AND. IZERO.EQ.0)
+     +      .OR.  (ZXMAX.EQ.ZXMIN       .AND. IZERO.EQ.1)       ) THEN
+         IF(ZXMAX .NE. 0.0) ZXMIN = ZXMIN/2.
+         IF(ZXMAX .NE. 0.0) ZXMAX = ZXMAX + ZXMIN
+         IF(ZXMAX .EQ. 0.0) ZXMIN = -1.
+         IF(ZXMAX .EQ. 0.0) ZXMAX =  1.
+      ENDIF
+C
+      IZERO = 0
+      IF (ZYMAX.EQ.0.0 .OR. ZYMIN.EQ.0.0) IZERO = 1
+      IF ( (ABS(ZYMAX-ZYMIN).LT.1.0E-12*ABS(ZYMAX) .AND. IZERO.EQ.0)
+     +      .OR.  (ZYMAX.EQ.ZYMIN       .AND. IZERO.EQ.1)       ) THEN
+         IF(ZYMAX .NE. 0.0) ZYMIN = ZYMIN/2.
+         IF(ZYMAX .NE. 0.0) ZYMAX = ZYMAX + ZYMIN
+         IF(ZYMAX .EQ. 0.0) ZYMIN = -1.
+         IF(ZYMAX .EQ. 0.0) ZYMAX =  1.
+      ENDIF
+C
+C     LONGUEUR DES AXES
+         ZHCHMN =       PHCHAR
+C%%         ZLX=PDX - 11.5 * ZHCHMN
+         ZLX=PDX - 11.5 * ZHCHMN - 2.*PHCHAR
+CC         IF (ABS(ZDY) .LT. 0.05*AMAX1(ABS(ZYMIN),ABS(ZYMAX)))
+CC     +                                             ZLX = ZLX - 2.*ZHCHMN
+C%%%%%%         ZLY=PDY - 7.0 * ZHCHMN
+         ZLAB = 0.7 + ZHCHMN
+         ZLY=PDY - 7.0 * ZHCHMN - ZLAB
+C
+C     DESSIN DES AXES
+C%%         ZX0=PX0+ 8.0 * ZHCHMN
+         ZX0=PX0+ 8.0 * ZHCHMN + 2.*PHCHAR
+CC         IF (ABS(ZDY) .LT. 0.05*AMAX1(ABS(ZYMIN),ABS(ZYMAX)))
+CC     +                                             ZX0 = ZX0 + 2.*ZHCHMN
+         ZY0=PY0+ 5.0 * ZHCHMN
+C
+C     GRID OPTION
+         ZGRIDX = 0.0
+         ZGRIDY = 0.0
+         IF (KGRID.EQ.1 .OR. KGRID.EQ.3) ZGRIDY =  ZLX
+         IF (KGRID.EQ.2 .OR. KGRID.EQ.3) ZGRIDX =  ZLY
+C
+         CALL AXES(ZX0*10.,ZY0*10.,ZLX*10.,ZXMIN,ZXMAX, 0.,PHCHAR*10.,
+     +             PXIBCD, KX, 0, 0,-ZLY*10.,-ZGRIDX*10.)
+         CALL AXASNH(ZX0*10.,ZY0*10.,ZLY*10.,ZYMIN,ZYMAX,90.,PHCHAR*10.,
+     +        PYIBCD(KPLOT+1),-KTIT(KPLOT+1), 1, 0, ZLX*10., ZGRIDY*10.)
+C
+C     ECHELLES
+      ZDX = ZXMAX - ZXMIN
+      ZDY = ASINH(ZYMAX) - ASINH(ZYMIN)
+      ZECHX = ZLX/ZDX
+      ZECHY = ZLY/ZDY
+C
+CL    PLOT THE CURVES HAVING DIFFERENT X COORDINATES
+CL    BUT DO NOT PLOT THE POINT IF THEIR COORDINATES ARE (0.,0.)
+C    
+         CALL GDASH(0)
+         CALL GWICOL(-PSIZLN,1)
+         ZYMNAS = ASINH(ZYMIN)
+         DO 100 IP=1,KPLOT
+         DO 100 J=1,KNJ(IP)
+            PX(J,IP) = ((PX(J,IP)-ZXMIN)*ZECHX + ZX0) *10.
+ 100     CONTINUE
+         DO 110 IP=1,KPLOT
+            IEND = 0
+ 1100       ISTART = IEND + 1
+C
+C     STARTING POINT
+            DO 1101 IX=ISTART,KNJ(IP)
+               IF (PY(IX,IP) .NE. 0.0) GO TO 1102
+               PY(IX,IP) = ((ASINH(PY(IX,IP))-ZYMNAS)*ZECHY + ZY0) *10.
+ 1101       CONTINUE
+ 1102       ISTART = IX
+            IF (ISTART .GE. KNJ(IP)) GO TO 110
+C     END OF SECTION
+            DO 1103 IX=ISTART,KNJ(IP)
+               IF (PY(IX,IP) .EQ. 0.0) GO TO 1104
+               PY(IX,IP) = ((ASINH(PY(IX,IP))-ZYMNAS)*ZECHY + ZY0) *10.
+ 1103       CONTINUE
+ 1104       IEND = IX - 1
+C
+            CALL GDASH((IP-1)*2)
+            CALL GVECT(PX(ISTART,IP),PY(ISTART,IP),IEND-ISTART+1)
+            IF (IEND .EQ. KNJ(IP)) GO TO 110
+            GO TO 1100
+ 110     CONTINUE
+C
+CL    LABEL THE CURVES
+C
+         ZY = ZY0 + ZLY + 0.5
+         ZYLAB(1) = ZY*10.
+         ZYLAB(2) = ZY*10.
+         ZX = PX0 + PHCHAR
+      DO 120 IP=1,KPLOT
+         ZXLAB(1) = ZX*10.
+         ZXLAB(2) = (ZX + 1.) * 10.
+         CALL GDASH((IP-1)*2)
+         CALL GVECT(ZXLAB,ZYLAB,2)
+         CALL GCHAR(PYIBCD(IP),ZXLAB(2)+0.2*10.,ZY*10.,PHCHAR*10.)
+C
+         ZDEL = 1.4 + KTIT(IP) * PHCHAR * 0.90
+         ZX = ZX + ZDEL
+ 120  CONTINUE
+C
+      DO 130 IP=1,KPLOT
+      DO 130 J=1,KNJ(IP)
+         PX(J,IP) = (PX(J,IP)/10.-ZX0)/ZECHX + ZXMIN
+         PY(J,IP) = SINH((PY(J,IP)/10.-ZY0)/ZECHY + ZYMNAS)
+ 130  CONTINUE
+C
+      IF (ZYMIN*ZYMAX .LT. 0.0) THEN
+         CALL GDASH(1)
+         CALL GWICOL(-1.0,1)
+         CALL GPLOT(ZX0*10.      ,(ZY0-ZYMNAS*ZECHY)*10.,3)
+         CALL GPLOT((ZX0+ZLX)*10.,(ZY0-ZYMNAS*ZECHY)*10.,2)
+      ENDIF
+         CALL GWICOL(-1.0,1)
+C
+      RETURN
+      END
+         SUBROUTINE XGCUSDN
+C        ******************
+C
+C     DRAW THE GRAPH OF N CURVES HAVING DIFFERENT X-COORDINATES AND NUMBER OF POINTS.
+C     THE POINTS FOR EACH CURVE J (J=1,KPLOT) ARE GIVEN BY (PX(I,J),PY(I,J)),I=1,KNJ(J)
+C     THE GRAPH IS DRAWN INSIDE A RECTANGULAR BOX ((PX0,PY0) ; (PX0+PDX,PY0+PDY)
+C
+C     THE CURVES ARE CUT SUCH THAT THE POINTS HAVING (0.0,0.0) AS COORDINATES ARE NOT
+C     DRAWN.
+C
+C     USE AN ASINH Y-AXIS
+C
+C        PX(I,J)    : VECTOR OF X-COORDINATES OF EACH CURVE, OF DIMENSION (MKN,KPLOT)
+C        PY(I,J)    : VECTOR OF Y-COORDINATES, FOR EACH CURVE J, OF "      "    "
+C        KNJ(KPLOT) : NUMBER OF POINTS FOR EACH CURVE
+C        MKN        : FIRST DIMENSION OF PX AND PY
+C        KPLOT      : NUMBER OF CURVES
+C        (PX0,PY0)  : BOTTOM LEFT CORNER OF THE BOX
+C        (PDX,PDY)  : LENGTH IN X- AND Y-DIRECTION OF THE BOX
+C        PHCHAR     : CHARACTER HEIGHT (TYPICAL VALUE: 0.30)
+C        PXIBCD     : TITLE OF X-AXIS
+C        PYIBCD(J)  : TITLE OF EACH CURVE
+C        PYIBCD(KPLOT+1) : TITLE OF PLOT
+C        KX,KTIT(J) : NUMBER OF CHARACTERS IN PXIBCD,PYIBCD(J)
+C        PSIZLN     : LINE WIDTH OF CURVE
+C        KCADRE     : DRAW BOX OPTION :(0=NO, 1=YES,CONT., 2=YES,ONLY CORNERS)
+C        KGRID      : DRAW GRID OPTION : (0=NO, 1=Y-GRID, 2=X-GRID, 3=XY-GRID)
+C
+C
+         PARAMETER(MNX1=3531 , MPLT=10, MKPLOT=10)
+C
+         CHARACTER PXIBCD*82,                    PYIBCD(MKPLOT+1)*82
+         CHARACTER ZXIBCD*82 ,ZYIBCD*82
+         DIMENSION PX(MNX1,MKPLOT), PY(MNX1,MKPLOT),    KTIT(MKPLOT+1),
+     +             KNJ(MNX1)
+C
+         NPLT = 13
+C
+         READ(NPLT,*) KPLOT , PX0 , PDX , PY0 , PDY , PHCHAR
+         READ(NPLT,*) (KNJ(J),J=1,KPLOT)
+C
+         DO 100 IP=1,KPLOT
+            READ(NPLT,*) (PX(I,IP),I=1,KNJ(IP))
+            READ(NPLT,*) (PY(I,IP),I=1,KNJ(IP))
+ 100     CONTINUE
+C
+         READ(NPLT,'(A)') PXIBCD
+         READ(NPLT,'(A)') (PYIBCD(I),I=1,KPLOT+1)
+         READ(NPLT,*) KX, (KTIT(I),I=1,KPLOT+1), PSIZLN, KCADRE,KGRID
+C
+         IX = 1
+         IF (PXIBCD(1:1) .EQ. ' ') IX = 2
+         ZXIBCD(1:KX) = PXIBCD(IX:KX+IX-1)
+         ZXIBCD(KX+1:KX+1) = '$'
+         PXIBCD = ZXIBCD
+         DO 110 I=1,KPLOT+1
+            IY = 1
+            KY = KTIT(I)
+            ZYIBCD = PYIBCD(I)
+            IF (ZYIBCD(1:1) .EQ. ' ') IY = 2
+            ZXIBCD(1:KY) = ZYIBCD(IY:KY+IY-1)
+            ZXIBCD(KY+1:KY+1) = '$'
+            PYIBCD(I) = ZXIBCD
+ 110     CONTINUE
+C
+         CALL GCUSDN(PX,PY,KNJ,MNX1,KPLOT,PX0,PDX,PY0,PDY,PHCHAR,
+     +                     PXIBCD,PYIBCD,KX,KTIT,PSIZLN,KCADRE,KGRID)
+C
+         RETURN
+         END
+         SUBROUTINE GCUSDN(PX,PY,KNJ,MKN,KPLOT,PX0,PDX,PY0,PDY,PHCHAR,
+     +                     PXIBCD,PYIBCD,KX,KTIT,PSIZLN,KCADRE,KGRID  )
+C        **************************************************************
+C
+C     PLOT SEVERAL CURVES ON SAME GRAPHE AND PLOT DOTS AS WELL
+C
+C     DRAW THE GRAPH OF N CURVES HAVING DIFFERENT X-COORDINATES AND NUMBER OF POINTS.
+C     THE POINTS FOR EACH CURVE J (J=1,KPLOT) ARE GIVEN BY (PX(I,J),PY(I,J)),I=1,KNJ(J)
+C     THE GRAPH IS DRAWN INSIDE A RECTANGULAR BOX ((PX0,PY0) ; (PX0+PDX,PY0+PDY)
+C
+C     THE CURVES ARE CUT SUCH THAT THE POINTS HAVING (0.0,0.0) AS COORDINATES ARE NOT
+C     DRAWN.
+C
+C     USE AN ASINH Y-AXIS
+C
+C        PX(I,J)    : VECTOR OF X-COORDINATES OF EACH CURVE, OF DIMENSION (MKN,KPLOT)
+C        PY(I,J)    : VECTOR OF Y-COORDINATES, FOR EACH CURVE J, OF "      "    "
+C        KNJ(KPLOT) : NUMBER OF POINTS FOR EACH CURVE
+C        MKN        : FIRST DIMENSION OF PX AND PY
+C        KPLOT      : NUMBER OF CURVES
+C        (PX0,PY0)  : BOTTOM LEFT CORNER OF THE BOX
+C        (PDX,PDY)  : LENGTH IN X- AND Y-DIRECTION OF THE BOX
+C        PHCHAR     : CHARACTER HEIGHT (TYPICAL VALUE: 0.30)
+C        PXIBCD     : TITLE OF X-AXIS
+C        PYIBCD(J)  : TITLE OF EACH CURVE
+C        PYIBCD(KPLOT+1) : TITLE OF PLOT
+C        KX,KTIT(J) : NUMBER OF CHARACTERS IN PXIBCD,PYIBCD(J)
+C        PSIZLN     : LINE WIDTH OF CURVE
+C        KCADRE     : DRAW BOX OPTION :(0=NO, 1=YES,CONT., 2=YES,ONLY CORNERS)
+C        KGRID      : DRAW GRID OPTION : (0=NO, 1=Y-GRID, 2=X-GRID, 3=XY-GRID)
+C
+C
+         CHARACTER PXIBCD*(*),                   PYIBCD(KPLOT+1)*(*)
+         DIMENSION PX(MKN,KPLOT),  PY(MKN,KPLOT),      KTIT(KPLOT+1),
+     +             ZXLAB(2), ZYLAB(2),           KNJ(MKN)
+C
+         CALL GDASH(0)
+         CALL GWICOL(-2.0,1)
+C
+      IF (KCADRE .NE. 0) CALL CADRE(PX0*10.,PY0*10.,PDX*10.,PDY*10.
+     +                              ,KCADRE)
+      CALL GWICOL(-1.0,1)
+C
+C     CACUL DES EXTREMAS
+C
+      CALL MAXAR(PX(1,1),KNJ(1),ZXMAX,ZXMIN)
+C
+CC      CALL MAXAR(PY(1,1),KNJ(1),ZYMAX,ZYMIN)
+      DO 7 IXS=1,KNJ(1)
+         IF (PY(IXS,1) .NE. 0.0) THEN
+            ZYMIN = PY(IXS,1)
+            ZYMAX = PY(IXS,1)
+            GO TO 8
+         ENDIF
+ 7    CONTINUE
+      ZYMIN = 0.0
+      ZYMAX = 0.0
+C
+ 8    DO 9 IX=IXS,KNJ(1)
+         IF (PY(IX,1) .NE. 0.0) THEN
+            ZYMAX = MAX(ZYMAX,PY(IX,1))
+            ZYMIN = MIN(ZYMIN,PY(IX,1))
+         ENDIF
+ 9    CONTINUE
+C
+      DO 10 I=2,KPLOT
+         CALL MAXAR(PX(1,I),KNJ(I),ZXMAXI,ZXMINI)
+         ZXMAX = MAX(ZXMAX,ZXMAXI)
+         ZXMIN = MIN(ZXMIN,ZXMINI)
+CC         CALL MAXAR(PY(1,I),KNJ(I),ZYMAXI,ZYMINI)
+      DO 101 IX=1,KNJ(I)
+         IF (PY(IX,I) .NE. 0.0) THEN
+            ZYMAX = MAX(ZYMAX,PY(IX,I))
+            ZYMIN = MIN(ZYMIN,PY(IX,I))
+         ENDIF   
+ 101  CONTINUE
+ 10   CONTINUE
+C
+      IZERO = 0
+      IF (ZXMAX.EQ.0.0 .OR. ZXMIN.EQ.0.0) IZERO = 1
+      IF ( (ABS(ZXMAX-ZXMIN).LT.1.0E-12*ABS(ZXMAX) .AND. IZERO.EQ.0)
+     +      .OR.  (ZXMAX.EQ.ZXMIN       .AND. IZERO.EQ.1)       ) THEN
+         IF(ZXMAX .NE. 0.0) ZXMIN = ZXMIN/2.
+         IF(ZXMAX .NE. 0.0) ZXMAX = ZXMAX + ZXMIN
+         IF(ZXMAX .EQ. 0.0) ZXMIN = -1.
+         IF(ZXMAX .EQ. 0.0) ZXMAX =  1.
+      ENDIF
+C
+      IZERO = 0
+      IF (ZYMAX.EQ.0.0 .OR. ZYMIN.EQ.0.0) IZERO = 1
+      IF ( (ABS(ZYMAX-ZYMIN).LT.1.0E-12*ABS(ZYMAX) .AND. IZERO.EQ.0)
+     +      .OR.  (ZYMAX.EQ.ZYMIN       .AND. IZERO.EQ.1)       ) THEN
+         IF(ZYMAX .NE. 0.0) ZYMIN = ZYMIN/2.
+         IF(ZYMAX .NE. 0.0) ZYMAX = ZYMAX + ZYMIN
+         IF(ZYMAX .EQ. 0.0) ZYMIN = -1.
+         IF(ZYMAX .EQ. 0.0) ZYMAX =  1.
+      ENDIF
+C
+C     LONGUEUR DES AXES
+         ZHCHMN =       PHCHAR
+C%%         ZLX=PDX - 11.5 * ZHCHMN
+         ZLX=PDX - 11.5 * ZHCHMN - 2.*PHCHAR
+CC         IF (ABS(ZDY) .LT. 0.05*AMAX1(ABS(ZYMIN),ABS(ZYMAX)))
+CC     +                                             ZLX = ZLX - 2.*ZHCHMN
+C%%%%%%         ZLY=PDY - 7.0 * ZHCHMN
+         ZLAB = 0.7 + ZHCHMN
+         ZLY=PDY - 7.0 * ZHCHMN - ZLAB
+C
+C     DESSIN DES AXES
+C%%         ZX0=PX0+ 8.0 * ZHCHMN
+         ZX0=PX0+ 8.0 * ZHCHMN + 2.*PHCHAR
+CC         IF (ABS(ZDY) .LT. 0.05*AMAX1(ABS(ZYMIN),ABS(ZYMAX)))
+CC     +                                             ZX0 = ZX0 + 2.*ZHCHMN
+         ZY0=PY0+ 5.0 * ZHCHMN
+C
+C     GRID OPTION
+         ZGRIDX = 0.0
+         ZGRIDY = 0.0
+         IF (KGRID.EQ.1 .OR. KGRID.EQ.3) ZGRIDY =  ZLX
+         IF (KGRID.EQ.2 .OR. KGRID.EQ.3) ZGRIDX =  ZLY
+C
+         CALL AXES(ZX0*10.,ZY0*10.,ZLX*10.,ZXMIN,ZXMAX, 0.,PHCHAR*10.,
+     +             PXIBCD, KX, 0, 0,-ZLY*10.,-ZGRIDX*10.)
+         CALL AXASNH(ZX0*10.,ZY0*10.,ZLY*10.,ZYMIN,ZYMAX,90.,PHCHAR*10.,
+     +        PYIBCD(KPLOT+1),-KTIT(KPLOT+1), 1, 0, ZLX*10., ZGRIDY*10.)
+C
+C     ECHELLES
+      ZDX = ZXMAX - ZXMIN
+      ZDY = ASINH(ZYMAX) - ASINH(ZYMIN)
+      ZECHX = ZLX/ZDX
+      ZECHY = ZLY/ZDY
+C
+CL    PLOT THE CURVES HAVING DIFFERENT X COORDINATES
+CL    BUT DO NOT PLOT THE POINT IF THEIR COORDINATES ARE (0.,0.)
+C    
+         CALL GDASH(0)
+         CALL GWICOL(-PSIZLN,1)
+         ZYMNAS = ASINH(ZYMIN)
+         DO 100 IP=1,KPLOT
+         DO 100 J=1,KNJ(IP)
+            PX(J,IP) = ((PX(J,IP)-ZXMIN)*ZECHX + ZX0) *10.
+ 100     CONTINUE
+         DO 110 IP=1,KPLOT
+            IEND = 0
+ 1100       ISTART = IEND + 1
+C
+C     STARTING POINT
+            DO 1101 IX=ISTART,KNJ(IP)
+               IF (PY(IX,IP) .NE. 0.0) GO TO 1102
+               PY(IX,IP) = ((ASINH(PY(IX,IP))-ZYMNAS)*ZECHY + ZY0) *10.
+ 1101       CONTINUE
+ 1102       ISTART = IX
+            IF (ISTART .GE. KNJ(IP)) GO TO 110
+C     END OF SECTION
+            DO 1103 IX=ISTART,KNJ(IP)
+               IF (PY(IX,IP) .EQ. 0.0) GO TO 1104
+               PY(IX,IP) = ((ASINH(PY(IX,IP))-ZYMNAS)*ZECHY + ZY0) *10.
+ 1103       CONTINUE
+ 1104       IEND = IX - 1
+C
+            CALL GDASH((IP-1)*2)
+            CALL GVECT(PX(ISTART,IP),PY(ISTART,IP),IEND-ISTART+1)
+            CALL GWICOL(PSIZLN+0.3/PSIZLN,1)
+            CALL GDOT(PX(ISTART,IP),PY(ISTART,IP),IEND-ISTART+1)
+            CALL GWICOL(-PSIZLN,1)
+            IF (IEND .EQ. KNJ(IP)) GO TO 110
+            GO TO 1100
+ 110     CONTINUE
+C
+CL    LABEL THE CURVES
+C
+         ZY = ZY0 + ZLY + 0.5
+         ZYLAB(1) = ZY*10.
+         ZYLAB(2) = ZY*10.
+         ZX = PX0 + PHCHAR
+      DO 120 IP=1,KPLOT
+         ZXLAB(1) = ZX*10.
+         ZXLAB(2) = (ZX + 1.) * 10.
+         CALL GDASH((IP-1)*2)
+         CALL GVECT(ZXLAB,ZYLAB,2)
+         CALL GCHAR(PYIBCD(IP),ZXLAB(2)+0.2*10.,ZY*10.,PHCHAR*10.)
+C
+         ZDEL = 1.4 + KTIT(IP) * PHCHAR * 0.90
+         ZX = ZX + ZDEL
+ 120  CONTINUE
+C
+      DO 130 IP=1,KPLOT
+      DO 130 J=1,KNJ(IP)
+         PX(J,IP) = (PX(J,IP)/10.-ZX0)/ZECHX + ZXMIN
+         PY(J,IP) = SINH((PY(J,IP)/10.-ZY0)/ZECHY + ZYMNAS)
+ 130  CONTINUE
+C
+      IF (ZYMIN*ZYMAX .LT. 0.0) THEN
+         CALL GDASH(1)
+         CALL GWICOL(-1.0,1)
+         CALL GPLOT(ZX0*10.      ,(ZY0-ZYMNAS*ZECHY)*10.,3)
+         CALL GPLOT((ZX0+ZLX)*10.,(ZY0-ZYMNAS*ZECHY)*10.,2)
+      ENDIF
+         CALL GWICOL(-1.0,1)
+C
+      RETURN
+      END
+         SUBROUTINE XGXISHN
+C        ******************
+C
+C     DRAW THE GRAPH OF N CURVES HAVING DIFFERENT X-COORDINATES AND NUMBER OF POINTS.
+C     THE POINTS FOR EACH CURVE J (J=1,KPLOT) ARE GIVEN BY (PX(I,J),PY(I,J)),I=1,KNJ(J)
+C     THE GRAPH IS DRAWN INSIDE A RECTANGULAR BOX ((PX0,PY0) ; (PX0+PDX,PY0+PDY)
+C
+C     USE AN ASINH Y-AXIS
+C
+C        PX(I,J)    : VECTOR OF X-COORDINATES OF EACH CURVE, OF DIMENSION (MKN,KPLOT)
+C        PY(I,J)    : VECTOR OF Y-COORDINATES, FOR EACH CURVE J, OF "      "    "
+C        KNJ(KPLOT) : NUMBER OF POINTS FOR EACH CURVE
+C        MKN        : FIRST DIMENSION OF PX AND PY
+C        KPLOT      : NUMBER OF CURVES
+C        (PX0,PY0)  : BOTTOM LEFT CORNER OF THE BOX
+C        (PDX,PDY)  : LENGTH IN X- AND Y-DIRECTION OF THE BOX
+C        PHCHAR     : CHARACTER HEIGHT (TYPICAL VALUE: 0.30)
+C        PXIBCD     : TITLE OF X-AXIS
+C        PYIBCD(J)  : TITLE OF EACH CURVE
+C        PYIBCD(KPLOT+1) : TITLE OF PLOT
+C        KX,KTIT(J) : NUMBER OF CHARACTERS IN PXIBCD,PYIBCD(J)
+C        PSIZLN     : LINE WIDTH OF CURVE
+C        KCADRE     : DRAW BOX OPTION :(0=NO, 1=YES,CONT., 2=YES,ONLY CORNERS)
+C        KGRID      : DRAW GRID OPTION : (0=NO, 1=Y-GRID, 2=X-GRID, 3=XY-GRID)
+C
+C
+         PARAMETER(MNX1=3531 , MPLT=10, MKPLOT=10)
+C
+         CHARACTER PXIBCD*82,                    PYIBCD(MKPLOT+1)*82
+         CHARACTER ZXIBCD*82 ,ZYIBCD*82
+         DIMENSION PX(MNX1,MKPLOT), PY(MNX1,MKPLOT),    KTIT(MKPLOT+1),
+     +             KNJ(MNX1)
+C
+         NPLT = 13
+C
+         READ(NPLT,*) KPLOT , PX0 , PDX , PY0 , PDY , PHCHAR
+         READ(NPLT,*) (KNJ(J),J=1,KPLOT)
+C
+         DO 100 IP=1,KPLOT
+            READ(NPLT,*) (PX(I,IP),I=1,KNJ(IP))
+            READ(NPLT,*) (PY(I,IP),I=1,KNJ(IP))
+ 100     CONTINUE
+C
+         READ(NPLT,'(A)') PXIBCD
+         READ(NPLT,'(A)') (PYIBCD(I),I=1,KPLOT+1)
+         READ(NPLT,*) KX, (KTIT(I),I=1,KPLOT+1), PSIZLN, KCADRE,KGRID
+C
+         IX = 1
+         IF (PXIBCD(1:1) .EQ. ' ') IX = 2
+         ZXIBCD(1:KX) = PXIBCD(IX:KX+IX-1)
+         ZXIBCD(KX+1:KX+1) = '$'
+         PXIBCD = ZXIBCD
+         DO 110 I=1,KPLOT+1
+            IY = 1
+            KY = KTIT(I)
+            ZYIBCD = PYIBCD(I)
+            IF (ZYIBCD(1:1) .EQ. ' ') IY = 2
+            ZXIBCD(1:KY) = ZYIBCD(IY:KY+IY-1)
+            ZXIBCD(KY+1:KY+1) = '$'
+            PYIBCD(I) = ZXIBCD
+ 110     CONTINUE
+C
+         CALL GXISHN(PX,PY,KNJ,MNX1,KPLOT,PX0,PDX,PY0,PDY,PHCHAR,
+     +                     PXIBCD,PYIBCD,KX,KTIT,PSIZLN,KCADRE,KGRID)
+C
+         RETURN
+         END
+         SUBROUTINE GXISHN(PX,PY,KNJ,MKN,KPLOT,PX0,PDX,PY0,PDY,PHCHAR,
+     +                     PXIBCD,PYIBCD,KX,KTIT,PSIZLN,KCADRE,KGRID  )
+C        **************************************************************
+C
+C     PLOT SEVERAL CURVES ON SAME GRAPHE
+C
+C     DRAW THE GRAPH OF N CURVES HAVING DIFFERENT X-COORDINATES AND NUMBER OF POINTS.
+C     THE POINTS FOR EACH CURVE J (J=1,KPLOT) ARE GIVEN BY (PX(I,J),PY(I,J)),I=1,KNJ(J)
+C     THE GRAPH IS DRAWN INSIDE A RECTANGULAR BOX ((PX0,PY0) ; (PX0+PDX,PY0+PDY)
+C
+C     USE AN ASINH Y-AXIS
+C
+C        PX(I,J)    : VECTOR OF X-COORDINATES OF EACH CURVE, OF DIMENSION (MKN,KPLOT)
+C        PY(I,J)    : VECTOR OF Y-COORDINATES, FOR EACH CURVE J, OF "      "    "
+C        KNJ(KPLOT) : NUMBER OF POINTS FOR EACH CURVE
+C        MKN        : FIRST DIMENSION OF PX AND PY
+C        KPLOT      : NUMBER OF CURVES
+C        (PX0,PY0)  : BOTTOM LEFT CORNER OF THE BOX
+C        (PDX,PDY)  : LENGTH IN X- AND Y-DIRECTION OF THE BOX
+C        PHCHAR     : CHARACTER HEIGHT (TYPICAL VALUE: 0.30)
+C        PXIBCD     : TITLE OF X-AXIS
+C        PYIBCD(J)  : TITLE OF EACH CURVE
+C        PYIBCD(KPLOT+1) : TITLE OF PLOT
+C        KX,KTIT(J) : NUMBER OF CHARACTERS IN PXIBCD,PYIBCD(J)
+C        PSIZLN     : LINE WIDTH OF CURVE
+C        KCADRE     : DRAW BOX OPTION :(0=NO, 1=YES,CONT., 2=YES,ONLY CORNERS)
+C        KGRID      : DRAW GRID OPTION : (0=NO, 1=Y-GRID, 2=X-GRID, 3=XY-GRID)
+C
+C
+         CHARACTER PXIBCD*(*),                   PYIBCD(KPLOT+1)*(*)
+         DIMENSION PX(MKN,KPLOT),  PY(MKN,KPLOT),      KTIT(KPLOT+1),
+     +             ZXLAB(2), ZYLAB(2),           KNJ(MKN)
+C
+         CALL GDASH(0)
+         CALL GWICOL(-2.0,1)
+C
+      IF (KCADRE .NE. 0) CALL CADRE(PX0*10.,PY0*10.,PDX*10.,PDY*10.
+     +                              ,KCADRE)
+      CALL GWICOL(-1.0,1)
+C
+C     CACUL DES EXTREMAS
+C
+      CALL MAXAR(PX(1,1),KNJ(1),ZXMAX,ZXMIN)
+      CALL MAXAR(PY(1,1),KNJ(1),ZYMAX,ZYMIN)
+      DO 10 I=2,KPLOT
+         CALL MAXAR(PX(1,I),KNJ(I),ZXMAXI,ZXMINI)
+         CALL MAXAR(PY(1,I),KNJ(I),ZYMAXI,ZYMINI)
+         ZXMAX = MAX(ZXMAX,ZXMAXI)
+         ZXMIN = MIN(ZXMIN,ZXMINI)
+         ZYMAX = MAX(ZYMAX,ZYMAXI)
+         ZYMIN = MIN(ZYMIN,ZYMINI)
+ 10   CONTINUE
+C
+      IZERO = 0
+      IF (ZXMAX.EQ.0.0 .OR. ZXMIN.EQ.0.0) IZERO = 1
+      IF ( (ABS(ZXMAX-ZXMIN).LT.1.0E-12*ABS(ZXMAX) .AND. IZERO.EQ.0)
+     +      .OR.  (ZXMAX.EQ.ZXMIN       .AND. IZERO.EQ.1)       ) THEN
+         IF(ZXMAX .NE. 0.0) ZXMIN = ZXMIN/2.
+         IF(ZXMAX .NE. 0.0) ZXMAX = ZXMAX + ZXMIN
+         IF(ZXMAX .EQ. 0.0) ZXMIN = -1.
+         IF(ZXMAX .EQ. 0.0) ZXMAX =  1.
+      ENDIF
+C
+      IZERO = 0
+      IF (ZYMAX.EQ.0.0 .OR. ZYMIN.EQ.0.0) IZERO = 1
+      IF ( (ABS(ZYMAX-ZYMIN).LT.1.0E-12*ABS(ZYMAX) .AND. IZERO.EQ.0)
+     +      .OR.  (ZYMAX.EQ.ZYMIN       .AND. IZERO.EQ.1)       ) THEN
+         IF(ZYMAX .NE. 0.0) ZYMIN = ZYMIN/2.
+         IF(ZYMAX .NE. 0.0) ZYMAX = ZYMAX + ZYMIN
+         IF(ZYMAX .EQ. 0.0) ZYMIN = -1.
+         IF(ZYMAX .EQ. 0.0) ZYMAX =  1.
+      ENDIF
+C
+C     LONGUEUR DES AXES
+         ZHCHMN =       PHCHAR
+C%%         ZLX=PDX - 11.5 * ZHCHMN
+         ZLX=PDX - 11.5 * ZHCHMN - 2.*PHCHAR
+CC         IF (ABS(ZDY) .LT. 0.05*AMAX1(ABS(ZYMIN),ABS(ZYMAX)))
+CC     +                                             ZLX = ZLX - 2.*ZHCHMN
+C%%%%%%         ZLY=PDY - 7.0 * ZHCHMN
+         ZLAB = 0.7 + ZHCHMN
+         ZLY=PDY - 7.0 * ZHCHMN - ZLAB
+C
+C     DESSIN DES AXES
+C%%         ZX0=PX0+ 8.0 * ZHCHMN
+         ZX0=PX0+ 8.0 * ZHCHMN + 2.*PHCHAR
+CC         IF (ABS(ZDY) .LT. 0.05*AMAX1(ABS(ZYMIN),ABS(ZYMAX)))
+CC     +                                             ZX0 = ZX0 + 2.*ZHCHMN
+         ZY0=PY0+ 5.0 * ZHCHMN
+C
+C     GRID OPTION
+         ZGRIDX = 0.0
+         ZGRIDY = 0.0
+         IF (KGRID.EQ.1 .OR. KGRID.EQ.3) ZGRIDY =  ZLX
+         IF (KGRID.EQ.2 .OR. KGRID.EQ.3) ZGRIDX =  ZLY
+C
+         CALL AXES(ZX0*10.,ZY0*10.,ZLX*10.,ZXMIN,ZXMAX, 0.,PHCHAR*10.,
+     +             PXIBCD, KX, 0, 0,-ZLY*10.,-ZGRIDX*10.)
+         CALL AXASNH(ZX0*10.,ZY0*10.,ZLY*10.,ZYMIN,ZYMAX,90.,PHCHAR*10.,
+     +        PYIBCD(KPLOT+1),-KTIT(KPLOT+1), 1, 0, ZLX*10., ZGRIDY*10.)
+C
+C     ECHELLES
+      ZDX = ZXMAX - ZXMIN
+      ZDY = ASINH(ZYMAX) - ASINH(ZYMIN)
+      ZECHX = ZLX/ZDX
+      ZECHY = ZLY/ZDY
+C
+CL    PLOT THE CURVES HAVING DIFFERENT X COORDINATES
+CL    BUT DO NOT PLOT THE POINT IF THEIR COORDINATES ARE (0.,0.)
+C    
+         CALL GDASH(0)
+         CALL GWICOL(-PSIZLN,1)
+         ZYMNAS = ASINH(ZYMIN)
+         DO 100 IP=1,KPLOT
+         DO 100 J=1,KNJ(IP)
+            PX(J,IP) = ((PX(J,IP)-ZXMIN)*ZECHX + ZX0) *10.
+            PY(J,IP) = ((ASINH(PY(J,IP))-ZYMNAS)*ZECHY + ZY0) *10.
+ 100     CONTINUE
+C
+         DO 110 IP=1,KPLOT
+            CALL GDASH((IP-1)*2)
+            CALL GVECT(PX(1,IP),PY(1,IP),KNJ(IP))
+ 110     CONTINUE
+C
+CL    LABEL THE CURVES
+C
+         ZY = ZY0 + ZLY + 0.5
+         ZYLAB(1) = ZY*10.
+         ZYLAB(2) = ZY*10.
+         ZX = PX0 + PHCHAR
+      DO 120 IP=1,KPLOT
+         ZXLAB(1) = ZX*10.
+         ZXLAB(2) = (ZX + 1.) * 10.
+         CALL GDASH((IP-1)*2)
+         CALL GVECT(ZXLAB,ZYLAB,2)
+         CALL GCHAR(PYIBCD(IP),ZXLAB(2)+0.2*10.,ZY*10.,PHCHAR*10.)
+C
+         ZDEL = 1.4 + KTIT(IP) * PHCHAR * 0.90
+         ZX = ZX + ZDEL
+ 120  CONTINUE
+C
+      DO 130 IP=1,KPLOT
+      DO 130 J=1,KNJ(IP)
+         PX(J,IP) = (PX(J,IP)/10.-ZX0)/ZECHX + ZXMIN
+         PY(J,IP) = SINH((PY(J,IP)/10.-ZY0)/ZECHY + ZYMNAS)
+ 130  CONTINUE
+C
+      IF (ZYMIN*ZYMAX .LT. 0.0) THEN
+         CALL GDASH(1)
+         CALL GWICOL(-1.0,1)
+         CALL GPLOT(ZX0*10.      ,(ZY0-ZYMNAS*ZECHY)*10.,3)
+         CALL GPLOT((ZX0+ZLX)*10.,(ZY0-ZYMNAS*ZECHY)*10.,2)
+      ENDIF
+         CALL GWICOL(-1.0,1)
+C
+      RETURN
+      END
+         SUBROUTINE XGXIGRN
+C        ******************
+C
+C     DRAW THE GRAPH OF N CURVES HAVING DIFFERENT X-COORDINATES AND NUMBER OF POINTS.
+C     THE POINTS FOR EACH CURVE J (J=1,KPLOT) ARE GIVEN BY (PX(I,J),PY(I,J)),I=1,KNJ(J)
+C     THE GRAPH IS DRAWN INSIDE A RECTANGULAR BOX ((PX0,PY0) ; (PX0+PDX,PY0+PDY)
+C
+C     USE A LINEAR Y-AXIS
+C
+C        PX(I,J)    : VECTOR OF X-COORDINATES OF EACH CURVE, OF DIMENSION (MKN,KPLOT)
+C        PY(I,J)    : VECTOR OF Y-COORDINATES, FOR EACH CURVE J, OF "      "    "
+C        KNJ(KPLOT) : NUMBER OF POINTS FOR EACH CURVE
+C        MKN        : FIRST DIMENSION OF PX AND PY
+C        KPLOT      : NUMBER OF CURVES
+C        (PX0,PY0)  : BOTTOM LEFT CORNER OF THE BOX
+C        (PDX,PDY)  : LENGTH IN X- AND Y-DIRECTION OF THE BOX
+C        PHCHAR     : CHARACTER HEIGHT (TYPICAL VALUE: 0.30)
+C        PXIBCD     : TITLE OF X-AXIS
+C        PYIBCD(J)  : TITLE OF EACH CURVE
+C        PYIBCD(KPLOT+1) : TITLE OF PLOT
+C        KX,KTIT(J) : NUMBER OF CHARACTERS IN PXIBCD,PYIBCD(J)
+C        PSIZLN     : LINE WIDTH OF CURVE
+C        KCADRE     : DRAW BOX OPTION :(0=NO, 1=YES,CONT., 2=YES,ONLY CORNERS)
+C        KGRID      : DRAW GRID OPTION : (0=NO, 1=Y-GRID, 2=X-GRID, 3=XY-GRID)
+C
+C
+         PARAMETER(MNX1=3531 , MPLT=10, MKPLOT=10)
+C
+         CHARACTER PXIBCD*80,                    PYIBCD(MKPLOT+1)*80
+         CHARACTER ZXIBCD*81 ,ZYIBCD*81
+         DIMENSION PX(MNX1,MKPLOT), PY(MNX1,MKPLOT),    KTIT(MKPLOT+1),
+     +             KNJ(MNX1)
+C
+         NPLT = 13
+C
+         READ(NPLT,*) KPLOT , PX0 , PDX , PY0 , PDY , PHCHAR
+         READ(NPLT,*) (KNJ(J),J=1,KPLOT)
+C
+         DO 100 IP=1,KPLOT
+            READ(NPLT,*) (PX(I,IP),I=1,KNJ(IP))
+            READ(NPLT,*) (PY(I,IP),I=1,KNJ(IP))
+ 100     CONTINUE
+C
+         READ(NPLT,'(A)') PXIBCD
+         DO I=1,KPLOT+1
+           READ(NPLT,'(A)') PYIBCD(I)
+         END DO
+         READ(NPLT,*) KX, (KTIT(I),I=1,KPLOT+1), PSIZLN, KCADRE,KGRID
+C
+         IX = 1
+         IF (PXIBCD(1:1) .EQ. ' ') IX = 2
+         ZXIBCD(1:KX) = PXIBCD(IX:KX+IX-1)
+         ZXIBCD(KX+1:KX+1) = '$'
+         PXIBCD = ZXIBCD
+         DO 110 I=1,KPLOT+1
+            IY = 1
+            KY = KTIT(I)
+            ZYIBCD = PYIBCD(I)
+            IF (ZYIBCD(1:1) .EQ. ' ') IY = 2
+            ZXIBCD(1:KY) = ZYIBCD(IY:KY+IY-1)
+            ZXIBCD(KY+1:KY+1) = '$'
+            PYIBCD(I) = ZXIBCD
+ 110     CONTINUE
+C
+         CALL GXIGRN(PX,PY,KNJ,MNX1,KPLOT,PX0,PDX,PY0,PDY,PHCHAR,
+     +                     PXIBCD,PYIBCD,KX,KTIT,PSIZLN,KCADRE,KGRID)
+C
+         RETURN
+         END
+         SUBROUTINE GXIGRN(PX,PY,KNJ,MKN,KPLOT,PX0,PDX,PY0,PDY,PHCHAR,
+     +                     PXIBCD,PYIBCD,KX,KTIT,PSIZLN,KCADRE,KGRID  )
+C        **************************************************************
+C
+C     PLOT SEVERAL CURVES ON SAME GRAPHE
+C
+C     DRAW THE GRAPH OF N CURVES HAVING DIFFERENT X-COORDINATES AND NUMBER OF POINTS.
+C     THE POINTS FOR EACH CURVE J (J=1,KPLOT) ARE GIVEN BY (PX(I,J),PY(I,J)),I=1,KNJ(J)
+C     THE GRAPH IS DRAWN INSIDE A RECTANGULAR BOX ((PX0,PY0) ; (PX0+PDX,PY0+PDY)
+C
+C     USE A LINEAR Y-AXIS
+C
+C        PX(I,J)    : VECTOR OF X-COORDINATES OF EACH CURVE, OF DIMENSION (MKN,KPLOT)
+C        PY(I,J)    : VECTOR OF Y-COORDINATES, FOR EACH CURVE J, OF "      "    "
+C        KNJ(KPLOT) : NUMBER OF POINTS FOR EACH CURVE
+C        MKN        : FIRST DIMENSION OF PX AND PY
+C        KPLOT      : NUMBER OF CURVES
+C        (PX0,PY0)  : BOTTOM LEFT CORNER OF THE BOX
+C        (PDX,PDY)  : LENGTH IN X- AND Y-DIRECTION OF THE BOX
+C        PHCHAR     : CHARACTER HEIGHT (TYPICAL VALUE: 0.30)
+C        PXIBCD     : TITLE OF X-AXIS
+C        PYIBCD(J)  : TITLE OF EACH CURVE
+C        PYIBCD(KPLOT+1) : TITLE OF PLOT
+C        KX,KTIT(J) : NUMBER OF CHARACTERS IN PXIBCD,PYIBCD(J)
+C        PSIZLN     : LINE WIDTH OF CURVE
+C        KCADRE     : DRAW BOX OPTION :(0=NO, 1=YES,CONT., 2=YES,ONLY CORNERS)
+C        KGRID      : DRAW GRID OPTION : (0=NO, 1=Y-GRID, 2=X-GRID, 3=XY-GRID)
+C
+C
+         CHARACTER PXIBCD*(*),                   PYIBCD(KPLOT+1)*(*)
+         DIMENSION PX(MKN,KPLOT),  PY(MKN,KPLOT),      KTIT(KPLOT+1),
+     +             ZXLAB(2), ZYLAB(2),           KNJ(MKN)
+C
+         CALL GDASH(0)
+         CALL GWICOL(-2.0,1)
+C
+      IF (KCADRE .NE. 0) CALL CADRE(PX0*10.,PY0*10.,PDX*10.,PDY*10.
+     +                              ,KCADRE)
+      CALL GWICOL(-1.0,1)
+C
+C     CACUL DES EXTREMAS
+C
+      CALL MAXAR(PX(1,1),KNJ(1),ZXMAX,ZXMIN)
+      CALL MAXAR(PY(1,1),KNJ(1),ZYMAX,ZYMIN)
+      DO 10 I=2,KPLOT
+         CALL MAXAR(PX(1,I),KNJ(I),ZXMAXI,ZXMINI)
+         CALL MAXAR(PY(1,I),KNJ(I),ZYMAXI,ZYMINI)
+         ZXMAX = MAX(ZXMAX,ZXMAXI)
+         ZXMIN = MIN(ZXMIN,ZXMINI)
+         ZYMAX = MAX(ZYMAX,ZYMAXI)
+         ZYMIN = MIN(ZYMIN,ZYMINI)
+ 10   CONTINUE
+C
+      IZERO = 0
+      IF (ZXMAX.EQ.0.0 .OR. ZXMIN.EQ.0.0) IZERO = 1
+      IF ( (ABS(ZXMAX-ZXMIN).LT.1.0E-12*ABS(ZXMAX) .AND. IZERO.EQ.0)
+     +      .OR.  (ZXMAX.EQ.ZXMIN       .AND. IZERO.EQ.1)       ) THEN
+         IF(ZXMAX .NE. 0.0) ZXMIN = ZXMIN/2.
+         IF(ZXMAX .NE. 0.0) ZXMAX = ZXMAX + ZXMIN
+         IF(ZXMAX .EQ. 0.0) ZXMIN = -1.
+         IF(ZXMAX .EQ. 0.0) ZXMAX =  1.
+      ENDIF
+C
+      IZERO = 0
+      IF (ZYMAX.EQ.0.0 .OR. ZYMIN.EQ.0.0) IZERO = 1
+      IF ( (ABS(ZYMAX-ZYMIN).LT.1.0E-12*ABS(ZYMAX) .AND. IZERO.EQ.0)
+     +      .OR.  (ZYMAX.EQ.ZYMIN       .AND. IZERO.EQ.1)       ) THEN
+         IF(ZYMAX .NE. 0.0) ZYMIN = ZYMIN/2.
+         IF(ZYMAX .NE. 0.0) ZYMAX = ZYMAX + ZYMIN
+         IF(ZYMAX .EQ. 0.0) ZYMIN = -1.
+         IF(ZYMAX .EQ. 0.0) ZYMAX =  1.
+      ENDIF
+C
+C     LONGUEUR DES AXES
+         ZHCHMN =       PHCHAR
+C%%         ZLX=PDX - 11.5 * ZHCHMN
+         ZLX=PDX - 11.5 * ZHCHMN - 2.*PHCHAR
+CC         IF (ABS(ZDY) .LT. 0.05*AMAX1(ABS(ZYMIN),ABS(ZYMAX)))
+CC     +                                             ZLX = ZLX - 2.*ZHCHMN
+C%%%%%%         ZLY=PDY - 7.0 * ZHCHMN
+         ZLAB = 0.7 + ZHCHMN
+         ZLY=PDY - 7.0 * ZHCHMN - ZLAB
+C
+C     DESSIN DES AXES
+C%%         ZX0=PX0+ 8.0 * ZHCHMN
+         ZX0=PX0+ 8.0 * ZHCHMN + 2.*PHCHAR
+CC         IF (ABS(ZDY) .LT. 0.05*AMAX1(ABS(ZYMIN),ABS(ZYMAX)))
+CC     +                                             ZX0 = ZX0 + 2.*ZHCHMN
+         ZY0=PY0+ 5.0 * ZHCHMN
+C
+C     GRID OPTION
+         ZGRIDX = 0.0
+         ZGRIDY = 0.0
+         IF (KGRID.EQ.1 .OR. KGRID.EQ.3) ZGRIDY =  ZLX
+         IF (KGRID.EQ.2 .OR. KGRID.EQ.3) ZGRIDX =  ZLY
+C
+         CALL AXES(ZX0*10.,ZY0*10.,ZLX*10.,ZXMIN,ZXMAX, 0.,PHCHAR*10.,
+     +             PXIBCD, KX, 0, 0,-ZLY*10.,-ZGRIDX*10.)
+         CALL AXES(ZX0*10.,ZY0*10.,ZLY*10.,ZYMIN,ZYMAX,90.,PHCHAR*10.,
+     +        PYIBCD(KPLOT+1),-KTIT(KPLOT+1), 1, 0, ZLX*10., ZGRIDY*10.)
+C
+C     ECHELLES
+      ZDX = ZXMAX - ZXMIN
+      ZDY = ZYMAX - ZYMIN
+      ZECHX = ZLX/ZDX
+      ZECHY = ZLY/ZDY
+C
+CL    PLOT THE CURVES HAVING DIFFERENT X COORDINATES
+CL    BUT DO NOT PLOT THE POINT IF THEIR COORDINATES ARE (0.,0.)
+C    
+         DO 100 IP=1,KPLOT
+         DO 100 J=1,KNJ(IP)
+            PX(J,IP) = ((PX(J,IP)-ZXMIN)*ZECHX + ZX0) *10.
+            PY(J,IP) = ((PY(J,IP)-ZYMIN)*ZECHY + ZY0) *10.
+ 100     CONTINUE
+C
+         CALL GDASH(0)
+         CALL GWICOL(-PSIZLN,1)
+         DO 110 IP=1,KPLOT
+            CALL GDASH((IP-1)*2)
+            CALL GVECT(PX(1,IP),PY(1,IP),KNJ(IP))
+c%OS            CALL GWICOL(PSIZLN+0.5,1)
+c%OS            CALL GDOT (PX(1,IP),PY(1,IP),KNJ(IP))
+c%OS            CALL GWICOL(-PSIZLN,1)
+ 110     CONTINUE
+C
+CL    LABEL THE CURVES
+C
+         ZY = ZY0 + ZLY + 0.5
+         ZYLAB(1) = ZY*10.
+         ZYLAB(2) = ZY*10.
+         ZX = PX0 + PHCHAR
+      DO 120 IP=1,KPLOT
+         ZXLAB(1) = ZX*10.
+         ZXLAB(2) = (ZX + 1.) * 10.
+         CALL GDASH((IP-1)*2)
+         CALL GVECT(ZXLAB,ZYLAB,2)
+         CALL GCHAR(PYIBCD(IP),ZXLAB(2)+0.2*10.,ZY*10.,PHCHAR*10.)
+C
+         ZDEL = 1.4 + KTIT(IP) * PHCHAR * 0.90
+         ZX = ZX + ZDEL
+ 120  CONTINUE
+C
+      DO 130 IP=1,KPLOT
+      DO 130 J=1,KNJ(IP)
+         PX(J,IP) = (PX(J,IP)/10.-ZX0)/ZECHX + ZXMIN
+         PY(J,IP) = (PY(J,IP)/10.-ZY0)/ZECHY + ZYMIN
+ 130  CONTINUE
+C
+      IF (ZYMIN*ZYMAX .LT. 0.0) THEN
+         CALL GDASH(1)
+         CALL GWICOL(-1.0,1)
+         CALL GPLOT(ZX0*10.      ,(ZY0-ZYMIN*ZECHY)*10.,3)
+         CALL GPLOT((ZX0+ZLX)*10.,(ZY0-ZYMIN*ZECHY)*10.,2)
+      ENDIF
+         CALL GWICOL(-1.0,1)
+C
+      RETURN
+      END
+         SUBROUTINE XGXIGDNM
+C        *******************
+C
+C
+C        PLOT SEVERAL CURVES ON SAME GRAPHE SPECIFYING THE LIMITS, DIFF. X
+C
+C        KOPT = 1: ONLY CURVES
+C        KOPT = 2: CURVES AND DOTS
+C        KOPT = 3: ONLY DOTS
+C
+C        DRAW THE GRAPH OF N FONCTIONS GIVEN BY KNJ(J) POINTS (PX(I,J),PY(I,J))
+C        IN A RECTANGULAR BOX ((PX0,PY0) ; (PX0+PDX,PY0+PDY)
+C
+C        PX(I,J)    : VECTOR OF X-COORDINATES, FOR EACH CURVE J
+C        PY(I,J)    : VECTOR OF Y-COORDINATES, FOR EACH CURVE J
+C        (PX0,PY0)  : BOTTOM LEFT CORNER OF THE BOX
+C        (PDX,PDY)  : LENGTH IN X- AND Y-DIRECTION OF THE BOX
+C        PHCHAR     : CHARACTER HEIGHT (TYPICAL VALUE: 0.30)
+C        PXIBCD     : TITLE OF X-AXIS
+C        PYIBCD(J)  : TITLE OF EACH CURVE
+C        PYIBCD(KPLOT+1) : TITLE OF PLOT
+C        KX,KTIT(J) : NUMBER OF CHARACTERS IN PXIBCD,PYIBCD(J)
+C        PSIZLN     : LINE WIDTH OF CURVE
+C        KCADRE     : DRAW BOX OPTION :(0=NO, 1=YES,CONT., 2=YES,ONLY CORNERS)
+C        KGRID      : DRAW GRID OPTION : (0=NO, 1=Y-GRID, 2=X-GRID, 3=XY-GRID)
+C        PXMIN,PXMAX: MIN AND MAX DESIRED VALUES FOR X-AXIS
+C        PYMIN,PYMAX: MIN AND MAX DESIRED VALUES FOR Y-AXIS
+C        .            IF P(X,Y)MIN/MAX = -99.9 THEN DO NOT SPECIFY IT
+C
+C
+C
+         PARAMETER(MNX1=3531 , MPLT=10, MKPLOT=25)
+C
+         CHARACTER PXIBCD*80,                    PYIBCD(MKPLOT+1)*80
+         CHARACTER ZXIBCD*81 ,ZYIBCD*81
+         DIMENSION PX(MNX1,MKPLOT), PY(MNX1,MKPLOT),    KTIT(MKPLOT+1),
+     +             KNJ(MNX1)
+C
+         NPLT = 13
+C
+         READ(NPLT,*) KPLOT , PX0 , PDX , PY0 , PDY , PHCHAR, KOPT
+         READ(NPLT,*) (KNJ(J),J=1,KPLOT)
+C
+         DO 100 IP=1,KPLOT
+            READ(NPLT,*) (PX(I,IP),I=1,KNJ(IP))
+            READ(NPLT,*) (PY(I,IP),I=1,KNJ(IP))
+ 100     CONTINUE
+C
+         READ(NPLT,'(A)') PXIBCD
+         DO I=1,KPLOT+1
+           READ(NPLT,'(A)') PYIBCD(I)
+         END DO
+         READ(NPLT,*) KX, (KTIT(I),I=1,KPLOT+1), PSIZLN, KCADRE,KGRID
+         READ(NPLT,*) PXMIN,PXMAX,PYMIN,PYMAX
+C
+         IX = 1
+         IF (PXIBCD(1:1) .EQ. ' ') IX = 2
+         ZXIBCD(1:KX) = PXIBCD(IX:KX+IX-1)
+         ZXIBCD(KX+1:KX+1) = '$'
+         PXIBCD = ZXIBCD
+         DO 110 I=1,KPLOT+1
+            IY = 1
+            KY = KTIT(I)
+            ZYIBCD = PYIBCD(I)
+            IF (ZYIBCD(1:1) .EQ. ' ') IY = 2
+            ZXIBCD(1:KY) = ZYIBCD(IY:KY+IY-1)
+            ZXIBCD(KY+1:KY+1) = '$'
+            PYIBCD(I) = ZXIBCD
+ 110     CONTINUE
+C
+         CALL GXIGDNM(PX,PY,KNJ,MNX1,KPLOT,PX0,PDX,PY0,PDY,PHCHAR,
+     +       PXIBCD,PYIBCD,KX,KTIT,PSIZLN,KCADRE,KGRID,
+     +       PXMIN,PXMAX,PYMIN,PYMAX,KOPT)
+C
+         RETURN
+         END
+         SUBROUTINE GXIGDNM(PX,PY,KNJ,MKN,KPLOT,PX0,PDX,PY0,PDY,PHCHAR,
+     +       PXIBCD,PYIBCD,KX,KTIT,PSIZLN,KCADRE,KGRID,
+     +       PXMIN,PXMAX,PYMIN,PYMAX,KOPT)
+C        **************************************************************
+C
+C        PLOT SEVERAL CURVES ON SAME GRAPHE SPECIFYING THE LIMITS, DIFF. X
+C
+C        KOPT = 1: ONLY CURVES
+C        KOPT = 2: CURVES AND DOTS
+C        KOPT = 3: ONLY DOTS
+C
+C        DRAW THE GRAPH OF N FONCTIONS GIVEN BY KNJ(J) POINTS (PX(I,J),PY(I,J))
+C        IN A RECTANGULAR BOX ((PX0,PY0) ; (PX0+PDX,PY0+PDY)
+C
+C        PX(I,J)    : VECTOR OF X-COORDINATES, FOR EACH CURVE J
+C        PY(I,J)    : VECTOR OF Y-COORDINATES, FOR EACH CURVE J
+C        (PX0,PY0)  : BOTTOM LEFT CORNER OF THE BOX
+C        (PDX,PDY)  : LENGTH IN X- AND Y-DIRECTION OF THE BOX
+C        PHCHAR     : CHARACTER HEIGHT (TYPICAL VALUE: 0.30)
+C        PXIBCD     : TITLE OF X-AXIS
+C        PYIBCD(J)  : TITLE OF EACH CURVE
+C        PYIBCD(KPLOT+1) : TITLE OF PLOT
+C        KX,KTIT(J) : NUMBER OF CHARACTERS IN PXIBCD,PYIBCD(J)
+C        PSIZLN     : LINE WIDTH OF CURVE
+C        KCADRE     : DRAW BOX OPTION :(0=NO, 1=YES,CONT., 2=YES,ONLY CORNERS)
+C        KGRID      : DRAW GRID OPTION : (0=NO, 1=Y-GRID, 2=X-GRID, 3=XY-GRID)
+C        PXMIN,PXMAX: MIN AND MAX DESIRED VALUES FOR X-AXIS
+C        PYMIN,PYMAX: MIN AND MAX DESIRED VALUES FOR Y-AXIS
+C        .            IF P(X,Y)MIN/MAX = -99.9 THEN DO NOT SPECIFY IT
+C
+C
+         CHARACTER PXIBCD*(*), PYIBCD(KPLOT+1)*(*)
+         DIMENSION PX(MKN,KPLOT),  PY(MKN,KPLOT),      KTIT(KPLOT+1),
+     +       ZXLAB(6), ZYLAB(6),           KNJ(KPLOT)
+C
+         CALL GDASH(0)
+         CALL GWICOL(-2.0,1)
+C
+      IF (KCADRE .NE. 0) CALL CADRE(PX0*10.,PY0*10.,PDX*10.,PDY*10.
+     +                              ,KCADRE)
+      CALL GWICOL(-1.0,1)
+C
+C     CACUL DES EXTREMAS
+C
+      CALL MAXAR(PX(1,1),KNJ(1),ZXMAX,ZXMIN)
+      CALL MAXAR(PY(1,1),KNJ(1),ZYMAX,ZYMIN)
+      DO 10 I=2,KPLOT
+         CALL MAXAR(PX(1,I),KNJ(I),ZXMAXI,ZXMINI)
+         CALL MAXAR(PY(1,I),KNJ(I),ZYMAXI,ZYMINI)
+         ZXMAX = MAX(ZXMAX,ZXMAXI)
+         ZXMIN = MIN(ZXMIN,ZXMINI)
+         ZYMAX = MAX(ZYMAX,ZYMAXI)
+         ZYMIN = MIN(ZYMIN,ZYMINI)
+ 10   CONTINUE
+C
+      IZERO = 0
+      IF (ZXMAX.EQ.0.0 .OR. ZXMIN.EQ.0.0) IZERO = 1
+      IF ( (ABS(ZXMAX-ZXMIN).LT.1.0E-12*ABS(ZXMAX) .AND. IZERO.EQ.0)
+     +      .OR.  (ZXMAX.EQ.ZXMIN       .AND. IZERO.EQ.1)       ) THEN
+         IF(ZXMAX .NE. 0.0) ZXMIN = ZXMIN/2.
+         IF(ZXMAX .NE. 0.0) ZXMAX = ZXMAX + ZXMIN
+         IF(ZXMAX .EQ. 0.0) ZXMIN = -1.
+         IF(ZXMAX .EQ. 0.0) ZXMAX =  1.
+      ENDIF
+C
+      IZERO = 0
+      IF (ZYMAX.EQ.0.0 .OR. ZYMIN.EQ.0.0) IZERO = 1
+      IF ( (ABS(ZYMAX-ZYMIN).LT.1.0E-12*ABS(ZYMAX) .AND. IZERO.EQ.0)
+     +      .OR.  (ZYMAX.EQ.ZYMIN       .AND. IZERO.EQ.1)       ) THEN
+         IF(ZYMAX .NE. 0.0) ZYMIN = ZYMIN/2.
+         IF(ZYMAX .NE. 0.0) ZYMAX = ZYMAX + ZYMIN
+         IF(ZYMAX .EQ. 0.0) ZYMIN = -1.
+         IF(ZYMAX .EQ. 0.0) ZYMAX =  1.
+      ENDIF
+C
+      IF (ABS(PXMIN+99.9) .LE. 1.0E-10) THEN
+        ZXMIN = ZXMIN
+      ELSE
+        ZXMIN = PXMIN
+      ENDIF
+      IF (ABS(PXMAX+99.9) .LE. 1.0E-10) THEN
+        ZXMAX = ZXMAX
+      ELSE
+        ZXMAX = PXMAX
+      ENDIF
+      IF (ABS(PYMIN+99.9) .LE. 1.0E-10) THEN
+        ZYMIN = ZYMIN
+      ELSE
+        ZYMIN = PYMIN
+      ENDIF
+      IF (ABS(PYMAX+99.9) .LE. 1.0E-10) THEN
+        ZYMAX = ZYMAX
+      ELSE
+        ZYMAX = PYMAX
+      ENDIF
+C
+C     LONGUEUR DES AXES
+         ZHCHMN =       PHCHAR
+C%%         ZLX=PDX - 11.5 * ZHCHMN
+         ZLX=PDX - 11.5 * ZHCHMN - 2.*PHCHAR
+CC         IF (ABS(ZDY) .LT. 0.05*AMAX1(ABS(ZYMIN),ABS(ZYMAX)))
+CC     +                                             ZLX = ZLX - 2.*ZHCHMN
+C%%%%%%         ZLY=PDY - 7.0 * ZHCHMN
+         ZLAB = 0.7 + ZHCHMN
+         ZLY=PDY - 7.0 * ZHCHMN - ZLAB
+C
+C     DESSIN DES AXES
+C%%         ZX0=PX0+ 8.0 * ZHCHMN
+         ZX0=PX0+ 8.0 * ZHCHMN + 2.*PHCHAR
+CC         IF (ABS(ZDY) .LT. 0.05*AMAX1(ABS(ZYMIN),ABS(ZYMAX)))
+CC     +                                             ZX0 = ZX0 + 2.*ZHCHMN
+         ZY0=PY0+ 5.0 * ZHCHMN
+C
+C     GRID OPTION
+         ZGRIDX = 0.0
+         ZGRIDY = 0.0
+         IF (KGRID.EQ.1 .OR. KGRID.EQ.3) ZGRIDY =  ZLX
+         IF (KGRID.EQ.2 .OR. KGRID.EQ.3) ZGRIDX =  ZLY
+C
+         CALL AXES(ZX0*10.,ZY0*10.,ZLX*10.,ZXMIN,ZXMAX, 0.,PHCHAR*10.,
+     +             PXIBCD, KX, 0, 0,-ZLY*10.,-ZGRIDX*10.)
+         CALL AXES(ZX0*10.,ZY0*10.,ZLY*10.,ZYMIN,ZYMAX,90.,PHCHAR*10.,
+     +        PYIBCD(KPLOT+1),-KTIT(KPLOT+1), 1, 0, ZLX*10., ZGRIDY*10.)
+C
+C     ECHELLES
+      ZDX = ZXMAX - ZXMIN
+      ZDY = ZYMAX - ZYMIN
+      ZECHX = ZLX/ZDX
+      ZECHY = ZLY/ZDY
+C
+CL    PLOT THE CURVES HAVING DIFFERENT X COORDINATES
+CL    BUT DO NOT PLOT THE POINT IF THEIR COORDINATES ARE (0.,0.)
+C    
+         DO 100 IP=1,KPLOT
+         DO 100 J=1,KNJ(IP)
+            PX(J,IP) = ((PX(J,IP)-ZXMIN)*ZECHX + ZX0) *10.
+            PY(J,IP) = ((PY(J,IP)-ZYMIN)*ZECHY + ZY0) *10.
+ 100     CONTINUE
+C
+         CALL GDASH(0)
+         CALL GWICOL(-PSIZLN,1)
+         DO 110 IP=1,KPLOT
+            CALL GDASH((IP-1)*2)
+            IF (KOPT .LE. 2) CALL GVECT(PX(1,IP),PY(1,IP),KNJ(IP))
+            CALL GWICOL(PSIZLN,1)
+            IF (KOPT .GE. 2) CALL GDOT (PX(1,IP),PY(1,IP),KNJ(IP))
+            CALL GWICOL(-PSIZLN,1)
+ 110     CONTINUE
+C
+CL    LABEL THE CURVES
+C
+         ZY = ZY0 + ZLY + 0.5
+         DO II=1,6
+            ZYLAB(II) = ZY*10.
+         ENDDO
+         ZX = PX0 + PHCHAR
+         DO 120 IP=1,KPLOT
+            ZXLAB(1) = ZX*10.
+            IF (KOPT .LE. 2) THEN
+               ZXLAB(2) = (ZX + 1.) * 10.
+c%OS               CALL GDASH((IP-1)*2)
+               CALL GDASH(IP-1)
+               CALL GVECT(ZXLAB,ZYLAB,2)
+               CALL GCHAR(PYIBCD(IP),ZXLAB(2)+0.2*10.,ZY*10.,PHCHAR*10.)
+            ELSE IF (KOPT .EQ. 3) THEN
+               CALL GWICOL(PSIZLN,1)
+               DO II=2,6
+                  ZXLAB(II) = (ZX + (II-1)*0.2) * 10.
+               ENDDO
+               CALL GDOT (ZXLAB,ZYLAB,6)
+               CALL GWICOL(-PSIZLN,1)
+               CALL GCHAR(PYIBCD(IP),ZXLAB(6)+0.2*10.,ZY*10.,PHCHAR*10.)
+            ENDIF
+C
+            ZDEL = 1.4 + KTIT(IP) * PHCHAR * 0.90
+            ZX = ZX + ZDEL
+ 120     CONTINUE
+C
+      DO 130 IP=1,KPLOT
+      DO 130 J=1,KNJ(IP)
+         PX(J,IP) = (PX(J,IP)/10.-ZX0)/ZECHX + ZXMIN
+         PY(J,IP) = (PY(J,IP)/10.-ZY0)/ZECHY + ZYMIN
+ 130  CONTINUE
+C
+      IF (ZYMIN*ZYMAX .LT. 0.0) THEN
+         CALL GDASH(1)
+         CALL GWICOL(-1.0,1)
+         CALL GPLOT(ZX0*10.      ,(ZY0-ZYMIN*ZECHY)*10.,3)
+         CALL GPLOT((ZX0+ZLX)*10.,(ZY0-ZYMIN*ZECHY)*10.,2)
+      ENDIF
+         CALL GWICOL(-1.0,1)
+      RETURN
+      END
+         SUBROUTINE XGVECT
+C
+         PARAMETER(MNX1=3531)
+C
+         DIMENSION PX(MNX1), PY(MNX1)
+C
+         NPLT = 13
+C
+         READ(NPLT,*) KN
+         READ(NPLT,*) (PX(I),I=1,KN)
+         READ(NPLT,*) (PY(I),I=1,KN)
+C
+         CALL GVECT(PX,PY,KN)
+C
+         RETURN
+         END
+         SUBROUTINE XGVECLN
+C
+         PARAMETER(MNX1=3531)
+C
+         DIMENSION PX(MNX1), PY(MNX1)
+C
+         NPLT = 13
+C
+         READ(NPLT,*) KN,KTYPE,KWIDTH
+         READ(NPLT,*) (PX(I),I=1,KN)
+         READ(NPLT,*) (PY(I),I=1,KN)
+C
+         CALL GDASH(KTYPE)
+         CALL GWICOL(-KWIDTH*1.0,1)
+         CALL GVECT(PX,PY,KN)
+         CALL GDASH(0)
+         CALL GWICOL(-1.0,1)
+C
+         RETURN
+         END
+         SUBROUTINE XGDOT
+C
+         PARAMETER(MNX1=3531)
+C
+         DIMENSION PX(MNX1), PY(MNX1)
+C
+         NPLT = 13
+C
+         READ(NPLT,*) KN
+         READ(NPLT,*) (PX(I),I=1,KN)
+         READ(NPLT,*) (PY(I),I=1,KN)
+C
+         CALL GWICOL(1.5,1)
+         CALL GDOT(PX,PY,KN)
+         CALL GWICOL(-1.0,1)
+C
+         RETURN
+         END
+         SUBROUTINE XGCHAR
+C
+         CHARACTER    PCTEXT*80
+C%%         CHARACTER    PCTEXT*80,ZTXT*81
+C
+         NPLT = 13
+C
+         READ(NPLT,*)       PX0 , PY0, PHCHAR
+         READ(NPLT,'(A)') PCTEXT
+CC         DO 10 I=80,1,-1
+CC            IF (PCTEXT(I:I) .NE. ' ') GO TO 11
+CC 10      CONTINUE
+CC 11      ILAST = I
+CC      PRINT *,' ILAST IN GTX = ',ILAST
+CC      PRINT *,PCTEXT
+CC         ZTXT(1:80) = PCTEXT(1:80)
+CC         ZTXT  (ILAST+1:ILAST+1) = '$'
+C
+CC         CALL GCHAR(ZTXT  ,PX0*10.,PY0*10.,3.0)
+         CALL GCHAR(PCTEXT,PX0,PY0,PHCHAR)
+C
+         RETURN
+         END
+         SUBROUTINE XFRAMCON
+C
+         CHARACTER*80 XNAME,ZNAME, ZXTXT, ZZTXT
+C
+         NPLT = 13
+C
+         READ(NPLT,*) XMIN,XMAX,ZMIN,ZMAX,X1,X2,Z1,Z2
+C
+         READ(NPLT,'(A)') XNAME
+         DO 10 I=80,1,-1
+            IF (XNAME(I:I) .NE. ' ') GO TO 11
+ 10      CONTINUE
+ 11      ILAST = I
+         ZXTXT(1:80) = XNAME(1:80)
+         ZXTXT(ILAST+1:ILAST+1) = '$'
+C
+         READ(NPLT,'(A)') ZNAME
+         DO 20 I=80,1,-1
+            IF (ZNAME(I:I) .NE. ' ') GO TO 21
+ 20      CONTINUE
+ 21      ILAST = I
+         ZZTXT(1:80) = ZNAME(1:80)
+         ZZTXT(ILAST+1:ILAST+1) = '$'
+C
+         CALL FRAMCON(XMIN,XMAX,ZXTXT,ZMIN,ZMAX,ZZTXT,X1,X2,Z1,Z2)
+C
+         RETURN
+         END
+      SUBROUTINE FRAMCON(XMIN,XMAX,XNAME,ZMIN,ZMAX,ZNAME,X1,X2,Z1,Z2)
+C
+C     SET FRAME FOR CONTOUR PLOT (TO BE CALLED BEFORE CONTOUR)
+C
+C     FUNCTION LIMITS: XMIN,XMAX,ZMIN,ZMAX
+C     NAME OF VARIABLES: XNAME,ZNAME     (UP TO 20 CHARACTERS)
+C
+C     PLOTTING LIMITS: X1,X2,Z1,Z2    (IN PLOTTING UNITS (CM) )
+C     IF Z2.LE.0. KEEP ASPECT RATIO
+C
+CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+C     SUBROUTINES TO DRAW CONTOUR PLOTS 
+C     =================================   FROM S.J.JARDIN (DEC 84)
+C                                         COMMENTS ADDED BY A.PERRENOUD
+C
+C     TWO SUBROUTINES CAN BE CALLED IN ORDER TO MAKE CONTOUR PLOTS: 
+C
+C     SUBROUTINE FRAMCON   : TO DEFINE THE LIMITS AND TO DRAW THE FRAME,
+C
+C     SUBROUTINE CONTOUR : TO PLOT THE DESIRED CONTOURS OF A FUNCTION 
+C                          OF TWO VARIABLES F(X,Z).
+C
+C     THE REQUIRED CALL PARAMETERS ARE DEFINED BELOW, IN EACH
+C     SUBROUTINE.
+C     THE FUNCTION IS DEFINED BY AN ARRAY OF CONTAINING ITS VALUES ON 
+C     A 2-DIMENSIONAL GRID (XI,ZJ), WHERE I=IMIN...IMAX, J=JMIN...JMAX.
+C     THE SPACING BETWEEN THE XI OR THE ZJ NEED NOT BE EQUAL.
+C
+CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+      CHARACTER*(*) XNAME,ZNAME
+      COMMON/PLTCOM/UMINC,VMINC,DUC,DVC,AX,BX,AZ,BZ
+C
+      IASPCT = 0
+      IF (Z2 .LE. 0.) THEN
+        IASPCT = 1
+        Z2 = ABS(Z2)
+      ENDIF
+      IF(X2.GT.X1 .AND. Z2.GT.Z1) GO TO 20
+      X1 = 3.
+      X2 = 18.
+      Z1 = 3.
+      Z2 = 18.
+   20 CONTINUE
+C
+      ASPCT = (ZMAX-ZMIN)/(XMAX-XMIN)
+      ASPCTO = (Z2-Z1)/(X2-X1)
+      IF (IASPCT .EQ. 1) THEN
+        IF (ASPCT .LE. ASPCTO) Z2 = Z1 + (X2-X1)*ASPCT
+        IF (ASPCT .GT. ASPCTO) X2 = X1 + (Z2-Z1)/ASPCT
+      ENDIF
+      X1S = X1 * 10.
+      X2S = X2 * 10.
+      Z1S = Z1 * 10.
+      Z2S = Z2 * 10.
+C
+      UMINC = XMIN
+      VMINC = ZMIN
+      DUC = (XMAX-XMIN)/(X2S-X1S)
+      DVC = (ZMAX-ZMIN)/(Z2S-Z1S)
+      AX = (XMAX*X1S - XMIN*X2S)/(XMAX-XMIN)
+      BX = (X2S-X1S)/(XMAX-XMIN)
+      AZ = (ZMAX*Z1S - ZMIN*Z2S)/(ZMAX-ZMIN)
+      BZ = (Z2S-Z1S)/(ZMAX-ZMIN)
+      SIZEX = X2S-X1S
+c%OS      CALL AXES(X1S,Z1S,SIZEX,XMIN,XMAX,0.,3.0,XNAME,20,0,0,0.0,0.0)
+      CALL AXES(X1S,Z1S,SIZEX,XMIN,XMAX,0.,3.0,XNAME,20,0,0,-SIZEZ,0.0)
+C     CALL AXIS(X1S,Z1S,SIZEX,0.,XMIN,DUC,XNAME,20)
+      SIZEZ = Z2S-Z1S
+c%OS      CALL AXES(X1S,Z1S,SIZEZ,ZMIN,ZMAX,90.,3.0,ZNAME,-20,0,0,0.0,0.0)
+      CALL AXES(X1S,Z1S,SIZEZ,ZMIN,ZMAX,90.,3.0,ZNAME,-20,0,0,SIZEX,0.0)
+C     CALL AXIS(X1S,Z1S,SIZEZ,90.,ZMIN,DVC,ZNAME,-20)
+      CALL GPLOT(X1S+SIZEX,Z1S,3)
+      CALL GPLOT(X1S+SIZEX,Z1S+SIZEZ,2) 
+      CALL GPLOT(X1S,Z1S+SIZEZ,2)
+      RETURN
+      END 
+         SUBROUTINE XCONTOUR
+C
+         PARAMETER(MNX1=501, MNZ1=501)
+         DIMENSION CVAL(2),VECX(MNX1,MNZ1),XARY(MNX1),ZARY(MNZ1)
+C
+         NPLT = 13
+C
+         READ(NPLT,*) K1,CVAL(1),CVAL(2),K2
+         READ(NPLT,*) IMIN,IMAX,ISKIP,JMIN,JMAX,JSKIP
+         IF (IMAX .GT. MNX1) THEN
+            PRINT *,' MNX1 TOO SMALL IN XCONTOUR: IMAX= ',IMAX
+            STOP
+         ENDIF
+         IF (JMAX .GT. MNZ1) THEN
+            PRINT *,' MNZ1 TOO SMALL IN XCONTOUR: JMAX= ',JMAX
+            STOP
+         ENDIF
+C
+c%OS         READ(NPLT,'(1P10E12.5)') (XARY(I),I=IMIN,IMAX,ISKIP)
+c%OS         READ(NPLT,'(1P10E12.5)') (ZARY(J),J=JMIN,JMAX,JSKIP)
+         READ(NPLT,*) (XARY(I),I=IMIN,IMAX,ISKIP)
+         READ(NPLT,*) (ZARY(J),J=JMIN,JMAX,JSKIP)
+         DO J=JMIN,JMAX,JSKIP
+c%OS            READ(NPLT,'(1P10E12.5)') (VECX(I,J),I=IMIN,IMAX,ISKIP)
+            READ(NPLT,*) (VECX(I,J),I=IMIN,IMAX,ISKIP)
+         END DO
+C
+         CALL CONTOUR(K1,CVAL,K2,VECX,MNX1,XARY,IMIN,IMAX,ISKIP,
+     +       ZARY,JMIN,JMAX,JSKIP)
+C
+         RETURN
+         END
+      SUBROUTINE CONTOUR(K1,CVAL,K2,VECX,NXDIM,XARY,IMIN,IMAX,ISKIP,
+     *                                         ZARY,JMIN,JMAX,JSKIP)
+C
+C     K1 NUMBER OF CONTOURS BETWEEN CVAL(1) AND CVAL(2)
+C     FIRST K2 CONTOURS WILL BE DASHED
+C     VECX : ARRAY CONTAINING FUNCTION VALUES ON GRID DEFINED BY
+C     XARY : X GRID  FROM IMIN TO IMAX, ISKIP POINTS SKIPPED
+C     ZARY : Z GRID  FROM JMIN TO JMAX, JSKIP POINTS SKIPPED.
+C     NXDIM : FIRST DIMENSION OF ARRAY VECX
+C
+      COMMON/PLTCOM/UMINC,VMINC,DUC,DVC,AX,BX,AZ,BZ
+      DIMENSION CVAL(2),VECX(NXDIM,JMAX),XARY(IMAX),ZARY(JMAX)
+      DIMENSION ZDOTVECX(2), ZDOTVECZ(2)
+c.......................................................................
+      IF(K1.LE.0 .OR. CVAL(2).LE.CVAL(1)) GO TO 1000
+      DPS = (CVAL(2) - CVAL(1))/(K1-1)
+      ZDOT1 = .35
+      ZDOT2 = .65
+      DO 400 I=IMIN,IMAX-1,ISKIP
+      DO 300 J=JMIN,JMAX-1,JSKIP
+      P1 = VECX(I+1,J+1)
+      P2 = VECX(I,J)
+      P3 = VECX(I+1,J)
+      P4 = VECX(I,J+1)
+      X1 = XARY(I+1)
+      X2 = XARY(I)
+      X3 = XARY(I+1)
+      X4 = XARY(I)
+      Z1 = ZARY(J+1)
+      Z2 = ZARY(J)
+      Z3 = ZARY(J)
+      Z4 = ZARY(J+1)
+C
+C     FIRST TRIANGLE
+      PBOT = AMIN1(P1,P2,P3)
+      PTOP = AMAX1(P1,P2,P3)
+      IBOT = IFIX((PBOT-CVAL(1))/DPS) + 2
+      ITOP = IFIX((PTOP-CVAL(1))/DPS) + 1
+      IBOT = MAX0(IBOT,1)
+      ITOP = MIN0(K1,ITOP)
+      IF(IBOT.GT.ITOP) GO TO 41
+      DO 40 N=IBOT,ITOP
+C     IF N.LT.K2 CURVE SHOULD BE DASHED
+      PS = CVAL(1) + (N-1)*DPS
+      I1 = 0
+      I2 = 0
+      I3 = 0
+      IF(P1.GT.PS) I1 = 1
+      IF(P2.GT.PS) I2 = 1
+      IF(P3.GT.PS) I3 = 1
+      INDX = I1 + 2*I2 + 4*I3 + 1
+      GO TO(40,10,20,30,30,20,10,40),INDX
+   10 XA = X2 + (X1-X2)*(PS-P2)/(P1-P2) 
+      ZA = Z2 + (Z1-Z2)*(PS-P2)/(P1-P2) 
+      XB = X3
+      ZB = Z3 + (Z1-Z3)*(PS-P3)/(P1-P3) 
+   15 XAS = AX+XA*BX
+      ZAS = AZ+ZA*BZ
+      XBS = AX+XB*BX
+      ZBS = AZ+ZB*BZ
+      IF(N.LT.K2) GO TO 16
+      CALL GPLOT(XAS,ZAS,3)
+      CALL GPLOT(XBS,ZBS,2)
+      GO TO 40
+   16 PDIS = SQRT((XAS-XBS)**2+(ZAS-ZBS)**2)
+      PDX = (XBS-XAS)/PDIS
+      PDZ = (ZBS-ZAS)/PDIS
+      PDISX = 0.
+      X1DX = XAS
+      Z1DX = ZAS
+c%OSc%OS      DOTL = .05
+c%OS      DOTL = .3
+c%OS   17 CALL GPLOT(X1DX,Z1DX,3) 
+c%OS      X2DX = X1DX + DOTL*PDX
+c%OS      Z2DX = Z1DX + DOTL*PDZ
+c%OS      PDISX = PDISX + DOTL
+c%OS      IF(PDISX.GT.PDIS) GO TO 40
+c%OS      CALL GPLOT(X2DX,Z2DX,2) 
+c%OS      X1DX = X2DX + DOTL*PDX
+c%OS      Z1DX = Z2DX + DOTL*PDZ
+c%OS      PDISX = PDISX + DOTL
+c%OS      GO TO 17
+      ZDOTVECX(1) = X1DX + ZDOT1*PDX
+      ZDOTVECX(2) = X1DX + ZDOT2*PDX
+      ZDOTVECZ(1) = Z1DX + ZDOT1*PDZ
+      ZDOTVECZ(2) = Z1DX + ZDOT2*PDZ
+      CALL GVECT(ZDOTVECX,ZDOTVECZ,2)
+      GO TO 40
+   20 XA = X2 + (X1-X2)*(PS-P2)/(P1-P2) 
+      ZA = Z2 + (Z1-Z2)*(PS-P2)/(P1-P2) 
+      XB = X2 + (X3-X2)*(PS-P2)/(P3-P2) 
+      ZB = Z2
+      GO TO 15
+   30 XA = X2 + (X3-X2)*(PS-P2)/(P3-P2) 
+      ZA = Z2
+      XB = X3
+      ZB = Z3 + (Z1-Z3)*(PS-P3)/(P1-P3) 
+      GO TO 15
+   40 CONTINUE
+   41 CONTINUE
+C
+C     SECOND TRIANGLE
+      PBOT = AMIN1(P1,P2,P4)
+      PTOP = AMAX1(P1,P2,P4)
+      IBOT = IFIX((PBOT-CVAL(1))/DPS)+2 
+      ITOP = IFIX((PTOP-CVAL(1))/DPS)+1 
+      IBOT = MAX0(IBOT,1)
+      ITOP = MIN0(K1,ITOP)
+      IF(IBOT.GT.ITOP) GO TO 81
+      DO 80 N=IBOT,ITOP
+C     IF N.LT.K2 CURVE SHOULD BE DASHED
+      PS = CVAL(1) + (N-1)*DPS
+      I1 = 0
+      I2 = 0
+      I3 = 0
+      IF(P1.GT.PS) I1 = 1
+      IF(P2.GT.PS) I2 = 1
+      IF(P4.GT.PS) I3 = 1
+      INDX = I1 + 2*I2 + 4*I3 + 1
+      GO TO(80,50,60,70,70,60,50,80),INDX
+   50 XA = X2 + (X1-X2)*(PS-P2)/(P1-P2) 
+      ZA = Z2 + (Z1-Z2)*(PS-P2)/(P1-P2) 
+      XB = X4 + (X1-X4)*(PS-P4)/(P1-P4) 
+      ZB = Z4
+   55 XAS = AX+XA*BX
+      ZAS = AZ+ZA*BZ
+      XBS = AX+XB*BX
+      ZBS = AZ+ZB*BZ
+      IF(N.LT.K2) GO TO 56
+      CALL GPLOT(XAS,ZAS,3)
+      CALL GPLOT(XBS,ZBS,2)
+      GO TO 80
+   56 PDIS = SQRT((XAS-XBS)**2+(ZAS-ZBS)**2)
+      PDX = (XBS-XAS)/PDIS
+      PDZ = (ZBS-ZAS)/PDIS
+      PDISX = 0.
+      X1DX = XAS
+      Z1DX = ZAS
+      ZDOTVECX(1) = X1DX + ZDOT1*PDX
+      ZDOTVECX(2) = X1DX + ZDOT2*PDX
+      ZDOTVECZ(1) = Z1DX + ZDOT1*PDZ
+      ZDOTVECZ(2) = Z1DX + ZDOT2*PDZ
+      CALL GVECT(ZDOTVECX,ZDOTVECZ,2)
+      GO TO 80
+   60 XA = X2 + (X1-X2)*(PS-P2)/(P1-P2) 
+      ZA = Z2 + (Z1-Z2)*(PS-P2)/(P1-P2) 
+      XB = X2
+      ZB = Z2 + (Z4-Z2)*(PS-P2)/(P4-P2) 
+      GO TO 55
+   70 XA = X2
+      ZA = Z2 + (Z4-Z2)*(PS-P2)/(P4-P2) 
+      XB = X4 + (X1-X4)*(PS-P4)/(P1-P4) 
+      ZB = Z4
+      GO TO 55
+   80 CONTINUE
+   81 CONTINUE
+  300 CONTINUE
+  400 CONTINUE
+      RETURN
+ 1000 CONTINUE
+      WRITE(6,9000) K1,K2,CVAL(1),CVAL(2)
+ 9000 FORMAT(" CONTOUR CALLED WITH K1,K2,CVAL(1),CVAL(2) =",2I3,2E12.4)
+      RETURN
+      END 
+         SUBROUTINE XCONTRLV
+C
+         PARAMETER(MNX1=501, MNZ1=501, MCONT=101)
+         DIMENSION CVAL(MCONT),VECX(MNX1,MNZ1),XARY(MNX1),ZARY(MNZ1)
+C
+         NPLT = 13
+C
+         READ(NPLT,*) K1,K2
+         READ(NPLT,*) (CVAL(I),I=1,K1)
+         READ(NPLT,*) IMIN,IMAX,ISKIP,JMIN,JMAX,JSKIP
+         IF (IMAX .GT. MNX1) THEN
+            PRINT *,' MNX1 TOO SMALL IN XCONTRLV: IMAX= ',IMAX
+            STOP
+         ENDIF
+         IF (JMAX .GT. MNZ1) THEN
+            PRINT *,' MNZ1 TOO SMALL IN XCONTRLV: JMAX= ',JMAX
+            STOP
+         ENDIF
+C
+c%OS         READ(NPLT,'(1P10E12.5)') (XARY(I),I=IMIN,IMAX,ISKIP)
+c%OS         READ(NPLT,'(1P10E12.5)') (ZARY(J),J=JMIN,JMAX,JSKIP)
+         READ(NPLT,*) (XARY(I),I=IMIN,IMAX,ISKIP)
+         READ(NPLT,*) (ZARY(J),J=JMIN,JMAX,JSKIP)
+         DO J=JMIN,JMAX,JSKIP
+c%OS            READ(NPLT,'(1P10E12.5)') (VECX(I,J),I=IMIN,IMAX,ISKIP)
+            READ(NPLT,*) (VECX(I,J),I=IMIN,IMAX,ISKIP)
+         END DO
+C
+         CALL CONTRLV(K1,CVAL,K2,VECX,MNX1,XARY,IMIN,IMAX,ISKIP,
+     +       ZARY,JMIN,JMAX,JSKIP)
+C
+         RETURN
+         END
+      SUBROUTINE CONTRLV(K1,CVAL,K2,VECX,NXDIM,XARY,IMIN,IMAX,ISKIP,
+     *                                         ZARY,JMIN,JMAX,JSKIP)
+C
+C     K1 NUMBER OF CONTOURS GIVEN BY CVAL(I),I=1,K1
+C     FIRST K2 CONTOURS WILL BE DASHED
+C     VECX : ARRAY CONTAINING FUNCTION VALUES ON GRID DEFINED BY
+C     XARY : X GRID  FROM IMIN TO IMAX, ISKIP POINTS SKIPPED
+C     ZARY : Z GRID  FROM JMIN TO JMAX, JSKIP POINTS SKIPPED.
+C     NXDIM : FIRST DIMENSION OF ARRAY VECX
+C
+      COMMON/PLTCOM/UMINC,VMINC,DUC,DVC,AX,BX,AZ,BZ
+      DIMENSION CVAL(K1),VECX(NXDIM,JMAX),XARY(IMAX),ZARY(JMAX)
+      DIMENSION ZDOTVECX(2), ZDOTVECZ(2)
+c.......................................................................
+      IF(K1.LE.0 .OR. CVAL(K1).LE.CVAL(1)) GO TO 1000
+      ZDOT1 = .35
+      ZDOT2 = .65
+      DO 400 I=IMIN,IMAX-1,ISKIP
+      DO 300 J=JMIN,JMAX-1,JSKIP
+      P1 = VECX(I+1,J+1)
+      P2 = VECX(I,J)
+      P3 = VECX(I+1,J)
+      P4 = VECX(I,J+1)
+      X1 = XARY(I+1)
+      X2 = XARY(I)
+      X3 = XARY(I+1)
+      X4 = XARY(I)
+      Z1 = ZARY(J+1)
+      Z2 = ZARY(J)
+      Z3 = ZARY(J)
+      Z4 = ZARY(J+1)
+C
+C     FIRST TRIANGLE
+      PBOT = AMIN1(P1,P2,P3)
+      PTOP = AMAX1(P1,P2,P3)
+C     FIND INDICES OF LEVELS OF CONTOUR IN [PBOT,PTOP]
+      DO IBOT=1,K1
+        IF (CVAL(IBOT) .GE. PBOT) GO TO 301
+      ENDDO
+ 301  CONTINUE
+      DO ITOP=K1,1,-1
+        IF (CVAL(ITOP) .LE. PTOP) GO TO 302
+      ENDDO
+ 302  CONTINUE
+      IBOT = MIN0(IBOT,K1)
+      ITOP = MAX0(1,ITOP)
+      IF(IBOT.GT.ITOP) GO TO 41
+      DO 40 N=IBOT,ITOP
+C     IF N.LT.K2 CURVE SHOULD BE DASHED
+      PS = CVAL(N)
+      I1 = 0
+      I2 = 0
+      I3 = 0
+      IF(P1.GT.PS) I1 = 1
+      IF(P2.GT.PS) I2 = 1
+      IF(P3.GT.PS) I3 = 1
+      INDX = I1 + 2*I2 + 4*I3 + 1
+      GO TO(40,10,20,30,30,20,10,40),INDX
+   10 XA = X2 + (X1-X2)*(PS-P2)/(P1-P2) 
+      ZA = Z2 + (Z1-Z2)*(PS-P2)/(P1-P2) 
+      XB = X3
+      ZB = Z3 + (Z1-Z3)*(PS-P3)/(P1-P3) 
+   15 XAS = AX+XA*BX
+      ZAS = AZ+ZA*BZ
+      XBS = AX+XB*BX
+      ZBS = AZ+ZB*BZ
+      IF(N.LT.K2) GO TO 16
+      CALL GPLOT(XAS,ZAS,3)
+      CALL GPLOT(XBS,ZBS,2)
+      GO TO 40
+   16 PDIS = SQRT((XAS-XBS)**2+(ZAS-ZBS)**2)
+      PDX = (XBS-XAS)/PDIS
+      PDZ = (ZBS-ZAS)/PDIS
+      PDISX = 0.
+      X1DX = XAS
+      Z1DX = ZAS
+c%OSc%OS      DOTL = .05
+c%OS      DOTL = .35
+c%OS   17 CALL GPLOT(X1DX,Z1DX,3) 
+c%OS      X2DX = X1DX + DOTL*PDX
+c%OS      Z2DX = Z1DX + DOTL*PDZ
+c%OS      PDISX = PDISX + DOTL
+c%OS      IF(PDISX.GT.PDIS) GO TO 40
+c%OS      CALL GPLOT(X2DX,Z2DX,2) 
+c%OS      X1DX = X2DX + DOTL*PDX
+c%OS      Z1DX = Z2DX + DOTL*PDZ
+c%OS      PDISX = PDISX + DOTL
+c%OS      GO TO 17
+c%OS      DOTL = .05
+      ZDOTVECX(1) = X1DX + ZDOT1*PDX
+      ZDOTVECX(2) = X1DX + ZDOT2*PDX
+      ZDOTVECZ(1) = Z1DX + ZDOT1*PDZ
+      ZDOTVECZ(2) = Z1DX + ZDOT2*PDZ
+      CALL GVECT(ZDOTVECX,ZDOTVECZ,2)
+      GO TO 40
+   20 XA = X2 + (X1-X2)*(PS-P2)/(P1-P2) 
+      ZA = Z2 + (Z1-Z2)*(PS-P2)/(P1-P2) 
+      XB = X2 + (X3-X2)*(PS-P2)/(P3-P2) 
+      ZB = Z2
+      GO TO 15
+   30 XA = X2 + (X3-X2)*(PS-P2)/(P3-P2) 
+      ZA = Z2
+      XB = X3
+      ZB = Z3 + (Z1-Z3)*(PS-P3)/(P1-P3) 
+      GO TO 15
+   40 CONTINUE
+   41 CONTINUE
+C
+C     SECOND TRIANGLE
+      PBOT = AMIN1(P1,P2,P4)
+      PTOP = AMAX1(P1,P2,P4)
+C     FIND INDICES OF LEVELS OF CONTOUR IN [PBOT,PTOP]
+      DO IBOT=1,K1
+        IF (CVAL(IBOT) .GE. PBOT) GO TO 303
+      ENDDO
+ 303  CONTINUE
+      DO ITOP=K1,1,-1
+        IF (CVAL(ITOP) .LE. PTOP) GO TO 304
+      ENDDO
+ 304  CONTINUE
+      IBOT = MIN0(IBOT,K1)
+      ITOP = MAX0(1,ITOP)
+      IF(IBOT.GT.ITOP) GO TO 81
+      DO 80 N=IBOT,ITOP
+C     IF N.LT.K2 CURVE SHOULD BE DASHED
+        PS = CVAL(N)
+      I1 = 0
+      I2 = 0
+      I3 = 0
+      IF(P1.GT.PS) I1 = 1
+      IF(P2.GT.PS) I2 = 1
+      IF(P4.GT.PS) I3 = 1
+      INDX = I1 + 2*I2 + 4*I3 + 1
+      GO TO(80,50,60,70,70,60,50,80),INDX
+   50 XA = X2 + (X1-X2)*(PS-P2)/(P1-P2) 
+      ZA = Z2 + (Z1-Z2)*(PS-P2)/(P1-P2) 
+      XB = X4 + (X1-X4)*(PS-P4)/(P1-P4) 
+      ZB = Z4
+   55 XAS = AX+XA*BX
+      ZAS = AZ+ZA*BZ
+      XBS = AX+XB*BX
+      ZBS = AZ+ZB*BZ
+      IF(N.LT.K2) GO TO 56
+      CALL GPLOT(XAS,ZAS,3)
+      CALL GPLOT(XBS,ZBS,2)
+      GO TO 80
+   56 PDIS = SQRT((XAS-XBS)**2+(ZAS-ZBS)**2)
+      PDX = (XBS-XAS)/PDIS
+      PDZ = (ZBS-ZAS)/PDIS
+      PDISX = 0.
+      X1DX = XAS
+      Z1DX = ZAS
+c%OSc%OS      DOTL = .05
+c%OS      DOTL = .35
+c%OS   57 CALL GPLOT(X1DX,Z1DX,3) 
+c%OS      X2DX = X1DX + DOTL*PDX
+c%OS      Z2DX = Z1DX + DOTL*PDZ
+c%OS      PDISX = PDISX + DOTL
+c%OS      IF(PDISX.GT.PDIS) GO TO 80
+c%OS      CALL GPLOT(X2DX,Z2DX,2) 
+c%OS      X1DX = X2DX + DOTL*PDX
+c%OS      Z1DX = Z2DX + DOTL*PDZ
+c%OS      PDISX = PDISX + DOTL
+c%OS      GO TO 57
+      ZDOTVECX(1) = X1DX + ZDOT1*PDX
+      ZDOTVECX(2) = X1DX + ZDOT2*PDX
+      ZDOTVECZ(1) = Z1DX + ZDOT1*PDZ
+      ZDOTVECZ(2) = Z1DX + ZDOT2*PDZ
+      CALL GVECT(ZDOTVECX,ZDOTVECZ,2)
+      GO TO 80
+   60 XA = X2 + (X1-X2)*(PS-P2)/(P1-P2) 
+      ZA = Z2 + (Z1-Z2)*(PS-P2)/(P1-P2) 
+      XB = X2
+      ZB = Z2 + (Z4-Z2)*(PS-P2)/(P4-P2) 
+      GO TO 55
+   70 XA = X2
+      ZA = Z2 + (Z4-Z2)*(PS-P2)/(P4-P2) 
+      XB = X4 + (X1-X4)*(PS-P4)/(P1-P4) 
+      ZB = Z4
+      GO TO 55
+   80 CONTINUE
+   81 CONTINUE
+  300 CONTINUE
+  400 CONTINUE
+      RETURN
+ 1000 CONTINUE
+      WRITE(6,9000) K1,K2,CVAL(1),CVAL(K2),CVAL(K1)
+ 9000 FORMAT(" CONTOUR CALLED WITH K1,K2,CVAL(1),CVAL(K2),CVAL(K1) =",
+     +  2I3,1P3E12.4)
+      RETURN
+      END 
+      SUBROUTINE XGRAPHMB
+C        ****************
+C
+C        DRAW THE GRAPH OF A FONCTION GIVEN BY KN POINTS (PX(I),PY(I))
+C        IN A RECTANGULAR BOX ((PX0,PY0) ; (PX0+PDX,PY0+PDY)
+C
+C        PX         : VECTOR OF X-COORDINATES, OF DIMENSION KN
+C        PY         : VECTOR OF Y-COORDINATES, OF DIMENSION KN
+C        (PX0,PY0)  : BOTTOM LEFT CORNER OF THE BOX
+C        (PDX,PDY)  : LENGTH IN X- AND Y-DIRECTION OF THE BOX
+C        PHCHAR     : CHARACTER HEIGHT (TYPICAL VALUE: 0.30)
+C        PXIBCD     : TITLE OF X-AXIS
+C        PYIBCD     : TITLE OF Y-AXIS
+C        KX,KY      : NUMBER OF CHARACTERS IN PXIBCD,PYIBCD
+C        PSIZLN     : LINE WIDTH OF CURVE
+C        KCADRE     : DRAW BOX OPTION :(0=NO, 1=YES,CONT., 2=YES,ONLY CORNERS)
+C        KGRID      : DRAW GRID OPTION : (0=NO, 1=Y-GRID, 2=X-GRID, 3=XY-GRID)
+C
+C
+         PARAMETER(MNX1=3531)
+C
+         CHARACTER PXIBCD*82,PYIBCD*82
+         DIMENSION  PX(MNX1),PY(MNX1)
+C-----------------------------------------------------------------------
+         DATA    NPLOT/13/
+C-----------------------------------------------------------------------
+C
+         READ(NPLOT,*) KN , PX0 , PDX , PY0 , PDY , PHCHAR
+         READ(NPLOT,*) PXMIN,PXMAX,PYMIN,PYMAX
+C
+         READ(NPLOT,*) (PX(I),I=1,KN)
+         READ(NPLOT,*) (PY(I),I=1,KN)
+         READ(NPLOT,'(A)') PXIBCD
+         READ(NPLOT,'(A)') PYIBCD
+         READ(NPLOT,*) KX , KY , PSIZLN , KCADRE , KGRID
+C
+         CALL GLASHMB(PX,PY,KN,PX0,PDX,PY0,PDY,PHCHAR,PXIBCD,PYIBCD
+     +  ,KX,KY,PSIZLN,KCADRE,KGRID,
+     +  PXMIN,PXMAX,PYMIN,PYMAX)
+C
+         RETURN
+         END
+         SUBROUTINE GRAPHMB(PX,PY,KN,PX0,PDX,PY0,PDY,PHCHAR,PXIBCD,
+     +                      PYIBCD,KX,KY,PSIZLN,KCADRE,KGRID,
+     +                      PXMIN,PXMAX,PYMIN,PYMAX)
+C        ***************************************************************
+C
+C     PX0,PY0,PDX,PDY REFER TO AXIS DIMENSION RATHER THAN FRAME
+C
+C     DRAW THE GRAPH OF A FONCTION GIVEN BY KN POINTS (PX(I),PY(I))
+C     IN A RECTANGULAR BOX ((PX0,PY0) ; (PX0+PDX,PY0+PDY)
+C
+C        PX         : VECTOR OF X-COORDINATES, OF DIMENSION KN
+C        PY         : VECTOR OF Y-COORDINATES, OF DIMENSION KN
+C        (PX0,PY0)  : BOTTOM LEFT CORNER OF THE BOX
+C        (PDX,PDY)  : LENGTH IN X- AND Y-DIRECTION OF THE BOX
+C        PHCHAR     : CHARACTER HEIGHT (TYPICAL VALUE: 0.30)
+C        PXIBCD     : TITLE OF X-AXIS
+C        PYIBCD     : TITLE OF Y-AXIS
+C        KX,KY      : NUMBER OF CHARACTERS IN PXIBCD,PYIBCD
+C        PSIZLN     : LINE WIDTH OF CURVE
+C        KCADRE     : DRAW BOX OPTION :(0=NO, 1=YES,CONT., 2=YES,ONLY CORNERS)
+C        KGRID      : DRAW GRID OPTION : (0=NO, 1=Y-GRID, 2=X-GRID, 3=XY-GRID)
+C
+      CHARACTER PXIBCD*(*),PYIBCD*(*)
+      DIMENSION  PX(KN),PY(KN)
+C
+C%%      CALL GSLN(1)
+C%%      CALL GSLWSC(2.0)
+         CALL GDASH(0)
+         CALL GWICOL(-2.0,1)
+C%%   CALL GSLWSC(1.0)
+      CALL GWICOL(-1.0,1)
+C%%
+C     CACUL DES EXTREMAS
+C
+      CALL MAXAR(PX,KN,ZZXMAX,ZZXMIN)
+
+      CALL MAXAR(PY,KN,ZZYMAX,ZZYMIN)
+C
+      IZERO = 0
+      IF (ZZXMAX.EQ.0.0 .OR. ZZXMIN.EQ.0.0) IZERO = 1
+      IF ( (ABS(ZZXMAX-ZZXMIN).LT.1.0E-12*ABS(ZZXMAX) .AND. IZERO.EQ.0)
+     +      .OR.  (ZZXMAX.EQ.ZZXMIN       .AND. IZERO.EQ.1)       ) THEN
+         IF(ZZXMAX .NE. 0.0) ZZXMIN = ZZXMIN/2.
+         IF(ZZXMAX .NE. 0.0) ZZXMAX = ZZXMAX + ZZXMIN
+         IF(ZZXMAX .EQ. 0.0) ZZXMIN = -1.
+         IF(ZZXMAX .EQ. 0.0) ZZXMAX =  1.
+      ENDIF
+C
+      IZERO = 0
+      IF (ZZYMAX.EQ.0.0 .OR. ZZYMIN.EQ.0.0) IZERO = 1
+      IF ( (ABS(ZZYMAX-ZZYMIN).LT.1.0E-12*ABS(ZZYMAX) .AND. IZERO.EQ.0)
+     +      .OR.  (ZZYMAX.EQ.ZZYMIN       .AND. IZERO.EQ.1)       ) THEN
+         IF(ZZYMAX .NE. 0.0) ZZYMIN = ZZYMIN/2.
+         IF(ZZYMAX .NE. 0.0) ZZYMAX = ZZYMAX + ZZYMIN
+         IF(ZZYMAX .EQ. 0.0) ZZYMIN = -1.
+         IF(ZZYMAX .EQ. 0.0) ZZYMAX =  1.
+      ENDIF
+
+C     X EXTREMA
+      IF (ABS(PXMIN+99.9) .LE. 1.0E-10) THEN
+        ZXMIN = ZZXMIN
+      ELSE
+        ZXMIN = PXMIN
+      ENDIF
+      IF (ABS(PXMAX+99.9) .LE. 1.0E-10) THEN
+        ZXMAX = ZZXMAX
+      ELSE
+        ZXMAX = PXMAX
+      ENDIF
+      IF (ZXMIN .GT. ZXMAX) THEN
+        ZXMIN = ZZXMIN
+        ZXMAX = ZZXMAX
+      ENDIF
+C     Y EXTREMA
+      IF (ABS(PYMIN+99.9) .LE. 1.0E-10) THEN
+        ZYMIN = ZZYMIN
+      ELSE
+        ZYMIN = PYMIN
+      ENDIF
+      IF (ABS(PYMAX+99.9) .LE. 1.0E-10) THEN
+        ZYMAX = ZZYMAX
+      ELSE
+        ZYMAX = PYMAX
+      ENDIF
+      IF (ZYMIN .GT. ZYMAX) THEN
+        ZYMIN = ZZYMIN
+        ZYMAX = ZZYMAX
+      ENDIF
+C
+      ZDX = ZXMAX-ZXMIN
+      ZDY = ZYMAX-ZYMIN
+C
+C     LONGUEUR DES AXES
+         ZHCHMN =       PHCHAR
+c%OS         ZLX=PDX - 11.5 * ZHCHMN
+         ZLX=PDX - 10.5 * ZHCHMN
+         IF (ABS(ZDY) .LT. 0.05*AMAX1(ABS(ZYMIN),ABS(ZYMAX)))
+     +                                             ZLX = ZLX - 2.*ZHCHMN
+         ZLY=PDY - 7.0 * ZHCHMN
+         zdeltax = (pdx - zlx)
+         zdeltay = (pdy - zly)
+         zcx0 = px0 - 0.75*zdeltax
+         zcy0 = py0 - 0.75*zdeltay
+         zlx = pdx
+         zly = pdy
+C%%
+      IF (KCADRE .NE. 0) CALL CADRE(zcX0*10.,zcY0*10.,(zdeltax+zlx)*10.,
+     +     (zdeltaY+zly)*10.,KCADRE)
+C
+C     DESSIN DES AXES
+c%OS         ZX0=PX0+ 8.0 * ZHCHMN
+         ZX0=PX0
+         IF (ABS(ZDY) .LT. 0.05*AMAX1(ABS(ZYMIN),ABS(ZYMAX)))
+     +                                             ZX0 = ZX0 + 2.*ZHCHMN
+c%OS         ZY0=PY0+ 5.0 * ZHCHMN
+         ZY0=PY0
+C
+C     ECHELLES
+C
+      ZECHX = ZLX/ZDX
+      ZECHY = ZLY/ZDY
+C
+C     GRID OPTION
+         ZGRIDX = 0.0
+         ZGRIDY = 0.0
+         IF (KGRID.EQ.1 .OR. KGRID.EQ.3) ZGRIDY =  ZLX
+         IF (KGRID.EQ.2 .OR. KGRID.EQ.3) ZGRIDX =  ZLY
+C
+         CALL AXES(ZX0*10.,ZY0*10.,ZLX*10.,ZXMIN,ZXMAX, 0.,PHCHAR*10.,
+     +             PXIBCD, KX, 0, 0,-ZLY*10.,-ZGRIDX*10.)
+         CALL AXES(ZX0*10.,ZY0*10.,ZLY*10.,ZYMIN,ZYMAX,90.,PHCHAR*10.,
+     +             PYIBCD,-KY, 1, 0, ZLX*10., ZGRIDY*10.)
+C     
+      DO 100 J=1,KN 
+         PX(J) = ((PX(J)-ZXMIN)*ZECHX + ZX0) *10.
+         PY(J) = ((PY(J)-ZYMIN)*ZECHY + ZY0) *10.
+ 100  CONTINUE
+C
+C%%      CALL GSLN(1)
+C%%      CALL GSLWSC(PSIZLN)
+         CALL GDASH(0)
+         CALL GWICOL(-PSIZLN,1)
+C%%         CALL GPL(KN,PX,PY)
+         CALL GVECT(PX,PY,KN)
+C
+      DO 110 J=1,KN 
+         PX(J) = (PX(J)/10.-ZX0)/ZECHX + ZXMIN
+         PY(J) = (PY(J)/10.-ZY0)/ZECHY + ZYMIN
+ 110  CONTINUE
+C
+      IF (ZYMIN*ZYMAX .LT. 0.0) THEN
+         CALL GDASH(1)
+         CALL GWICOL(-1.0,1)
+         CALL GPLOT(ZX0*10.      ,(ZY0-ZYMIN*ZECHY)*10.,3)
+         CALL GPLOT((ZX0+ZLX)*10.,(ZY0-ZYMIN*ZECHY)*10.,2)
+         CALL GDASH(0)
+      ENDIF
+C
+C%%      CALL GSLWSC(1.)
+         CALL GWICOL(-1.0,1)
+C
+      RETURN
+      END
+      SUBROUTINE XGRAPNMB
+C        ****************
+C
+C     PLOT KPLOT CURVES
+C
+C        DRAW THE GRAPH OF A FONCTION GIVEN BY KN POINTS (PX(I),PY(I))
+C        IN A RECTANGULAR BOX ((PX0,PY0) ; (PX0+PDX,PY0+PDY)
+C
+C        PX         : VECTOR OF X-COORDINATES, OF DIMENSION KN
+C        PY         : VECTOR OF Y-COORDINATES, OF DIMENSION KN
+C        (PX0,PY0)  : BOTTOM LEFT CORNER OF THE BOX
+C        (PDX,PDY)  : LENGTH IN X- AND Y-DIRECTION OF THE BOX
+C        PHCHAR     : CHARACTER HEIGHT (TYPICAL VALUE: 0.30)
+C        PXIBCD     : TITLE OF X-AXIS
+C        PYIBCD     : TITLE OF Y-AXIS
+C        KX,KY      : NUMBER OF CHARACTERS IN PXIBCD,PYIBCD
+C        PSIZLN     : LINE WIDTH OF CURVE
+C        KCADRE     : DRAW BOX OPTION :(0=NO, 1=YES,CONT., 2=YES,ONLY CORNERS)
+C        KGRID      : DRAW GRID OPTION : (0=NO, 1=Y-GRID, 2=X-GRID, 3=XY-GRID)
+C
+C
+         PARAMETER(MNX1=3531 , MKPLOT=10)
+C
+         CHARACTER*82 PXIBCD,PYIBCD(MKPLOT+1)
+         DIMENSION  PX(MNX1),PY(MNX1,MKPLOT), KY(MKPLOT+1)
+C-----------------------------------------------------------------------
+         DATA    NPLOT/13/
+C-----------------------------------------------------------------------
+C
+         READ(NPLOT,*) KN , KPLOT , PX0 , PDX , PY0 , PDY , PHCHAR
+         READ(NPLOT,*) (PX(I),I=1,KN)
+C
+         DO 110 IP=1,KPLOT
+           READ(NPLOT,*) (PY(I,IP),I=1,KN)
+ 110     CONTINUE
+         READ(NPLOT,'(A)') PXIBCD
+         READ(NPLOT,'(A)') (PYIBCD(I),I=1,KPLOT+1)
+         READ(NPLOT,*) KX, (KY(I),I=1,KPLOT+1), PSIZLN, KCADRE,KGRID
+         READ(NPLOT,*) PXMIN,PXMAX,PYMIN,PYMAX
+C
+         CALL GRAPNMB(PX,PY,MNX1,KN,KPLOT,PX0,PDX,PY0,PDY,PHCHAR,
+     +  PXIBCD,PYIBCD,KX,KY,PSIZLN,KCADRE,KGRID,
+     +  PXMIN,PXMAX,PYMIN,PYMAX)
+C
+         RETURN
+         END
+         SUBROUTINE GRAPNMB(PX,PY,MDKN,KN,KPLOT,PX0,PDX,PY0,PDY,PHCHAR,
+     +                      PXIBCD,PYIBCD,KX,KY,PSIZLN,KCADRE,KGRID,
+     +                      PXMIN,PXMAX,PYMIN,PYMAX)
+C        ***************************************************************
+C
+C     PLOT KPLOT CURVE, OTHERWISE, SAME AS GRAPHMB
+C
+C     PX0,PY0,PDX,PDY REFER TO AXIS DIMENSION RATHER THAN FRAME
+C
+C     DRAW THE GRAPH OF A FONCTION GIVEN BY KN POINTS (PX(I),PY(I))
+C     IN A RECTANGULAR BOX ((PX0,PY0) ; (PX0+PDX,PY0+PDY)
+C
+C        PX         : VECTOR OF X-COORDINATES, OF DIMENSION KN
+C        PY         : VECTOR OF Y-COORDINATES, OF DIMENSION KN
+C        (PX0,PY0)  : BOTTOM LEFT CORNER OF THE BOX
+C        (PDX,PDY)  : LENGTH IN X- AND Y-DIRECTION OF THE BOX
+C        PHCHAR     : CHARACTER HEIGHT (TYPICAL VALUE: 0.30)
+C        PXIBCD     : TITLE OF X-AXIS
+C        PYIBCD(I)  : TITLE OF CURVE + Y-AXIS
+C        KX,KY(I)   : NUMBER OF CHARACTERS IN PXIBCD,PYIBCD
+C        PSIZLN     : LINE WIDTH OF CURVE
+C        KCADRE     : DRAW BOX OPTION :(0=NO, 1=YES,CONT., 2=YES,ONLY CORNERS)
+C        KGRID      : DRAW GRID OPTION : (0=NO, 1=Y-GRID, 2=X-GRID, 3=XY-GRID)
+C
+      CHARACTER*(*) PXIBCD,PYIBCD(KPLOT+1)
+      DIMENSION  PX(KN),PY(MDKN,KPLOT), KY(KPLOT+1), ZXLAB(2), ZYLAB(2)
+C
+C%%      CALL GSLN(1)
+C%%      CALL GSLWSC(2.0)
+         CALL GDASH(0)
+         CALL GWICOL(-2.0,1)
+C%%   CALL GSLWSC(1.0)
+      CALL GWICOL(-1.0,1)
+C%%
+C     CACUL DES EXTREMAS
+C
+      CALL MAXAR(PX,KN,ZZXMAX,ZZXMIN)
+
+      CALL MAXAR(PY(1,1),KN,ZZYMAX,ZZYMIN)
+      DO IPLOT=2,KPLOT
+        CALL MAXAR(PY(1,IPLOT),KN,ZZYMAXI,ZZYMINI)
+        ZZYMAX = MAX(ZZYMAX,ZZYMAXI)
+        ZZYMIN = MIN(ZZYMIN,ZZYMINI)
+      ENDDO
+C
+      IZERO = 0
+      IF (ZZXMAX.EQ.0.0 .OR. ZZXMIN.EQ.0.0) IZERO = 1
+      IF ( (ABS(ZZXMAX-ZZXMIN).LT.1.0E-12*ABS(ZZXMAX) .AND. IZERO.EQ.0)
+     +      .OR.  (ZZXMAX.EQ.ZZXMIN       .AND. IZERO.EQ.1)       ) THEN
+         IF(ZZXMAX .NE. 0.0) ZZXMIN = ZZXMIN/2.
+         IF(ZZXMAX .NE. 0.0) ZZXMAX = ZZXMAX + ZZXMIN
+         IF(ZZXMAX .EQ. 0.0) ZZXMIN = -1.
+         IF(ZZXMAX .EQ. 0.0) ZZXMAX =  1.
+      ENDIF
+C
+      IZERO = 0
+      IF (ZZYMAX.EQ.0.0 .OR. ZZYMIN.EQ.0.0) IZERO = 1
+      IF ( (ABS(ZZYMAX-ZZYMIN).LT.1.0E-12*ABS(ZZYMAX) .AND. IZERO.EQ.0)
+     +      .OR.  (ZZYMAX.EQ.ZZYMIN       .AND. IZERO.EQ.1)       ) THEN
+         IF(ZZYMAX .NE. 0.0) ZZYMIN = ZZYMIN/2.
+         IF(ZZYMAX .NE. 0.0) ZZYMAX = ZZYMAX + ZZYMIN
+         IF(ZZYMAX .EQ. 0.0) ZZYMIN = -1.
+         IF(ZZYMAX .EQ. 0.0) ZZYMAX =  1.
+      ENDIF
+
+C     X EXTREMA
+      IF (ABS(PXMIN+99.9) .LE. 1.0E-10) THEN
+        ZXMIN = ZZXMIN
+      ELSE
+        ZXMIN = PXMIN
+      ENDIF
+      IF (ABS(PXMAX+99.9) .LE. 1.0E-10) THEN
+        ZXMAX = ZZXMAX
+      ELSE
+        ZXMAX = PXMAX
+      ENDIF
+      IF (ZXMIN .GT. ZXMAX) THEN
+        ZXMIN = ZZXMIN
+        ZXMAX = ZZXMAX
+      ENDIF
+C     Y EXTREMA
+      IF (ABS(PYMIN+99.9) .LE. 1.0E-10) THEN
+        ZYMIN = ZZYMIN
+      ELSE
+        ZYMIN = PYMIN
+      ENDIF
+      IF (ABS(PYMAX+99.9) .LE. 1.0E-10) THEN
+        ZYMAX = ZZYMAX
+      ELSE
+        ZYMAX = PYMAX
+      ENDIF
+      IF (ZYMIN .GT. ZYMAX) THEN
+        ZYMIN = ZZYMIN
+        ZYMAX = ZZYMAX
+      ENDIF
+C
+      ZDX = ZXMAX-ZXMIN
+      ZDY = ZYMAX-ZYMIN
+C
+C     LONGUEUR DES AXES
+         ZHCHMN =       PHCHAR
+c%OS         ZLX=PDX - 11.5 * ZHCHMN
+         ZLX=PDX - 10.5 * ZHCHMN
+         IF (ABS(ZDY) .LT. 0.05*AMAX1(ABS(ZYMIN),ABS(ZYMAX)))
+     +                                             ZLX = ZLX - 2.*ZHCHMN
+         ZLY=PDY - 7.0 * ZHCHMN
+         zdeltax = (pdx - zlx)
+         zdeltay = (pdy - zly)
+         zcx0 = px0 - 0.75*zdeltax
+         zcy0 = py0 - 0.75*zdeltay
+         zlx = pdx
+         zly = pdy
+C%%
+      IF (KCADRE .NE. 0) CALL CADRE(zcX0*10.,zcY0*10.,(zdeltax+zlx)*10.,
+     +     (zdeltaY+zly)*10.,KCADRE)
+C
+C     DESSIN DES AXES
+c%OS         ZX0=PX0+ 8.0 * ZHCHMN
+         ZX0=PX0
+         IF (ABS(ZDY) .LT. 0.05*AMAX1(ABS(ZYMIN),ABS(ZYMAX)))
+     +                                             ZX0 = ZX0 + 2.*ZHCHMN
+c%OS         ZY0=PY0+ 5.0 * ZHCHMN
+         ZY0=PY0
+C
+C     ECHELLES
+C
+      ZECHX = ZLX/ZDX
+      ZECHY = ZLY/ZDY
+C
+C     GRID OPTION
+         ZGRIDX = 0.0
+         ZGRIDY = 0.0
+         IF (KGRID.EQ.1 .OR. KGRID.EQ.3) ZGRIDY =  ZLX
+         IF (KGRID.EQ.2 .OR. KGRID.EQ.3) ZGRIDX =  ZLY
+C
+         CALL AXES(ZX0*10.,ZY0*10.,ZLX*10.,ZXMIN,ZXMAX, 0.,PHCHAR*10.,
+     +             PXIBCD, KX, 0, 0,-ZLY*10.,-ZGRIDX*10.)
+         CALL AXES(ZX0*10.,ZY0*10.,ZLY*10.,ZYMIN,ZYMAX,90.,PHCHAR*10.,
+     +         PYIBCD(KPLOT+1),-KY(KPLOT+1), 1, 0, ZLX*10., ZGRIDY*10.)
+C
+         DO J=1,KN 
+           PX(J) = ((PX(J)-ZXMIN)*ZECHX + ZX0) *10.
+         ENDDO
+         DO IP=1,KPLOT
+           DO J=1,KN 
+             PY(J,IP) = ((PY(J,IP)-ZYMIN)*ZECHY + ZY0) *10.
+           ENDDO
+         ENDDO
+C
+C%%      CALL GSLN(1)
+C%%      CALL GSLWSC(PSIZLN)
+         CALL GDASH(0)
+         CALL GWICOL(-PSIZLN,1)
+         DO IP=1,KPLOT
+           CALL GDASH(MOD(IP-1,8))
+           CALL GVECT(PX,PY(1,IP),KN)
+         ENDDO
+C
+C
+CL    LABEL THE CURVES
+C
+         ZY = ZY0 + ZLY + 0.5
+         ZYLAB(1) = ZY*10.
+         ZYLAB(2) = ZY*10.
+         ZX = ZCX0 + PHCHAR
+      DO 107 IP=1,KPLOT
+         ZXLAB(1) = ZX*10.
+         ZXLAB(2) = (ZX + 0.8) * 10.
+         CALL GDASH(MOD(IP-1,8))
+         CALL GVECT(ZXLAB,ZYLAB,2)
+         CALL GCHAR(PYIBCD(IP),ZXLAB(2)+0.15*10.,ZY*10.,PHCHAR*10.)
+C
+c%OS         ZDEL = 0.8 + KY(IP) * PHCHAR * 0.90 ! UNIRAS
+         ZDEL = 0.8 + KY(IP) * PHCHAR * 1.00 ! NCAR
+         ZX = ZX + ZDEL
+ 107  CONTINUE
+C
+      DO 110 J=1,KN 
+         PX(J) = (PX(J)/10.-ZX0)/ZECHX + ZXMIN
+ 110  CONTINUE
+C
+      DO 111 IP=1,KPLOT
+      DO 111 J=1,KN 
+         PY(J,IP) = (PY(J,IP)/10.-ZY0)/ZECHY + ZYMIN
+ 111  CONTINUE
+C
+      IF (ZYMIN*ZYMAX .LT. 0.0) THEN
+         CALL GDASH(1)
+         CALL GWICOL(-1.0,1)
+         CALL GPLOT(ZX0*10.      ,(ZY0-ZYMIN*ZECHY)*10.,3)
+         CALL GPLOT((ZX0+ZLX)*10.,(ZY0-ZYMIN*ZECHY)*10.,2)
+         CALL GDASH(0)
+      ENDIF
+C
+C%%      CALL GSLWSC(1.)
+         CALL GWICOL(-1.0,1)
+C
+      RETURN
+      END
+         SUBROUTINE XGLASHMB
+C        *******************
+C
+C        DRAW THE GRAPH OF A FONCTION GIVEN BY KN POINTS (PX(I),PY(I))
+C        IN A RECTANGULAR BOX ((PX0,PY0) ; (PX0+PDX,PY0+PDY)
+C
+C        PX         : VECTOR OF X-COORDINATES, OF DIMENSION KN
+C        PY         : VECTOR OF Y-COORDINATES, OF DIMENSION KN
+C        (PX0,PY0)  : BOTTOM LEFT CORNER OF THE BOX
+C        (PDX,PDY)  : LENGTH IN X- AND Y-DIRECTION OF THE BOX
+C        PHCHAR     : CHARACTER HEIGHT (TYPICAL VALUE: 0.30)
+C        PXIBCD     : TITLE OF X-AXIS
+C        PYIBCD     : TITLE OF Y-AXIS
+C        KX,KY      : NUMBER OF CHARACTERS IN PXIBCD,PYIBCD
+C        PSIZLN     : LINE WIDTH OF CURVE
+C        KCADRE     : DRAW BOX OPTION :(0=NO, 1=YES,CONT., 2=YES,ONLY CORNERS)
+C        KGRID      : DRAW GRID OPTION : (0=NO, 1=Y-GRID, 2=X-GRID, 3=XY-GRID)
+C
+C
+         PARAMETER(MNX1=3531)
+C
+         CHARACTER PXIBCD*82,PYIBCD*82
+         DIMENSION  PX(MNX1),PY(MNX1)
+C-----------------------------------------------------------------------
+         DATA    NPLOT/13/
+C-----------------------------------------------------------------------
+C
+         READ(NPLOT,*) KN , PX0 , PDX , PY0 , PDY , PHCHAR
+         READ(NPLOT,*) PXMIN,PXMAX,PYMIN,PYMAX
+C
+         READ(NPLOT,*) (PX(I),I=1,KN)
+         READ(NPLOT,*) (PY(I),I=1,KN)
+         READ(NPLOT,'(A)') PXIBCD
+         READ(NPLOT,'(A)') PYIBCD
+         READ(NPLOT,*) KX , KY , PSIZLN , KCADRE , KGRID
+C
+         CALL GLASHMB(PX,PY,KN,PX0,PDX,PY0,PDY,PHCHAR,PXIBCD,PYIBCD
+     +     ,KX,KY,PSIZLN,KCADRE,KGRID,
+     +     PXMIN,PXMAX,PYMIN,PYMAX)
+C
+         RETURN
+         END
+
+      SUBROUTINE GLASHMB(PX,PY,KN,PX0,PDX,PY0,PDY,PHCHAR,PXIBCD,
+     +                      PYIBCD,KX,KY,PSIZLN,KCADRE,KGRID,
+     +                      PXMIN,PXMAX,PYMIN,PYMAX)
+C        ***************************************************************
+C
+C
+C     Y AXIS IS ASINH SCALING
+C
+C     PX0,PY0,PDX,PDY REFER TO AXIS DIMENSION RATHER THAN FRAME
+C
+C     DRAW THE GRAPH OF A FONCTION GIVEN BY KN POINTS (PX(I),PY(I))
+C     IN A RECTANGULAR BOX ((PX0,PY0) ; (PX0+PDX,PY0+PDY)
+C
+C        PX         : VECTOR OF X-COORDINATES, OF DIMENSION KN
+C        PY         : VECTOR OF Y-COORDINATES, OF DIMENSION KN
+C        (PX0,PY0)  : BOTTOM LEFT CORNER OF THE BOX
+C        (PDX,PDY)  : LENGTH IN X- AND Y-DIRECTION OF THE BOX
+C        PHCHAR     : CHARACTER HEIGHT (TYPICAL VALUE: 0.30)
+C        PXIBCD     : TITLE OF X-AXIS
+C        PYIBCD     : TITLE OF Y-AXIS
+C        KX,KY      : NUMBER OF CHARACTERS IN PXIBCD,PYIBCD
+C        PSIZLN     : LINE WIDTH OF CURVE
+C        KCADRE     : DRAW BOX OPTION :(0=NO, 1=YES,CONT., 2=YES,ONLY CORNERS)
+C        KGRID      : DRAW GRID OPTION : (0=NO, 1=Y-GRID, 2=X-GRID, 3=XY-GRID)
+C
+      CHARACTER PXIBCD*(*),PYIBCD*(*)
+      DIMENSION  PX(KN),PY(KN)
+C
+C%%      CALL GSLN(1)
+C%%      CALL GSLWSC(2.0)
+         CALL GDASH(0)
+         CALL GWICOL(-2.0,1)
+C%%   CALL GSLWSC(1.0)
+      CALL GWICOL(-1.0,1)
+C%%
+C     CACUL DES EXTREMAS
+C
+      CALL MAXAR(PX,KN,ZZXMAX,ZZXMIN)
+
+      CALL MAXAR(PY,KN,ZZYMAX,ZZYMIN)
+C
+      IZERO = 0
+      IF (ZZXMAX.EQ.0.0 .OR. ZZXMIN.EQ.0.0) IZERO = 1
+      IF ( (ABS(ZZXMAX-ZZXMIN).LT.1.0E-12*ABS(ZZXMAX) .AND. IZERO.EQ.0)
+     +      .OR.  (ZZXMAX.EQ.ZZXMIN       .AND. IZERO.EQ.1)       ) THEN
+         IF(ZZXMAX .NE. 0.0) ZZXMIN = ZZXMIN/2.
+         IF(ZZXMAX .NE. 0.0) ZZXMAX = ZZXMAX + ZZXMIN
+         IF(ZZXMAX .EQ. 0.0) ZZXMIN = -1.
+         IF(ZZXMAX .EQ. 0.0) ZZXMAX =  1.
+      ENDIF
+C
+      IZERO = 0
+      IF (ZZYMAX.EQ.0.0 .OR. ZZYMIN.EQ.0.0) IZERO = 1
+      IF ( (ABS(ZZYMAX-ZZYMIN).LT.1.0E-12*ABS(ZZYMAX) .AND. IZERO.EQ.0)
+     +      .OR.  (ZZYMAX.EQ.ZZYMIN       .AND. IZERO.EQ.1)       ) THEN
+         IF(ZZYMAX .NE. 0.0) ZZYMIN = ZZYMIN/2.
+         IF(ZZYMAX .NE. 0.0) ZZYMAX = ZZYMAX + ZZYMIN
+         IF(ZZYMAX .EQ. 0.0) ZZYMIN = -1.
+         IF(ZZYMAX .EQ. 0.0) ZZYMAX =  1.
+      ENDIF
+
+C     X EXTREMA
+      IF (ABS(PXMIN+99.9) .LE. 1.0E-10) THEN
+        ZXMIN = ZZXMIN
+      ELSE
+        ZXMIN = PXMIN
+      ENDIF
+      IF (ABS(PXMAX+99.9) .LE. 1.0E-10) THEN
+        ZXMAX = ZZXMAX
+      ELSE
+        ZXMAX = PXMAX
+      ENDIF
+      IF (ZXMIN .GT. ZXMAX) THEN
+        ZXMIN = ZZXMIN
+        ZXMAX = ZZXMAX
+      ENDIF
+C     Y EXTREMA
+      IF (ABS(PYMIN+99.9) .LE. 1.0E-10) THEN
+        ZYMIN = ZZYMIN
+      ELSE
+        ZYMIN = PYMIN
+      ENDIF
+      IF (ABS(PYMAX+99.9) .LE. 1.0E-10) THEN
+        ZYMAX = ZZYMAX
+      ELSE
+        ZYMAX = PYMAX
+      ENDIF
+      IF (ZYMIN .GT. ZYMAX) THEN
+        ZYMIN = ZZYMIN
+        ZYMAX = ZZYMAX
+      ENDIF
+C
+      ZDX = ZXMAX-ZXMIN
+C
+C     LONGUEUR DES AXES
+         ZHCHMN =       PHCHAR
+c%OS         ZLX=PDX - 11.5 * ZHCHMN
+         ZLX=PDX - 10.5 * ZHCHMN
+C         IF (ABS(ZDY) .LT. 0.05*AMAX1(ABS(ZYMIN),ABS(ZYMAX)))
+C     +                                             ZLX = ZLX - 2.*ZHCHMN
+         ZLY=PDY - 7.0 * ZHCHMN
+         zdeltax = (pdx - zlx)
+         zdeltay = (pdy - zly)
+         zcx0 = px0 - 0.75*zdeltax
+         zcy0 = py0 - 0.75*zdeltay
+         zlx = pdx
+         zly = pdy
+C%%
+      IF (KCADRE .NE. 0) CALL CADRE(zcX0*10.,zcY0*10.,(zdeltax+zlx)*10.,
+     +     (zdeltaY+zly)*10.,KCADRE)
+C
+C     DESSIN DES AXES
+c%OS         ZX0=PX0+ 8.0 * ZHCHMN
+c%OS         ZX0=PX0
+         ZX0=PX0 + 2.2*ZHCHMN
+C         IF (ABS(ZDY) .LT. 0.05*AMAX1(ABS(ZYMIN),ABS(ZYMAX)))
+C     +                                             ZX0 = ZX0 + 2.*ZHCHMN
+c%OS         ZY0=PY0+ 5.0 * ZHCHMN
+         ZY0=PY0
+C
+C     ECHELLES
+C
+      ZECHX = ZLX/ZDX
+      ZDYA = ASINH(ZYMAX) - ASINH(ZYMIN)
+      ZECHY = ZLY/ZDYA
+C
+C     GRID OPTION
+         ZGRIDX = 0.0
+         ZGRIDY = 0.0
+         IF (KGRID.EQ.1 .OR. KGRID.EQ.3) ZGRIDY =  ZLX
+         IF (KGRID.EQ.2 .OR. KGRID.EQ.3) ZGRIDX =  ZLY
+C
+         CALL AXES(ZX0*10.,ZY0*10.,ZLX*10.,ZXMIN,ZXMAX, 0.,PHCHAR*10.,
+     +             PXIBCD, KX, 0, 0,-ZLY*10.,-ZGRIDX*10.)
+         CALL AXASNH(ZX0*10.,ZY0*10.,ZLY*10.,ZYMIN,ZYMAX,90.,PHCHAR*10.,
+     +        PYIBCD,-KY, 1, 0, ZLX*10., ZGRIDY*10.)
+C     
+      DO 100 J=1,KN 
+         PX(J) = ((PX(J)-ZXMIN)*ZECHX + ZX0) *10.
+ 100  CONTINUE
+C
+      ZYMNAS = ASINH(ZYMIN)
+      DO 101 J=1,KN 
+         PY(J) = ((ASINH(PY(J))-ZYMNAS)*ZECHY + ZY0) *10.
+ 101  CONTINUE
+C
+C%%      CALL GSLN(1)
+C%%      CALL GSLWSC(PSIZLN)
+         CALL GDASH(0)
+         CALL GWICOL(-PSIZLN,1)
+C%%         CALL GPL(KN,PX,PY)
+         CALL GVECT(PX,PY,KN)
+C
+      DO 110 J=1,KN 
+         PX(J) = (PX(J)/10.-ZX0)/ZECHX + ZXMIN
+         PY(J) = SINH((PY(J)/10.-ZY0)/ZECHY + ZYMNAS)
+ 110  CONTINUE
+C
+      IF (ZYMIN*ZYMAX .LT. 0.0) THEN
+         CALL GWICOL(-1.0,1)
+         CALL GDASH(1)
+         CALL GPLOT(ZX0*10.      ,(ZY0-ZYMNAS*ZECHY)*10.,3)
+         CALL GPLOT((ZX0+ZLX)*10.,(ZY0-ZYMNAS*ZECHY)*10.,2)
+         CALL GDASH(0)
+      ENDIF
+C
+C%%      CALL GSLWSC(1.)
+         CALL GWICOL(-1.0,1)
+C
+      RETURN
+      END
+         SUBROUTINE XGLASNMB
+C        *******************
+C
+C     PLOT KPLOT CURVES
+C
+C        DRAW THE GRAPH OF A FONCTION GIVEN BY KN POINTS (PX(I),PY(I))
+C        IN A RECTANGULAR BOX ((PX0,PY0) ; (PX0+PDX,PY0+PDY)
+C
+C        PX         : VECTOR OF X-COORDINATES, OF DIMENSION KN
+C        PY         : VECTOR OF Y-COORDINATES, OF DIMENSION KN
+C        (PX0,PY0)  : BOTTOM LEFT CORNER OF THE BOX
+C        (PDX,PDY)  : LENGTH IN X- AND Y-DIRECTION OF THE BOX
+C        PHCHAR     : CHARACTER HEIGHT (TYPICAL VALUE: 0.30)
+C        PXIBCD     : TITLE OF X-AXIS
+C        PYIBCD     : TITLE OF Y-AXIS
+C        KX,KY      : NUMBER OF CHARACTERS IN PXIBCD,PYIBCD
+C        PSIZLN     : LINE WIDTH OF CURVE
+C        KCADRE     : DRAW BOX OPTION :(0=NO, 1=YES,CONT., 2=YES,ONLY CORNERS)
+C        KGRID      : DRAW GRID OPTION : (0=NO, 1=Y-GRID, 2=X-GRID, 3=XY-GRID)
+C
+C
+         PARAMETER(MNX1=3531 , MKPLOT=10)
+C
+         CHARACTER*82 PXIBCD,PYIBCD(MKPLOT+1)
+         DIMENSION  PX(MNX1),PY(MNX1,MKPLOT), KY(MKPLOT+1)
+C-----------------------------------------------------------------------
+         DATA    NPLOT/13/
+C-----------------------------------------------------------------------
+C
+         READ(NPLOT,*) KN , KPLOT , PX0 , PDX , PY0 , PDY , PHCHAR
+         READ(NPLOT,*) (PX(I),I=1,KN)
+C
+         DO 110 IP=1,KPLOT
+           READ(NPLOT,*) (PY(I,IP),I=1,KN)
+ 110     CONTINUE
+         READ(NPLOT,'(A)') PXIBCD
+         READ(NPLOT,'(A)') (PYIBCD(I),I=1,KPLOT+1)
+         READ(NPLOT,*) KX, (KY(I),I=1,KPLOT+1), PSIZLN, KCADRE,KGRID
+         READ(NPLOT,*) PXMIN,PXMAX,PYMIN,PYMAX
+C
+         CALL GLASNMB(PX,PY,MNX1,KN,KPLOT,PX0,PDX,PY0,PDY,PHCHAR,
+     +     PXIBCD,PYIBCD,KX,KY,PSIZLN,KCADRE,KGRID,
+     +     PXMIN,PXMAX,PYMIN,PYMAX)
+C
+         RETURN
+         END
+         SUBROUTINE GLASNMB(PX,PY,MDKN,KN,KPLOT,PX0,PDX,PY0,PDY,PHCHAR,
+     +                      PXIBCD,PYIBCD,KX,KY,PSIZLN,KCADRE,KGRID,
+     +                      PXMIN,PXMAX,PYMIN,PYMAX)
+C        ***************************************************************
+C
+C     PLOT KPLOT CURVE, OTHERWISE, SAME AS GLASHMB
+C
+C     PX0,PY0,PDX,PDY REFER TO AXIS DIMENSION RATHER THAN FRAME
+C
+C     DRAW THE GRAPH OF A FONCTION GIVEN BY KN POINTS (PX(I),PY(I))
+C     IN A RECTANGULAR BOX ((PX0,PY0) ; (PX0+PDX,PY0+PDY)
+C
+C        PX         : VECTOR OF X-COORDINATES, OF DIMENSION KN
+C        PY         : VECTOR OF Y-COORDINATES, OF DIMENSION KN
+C        (PX0,PY0)  : BOTTOM LEFT CORNER OF THE BOX
+C        (PDX,PDY)  : LENGTH IN X- AND Y-DIRECTION OF THE BOX
+C        PHCHAR     : CHARACTER HEIGHT (TYPICAL VALUE: 0.30)
+C        PXIBCD     : TITLE OF X-AXIS
+C        PYIBCD(I)  : TITLE OF CURVE + Y-AXIS
+C        KX,KY(I)   : NUMBER OF CHARACTERS IN PXIBCD,PYIBCD
+C        PSIZLN     : LINE WIDTH OF CURVE
+C        KCADRE     : DRAW BOX OPTION :(0=NO, 1=YES,CONT., 2=YES,ONLY CORNERS)
+C        KGRID      : DRAW GRID OPTION : (0=NO, 1=Y-GRID, 2=X-GRID, 3=XY-GRID)
+C
+      CHARACTER*(*) PXIBCD,PYIBCD(KPLOT+1)
+      DIMENSION  PX(KN),PY(MDKN,KPLOT), KY(KPLOT+1), ZXLAB(2), ZYLAB(2)
+C
+C%%      CALL GSLN(1)
+C%%      CALL GSLWSC(2.0)
+         CALL GDASH(0)
+         CALL GWICOL(-2.0,1)
+C%%   CALL GSLWSC(1.0)
+      CALL GWICOL(-1.0,1)
+C%%
+C     CACUL DES EXTREMAS
+C
+      CALL MAXAR(PX,KN,ZZXMAX,ZZXMIN)
+
+      CALL MAXAR(PY(1,1),KN,ZZYMAX,ZZYMIN)
+      DO IPLOT=2,KPLOT
+        CALL MAXAR(PY(1,IPLOT),KN,ZZYMAXI,ZZYMINI)
+        ZZYMAX = MAX(ZZYMAX,ZZYMAXI)
+        ZZYMIN = MIN(ZZYMIN,ZZYMINI)
+      ENDDO
+C
+      IZERO = 0
+      IF (ZZXMAX.EQ.0.0 .OR. ZZXMIN.EQ.0.0) IZERO = 1
+      IF ( (ABS(ZZXMAX-ZZXMIN).LT.1.0E-12*ABS(ZZXMAX) .AND. IZERO.EQ.0)
+     +      .OR.  (ZZXMAX.EQ.ZZXMIN       .AND. IZERO.EQ.1)       ) THEN
+         IF(ZZXMAX .NE. 0.0) ZZXMIN = ZZXMIN/2.
+         IF(ZZXMAX .NE. 0.0) ZZXMAX = ZZXMAX + ZZXMIN
+         IF(ZZXMAX .EQ. 0.0) ZZXMIN = -1.
+         IF(ZZXMAX .EQ. 0.0) ZZXMAX =  1.
+      ENDIF
+C
+      IZERO = 0
+      IF (ZZYMAX.EQ.0.0 .OR. ZZYMIN.EQ.0.0) IZERO = 1
+      IF ( (ABS(ZZYMAX-ZZYMIN).LT.1.0E-12*ABS(ZZYMAX) .AND. IZERO.EQ.0)
+     +      .OR.  (ZZYMAX.EQ.ZZYMIN       .AND. IZERO.EQ.1)       ) THEN
+         IF(ZZYMAX .NE. 0.0) ZZYMIN = ZZYMIN/2.
+         IF(ZZYMAX .NE. 0.0) ZZYMAX = ZZYMAX + ZZYMIN
+         IF(ZZYMAX .EQ. 0.0) ZZYMIN = -1.
+         IF(ZZYMAX .EQ. 0.0) ZZYMAX =  1.
+      ENDIF
+
+C     X EXTREMA
+      IF (ABS(PXMIN+99.9) .LE. 1.0E-10) THEN
+        ZXMIN = ZZXMIN
+      ELSE
+        ZXMIN = PXMIN
+      ENDIF
+      IF (ABS(PXMAX+99.9) .LE. 1.0E-10) THEN
+        ZXMAX = ZZXMAX
+      ELSE
+        ZXMAX = PXMAX
+      ENDIF
+      IF (ZXMIN .GT. ZXMAX) THEN
+        ZXMIN = ZZXMIN
+        ZXMAX = ZZXMAX
+      ENDIF
+C     Y EXTREMA
+      IF (ABS(PYMIN+99.9) .LE. 1.0E-10) THEN
+        ZYMIN = ZZYMIN
+      ELSE
+        ZYMIN = PYMIN
+      ENDIF
+      IF (ABS(PYMAX+99.9) .LE. 1.0E-10) THEN
+        ZYMAX = ZZYMAX
+      ELSE
+        ZYMAX = PYMAX
+      ENDIF
+      IF (ZYMIN .GT. ZYMAX) THEN
+        ZYMIN = ZZYMIN
+        ZYMAX = ZZYMAX
+      ENDIF
+C
+      ZDX = ZXMAX-ZXMIN
+      ZDY = ZYMAX-ZYMIN
+C
+C     LONGUEUR DES AXES
+         ZHCHMN =       PHCHAR
+c%OS         ZLX=PDX - 11.5 * ZHCHMN
+         ZLX=PDX - 10.5 * ZHCHMN
+         IF (ABS(ZDY) .LT. 0.05*AMAX1(ABS(ZYMIN),ABS(ZYMAX)))
+     +                                             ZLX = ZLX - 2.*ZHCHMN
+         ZLY=PDY - 7.0 * ZHCHMN
+         zdeltax = (pdx - zlx)
+         zdeltay = (pdy - zly)
+         zcx0 = px0 - 0.75*zdeltax
+         zcy0 = py0 - 0.75*zdeltay
+         zlx = pdx
+         zly = pdy
+C%%
+      IF (KCADRE .NE. 0) CALL CADRE(zcX0*10.,zcY0*10.,(zdeltax+zlx)*10.,
+     +     (zdeltaY+zly)*10.,KCADRE)
+C
+C     DESSIN DES AXES
+c%OS         ZX0=PX0+ 8.0 * ZHCHMN
+         ZX0=PX0 + 2.2*ZHCHMN
+         IF (ABS(ZDY) .LT. 0.05*AMAX1(ABS(ZYMIN),ABS(ZYMAX)))
+     +                                             ZX0 = ZX0 + 2.*ZHCHMN
+c%OS         ZY0=PY0+ 5.0 * ZHCHMN
+         ZY0=PY0
+C
+C     ECHELLES
+C
+      ZECHX = ZLX/ZDX
+      ZDYA = ASINH(ZYMAX) - ASINH(ZYMIN)
+      ZECHY = ZLY/ZDYA
+C
+C     GRID OPTION
+         ZGRIDX = 0.0
+         ZGRIDY = 0.0
+         IF (KGRID.EQ.1 .OR. KGRID.EQ.3) ZGRIDY =  ZLX
+         IF (KGRID.EQ.2 .OR. KGRID.EQ.3) ZGRIDX =  ZLY
+C
+         CALL AXES(ZX0*10.,ZY0*10.,ZLX*10.,ZXMIN,ZXMAX, 0.,PHCHAR*10.,
+     +             PXIBCD, KX, 0, 0,-ZLY*10.,-ZGRIDX*10.)
+         CALL AXASNH(ZX0*10.,ZY0*10.,ZLY*10.,ZYMIN,ZYMAX,90.,PHCHAR*10.,
+     +        PYIBCD(KPLOT+1),-KY(KPLOT+1), 1, 0, ZLX*10., ZGRIDY*10.)
+C
+         DO J=1,KN 
+           PX(J) = ((PX(J)-ZXMIN)*ZECHX + ZX0) *10.
+         ENDDO
+         ZYMNAS = ASINH(ZYMIN)
+         DO IP=1,KPLOT
+           DO J=1,KN 
+             PY(J,IP) = ((ASINH(PY(J,IP))-ZYMNAS)*ZECHY + ZY0) *10.
+           ENDDO
+         ENDDO
+C
+C%%      CALL GSLN(1)
+C%%      CALL GSLWSC(PSIZLN)
+         CALL GDASH(0)
+         CALL GWICOL(-PSIZLN,1)
+         DO IP=1,KPLOT
+           CALL GDASH(MOD(IP-1,8))
+           CALL GVECT(PX,PY(1,IP),KN)
+         ENDDO
+C
+C
+CL    LABEL THE CURVES
+C
+         ZY = ZY0 + ZLY + 0.5
+         ZYLAB(1) = ZY*10.
+         ZYLAB(2) = ZY*10.
+         ZX = ZCX0 + PHCHAR
+      DO 107 IP=1,KPLOT
+         ZXLAB(1) = ZX*10.
+         ZXLAB(2) = (ZX + 0.8) * 10.
+         CALL GDASH(MOD(IP-1,8))
+         CALL GVECT(ZXLAB,ZYLAB,2)
+         CALL GCHAR(PYIBCD(IP),ZXLAB(2)+0.15*10.,ZY*10.,PHCHAR*10.)
+C
+c%OS         ZDEL = 0.8 + KY(IP) * PHCHAR * 0.90 ! UNIRAS
+         ZDEL = 0.8 + KY(IP) * PHCHAR * 1.00 ! NCAR
+         ZX = ZX + ZDEL
+ 107  CONTINUE
+C
+      DO 110 J=1,KN 
+         PX(J) = (PX(J)/10.-ZX0)/ZECHX + ZXMIN
+ 110  CONTINUE
+C
+      DO 111 IP=1,KPLOT
+      DO 111 J=1,KN 
+         PY(J,IP) = SINH((PY(J,IP)/10.-ZY0)/ZECHY + ZYMIN)
+ 111  CONTINUE
+C
+      IF (ZYMIN*ZYMAX .LT. 0.0) THEN
+         CALL GDASH(1)
+         CALL GWICOL(-1.0,1)
+         CALL GPLOT(ZX0*10.      ,(ZY0-ZYMNAS*ZECHY)*10.,3)
+         CALL GPLOT((ZX0+ZLX)*10.,(ZY0-ZYMNAS*ZECHY)*10.,2)
+         CALL GDASH(0)
+      ENDIF
+C
+C%%      CALL GSLWSC(1.)
+         CALL GWICOL(-1.0,1)
+C
+      RETURN
+      END

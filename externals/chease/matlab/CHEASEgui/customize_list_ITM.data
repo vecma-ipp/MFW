@@ -1,0 +1,8 @@
+% keyword    default_value   "label in quotes to allow spaces" (leave 1st headerline)
+nitmopt	       0            "nitmopt (1 read, 10 write, 11 read/write)"
+nitmshot_1     10           "shot for input"
+nitmrun_1      1            "run for input"
+nitmshot_2     10           "shot for output"
+nitmrun_2      99           "run for output"
+treeitm_1     euitm         "beginning of datafile name for input"
+treeitm_2     euitm         "beginning of datafile name for output"

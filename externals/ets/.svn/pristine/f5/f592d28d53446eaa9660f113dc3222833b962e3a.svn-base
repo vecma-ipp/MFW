@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+
+<?xml-stylesheet type="text/xsl" href="./emeq.xsl" charset="ISO-8859-1"?>
+
+<parameters>
+
+  <dims>
+    <neq>            100      </neq>           NEQ,   number of equilibrium points -->
+  </dims>
+
+  <solver>
+    <convergence>    1.0d-4    </convergence>  <!-- convergence criterion in EQUILIBRIUM_INTERFACE --> 
+    <aceqlb>         1.0d-3    </aceqlb>       <!-- convergence criterion in E3ASTR--> 
+    <itermax>         1000     </itermax>      <!-- maximum iterations in E3ASTR--> 
+  </solver>
+
+</parameters>
+

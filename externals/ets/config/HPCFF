@@ -1,0 +1,9 @@
+GOT_PERFLIB = 'yes'
+FC=ifort
+FCOPTS=-g
+MOD=mod
+LIBS=-lmkl_lapack -lmkl_blas -lmkl -liomp5 -lpthreads
+LIBS=-llapack
+INCLUDE=
+
+

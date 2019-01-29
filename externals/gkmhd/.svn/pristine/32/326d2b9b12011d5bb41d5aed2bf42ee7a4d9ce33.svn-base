@@ -1,0 +1,8 @@
+ &PARM
+      rr0 = 3.3,  
+      elongation = 1.,  triangularity = 0.,  
+      beta = 0.0,  jj0 = 0.5,  
+      grid_choice = "rho_tor",  
+      nx00 = 64,  
+      niter_eq = 27,  
+ /

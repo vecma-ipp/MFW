@@ -1,0 +1,134 @@
+<?xml version="1.0"?>
+
+<?xml-stylesheet type="text/xsl" href="./ets.xsl" charset="ISO-8859-1"?>
+
+<parameters>
+
+  <input>
+    <shot_in>              4     </shot_in>          <!-- shot number -->
+    <run_in>               1     </run_in>           <!-- run number -->
+    <interpol>             1     </interpol>         <!-- interpolation index -->
+    <time_dep_input>       0     </time_dep_input>   <!-- 1 implies time dependence in input data -->
+    <db_out>         mdsplus     </db_out>           <!-- output database format -->
+  </input>
+
+
+  <output>
+    <shot_out>             5     </shot_out>         <!-- shot number -->
+    <run_out>              3     </run_out>          <!-- run number -->
+    <tau_out>         1.0e-3     </tau_out>          <!-- output frequency -->
+  </output>
+
+
+  <dims>
+    <nrho>                50     </nrho>             <!-- NRHO,  number of radial points -->
+    <npsi>                100    </npsi>             <!-- NPSI,  number of equilibrium points -->
+    <neq_dim1>            100    </neq_dim1>         <!-- NDIM1, number of points for 2-D equilibrium signals in R direction -->          
+    <neq_dim2>            100	 </neq_dim2>         <!-- NDIM2, number of points for 2-D equilibrium signals in Z direction -->
+    <neq_max_npoints>     100	 </neq_max_npoints>  <!-- MAX_NPOINTS,  number of equilibrium boundary points -->
+  </dims>
+
+
+  <compositions>
+    <ions>
+      <amn>                2     </amn>             <!-- AMN,              atomic mass IONS -->
+      <zn>                 1     </zn>              <!-- ZN,               nuclear charge IONS -->
+      <zion>               1     </zion>            <!-- ZIONN,            charge IONS -->
+    </ions>
+
+    <impurity>
+      <amn_imp>           12     </amn_imp>         <!-- AMN_IMP,          atomic mass IMPURITY -->
+      <zn_imp>             6     </zn_imp>          <!-- ZN_IMP,           nuclear charge IMPURITY -->
+      <max_z_imp>          6     </max_z_imp>       <!-- MAX_Z_IMP,        maximal charge IMPURITY -->
+    </impurity>
+
+    <neutrals>
+      <cold_neutrals>      1     </cold_neutrals>   <!-- COLD_NEUTRALS,    flag for cold neutrals -->
+      <thermal_neutrals>   1     </thermal_neutrals><!-- THERMAL_NEUTRALS, flag for thermal neutrals -->
+      <fast_neutrals>      0     </fast_neutrals>   <!-- FAST_NEUTRALS,    flag for fast neutrals -->
+      <NBI_neutrals>       0     </NBI_neutrals>    <!-- NBI_NEUTRALS,     flag for NBI neutrals -->
+    </neutrals>
+
+  </compositions>
+
+
+  <boundary>  
+    <type>
+      <psi_bnd_type>       2     </psi_bnd_type>     <!-- Type of boundary conditions CURRENT -->
+      <ne_bnd_type>        0	 </ne_bnd_type>      <!-- Type of boundary conditions ELECTRON DENSITY -->
+      <ni_bnd_type>        1	 </ni_bnd_type>      <!-- Type of boundary conditions ION DENSITY -->
+      <te_bnd_type>        1	 </te_bnd_type>      <!-- Type of boundary conditions ELECTRON TEMPERATURE -->
+      <ti_bnd_type>        1	 </ti_bnd_type>      <!-- Type of boundary conditions ION TEMPERATURE -->
+      <vtor_bnd_type>      0	 </vtor_bnd_type>    <!-- Type of boundary conditions ROTATION -->
+
+      <nimp_bnd_type>      1	 </nimp_bnd_type>    <!-- Type of boundary conditions IMPURITY DENSITY -->
+      <n0_bnd_type>        1	 </n0_bnd_type>      <!-- Type of boundary conditions NEUTRALS DENSITY -->
+      <t0_bnd_type>        1	 </t0_bnd_type>      <!-- Type of boundary conditions NEUTRALS TEMPERATURE -->
+    </type>
+
+    <value>
+      <psi_bnd_value>   1.7E6    </psi_bnd_value>    <!-- VALUE of boundary conditions CURRENT -->
+      <ne_bnd_value>    5.E19  	 </ne_bnd_value>     <!-- VALUE of boundary conditions ELECTRON DENSITY -->
+      <ni_bnd_value>    5.E19  	 </ni_bnd_value>     <!-- VALUE of boundary conditions ION DENSITY -->
+      <te_bnd_value>    5.E2	 </te_bnd_value>     <!-- VALUE of boundary conditions ELECTRON TEMPERATURE -->
+      <ti_bnd_value>    5.E2	 </ti_bnd_value>     <!-- VALUE of boundary conditions ION TEMPERATURE -->
+      <vtor_bnd_value>  0.E0   	 </vtor_bnd_value>   <!-- VALUE of boundary conditions ROTATION -->
+
+      <nimp_bnd_value>  6.E14 5.E14 4.E14 3.E14 2.E14 1.E14 </nimp_bnd_value>   <!-- VALUE of boundary conditions IMPURITY DENSITY -->
+
+      <n0_bnd_value_cold>     1.E14 2.E5 </n0_bnd_value_cold>    <!-- VALUE of boundary conditions for neutrals density {1:NION},{1:NIMP} cold-->
+      <n0_bnd_value_thermal>  0.E0 0.E0 </n0_bnd_value_thermal> <!-- VALUE of boundary conditions for neutrals density {1:NION},{1:NIMP} thermal-->
+      <t0_bnd_value_cold>     1.E0  1.E0 </t0_bnd_value_cold>    <!-- VALUE of boundary conditions for neutrals temperature {1:NION},{1:NIMP} cold-->
+      <t0_bnd_value_thermal>  1.E2  1.E2 </t0_bnd_value_thermal> <!-- VALUE of boundary conditions for neutrals temperature {1:NION},{1:NIMP} thermal-->
+    </value>
+
+  </boundary>
+
+
+  <equilibrium>
+    <ip>                1.7e6    </ip>               <!-- Current, geometrical axis of the device -->
+    <r_geo>             2.86     </r_geo>            <!-- R, geometrical axis of the device -->
+    <z_geo>             0.0      </z_geo>            <!-- Z, geometrical axis of the device -->
+    <b_geo>             2.56     </b_geo>            <!-- BT, geometrical axis of the device -->
+    <r_plasma>          2.95     </r_plasma>         <!-- R, plasma axis -->
+    <z_plasma>          0.0      </z_plasma>         <!-- Z, plasma axis -->
+    <b_plasma>          2.48     </b_plasma>         <!-- BT, plasma axis -->
+    <amin>              0.95     </amin>             <!-- a, minor radius equatorial plane -->          
+    <elong>              1.6	 </elong>            <!-- elongation -->
+    <tria_up>            0.2	 </tria_up>          <!-- upper triangularity -->
+    <tria_low>           0.2	 </tria_low>         <!-- lower triangularity -->
+    <eq_source>            1	 </eq_source>        <!-- Flag for initial equilibrium: 0-from input CPO; 1 - define from XML parameters -->
+  </equilibrium>
+
+
+  <solver>
+   <solver_type>           4     </solver_type>      <!-- choice of numerical solver -->
+   <sigma_source>          0     </sigma_source>     <!-- option for origin of Plasma electrical conductivity: 0: plasma collisions; 1: transport module; 2: source module -->
+   <start_time>          0.0	 </start_time>       <!-- starting time [s] --> 
+   <tau>              1.0e-3	 </tau>              <!-- TAU, time step [s] --> 
+   <amix>             1.0e-0	 </amix>             <!-- AMIX, mixing factor --> 
+   <convrec>          1.0e-4	 </convrec>          <!-- PRECISION --> 
+   <ntime>                10	 </ntime>            <!-- NTIME, number of time points -->   
+   <nsol>                  2	 </nsol>             <!-- Number of analytical example -->   
+   <ext_equil>             2     </ext_equil>        <!-- call external equilibrium: 0: none, 1: BDSEQ, 2: EMEQ, 3: HELENA -->   
+   <augment_equil>         0     </augment_equil>    <!-- if 1 add psi(R,Z), B(R,Z) using splines -->
+   <ext_source>            2     </ext_source>       <!-- call external source routines: if 2, call combine_source -->   
+   <ext_transport>         2     </ext_transport>    <!-- call external transport routines: if 1, call etaigb and neowes; if 2, call combine_transport -->   
+   <quasi_neut>            0     </quasi_neut>       <!-- Quasi neutrality:0-electrons; 1-ions from BC; 2-ions fron charge -->   
+   <icoronal>              0     </icoronal>         <!-- Coronal flag: "0"-OFF; "1" - replace boundary conditions by coronal; "2" - replace boundary conditions and profiles by coronal -->
+  </solver>
+
+
+  <startup>
+    <prof_flag>            3     </prof_flag>        <!--  -->
+    <j0_flag>              0     </j0_flag>          <!--  -->
+    <q0_flag>              1     </q0_flag>          <!--  -->
+  </startup>
+
+
+  <experimental>
+    <option>              -1     </option>           <!-- option #: 0: disabled -->
+  </experimental>
+
+</parameters>
+

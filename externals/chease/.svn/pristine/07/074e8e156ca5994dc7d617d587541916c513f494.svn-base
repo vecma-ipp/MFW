@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?jaxfront version=2.66;time=2015-07-03 15:32:28.15?>
+<parameters xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:NS1="ImportNamespace">
+       <COCOS_verbose>
+              <cocos_in>13</cocos_in>
+              <cocos_out>13</cocos_out>
+              <nverbose>1</nverbose>
+       </COCOS_verbose>
+       <choice_of_input_profiles>
+              <first_source>
+                     <pprime>
+                            <nppfun>4</nppfun>
+                     </pprime>
+              </first_source>
+              <second_source>
+                     <Istar_jphi>
+                            <nfunc>4</nfunc>
+                            <nsttp>2</nsttp>
+                     </Istar_jphi>
+              </second_source>
+       </choice_of_input_profiles>
+       <radial_input_mesh>
+              <rho_pol_norm_standard_chease>
+                     <nfunrho>0</nfunrho>
+                     <nrhomesh>0</nrhomesh>
+              </rho_pol_norm_standard_chease>
+       </radial_input_mesh>
+       <mapping_mesh_output>
+              <equal_arc_length>
+                     <NER>1</NER>
+                     <NEGP>-1</NEGP>
+              </equal_arc_length>
+       </mapping_mesh_output>
+       <rescaling_options>
+              <specify_q_value_at_csspec>
+                     <ncscal>1</ncscal>
+                     <csspec>0</csspec>
+                     <qspec>0.95</qspec>
+              </specify_q_value_at_csspec>
+       </rescaling_options>
+       <mesh_characteristics>
+              <number_intervals_equil_mesh>
+                     <standard>
+                            <NS>40</NS>
+                            <NT>40</NT>
+                            <epslon>1.0E-8</epslon>
+                     </standard>
+              </number_intervals_equil_mesh>
+              <number_intervals_mapping_mesh>
+                     <standard>
+                            <NPSI>180</NPSI>
+                            <NCHI>180</NCHI>
+                            <NISO>180</NISO>
+                     </standard>
+              </number_intervals_mapping_mesh>
+              <number_eqdskRZ_mesh_and_box>
+                     <standard>
+                            <nrbox>129</nrbox>
+                            <nzbox>129</nzbox>
+                     </standard>
+              </number_eqdskRZ_mesh_and_box>
+              <various_mesh_packing>
+                     <standard>
+                            <nmesha_stability_s_mesh_packing_on_s_values>
+                                   <nmesha>1</nmesha>
+                                   <npoida>2</npoida>
+                                   <aplace>9.6E-1 1.0E0</aplace>
+                                   <awidth>7.0E-2 2.0E-2</awidth>
+                                   <solpda>0.7</solpda>
+                                   <ndifps>0</ndifps>
+                            </nmesha_stability_s_mesh_packing_on_s_values>
+                            <nmeshb_intermediate_s_mesh_nopacking>
+                                   <nmeshb>0</nmeshb>
+                            </nmeshb_intermediate_s_mesh_nopacking>
+                            <nmeshc_equil_sigma_mesh_packing>
+                                   <nmeshc>1</nmeshc>
+                                   <npoidc>2</npoidc>
+                                   <cplace>9.5E-1 9.9E-1 1.0E0</cplace>
+                                   <cwidth>1.0E-1 2.0E-2 5.0E-2</cwidth>
+                                   <solpdc>0.7</solpdc>
+                            </nmeshc_equil_sigma_mesh_packing>
+                            <nmeshd_equil_theta_mesh_auto_packing>
+                                   <nmeshd>0</nmeshd>
+                                   <ndift>2</ndift>
+                            </nmeshd_equil_theta_mesh_auto_packing>
+                            <nmeshe_chi_mesh_packing>
+                                   <nmeshe>1</nmeshe>
+                                   <npoide>4</npoide>
+                                   <eplace>-1.7E0 -1.7E0 1.7E0 1.7E0</eplace>
+                                   <ewidth>1.8E-1 8.0E-2 1.8E-1 8.0E-2</ewidth>
+                                   <solpde>0.5</solpde>
+                            </nmeshe_chi_mesh_packing>
+                     </standard>
+              </various_mesh_packing>
+       </mesh_characteristics>
+       <plasma_boundary>
+              <from_input_RZ_array>
+                     <nsurf>6</nsurf>
+              </from_input_RZ_array>
+       </plasma_boundary>
+       <nideal_output_mapping_choice>
+              <standard_kepler_eqdsk>
+                     <nideal>6</nideal>
+              </standard_kepler_eqdsk>
+       </nideal_output_mapping_choice>
+       <link_to_database_ala_itm_imas>
+              <no_link>
+                     <nitmopt>22</nitmopt>
+              </no_link>
+       </link_to_database_ala_itm_imas>
+       <Others>
+              <b0exp>1</b0exp>
+              <r0exp>1</r0exp>
+              <signb0xp>-9</signb0xp>
+              <signipxp>-9</signipxp>
+              <relax>0.2</relax>
+              <ninmap>40</ninmap>
+              <ninsca>40</ninsca>
+              <cfnress>1</cfnress>
+              <cpress>1</cpress>
+              <neqdsk>0</neqdsk>
+              <nideal>6</nideal>
+              <rboxlen>0</rboxlen>
+              <rboxlft>0</rboxlft>
+              <zboxlen>0</zboxlen>
+              <zboxmid>-1.0E30</zboxmid>
+              <nanal>0</nanal>
+              <nbal>1</nbal>
+              <nblc0>1</nblc0>
+              <nblopt>0</nblopt>
+              <nbpsout>100</nbpsout>
+              <nbsexpq>0</nbsexpq>
+              <ndiagop>1</ndiagop>
+              <neonbqs>6</neonbqs>
+              <neqdxtpo>1</neqdxtpo>
+              <nfftopt>1</nfftopt>
+              <nopt>0</nopt>
+              <nplot>0</nplot>
+              <nprof2d>1</nprof2d>
+              <npropt>2</npropt>
+              <nprpsi>0</nprpsi>
+              <nrscal>0</nrscal>
+              <nsmooth>1</nsmooth>
+              <nsour>2</nsour>
+              <ntcase>0</ntcase>
+              <ntest>0</ntest>
+              <ntmf0>0</ntmf0>
+              <nturn>20</nturn>
+              <tensbnd>-0.1</tensbnd>
+              <tensprof>-0.1</tensprof>
+              <ap>1.0E-1 5.0E-1</ap>
+              <ap2>1.0E-1 5.0E-1</ap2>
+              <at>1.0E-1 5.0E-1</at>
+              <at2>1.0E-1 5.0E-1</at2>
+              <at3>1.0E-1 5.0E-1</at3>
+              <at4>1.0E-1 5.0E-1</at4>
+              <comments>full new default xml input</comments>
+              <etaei>1.5</etaei>
+              <msmax>1</msmax>
+              <nipr>1</nipr>
+              <npp>1</npp>
+              <nrfp>0</nrfp>
+              <rpeop>0.5</rpeop>
+              <predge>0</predge>
+              <psiscl>1</psiscl>
+              <rext>1</rext>
+              <rzion>1</rzion>
+              <scalne>0</scalne>
+              <afbs>0.0E1 0.0E1</afbs>
+              <afbs2>0.0E1 0.0E1</afbs2>
+              <bentaxis>1.015</bentaxis>
+              <bentqprofile>0</bentqprofile>
+              <bentradius>0.5</bentradius>
+              <bsfrac>0.5</bsfrac>
+              <cfbal>1</cfbal>
+              <qvalneo>9.0E-1 1.0E0 1.5E0 2.0E0 3.0E0</qvalneo>
+              <cfnresso>1</cfnresso>
+              <cpresso>1</cpresso>
+              <nmgaus>4</nmgaus>
+              <nppr>30</nppr>
+              <nprofz>0</nprofz>
+              <nsgaus>4</nsgaus>
+              <ntgaus>4</ntgaus>
+              <ntnova>64</ntnova>
+              <nv>60</nv>
+              <nvexp>0</nvexp>
+              <nsym>0</nsym>
+              <gamma>1.667</gamma>
+              <pangle>0</pangle>
+              <rz0w>0</rz0w>
+              <r0w>1</r0w>
+              <scexp>1</scexp>
+              <slimit>100000</slimit>
+              <snumber>1.0E7</snumber>
+              <shift_p>0</shift_p>
+              <nbsfun>1</nbsfun>
+              <nbsopt>0</nbsopt>
+              <nbstrp>1</nbstrp>
+       </Others>
+</parameters>

@@ -1,0 +1,48 @@
+!...  find derivatives of psi and then the shear pieces
+
+     DO i0=2,nx0
+        i=i0+ngdx
+        j0=fsfc(i)%ny0
+        j1=1+ngdy
+        j2=j0+ngdy
+
+        DO j=j1,j2
+           area=fsfc(i)%area2(j)
+           duu(:,1:nvars)=fsfc(i)%uu(:,1:nvars,j)
+
+           dpsidr=0.
+           dpsidz=0.
+
+           DO m0=1,6
+              mp=m0+1
+              mm=m0-1
+              IF (m0 == 6) mp=1
+              IF (m0 == 1) mm=6
+
+              drdn=duu(m0,muc)-duu(0,muc)
+              drdx=duu(mp,muc)-duu(0,muc)
+              dzdn=duu(m0,mux)-duu(0,mux)
+              dzdx=duu(mp,mux)-duu(0,mux)
+
+              det=1./(drdn*dzdx-drdx*dzdn)
+              dndr=dzdx*det
+              dndz=-drdx*det
+              dxdr=-dzdn*det
+              dxdz=drdn*det
+
+              areat=duu(m0,muc)*duu(mp,mux) - duu(mp,muc)*duu(m0,mux) &
+                   + duu(mp,muc)*duu(0,mux) - duu(0,muc)*duu(mp,mux) &
+                   + duu(0,muc)*duu(m0,mux) - duu(m0,muc)*duu(0,mux)
+              areat=areat/2.
+              areat=areat/area
+
+              dpsidn=duu(m0,mupsi)-duu(0,mupsi)
+              dpsidx=duu(mp,mupsi)-duu(0,mupsi)
+              dpsidr=dpsidr+(dpsidn*dndr+dpsidx*dxdr)*areat
+              dpsidz=dpsidz+(dpsidn*dndz+dpsidx*dxdz)*areat
+           END DO
+
+!           fsfc(i)%uu(0,1,j)=
+
+        END DO
+     END DO

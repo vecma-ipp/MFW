@@ -1,0 +1,99 @@
+This compiles as a library to which you link
+    If $LIB_DIR is where you have the libbohmgb.a file which is built by
+    typing 'make' then the link flag for the toplevel workflow code is
+    -L$LIB_DIR -lbohmgb
+
+The call is according to
+
+  interface
+    subroutine bohmgb(eq, coreprof, coretransp, code_parameters)
+      use euitm_schemas
+      type (type_equilibrium), pointer :: eq(:)
+      type (type_coreprof), pointer :: coreprof(:)
+      type (type_coretransp), pointer :: coretransp(:)
+      type (type_param) :: code_parameters
+    end subroutine bohmgb
+  end interface
+
+You have to load the eq and coreprof CPOs in an interface routine.
+    a, B, and R are taken from the eq geometry/global parameters, and
+    the q profile from the eq profiles_1d in eq(1), and the ne, ni, 
+    Te, Ti, and Zeff profiles from coreprof(1).  The grid is rho_tor, 
+    while rho_tor_norm is not used.  The coretransp grid is taken from
+    coreprof while the q profile from eq is interpolated.
+A simple set of formulae is used to give turbulent fluxes and consistent
+    transport coefficients in a simple Bohm-GyroBohm model.
+Ultimately, the transport is given in terms of the electron and ion
+    densities and temperatures, while their derivatives are not needed.
+By convention the same grid as the coreprof one is used.  The input
+    parameters are all switches, with default values as compiled in
+    bohmgb_coeff.f90.  The essential model is for heat transport,
+    but the possibility is given to effect particle and momentum
+    transport according to simple ratio rules.  The basic physics of the
+    model can be explored by playing with these values.
+The output is in terms of transport coefficients only.  The transport
+    solver will decide how to treat fluxes.
+
+The compilation flags assume 64 bit mode
+This has been tested only under the pgf95 compiler
+
+No provision is made for MPI.  If you use this with an MPI code be sure
+to set all the write flags to .false.
+
+The environment variable ITM_UAL has to be set to it can see the 
+    euitm_schemas.mod and itm_types.mod and itm_constants.mod files
+
+The files in the inputs directory give the XML schema and input files
+    which have to be present in the working directory.  
+
+There is a profile_check program provided so you can check your
+implementation.  You type make test and then more prof.dat.
+The following are for the default parameters except for the threshold.
+
+Here is the result with the default settings...
+
+  i   rho_tor   ne(19)   Te(3)    Ti(3)      D      chi_e    chi_i   chi_phi
+  1    0.013    5.997    4.992    4.992    0.000    0.000    0.000    0.000
+  2    0.038    5.969    4.932    4.932    0.000    0.675    1.137    0.000
+  3    0.063    5.915    4.814    4.814    0.000    1.348    2.285    0.000
+  4    0.088    5.835    4.642    4.642    0.000    2.014    3.446    0.000
+  5    0.113    5.730    4.423    4.423    0.000    2.670    4.618    0.000
+  6    0.138    5.601    4.162    4.162    0.000    3.310    5.797    0.000
+  7    0.163    5.451    3.870    3.870    0.000    3.931    6.977    0.000
+  8    0.188    5.280    3.556    3.556    0.000    4.528    8.146    0.000
+  9    0.213    5.091    3.227    3.227    0.000    5.094    9.289    0.000
+ 10    0.238    4.887    2.894    2.894    0.000    5.622   10.385    0.000
+ 11    0.263    4.670    2.563    2.563    0.000    6.101   11.408    0.000
+ 12    0.288    4.442    2.243    2.243    0.000    6.522   12.329    0.000
+ 13    0.313    4.207    1.940    1.940    0.000    6.872   13.117    0.000
+ 14    0.338    3.965    1.657    1.657    0.000    7.140   13.744    0.000
+ 15    0.363    3.721    1.398    1.398    0.000    7.315   14.182    0.000
+ 16    0.388    3.475    1.166    1.166    0.000    7.389   14.412    0.000
+ 17    0.413    3.232    0.960    0.960    0.000    7.356   14.422    0.000
+ 18    0.438    2.991    0.781    0.781    0.000    7.218   14.209    0.000
+ 19    0.463    2.756    0.628    0.628    0.000    6.978   13.783    0.000
+ 20    0.488    2.528    0.499    0.499    0.000    6.645   13.161    0.000
+
+... and here is the result with diff_e = 0.3 and diff_phi = 0.6
+
+  i   rho_tor   ne(19)   Te(3)    Ti(3)      D      chi_e    chi_i   chi_phi
+  1    0.013    5.997    4.992    4.992    0.000    0.000    0.000    0.000
+  2    0.038    5.969    4.932    4.932    0.202    0.675    1.137    0.682
+  3    0.063    5.915    4.814    4.814    0.404    1.348    2.285    1.371
+  4    0.088    5.835    4.642    4.642    0.604    2.014    3.446    2.068
+  5    0.113    5.730    4.423    4.423    0.801    2.670    4.618    2.771
+  6    0.138    5.601    4.162    4.162    0.993    3.310    5.797    3.478
+  7    0.163    5.451    3.870    3.870    1.179    3.931    6.977    4.186
+  8    0.188    5.280    3.556    3.556    1.358    4.528    8.146    4.888
+  9    0.213    5.091    3.227    3.227    1.528    5.094    9.289    5.574
+ 10    0.238    4.887    2.894    2.894    1.686    5.622   10.385    6.231
+ 11    0.263    4.670    2.563    2.563    1.830    6.101   11.408    6.845
+ 12    0.288    4.442    2.243    2.243    1.957    6.522   12.329    7.397
+ 13    0.313    4.207    1.940    1.940    2.062    6.872   13.117    7.870
+ 14    0.338    3.965    1.657    1.657    2.142    7.140   13.744    8.246
+ 15    0.363    3.721    1.398    1.398    2.194    7.315   14.182    8.509
+ 16    0.388    3.475    1.166    1.166    2.217    7.389   14.412    8.647
+ 17    0.413    3.232    0.960    0.960    2.207    7.356   14.422    8.653
+ 18    0.438    2.991    0.781    0.781    2.165    7.218   14.209    8.526
+ 19    0.463    2.756    0.628    0.628    2.093    6.978   13.783    8.270
+ 20    0.488    2.528    0.499    0.499    1.994    6.645   13.161    7.897

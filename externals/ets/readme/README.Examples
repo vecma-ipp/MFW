@@ -1,0 +1,5 @@
+To get the ETS examples, execute the following in the trunk/ETS
+directory:
+
+svn co http://gforge.efda-itm.eu/svn/ets/branches/ETS_Examples Examples
+

@@ -1,0 +1,22 @@
+GOT_PERFLIB = 'yes'
+FC=f95f
+FCOPTS=-g -Hasu --trace
+FCOPTS=-g -Haesux --chkglobal --trace --trap
+FCOPTS=-g -Hasu --trace
+FCOPTS=-g -Hasu --trace --trap
+MOD=mod
+LIBS=-llapack -lblas
+DEFINES = -DUAL
+
+UAL=local
+ifeq ($(UAL),yes)
+  INCLUDE=-I /afs/efda-itm.eu/project/switm/ual/${UAL_VERSION}/include/amd64_pgi
+  LIBSCHEMAS = 
+  LIBS += -L/afs/efda-itm.eu/project/switm/ual/${UAL_VERSION}/lib -lUALFORTRANInterface_pgi
+else
+ifeq ($(UAL),local)
+  INCLUDE= -I ${MDSPLUS_DIR}/include
+  LIBSCHEMAS = 
+  LIBS += -L ${MDSPLUS_DIR}/lib -lTreeShr -lTdiShr -lMdsShr -lXTreeShr -lCacheShr # -ljava
+endif
+endif

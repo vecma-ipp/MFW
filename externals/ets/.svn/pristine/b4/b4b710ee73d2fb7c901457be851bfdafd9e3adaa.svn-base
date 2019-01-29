@@ -1,0 +1,26 @@
+GOT_PERFLIB = 'no'
+FC=gfortran
+FCOPTS=-g
+CC=gcc
+MOD=mod
+LIBS=-llapack -lblas
+DEFINES = -DUAL
+JAVA_DIR = /Developer/SDKs/MacOSX10.6.sdk/System/Library/Frameworks/JavaVM.framework/Versions/A
+
+
+UAL=local
+ifeq ($(UAL),yes)
+  INCLUDE=-I /afs/efda-itm.eu/project/switm/ual/${UAL_VERSION}/include/amd64_g95
+  LIBSCHEMAS = 
+  LIBS += -L/afs/efda-itm.eu/project/switm/ual/${UAL_VERSION}/lib -lUALFORTRANInterface_g95
+else
+ifeq ($(UAL),local)
+  DEFINES += -DOLD_MDS
+  INCLUDE = -I$(MDSPLUS_DIR)/include -I$(JAVA_DIR)/Headers # -I /afs/efda-itm.eu/project/switm/hdf5/amd64_pgi/include
+  LIBSCHEMAS = 
+  LIBS += # -L/afs/efda-itm.eu/project/switm/ual/${UAL_VERSION}/lib -lUALLowLevel
+  LIBS += -L$(MDSPLUS_DIR)/lib -lTreeShr -lTdiShr -lMdsShr -lXTreeShr -lCacheShr -lMdsIpShr # -ljava
+#  LIBS += -L/afs/efda-itm.eu/project/switm/hdf5/amd64_pgi/lib
+endif
+endif
+

@@ -1,0 +1,50 @@
+GOT_PERFLIB = 'yes'
+FC=g95 -fno-second-underscore -fPIC -ffree-line-length-huge -fmod=${OBJECTCODE} -ftrace=full
+FCOPTS=-g ${INCLUDE}
+MOD=mod
+LIBS += -llapack -lblas
+INCLUDE=
+DEFINES += -DUAL
+
+AMNS=yes
+ifeq ($(AMNS),yes)
+INCLUDE  += ${shell eval-pkg-config --cflags amns-g95}
+LIBS     += ${shell eval-pkg-config --libs amns-g95}
+endif
+
+CJK=yes
+ifeq ($(CJK),yes)
+endif
+
+ITMTYPES=yes
+ifeq ($(ITMTYPES),yes)
+INCLUDE  += ${shell eval-pkg-config --cflags itmtypes-g95}
+LIBS     += ${shell eval-pkg-config --libs itmtypes-g95}
+endif
+
+ITMCONSTANTS=yes
+ifeq ($(ITMCONSTANTS),yes)
+INCLUDE  += ${shell eval-pkg-config --cflags itmconstants-g95}
+LIBS     += ${shell eval-pkg-config --libs itmconstants-g95}
+endif
+
+XMLLIB=yes
+ifeq ($(XMLLIB),yes)
+INCLUDE  += ${shell eval-pkg-config --cflags xmllib-amd64_g95_0.92}
+LIBS     += ${shell eval-pkg-config --libs xmllib-amd64_g95_0.92}
+endif
+
+ifeq ($(CORE_EDGE),yes)
+  SOLPSTOP = ${HOME}/SVN/ETS/trunk/Core-Edge/SOLPS/solps5.0-ITM-restructure
+  SOLPS_LIB = ${SOLPSTOP}/src/lib/linux.g95
+  B2LIB = ${SOLPSTOP}/src/Braams/b2/base/linux.g95
+  NAG = -lnag
+  LIBS += -Wl,-rpath=${B2LIB} -L${B2LIB} -lb2 -lb2 -leirene ${B2LIB}/grlib.o -Wl,-rpath=${SOLPS_LIB} -L${SOLPS_LIB} ${NAG} ${NAG} -lnetcdf
+endif
+
+UAL=yes
+ifeq ($(UAL),yes)
+  INCLUDE += ${shell eval-pkg-config --cflags ual-g95}
+  LIBSCHEMAS = 
+  LIBS += ${shell eval-pkg-config --libs ual-g95}
+endif

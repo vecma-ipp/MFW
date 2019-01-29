@@ -1,0 +1,9 @@
+!...  define vars from uufl
+
+  nefl=uufl(l,i,1)
+  nifl=uufl(l,i,2)
+  phifl=uufl(l,i,muphi)
+  phigfl=uufl(l,i,muphig)
+  phigefl=uufl(l,i,muphige)
+  hefl=nefl-phigefl
+  vorfl=nefl-nifl

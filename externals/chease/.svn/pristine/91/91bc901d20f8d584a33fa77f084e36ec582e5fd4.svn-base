@@ -1,0 +1,63 @@
+#
+#
+CHEASE_MACHINE = linux_nohdf5
+ ifneq (,$(findstring efda-itm.eu,$(HOSTNAME)))
+   # allows to match all enea14x.efda-itm.eu machines
+   CHEASE_MACHINE = gateway
+ endif
+ ifneq (,$(findstring lac,$(HOSTNAME)))
+   # allows to match all lacx.epfl.ch machines
+   CHEASE_MACHINE = linux_nohdf5
+ endif
+ ifneq (,$(findstring lac5,$(HOSTNAME)))
+   # allows to match all lacx.epfl.ch machines
+   CHEASE_MACHINE = linux_hdf5
+ endif
+ ifneq (,$(findstring pleiades,$(HOSTNAME)))
+   # allows to match all pleiadesx machines
+   CHEASE_MACHINE = pleiades
+ endif
+ ifneq (,$(findstring darwin,$(HOSTNAME)))
+   CHEASE_MACHINE = darwin
+ endif
+ ifneq (,$(findstring sun,$(HOSTNAME)))
+   CHEASE_MACHINE = sun
+ endif
+ ifneq (,$(findstring crpppc74,$(HOSTNAME)))
+   CHEASE_MACHINE = crpppc74
+ endif
+ ifneq (,$(findstring crpppc214,$(HOSTNAME)))
+   CHEASE_MACHINE = crpppc214
+ endif
+ ifneq (,$(findstring bg-fe1,$(HOSTNAME)))
+   CHEASE_MACHINE = bg-fe1
+ endif
+ ifneq (,$(findstring guiness,$(HOSTNAME)))
+   CHEASE_MACHINE = guiness
+ endif
+ ifneq (,$(findstring iter.org,$(HOSTNAME)))
+   CHEASE_MACHINE = ITER
+ endif
+ ifneq (,$(findstring g0,$(HOSTNAME)))
+   # allows to match all enea14x.efda-itm.eu machines
+   CHEASE_MACHINE = gateway
+ endif
+ ifneq (,$(findstring turing,$(HOSTNAME)))
+   CHEASE_MACHINE = turing
+ endif
+ ifneq (,$(findstring ada,$(HOSTNAME)))
+   CHEASE_MACHINE = ada
+ endif
+ ifneq (,$(findstring curie,$(HOSTNAME)))
+   CHEASE_MACHINE = curie
+ endif
+ ifneq (,$(findstring qa0,$(HOSTNAME)))
+   CHEASE_MACHINE = aug
+ endif
+ ifneq (,$(findstring occigen,$(HOSTNAME)))
+   CHEASE_MACHINE = occigen
+ endif
+ ifneq (,$(findstring yes,$(ITM_ENVIRONMENT_LOADED)))
+    # overwrites the CHEASE_MACHINE set in Makefile.define_MACHINE by using hostname
+    CHEASE_MACHINE = gateway_with_itm
+ endif

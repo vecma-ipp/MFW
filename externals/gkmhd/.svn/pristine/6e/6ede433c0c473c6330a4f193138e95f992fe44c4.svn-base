@@ -1,0 +1,14 @@
+MODULE Varsfl
+
+  USE Dim
+
+  IMPLICIT NONE
+
+  INTEGER :: npvarsfl
+
+  COMPLEX, DIMENSION(:,:,:), ALLOCATABLE :: uufl
+  COMPLEX :: nefl,nifl,phifl,phigfl,phigefl,hefl,vorfl
+  COMPLEX ::  vexfl,uexfl
+  COMPLEX ::  veyfl,ueyfl
+
+END MODULE Varsfl

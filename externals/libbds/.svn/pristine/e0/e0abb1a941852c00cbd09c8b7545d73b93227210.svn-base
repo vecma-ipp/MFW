@@ -1,0 +1,4 @@
+FC       = g95
+FFLAGS   = -r8 -fPIC -fmod=include -fno-second-underscore -ffree-line-length-huge
+DBGFLAGS = -g -O0 -Wall -ftrace=full -fbounds-check
+OPTFLAGS = -O2 

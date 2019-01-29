@@ -1,0 +1,77 @@
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <!-- document element -->
+  <xs:element name="parameters">				
+    <xs:annotation>
+     <xs:documentation>
+      GLOBAL: parameters for emeq
+      </xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:all>
+        <xs:element ref="dims" maxOccurs="1"/>
+        <xs:element ref="solver" maxOccurs="1"/>
+      </xs:all>
+    </xs:complexType>
+  </xs:element>
+
+  <!-- dims parameters -->
+  <xs:element name="dims">					
+    <xs:annotation>
+     <xs:documentation>
+      BLOCK: specify the dimensions
+      </xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:all>
+         <xs:element ref="neq" maxOccurs="1"/>
+      </xs:all>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="neq" type="xs:integer">			
+    <xs:annotation>
+     <xs:documentation>
+      NEQ,   number of equilibrium points
+      </xs:documentation>
+    </xs:annotation>
+  </xs:element>
+
+  <!-- solver parameters -->
+  <xs:element name="solver">					
+    <xs:annotation>
+   <xs:documentation>
+      BLOCK: parameters for the solver
+      </xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:all>
+        <xs:element ref="convergence" maxOccurs="1"/>
+        <xs:element ref="aceqlb" maxOccurs="1"/>
+        <xs:element ref="itermax" maxOccurs="1"/>
+      </xs:all>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="convergence" type="xs:float">		
+    <xs:annotation>
+   <xs:documentation>
+      convergence criterion in EQUILIBRIUM_INTERFACE
+      </xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:element name="aceqlb" type="xs:float">			
+    <xs:annotation>
+   <xs:documentation>
+      convergence criterion in E3ASTR
+      </xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:element name="itermax" type="xs:integer">			
+    <xs:annotation>
+   <xs:documentation>
+      maximum iterations in E3ASTR
+      </xs:documentation>
+    </xs:annotation>
+  </xs:element>
+
+</xs:schema>

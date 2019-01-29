@@ -1,0 +1,48 @@
+#!/bin/sh
+
+curdir=`pwd`
+
+export CHEASE_ROOT=$PWD/../../..  #this is the directory in which you have src-f90, WK, etc   
+export NIDEAL10=$CHEASE_ROOT'/WK/TESTCASES/NIDEAL10'
+export PATH=$PATH:$CHEASE_ROOT # to add path for o.chease_to_cols
+
+mkdir -p /tmp/$USER/WKnideal10
+cp -pr $NIDEAL10/input/* /tmp/$USER/WKnideal10/
+cd /tmp/$USER/WKnideal10
+
+export TEST_FILE='splus'    #can also be tcv.snd1
+
+cp EXPEQ.$TEST_FILE EXPEQ
+cp i.$TEST_FILE chease_namelist
+cp i.$TEST_FILE o.i.$TEST_FILE
+$CHEASE_ROOT/src-f90/chease_imas >> o.i.$TEST_FILE
+echo $CHEASE_ROOT
+
+o.chease_to_cols o.i.$TEST_FILE o.i.$TEST_FILE.cols
+mv hamada.dat hamada.$TEST_FILE.dat
+mv neoart.dat neoart.$TEST_FILE.dat
+
+echo "addpath $CHEASE_ROOT/WK/TESTCASES/NIDEAL10/matlab/" > test_$TEST_FILE.m
+echo "[H1,H2,Hdiff,N1,N2,Ndiff]=chease_diff(1e-4,'$TEST_FILE','$CHEASE_ROOT/WK/TESTCASES/NIDEAL10/output_ref/','$TEST_FILE','./');" >> test_$TEST_FILE.m
+echo "disp('type quit when ok to continue')" >> test_$TEST_FILE.m
+
+matlab -nodesktop -r "test_$TEST_FILE"
+
+export TEST_FILE='tcv.snd1'    #can also be tcv.snd1
+
+cp EXPEQ.$TEST_FILE EXPEQ
+cp i.$TEST_FILE chease_namelist
+cp i.$TEST_FILE o.i.$TEST_FILE
+$CHEASE_ROOT/src-f90/chease_imas >> o.i.$TEST_FILE
+o.chease_to_cols o.i.$TEST_FILE o.i.$TEST_FILE.cols
+mv hamada.dat hamada.$TEST_FILE.dat
+mv neoart.dat neoart.$TEST_FILE.dat
+
+#  cannot have file.next.m filename with 2 "dots" for matlab script, so use just test_file.m nameing
+echo "addpath $CHEASE_ROOT/WK/TESTCASES/NIDEAL10/matlab/" > test_file.m
+echo "[H1,H2,Hdiff,N1,N2,Ndiff]=chease_diff(1e-4,'$TEST_FILE','$CHEASE_ROOT/WK/TESTCASES/NIDEAL10/output_ref/','$TEST_FILE','./');" >> test_file.m
+echo "disp('type quit when ok to continue')" >> test_file.m
+
+matlab -nodesktop -r "test_file"
+
+

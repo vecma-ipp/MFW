@@ -1,0 +1,195 @@
+PREFIX=$(HOME)
+
+F90 = mpif90
+#OPT = -O3 -axPW
+OPT = -g -traceback  -CB
+F90FLAGS = $(OPT) -I${HDF5}/lib
+CC = cc
+CFLAGS = -O2
+LDFLAGS = $(OPT) -L. -L${HDF5}/lib
+LIBS =  -lfutils -lhdf5_fortran -lhdf5 -lz -lgcc_s -lcrypt -lssl
+LIBS =  -lfutils -lhdf5_fortran -lhdf5 -lz
+MPIRUN = mpiexec -n 4
+
+SERIAL = ex1 ex2 ex3 ex4 ex7 ex8 ex9 ex11 ex12
+PARA   = pex1 pex3 pex4 pex5 pex6 pex7 pex8 pex9 ex10
+
+.SUFFIXES:
+.SUFFIXES: .o .c .f90
+
+.f90.o:
+	$(F90) $(F90FLAGS) -c $<
+
+examples: $(SERIAL) ex6 $(PARA) pex5r
+
+install: debug opt
+
+lib: libfutils.a getfile
+
+ex1:	ex1.o
+	$(F90) $(LDFLAGS) -o $@ $<  $(LIBS)
+
+ex2:	ex2.o
+	$(F90) $(LDFLAGS) -o $@ $<  $(LIBS)
+
+ex3:	ex3.o
+	$(F90) $(LDFLAGS) -o $@ $<  $(LIBS)
+
+ex4:	ex4.o
+	$(F90) $(LDFLAGS) -o $@ $<  $(LIBS)
+
+ex5:	ex5.o
+	$(F90) $(LDFLAGS) -o $@ $<  $(LIBS)
+
+ex6:	ex6.o
+	$(F90) $(LDFLAGS) -o $@ $<  $(LIBS)
+
+ex7:	ex7.o
+	$(F90) $(LDFLAGS) -o $@ $<  $(LIBS)
+
+ex8:	ex8.o
+	$(F90) $(LDFLAGS) -o $@ $<  $(LIBS)
+
+ex9:	ex9.o
+	$(F90) $(LDFLAGS) -o $@ $<  $(LIBS)
+
+ex10: ex10.o
+	$(F90) $(LDFLAGS) -o $@ $<  $(LIBS)
+
+ex11: ex11.o
+	$(F90) $(LDFLAGS) -o $@ $<  $(LIBS)
+
+ex12: ex12.o
+	$(F90) $(LDFLAGS) -o $@ $<  $(LIBS)
+
+ex13: ex13.o
+	$(F90) $(LDFLAGS) -o $@ $<  $(LIBS)
+
+ex14: ex14.o
+	$(F90) $(LDFLAGS) -o $@ $<  $(LIBS)
+
+pex1:	pex1.o
+	$(F90) $(LDFLAGS) -o $@ $<  $(LIBS)
+
+pex3:	pex3.o
+	$(F90) $(LDFLAGS) -o $@ $<  $(LIBS)
+
+pex4:	pex4.o
+	$(F90) $(LDFLAGS) -o $@ $<  $(LIBS)
+
+pex5:	pex5.o
+	$(F90) $(LDFLAGS) -o $@ $<  $(LIBS)
+
+pex5r:	pex5r.o
+	$(F90) $(LDFLAGS) -o $@ $<  $(LIBS)
+
+pex6:	pex6.o
+	$(F90) $(LDFLAGS) -o $@ $<  $(LIBS)
+
+pex7:	pex7.o
+	$(F90) $(LDFLAGS) -o $@ $<  $(LIBS)
+
+pex8:	pex8.o
+	$(F90) $(LDFLAGS) -o $@ $<  $(LIBS)
+
+pex9:	pex9.o
+	$(F90) $(LDFLAGS) -o $@ $<  $(LIBS)
+
+pex10:	pex10.o
+	$(F90) $(LDFLAGS) -o $@ $<  $(LIBS)
+
+pex11:	pex11.o
+	$(F90) $(LDFLAGS) -o $@ $<  $(LIBS)
+
+getfile: getfile.o
+	$(F90) $(LDFLAGS) -o $@ $<  $(LIBS)
+
+testmem: testmem.o cutils.o
+	$(F90) $(LDFLAGS) -o $@ $< cutils.o
+
+libfutils.a: futils.o cutils.o buffer.o vis3d.o uniproc.o
+	ar r $@ $?
+	ranlib $@
+
+futils.o: append.tpl zappend.tpl \
+          putarr.tpl cputarr.tpl putarrnd.tpl cputarrnd.tpl \
+          getarr.tpl cgetarr.tpl getarrnd.tpl cgetarrnd.tpl
+
+buffer.o: futils.o
+
+vis3d.o: futils.o
+
+test_s:	$(SERIAL) ex5
+	@for x in $(SERIAL); do \
+	echo === Running $$x ===;\
+	./$$x ;\
+        echo ;\
+	done
+	@echo === Running ex5 ===;\
+	./ex5 < ex5.in ;\
+        echo ;\
+
+test_p:	$(PARA) pex10 pex11
+	@for x in $(PARA); do \
+	echo === Running $$x ===;\
+	$(MPIRUN) ./$$x ;\
+        echo ;\
+	done ;\
+	echo === Running pex10 ===;\
+	mpiexec -n 12 ./pex10 ;\
+        echo ;\
+	echo === Running pex11 ===;\
+	mpiexec -n 8 ./pex11 ;\
+        echo ;\
+
+debug:
+	make distclean
+	make "OPT = -g -traceback  -CB" libfutils.a
+	mkdir -p $(PREFIX)/{lib,include}/g
+	cp -p libfutils.a $(PREFIX)/lib/g
+	cp -p *.mod $(PREFIX)/include/g
+
+opt:
+	make distclean
+	make "OPT = -O3 -axPW" libfutils.a
+	mkdir -p $(PREFIX)/{lib,include}/O
+	cp -p libfutils.a $(PREFIX)/lib/O
+	cp -p *.mod $(PREFIX)/include/O
+
+uninstall:
+	rm -f $(PREFIX)/include{O,g}/futils.mod
+	rm -f $(PREFIX)/include{O,g}/vis3d.mod
+	rm -f $(PREFIX)/include{O,g}/hashtable.mod
+	rm -f $(PREFIX)/lib{O,g}/libfutils.a
+
+ex1.o:	libfutils.a
+ex2.o:	libfutils.a
+ex3.o:	libfutils.a
+ex4.o:	libfutils.a
+ex5.o:	libfutils.a
+ex6.o:	libfutils.a
+ex7.o:	libfutils.a
+ex8.o:	libfutils.a
+ex9.o:	libfutils.a
+ex10.o: libfutils.a
+ex11.o: libfutils.a
+ex12.o: libfutils.a
+ex13.o: libfutils.a
+ex14.o: libfutils.a
+pex1.o:	libfutils.a
+pex3.o:	libfutils.a
+pex4.o:	libfutils.a
+pex5.o:	libfutils.a
+pex5r.o: libfutils.a
+pex6.o:	libfutils.a
+pex7.o:	libfutils.a
+pex8.o:	libfutils.a
+pex9.o:	libfutils.a
+pex10.o:	libfutils.a
+pex11.o:	libfutils.a
+getfile.o:	libfutils.a
+
+clean:
+	rm -f *.o *~ a.out
+distclean: clean
+	rm -f $(SERIAL) ex5 ex6 $(PARA) pex5r pex10 pex11 getfile *.h5* *.a *.mod TAGS

@@ -1,0 +1,165 @@
+<?xml version="1.0"?>
+
+<?xml-stylesheet type="text/xsl" href="./ets.xsl" charset="ISO-8859-1"?>
+
+<parameters>
+
+  <dimensions>
+    <nrho>             200      </nrho> 
+    <npsi>             100      </npsi> 
+    <neq_dim1>         100      </neq_dim1>
+    <neq_dim2>         512      </neq_dim2>
+    <neq_max_npoints>  512      </neq_max_npoints>
+  </dimensions>
+
+  <output>
+    <shot>    35441      </shot>
+    <run>        24      </run>
+  </output>
+
+  <global>
+    <time>      0.0     </time>
+    <R0>        6.2     </R0>
+    <B0>       -5.3     </B0>
+    <A0>        2.0     </A0>
+    <Ip>    -12.0e6     </Ip>
+    <Rgeo>      6.2     </Rgeo>  
+  </global>
+
+  <compositions>
+    <ions>
+      <amn>          2 3 4 9     </amn>             <!-- AMN,              atomic mass IONS -->
+      <zn>           1 1 2 4     </zn>              <!-- ZN,               nuclear charge IONS -->
+      <zion>         1 1 2 4     </zion>            <!-- ZIONN,            charge IONS -->
+    </ions>
+
+    <impurity>
+      <amn_imp>       20 184     </amn_imp>         <!-- AMN_IMP,          atomic mass IMPURITY -->
+      <zn_imp>        10  74     </zn_imp>          <!-- ZN_IMP,           nuclear charge IMPURITY -->
+      <max_z_imp>     10  74     </max_z_imp>       <!-- MAX_Z_IMP,        maximal charge IMPURITY -->
+    </impurity>
+
+    <neutrals>
+      <cold_neutrals>      0     </cold_neutrals>   <!-- COLD_NEUTRALS,    flag for cold neutrals -->
+      <thermal_neutrals>   0     </thermal_neutrals><!-- THERMAL_NEUTRALS, flag for thermal neutrals -->
+      <fast_neutrals>      0     </fast_neutrals>   <!-- FAST_NEUTRALS,    flag for fast neutrals -->
+      <NBI_neutrals>       0     </NBI_neutrals>    <!-- NBI_NEUTRALS,     flag for NBI neutrals -->
+    </neutrals>
+
+  </compositions>
+
+  <equilibrium>
+    <equilibrium_ext> dpc/iter/4.10a/35441/14 </equilibrium_ext>
+    <el>   1.48491481241450   </el>
+    <tr_u> 0.162843312711714  </tr_u>
+    <tr_l> 0.102476759038266  </tr_l>
+  </equilibrium>
+
+  <coreprof>
+    <coreprof_ext>                               </coreprof_ext>
+    <ni>        
+((1-x^2)*(1.0E20-5.0E19)+5.0E19)/2
+((1-x^2)*(1.0E20-5.0E19)+5.0E19)/2
+((1-x^2)*(1.0E20-5.0E19)+5.0E19)/10
+((1-x^2)*(1.0E20-5.0E19)+5.0E19)/50
+    </ni>  
+    <ti>        
+(1-x^2)*(6.0E3-4.0E3)+4.0E3
+(1-x^2)*(6.0E3-4.0E3)+4.0E3
+(1-x^2)*(6.0E3-4.0E3)+4.0E3
+(1-x^2)*(6.0E3-4.0E3)+4.0E3
+    </ti>  
+    <te>        (1-x^2)*(6.0E3-4.0E3)+4.0E3      </te>  
+    <vtor>                0.0 0.0 0.0 0.0        </vtor>
+    <jpar>     -(1-x^2)*(1.0E6-0.0E0)+0.0E0      </jpar>
+    <qsf>      -((1-x^2)*(1.0-3.0)+3.0)          </qsf>
+  </coreprof>
+
+  <coretransp>
+    <coretransp_ext>  </coretransp_ext>
+    <sigma>
+2.0e7
+    </sigma>
+    <ne_diff>
+0.0 0.5 0.0
+    </ne_diff>
+    <ne_conv>
+0.0 0.0 0.0
+    </ne_conv>
+    <ni_diff>
+0.0 0.5 0.0
+0.0 0.5 0.0
+0.0 0.5 0.0
+0.0 0.5 0.0
+    </ni_diff>
+    <ni_conv>
+0.0 0.0 0.0
+0.0 0.0 0.0
+0.0 0.0 0.0
+0.0 0.0 0.0
+    </ni_conv>
+    <te_diff>
+0.25
+    </te_diff>
+    <te_conv>
+0.0
+    </te_conv>
+    <ti_diff>
+0.25 0.25 0.25 0.25
+    </ti_diff>
+    <ti_conv>
+0.0 0.0 0.0 0.0
+    </ti_conv>
+    <vtor_diff>
+0.25 0.25 0.25 0.25
+    </vtor_diff>
+    <vtor_conv>
+0.0 0.0 0.0 0.0
+    </vtor_conv>
+    <nz_diff>
+1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0
+1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 
+1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 
+1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 
+1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0
+    </nz_diff>
+    <nz_conv>
+0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+    </nz_conv>
+  </coretransp>
+
+  <coresource>
+    <coresource_ext>  </coresource_ext>
+    <j>         0.0             </j>
+    <sigma_src> 0.0             </sigma_src>
+    <qe_exp>    0.0             </qe_exp>
+    <qe_imp>    0.0             </qe_imp>
+    <qi_exp>    0.0 0.0 0.0 0.0 </qi_exp>
+    <qi_imp>    0.0 0.0 0.0 0.0 </qi_imp>
+    <si_exp>    0.0 0.0 0.0 0.0 </si_exp>
+    <si_imp>    0.0 0.0 0.0 0.0 </si_imp>
+    <ui_exp>    0.0 0.0 0.0 0.0 </ui_exp>
+    <ui_imp>    0.0 0.0 0.0 0.0 </ui_imp>
+  </coresource>
+
+  <coreimpur>
+    <coreimpur_ext>      </coreimpur_ext>
+    <nz>
+1e15 1e15 1e15 1e15 1e15 1e15 1e15 1e15 1e15 1e15
+1e10 1e10 1e10 1e10 1e10 1e10 1e10 1e10 1e10 1e10 
+1e10 1e10 1e10 1e10 1e10 1e10 1e10 1e10 1e10 1e10 
+1e10 1e10 1e10 1e10 1e10 1e10 1e10 1e10 1e10 1e10 
+1e10 1e10 1e10 1e10 1e10 1e10 1e10 1e10 1e10 1e10 
+1e10 1e10 1e10 1e10 1e10 1e10 1e10 1e10 1e10 1e10 
+1e10 1e10 1e10 1e10 1e10 1e10 1e10 1e10 1e10 1e10 
+1e10 1e10 1e10 1e10 1e10 1e10 1e10 1e10 1e10 1e10 
+1e10 1e10 1e10 1e10
+    </nz>
+  </coreimpur>
+
+</parameters>
+

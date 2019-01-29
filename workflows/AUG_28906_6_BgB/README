@@ -1,0 +1,2 @@
+This input comes AUG_28906_6 on which we applied 500 steps of BOHMGB-ETS-CHEASE workflow with Tau=0.001
+MUSCLE workflow was smoother.cxa.rb (path to kernels and to input data should be updated in order to run the workflow again)

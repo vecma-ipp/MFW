@@ -1,0 +1,7 @@
+*** test case 2: JET
+*** if nideal=9, add ner=2, negp=0 and test if hdf5 output is created
+***
+***
+ &EQDATA
+ ntcase=2
+ /

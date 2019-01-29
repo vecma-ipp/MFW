@@ -1,0 +1,8 @@
+  DO m0=1,6
+     mp=m0+1
+     mm=m0-1
+     IF (m0 == 6) mp=1
+     IF (m0 == 1) mm=6
+     fsfc(i)%suu(mu,j)=fsfc(i)%suu(mu,j) + thxm*( &
+          (duu(mp,muc)-duu(mm,muc))*duu(m0,mux) )
+  END DO

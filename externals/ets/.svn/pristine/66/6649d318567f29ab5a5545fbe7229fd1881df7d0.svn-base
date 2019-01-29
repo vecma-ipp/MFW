@@ -1,0 +1,49 @@
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+!> wrapper for ETAIGB
+!>
+!> \author D. Coster
+!>
+!> \version "$Id$"
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+module ets_wrapper_etaigb
+
+  use euitm_schemas
+  implicit none
+  
+contains
+
+  subroutine etaigb_wrapper(eq, coreprof, coretransp)
+
+    use xml_file_reader
+
+    implicit none
+
+    TYPE (type_equilibrium), pointer :: eq(:)
+    TYPE (type_coreprof), pointer :: coreprof(:)
+    TYPE (type_coretransp), pointer :: coretransp(:)
+    type (type_param), save  :: code_parameters
+    logical, save :: first = .true.
+
+    interface
+       subroutine etaigb(eq, coreprof, coretransp, code_parameters)
+         use euitm_schemas
+         IMPLICIT NONE
+         type (type_equilibrium), pointer :: eq(:)
+         type (type_coreprof), pointer :: coreprof(:)
+         type (type_coretransp), pointer :: coretransp(:)
+         type (type_param) :: code_parameters
+       end subroutine etaigb
+    end interface
+    
+    if(first) then
+       call fill_param(code_parameters, 'XML/etaigb.xml', '', 'XML/etaigb.xsd')
+       first=.false.
+    endif
+
+    CALL ETAIGB(eq, coreprof, coretransp, code_parameters)
+
+    return
+
+  end subroutine etaigb_wrapper
+
+end module ets_wrapper_etaigb

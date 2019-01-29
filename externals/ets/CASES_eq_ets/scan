@@ -1,0 +1,48 @@
+#! /bin/tcsh
+# don't run cases if they already exist
+# determine the system from argument 1 or, if empty, from the Makefile
+# argument 2 if set should contain "bsub" on the Gateway for queuing jobs
+#
+# D. Coster
+
+if ("X$1X" ==  "XX") then
+  setenv SYS GW_UAL.local
+else
+  setenv SYS "$1"
+endif
+
+if ("X$2X" ==  "XX") then
+  set LAUNCH="time"
+else
+  set LAUNCH="$2"
+endif
+
+echo Using $SYS for binary
+
+set R="11 21 51 101 201 501 1001"
+set T="1e-1 1e-2 1e-3 1e-4"
+set S="3 10"
+
+
+cp /dev/null cases
+# scan over number of rho points
+foreach r ($R)
+  set e=`echo $r | awk '{print $1*2}'`
+# scan over time-steps
+  foreach t ($T)
+    set n=`echo $t | awk '{print 1/$t}'`
+    foreach s ($S)
+      set R=`echo $s $r $n | awk '{print $1*100+(int(log($2)/log(2))-3)*10+int(log($3)/log(10)+0.5)-1}'`
+      set case=NRHO=${r}_NEQ=${e}_DT=${t}_NT=${n}_SOLVER=${s}
+      echo $case $R
+      echo $R >> cases
+      if (! -e $case/eq_ets_data/OUTPUT) then
+        mkdir -p $case/eq_ets_data/OUTPUT
+        sed -e "s:#s#:${s}:" -e "s:#SHOT_OUT#:6:" -e "s:#RUN_OUT#:${R}:" -e "s:#NRHO#:${r}:" -e "s:#NEQ#:${e}:" -e "s:#DT#:${t}:" -e "s:#CONVREC#:1e-4:" -e "s:#NT#:${n}:" eq_ets.TEMPLATE > $case/eq_ets.xml
+        sed -e "s:#s#:${s}:" -e "s:#SHOT_OUT#:6:" -e "s:#RUN_OUT#:${R}:" -e "s:#NRHO#:${r}:" -e "s:#NEQ#:${e}:" -e "s:#DT#:${t}:" -e "s:#CONVREC#:1e-4:" -e "s:#NT#:${n}:" emeq.TEMPLATE > $case/emeq.xml
+        ( cd $case ; ln -s ../*.xsd ../ets.xml . ; $LAUNCH ../../obj/$SYS/eq_ets_test)
+#        ( cd $case ; ln -s ../eq_ets.xsd . ; $LAUNCH ../../obj/$SYS/eq_ets_test >& run.log ) &
+      endif
+    end
+  end
+end

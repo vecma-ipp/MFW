@@ -1,0 +1,54 @@
+<?xml version="1.0"?>
+
+<?xml-stylesheet type="text/xsl" href="./input_helena.xsl"
+charset="ISO-8859-1"?>
+
+<parameters>
+
+<!-- profile parameters -->
+
+ <profile_parameters>
+   <hbt> .false. </hbt>
+<!-- options are: "p' and FF'" | "p' and j_tor" | "p and j_tor" | "p' and q" -->
+   <input_type> p' and FF' </input_type>
+   <radial_coordinate> rho_vol </radial_coordinate>
+ </profile_parameters>
+
+<!-- shape parameters -->
+
+ <shape_parameters>
+   <ishape> 2 </ishape>
+   <isol> 0 </isol>
+   <ias> 1 </ias>
+   <equidistant> 1. </equidistant>
+ </shape_parameters>
+
+<!-- global parameters -->
+
+ <global_parameters>
+ </global_parameters>
+
+<!-- numerical parameters -->
+
+  <numerical_parameters>
+    <nr> 51 </nr>
+    <np> 33 </np>
+    <nrmap> 51 </nrmap>
+    <npmap> 129 </npmap>
+    <nchi> 128 </nchi>
+    <niter> 500 </niter>
+    <nmesh> 5 </nmesh>
+    <errcur> 0.1000E-06 </errcur>
+  </numerical_parameters>
+
+<!-- diagnostics parameters -->
+
+ <diagnostics_parameters>
+   <verbosity> 2 </verbosity>
+   <output> none </output>
+   <diagnostics_on> .true. </diagnostics_on>
+   <standard_output> .false. </standard_output>
+   <xmgrace_output> .false. </xmgrace_output>
+ </diagnostics_parameters>
+
+</parameters>

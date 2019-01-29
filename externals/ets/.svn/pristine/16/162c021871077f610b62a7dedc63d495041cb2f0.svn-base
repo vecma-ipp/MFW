@@ -1,0 +1,73 @@
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+!> wrapper for BDSEQ
+!>
+!> \author D. Coster
+!>
+!> \version "$Id$"
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+module ets_wrapper_bdseq
+
+  use euitm_schemas
+  use itm_types
+  implicit none
+  
+contains
+
+  subroutine bdseq_wrapper(euitm_equilibrium_in, euitm_equilibrium_out)
+
+    use xml_file_reader
+
+    implicit none
+
+    type (type_equilibrium), pointer :: euitm_equilibrium_in(:)
+    type (type_equilibrium), pointer :: euitm_equilibrium_out(:)
+    type (type_param), save :: code_parameters
+    REAL (R8) :: maxabs
+    logical, save :: first = .true.
+
+    interface
+       SUBROUTINE Bdseq (euitm_equilibrium_in, euitm_equilibrium_out, code_parameters)
+         use euitm_schemas
+         IMPLICIT NONE
+         type (type_equilibrium), pointer :: euitm_equilibrium_in(:)
+         type (type_equilibrium), pointer :: euitm_equilibrium_out(:)
+         type (type_param) :: code_parameters
+       end SUBROUTINE Bdseq
+    end interface
+    
+    if(first) then
+       call fill_param(code_parameters, 'XML/bdseq.xml', '', 'XML/bdseq.xsd')
+       first=.false.
+    endif
+
+    if(associated(euitm_equilibrium_in(1)%profiles_1d%jparallel)) then
+       maxabs = maxval(abs(euitm_equilibrium_in(1)%profiles_1d%jphi))
+       write(*,*) 'max( | jphi | ) = ', maxabs
+       if(maxabs .EQ. 0.0_R8) then
+          write(*,*) 'bdseq_wrapper copied jparallel to jphi [ERROR]'
+          if(.not.associated(euitm_equilibrium_in(1)%profiles_1d%jphi)) &
+               allocate(euitm_equilibrium_in(1)%profiles_1d%jphi(size(euitm_equilibrium_in(1)%profiles_1d%jparallel)))
+          euitm_equilibrium_in(1)%profiles_1d%jphi = euitm_equilibrium_in(1)%profiles_1d%jparallel  ! -? ToDo
+       endif
+    endif
+
+    CALL BDSEQ(euitm_equilibrium_in, euitm_equilibrium_out, code_parameters)
+
+    if(.not.associated(euitm_equilibrium_out(1)%profiles_1d%jparallel)) then
+       write(*,*) 'bdseq_wrapper copied jphi to jparallel [ERROR]'
+       allocate(euitm_equilibrium_out(1)%profiles_1d%jparallel(size(euitm_equilibrium_out(1)%profiles_1d%jphi)))
+       euitm_equilibrium_out(1)%profiles_1d%jparallel = euitm_equilibrium_out(1)%profiles_1d%jphi
+    else
+       maxabs = maxval(abs(euitm_equilibrium_out(1)%profiles_1d%jparallel))
+       write(*,*) 'max( | jparallel | ) = ', maxabs
+       if(maxabs .EQ. 0.0_R8) then
+          write(*,*) 'bdseq_wrapper copied jphi to jparallel [ERROR]'
+          euitm_equilibrium_out(1)%profiles_1d%jparallel = euitm_equilibrium_out(1)%profiles_1d%jphi
+       endif
+    endif
+
+    return
+
+  end subroutine bdseq_wrapper
+
+end module ets_wrapper_bdseq

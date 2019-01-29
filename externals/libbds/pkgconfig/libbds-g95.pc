@@ -1,0 +1,1 @@
+libbds-amd64_g95_0.93.pc

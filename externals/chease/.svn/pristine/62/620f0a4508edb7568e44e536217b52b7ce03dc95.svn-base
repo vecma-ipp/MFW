@@ -1,0 +1,175 @@
+\documentclass[11pt]{article}
+%\usepackage{type1cm}
+%\usepackage{eso-pic}
+%\AddToShipoutPicture{\raisebox{.3\paperheight}{\makebox[\paperwidth][c]{\rotatebox{45}{\textcolor[gray]{0.9}{
+%	  \usefont{OT1}{cmr}{m}{n}\fontsize{3cm}{3cm}\selectfont INTERNAL DOC}}}}}
+\usepackage[dvips]{graphicx}
+%\usepackage[pdftex]{hyperref}
+\title{Normalizations on CHEASE}
+\author{O. Sauter}
+
+\begin{document}
+  \def \che {{_\mathrm{CHEASE}}}
+  \def \cgs {{_\mathrm{CGS}}}
+  \def \phys {\mathrm{phys}}
+  \def \[   {\left[  }
+  \def \]   {\right] }
+  \def \ip {I_\parallel}
+  \def \tip {\tilde{I}_\parallel}
+  \def \ipc {I_{\parallel_\mathrm{CHEASE}}}
+  \def \ipp {I_{\parallel_\mathrm{phys  }}}
+  \def \be {\begin{eqnarray}}
+  \def \ee {\end{eqnarray}}
+  \def \nn {\underline{\nabla}}
+
+  \def \ovb {{B}_0}
+  \def \ovr {{R}_0}
+  \def \bpol {\beta_\mathrm{pol}}
+  \newcommand{\ov}[1]{\overline{#1}}
+  \newcommand{\un}[1]{\underline{#1}}
+  \newcommand{\ofc}[1]{#1_{0_\mathrm{CHEASE}}}
+  \newcommand{\ofp}[1]{#1_{0_\mathrm{phys}}}
+  \newcommand{\units}[1]{\left[#1\right]}
+
+  \maketitle
+  
+  \section{CHEASE normalizations, MKSA units}
+  From 
+  \be\label{eq:B}
+  \underline{B} = T\nn\phi + \nn\phi\times\nn \psi
+  \ee
+  then
+  \be
+  \[ B \] = \frac{\[ T \] }{\[ R \] } 
+  \rightarrow T_\che = \frac{T_\phys}{\ov{B}_0\ov{R}_0}
+  \ee
+  Where $\ovr$ and $\ovb$ are the values used for normalizing the parameters
+  \be 
+  \begin{array}{rcl}
+    \ofc{B} = \ofp{B}/\ovb & \phantom{;} & \ofc{R} = \ofp{R}/\ovr \\
+  \end{array}
+  \ee
+  If one uses the boundary conditions $T_\che(\mathrm{edge})=1$, then $B_0$ is the vacuum magnetic field at $R=R_0$ such that
+  $T(\mathrm{edge})=R_0 B_0$. From
+  \be
+  \nn \times B = \mu_0 j
+  \ee
+  we obtain the following expression
+  \be
+  \units{j} = \frac{\units{B}}{\mu_0 \units{R}} =  \frac{\units{B}}{\mu_0\units{R}}
+  \ee
+which gives the following normalization for the current density:
+  \be
+  j_\che = j_\phys \frac{\mu_0 \ovr}{\ovb}
+  \ee
+  and the corresponding relation for total current
+  \be
+  \units{I} =  \frac{\units{B}\units{R}}{\mu_0}  \rightarrow  I_\che = I_\phys \frac{\mu_0}{\ovr\ovb}
+  \ee
+  For the pressure, from
+  \be
+  \nabla p = j \times B
+  \ee
+  we obtain
+  \be
+  \units{p} = \units{j}\units{B}\units{R} =  \frac{\ovb}{\mu_0 \ovr} \ovb\ovr 
+  = \frac{\ovb^2}{\mu_0}
+  \ee
+  Then we define
+  \be
+  p_\che = p_\phys \frac{\mu_0}{\ovb^2}
+  \ee
+  The magnetic field itself is defined by Eq.~\ref{eq:B} which brings to
+  \be
+  \units{\psi} = \units{B}\units{R}^2
+  \ee
+  It  follows
+  \be
+  \psi_\che = \frac{\psi_\phys }{\ovb\ovr^2}
+  \ee
+  In the same way
+  \be
+p^\prime =   \units{\frac{\partial p}{\partial \psi}} = \frac{\units{p}}{\units{\psi}}
+  = \frac{\ovb^2}{\mu_0\ovr^2\ovb} = \frac{\ovb}{\mu_0\ovr^2} \rightarrow p^{\prime}_\che = p^{\prime}_\phys \frac{\mu_0\ovr^2}{\ovb}
+  \ee
+  and
+  \be
+TT^\prime =   \units{T\frac{\partial T}{\partial \psi}} = \frac{\units{T}^2}{\units{\psi}}
+  = \frac{\ovb^2\ovr^2}{\ovb\ovr^2} = \ovb
+  \rightarrow TT^{\prime}_\che = \frac{TT^{\prime}_\phys}{\ovb}
+  \ee
+Let us now check $\beta_\mathrm{pol}$ as given in Table 1 of H. Lutjens et al, Comput. Phys. Commun. 97 (1996) 219:
+  \be
+  \bpol = \units{\frac{8\pi}{I^2_\phi R_0} \ov{p} V_{tot}}_\che
+  \ee 
+Note that $V_{tot,\che}$ is in fact $V_\che/(2\pi)$, thus we get after the above transformations:
+\be
+\bpol = \frac{4}{\mu_0} \frac{\int p_\phys dV_\phys}{I^2_{\phi_\phys} R_{0_\phys}}
+\ee
+which corresponds to the usual definition with $\ov{B_\mathrm{pol}}=\mu_0 I_{\phi_\phys} / (2V/R_{0,\phys})^{1/2}$
+ 
+ Let us now focus on the parallel component of the plasma current as given in Eq. (8) of the above paper. We get:
+  \be
+  \units{\ip} = \frac{\units{j}}{\units{1/R}} = \units{j}\units{R}
+  \ee
+Instead of $\units{j}$. This is because a $1/R_0$ is missing in Eq. (8). $R_0$ is supposed to be equal to 1 in CHEASE, so it's not so important, however the correct definition should read and has been modified in CHEASE:
+\be
+\ip = \frac{<\bf{j} \cdot \bf{B}>}{R_0<\bf{B} \cdot \nabla \phi>}
+\ee
+  In this way, $\ip$ has the correct dimension and we have:
+\be
+\ip = \units{j} \Rightarrow \ipc = \ipp \frac{\mu_0R_0}{B_0}
+\ee
+
+
+  \section{CHEASE normalizations in CGS}
+  In CGS
+  \be
+  \nn \times B = \frac{4\pi j}{c} + \frac{1}{c}\frac{\partial E}{\partial t} \\
+  mn\frac{dv}{dt} = qnE + \frac{qnv}{c}\times B -\nn p\\
+  \Rightarrow \frac{j}{c}\times B = \nn p\\
+  \underline{B} = T\nn\phi + \nn \phi \times \nn \psi
+  \ee
+  Dimensionally, again
+  \be
+  \units{T} = \units{B_0}\units{R_0}
+  \ee
+  where this time $B_0$~[Gauss] and $R_0$~[cm].
+  The latter relations thus bring to
+  \be
+  \units{j}_\cgs = \frac{c}{4\pi} \frac{\units{B}}{\units{R}} =  \frac{c}{4\pi} \frac{\units{B_0}}{\units{R_0}}\\
+  \units{p}_\cgs = \frac{\units{j}\units{B}}{c} \units{R} =
+  \frac{c}{4\pi}\frac{B_0}{R_0} \frac{1}{c} B_0 R_0 = \frac{B^2_0}{4 \pi}\\
+  \units{\psi} = \units{B}\units{R}^2 = B_0 R_0^2\\
+  \Rightarrow \units{p^\prime}_\cgs = \frac{B_0^2}{4\pi B_0 R_0^2} =
+  \frac{B_0}{4\pi R_0^2}\nonumber\\
+  \Rightarrow p^\prime_\che = p^\prime_\cgs \frac{4\pi R_{0_\mathrm{CGS}}^2}{B_{0_\mathrm{CGS}}}
+  \ee
+  Finally we can express $TT^{\prime}$ from these relations as
+  \be
+  TT^\prime_\che = \frac{TT^\prime_\cgs}{B_{0_\mathrm{CGS}}}
+  \ee
+  Note that the following identity holds
+  \be
+  \units{p}_{_\mathrm{MKS}} = \frac{B^2_{0_\mathrm{MKS}}}{\mu_0} =
+  \frac{B^2_{0_\mathrm{MKS}}}{4\pi}10^7\nonumber\\
+  \units{p}_{_\mathrm{CGS}} = \frac{B^2_{0_\mathrm{CGS}}}{4\pi} =
+  \frac{B^2_{0_\mathrm{MKS}}}{4\pi}10^8 
+  \Rightarrow \units{p}_{_\mathrm{CGS}} = 10 \units{p}_{_\mathrm{MKS}}
+  \ee
+  which is the conversion factor in the NRL plasma formulary.
+  
+
+
+
+  \bibliographystyle{plain}
+  \bibliography{biblio}
+\end{document}
+
+
+
+
+
+
+
+

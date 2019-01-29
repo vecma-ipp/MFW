@@ -1,0 +1,11 @@
+GOT_PERFLIB = 'yes'
+FC=f95f
+FCOPTS=-g -Hasu --trace
+FCOPTS=-g -Haesux --chkglobal --trace --trap
+FCOPTS=-g -Hasu --trace
+MOD=mod
+LIBS=-llapack -lblas
+
+# SOLPS-B2 uses
+# FCOPTS = -g -A2 -Am -X9 -Hasu --trace
+# FCOPTS = -O -A2 -fw -Am -X9 -Kfast,eval

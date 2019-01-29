@@ -1,0 +1,50 @@
+#
+#
+CHEASE_F90 = ifort
+ ifneq (,$(findstring efda-itm.eu,$(HOSTNAME)))
+   # allows to match all enea14x.efda-itm.eu machines
+   CHEASE_F90 = pgf90
+ endif
+ ifneq (,$(findstring lac,$(HOSTNAME)))
+   # allows to match all lacx.epfl.ch machines
+   CHEASE_F90 = ifort
+   CHEASE_F90 = gfortran
+ endif
+ ifneq (,$(findstring lac5,$(HOSTNAME)))
+   # allows to match all lacx.epfl.ch machines
+   # CHEASE_F90 = ifort
+   CHEASE_F90 = gfortran
+   CHEASE_F90 = mpif90
+   CHEASE_F90 = ifort
+ endif
+ ifneq (,$(findstring pleiades,$(HOSTNAME)))
+   # allows to match all pleiadesx machines
+   CHEASE_F90 = mpif90
+ endif
+ ifneq (,$(findstring Darwin,$(HOSTNAME)))
+   CHEASE_F90 = ifort
+ endif
+ ifneq (,$(findstring sun,$(HOSTNAME)))
+   CHEASE_F90 = f90
+ endif
+ ifneq (,$(findstring crpppc74,$(HOSTNAME)))
+   CHEASE_F90 = mpif90
+ endif
+ ifneq (,$(findstring bg-fe1,$(HOSTNAME)))
+   CHEASE_F90 = mpixlf90_r
+ endif
+ ifneq (,$(findstring turing,$(HOSTNAME)))
+   CHEASE_F90 = xlf90_r
+ endif
+ ifneq (,$(findstring ada,$(HOSTNAME)))
+   CHEASE_F90 = ifort
+ endif
+ ifneq (,$(findstring curie,$(HOSTNAME)))
+   CHEASE_F90 = ifort
+ endif
+ ifneq (,$(findstring occigen,$(HOSTNAME)))
+   CHEASE_F90 = ifort
+ endif
+ ifneq (,$(findstring qa0,$(HOSTNAME)))
+   CHEASE_F90 = gfortran
+ endif

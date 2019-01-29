@@ -1,0 +1,134 @@
+<!-- !*COMDECK COMDAT -->
+<!-- ! -->
+<!-- !********************************************************************** -->
+<!-- !                                                                     * -->
+<!-- !     C.20   EQUILBRIUM NAMELIST                                      * -->
+<!-- !                                                                     * -->
+<!-- !********************************************************************** -->
+<!-- ! -->
+<!-- !    ADD COMMENTS ABOUT NAMELIST VARIABLES HERE: -->
+<!-- ! -->
+<!-- !    NIDEAL:  DETERMINES MAPPING OF SPECIFIC CHEASE RESULTS ON TO A SPECIFIC MESH, IN GENERAL FOR A GIVEN CODE -->
+<!-- !            =0: FOR MARS -->
+<!-- !            =1: FOR ERATO -->
+<!-- !            =2: FOR LION -->
+<!-- !            =3: FOR NOVA-W (FILE INP1) -->
+<!-- !            =4: FOR PENN (FILE NPENN) -->
+<!-- !            =5: FOR XTOR (FILE OUTXTOR) -->
+<!-- !            =6 (DEFAULT): FOR STANDARD OUTPUT, INCLUDING EQDSK -->
+<!-- !            =7: FOR GYROKINETIC CODES (FILE EQCIN) -->
+<!-- !            =8: FOR ELITE (FILE NELITE) -->
+<!-- !            =9: FOR OGYROPSI (FILE OGYROPSI), REQUIRES STRAIGHT FIELD LINE JACOBIAN -->
+<!-- ! -->
+<!-- !     EU-ITM RELATED VARIABLES: -->
+<!-- ! -->
+<!-- !    NITMOPT: DETERMINES TYPE OF INPUT AND POSSIBILITIES. IF SET TO -1 AS DEFAULT VALUE, ASSUME CHEASE NOT COMPILED WITH ITM PACKAGE. IF SET TO 0, THEN CAN BE CHANGED IN NAMELIST SUCH THAT: -->
+<!-- !            =01: READ EQUILIBRIUM FROM ITM STRUCTURE, BUT WRITE STANDARD OUTPUT FILES -->
+<!-- !            =11: READ AND WRITE EQUIL FROM AND TO ITM DATA STRUCTURE -->
+<!-- !            =10: READ EQUIL FROM STANDARD FILES AND WRITE TO ITM DATA STRUCTURE -->
+<!-- !            =00: READ FROM FILES AND WRITE ON FILES AS BEFORE -->
+<!-- !            =22: READ AND WRITE VIA KEPLER (NOT ACTIVE YET) -->
+<!-- !    NITMSHOT(1)/NITMRUN(1): SHOT AND RUN NUMBER TO READ ITM DATA FROM -->
+<!-- !    NITMSHOT(2)/NITMRUN(2): SHOT AND RUN NUMBER TO WRITE ITM DATA TO -->
+<!-- !    TREEITM: ITM TREE TO USE, TREEITM(1) FOR READING AND TREEITM(2) FOR WRITING THE DATA -->
+<!-- !         AT THIS STAGE, IT IS ASSUMED THAT ONLY THE SIGNAL_NAME='EQUILIBRIUM' IS DEALT WITH -->
+<!-- !      -->
+<!-- !         NAMELIST /EQDATA/ & -->
+<!-- ! at this stage, no groups in xml, namelist in alphabetical order -->
+
+<parameters>
+
+<!-- NOTE: the first appearance of a given parameter is taken into account instead of the last as in namelist -->
+
+  <ap> 0.0 -0.8  0.0  0.0 </ap>
+  <aplace> .00 .70 1.0  0.0</aplace>
+  <aspct> 0.28  </aspct>
+  <at> 0.  -0.30761536e+01 0.72318357  0.0  </at>
+  <at2> 1.5165  0.14189  -5.0417  36.759  -121.11  200.38  -162.23  51.152  </at2>
+  <at3> 0.52503  0.92754  0.21896  -2.4078  8.1211  -13.87  11.653  -3.7942  </at3>
+  <at4> 29500.  -68768.  272720.  -1147400.  2798300.  -3873600.  2842600.  -852840.  </at4>
+  <awidth> .05 .07 .05 </awidth>
+  <b0exp> 1.08  </b0exp>
+  <cfbal> 10.0  </cfbal>
+  <cfnress> 1.0  </cfnress>
+  <cplace> .95 .99 1.0 </cplace>
+  <cpress> 1.0  </cpress>
+  <csspec> 0.0  </csspec>
+  <currt> 0.52  </currt>
+  <cwidth> .10 .02 .05 </cwidth>
+  <dplace> -1.80 -1.80 4.0 </dplace>
+  <dwidth> .18 .08 .05 </dwidth>
+  <elong> 2.05  </elong>
+  <eplace> -1.70 -1.70  1.70  1.70 </eplace>
+  <etaei> 0.1  </etaei>
+  <ewidth> .18 .08 .18 .08 </ewidth>
+  <epslon> 1.0e-8 </epslon>
+  <gamma> 1.6666666667 </gamma>
+  <predge> 1.0e-08  </predge>
+  <psiscl> 1.0 </psiscl>
+  <qspec> 0.9  </qspec>
+  <qplace> 1.00 1.00 2.00 2.00 3.00 3.00 4.00 4.00 4.41 4.41 </qplace>
+  <qwidth> 0.13 0.04 0.09 0.04 0.07 0.02 0.04 0.01 0.01 0.001 </qwidth>
+  <relax> 0.  </relax>
+  <rext> 10.0 </rext>
+  <rpeop> 0.5  </rpeop>
+  <rzion> 1.5  </rzion>
+  <rz0w> 0.  </rz0w>
+  <r0exp> 2.90  </r0exp>
+  <r0w> 1. </r0w>
+  <solpda> 0.60 </solpda>
+  <solpdc> 0.70 </solpdc>
+  <solpdd> 0.60 </solpdd>
+  <solpde> 0.50 </solpde>
+  <triang> 0.5  </triang>
+  <msmax> 1 </msmax>
+  <nbal> 0  </nbal>
+  <nblc0> 16 </nblc0>
+  <nblopt> 0  </nblopt>
+  <nbsexpq> 0000  </nbsexpq>
+  <ncscal> 2  </ncscal>
+  <ndiagop> 1  </ndiagop>
+  <ndifps> 0  </ndifps>
+  <ndift> 1  </ndift>
+  <negp> -1 </negp>
+  <neqdsk> 0 </neqdsk>
+  <ner> 1 </ner>
+  <nfunc> 4  </nfunc>
+  <nideal> 6  </nideal>
+  <ninmap> 40 </ninmap>
+  <ninsca> 40 </ninsca>
+  <niso> 140  </niso>
+  <nmesha> 0  </nmesha>
+  <nmeshc> 1  </nmeshc>
+  <nmeshd> 1  </nmeshd>
+  <nmeshe> 0  </nmeshe>
+  <nopt> 0  </nopt>
+  <nplot> 1  </nplot>
+  <npoida> 1  </npoida>
+  <npoidc> 2  </npoidc>
+  <npoidd> 2  </npoidd>
+  <npoide> 4  </npoide>
+  <npoidq> 10  </npoidq>
+  <npp> 1  </npp>
+  <nppfun> 4  </nppfun>
+  <nppr> 24 </nppr>
+  <npropt> 2  </npropt>
+  <nrbox> 129 </nrbox>
+  <nrscal> 0  </nrscal>
+  <ns> 140  </ns>
+  <nsmooth> 1  </nsmooth>
+  <nsour> 8  </nsour>
+  <nsttp> 1  </nsttp>
+  <nsurf> 6  </nsurf>
+  <nsym> 0 </nsym>
+  <nt> 140  </nt>
+  <ntcase> 0  </ntcase>
+  <ntmf0> 0  </ntmf0>
+  <ntnova> 12  </ntnova>
+  <nturn> 10  </nturn>
+  <nv> 40 </nv>
+  <nvexp> 1 </nvexp>
+  <nzbox> 129 </nzbox>
+  <neqdxtpo> 1 </neqdxtpo>
+  <nitmshot> 170 180 </nitmshot>
+</parameters>

@@ -1,0 +1,1262 @@
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+!> replacement for the EMEQ common block
+!>
+!> \author D. Coster
+!>
+!> \version "$Id$"
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+      module emeq_equil
+
+      implicit none
+      
+      private
+      public :: alloc_emeq_equil, dealloc_emeq_equil, E3ASTR
+
+      integer, save :: 	NP,       ITER
+      double precision, save ::	WSACC
+      double precision, save ::
+     1     WGBJ,      WGB,       WGB0,      WGBST,     WGBD,
+     2     WGMJ,      WGMJEX,    WSQC,      WBBS0,     WBJ0,
+     3     WBR00,     WBR0,      WSAC1,     WSAC2,     WSAC3
+      double precision, allocatable, save ::	
+     1     WSA(:),   WSAA(:),
+     4     WSD1(:),  WGL(:),   WDGL(:),
+     5     WDSD1(:), WD2SD1(:),WBS1(:),
+     6     WD2GL(:), WBS2(:),
+     7     WSD3(:),  WDSD3(:), WD2SD3(:),WBS3(:),
+     8     WBK02(:), WBK0(:),  WDBK00(:),WBD02(:),
+     9     WBD0(:),  WBG02(:), WBG0(:),  WBD12(:),
+     &     WBG332(:),WBG33(:), WBG222(:),WBG22(:)
+      double precision, allocatable, save ::	
+     1     WSL0(:),  WSV0(:),  WSU0(:),  WSW0(:),
+     2     WGMC(:),  WDGMC(:), WBA(:),   WDBA(:),
+     3     WBB(:),   WDBB(:),
+     4     WSCJ1(:), WSCI1(:), WSCJ3(:), WSCI3(:),
+     5     WSCJ5(:), WSCI5(:), WSCJ7(:), WSCI7(:),
+     6     WBK10(:), WBK11(:), WBK20(:), WBK22(:),
+     7     WBK13(:), WBK30(:), WBK31(:), WBK33(:),
+     8     WSL1(:),  WSV1(:),  WSU1(:),
+     9     WSL22(:), WSL2(:),  WSV2(:),  WSU2(:),
+     &     WSL3(:),  WSV3(:),  WSU3(:)
+      double precision, allocatable, save ::		
+     1     WSP(:),   WDSP(:),  WSJP(:),  WDSJP(:),
+     2     WSJ(:),   WDSJ(:),  WSQ(:),   WDSQ(:),
+     3     WDSQRQ(:),WBF(:),   WBFF(:),  WSJSL(:),
+     4     WSJSR(:), WGP(:)
+      double precision, allocatable, save ::
+     1     SKDR(:),SKGA(:),SQG22R(:)
+
+C Total length 76*NP (+21*NP)
+
+      contains
+
+      subroutine alloc_emeq_equil(NP_in)
+      implicit none
+      integer NP_in
+      NP=NP_in
+      allocate(
+     1     WSA(NP),   WSAA(NP),
+     4     WSD1(NP),  WGL(NP),   WDGL(NP),
+     5     WDSD1(NP), WD2SD1(NP),WBS1(NP),
+     6     WD2GL(NP), WBS2(NP),
+     7     WSD3(NP),  WDSD3(NP), WD2SD3(NP),WBS3(NP),
+     8     WBK02(NP), WBK0(NP),  WDBK00(NP),WBD02(NP),
+     9     WBD0(NP),  WBG02(NP), WBG0(NP),  WBD12(NP),
+     &     WBG332(NP),WBG33(NP), WBG222(NP),WBG22(NP))
+      allocate(
+     1     WSL0(NP),  WSV0(NP),  WSU0(NP),  WSW0(NP),
+     2     WGMC(NP),  WDGMC(NP), WBA(NP),   WDBA(NP),
+     3     WBB(NP),   WDBB(NP),
+     4     WSCJ1(NP), WSCI1(NP), WSCJ3(NP), WSCI3(NP),
+     5     WSCJ5(NP), WSCI5(NP), WSCJ7(NP), WSCI7(NP),
+     6     WBK10(NP), WBK11(NP), WBK20(NP), WBK22(NP),
+     7     WBK13(NP), WBK30(NP), WBK31(NP), WBK33(NP),
+     8     WSL1(NP),  WSV1(NP),  WSU1(NP),
+     9     WSL22(NP), WSL2(NP),  WSV2(NP),  WSU2(NP),
+     &     WSL3(NP),  WSV3(NP),  WSU3(NP))
+      allocate(
+     1     WSP(NP),   WDSP(NP),  WSJP(NP),  WDSJP(NP),
+     2     WSJ(NP),   WDSJ(NP),  WSQ(NP),   WDSQ(NP),
+     3     WDSQRQ(NP),WBF(NP),   WBFF(NP),  WSJSL(NP),
+     4     WSJSR(NP), WGP(NP))
+      allocate(
+     1     SKDR(NP),SKGA(NP),SQG22R(NP))
+      WSD1=0.d0
+      WDSD1=0.d0
+      WDGL=0.d0
+      WBS1=0.d0
+      WBS2=0.d0
+      WBS3=0.d0
+
+      end subroutine alloc_emeq_equil
+
+      subroutine dealloc_emeq_equil
+
+      deallocate(
+     1     WSA,   WSAA,
+     4     WSD1,  WGL,   WDGL,
+     5     WDSD1, WD2SD1,WBS1,
+     6     WD2GL, WBS2,
+     7     WSD3,  WDSD3, WD2SD3,WBS3,
+     8     WBK02, WBK0,  WDBK00,WBD02,
+     9     WBD0,  WBG02, WBG0,  WBD12,
+     &     WBG332,WBG33, WBG222,WBG22)
+      deallocate(
+     1     WSL0,  WSV0,  WSU0,  WSW0,
+     2     WGMC,  WDGMC, WBA,   WDBA,
+     3     WBB,   WDBB,
+     4     WSCJ1, WSCI1, WSCJ3, WSCI3,
+     5     WSCJ5, WSCI5, WSCJ7, WSCI7,
+     6     WBK10, WBK11, WBK20, WBK22,
+     7     WBK13, WBK30, WBK31, WBK33,
+     8     WSL1,  WSV1,  WSU1,
+     9     WSL22, WSL2,  WSV2,  WSU2,
+     &     WSL3,  WSV3,  WSU3)
+      deallocate(
+     1     WSP,   WDSP,  WSJP,  WDSJP,
+     2     WSJ,   WDSJ,  WSQ,   WDSQ,
+     3     WDSQRQ,WBF,   WBFF,  WSJSL,
+     4     WSJSR, WGP)
+      deallocate(
+     1     SKDR,SKGA,SQG22R)
+      end subroutine dealloc_emeq_equil
+
+C======================================================================|
+C Input:
+C BA(1:NEQL)[MA/m^2] - flux function in front of R/r on the rhs of G-Sh. eq.
+C BB(1:NEQL)[MA/m^2] - flux function in front of (r/R-R/r) - " - " - " - " -
+C BR00 [m] - R the geom. center of the edge magnetic surface
+C SA0  [m] - a_{edge} - "a" for the edge magnetic surface
+C GL0  [d/l] - elongation of the edge magnetic surface
+C GD30 [m]   - triangularity of the edge magnetic surface (\delta(a_{edge}))
+C NEQL [d/l]- # of grid points
+C B0T  [T]   - vacuum toroidal magnetic field at the point r=R
+C PLCUR[MA]  - plasma current
+C
+C Output:
+C GR(1:NEQL) [m]	- \rho(a)
+C GBD(1:NEQL) [m] - \Delta(a)
+C GL(1:NEQL) [d/l] - \lambda(a)
+C GSD(1:NEQL) [d/l] - \delta(a)/[a_{edge}(a/a_{edge})^2]
+C GRA(1:NEQL) [d/l] - <(\nabla a)^2>
+C GRAR(1:NEQL) [1/m^2] - <[(\nabla a)/r]^2>
+C AVR2(1:NEQL) [1/m^2] - <[1/r]^2>
+C AI0(1:NEQL) [mT] - I = r B_{tor}
+C Everywhere above 
+C (i)  the same equidistant grid with respect to the "radial" 
+C      variable "a" is assumed to be used both for input and output.
+C (ii) average <f> is an [0.5/\pi] integral over the poloidal angle \tau 
+C      of the quantity [f\sqrt{g}], where g_{ij} is the metric tensor 
+C      of {a,\tau,\zeta}.
+C (iii) r is the current polar radius (the distance to the major torus axis)
+C
+
+C - BR00,SA0 - MAJOR & MINOR RADII /METER/
+C - GLO,GD3O - ELONGATION AND TRIANGULARITY /BOUNDARY VALUE/
+C - GSD = TRIANGULARITY
+
+C=======================================================================
+C	Input:	BA [MA/m^2] Zakharov's input function on the rhs current  
+C		BB [MA/m^2] --"--"--"--"--"--"--"--"--"--- presure 
+C		BR00  [m]   major radius of the edge magnetic surface
+C		SA0   [m]   minor radius in the equatorial plane
+C		GL0  [d/l]  edge elongation
+C		GD30  [m]   edge triangularity
+C		NA1         number of radial points
+C		B0T   [T]   vacuum magnetic field at the position BR00 
+C		PLCUR [MA]  total plasma current
+C	Output:	GR  - rho
+C		GBD - shift
+C		GL  - elongation
+C		GSD - triangularity
+C		GRA - <G11>
+C		SQGRA - <sqrt(G11)>
+C		GRAR - <G11/R#2>
+C		AVR2 - <1/R#2>
+C		AI0  - IPOL*RTOR*BTOR
+C======================================================================|
+      subroutine E3ASTR
+C Input:
+     &	(BA,BB	! j_zeta = BA*(R_0/r) + BB*(r/R_0-R_0/r)
+     &	,BR00	! R_0+\Delta_edge		! RTOR+SHIFT
+     &	,SA0	! a_edge			! ABC
+     &	,GL0	! \lambda_edge			! ELONG
+     &	,GD30	! \delta_edge			! TRIAN*ABC
+     &	,NA1	! radial grid point No.		! NEQL
+     &	,ACC	! accuracy required    		! ACEQLB
+     &  ,ITERMX ! Maximum number of iterations
+     &	,B0T	! B_0 at the magnetic axis	! BTOR*RTOR/(RTOR+SHIFT)
+     &	,PLCUR	! Total plasma current		! IPL
+C Output:
+     &	,GR	! \Rho(a)
+     &	,GBD	! \Delta(a)
+     &	,GL	! \lambda(a)
+     &	,GSD	! \delta(a)
+     &	,GRA	! <g^{11}>		= <[nabla(a)]^2>
+     &	,SQGRA	! <\sqrt{|g^{11}|}>	= <|nabla(a)|>
+     &	,GRAR	! <g^{11}g^{33}>	= <[nabla(a)/r]^2>
+     &	,AVR2	! <g^{33}>		= <1/r^2>=G33/RTOR**2
+     &	,AI0	! I				-> IPOL*RTOR*BTOR
+     &	,dgrda	! \prti{\rho}{a}
+     &	,avsqg	! \prti{V}{a}/(4\pi^2)
+     &	,Vol	! V(a)
+     &  ,B2B0EQ ! <B**2/B0**2>
+     &  ,B0B2EQ ! <B0**2/B**2>
+     &  ,BMAXEQ ! BMAXT
+     &  ,BMINEQ ! BMINT
+     &  ,BMODEQ ! <B/BTOR>
+     &  ,FOFBEQ ! <(BTOR/B)**2*(1.-SQRT(1-B/Bmax)*(1+.5B/Bmax))>
+     &  ,GRDAEQ ! <grad a>
+     &  ,TIME)
+
+
+
+C - BR00,SA0 - MAJOR & MINOR RADII /METER/
+C - GLO,GD3O - ELONGATION AND TRIANGULARITY /BOUNDARY VALUE/
+C - GSD = TRIANGULARITY
+C	\Delta' =WDSD1(I)*WSA(I)
+C	\lambda'=WDGL(I)*WGL(I)*WSAA(I)
+C	\delta' =WDSD3(I)*WSA(I)
+
+	implicit none
+	integer	NA1,NAOLD,NA,NT,NT1,I,I1,J,K,NITER,ITERMX
+	double precision	BR00,SA0,GL0,GD30,ACC,B0T,PLCUR,TIME
+	double precision	BA(NA1),BB(NA1),GR(NA1),GBD(NA1),GL(NA1),
+     &       GSD(NA1),GRA(NA1),SQGRA(NA1),GRAR(NA1),AVR2(NA1),AI0(NA1),
+     &       dgrda(NA1),avsqg(NA1),Vol(NA1),GR2AUX(NA1)
+	double precision	B2B0EQ(NA1),B0B2EQ(NA1),BMAXEQ(NA1),BMINEQ(NA1),
+     1		BMODEQ(NA1),FOFBEQ(NA1),GRDAEQ(NA1),
+     2		A,AA,C,CC,S,SS,SR,SX,SX1,T,Y,Y1,SDT,SDT0,
+     3		DRDA,DZDA,DRDT,DZDT,DMETR,DA2,DGR2,FI,FJ,D0,CGP,
+     4		GP,GP2,GR2,GLOLD,G3DOLD,AOLD,G22A2,SKGGG,
+     5		SQG,YLIN,YVOL,YMIN,YMAX
+      save AOLD,GLOLD,G3DOLD,NAOLD,cgp,NITER
+      data AOLD/0.d0/GLOLD/0.d0/G3DOLD/0.d0/NAOLD/1/
+      data cgp/3.14159265359d0/	NITER/60/
+
+*************************************************
+C	if (TIME .gt. .1)	then
+C	write(*,*)BR00	! R_0+\Delta_edge		! RTOR+SHIFT
+C	write(*,*)SA0	! a_edge			! ABC	   
+C	write(*,*)GL0	! \lambda_edge			! ELONG	   
+C	write(*,*)GD30	! \delta_edge			! TRIAN*ABC0
+C	write(*,*)NA1
+C	write(*,*)B0T	! B_0 at the magnetic axis ! BTOR*RTOR/(RTOR+SHIFT)
+C	write(*,*)PLCUR	! Total plasma current		! IPL
+C	write(*,'(2(E14.6))')(BA(j),BB(j),j=1,NA1)
+C	stop
+C	endif
+**************************************************
+
+      WBBS0=B0T
+      WBJ0=0.2*PLCUR
+      NA=NA1-1
+      NT=12*MAX(1,NA1/8)
+C 		Set initial conditions / zero iteration
+!      if (               NAOLD .eq. NA
+!     &     .and. abs(AOLD-SA0)    .lt. 1.E-6
+!     &     .and. abs(GLOLD-GL0)   .lt. 1.E-6
+!     &     .and. abs(G3DOLD-GD30) .lt. 1.E-6
+!     *     )	goto	4
+      call EQGB3(BR00,SA0,GL0,GD30,NA)
+      AOLD=SA0
+      GLOLD=GL0
+      G3DOLD=GD30
+      NAOLD=NA
+      WBR00=BR00
+ 4    continue
+      do  I=1,NA1
+         WSJP(I)=BA(I)
+         WSP(I)=BB(I)
+      enddo
+      NITER=ITERMX                  ! Use 60 for the 1st entry only
+      call EQAB3(NA,NT,NITER,ACC) ! Call MEM equil solver
+      if (NA .le. 1)	then
+	 NA1 = NA
+	 return
+      endif
+      call EQPPAB(NA)
+      D0=WSD1(NA1)*WSAA(NA1)
+      GR(1)=0.
+      Vol(1)=0.
+      GR2=0.
+      fi=0.
+      s=4.*cgp*cgp
+      do I=1,NA1
+         Vol(i)=s*WSAA(i)*(WBR0*wsl0(i)+WSAA(i)*wsl1(i))
+         j=i-1
+         fj=fi
+         AI0(I)=WBF(I)*WBR0
+         sqg=wbg0(i)*wgl(i)*wbr0
+         avsqg(i)=WSA(i)*sqg
+         GRA(I)	=SKGA(I)/sqg
+         SQGRA(I)=SQG22R(I)/sqg
+         GRAR(I)=wbg22(i)/(wgl(i)*wbr0*sqg)
+         AVR2(I)=wbg33(i)*wgl(i)/(wbr0*sqg)
+         GL(I)=WGL(I)
+         GBD(I)=D0-WSD1(I)*WSAA(I)
+         GSD(I)=WSD3(I)*WSAA(i)
+         fi=wbg33(i)*wgl(i)*AI0(I)/(wbr0*WBBS0)
+         if (I.gt.1) then
+            DGR2=fj*WSCJ1(j)+fi*WSCI1(j)
+            GR2=GR2+DGR2
+	    if (DGR2.le.0.)	then
+               write(*,*)"NA1 = 0",GR2,DGR2
+               NA1 = 0
+               return
+	    endif
+            GR(I)=SQRT(GR2*2.)
+            dgrda(i)=fi*WSA(i)/gr(i)
+         else
+            dgrda(i)=sqrt(fi)
+         endif
+      enddo
+CMR extra quantities
+      GR2AUX(1)=0.
+      GP=3.1415926
+      GP2=2.*GP
+      NT1=NT+1
+      SDT0=1./NT
+      YLIN=0.
+      YVOL=0.
+      do 10 I=1,NA1
+         A=WSA(I)
+         AA=A*A
+         B2B0EQ(I)	=0.
+         B0B2EQ(I) 	=0.
+         BMODEQ(I) 	=0.
+         FOFBEQ(I) 	=0.
+         GRDAEQ(I)	=0.
+         SKGGG		=0.
+         YMIN		=99999.
+         YMAX		=0.
+         AI0(I)=WBF(I)*WBR0
+         IF(I.EQ.1) GOTO 3
+         K=I-1
+         GR2AUX(I)=GR2AUX(K)+(SKDR(K)*AI0(K)*WSCJ1(K)+
+     +        SKDR(I)*AI0(I)*WSCI1(K))*2./WBBS0
+ 3       CONTINUE
+C Need to calculate Ymax and Ymin, before doing flux surface averages
+C                                        ( Y=B^2 )
+         DO 50 K=1,NT1
+            T=SDT0*GP*(K-1)
+            SDT=SDT0
+            IF(K.EQ.1.OR.K.EQ.NT1) SDT=SDT0*0.5
+            C=COS(T)
+            S=SIN(T)
+            SS=S*S
+            CC=1.-SS
+            SX1=-WSD1(I)-WSD3(I)*SS
+            SX=C+A*SX1
+            SR=WBR0+A*SX
+C R,Z derivatives
+            DRDA=-WDSD1(I)*A+C-WDSD3(I)*A*SS
+            DZDA=S*WGL(I)*(AA*WDGL(I)+1)
+            DRDT=-A*S-2.*AA*WSD3(I)*C*S	
+            DZDT=WGL(I)*A*C
+C metric tensor components
+            DMETR=DRDA*DZDT-DRDT*DZDA
+            SKGGG=SKGGG+DMETR*SR*SDT
+            if(I.NE.1)then
+               I1=I-1
+               Y=(AI0(I)/SR/WBBS0)**2 + (DRDT**2+DZDT**2)*
+     *              ((GR2AUX(I)-GR2AUX(I1))/(WSA(I)-WSA(I1))/
+     /              (WSQ(I)+WSQ(I1))/SR/DMETR)**2
+            else
+               Y=(AI0(I)/SR/WBBS0)**2
+            endif
+            YMAX=MAX(Y,YMAX)
+            YMIN=MIN(Y,YMIN)
+ 50      continue
+         DO 40 K=1,NT1
+            T=SDT0*GP*(K-1)
+            SDT=SDT0
+            IF(K.EQ.1.OR.K.EQ.NT1) SDT=SDT0*0.5
+            C=COS(T)
+            S=SIN(T)
+            SS=S*S
+            CC=1.-SS
+            SX1=-WSD1(I)-WSD3(I)*SS
+            SX=C+A*SX1
+            SR=WBR0+A*SX
+C R,Z derivatives
+            DRDA=-WDSD1(I)*A+C-WDSD3(I)*A*SS
+            DZDA=S*WGL(I)*(AA*WDGL(I)+1)
+            DRDT=-A*S-2.*AA*WSD3(I)*C*S
+            DZDT=WGL(I)*A*C
+c G22/A**2
+            G22A2=SS+4.*A*WSD3(I)*SS*C+(2.*A*WSD3(I)*S*C)**2+
+     +           (WGL(I)*C)**2
+C D**2/A**2
+            DA2=(C-A*(WDSD1(I)+WDSD3(I)*SS))*WGL(I)*C+
+     +           WGL(I)*SS*(WDGL(I)*AA+1.)*(1.+2.*A*C*WSD3(I))
+            DA2=DA2*DA2
+C metric tensor components
+            DMETR =DRDA*DZDT-DRDT*DZDA
+            if(I.NE.1)then
+               I1=I-1
+               Y=(AI0(I)/SR/WBBS0)**2 + (DRDT**2+DZDT**2)*
+     *              ((GR2AUX(I)-GR2AUX(I1))/(WSA(I)-WSA(I1))/
+     /              (WSQ(I)+WSQ(I1))/SR/DMETR)**2
+               B2B0EQ(I)=B2B0EQ(I)+ Y*DMETR*SR*SDT
+               B0B2EQ(I)=B0B2EQ(I)+ DMETR*SR*SDT/Y
+               BMODEQ(I)=BMODEQ(I)+ SQRT(Y)*DMETR*SR*SDT
+               IF (Y.GT.YMAX) YMAX=Y
+	       Y1 = SQRT(Y/YMAX)
+               FOFBEQ(I)=FOFBEQ(I)+1./Y*(1.-SQRT(abs(1.-Y1))
+     +              *(1.+.5*Y1))*DMETR*SR*SDT
+               GRDAEQ(I)=GRDAEQ(I)+ SQRT(G22A2/DA2)*DMETR*SR*SDT
+	       YLIN	=YLIN+(DRDT**2+DZDT**2)*
+     *              ((GR2AUX(I)-GR2AUX(I1))/(WSA(I)-WSA(I1))/
+     /              (WSQ(I)+WSQ(I1))/SR/DMETR)**2*DMETR*SR*SDT
+               yvol = yvol + DMETR*SR*SDT
+            else
+               Y=(AI0(I)/SR/WBBS0)**2
+               B2B0EQ(I)=B2B0EQ(I)+Y*SDT
+               B0B2EQ(I)=B0B2EQ(I)+ SDT/Y
+               BMODEQ(I)=BMODEQ(I)+ SQRT(Y)*SDT
+               IF (Y.GT.YMAX) YMAX=Y
+               Y1 = SQRT(Y/YMAX)
+               Y1 = 1.d0/Y*(1.d0-SQRT(abs(1.d0-Y1))*(1.d0+.5d0*Y1))*SDT
+               FOFBEQ(I)=FOFBEQ(I)+Y1
+               GRDAEQ(I)=GRDAEQ(I)+SQRT(G22A2/DA2)*SDT
+            endif
+ 40      continue
+         BMAXEQ(I)=SQRT(YMAX)*WBBS0
+         BMINEQ(I)=SQRT(YMIN)*WBBS0
+         if(I.NE.1)then
+            B0B2EQ(I)=B0B2EQ(I)/SKGGG
+            B2B0EQ(I)=B2B0EQ(I)/SKGGG
+            BMODEQ(I)=BMODEQ(I)/SKGGG
+            FOFBEQ(I)=FOFBEQ(I)/SKGGG
+            GRDAEQ(I)=GRDAEQ(I)/SKGGG
+         endif
+ 10   continue
+CMR
+      YLIN=YLIN*WBBS0*WBBS0*A*2./(.4*cgp*PLCUR)**2/BR00
+C	open(33,file='dat/lin3')
+C	write(33,*) YLIN
+!,yvol*A
+C	close(33)
+ 30   format(5(f10.4))
+      END subroutine E3ASTR
+
+C - 3 MOMENT EQUILIBRIUM SOLVER			AUGUST 17,1988 
+C NITER - max number of iterations
+C ACC   - relative tolerance parameter
+      subroutine EQAB3(NA,NT,NITER,ACC)
+      implicit none
+      integer	NA,NT,NITER,NA1,I,J,I1,JJ
+      double precision
+     1     ACC,AA,AAI,A4AI,A6AI,S,SC2,W0,W1,W2,W3,BI0,BP1,BP3,
+     2     FU0,FU0I,FU0J,FU1I,FU1J,FU2I,FU2J,FU3I,FU3J,
+     3     FV0I,FV0J,FV1I,FV1J,FV2I,FV2J,FV3I,FV3J
+      NA1=	NA+1
+      ITER=	0
+ 200  ITER=	ITER+1
+      WSAC1=	WDSD1(NA1)
+      WSAC2=	WDGL(NA1)
+      WSAC3=	WDSD3(NA1)
+      WBR0=	WBR00+WSD1(NA1)*WSAA(NA1)
+      CALL EQK3(NA,NT)
+      CALL EQLVU3(NA)
+      CALL EQC1(NA)
+C  GMC,SW0,SDD1,GDL
+      WGMC(1)=WBA(1)*WSL0(1)/WBK0(1)
+      BI0=	0.
+      W0=	0.
+      FU0I=	WDBA(1)*WSL0(1)
+      FV0I=	WDBB(1)*WSV0(1)
+      FU0=	WGMC(1)*WSU0(1)
+      WSW0(1)=0.25*(FU0-FU0I)
+      W2=	0.
+      FU2I=	WGMC(1)*WSU2(1)-WDBA(1)*WSL2(1)
+      FV2I=	WDBB(1)*WSV2(1)
+      SC2=	0.25*(WGL(1)**2-1.)
+      WBS2(1)=((WBA(1)*WSL22(1)+WBB(1)*(WSV2(1)+SC2*WSV0(1))+
+     ,     FU2I/6.+SC2*WSW0(1))/WGMC(1)-WBK20(1))/WBK22(1)
+      WDGL(1)=0.
+      W1=	0.
+      FU1I=	WGMC(1)*WSU1(1)
+      FV1I=	WDBA(1)*WSL1(1)+WDBB(1)*WSV1(1)
+      BP1=	(WBA(1)*WSL1(1)+WBB(1)*WSV1(1)+
+     *     0.25*FU1I)/WGMC(1)-WBK10(1)
+      W3=	0.
+      FU3I=	WGMC(1)*WSU3(1)
+      FV3I=	WDBA(1)*WSL3(1)+WDBB(1)*WSV3(1)
+      BP3=	(WBA(1)*WSL3(1)+WBB(1)*WSV3(1)+
+     *     FU3I/6.)/WGMC(1)-WBK30(1)
+      S=	1./(WBK11(1)*WBK33(1)-WBK13(1)*WBK31(1))
+      WBS1(1)=(BP1*WBK33(1)-BP3*WBK13(1))*S
+      WBS3(1)=(BP3*WBK11(1)-BP1*WBK31(1))*S
+      WDSD1(1)=WBS1(1)
+      DO 1 I=2,NA1
+         J=	I-1
+         AA=	WSAA(I)
+         AAI=	1./AA
+         A4AI=	AAI*AAI
+         A6AI=	A4AI*AAI
+         FU0J=	FU0I
+         FU0I=	WDBA(I)*WSL0(I)
+         FV0J=	FV0I
+         FV0I=	WDBB(I)*WSV0(I)
+         BI0=	BI0+WSCJ3(J)*FU0J+WSCI3(J)*FU0I+
+     *        WSCJ5(J)*FV0J+WSCI5(J)*FV0I
+         W0=	W0+WSCJ3(J)*FU0
+         WGMC(I)=(WBA(I)*WSL0(I)+WBB(I)*AA*WSV0(I)+(W0-BI0)*AAI)
+     ,        /(WBK0(I)-WSCI3(J)*WSU0(I)*AAI)
+         FU0=	WGMC(I)*WSU0(I)
+         W0=	W0+WSCI3(J)*FU0
+         WSW0(I)=(W0-BI0)*A4AI
+         FU2J=	FU2I
+         FU2I=	WGMC(I)*WSU2(I)-WDBA(I)*WSL2(I)
+         FV2J=	FV2I
+         FV2I=	WDBB(I)*WSV2(I)
+         W2=	W2+FU2J*WSCJ5(J)+FU2I*WSCI5(J)-
+     *        FV2J*WSCJ7(J)-FV2I*WSCI7(J)
+         SC2=	0.25*(WGL(I)**2-1.)
+         WBS2(I)=((WBA(I)*WSL22(I)+WBB(I)*(WSV2(I)+SC2*WSV0(I))+
+     ,        W2*A6AI+SC2*WSW0(I))/WGMC(I)-WBK20(I))/WBK22(I)
+         WDGL(I)=WDGL(J)+(WBS2(J)+WBS2(I))*WSCJ1(J)
+         FV1J=	FV1I
+         FV1I=	WDBA(I)*WSL1(I)+WDBB(I)*WSV1(I)
+         FU1J=	FU1I
+         FU1I=	WGMC(I)*WSU1(I)
+         W1=	W1+FU1J*WSCJ3(J)+FU1I*WSCI3(J)-
+     *        FV1J*WSCJ5(J)-FV1I*WSCI5(J)
+         BP1=	(WBA(I)*WSL1(I)+WBB(I)*WSV1(I)+
+     *        W1*A4AI)/WGMC(I)-WBK10(I)
+         FU3J=	FU3I
+         FU3I=	WGMC(I)*WSU3(I)
+         FV3J=	FV3I
+         FV3I=	WDBA(I)*WSL3(I)+WDBB(I)*WSV3(I)
+         W3=	W3+FU3J*WSCJ5(J)+FU3I*WSCI5(J)-
+     *        FV3J*WSCJ7(J)-FV3I*WSCI7(J)
+         BP3=	(WBA(I)*WSL3(I)+WBB(I)*WSV3(I)+
+     *        W3*A6AI)/WGMC(I)-WBK30(I)
+         S=	1./(WBK11(I)*WBK33(I)-WBK13(I)*WBK31(I))
+         WBS1(I)=(BP1*WBK33(I)-BP3*WBK13(I))*S
+         WBS3(I)=(BP3*WBK11(I)-BP1*WBK31(I))*S
+         WDSD1(I)=WBS1(I)
+ 1    CONTINUE
+C  SD1,GL
+      W1=	0.
+      WSD1(1)=0.5*WDSD1(1)
+      S=	WGL(NA1)*EXP(-WDGL(NA1))
+C	write(*,*)S,WGL(1),WGL(NA1),WDGL(NA1),EXP(-WDGL(NA1)),WDSD1(1)
+      WGL(1)=	S
+      WDGL(1)=WBS2(1)
+      DO 2 I=2,NA1
+         J=	I-1
+         WGL(I)=	S*EXP(WDGL(I))
+         WDGL(I)=WBS2(I)
+         W1=	W1+(WDSD1(J)+WDSD1(I))*WSCJ1(J)
+         WSD1(I)=W1/WSAA(I)
+ 2    CONTINUE
+C  SD3,SDD3
+      FU3J=	1.+WDGL(NA1)*WSAA(NA1)
+      WDSD3(NA1)=WBS3(NA1)+2.*WSD3(NA1)*FU3J
+      DO 3 I1=1,NA
+         J=	NA1-I1
+         I=	J+1
+         AA=	WSAA(J)
+         FU3I=	FU3J
+         FU3J=	1.+WDGL(J)*AA
+         WSD3(J)=(WSD3(I)*(WSAA(I)-2.*WSCI1(J)*FU3I)-(WBS3(I)+
+     ,        WBS3(J))*WSCJ1(J))/(AA+2.*WSCJ1(J)*FU3J)
+         WDSD3(J)=WBS3(J)+2.*WSD3(J)*FU3J
+ 3    CONTINUE
+      WSAC1=	WSA(NA1)*ABS(WDSD1(NA1)-WSAC1)
+      WSAC2=	WSAA(NA1)*ABS(WDGL(NA1)-WSAC2)
+      WSAC3=	WSA(NA1)*ABS(WDSD3(NA1)-WSAC3)
+      WSACC=	WSAC1+WSAC2+WSAC3
+      IF(ITER.LT.NITER.AND.WSACC.GT.ACC) GO TO 200
+
+      write(*,'(2I5,5F10.7)')ITER,NITER,WSACC,WSAC1,WSAC2,WSAC3
+      if (ITER.EQ.NITER)	then
+         jj = 7
+         write(*,*)char(jj),
+     >        ">>> No convergence in the 3M equilibrium solver >>>"
+         write(*,'(1A)')"        You can: (0) Continue anyway"
+         write(*,'(1A)')"                 (1) Try more iterations"
+         write(*,'(2A)')"                 (2) Freeze the current ",
+     >        "equilibrium and continue"
+         write(*,'(1A)')"                 (3) Stop the run"
+         write(*,'(A,$)')"     Your selection > "
+!dpc
+         write(*,*) 'Continue anyway'
+         goto	4
+!cpd
+         read(*,*)jj
+         if (jj .ge. 3) stop
+         if (jj .eq. 0)	goto	4
+         ITER = 0
+         if (jj .eq. 1)	goto	200
+         if (jj .eq. 2)	NA = 0
+         return
+      endif
+
+C  SD2D1,GD2L,SD2D3
+ 4    WD2SD1(1)=WDSD1(1)
+      FU1I=	0.
+      WD2GL(1)=WDGL(1)*WGL(1)
+      FU2I=	-WGL(1)
+      WD2SD3(1)=WDSD3(1)
+      FU3I=	0.
+      DO 5 I=2,NA1
+         J=	I-1
+         AA=	WSAA(I)
+         FU1J=	FU1I
+         FU1I=	AA*(WDSD1(I)-WSD1(I))
+         WD2SD1(I)=(FU1I-FU1J)/WSCI1(J)-WD2SD1(J)
+         FU2J=	FU2I
+         FU2I=	WGL(I)*(AA*WDGL(I)-1.)
+         WD2GL(I)=(FU2I-FU2J)/WSCI1(J)-WD2GL(J)
+         FU3J=	FU3I
+         FU3I=	AA*(WDSD3(I)-WSD3(I))
+         WD2SD3(I)=(FU3I-FU3J)/WSCI1(J)-WD2SD3(J)
+ 5    CONTINUE
+      RETURN
+      END subroutine EQAB3
+C======================================================================|
+
+      subroutine EQGB3(BR00,SA0,GL0,GD30,NA)
+C----------------------------------------------------------------------|
+C Parameters used:
+C Input:
+C	Variables:	NA,BR00,SA0,GL0,GD30
+C	Arrays:		
+C Output
+C	Arrays defined here and used elsewhere
+C   WSA  = j*SA0/NA	current minor radius, a
+C   WSAA = WSA**2	a^2
+C   WSCI1 = 
+C   WSCI3 = 
+C   WSCI5 = 
+C   WSCI7 = 
+C   WSCJ1 = 
+C   WSCJ3 = 
+C   WSCJ5 = 
+C   WSCJ7 = 
+C	Arrays first defined here and modified in EQAB3
+C   WGL  = \lambda
+C   WSD3 = \delta/a^2
+C   WDSD3
+C----------------------------------------------------------------------|
+      implicit none
+      integer	NA,NA1,I,J
+      double precision
+     1     BR00,SA0,GL0,GD30,DA,D3,D32,AAI,AAJ,H,C0,CI,CJ,CII,CJJ
+C	double precision	WBR0,WBR00
+C	double precision	WSA(1),WSAA(1),WGL(1),WSD3(1),WDSD3(1)
+C	double precision	WSCI1(1),WSCI3(1),WSCI5(1),WSCI7(1)
+C	double precision	WSCJ1(1),WSCJ3(1),WSCJ5(1),WSCJ7(1)
+      WBR00=BR00
+      WBR0=BR00
+      DA=SA0/NA
+      D3=GD30/SA0**2
+      D32=2.*D3
+      NA1=NA+1
+      DO 1 I=1,NA1
+         J=I-1
+         WSA(I)=DA*J
+         WSAA(I)=WSA(I)**2
+         WGL(I)=GL0
+         WSD3(I)=D3
+         WDSD3(I)=D32
+C---C(J,N),C(I,N)
+         IF(J.EQ.0) GO TO 1
+         AAI=WSAA(I)
+         AAJ=WSAA(J)
+         H=(AAI-AAJ)*0.5
+         WSCJ1(J)=H*0.5
+         WSCI1(J)=WSCJ1(J)
+         CJ=AAI+2.*AAJ
+         CI=AAJ+2.*AAI
+         C0=H/6.
+         WSCJ3(J)=C0*CJ
+         WSCI3(J)=C0*CI
+C---CJJ=AJ**2N
+         CJJ=AAJ*AAJ
+C---CII=AI**2N
+         CII=AAI*AAI
+         CJ=AAI*CJ+3.*CJJ
+         CI=AAJ*CI+3.*CII
+         C0=C0*0.5
+         WSCJ5(J)=C0*CJ
+         WSCI5(J)=C0*CI
+         C0=H*0.05
+         WSCJ7(J)=C0*(AAI*CJ+4.*CJJ*AAJ)
+         WSCI7(J)=C0*(AAJ*CI+4.*CII*AAI)
+ 1    CONTINUE
+      RETURN
+      END subroutine EQGB3
+
+
+C - EQK3.FOR - LEFT HAND SIDE AVERAGER		AUGUST 17,1988
+
+      subroutine EQK3(NA,NT)
+C----------------------------------------------------------------------|
+C Parameters used:
+C Input:
+C	Variables:	NA,WBR0
+C	Arrays:		
+C Output (arrays):
+C			
+C----------------------------------------------------------------------|
+	implicit none
+	integer	NA,NT,NA1,NT1,I,K
+	double precision
+     1		CGP,A,AA,ASPA,EE,SC1,SC2,T,DEN,
+     2		DA1,DA2,RA,RI,XR,G22A2,R0RD,SF2,SF20,SF21,SF3,SF30,SF31,
+     3		XRXR,SK10,SK11,SK13,SK0,SK01,SK2,SR,SX,SXX,SX1,SXX1,SZZ,
+     4		S,SS,SY1,C,CC,BM1,BM2,BMI,BN,BN0,BN1,BN2,BN12,SDT,SDT0
+	save	CGP
+      data CGP/3.14159265359d0/
+	NA1=	NA+1
+	NT1=	NT+1
+	SDT0=	1./NT
+	RI=	1./WBR0
+      DO 1 I=1,NA1
+	A=	WSA(I)
+	AA=	A*A
+	ASPA=	AA*RI
+	EE=	WGL(I)**2
+	SC1=	0.25*(EE-1.)
+	SC2=	0.5*(EE+1.)
+	WBK02(I)=0.
+	WBG332(I)=0.
+	WBG222(I)=0.
+	WSU1(I)=0.
+	WSU2(I)=0.
+	WBK20(I)=0.
+	WBK22(I)=0.
+	WBK10(I)=0.
+	WBK11(I)=0.
+	WBK13(I)=0.
+	WBK30(I)=0.
+	WBK31(I)=0.
+	WBK33(I)=0.
+C------------------------------------------
+C KONOVALOV LIKES TO DO SOMETHING BY HIMSELF
+C------------------------------------------
+	SKGA(I)=0.
+        SKDR(I)=0.
+	SQG22R(I)=0.
+C------------------------------------------
+      DO 2 K=1,NT1
+	T=	SDT0*CGP*(K-1)
+	SDT=	SDT0
+	IF(K.EQ.1.OR.K.EQ.NT1) SDT=SDT0*0.5
+C--------------------------------------
+	C=	COS(T)
+	S=      SIN(T)
+	SS=	S*S
+	CC=	C*C
+	SX1=	-WSD1(I)-WSD3(I)*SS
+	SXX1=	SX1*SX1
+	SZZ=	EE*SS
+	SX=	C+A*SX1
+	SXX=	SX*SX
+	SR=	WBR0+A*SX
+	SY1=	2.*C*WSD3(I)
+C---BN0=N0*DT
+	BN0=	(EE*CC+SS)*SDT
+C---BN1=N1*DT
+	BN1=	2.*SY1*SS*SDT
+C---BN2=N2*DT
+	BN2=	SS*SY1*SY1*SDT
+	BN12=	BN1+A*BN2
+	BN=	BN0+A*BN12
+	BM1=	-(WBS1(I)+WBS3(I)*SS)*C
+	BM2=	WBS2(I)*SS
+	BMI=	1./(1.+A*BM1+AA*BM2)
+C  EVEN EQUATIONS
+	DEN=	1./(1.+A*BM1)
+	SK01=	BN1-BN0*BM1
+	SK0=	(BN2-BN1*(BM1+A*BM2))*BMI+BN0*BM1*BM1*DEN
+	SK2=	-BN0*SS*DEN*BMI
+	SF20=	CC-SZZ+SC1
+	SF21=	2.*C*SX1
+	SF2=	SF20+A*SF21+AA*SXX1
+	WBK02(I)=WBK02(I)+SK0+WBS2(I)*SK2
+	WBK20(I)=WBK20(I)+BN0*SXX1+SK01*SF21+SK0*SF2
+	WBK22(I)=WBK22(I)+SK2*SF2
+C  ODD EQUATIONS
+	DEN=	1./(1.+AA*BM2)
+	SK0=	BN0*DEN
+	SK10=	BN12*BMI
+	SK11=	SK0*C*BMI
+	SK13=	SK11*SS
+	SF3=	CC-3.*SZZ
+	SF30=	C*SF3
+	SF31=	SX1*(SXX+C*SX+SF3)
+	SF3=	SF30+A*SF31
+	WBK10(I)=WBK10(I)+SK0*SX1+SK10*SX
+	WBK30(I)=WBK30(I)+SK0*SF31+SK10*SF3
+	WBK11(I)=WBK11(I)+SK11*SX
+	WBK31(I)=WBK31(I)+SK11*SF3
+	WBK13(I)=WBK13(I)+SK13*SX
+	WBK33(I)=WBK33(I)+SK13*SF3
+        XR=	SX*RI
+	XRXR=	XR*XR
+	R0RD=	WBR0/SR
+	WBG222(I)=WBG222(I)+BN*BMI*XRXR*R0RD
+	R0RD=R0RD*SDT
+	WBG332(I)=WBG332(I)+(XRXR+BM2-BM1*XR)*R0RD
+	R0RD=	R0RD*SX*C
+	WSU1(I)=WSU1(I)+R0RD*SZZ
+	WSU2(I)=WSU2(I)+R0RD*SXX
+C HERE ZAKHAROV'S AUTHOR RIGHTS ARE CANCELED WITHOUT ANY CEREMONY
+c	DRDA=-WDSD1(I)*A+C-WDSD3(I)*A*SS
+c	DZDA=S*WGL(I)*(AA*WDGL(I)+1.)
+c	DRDT=-A*S-2.*AA*WSD3(I)*C*S	
+c	DZDT=WGL(I)*A*C
+C METRIC (SUBSRIPT) TENSOR COMPONENTS
+c	G11=DRDA**2+DZDA**2
+c	G22=DRDT**2+DZDT**2
+c	G12=DRDA*DRDT+DZDA*DZDT
+c G22/A**2
+        G22A2=SS+4.*A*WSD3(I)*SS*C+(2.*A*WSD3(I)*S*C)**2+(WGL(I)*C)**2
+C D/A
+        DA1=WGL(I)*(CC-A*(WDSD1(I)+WDSD3(I)*SS)*C+
+     +       SS*(WDGL(I)*AA+1.)*(1.+2.*A*C*WSD3(I)))
+C---- EMEQ METRIC COMBINATIONS -------
+        SKGA(I)=SKGA(I)+G22A2*SR*SDT/DA1
+        SQG22R(I)=SQG22R(I)+sqrt(G22A2)*SR*SDT
+C D**2/A**2
+        DA2=(C-A*(WDSD1(I)+WDSD3(I)*SS))*WGL(I)*C+
+     +  WGL(I)*SS*(WDGL(I)*AA+1.)*(1.+2.*A*C*WSD3(I))
+        SKDR(I)=SKDR(I)+SDT*DA2/SR      
+ 2    CONTINUE
+      WBG332(I)=WBG332(I)+(WSD1(I)+0.5*WSD3(I))*RI
+	WBG222(I)=WBG222(I)+WBK02(I)-(WBK10(I)+
+     *	WBS1(I)*WBK11(I)+WBS3(I)*WBK13(I))*RI
+	WBD02(I)= 0.5*WBS2(I)
+	RA=	  1.-WSD1(I)*AA*RI
+	WBG02(I)=0.5*WBS2(I)*(RA-0.75*WSD3(I)*ASPA)-
+     *	(WSD1(I)+0.5*(WSD3(I)+WBS1(I)+0.25*WBS3(I)))*RI
+	WBD12(I)= WBG02(I)-WBG332(I)
+	WBK0(I)=  SC2+AA*WBK02(I)
+	WDBK00(I)=EE*WDGL(I)
+	WBD0(I)=  1.+AA*WBD02(I)
+	WBG0(I)=  1.+AA*WBG02(I)
+	WBG33(I)= 1.+AA*WBG332(I)
+	WBG22(I)= SC2+AA*WBG222(I)
+ 1	CONTINUE
+	END subroutine EQK3
+C - EQLVU3.FOR - RIGHT HAND SIDE AVERAGER	AUGUST 17,1988
+
+ 	subroutine EQLVU3(NA)
+C----------------------------------------------------------------------|
+C Parameters used:
+C Input:
+C	Variables:	NA,WBR0
+C	Arrays:	
+C   WSAA(*)
+C   WGL(*)
+C   WSD1(*)
+C   WSD3(*)
+C Output
+C	Arrays defined here and used elsewhere
+C   WSL0
+C   WSL1
+C   WSL2
+C   WSL3
+C   WSL22
+C   WSV0
+C   WSV1
+C   WSV2
+C   WSV3
+C	Arrays modified here, first defined in EQK3, used in EQAB3
+C   WSU0
+C   WSU1
+C   WSU2
+C   WSU3
+C----------------------------------------------------------------------|
+	implicit none
+C	double precision	WBR0,WSAA(1),WGL(1),WSD1(1),WSD3(1)
+C	double precision	WSL0(1),WSL1(1),WSL2(1),WSL3(1),WSL22(1)
+C	double precision	WSV0(1),WSV1(1),WSV2(1),WSV3(1)
+C	double precision	WSU0(1),WSU1(1),WSU2(1),WSU3(1)
+	integer	NA,NA1,I
+	double precision
+     1		CR2,CR3,CR4,CR6,CR8,AA,E,EE,T1,T3,T5,RBR0,
+     2		S,S1,S2,X20,X22,X30,X32,X40,X42,X50,X60,X5X1,X6X1,
+     3		Y0,Y2,Y4,UX0,UX2,UX12,UX30,UT0,UT1,UT2,UT4,UT6,
+     4		UY0,UY1,UY2,UY3,UY4,UZ1,UZ3
+	data CR2 /5.d-1/,CR3/3.33333333d-1/,CR6/1.66666666d-1/,
+     ,		CR4/2.5d-1/,CR8/1.25d-1/
+	NA1=	NA+1
+	RBR0=1./WBR0
+      do 1 I=1,NA1
+        AA=	WSAA(I)
+        E=	WGL(I)
+        EE=	E*E
+	UX2=	CR2*WSD3(I)
+	UX0=	-WSD1(I)-UX2
+C-------------------------------
+	UY4=	CR2*UX2*UX2
+	UY0=	UX0*UX0+UY4
+	Y0=	CR2+UY0*AA
+	UY1=	2.*UX0+UX2
+	UY2=	2.*UX0*UX2
+	Y2=	CR2+UY2*AA
+	UY3=	UX2
+	Y4=	UY4*AA
+	UT0=	UX0*Y0+CR2*(UY1+UX2*Y2)
+	UT1=	UX0*UY1+UY0+CR2*(UY2+UX2*(UY3+UY1))
+	T1=	0.75+UT1*AA
+	UT2=	UX0*Y2+Y0*UX2+CR2*(UY3+UY1+UX2*Y4)
+	T3=	AA*UX0*UY3+CR2*(Y2+Y4+AA*UX2*UY1)
+	UT4=	UX0*Y4+CR2*(UY3+UX2*Y2)
+	T5=	CR2*(Y4+AA*UX2*UY3)
+	UT6=	CR2*UX2*Y4
+	UZ1=	UY1*(2.*Y0+Y2)+UY3*(Y2+Y4)
+	UZ3=	UY3*2.*Y0+UY1*(Y4+Y2)
+	X5X1=	T1*Y0+AA*UT0*UY1+CR2*(Y2*(T1+T3)+
+     ,		Y4*(T3+T5)+AA*(UT2*UY1+UY3*(UT2+UT4)))
+	X6X1=	T1*(2.*UT0+UT2)+T3*(UT2+UT4)+T5*(UT4+UT6)
+      S=	EE*CR8
+	X20=	CR4*UY1
+	X22=	S*(UY1-UY3)*CR2
+	X30=	CR6*T1
+	X32=	S*(T1-T3)*CR3
+	UX30=	CR6*UT1
+	X40=	CR8*UZ1
+	X42=	S*(UZ1-UZ3)*0.25
+	X50=	X5X1*0.1
+	X60=	CR2*X6X1*CR6
+C-------------------------------
+	S1=(1.-EE)*CR4
+        WSL0(I)=	E*CR2
+	WSL22(I)=	E*UX30
+	WSL2(I)=	WSL0(I)*S1+AA*WSL22(I)
+	WSL1(I)=	E*X20
+	WSL3(I)=	E*(X40-3.*X22)
+	S=	2.*E*RBR0
+	S1=	CR2*RBR0
+	S2=	AA*S1
+        WSV0(I)=	S*(X20+S1*X30)
+        WSV1(I)=	S*(X30+S2*X40)
+	WSV2(I)=	S*(X40-X22+S1*(X50-X32))
+	WSV3(I)=	S*(X50-3.*X32+S2*(X60-3.*X42))
+
+	UX30=	WSU2(I)
+        UX12=	WSU1(I)
+	S=	EE*RBR0
+	S2=	AA*RBR0
+        WSU1(I)=	S*(CR2+S2*(UX30*RBR0-2.*X20))
+        WSU0(I)=	-RBR0*WSU1(I)
+        WSU2(I)=	S*(2.*X20+RBR0*(UX12-UX30))
+        WSU3(I)=	S*(UX30-3.*UX12)
+ 1	CONTINUE
+	RETURN
+	END subroutine EQLVU3
+
+	subroutine EQC1(NA)
+C----------------------------------------------------------------------|
+C Parameters used:
+C Input:
+C	Variables:	NA,WBR0,WBR00
+C	Arrays:		WSA,WSP,WSJP
+C Output:
+C      Arrays:
+C   WBA   Zakharov's function A
+C   WBB   Zakharov's function B
+C   WDBA  h/a*dA/da
+C   WDBB  
+C----------------------------------------------------------------------|
+	implicit none
+C	double precision WBR0,WBR00
+C	double precision WSA(1),WSP(1),WSJP(1),WBA(1),WBB(1),WDBA(1),WDBB(1)
+
+	integer	NA,NA1,I
+	double precision	H, S, RS, SS
+	NA1=NA+1
+	WDBA(1)=2.*(WSJP(2)-WSJP(1))/WSA(2)**2
+	WBA(1)=WSJP(1)
+	WBB(1)=WSP(1)
+	WDBB(1)=2.*(WSP(2)-WSP(1))/WSA(2)**2
+	H=.5/WSA(2)
+	do 1 I=2,NA
+	WBA(I)=WSJP(I)
+	WBB(I)=WSP(I)
+	WDBB(I)=(WSP(I+1)-WSP(I-1))*H/WSA(I)
+1	WDBA(I)=(WSJP(I+1)-WSJP(I-1))*H/WSA(I)
+	WBA(NA1)=WSJP(NA1)
+	WDBA(NA1)=(WSJP(NA1)-WSJP(NA))/WSA(2)/WSA(NA1)
+	WBB(NA1)=WSP(NA1)
+	WDBB(NA1)=(WSP(NA1)-WSP(NA))/WSA(2)/WSA(NA1)
+	S=WBR0/WBR00
+	RS=1./S
+	SS=S-RS
+	do 2 I=1,NA1
+	WBA(I)=WBA(I)*RS+WBB(I)*SS
+	WBB(I)=WBB(I)*S
+	WDBA(I)=WDBA(I)*RS+WDBB(I)*SS
+	WDBB(I)=WDBB(I)*S
+2	continue
+	end subroutine EQC1
+
+	subroutine EQPPAB(NA)
+C----------------------------------------------------------------------|
+C	gm0 = 0.4*cgp
+C	WSA(I) = a[m], WSAA(I) = a**2
+C	WBR00 = (RTOR+SHIFT) = R[m]
+C	WBR0 = R0[m]
+C	WBJ0 = 0.2*I[MA]
+C	WBBS0 = Bs[T],
+C	WBF(I)=0.2*F/R0[MA/m], WBFF(I) = WBF(I)**2
+C	WSJ(I)=gm0*<j>[MA/m**2], WSJP(I) = <jB>/B
+C	WSJSL(I) = j(r,gt=cgp), WSJSR(I) = j(r,gt=0)
+C	WSP(I) = gm0*p[MJ/m**3]
+C	WGP(I) = gP[VS]/(2*cgp*R0)
+C	WDSQRQ(I) = aq'/q
+C   WGPINT, WGPRES, WSLI are defined but not used (not present in commons
+C----------------------------------------------------------------------|
+C Parameters used:
+C Input:
+C	Variables:	NA,WBR0,WBR00,WBJ0,WBBS0
+C	Arrays:	
+C   WSA(*)
+C   WSAA(*)
+C   WGL(*)
+C   WSD1(*)
+C   WSD3(*)
+C Output
+C     Variables:
+C   WGB
+C   WGB0
+C   WGBD
+C   WGBJ
+C   WGBST
+C   WGMJ
+C   WGMJEX
+C   WSQC
+C   WGPINT
+C   WGPRES
+C   WSLI
+C	Arrays:
+C   WSL0
+C   WSL1
+C   WSL2
+C   WSL3
+C   WSL22
+C   WSV0
+C   WSV1
+C   WSV2
+C   WSV3
+C----------------------------------------------------------------------|
+	implicit none
+C	double precision WBR0,WBR00,WBJ0,WBBS0
+C	double precision WGB,WGB0,WGBD,WGBJ,WGBST,WGMJ,WGMJEX,WSQC
+C	double precision WSP(1),WSA(1),WSAA(1),WGL(1),WGP(1),WSJ(1),WSJP(1)
+C	double precision WBA(1),WBB(1),WBF(1),WBFF(1),WSD1(1)
+C	double precision WDBA(1),WDBB(1),WDGL(1),WBK0(1),WBK02(1),WDBK00(1)
+C	double precision WDSP(1),WDSJ(1),WSQ(1),WDSQ(1),WDSQRQ(1),WDSJP(1)
+C	double precision WBD0(1),WBD12(1),WBD02(1),WBG22(1),WBG33(1),WBG332(1)
+C	double precision WSCI3(1),WSCJ3(1),WSCJ1(1)
+C	double precision WSL0(1),WSU0(1),WSW0(1),WSV0(1),WGMC(1),WDGMC(1)
+C	double precision WSJSL(1),WSJSR(1)
+	integer	NA,NA1,I,J
+	double precision
+     1		S,SLI,SLJ,G33I,G33J,CGP,DG33,BJ,BJI,BJJ,RR,RL,
+     2		DL0,DL0I,DL0J,D12I,D12J,DD12,DV0,FF0,FFI,FFJ,V0I,V0J,
+     3		GB,GBI,GBJ,GBS,GBSI,GBSJ,GBD,GBDI,GBDJ,GPI,GPJ,GMJI,GMJJ,
+     4		WGPINT,WGPRES,WSLI
+        save CGP
+	data CGP/3.14159265359d0/
+	NA1=NA+1
+C --- GP,SJ,DSJ,BJ,SJL,SJR
+
+	G33I=0.
+	DG33=2.*(WBA(1)*(WBG332(1)-WBD02(1))+WBB(1)*WBD12(1))
+	WSJ(1)=WBA(1)
+	WDSJ(1)=WDBA(1)+DG33
+	BJI=WSJ(1)*WGL(1)
+	BJ=0.
+
+	DO 1 I=2,NA1
+           J=I-1
+           G33J=G33I
+           G33I=(WBA(I)*(WBG332(I)-WBD02(I))+WBB(I)*WBD12(I))*
+     ,          WSAA(I)/WBD0(I)
+           DG33=(G33I-G33J)/WSCJ1(J)-DG33
+           WSJ(I)=WBA(I)+G33I
+           WDSJ(I)=WDBA(I)+DG33
+           BJJ=BJI
+           BJI=WSJ(I)*WBD0(I)*WGL(I)
+           BJ=BJ+(BJJ+BJI)*WSCJ1(J)
+1	CONTINUE
+
+	S=WBJ0/BJ
+
+	DO 2 I=1,NA1
+           WBA(I)	=WBA(I)*S
+           WDBA(I)	=WDBA(I)*S
+           WBB(I)	=WBB(I)*S
+           WDBB(I)	=WDBB(I)*S
+           WSJ(I)	=WSJ(I)*S
+           WDSJ(I)	=WDSJ(I)*S
+           WGMC(I)	=WGMC(I)*S
+           WSW0(I)	=WSW0(I)*S
+
+           RR=WBR0-WSD1(I)*WSAA(I)
+           RL=WBR0/(RR-WSA(I))
+           RR=WBR0/(RR+WSA(I))
+           WSJSL(I)=WBA(I)*RL+WBB(I)*(1./RL-RL)
+           WSJSR(I)=WBA(I)*RR+WBB(I)*(1./RR-RR)
+
+           WDSP(I)=-WBB(I)*WGMC(I)*WGL(I)
+2	CONTINUE
+
+	GPI=WGMC(1)*WGL(1)
+	WGP(1)=0.
+	SLI=WGP(1)*WSJ(1)*WGL(1)*WBD0(1)
+	WSLI=0.
+
+	FFI=(WBA(1)-WBB(1))*GPI
+	WBFF(1)=0.
+	WSP(1)=0.
+
+	GBI=WBB(1)*GPI*WSL0(1)
+	GB=0.
+	GBSI=0.
+	GBS=0.
+	GBDI=(WBA(1)-WBB(1))*WGMC(1)*WSU0(1)
+	GBD=0.
+
+	DO 3 I=2,NA1
+           J=I-1
+
+           GPJ=GPI
+           GPI=WGMC(I)*WGL(I)
+           WGP(I)=WGP(J)-(GPJ+GPI)*WSCJ1(J)
+           SLJ=SLI
+           SLI=WGP(I)*WSJ(I)*WGL(I)*WBD0(I)
+           WSLI=WSLI+(SLJ+SLI)*WSCJ1(J)
+
+           FFJ=FFI
+           FFI=(WBA(I)-WBB(I))*GPI
+           WBFF(I)=WBFF(J)+(FFJ+FFI)*WSCJ1(J)
+           WSP(I)=WSP(J)+(WDSP(J)+WDSP(I))*WSCJ1(J)
+
+           GBJ=GBI
+           GBI=WBB(I)*GPI*WSL0(I)
+           GB=GB+GBJ*WSCJ3(J)+GBI*WSCI3(J)
+
+           GBSJ=GBSI
+           GBSI=WSP(I)*GBI
+           GBS=GBS+GBSJ*WSCJ3(J)+GBSI*WSCI3(J)
+
+           GBDJ=GBDI
+           GBDI=(WBA(I)-WBB(I))*WGMC(I)*WSU0(I)
+           GBD=GBD+GBDJ*WSCJ3(J)+GBDI*WSCI3(J)
+3	CONTINUE
+	WGPINT=-2.*CGP*WBR0*WGP(NA1)
+c
+c inernal iductance
+c
+	WSLI=2.*WBR0/(WBR00*WBJ0**2)*(WSLI-WGP(NA1)*WBJ0)
+	WGPRES=CGP*WBR00*WSLI*WBJ0
+c
+c betta j
+c
+	WGBJ=4.*GB/(WBJ0**2)
+	S=WSL0(NA1)*WSAA(NA1)
+c
+c betta
+c
+	WGB=2.*GB/(WBBS0**2*S)
+c
+c betta*
+c
+	WGBST=2.*SQRT(2.*(GBS-WSP(NA1)*GB)/S)/WBBS0**2
+!DPC ff0 here is not yet defined, moved ff0 calculation up
+	FF0=(WBBS0*WBR00/WBR0)**2
+	WGBD=2.*GB/(WBR0**2*(2.*GBD-FF0*WSU0(NA1)*WSAA(NA1)/WGL(NA1)))
+	WGMJ=4.*GBD*(WBR0/WBJ0)**2
+	WSP(1)=-WSP(NA1)
+!moved up	FF0=(WBBS0*WBR00/WBR0)**2
+	WBFF(1)=FF0+2.*WBFF(NA1)
+	WBF(1)=SQRT(WBFF(1))
+	WGB0=2.*WSP(1)/WBBS0**2
+	WSQC=WBBS0*WSAA(NA1)*(WGL(NA1)**2+1.)*.5/(WBJ0*WBR00)
+
+C --- SJP,SDJP,SP,BFF,DGMC,SQ,SDQ,GMJ,GMJEX
+	DV0=2.*(WBB(1)*WSV0(1)+WSW0(1)-WGMC(1)*WBK02(1))
+	V0I=0.
+	DL0I=(WDGL(1)-2.*WBD02(1))*WGL(1)
+	DL0=0.
+	WDGMC(1)=(WDBA(1)*WSL0(1)+WBA(1)*(WGL(1)*WBD02(1)+.25*DL0I)-
+     ,	WGMC(1)*WDBK00(1)+DV0)/WBK0(1)
+
+	FFI=(WBA(1)-WBB(1))*WGMC(1)*WGL(1)
+	WSQ(1)=WBF(1)/(WBR0*WGMC(1))
+	DG33=2.*WBG332(1)*WSQ(1)
+	G33I=0.
+	WDSQ(1)=WSQ(1)*(-FFI/WBFF(1)-WDGMC(1)/WGMC(1))+DG33
+	WDSQRQ(1)=0.
+
+	DD12=2.*((WBA(1)-WBB(1))*WBG22(1)/(WBR0*WSQ(1))**2+
+     ,	WBB(1)*WBD12(1))
+	D12I=0.
+	WSJP(1)=WBA(1)
+	WDSJP(1)=WDBA(1)+DD12
+
+	BJI=WGL(1)
+	BJ=0.
+	GMJI=FFI/WBF(1)*BJI*.5
+	WGMJEX=0.
+
+	DO 4 I=2,NA1
+	J=I-1
+	WSP(I)=WSP(I)-WSP(NA1)
+C --- DERIVATIVES
+	S=1./WSCJ1(J)
+	GPI=WGMC(I)*WGL(I)
+
+	WBFF(I)=WBFF(1)-2.*WBFF(I)
+	WBF(I)=SQRT(WBFF(I))
+
+	DL0J=DL0I
+	DL0I=(WDGL(I)-2.*WBD02(I))*WGL(I)
+	DL0=DL0+DL0J*WSCJ3(J)+DL0I*WSCI3(J)
+	V0J=V0I
+	V0I=(WBB(I)*WSV0(I)+WSW0(I)-WGMC(I)*WBK02(I))*WSAA(I)
+	DV0=(V0I-V0J)*S-DV0
+	WDGMC(I)=(WBA(I)*(WGL(I)*WBD02(I)+DL0/WSAA(I)**2)+
+     ,	WDBA(I)*WSL0(I)-WGMC(I)*WDBK00(I)+DV0)/(WGL(I)**2+1.)*2.
+
+	FFI=(WBA(I)-WBB(I))*WGL(I)*WGMC(I)
+	G33J=G33I
+	WSQ(I)=WBF(I)/(WBR0*WGMC(I))
+	G33I=WSQ(I)*WBG332(I)*WSAA(I)
+	DG33=(G33I-G33J)*S-DG33
+	WDSQ(I)=WSQ(I)*(-FFI/WBFF(I)-WDGMC(I)/WGMC(I))+DG33
+	WSQ(I)=WSQ(I)+G33I
+	WDSQRQ(I)=WSAA(I)*WDSQ(I)/WSQ(I)
+
+	D12J=D12I
+	D12I=((WBA(I)-WBB(I))*WBG22(I)*WBG33(I)/(WBR0*WSQ(I))**2+
+     ,	WBB(I)*WBD12(I)/WBG33(I))*WSAA(I)
+	DD12=(D12I-D12J)*S-DD12
+	WSJP(I)=WBA(I)+D12I
+	WDSJP(I)=WDBA(I)+DD12
+
+	BJJ=BJI
+	BJI=WBG33(I)*WGL(I)
+	BJ=BJ+(BJJ+BJI)*WSCJ1(J)
+	GMJJ=GMJI
+	GMJI=FFI*BJ/(WBF(I)*WSAA(I))
+	WGMJEX=WGMJEX+GMJJ*WSCJ3(J)+GMJI*WSCI3(J)
+
+4	CONTINUE
+
+	WGMJEX=4.*WGMJEX*WBBS0/WBJ0**2
+
+	END subroutine EQPPAB
+C======================================================================|
+
+      end module emeq_equil

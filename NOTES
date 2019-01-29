@@ -1,0 +1,20 @@
+[12-08-2016]
+* Chease kernel is working now
+	- issue with codeparams is fixed (using its own version of the XML parser => change in ual lib design)
+* first test with chease 
+	- with old codeparams it crash after 2 iterations => use updated xml/xsd from fc2k actor instead
+	- with TAU=0.01 it finished a 0.5s run => but Te evo is bumping...
+	- with TAU=0.005 it crashes mid-way (and chease has hard-time converging)
+
+[10-08-2016]
+* Quick plotting of profiles evolution from Dave:
+  grep -A3 %te%value ets_coreprof_* | awk 'NF==4{print $2}' | nl | ~dpc/SVN/SOLPS/solps5.0/src/bin/common/plot xyplot
+
+[08-08-2016]
+* Compilation/build issues:
+	- ETS usage of l3interp
+	- GEM usage of l3interp
+	- dFEFI usage of l3interp
+* Test using local l3interp for ETS:
+	- crash in ets wrapper when getting data from 87412,850,olivh,jet,4.10b 
+

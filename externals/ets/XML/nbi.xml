@@ -1,0 +1,38 @@
+<?xml version="1.0"?>
+
+<?xml-stylesheet type="text/xsl" href="./ets.xsl" charset="ISO-8859-1"?>
+
+<parameters>
+
+  <coresource>
+    <j>
+0.0
+    </j>
+    <qe_exp>
+exp(-((x-0.0)/0.4)^2)*1.0e4
+    </qe_exp>
+    <qe_imp>
+0.0
+    </qe_imp>
+    <qi_exp>
+exp(-((x-0.0)/0.4)^2)*1.0e4
+    </qi_exp>
+    <qi_imp>
+0.0
+    </qi_imp>
+    <si_exp>
+exp(-((x-0.0)/0.4)^2)*2.0e4/(1e6*1.6e-19)
+    </si_exp>
+    <si_imp>
+0.0
+    </si_imp>
+    <ui_exp>
+0.0
+    </ui_exp>
+    <ui_imp>
+0.0
+    </ui_imp>
+  </coresource>
+
+</parameters>
+

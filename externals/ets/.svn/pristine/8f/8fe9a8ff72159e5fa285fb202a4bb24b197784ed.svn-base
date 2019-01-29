@@ -1,0 +1,718 @@
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+!> This subroutine is prepared to solve single transport equation in standardised form adopted by the ETS.
+!>
+!> \author M.Tokar, D.Kalupin
+!>
+!> \version "$Id$"
+! + + + + + + + + + NUMERICAL SOLUTION  + + + + + + + + +    
+
+SUBROUTINE SOLUTION1 (SOLVER, ifail)
+
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+!                                                       +
+!     This subroutine is prepared to solve single       +   
+!     transport equation in standardised form           +
+!     adopted by the ETS.                               +
+!                                                       +
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+!     Source:       1-D transport code RITM             +
+!     Developers:   M.Tokar, D.Kalupin                  +
+!     Kontacts:     M.Tokar@fz-juelich.de               +
+!                   D.Kalupin@fz-juelich.de             +
+!                                                       +
+!     Comments:    equation is solved in                +
+!                  DIFFERENTIAL form                    +
+!                                                       +
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+
+
+  USE TYPE_SOLVER
+
+  use itm_types
+
+  IMPLICIT NONE
+
+  INTEGER, INTENT (INOUT)         :: ifail
+
+! +++ Input/Output with ETS:
+  TYPE (NUMERICS), INTENT (INOUT) :: SOLVER               !contains all I/O quantities to numerics part
+
+
+! +++ Internal input/output parameters:
+  INTEGER   :: IDIM,    NDIM                              !equation index and total number of equations to be solved
+
+  INTEGER   :: IRHO,    NRHO                              !radius index, number of radial points
+
+  INTEGER   :: FLAG                                       !flag for equation: 0 - interpretative (not solved), 1 - predictive (solved)
+
+  REAL (R8) :: RHO(SOLVER%NRHO)                           !radii
+
+  REAL (R8) :: AMIX                                       !fraction of new sollution mixed
+
+  REAL (R8) :: Y(SOLVER%NRHO), YM(SOLVER%NRHO)            !function at the current amd previous time steps
+  REAL (R8) :: DY(SOLVER%NRHO)                            !derivative of function
+
+  REAL (R8) :: A(SOLVER%NRHO), B(SOLVER%NRHO)             !coefficients
+  REAL (R8) :: C(SOLVER%NRHO), D(SOLVER%NRHO)             !coefficients 
+  REAL (R8) :: E(SOLVER%NRHO), F(SOLVER%NRHO)             !coefficients 
+  REAL (R8) :: G(SOLVER%NRHO), H                          !coefficients 
+  REAL (R8) :: DD(SOLVER%NRHO), DE(SOLVER%NRHO)           !derivatives of coefficients 
+
+  REAL (R8) :: V(2), U(2), W(2)                           !boundary conditions 
+
+
+! +++ Coefficients used by internal numerical solver:
+  INTEGER   :: I, N                                       !radius index, number of radial points
+  INTEGER   :: ISP                                        !spline flag
+
+  REAL (R8) :: X(SOLVER%NRHO)                             !radii
+
+  REAL (R8) :: SOL(SOLVER%NRHO)                           !solution 
+  REAL (R8) :: DSOL(SOLVER%NRHO)                          !derivative of solution
+
+  REAL (R8) :: AS(SOLVER%NRHO), BS(SOLVER%NRHO)           !coefficients
+  REAL (R8) :: CS(SOLVER%NRHO)                            !coefficients 
+
+  REAL (R8) :: VS(2), US(2), WS(2)                        !boundary conditions 
+
+
+
+! + + + + + + + + + INTERFACE PART  + + + + + + + + + + +    
+
+
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+! +++ Set up local variables (input, obtained from ETS):
+!     Control parameters:
+  NDIM           = SOLVER%NDIM
+  NRHO           = SOLVER%NRHO
+  AMIX           = SOLVER%AMIX
+
+
+
+! +++ Solution of equations starting from 1 to NDIM:
+  EQUATION_LOOP1: DO IDIM = 1, NDIM
+
+     FLAG         = SOLVER%EQ_FLAG(IDIM)
+
+
+     IF (FLAG.EQ.0) GOTO 20                                !equation is not solved
+
+
+
+! +++ Numerical coefficients obtained from physics part  in form:
+!
+!     (A*Y-B*Y(t-1))/H + 1/C * (-D*Y' + E*Y) = F - G*Y
+
+     RHO_LOOP1: DO IRHO=1,NRHO
+        RHO(IRHO)  = SOLVER%RHO(IRHO)
+
+        Y(IRHO)    = SOLVER%Y(IDIM,IRHO)
+        DY(IRHO)   = SOLVER%DY(IDIM,IRHO)
+        YM(IRHO)   = SOLVER%YM(IDIM,IRHO)
+
+        A(IRHO)    = SOLVER%A(IDIM,IRHO) 
+        B(IRHO)    = SOLVER%B(IDIM,IRHO)
+        C(IRHO)    = SOLVER%C(IDIM,IRHO)
+        D(IRHO)    = SOLVER%D(IDIM,IRHO) 
+        E(IRHO)    = SOLVER%E(IDIM,IRHO)
+        F(IRHO)    = SOLVER%F(IDIM,IRHO)
+        G(IRHO)    = SOLVER%G(IDIM,IRHO) 
+
+     END DO RHO_LOOP1
+
+     H            = SOLVER%H
+
+     CALL DERIVN1(NRHO,RHO,D,DD)                             !Derivation of coefficient D
+     CALL DERIVN1(NRHO,RHO,E,DE)                             !Derivation of coefficient E
+
+! +++ Boundary conditions for numerical solver in form:
+!
+!     V*Y' + U*Y = W 
+
+! +++ On axis:
+
+     V(1)         = SOLVER%V(IDIM,1)
+     U(1)         = SOLVER%U(IDIM,1)
+     W(1)         = SOLVER%W(IDIM,1) 
+
+! +++ At the edge:
+
+     V(2)         = SOLVER%V(IDIM,2) 
+     U(2)         = SOLVER%U(IDIM,2) 
+     W(2)         = SOLVER%W(IDIM,2) 
+
+
+
+
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+! +++ Set up numerical coefficients used in the solver
+!     (translation is done for differential form 
+!      of transport equation):
+
+!       indexies:
+     IF(solver%type .EQ. 1) THEN                 !SOLVER1 (w/o spline)
+        ISP          = 0
+     ELSE IF(solver%type .EQ. 4) THEN            !SOLVER4 (with spline)
+        ISP          = 1            
+     ELSE
+        write(*,*) 'Invalid solver%type = ',solver%type
+        stop
+     END IF
+
+     N            = NRHO
+!       coefficients:
+     RHO_LOOP2: DO I = 1,N
+        X(I)       = RHO(I)
+        AS(I)      = -E(I)/D(I) + DD(I)/D(I) 
+        BS(I)      = A(I)*C(I)/H/D(I) + C(I)*G(I)/D(I) + DE(I)/D(I)
+        CS(I)      = C(I)/D(I) * (F(I) + B(I)*YM(I)/H)
+     END DO RHO_LOOP2
+!       boundary conditions:
+     VS(1)        = V(1)
+     US(1)        = U(1)
+     WS(1)        = W(1) 
+     VS(2)        = V(2) 
+     US(2)        = U(2) 
+     WS(2)        = W(2) 
+
+
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+! +++  Solution of transport equation:      
+
+     CALL SOLVER_RITM  (X,N,   VS,US,WS,   AS,BS,CS,   SOL,DSOL,  ISP)
+!                         radii   b.c.        coeff.      solution   spline
+
+
+     RHO_LOOP3: DO IRHO = 1,NRHO
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+! +++ New function and derivative:      
+        Y(IRHO)    = Y(IRHO)*(1.e0_R8-AMIX)  + SOL(IRHO)*AMIX
+        DY(IRHO)   = DY(IRHO)*(1.e0_R8-AMIX) + DSOL(IRHO)*AMIX
+
+
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+! +++ Return solution to ETS:      
+        SOLVER%Y(IDIM,IRHO)  = Y(IRHO)
+        SOLVER%DY(IDIM,IRHO) = DY(IRHO)
+
+     END DO RHO_LOOP3
+
+
+
+20   CONTINUE
+
+
+  END DO EQUATION_LOOP1
+
+
+
+  RETURN
+
+
+
+END SUBROUTINE SOLUTION1
+
+
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+
+
+
+
+
+
+! + + + + + + + + + NUMERICAL PART  + + + + + + + + + + +    
+
+
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+!> This is interface for RITM solver, which allows to use the solver on grids starting from zero
+!>
+!> The subroutine interploates the function at X=0 by parabola: Y=E+F*X^2
+!>
+!> \author M.Tokar, D.Kalupin
+!>
+!> \version "$Id$"
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+SUBROUTINE SOLVER_RITM(X,N,   V,U,W,   A,B,C,   SOL,DSOL,  ISP)
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+! This is interface for RITM solver, which allows to    !
+! use the solver on grids starting from zero            !
+!                                                       !
+! The subroutine interploates the function at X=0       !
+! by parabola: Y=E+F*X^2
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+
+  use itm_types
+
+  IMPLICIT NONE
+
+  INTEGER, INTENT (INOUT)   :: ISP
+
+  INTEGER                   :: I, N, N1 
+
+  REAL (R8)                 :: X(N),  X1(N-1)             !grid starting at x=0 and starting at x=/=0
+
+  REAL (R8)                 :: A(N),  B(N),  C(N)         !coefficients on the grid starting at x=0
+  REAL (R8)                 :: A1(N), B1(N), C1(N)        !coefficients on the grid starting at x=/=0
+
+  REAL (R8)                 :: V(2),  U(2),  W(2)         !boundary conditions on the grid starting at x=0 
+  REAL (R8)                 :: V1(2), U1(2), W1(2)        !boundary conditions on the grid starting at x=/=0
+
+  REAL (R8)                 :: SOL(N),  DSOL(N)           !solution and its derivative on the grid starting at x=0
+  REAL (R8)                 :: SOL1(N), DSOL1(N)          !solution and its derivative on the grid starting at x=/=0
+
+  REAL (R8)                 :: E, F, K1, K2               !coefficients of parabola
+
+
+  IF (X(1).EQ.0.e0_R8.AND.U(1).EQ.0.e0_R8.AND.W(1).EQ.0.e0_R8) THEN
+
+     N1        = N - 1
+
+     DO I = 1,N1
+        X1(I)  = X(I+1)
+        A1(I)  = A(I+1)
+        B1(I)  = B(I+1)
+        C1(I)  = C(I+1)
+     END DO
+
+     K1        = 2.e0_R8 + 2.0*A1(1)*X1(1) - B1(1)*X1(1)**2
+     K2        = 2.e0_R8 + 2.0*A1(2)*X1(2) - B1(2)*X1(2)**2
+
+     F         = - (C1(1)*B1(2)-C1(2)*B1(1)) / (K1*B1(2)-K2*B1(1))
+     E         = (F*K1+ C1(1))/B1(1)
+
+     IF (ISP.EQ.0) THEN                            !SOLVER1
+       V1(1)   = 1.e0_R8/X1(1) - A1(1)
+       U1(1)   = B1(1)
+       W1(1)   = C1(1) 
+     ELSE IF (ISP.EQ.1) THEN                       !SOLVER4
+       V1(1)   = 1.e0_R8
+       U1(1)   = 0.e0_R8
+       W1(1)   = 1.e0_R8 * F * X1(1)
+     END IF
+
+     V1(2)     = V(2)
+     U1(2)     = U(2)
+     W1(2)     = W(2)
+
+
+     CALL SOLVER_RITM1  (X1,N1,  V1,U1,W1,  A1,B1,C1,   SOL1,DSOL1,  ISP)
+!                          radii   b.c.       coeff.      solution     spline
+
+     DO I = 2,N
+        SOL(I)  = SOL1(I-1)
+        DSOL(I) = DSOL1(I-1)
+     END DO
+
+!     SOL(1)    = E
+
+
+     IF (ISP.EQ.0) THEN                            !SOLVER1
+       CALL AXIS1(N, X, SOL)
+     ELSE IF (ISP.EQ.1) THEN                       !SOLVER4
+       SOL(1)   = E
+     END IF
+
+     DSOL(1)   = 0.e0_R8
+
+  ELSE IF (X(1).NE.0.e0_R8) THEN
+
+     CALL SOLVER_RITM1  (X,N,   V,U,W,     A,B,C,      SOL,DSOL,    ISP)
+!                          radii   b.c.       coeff.      solution     spline
+
+  END IF
+
+
+
+  RETURN
+
+
+
+END SUBROUTINE SOLVER_RITM
+
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+
+
+
+
+
+
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+!> This subroutine provides solution for the equation
+!>   Y''(x)+a(x)*Y'(x)=b(x)*Y(x)-f(x) 
+!> with boundary conditions: v(1)*Y'(1)+u(1)*Y(1)=w(1)
+!> & v(2)*Y'(n)+u(2)*Y(n)=w(2)
+!>
+!> \author M.Tokar, D.Kalupin
+!>
+!> \version "$Id$"
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+SUBROUTINE SOLVER_RITM1(x,n, v,u,w, a,b,f, y,d, isp)
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+! This subroutine provides solution for the equation    !
+!                                                       !
+!              Y''(x)+a(x)*Y'(x)=b(x)*Y(x)-f(x)         !
+!                                                       !
+! with boundary conditions: v(1)*Y'(1)+u(1)*Y(1)=w(1)   !
+!                           v(2)*Y'(n)+u(2)*Y(n)=w(2)   !
+!                                                       !
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+
+  use itm_types
+
+  IMPLICIT NONE
+
+! +++ Input:
+  INTEGER :: N                                          !number of radial points
+  INTEGER :: isp                                        !flag for use of spline, default: isp=0
+
+  REAL (R8) :: x(n)                                     !radial coordinate
+  REAL (R8) :: a(n),b(n),f(n)                           !coefficients
+  REAL (R8) :: u(2),v(2),w(2)                           !boundary conditions
+
+! +++ Output:
+  REAL (R8) :: y(n),d(n)                                !function and its derivative
+
+! +++ Internal variables:
+  INTEGER :: i,l,m,mn,k,j,jm,ii
+
+  REAL (R8) :: h(0:n+1)
+  REAL (R8) :: lam
+  REAL (R8) :: y0(n,3),d0(n,3),y1(n,2,3),d1(n,2,3),s1(n,2,3)
+  REAL (R8) :: cs(n,2,2),zt(n,2),et(n,2,2,2),mu(n,2,2),c(n,2)
+  REAL (R8) :: asi,arg,ay,cy,by,dy,bf,df,s,si,de,xi,af,cf,det
+
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+  h(0)=0.e0_R8
+!  h(1)=x(1)
+  DO i=1,n-1
+     h(i)=x(i+1)-x(i)
+  END DO
+  h(n)=0.e0_R8
+  h(n+1)=0.e0_R8
+
+
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+! +++ partial solution
+  DO i=1,n
+     DO l=1,3
+        y0(i,l)=f(i)/b(i)
+        d0(i,l)=0.e0_R8
+     END DO
+  END DO
+  IF(isp.EQ.0) GOTO 10
+  DO i=2,n-1
+
+! +++ hyperbolic-trigonometric spline for f(x)
+     CALL HYP_TRIG_SPLINE1(i,n,x,f,af,bf,cf,df,si)
+     jm=1
+     IF(i.EQ.2.OR.i.EQ.n-1) jm=2
+     DO j=1,jm
+        ii=i
+        IF(i.EQ.2.AND.j.EQ.2) ii=1
+        IF(i.EQ.n-1.AND.j.EQ.2) ii=n
+        asi=a(ii)*si
+
+! +++ weights of trigonometric functions
+        arg=b(ii)+si**2
+        ay=(af*arg+cf*asi)/(arg**2+asi**2)
+        cy=(cf*arg-af*asi)/(arg**2+asi**2)
+
+! +++ weights of hyperbolic functions
+        arg=b(ii)-si**2
+        by=(bf*arg+df*asi)/(arg**2-asi**2)
+        dy=(df*arg+bf*asi)/(arg**2-asi**2)
+        DO l=1,2
+           s=(-1)**l*si*h(i+l-2)/2.e0_R8
+           IF(i.EQ.2.AND.j.EQ.2) THEN
+              IF(l.EQ.1) s=-si*h(1)
+              IF(l.EQ.2) s=-si*h(1)/2.e0_R8
+           END IF
+           IF(i.EQ.n-1.AND.j.EQ.2) THEN
+              IF(l.EQ.1) s=si*h(n-1)/2.e0_R8
+              IF(l.EQ.2) s=si*h(n-1)
+           END IF
+           y0(ii,l)=ay*cos(s)+cy*sin(s)+                           &
+                by*cosh(s)+dy*sinh(s)
+           d0(ii,l)=si*(-ay*sin(s)+cy*cos(s)+                      &
+                by*sinh(s)+dy*cosh(s))
+        END DO
+        IF(j.EQ.1) y0(i,3)=ay+by
+     END DO
+     IF(i.EQ.2) y0(1,3)=y0(1,1)
+     IF(i.EQ.n-1) y0(n,3)=y0(n,2)
+  END DO
+
+
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+! +++ general solution
+10 DO i=1,n
+     de=a(i)**2/4.e0_R8+b(i)
+     DO k=1,2
+        lam=(-1)**k*sqrt(max(0.e0_R8,de))-a(i)/2.e0_R8
+        IF(abs(b(i)).LT.1.e-10_R8*a(i)**2/4.e0_R8)                         &
+             lam=-a(i)*(2.e0_R8-k)+b(i)/a(i)*(k-1.e0_R8)
+        DO l=1,3
+           s=(-1)**l*h(i+l-2)/2.e0_R8
+           IF(i.EQ.1.AND.l.EQ.1.OR.i.EQ.n.AND.l.EQ.2.OR.l.EQ.3)       &
+                s=0.e0_R8 
+           y1(i,k,l)=exp(s*lam-(h(i-1)*(abs(lam)-lam)+              &
+                h(i)*(abs(lam)+lam))/4.e0_R8)/(1.e0_R8+(sqrt(max        &
+                (0.e0_R8,de))+abs(a(i)/2.e0_R8))*(h(i-1)+h(i))/2.e0_R8)
+           s1(i,k,l)=lam
+           IF(de.EQ.0.e0_R8) THEN
+              xi=(k-1.e0_R8)*(x(i)+s)
+              y1(i,k,l)=y1(i,k,l)*(1.e0_R8+xi/(abs(x(1))+abs(x(n))))
+              s1(i,k,l)=lam+(k-1.e0_R8)/(abs(x(1))+abs(x(n))+xi)
+           END IF
+           IF(de.LT.0.e0_R8) THEN
+              xi=(-1)**k*tan(sqrt(-de)*s)
+              y1(i,k,l)=y1(i,k,l)*cos(sqrt(-de)*s)*(1.e0_R8+xi)
+              s1(i,k,l)=lam+sqrt(-de)*(-1)**k*(1.e0_R8-xi)/(1.e0_R8+xi)
+           END IF
+           d1(i,k,l)=y1(i,k,l)*s1(i,k,l)
+        END DO
+     END DO
+  END DO
+
+
+
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+! +++ total solution
+  DO m=1,2
+     mn=n*(m-1)+2-m
+     DO k=1,2
+        cs(mn,k,m)=u(m)+v(m)*s1(mn,k,m)
+     END DO
+     zt(mn,m)=(w(m)-u(m)*y0(mn,m)-v(m)*d0(mn,m))
+     det=max(1.e0_R8,abs(cs(mn,1,m)),abs(cs(mn,2,m)))
+     IF(det.GT.0.e0_R8) THEN
+        DO k=1,2
+           cs(mn,k,m)=cs(mn,k,m)/det
+        END DO
+        zt(mn,m)=zt(mn,m)/det
+     END IF
+     DO i=mn,(n-1)*(2-m)+2*(m-1),-(-1)**m
+        j=i-(-1)**m
+        DO l=1,2
+           DO k=1,2
+              et(i,k,l,m)=(-1)**l*(s1(j,k,m)-                           &
+                   s1(i,3-l,3-m))/(s1(i,2,3-m)-s1(i,1,3-m))
+           END DO
+           mu(i,l,m)=(-1)**l*(d0(j,m)-d0(i,3-m)-(y0(j,m)-y0(i,3-m))*  &
+                s1(i,3-l,3-m))/(s1(i,2,3-m)-s1(i,1,3-m))
+        END DO
+        DO k=1,2
+           cs(j,k,m)=et(i,k,1,m)*y1(i,1,m)*y1(i,2,3-m)*                  &
+                cs(i,1,m)+et(i,k,2,m)*y1(i,1,3-m)*y1(i,2,m)*cs(i,2,m)
+        END DO
+        zt(j,m)=(zt(i,m)*y1(i,1,3-m)*y1(i,2,3-m)-                     &
+             mu(i,1,m)*y1(i,1,m)*y1(i,2,3-m)*cs(i,1,m)-               &
+             mu(i,2,m)*y1(i,1,3-m)*y1(i,2,m)*cs(i,2,m))
+        det=max(abs(cs(j,1,m)),abs(cs(j,2,m)))
+        IF(det.GT.0.e0_R8) THEN
+           DO k=1,2
+              cs(j,k,m)=cs(j,k,m)/det
+           END DO
+           zt(j,m)=zt(j,m)/det
+        END IF
+     END DO
+  END DO
+
+  DO i=1,n
+     DO k=1,2
+        j=3-k
+        c(i,k)=(zt(i,k)*y1(i,j,j)*cs(i,j,j)-                          &
+             zt(i,j)*y1(i,j,k)*cs(i,j,k))/                            &
+             (y1(i,1,1)*y1(i,2,2)*cs(i,1,1)*cs(i,2,2)-                &
+             y1(i,1,2)*y1(i,2,1)*cs(i,1,2)*cs(i,2,1))
+     END DO
+     y(i)=c(i,1)*y1(i,1,3)+c(i,2)*y1(i,2,3)+y0(i,3)
+     d(i)=c(i,1)*d1(i,1,3)+c(i,2)*d1(i,2,3)+d0(i,3)
+  END DO
+
+
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+! +++ splined derivative:
+  DO i=2,n-1
+     d(i)=((y(i)-y(i-1))*h(i)/h(i-1)+                                    &
+          (y(i+1)-y(i))*h(i-1)/h(i))/(h(i-1)+h(i))
+  END DO
+!      d(1)=((y(2)-y(1))*(h(2)/h(1)+2.e0_R8)-(y(3)-y(2))*h(1)/h(2))/          &
+!           (h(1)+h(2))
+  d(n)=((y(n)-y(n-1))*(h(n-2)/h(n-1)+2.e0_R8)-                           &
+       (y(n-1)-y(n-2))*h(n-1)/h(n-2))/(h(n-2)+h(n-1))
+
+
+  RETURN
+END SUBROUTINE SOLVER_RITM1
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+
+
+
+
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+!> This subroutine interpolates the experimental data by using
+!> qubic spline so that k additional points are inserted between
+!> any two experimental ones
+!>
+!> \author M.Tokar, D.Kalupin
+!>
+!> \version "$Id$"
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+SUBROUTINE HYP_TRIG_SPLINE1(i,n,x,f,a,b,c,d,l)
+
+  use itm_types
+
+  IMPLICIT NONE
+
+  INTEGER :: I,N
+
+  REAL (R8) :: x(n), f(n)
+  REAL (R8) :: a, b, c, d, l
+  REAL (R8) :: l1,s1,s2,cs,ga
+
+  s1=2.e0_R8*(x(i)-x(i-1))/(x(i+1)-x(i-1))
+  s2=2.e0_R8-s1
+
+  IF(f(i).EQ.0.e0_R8) GOTO 30
+  cs=(f(i+1)*s1+f(i-1)*s2)/f(i)/2.e0_R8
+  l=1.e-5_R8
+
+  IF(1.e0_R8+1.e-7_R8.LT.cs.AND.cs.LE.2.e0_R8) THEN
+10   l1=l
+     ga=cosh(l)*(f(i-1)/sinh(l*s1)+f(i+1)/sinh(l*s2))/             &
+          (f(i)/tanh(l*s1)+f(i)/tanh(l*s2))
+     l=log(ga+sqrt(ga*ga-1.e0_R8))
+     IF(abs(l).GE.1.e0_R8) GOTO 30
+     IF(s1.NE.s2.AND.abs(1.e0_R8-l1/l).GT.1.e-5_R8) GOTO 10
+     a=0.e0_R8
+     b=f(i)
+     c=0.e0_R8
+     d=(f(i+1)*cosh(l*s1)-f(i-1)*cosh(l*s2))/sinh(2.e0_R8*l)
+     GOTO 40
+  END IF
+
+  IF(-.5e0_R8.LE.cs.AND.cs.LT.1.e0_R8-1.e-7_R8) THEN
+20   l1=l
+     ga=(f(i-1)*sin(l*s2)+f(i+1)*sin(l*s1))/2.e0_R8/f(i)/sin(l)
+     l=acos(ga)
+     IF(abs(l).GE.1.e0_R8) GOTO 30
+     IF(s1.NE.s2.AND.abs(1.e0_R8-l1/l).GT.1.e-5_R8) GOTO 20
+     a=f(i)
+     b=0.e0_R8
+     c=(f(i+1)*cos(l*s1)-f(i-1)*cos(l*s2))/sin(2.e0_R8*l)
+     d=0.e0_R8
+     GOTO 40
+  END IF
+
+30 l=1.e0_R8
+  a=(f(i+1)*(sin(s1)+sinh(s1))+f(i-1)*(sin(s2)+sinh(s2))-        &
+       f(i)*(sin(s1)*cosh(s2)+sin(s2)*cosh(s1)+sinh(2.e0_R8)))/    &
+       (sin(2.e0_R8)+cos(s2)*sinh(s1)+cos(s1)*sinh(s2)-            &
+       sin(s1)*cosh(s2)-sin(s2)*cosh(s1)-sinh(2.e0_R8))
+  b=f(i)-a
+  c=(f(i+1)-f(i-1)+a*(cos(s1)-cos(s2))+b*(cosh(s1)-               &
+       cosh(s2)))/(sin(s1)+sinh(s1)+sin(s2)+sinh(s2))
+  d=c
+
+40 l=2.e0_R8*l/(x(i+1)-x(i-1))
+
+
+  RETURN
+END SUBROUTINE HYP_TRIG_SPLINE1
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+
+
+
+
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+!>  These subroutines calculate first and second derivatives,
+!>  DY1 and DY2, of function Y respect to argument X
+!>
+!> \author M.Tokar, D.Kalupin
+!>
+!> \version "$Id$"
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+SUBROUTINE DERIVN1(N,X,Y,DY1)
+
+  use itm_types
+
+  IMPLICIT NONE
+
+  INTEGER :: N                                          ! number of radial points (input)
+  INTEGER :: I
+
+  REAL (R8) :: X(N), &                                  ! argument array (input)
+       Y(N), &                                  ! function array (input)
+       DY1(N)                                   ! function derivative array (output)
+  REAL (R8) :: H(N),DY2(N)
+
+  DO I=1,N-1
+     H(I)=X(I+1)-X(I)
+  END DO
+
+  DO I=2,N-1
+     DY1(I)=((Y(I+1)-Y(I))*H(I-1)/H(I)+(Y(I)-Y(I-1))*H(I)/H(I-1)) &
+          /(H(I)+H(I-1))
+     DY2(I)=2.e0_R8*((Y(I-1)-Y(I))/H(I-1)+(Y(I+1)-Y(I))/H(I)) &
+          /(H(I)+H(I-1))
+  END DO
+
+  DY1(1)=DY1(2)-DY2(2)*H(1)
+  DY1(N)=DY1(N-1)+DY2(N-1)*H(N-1)
+
+  RETURN
+END SUBROUTINE DERIVN1
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+
+
+
+
+
+
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+!> This subroutine finds f(r_1=0) from f(r_2), f(r_3) and f(r_4)
+!>
+!> \author D.Kalupin
+!>
+!> \version "$Id$"
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+      SUBROUTINE AXIS1(n, r, f)
+!-------------------------------------------------------!
+!                                                       !
+!     This subroutine finds                             !
+!     f(r_1=0) from f(r_2), f(r_3) and f(r_4)           !
+!                                                       !
+!-------------------------------------------------------!  
+
+      USE ITM_TYPES
+
+      IMPLICIT NONE
+
+      INTEGER    n, i
+      REAL *8    h(n), r(n), f(n)
+
+  
+      h(1)=r(1)
+      DO i=2,n-1
+        h(i)=r(i+1)-r(i)
+      END DO
+      h(n)=0.e0_R8
+ 
+
+      f(1)     = ((f(2)*r(4)/h(2)+f(4)*r(2)/h(3))*r(3)        &
+                 -f(3)*(r(2)/h(2)+r(4)/h(3))*r(2)*r(4)/r(3))  &
+                 /(r(4)-r(2))
+
+
+      RETURN
+
+
+      END SUBROUTINE AXIS1
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  
+! + + + + + + + + + + + + + + + + + + + + + + + + + + + +  

@@ -1,0 +1,177 @@
+In CASES directory
+
+./scan
+./scan.gnuplot
+
+  OR, (IF YOU WANT TO SUBMIT THE JOBS TO THE BATCH QUEUES)
+
+./scan '' 'bsub -e STDERR -o STDOUT'
+WAIT UNTIL JOBS FINISH
+./scan
+./scan.gnuplot
+
+For the UAL version using the standard queue
+./scan GW_UAL 'bsub -e STDERR -o STDOUT'
+#./scan GW_UAL.local 'bsub -e STDERR -o STDOUT'
+
+echo */data/OUTPUT/OUT*.DAT | xargs grep -l NaN | xargs -i@ mv -i @ @.NaN
+find */data/OUTPUT -name 'OUT*.DAT' | xargs grep -l NaN | xargs -i@ mv -i @ @.NaN
+find .. -name \*.NaN | sed 's:data/OUTPUT/.*::' | uniq
+
+foreach s (1 2 3)
+  foreach t (1e-1 1e-2 1e-3 1e-4)
+    foreach r (5 9 17 33 65 129 257 513 1025)
+      set n=`echo $t | awk '{print 1/$1}'`
+      set CASE=${s}_${t}_${r}_${n}
+      set OUT=`echo $n | awk '{printf "OUT%05i.DAT\n",$1}'`
+      [ -e $CASE/data/OUTPUT/$OUT ] || echo $CASE
+    end
+  end
+end
+
+In main directory:
+make DOC
+rsync -avP --delete --exclude .htaccess doc/Doxygen/html/ ~wwwimp3/public_html/ETS/ 
+
+
+1_1e-3_9_1000
+291.813u 2.822s 4:55.22 99.8%   0+0k 0+5352io 0pf+0w
+???
+
+2_1e-3_17_1000
+179.513u 1.834s 3:01.85 99.7%   0+0k 0+4240io 0pf+0w
+???
+
+2_1e-4_33_10000
+2042.468u 94.228s 35:47.16 99.5%        0+0k 0+96416io 0pf+0w
+???
+
+1_1e-4_17_10000
+10674.173u 403.296s 3:05:17.47 99.6%    0+0k 0+53008io 1pf+0w
+???
+
+
+============================================================================
+Some timings
+
+1_1e-4_65_10000		29.900u 6.012s 0:46.57 77.1%    0+0k 0+320000io 1pf+0w
+1_1e-4_129_10000	58.011u 7.686s 1:28.86 73.9%    0+0k 0+556936io 0pf+0w
+1_1e-4_257_10000	114.313u 13.048s 3:02.24 69.8%  0+0k 0+1009992io 0pf+0w
+1_1e-4_513_10000	231.688u 25.218s 4:36.94 92.7%  0+0k 0+1999336io 0pf+0w
+1_1e-4_1025_10000	453.652u 52.993s 8:38.31 97.7%  0+0k 0+3999960io 0pf+0w
+
+2_1e-4_65_10000		31.655u 7.038s 1:04.30 60.1%    0+0k 0+320000io 0pf+0w
+2_1e-4_129_10000	60.616u 9.133s 2:05.37 55.6%    0+0k 0+528800io 0pf+0w
+2_1e-4_257_10000	118.221u 14.485s 3:12.45 68.9%  0+0k 0+1002872io 0pf+0w
+2_1e-4_513_10000	248.484u 28.247s 4:49.09 95.7%  0+0k 0+2000000io 0pf+0w
+2_1e-4_1025_10000	440.790u 267.527s 12:11.13 96.8%        0+0k 0+4000000io 0pf+0w
+
+3_1e-4_65_10000		28.253u 7.306s 1:03.47 56.0%    0+0k 0+320000io 0pf+0w
+3_1e-4_129_10000	53.488u 211.634s 5:10.26 85.4%  0+0k 0+543984io 0pf+0w
+3_1e-4_257_10000	99.927u 677.603s 13:22.03 96.9% 0+0k 0+1040000io 0pf+0w
+3_1e-4_513_10000	198.330u 1015.457s 22:43.95 88.9%       0+0k 0+2000000io 0pf+0w
+3_1e-4_1025_10000	395.933u 804.121s 20:41.23 96.6%        0+0k 0+4000016io 0pf+0w
+
+===============================================================================
+
+mkdir CASES_TEST
+mv -i CASES/?_1* CASES_TEST/
+update solution1.f90 code setting the flag for splines
+
+--- ../src/solvers/solution1.f90        (revision 62)
++++ ../src/solvers/solution1.f90        (working copy)
+@@ -151,6 +151,7 @@
+
+ !       indexies:
+         ISP          = 0
++        ISP          = 1            !DPC 2009-01-22 temporary for testing
+         N            = NRHO
+ !       coefficients:
+         RHO_LOOP2: DO I = 1,N
+
+compile
+
+cd CASES_TEST
+mkdir TMP
+mv -i 1_* TMP/
+
+./scan
+
+foreach i (1_*)
+  mv -i $i `echo $i | sed 's:^1:4:'`
+end
+mv -i TMP/* .
+rmdir TMP
+
+add a 4 option to scan
+
+cat << EOD > ignore_obj
+*.mod
+dependencies*
+solver_test
+EOD
+
+svn propset svn:ignore -F ignore_obj obj/...
+
+cat << EOD > ignore_obj
+latex
+EOD
+
+gnuplot 2008_ets_convergence.gnuplot
+convert 2008_ets_convergence_dx.ps -rotate 90 2008_ets_convergence_dx.png
+convert 2008_ets_convergence_dx_dt=1e-4.ps -rotate 90 2008_ets_convergence_dx_dt=1e-4.png
+convert 2008_ets_convergence_dt.ps -rotate 90 2008_ets_convergence_dt.png
+convert 2008_ets_convergence_dt_nx=1025.ps -rotate 90 2008_ets_convergence_dt_nx=1025.png
+cp -ip *.png /afs/ipp-garching.mpg.de/home/d/dpc/tex/JET_TF-T_2009-02/
+
+t.write      100     76.744    99.2     0.000     76.744    99.2     0.000
+t.write      100     21.426    97.4     0.000     21.426    97.4     0.000
+t.write      100    658.227    99.8     0.000    658.227    99.8     0.000
+t.write      100      0.385    31.3     0.000      0.385    31.3     0.000
+t.write      100    116.115    99.5     0.000    116.115    99.5     0.000
+t.write      100    123.981    99.2     0.000    123.981    99.2     0.000
+t.write      100      0.997    62.7     0.000      0.997    62.7     0.000
+
+
+../src/blogbench -d .
+Final score for writes:            11
+Final score for reads :          4141
+
+mkdir .del.1
+mv -i [0-9]_1e-* .del.1/
+
+~/src/fsstats/fsstats CASES/ 
+
+total 310.91 GB used to store 309.20 GB user data, overhead 0.55%
+
+file size (Regular file's last addressable byte): Range, Count of files in range, number of files in range as a percent of total number of files, number of files in this range or smaller as a % of total # of files, total size of files in range, total size of files in range as a % of total size of files, total size of files in this range or smaller as a % of total size of files.
+  count=700766 avg=462.63 KB
+  min=0.00 KB max=18721561.40 KB
+  [       0-       2 KB): 156068 (22.27%) ( 22.27% cumulative)    208863.16 KB ( 0.06%) (  0.06% cumulative)
+  [       2-       4 KB):  77776 (11.10%) ( 33.37% cumulative)    253073.69 KB ( 0.08%) (  0.14% cumulative)
+  [       4-       8 KB):  77778 (11.10%) ( 44.47% cumulative)    491276.74 KB ( 0.15%) (  0.29% cumulative)
+  [       8-      16 KB):  77783 (11.10%) ( 55.57% cumulative)    967709.26 KB ( 0.30%) (  0.59% cumulative)
+  [      16-      32 KB):  77787 (11.10%) ( 66.67% cumulative)   1920590.15 KB ( 0.59%) (  1.18% cumulative)
+  [      32-      64 KB):  77774 (11.10%) ( 77.77% cumulative)   3825777.05 KB ( 1.18%) (  2.37% cumulative)
+  [      64-     128 KB):  77773 (11.10%) ( 88.87% cumulative)   7636645.06 KB ( 2.36%) (  4.72% cumulative)
+  [     128-     256 KB):  77786 (11.10%) ( 99.97% cumulative)  15260537.51 KB ( 4.71%) (  9.43% cumulative)
+  [     256-     512 KB):     10 ( 0.00%) ( 99.97% cumulative)      3480.07 KB ( 0.00%) (  9.43% cumulative)
+  [     512-    1024 KB):      7 ( 0.00%) ( 99.97% cumulative)      4531.09 KB ( 0.00%) (  9.43% cumulative)
+  [    1024-    2048 KB):     21 ( 0.00%) ( 99.97% cumulative)     31758.82 KB ( 0.01%) (  9.44% cumulative)
+  [    2048-    4096 KB):     14 ( 0.00%) ( 99.97% cumulative)     41100.39 KB ( 0.01%) (  9.45% cumulative)
+  [    4096-    8192 KB):     14 ( 0.00%) ( 99.98% cumulative)     77877.05 KB ( 0.02%) (  9.48% cumulative)
+  [    8192-   16384 KB):     21 ( 0.00%) ( 99.98% cumulative)    240872.91 KB ( 0.07%) (  9.55% cumulative)
+  [   16384-   32768 KB):     21 ( 0.00%) ( 99.98% cumulative)    439237.47 KB ( 0.14%) (  9.69% cumulative)
+  [   32768-   65536 KB):     21 ( 0.00%) ( 99.98% cumulative)   1020327.23 KB ( 0.31%) ( 10.00% cumulative)
+  [   65536-  131072 KB):     21 ( 0.00%) ( 99.99% cumulative)   2407092.86 KB ( 0.74%) ( 10.74% cumulative)
+  [  131072-  262144 KB):     21 ( 0.00%) ( 99.99% cumulative)   4390738.38 KB ( 1.35%) ( 12.10% cumulative)
+  [  262144-  524288 KB):     14 ( 0.00%) ( 99.99% cumulative)   5731077.28 KB ( 1.77%) ( 13.87% cumulative)
+  [  524288- 1048576 KB):     14 ( 0.00%) ( 99.99% cumulative)  11042669.08 KB ( 3.41%) ( 17.27% cumulative)
+  [ 1048576- 2097152 KB):     14 ( 0.00%) (100.00% cumulative)  21656077.29 KB ( 6.68%) ( 23.95% cumulative)
+  [ 2097152- 4194304 KB):      7 ( 0.00%) (100.00% cumulative)  16720558.67 KB ( 5.16%) ( 29.11% cumulative)
+  [ 4194304- 8388608 KB):      7 ( 0.00%) (100.00% cumulative)  33050929.76 KB (10.19%) ( 39.30% cumulative)
+  [ 8388608-16777216 KB):      7 ( 0.00%) (100.00% cumulative)  65720558.67 KB (20.27%) ( 59.58% cumulative)
+  [16777216-33554432 KB):      7 ( 0.00%) (100.00% cumulative) 131050929.77 KB (40.42%) (100.00% cumulative)
+
+
+~/src/fsstats/fsstats ~/SVN/solps*

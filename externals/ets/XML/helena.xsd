@@ -1,0 +1,418 @@
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <!-- document element -->
+  <xs:element name="parameters">
+    <xs:complexType>
+      <xs:all>
+        <xs:element ref="profile_parameters" maxOccurs="1"/>
+        <xs:element ref="shape_parameters" maxOccurs="1"/>
+        <xs:element ref="global_parameters" maxOccurs="1"/>
+        <xs:element ref="numerical_parameters" maxOccurs="1"/>
+        <xs:element ref="diagnostics_parameters" maxOccurs="1"/>
+      </xs:all>
+    </xs:complexType>
+  </xs:element>
+
+  <!-- profiles parameters -->
+  <xs:element name="profile_parameters">
+    <xs:complexType>
+      <xs:all>
+         <xs:element ref="input_type"/>
+         <xs:element ref="radial_coordinate"/>
+         <xs:element ref="hbt" minOccurs="0" maxOccurs="1"/>
+         <xs:element ref="current_averaging" minOccurs="0" maxOccurs="1"/>
+      </xs:all>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="input_type">
+    <xs:simpleType>
+      <xs:restriction base="xs:string">
+        <xs:pattern value="p' and FF'|p' and j_tor|p and j_tor|p' and q"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+
+  <xs:element name="radial_coordinate">
+    <xs:simpleType>
+      <xs:restriction base="xs:string">
+        <xs:pattern value="psi|rho_vol|rho_tor"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+
+  <xs:simpleType name="FloatList">
+     <xs:list itemType="xs:float"/>
+  </xs:simpleType>
+
+  <xs:simpleType name="RestrictedFloatList">
+    <xs:restriction base="FloatList">
+      <xs:maxLength value="10"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:element name="hbt" type="xs:boolean"/>
+
+  <xs:element name="current_averaging">
+    <xs:simpleType>
+      <xs:restriction base="xs:string">
+        <xs:pattern value="line|area|volume|theta"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+
+  <!-- shape parameters -->
+  <xs:element name="shape_parameters">
+    <xs:complexType>
+      <xs:all>
+        <xs:element ref="ellip" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="tria" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="quad" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="par1" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="par2" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="par3" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="par4" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="isol" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="ias" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="mfm" maxOccurs="1"/>
+        <xs:element ref="iarc" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="imesh" maxOccurs="1"/>
+        <xs:element ref="amesh" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="bmesh" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="n_acc_points" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="s_acc" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="sig" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="weights" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="equidistant" minOccurs="0" maxOccurs="1"/>
+      </xs:all>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="ellip">
+    <xs:simpleType>
+      <xs:restriction base="xs:float">
+        <xs:minInclusive value="0"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+
+  <xs:element name="tria">
+    <xs:simpleType>
+      <xs:restriction base="xs:float">
+        <xs:minInclusive value="0"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+
+  <xs:element name="quad">
+    <xs:simpleType>
+      <xs:restriction base="xs:float">
+        <xs:minInclusive value="0"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+
+  <xs:element name="par1" type="xs:float"/>
+  <xs:element name="par2" type="xs:float"/>
+  <xs:element name="par3" type="xs:float"/>
+  <xs:element name="par4" type="xs:float"/>
+
+  <xs:element name="isol">
+    <xs:simpleType>
+      <xs:restriction base="xs:integer">
+        <xs:pattern value="0|1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+
+  <xs:element name="ias">
+    <xs:simpleType>
+      <xs:restriction base="xs:integer">
+        <xs:pattern value="0|1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+
+  <xs:element name="mfm">
+    <xs:simpleType>
+      <xs:restriction base="xs:integer">
+        <xs:minInclusive value="2"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+
+  <xs:element name="iarc">
+    <xs:simpleType>
+      <xs:restriction base="xs:integer">
+        <xs:pattern value="0|1"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+
+  <xs:element name="imesh">
+    <xs:simpleType>
+      <xs:restriction base="xs:integer">
+        <xs:pattern value="0|1|2|3"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+
+  <xs:element name="amesh" type="xs:float"/>
+  <xs:element name="bmesh" type="xs:float"/>
+
+  <xs:element name="n_acc_points">
+    <xs:simpleType>
+      <xs:restriction base="xs:integer">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="10"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+
+  <xs:element name="s_acc" type="RestrictedUnitFloatList"/>
+  <xs:element name="sig" type="RestrictedPosFloatList"/>
+  <xs:element name="weights" type="RestrictedUnitFloatList"/>
+
+  <xs:simpleType name="pos_float">
+    <xs:restriction base="xs:float">
+      <xs:minExclusive value="0"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="unit_float">
+    <xs:restriction base="xs:float">
+      <xs:minInclusive value="0"/>
+      <xs:maxInclusive value="1"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="PosFloatList">
+     <xs:list itemType="pos_float"/>
+  </xs:simpleType>
+
+  <xs:simpleType name="RestrictedPosFloatList">
+    <xs:restriction base="PosFloatList">
+      <xs:maxLength value="10"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="UnitFloatList">
+     <xs:list itemType="unit_float"/>
+  </xs:simpleType>
+
+  <xs:simpleType name="RestrictedUnitFloatList">
+    <xs:restriction base="UnitFloatList">
+      <xs:maxLength value="10"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:element name="equidistant" type="unit_float"/>
+
+  <!-- global parameters -->
+  <xs:element name="global_parameters">
+    <xs:complexType>
+      <xs:all>
+        <xs:element ref="match" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="eps" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="alfa" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="B" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="Ip" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="q95" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="betap" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="W_MHD" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="rvac" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="bvac" maxOccurs="1"/>
+        <xs:element ref="zeff" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="zn0" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="rpe" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="etaei" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="ne" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="te" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="cpsurfin" minOccurs="0" maxOccurs="1"/>
+      </xs:all>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="match">
+    <xs:simpleType>
+      <xs:restriction base="xs:string">
+        <xs:pattern value="psi_bound|Ip|q95"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+
+  <xs:element name="eps" type="pos_float"/>
+  <xs:element name="alfa" type="xs:float"/>
+  <xs:element name="B" type="xs:float"/>
+  <xs:element name="Ip" type="xs:float"/>
+  <xs:element name="q95" type="xs:float"/>
+  <xs:element name="betap" type="xs:float"/>
+  <xs:element name="W_MHD" type="pos_float"/>
+  <xs:element name="rvac" type="pos_float"/>
+  <xs:element name="bvac" type="xs:float"/>
+  <xs:element name="zeff" type="pos_float"/>
+  <xs:element name="zn0" type="pos_float"/>
+  <xs:element name="rpe" type="pos_float"/>
+  <xs:element name="etaei" type="pos_float"/>
+
+  <xs:element name="ne">
+    <xs:complexType>
+      <xs:all>
+        <xs:element ref="shape" maxOccurs="1"/>
+        <xs:element ref="h" maxOccurs="1"/>
+        <xs:element ref="h_0" maxOccurs="1"/>
+        <xs:element ref="slope" maxOccurs="1"/>
+        <xs:element ref="psi_m" maxOccurs="1"/>
+        <xs:element ref="delta" maxOccurs="1"/>
+        <xs:element ref="psi_0" maxOccurs="1"/>
+        <xs:element ref="alpha" maxOccurs="1"/>
+      </xs:all>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="te">
+    <xs:complexType>
+      <xs:all>
+        <xs:element ref="shape" maxOccurs="1"/>
+        <xs:element ref="h" maxOccurs="1"/>
+        <xs:element ref="h_0" maxOccurs="1"/>
+        <xs:element ref="slope" maxOccurs="1"/>
+        <xs:element ref="psi_m" maxOccurs="1"/>
+        <xs:element ref="delta" maxOccurs="1"/>
+        <xs:element ref="psi_0" maxOccurs="1"/>
+        <xs:element ref="alpha" maxOccurs="1"/>
+      </xs:all>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="shape">
+    <xs:simpleType>
+      <xs:restriction base="xs:integer">
+        <xs:pattern value="0|1|2"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+
+  <xs:element name="h" type="pos_float"/>
+  <xs:element name="h_0" type="pos_float"/>
+  <xs:element name="slope" type="xs:float"/>
+
+  <xs:element name="psi_m" type="unit_float"/>
+
+  <xs:element name="delta">
+    <xs:simpleType>
+      <xs:restriction base="xs:float">
+        <xs:minInclusive value="1E-4"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="psi_0" type="xs:float"/>
+  <xs:element name="alpha" type="ShortFloatList"/>
+
+  <xs:simpleType name="ShortFloatList">
+    <xs:restriction base="FloatList">
+      <xs:length value="3"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:element name="cpsurfin" type="xs:float"/>
+
+  <!-- numerical parameters -->
+  <xs:element name="numerical_parameters">
+    <xs:complexType>
+      <xs:all>
+        <xs:element ref="nr" maxOccurs="1"/>
+        <xs:element ref="np" maxOccurs="1"/>
+        <xs:element ref="nrmap" maxOccurs="1"/>
+        <xs:element ref="npmap" maxOccurs="1"/>
+        <xs:element ref="nchi" maxOccurs="1"/>
+        <xs:element ref="niter" maxOccurs="1"/>
+        <xs:element ref="nmesh" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="nouter" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="amix" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="errit" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="errcur" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="nbb" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="abb" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="bbb" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="ampl" minOccurs="0" maxOccurs="1"/>
+      </xs:all>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:simpleType name="pos_integer">
+    <xs:restriction base="xs:integer">
+      <xs:minExclusive value="0"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:element name="nr" type="pos_integer"/>
+  <xs:element name="np" type="pos_integer"/>
+  <xs:element name="nrmap" type="pos_integer"/>
+  <xs:element name="npmap" type="pos_integer"/>
+  <xs:element name="nchi" type="pos_integer"/>
+  <xs:element name="niter" type="pos_integer"/>
+  <xs:element name="nmesh" type="pos_integer"/>
+  <xs:element name="nouter" type="pos_integer"/>
+  <xs:element name="amix" type="unit_float"/>
+  <xs:element name="errit" type="pos_float"/>
+  <xs:element name="errcur" type="pos_float"/>
+  <xs:element name="nbb" type="pos_integer"/>
+  <xs:element name="abb" type="xs:float"/>
+  <xs:element name="bbb" type="xs:float"/>
+  <xs:element name="ampl" type="xs:float"/>
+
+  <!-- diagnostics parameters -->
+  <xs:element name="diagnostics_parameters">
+    <xs:complexType>
+      <xs:all>
+        <xs:element ref="verbosity" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="output" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="diagnostics_on" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="standard_output" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="elite_output" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="profiles_output" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="additional_output" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="xmgrace_output" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="eqdsk_file" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="vec_file" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="edgelabe" minOccurs="0" maxOccurs="1"/>
+      </xs:all>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="verbosity">
+    <xs:simpleType>
+      <xs:restriction base="xs:integer">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="4"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+
+  <xs:element name="output">
+    <xs:simpleType>
+      <xs:restriction base="xs:string">
+        <xs:pattern value="none|equilibrium|profiles|full"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+
+  <xs:element name="diagnostics_on" type="xs:boolean"/>
+  <xs:element name="standard_output" type="xs:boolean"/>
+  <xs:element name="elite_output" type="xs:boolean"/>
+  <xs:element name="profiles_output" type="xs:boolean"/>
+  <xs:element name="additional_output" type="xs:boolean"/>
+  <xs:element name="xmgrace_output" type="xs:boolean"/>
+  <xs:element name="eqdsk_file" type="xs:boolean"/>
+  <xs:element name="vec_file" type="xs:boolean"/>
+
+  <xs:element name="edgelabe">
+    <xs:simpleType>
+      <xs:restriction base="xs:float">
+        <xs:minInclusive value="0"/>
+        <xs:maxInclusive value="100"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+
+</xs:schema>

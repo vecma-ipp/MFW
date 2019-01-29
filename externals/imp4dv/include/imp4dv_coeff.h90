@@ -1,0 +1,27 @@
+MODULE IMP4DV_Coeff
+
+  USE Phys_constants
+  USE Mod_turb
+  USE L3interps
+  USE copy_structures
+  USE write_structures
+
+  IMPLICIT NONE
+
+  LOGICAL, SAVE :: write_diags = .false.
+  LOGICAL, SAVE :: write_cpos = .false.
+  LOGICAL, SAVE :: interpolate_zero = .false.
+
+  INTEGER(ITM_I4) :: npsi = 0, nrho_prof = 0, nrho = 0, nion = 0
+
+  REAL(R8) :: a00,b00,r00,rho_tor_max
+
+  REAL(R8) :: nni,tti,rlni,rlti,llni,llti
+  REAL(R8) :: diffe,ffi,ggi,diffi,chii,vconvi,yconvi
+
+  REAL(R8), DIMENSION(:), POINTER :: rho_eq,gm3,rho_prof,rho
+
+  REAL(R8), DIMENSION(:,:), ALLOCATABLE :: &
+       nnix,ttix,rlnix,rltix,ffix,ggix
+
+END MODULE IMP4DV_Coeff

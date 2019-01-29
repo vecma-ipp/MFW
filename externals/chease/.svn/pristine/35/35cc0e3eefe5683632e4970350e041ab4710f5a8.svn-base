@@ -1,0 +1,60 @@
+!*COMDECK COMDAT
+!
+!**********************************************************************
+!                                                                     *
+!     C.20   EQUILBRIUM NAMELIST                                      *
+!                                                                     *
+!**********************************************************************
+!
+!    ADD COMMENTS ABOUT NAMELIST VARIABLES HERE:
+!
+!    NIDEAL:  DETERMINES MAPPING OF SPECIFIC CHEASE RESULTS ON TO A SPECIFIC MESH, IN GENERAL FOR A GIVEN CODE
+!            =0: FOR MARS
+!            =1: FOR ERATO
+!            =2: FOR LION
+!            =3: FOR NOVA-W (FILE INP1)
+!            =4: FOR PENN (FILE NPENN)
+!            =5: FOR XTOR (FILE OUTXTOR)
+!            =6 (DEFAULT): FOR STANDARD OUTPUT, INCLUDING EQDSK
+!            =7: FOR GYROKINETIC CODES (FILE EQCIN)
+!            =8: FOR ELITE (FILE NELITE)
+!            =9: FOR OGYROPSI (FILE OGYROPSI), REQUIRES STRAIGHT FIELD LINE JACOBIAN
+!
+!     EU-ITM RELATED VARIABLES:
+!
+!    NITMOPT: DETERMINES TYPE OF INPUT AND POSSIBILITIES. IF SET TO -1 AS DEFAULT VALUE, ASSUME CHEASE NOT COMPILED WITH ITM PACKAGE. IF SET TO 0, THEN CAN BE CHANGED IN NAMELIST SUCH THAT:
+!            =01: READ EQUILIBRIUM FROM ITM STRUCTURE, BUT WRITE STANDARD OUTPUT FILES
+!            =11: READ AND WRITE EQUIL FROM AND TO ITM DATA STRUCTURE
+!            =10: READ EQUIL FROM STANDARD FILES AND WRITE TO ITM DATA STRUCTURE
+!            =00: READ FROM FILES AND WRITE ON FILES AS BEFORE
+!            =22: READ AND WRITE VIA KEPLER (NOT ACTIVE YET)
+!    NITMSHOT(1)/NITMRUN(1): SHOT AND RUN NUMBER TO READ ITM DATA FROM
+!    NITMSHOT(2)/NITMRUN(2): SHOT AND RUN NUMBER TO WRITE ITM DATA TO
+!    TREEITM: ITM TREE TO USE, TREEITM(1) FOR READING AND TREEITM(2) FOR WRITING THE DATA
+!         AT THIS STAGE, IT IS ASSUMED THAT ONLY THE SIGNAL_NAME='EQUILIBRIUM' IS DEALT WITH
+!     
+         NAMELIST /EQDATA/ &
+     &   AFBS,    AFBS2,   AP,      APLACE,  AP2,     ASPCT,   AT, &
+     &   AT2,     AT3,     AT4,     AWIDTH,  BEANS,   bentaxis,bentqprofile, bentradius, &
+     &   BPLACE,  BSFRAC,  BWIDTH,  B0EXP,   CETA,    CFBAL,   CFNRESS, &
+     &   CFNRESSO,CPLACE,  CPRESS,  CPRESSO, CQ0,     CSSPEC, &
+     &   CURRT,   CWIDTH,  DELTA,   DPLACE,  DWIDTH,  ELONG,   EPLACE, &
+     &   ETAEI,   EWIDTH,  EPSLON,  GAMMA,   PANGLE,  PREDGE, &
+     &   PSISCL,  QSPEC,   QPLACE,  QWIDTH,  QVALNEO, RBOXLEN, RBOXLFT, &
+     &   RC,      RELAX,   REXT,    RNU,     RPEOP,   RZION, &
+     &   RZ0,     RZ0W,    R0,      R0EXP,   R0W,     SCALNE, &
+     &   SCEXP,   SIGNB0XP,SIGNIPXP,SGMA,    slimit,  snumber, SOLPDA,  SOLPDB, &
+     &   SOLPDC,  SOLPDD,  SOLPDE,  spitzer, &
+     &   THETA0,  TREEITM, TRIANG,  TRIPLT,  XI,      ZBOXLEN, &
+     &   MSMAX,   NANAL,   NBAL,    NBLC0,   NBLOPT,  NBPSOUT, NBSEXPQ, &
+     &   NBSFUN,  NBSOPT,  NBSTRP,  NCHI,    NCSCAL,  NDIAGOP, NDIFPS, &
+     &   NDIFT,   NEGP,    NEONBQS, NEQDSK,  NER,     NITMOPT, NITMRUN, NITMSHOT,  NFFTOPT, &
+     &   NFUNC,   NFUNRHO, NIDEAL,  NINMAP,  NINSCA,  NIPR,    NISO,    NMESHA, &
+     &   NMESHB,  NMESHC,  NMESHD,  NMESHE,  NMGAUS,  NOPT, &
+     &   NPLOT,   NPOIDA,  NPOIDB,  NPOIDC,  NPOIDD,  NPOIDE, &
+     &   NPOIDQ,  NPP,     NPPFUN,  NPPR,    NPROFZ,  NPROPT, &
+     &   NPRPSI,  NPSI,    NRBOX,   NRFP,    NRSCAL,  NS, &
+     &   NSGAUS,  NSMOOTH, NSOUR,   NSTTP,   NSURF,   NSYM, &
+     &   NT,      NTCASE,  NTGAUS,  NTEST,   NTMF0,   NTNOVA, &
+     &   NTURN,   NV,      NVEXP,   NZBOX,   NEQDXTPO,COMMENTS
+

@@ -1,0 +1,384 @@
+
+$Id: README 1025 2015-11-19 17:07:41Z osauter $
+
+Started 990416 from f90 version made by Minh and Alexandre Pletzer
+to have dynamic dimensions.
+
+src-f90 contains it with tag CHEASE-90-1-0
+
+990725: Remove files and variables related to old XTOR interface
+ => tag CHEASE_90_2_1
+
+990720: Add directory PLOT with pchease.V12 and files needed for interface with
+        creapict (fort.8) or NCAR directly.
+        Also has last(?) bugs fixed for f90 version (dimension in wrtplot).
+ => tag CHEASE_90_2_0  (cvs rtag CHEASE_90_2_0 chease)
+
+990727: Removed old routines and variables for old XTOR interface. This version
+        was given to M. Chu on 990725.
+ => tag CHEASE_90_2_1
+
+990729: Modify Bootstrap formulas according to Sauter et al, Phys. Plasmas 6 (1999) 2834.
+        Remove old RJBSH and RJBSR. Keep nue*=0 and nue* non zero, as nue* well known only
+        if Te, ne are given (using namelist or input file EXPTNZ)
+        Add also sigmaneo module
+ => tag CHEASE_90_2_2
+
+991221: Bug in sigmaneomod.f90 and bscoeff.f90 if Te or pe=0 fixed for ln Lambda
+ => tag CHEASE_90_2_4 (2_3 already done)
+
+000126: Error in computing total BS current, added IBS(psi) in diag
+ => tag CHEASE_90_2_5
+
+000406: Added binary ouput files for plot stuff (subroutines wrtbin, matwrtI,
+        matwrtM and matwrtC)
+
+000407: Bug in ballooning stability corrected. This bug was created with f90
+        version of the code. f77 version was correct.
+
+000407: Added a flag in cotrol.f90 for XTOR. Added some of missing _rkind's.
+
+000701: Add wrtmat, error with exit in baloon, matlab routine from Zabiego
+ => tag CHEASE_90_2_6 (installed on JET and given to Lazzaro)
+
+020312: Some minor changes and debug of bootstrap term
+ => tag CHEASE_90_2_7 (saved at JET to give it to Culham (R. Buttery)
+
+021007: cvs export -r CHEASE_90_2_7 chease to export to Konstantin Komoshvil: komosh@post.tau.ac.il
+
+030403: debugged ELITE nideal=8 interface, added ppspln2 routine
+
+20051116: tag version before exporting to Lutjens for inserting ITM Task Force F90 ala XML interface:
+         cvs tag CHEASE_90_2_8
+
+20060324: Merged with Hinrich modifed version finalised March 21
+         cvs tag CHEASE_90_3_0
+
+20060327: free read for eqdsk first line and NPP=3 option for polynomial case NSTTP=1 to keep standard option
+         cvs tag CHEASE_90_3_1
+
+20070323: Merge H. Lutjens modif for EU ITM interface. Change EUITM to yes in Makefile and add mdsplus library link to compile
+          file bndinp.f90 has been removed since was just calling iodisk(33)
+          cvs add chipsimetrics.f90 euitm_access.f90 euitm_chease.f90 euitm_getroutines.f90
+                  euitm_putroutines.f90 euitm_schemas.f90 euitm_utilities.f90 outastro.f90 rvar2.f90 subr_chease.f90
+          rm Makefile_hal, since just option IBM, hal of Makefile
+          resolved question of pprime.f90
+          Makefile needs to comment the "ifeq" part, at least on hal. Probably just a question of shell
+          Compiles correctly. Chipsimetrics calculated for J standard, but see comments from Hinrich's email below:
+    chipsimetrics ne calcule les metriques que pour les jacobiens c(psi)*R^alpha*|grad-psi|^beta. Je l'ai ajoute pour calculer et 
+    stocker les metriques pour les maillages en chi-psi.
+    Pour les maillages en psi-theta, les metriques sont stockees dans outxt.f90. Notes que je n'ai pas fait la manip pour outpen
+    a cause du cahier des charges pour le stockage ITM. Pour PENN, les metriques sont en effet stockees sur 
+    les points d'integrations de Gauss.
+    La structure equil est tjrs remplie, avec EUITM=yes et no. Le remplissage de cette structure n'est que du fortran 90. 
+    C'est seulement lors du stockage et da la lecture sur le serveur EUITM que sont utilisees les routines mdsplus. 
+    Ca se fait dans un chapeau au dessus de CHEASE, euitme_chease.f90.
+    J'ai expressement separe cela, car sur certaines machines, je veux pouvoir tourner sans cette librairie.
+    Notes aussi que j'ai pour EUITM, chease est appele comme subroutine dans subr_chease.f90. J'ai du faire la manip de 
+    stocker equil_in et equil_out  dans equilchease_in et equilchease_out parce que je ne peux pas les passer en dummy 
+    par le module globals.f90. Sinon, il aurait fallu les faire passer par toute la hierarchie de chease jusqu'a
+    la routine ou elles sont remplies.
+
+          cvs tag CHEASE_90_4_1
+
+20070529: (OS) Introduced option to give experimental profiles in terms of normalized rho_toroidal instead of poloidal rho
+          This is much better since rho_tor changes less with a change in q profile, that is of equilibrium. In particular 
+          to scan various j profile (with additional jcd for example), one should use this new option.
+          It is easy to test it, since now there is always an EXPEQ.OUT.TOR file which is given in output. One needs just 
+          to set NFUNRHO=1 in namelist (new variable). Then an integer is read in EXPEQ file next to NSTTP. The value is put into
+          the variable NRHOMESH. If NRHOMESH=0, it means the rho mesh is rho_poloidal. If NRHOMESH=1, rho mesh is rho_toroidal.
+
+          cvs tag CHEASE_90_4_2
+
+20070601: (OS) New interface for gyrokinetic codes, which could be relatively general since mainly metrics are given. 
+          Use the new structure variable created in chipsimetrics.
+          Details about implementation here below in order to redo the same if needed:
+          New option: NIDEAL=9 -> OGYROPSI since OUTGYRO is for R,Z mesh, now on psi, chi
+           - change COMDAT.inc to add comment for new NIDEAL
+           - Add in cotrol.f90 a check if straight field line Jacobian is used with NIDEAL=9 (required for GENE interface)
+           - Add call to premap, norept and mappin ala outelit in stepon.f90, and later call ogyropsi in stepon.f90, 
+             after call to chipsi, since needs quantities on chim calculated in chipsi.f90
+           - create file ogyropsi.f90, starting from erdata.f90
+           - To be continued later
+
+20080130: Introduced SIGNIPXP and SIGNB0XP to allow follow-up of experimental signs of Ip and B0, since
+          CHEASE sets Ip AND B0 positive and equilibrium ignorant of effective sign of either
+          cvs tag CHEASE_90_4_3
+
+20080516: First version running for both with/without ITM data structure v4. Added load_itm_with_rout or _dummy, 
+          as well as write_itm... This has been tested on the gateway for ITM structure and on crpppc70, hal for standard runs
+          On gateway, need to define euitm_path to ~sauter/itm_pulses in order to save locally the pulses
+          Added namelist variables nitmshot(2), nitmrun(2), treeitm(2) to specify equilibrium to be read (1) 
+          and/or the one to be written to (2). The NITMOPT determines what to do:
+          NITMOPT = -1 or 0: no interaction with ITM structure
+          NITMOPT = 1: read in equil from ITM and write outputs as usual
+          NITMOPT = 10: read from standard files as usual and write also to ITM structure
+          NITMOPT = 11: read in equil from ITM and write result to ITM structure
+          NITMOPT = 22: should be for kepler option (not tested/implemented yet)
+          cvs tag CHEASE_90_5_1
+
+20080528: Transferred cvs version to svn, using Minh Tran's commands.
+          Repository is public in> https://crppsvn.epfl.ch/repos/CHEASE/chease. We decided to put 3 codes in this main repository,
+          namely chease, BNDFIT and PROFFIT. Thus to checkout one should do:
+          svn co https://crppsvn.epfl.ch/repos/CHEASE/chease/trunk CHEASE/chease
+          svn co https://crppsvn.epfl.ch/repos/CHEASE/PROFFIT/trunk CHEASE/PROFFIT
+          svn co https://crppsvn.epfl.ch/repos/CHEASE/BNDFIT/trunk CHEASE/BNDFIT
+          To export the latest version one should do:
+          svn export https://crppsvn.epfl.ch/repos/CHEASE/chease/trunk CHEASE/chease
+          svn export https://crppsvn.epfl.ch/repos/CHEASE/PROFFIT/trunk CHEASE/PROFFIT
+          svn export https://crppsvn.epfl.ch/repos/CHEASE/BNDFIT/trunk CHEASE/BNDFIT
+          Note that usually one export tagged version to outside collaborators, thus something like:
+          svn export https://crppsvn.epfl.ch/repos/CHEASE/chease/tags/CHEASE_90_5_1 CHEASE/chease_5_1
+          The last cvs version dates 2008 May 27.
+          Tagged this version with svn as starting point, although still developing xml input for chease:
+          svn cp https://crppsvn.epfl.ch/repos/CHEASE/chease/trunk https://crppsvn.epfl.ch/repos/CHEASE/chease/tags/CHEASE_90_5_1b
+          tag CHEASE_90_5_1b
+
+20080529  First version which can do it all, almost, with respect to ITM structure and inputs
+          Changes such as to read namelist from chease_input.xml file OR from chease_namelist file, so if one was using:
+                chease < datain
+          change to:
+                cp datain chease_namelist
+                chease
+          The file chease_input.xml is read first and this should become the default standard. 
+          The routines needed to parse through this xml file were given by C. Konz
+          To add a new namelist parameter:
+             modify globals.f90, assign_code_parameters.f90 chease_schema.xml
+             modify COMDAT.inc for backward compatibility with namelist
+          Note that namelist variables are put into groups in the xml file, and then in alphabetical order
+
+          This version can also read and/or write from ITM data structure, or not...
+
+          tag CHEASE_90_6_1 (and will add ID automatic from svn stuff later, with help of M. tran)
+          svn cp https://crppsvn.epfl.ch/repos/CHEASE/chease/trunk https://crppsvn.epfl.ch/repos/CHEASE/chease/tags/CHEASE_90_6_1 -m"tag version 6_1, running with either XML or normal namelist input" 
+
+20080606  File src-f90/euitm_xml_parser.f90 uses recursive subroutine call with pointer manipulation. It seems that
+          it does work properly if compile with automatic deallocation at end of routines, like is the default 
+          with xlf95. So need to compile it with xlf90 AND -Oi with i<=1. Modified Makefile.
+
+20080626  Removed some prints from debugging, added nitmopt=22 opt, but to be tested with kepler later. 
+          Makefile such that "make chease_itm" works directly on gateway, so can give this version to G. Vlad, etc.
+          tag CHEASE_90_6_2:
+          svn cp https://crppsvn.epfl.ch/repos/CHEASE/chease/trunk https://crppsvn.epfl.ch/repos/CHEASE/chease/tags/CHEASE_90_6_2 -m"tag version 6_2, running with either XML or normal namelist input" 
+          Then others should do:
+          svn export https://crppsvn.epfl.ch/repos/CHEASE/chease/tags/CHEASE_90_6_2 CHEASE/chease
+
+20090211  Larger bounds and change surface to print also sigmaneo. Seems there is still a bug for rhotor in input with new version 62. To be checked but first 
+          Integrate latest changes due to ORB5 link:
+            diff ./Makefile ../chease/src-f90//Makefile                     ok added in comments pleiades way + f90flag_parser
+            diff ./chipsimetrics.f90 ../chease/src-f90//chipsimetrics.f90   ok replaced by ORB5 version
+            diff ./mappin.f90 ../chease/src-f90//mappin.f90                 ok took ORB5 with larger eqchease_out_add_2d(7,npsi1,nchi)
+            diff ./ogyropsi.f90 ../chease/src-f90//ogyropsi.f90             ok add write extra eqchease_out_add_2d
+            diff ./ogyropsi_hdf5.f90 ../chease/src-f90//ogyropsi_hdf5.f90   ok add write extra eqchease_out_add_2d
+            diff ./premap.f90 ../chease/src-f90//premap.f90                 ok added new npsi+1 equidistant points k=6 option
+            diff ./stepon.f90 ../chease/src-f90//stepon.f90                 ok replace premap(3) by premap(6)
+            diff ./write_ogyropsi_hdf5.f90 ../chease/src-f90//write_ogyropsi_hdf5.f90 ok replaced chease_namelist but remains "close(9)" with 9 coming from the blue
+          Added debug of rhotor option (call ppspln2 with array for last 2 args in pprime and rfunc)
+
+20090212  Add H. Lutjens modifications
+            Add RODABYROD0 in COMDAT.inc, globals.f90, norept.f90, preset.f90
+            Replace R/ZISO surfaces treatment in wrtasc.f90, wrtbin.f90, wrtmat.f90, wrtplot.f90
+
+20090303  Add Y. Camenen's corrections with NIDEAL=10 for Warwick'Peeters' code interface and hamada coordinates and bug in BCHIN(0)            
+          Once OK with Yann, will tag as version 6.3
+          Addition of a small module in Chease to compute the metric elements for the local gyrokinetic code GKW.
+          List of modified files and short description:
+            cotrol.f90   # check that NER=0 and NEGP=0 if NIDEAL=10 is selected
+            globals.f90  # Add variables rb2min, ah, ahpr, ahprcor and explicit index names for the arrays
+                         # eqchease_out_add_1d and eqchease_out_add_2d
+            g_2.f90      # Allocate rb2min, ah, ahpr and ahprcor
+            mappin.f90   # Increase size of eqchease_out_add_1d to 17 and size of eqchease_out_add_2d to 14
+            stepon.f90   # Add case NIDEAL=10
+            mesh.f90     # Add option NMESHA=4
+            packme.f90   # Add pacmke2 to have FS exactly on APLACE when packing is used with NMESHA=4
+            write_ogyropsi.f90   # Add an extra input to specify the name of the output file
+            write_ogyropsi_hdf5.f90   # idem
+            ogyropsi.f90 # Make the call to write_ogyropsi with the input 'ogyropsi' for the file name
+            surface.f90  # Add local variables ZDAH, ZDAHPR1, ZDAHPR2, KGAUS, ZAHPR1, ZAHPR2, ZD2BCN, tmp1, tmp2, tmp3, ZBETCHI, ZTET and J1
+                         # Integrals for BCHIN, BCHI0, etc was done assuming MGAUS=4 -> changed to arbitrary MGAUS
+                         # Calculate AH, AHPR, AHPRCOR and RB2MIN
+            chipsimetrics.f90  # Add local variables ZAH, ZAHPR, ZAHPRCOR, Y2, WORK, tmp1, tmp2, ZDET, ZDRDPSI, ZDRDCHI, ZDZDPSI, ZDZDCHI, ZBETCHI0, ZBETCHITOT
+                               # Calculate ZBETCHI0 = beta_psi_chi(theta =0)
+                               # Calculate quantities required in hamada.f90
+            hamada.f90   (new file) # builds and outputs the quantities for GKW
+
+20090307  svn cp https://crppsvn.epfl.ch/repos/CHEASE/chease/trunk https://crppsvn.epfl.ch/repos/CHEASE/chease/tags/CHEASE_90_6_3_0 -m"tag version 6_3_0, with latest changes for ORB5 and GKW (from Camenen) include debug of BCHIN. _0 because will change all tabs in spaces for version 6_3" 
+          Then changed a lot of things but only for formatting using emacs indent-region and thus removing do 1... 1 continue
+          Also had to change do loops to only one continue statement, etc. Did check to o.chease_namelist20090307 using chease_namelist and EXPEQ_50555t63.95
+          Seems to work. Do check in at 15:45 and will wait for checks from others before making the tag 7_1
+          Almost all files have been indented using emacs and "! <cotrol.f90>" comments have been removed. Some remain, but now should be easier to check further changes
+          ALSO ALL TABS HAVE BEEN REMOVED. BE CAREFUL TO NOT ENTER ^I CHARACTER WHEN PRESSING TAB, IT DEPENDS WITH EDITOR
+          IN EMACS, ADD FOLLOWING IN .emacs file: (setq indent-tabs-mode nil)
+
+20090309  Changes and reformatting is OK. Now save this version and make it tag CHEASE_90_7_1 which should have all changes for ORB5 for new interface and for new interface with GKW
+          To tag this version, after committing this README file, the following is done:
+             svn cp https://crppsvn.epfl.ch/repos/CHEASE/chease/trunk https://crppsvn.epfl.ch/repos/CHEASE/chease/tags/CHEASE_90_7_1 -m"tag version 7_1, new format"
+          To get this version do:
+            svn export https://crppsvn.epfl.ch/repos/CHEASE/chease/tags/CHEASE_90_7_1 CHEASE/chease71
+          or
+            svn co https://crppsvn.epfl.ch/repos/CHEASE/chease/tags/CHEASE_90_7_1 CHEASE/chease71
+
+20090421  Some bugs fixed by Lutjens after using new compiler on NEC SX8. Thus tag as CHEASE_90_7_2
+          Bugs in index in surface.f90 defined as real corrected and tag as CHEASE_90_7_3
+
+20090504  New euitm create and close need exact character string length (best to give "euitm", etc)
+          and needs extra shot, run in close call. Checked and works again with the call:
+          /afs/efda-itm.eu/project/switm/scripts/create_user_itm_dir test 4.06d (only once)
+          source /afs/efda-itm.eu/project/switm/scripts/set_itm_data_env sauter test 4.06d (each time to define local private database)
+
+20090910  Several changes for CHEASEGUI but also Makefile_gateway ok with 4.06d for make chease_itm, tag before going to 4.07a version
+          svn cp https://crppsvn.epfl.ch/repos/CHEASE/chease/trunk https://crppsvn.epfl.ch/repos/CHEASE/chease/tags/CHEASE_90_7_4 -m"tag version 7_4" 
+            20090911  Adapt to 4.07a: EQUILIBRIUM CPO : profiles_1d/gm1, gm2 and gm6 are
+            not multiplied by Vprime anymore PSI definition clarified : full poloidal flux, without 1/2pi for
+            the whole data structure (affects : equilibrium, mhd, sawteeth CPOs)
+            Eqconstraint/eqmes1d/time becomes a scalar
+            EQUILIBRIUM : profiles_1d%gm8 and gm9 added. Rho_rttor and rho_rtvol deleted, replaced by rho_tor (square
+            root of toroidal flux as used by the ETS/COREPROF) and rho_vol (normalised square root of volume).
+            TOROIDALFIELD and MAGDIAG CPO : added sign convention in the documentation of bvac_r and ip.
+            EQUILIBRIUM and SCENARIO : eqgeometry/boundarytype is now an integer (instead of a string previously)
+e
+
+20091201  Small change in hamada.f90 to output the second derivative of amin vs psi for GKW (Y. Camenen)
+          Calculation of new terms added in surface.f90 (flux surface average of various quantities to calculate neoclassical transport).
+          New module added neoart.f90 to output these terms in a file to be read by NEOART
+
+20100322  Add p as source option. Since found that NPPFUN=7 is already p(psi) given from AP(i) or AP2(i), set NPPFUN=8 combining NPPFUN=4 and 7
+          Now NPPFUN=8 works. As NPPFUN=4 but input p array transformed to dp/dpsi_normalized and then when
+          pprime is used, -1/spsim is added to get dp/dpsi.
+          Added interpos as well, so foar within src-f90/interpos_libs which is an export from interpos svn
+          Tag 7_5 after check on lac.epfl.ch (was developed on gateway)
+
+20100401  No kitting, it is working with kepler (need to avoid explicit nitmopt=22)
+
+20100406  But no not anymore for standard chease or hdf5 version
+          Add futils within Chease as with interpos:
+          in src-f90 directory do:
+          svn export
+          https://crppsvn.epfl.ch/repos/hdf5_futils/futils/tags/1.3/src/futils_src --force
+          Add stuff in Makefile to compile futil as well
+
+20100407  Change Makefile to have definition of F90 and MACHINE outside. Working on gateway. (No need for Makefile_gateway and Makfile_pc70)
+          check in and then test on lac and pleiades
+          test on lac.epfl.ch machines and pleiades are ok (thus g95, ifort, mpif90, pgf90 have been tested)
+          Added chease_namelist_tcase2 in WK, so now should do:
+          cp chease_namelist_tcase2 chease_namelist
+          ../src-f90/chease... (and should get q0=0.9 and qedge=6.1479..) (add also o.tcase2_gateway)
+          Tags as Version CHEASE_90_8_0 since whole new makefiles
+
+20100409  working version with default actor for chease with inputs/outputs ok with 2pi, signs etc. check with run=20, shot=5 from helena
+          Still missing several nodes but nsttp=1, 2 3 with pprime or p working
+          Tags as Version CHEASE_90_8_1
+          To add further nodes, decided to first change mappin completely, thus for next versions ...
+
+20100504  Many changes to change way of mapping and getting away from CS mesh and avoiding re-meshing down in mappin.f90, 
+          introduced smiso, use eqchease_out for many quantities, so keep them in chease units except when writing out. 
+          Need to check ogyropsi. Many bugs to check still. Will become version 9_0 and follows. All profiles_1d%gm filled in
+
+20100512  Working on gateway within workflow and creating the gms. Some inaccuracy still it seems, especially for grad rho's. To check
+          Checked also with ntcase=2. beta_pol still to be checked, but ready for tag CHEASE_90_9_0
+          svn cp https://crppsvn.epfl.ch/repos/CHEASE/chease/trunk https://crppsvn.epfl.ch/repos/CHEASE/chease/tags/CHEASE_90_9_0 -m"tag version 9_0. With new mappin routines, still with mappin_new, gloqua_new.f90 etc"
+
+20100519  Corrected most new outputs including gm's. Should be essentially ok now. Ready to ask check by others
+
+20100609  Debugged several problems with dimensions (using -check all with ifort) and a problem in outgyro (to be checked by users). Tag version 9_1
+          svn cp https://crppsvn.epfl.ch/repos/CHEASE/chease/trunk https://crppsvn.epfl.ch/repos/CHEASE/chease/tags/CHEASE_90_9_1 -m"tag version 9_1. Tested with NIDEAL=7 as well"
+
+20100613  Change SMISO to CS mesh for nideal=6 to have a more regular mesh near center and edge. Debug some outgyro, ogyropsi, hamada, neoart but still needs some tests
+
+20100713  Debug dimensions with : pgf90 -Mbounds -Mchkfpstk -Mchkptr  ... on gateway (very useful). 
+          Now working to recompute many equilibriums within kepler (bug fixed with ncurv allocate in particular)
+          Will make library interpos external as compulsory since a bit awkward to have a subset below chease, so tag as CHEASE_90_9_1b first
+
+20100930  Debug some dimensions like CSTOR and add new in input for XTOR. Tag 9_2:
+          svn cp https://crppsvn.epfl.ch/repos/CHEASE/chease/trunk https://crppsvn.epfl.ch/repos/CHEASE/chease/tags/CHEASE_90_9_2 -m"tag version 9_2. Tested with NIDEAL=5"
+
+20110609  Debug NIDEAL=10 for new mesh and mapping. Test cases added for NIDEAL=10. Tag 9_3:           
+          svn cp https://crppsvn.epfl.ch/repos/CHEASE/chease/trunk https://crppsvn.epfl.ch/repos/CHEASE/chease/tags/CHEASE_90_9_3 -m"tag version 9_3. With NIDEAL=10 repaired and tested."
+
+20110913  Modifications to work with euitm_schemas_v4.09a.f90, moved vprime and dpsidrho to eqchease_out since vprime is now dV/dpsi: Tag 9_4
+          svn cp https://crppsvn.epfl.ch/repos/CHEASE/chease/trunk https://crppsvn.epfl.ch/repos/CHEASE/chease/tags/CHEASE_90_9_4 -m"tag version 9_4. Modifications for euitm_schemas_v4.09a.f90"
+
+20111017  Update global psi_ax and psi_bnd (where incorrect before). Tag 9_5
+          svn cp https://crppsvn.epfl.ch/repos/CHEASE/chease/trunk https://crppsvn.epfl.ch/repos/CHEASE/chease/tags/CHEASE_90_9_5 -m"tag version 9_5. Further modifications for euitm_schemas_v4.09a.f90"
+
+20111205  Version with NITMOPT=33, ndiagop=-1 working in KEPLER to have less outputs while running
+          Add smoothing of boundary and input profiles for each case, so need to define tensbnd=0. and tensprof=0. if that's what is wanted (no smoothing, use -1 to have standard smoothing and -10 for good smoothing)
+20111206  Add check if input profiles has multiple x values and remove them. Add to interpos as well. Compared jbootstrap and sigmaneo with NEOS. Tag 9_6 this version used during Innsbruck code camp
+          Next 10_0 will have a different xsd schema with a list and Lion interface modified
+          svn cp https://crppsvn.epfl.ch/repos/CHEASE/chease/trunk https://crppsvn.epfl.ch/repos/CHEASE/chease/tags/CHEASE_90_9_6 -m"tag version 9_6. Further modifications for euitm_schemas_v4.09a.f90, version middle of Innsbruck code camp. OK with NEOS"
+
+20120221  Introduced COCOS_IN and COCOS_OUT to enable any choice of coordinate system and 2pi's. It follows the paper submitted by O. Sauter and S. Yu. Medvedev included in the CHEASE trunk as well on "Tokamak Equilibrium Coordinate Conventions: COCOS" (Sauter_COORD_CONVENTIONS_COCOS.pdf)
+          Tag this version as: CHEASE_90_10_1
+          svn cp https://crppsvn.epfl.ch/repos/CHEASE/chease/trunk https://crppsvn.epfl.ch/repos/CHEASE/chease/tags/CHEASE_90_10_1 -m"tag version CHEASE_90_10_1 with COCOS and new xsd schema"
+
+20120418  Various corrections, added general transformations  as standalone COCOStransform.f90 and in CHEASEgui matlab files as well, checked ITM as well. Checked NIDEAL=10 and added script. NIDEAL=10 requires COCOS_OUT=13 at this stage, so enforce it in cotrol.f90
+          Tag this version as: CHEASE_90_10_2
+          svn cp https://crppsvn.epfl.ch/repos/CHEASE/chease/trunk https://crppsvn.epfl.ch/repos/CHEASE/chease/tags/CHEASE_90_10_2 -m"tag version CHEASE_90_10_2 with COCOS and NIDEAL=10 with COCOS_OUT=13 checked, COCOStransform.f90 interface available"
+
+20120523  Tag before changing to version 4.10a which has a different structure for profiles_2d and boundary (array of structures)
+          svn cp https://crppsvn.epfl.ch/repos/CHEASE/chease/trunk https://crppsvn.epfl.ch/repos/CHEASE/chease/tags/CHEASE_90_10_2b -m"tag version CHEASE_90_10_2b, tag before changing to version 4.10a of euitm_schemas.f90"
+
+20120528  Tag after changing to version 4.10a which has a different structure for profiles_2d and boundary (array of structures). Checked NIDEAL=10 test case with script on gateway.
+          svn cp https://crppsvn.epfl.ch/repos/CHEASE/chease/trunk https://crppsvn.epfl.ch/repos/CHEASE/chease/tags/CHEASE_90_10_3 -m"tag version CHEASE_90_10_3, eq_cheaseout structure changed to version 4.10a of euitm_schemas.f90"
+
+20121126  Tag after debug EQDSK creation which was still using CSM with a wrong shift, thus small difference of profiles
+          Tag also after modifications for LION interface, working with new F90 LION version as well (NIDEAL=2)
+          Tag checked with NIDEAL10 script
+          svn cp https://crppsvn.epfl.ch/repos/CHEASE/chease/trunk https://crppsvn.epfl.ch/repos/CHEASE/chease/tags/CHEASE_90_10_4 -m"Tag CHEASE_90_10_4: EQDSK.OUT corrected and INTERFACE with LION corrected and checked"
+
+20130228  Tag after adding interface to IDS (Interface Data Structure) being developed for ITER datamodel
+          Add also revision and global version automatically with fpp. Modified metrictoitm.f90 and added metrictoitm_afterfpp.f90
+          Checked with NIDEAL10 script: cd ../WK/TESTCASES/NIDEAL10/; ./script_test
+          svn cp https://crppsvn.epfl.ch/repos/CHEASE/chease/trunk https://crppsvn.epfl.ch/repos/CHEASE/chease/tags/CHEASE_90_11_1 -m"Tag CHEASE_90_11_1: interface with new IDS added and tested inside IMAS-KEPLER, add svnversion in metrictoitm_afterfpp.f90"
+
+20130312  Tag after checking installation on new gateway and adding p(rhotor), jphi/jpar(rhotor) option. Also added DI, DR and NCBAL on profiles_1d%phi_, s_ and h_flow respectively. Should now add nsttp=4 for jpar=<j.B>/B0
+          svn cp https://crppsvn.epfl.ch/repos/CHEASE/chease/trunk https://crppsvn.epfl.ch/repos/CHEASE/chease/tags/CHEASE_90_11_2 -m"Tag CHEASE_90_11_2: p(rhotor) option added and DI, DR and NCBAL in profiles_1d"
+
+20130313  Tag after adding nsttp=4 option and checking it. Using also new NPROPT=-4 to 4 option such that 
+          nsttp_out=abs(NPROPT) and pprime or pressure given if NPROPT positive or negative
+
+20130902 Tag after several changes for ITM/LION and July 2013 conf, for nprof2d, for XTOR by HL, etc since March 2013
+         Tag before adding chim(R,Z) calculations and other changes. Tested for NIDEAL=10 but works only without "*Ksigma_rhothetaphi" in g12. To check further. At this stage this was added for revisions 834++ when fixing cocos transformations, but removed.
+         svn cp https://crppsvn.epfl.ch/repos/CHEASE/chease/trunk https://crppsvn.epfl.ch/repos/CHEASE/chease/tags/CHEASE_90_11_3 -m"Tag CHEASE_90_11_3: several modif over Summer 2013, test nideal10 ok and tested in details, but *sigma_rhothetaphi in g12 removed"
+
+20130906 adding chi(R,Z) in psibox.f90 and EQCHEASE_OUT_ADD_2D_RZ and in ogyropsi output. Also compute tetchi and tetchi_sorted in chipsimetrics.f90. Added to write eqdsk for all nideal (to be checked later but psibox called by all anyway)
+         tetchi, sigchi calculated in chipsimetrics, chi(R,Z) calculated in psibox. Should be added somewhere in ITM structure
+
+20130913 Tested chease with gfortran and mpif90 on lac5. 
+         Tested NIDEAL10 testcase as well. Added latest futils routines and Makefile.gfortran_lac5 (using mpif90) in futils dir. 
+         Tested hdf5 version. Tested make chease_hdf5 and executable with NIDEAL10 testcase, fixed hdf5 in hamada.f90
+         Added simple gethdf5.m in matlab/CHEASEgui, tested contour(rmesh,zmeh,chiRZ)
+
+20140425 Checked IMAS V1.1 version, made several changes to make it work for all cases namely nitmopt=0,1,10,11 and within Kepler. Debugged also nprof2d
+         Added latest interpos_source.f90 with check that periodic splines use non-zero tension (was bug in surface.f90)
+         Tested on ITER computer and added cheaseimas FC2K and workflows files
+         Ready for tag 12_1 (12_1 tag was not performed earlier so use this now)
+         svn cp https://crppsvn.epfl.ch/repos/CHEASE/chease/trunk https://crppsvn.epfl.ch/repos/CHEASE/chease/tags/CHEASE_90_12_1 -m"Tag CHEASE_90_12_1: Tested on IMAS and within Kepler, IMASV1.1, and debugged calling interpos periodic with zero tension and nprof2d"
+
+20140620 Modified for version 3.0.1 of IMAS and debugged copy_itm_ids and vice versa. Tested for read and write to IMAS structure with chease_namelist or chease_input.xml as input, debugged wrtbin.f90 for J283 but to be checked if intent conserved
+
+201507   Add make_xsd_for_f90.m to create f90 part of assigna_codeparameter from a given xsd file. Created new "choices" xml, 
+         which work with xml2eg and libxml version 2.0 or more. Tested with cheasenewxml in kepler as well (4.10b). 
+         Flag added in Makefile.define_FLAGS.
+
+201509   Add files for actor release. module switch fc2k/rc; module switch scripts/R2.2; source $ITMSCRIPTDIR/ITMv1 kepler test 4.10b.10_R2.2.0 , 
+         echo $DATAVERSION_TAG = 4.10b.10. Added fc2k/chease.xml, build.sh, doc/chease.txt; 
+         tested: ./build.sh  &&  fc2k  -ual  -kepler  -fc2k  -docfile doc/chease.txt  fc2k/chease.xml
+         ready for tag CHEASE_90_12_2, but under $DATAVERSION_TAG_CHEASEv12_2svnxxx thus 4.10b.10_CHEASEv12_2_svn1003
+         svn cp https://crppsvn.epfl.ch/repos/CHEASE/chease/trunk https://crppsvn.epfl.ch/repos/CHEASE/chease/tags/4.10b.10_CHEASEv12_2_svn -m"Tag 4.10b.10_CHEASEv12_2_svn1003: ready for actor release tag"
+
+         In fact need libraries from system libraries and build.sh in csh, so changed this ->svn rev 1005 (thus better not to put revision in name of tag)
+
+         Changed libraries in fc2k to use system libraries (click on add system and then all system lib). Changed build.sh to being csh script, added effective calls to fc2k/rc, UAL etc. Added workflows to have simple workflows to test (could add one with no input)
+         Tag should not contain svn rev number in case one changes some files directly in the tag
+         ready for tag 4.10b.10_CHEASEv12_2b since minor changes since above tag
+         svn cp https://crppsvn.epfl.ch/repos/CHEASE/chease/trunk https://crppsvn.epfl.ch/repos/CHEASE/chease/tags/4.10b.10_CHEASEv12_2b -m"Tag 4.10b.10_CHEASEv12_2b: ready for actor release tag"
+
+20151011 Added ITM_ENVIRONMENT_LOADED test to define gateway_with_itm "machine" which is supposed to have itm libraries and ifort at this stage
+         Added possibility to run chease without input CPOs from within KEPLER, tested with ./workflow_test/chease_test_workflow_nocpoin.xml
+         Ready for tag release for automatic build using ./build.sh, fc2k/*
+         svn cp https://crppsvn.epfl.ch/repos/CHEASE/chease/trunk https://crppsvn.epfl.ch/repos/CHEASE/chease/tags/4.10b.10_CHEASEv12_3 -m"Tag 4.10b.10_CHEASEv12_3: ready for actor release tag using ual 4.10b_rc, see ./build.sh"
+
+20151119 Ready for tag for actor release, tag 4.10b.10_CHEASEv12_3b, rm source, switch, mv to build.csh with \#\!/bin/tcsh -fe
+         svn cp https://crppsvn.epfl.ch/repos/CHEASE/chease/trunk https://crppsvn.epfl.ch/repos/CHEASE/chease/tags/4.10b.10_CHEASEv12_3b -m"Tag 4.10b.10_CHEASEv12_3b: ready for actor release tag without source, switch , see ./build.csh"
+

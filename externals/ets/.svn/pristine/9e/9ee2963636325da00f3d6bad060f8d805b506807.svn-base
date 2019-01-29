@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+
+<?xml-stylesheet type="text/xsl" href="./ets.xsl" charset="ISO-8859-1"?>
+
+<parameters>
+
+  <input>
+    <functions>
+exp(-((x-0.5)/0.05)^2)
+exp(-((x-0.0)/0.20)^2)
+(1-x^2)*(5e19-2e18)+2e18
+(1-x^2)*(5e19-2e18)+2e18
+(1-x^2)*(1e19-4e17)+4e17
+(1-x^2)*(1e18-4e16)+4e16
+(1-x^2)*(10000-100)+100
+(1-x^2)*(10000-100)+100
+    </functions>
+  </input>
+
+</parameters>
+
