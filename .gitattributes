@@ -1,1 +1,1 @@
-*.py *.F90 *.xml  linguist-vendored
+*.py linguist-vendored
