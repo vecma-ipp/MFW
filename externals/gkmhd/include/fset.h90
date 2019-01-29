@@ -1,4 +1,0 @@
-!...  allocate FFT arrays
-
-  INCLUDE 'fset1.h90'
-  INCLUDE 'fset2.h90'

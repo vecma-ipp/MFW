@@ -1,8 +1,0 @@
-!...  define vars from duu
-
-  psi=duu(0,mupsi)
-  theta=duu(0,mutheta)
-  current=duu(0,muj)
-  pressure=duu(0,mupressure)
-  phi=duu(0,muphi)
-  phige=duu(0,muphige)

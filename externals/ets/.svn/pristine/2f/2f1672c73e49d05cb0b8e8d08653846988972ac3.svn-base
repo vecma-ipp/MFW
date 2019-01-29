@@ -1,6 +1,0 @@
-GOT_PERFLIB = 'no'
-FC=gfortran
-FCOPTS=-g -fbackslash
-MOD=mod
-LIBS=-llapack -lblas
-RANLIB=ranlib -c

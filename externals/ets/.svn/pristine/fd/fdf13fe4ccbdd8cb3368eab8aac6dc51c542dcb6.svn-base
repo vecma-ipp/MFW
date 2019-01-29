@@ -1,7 +1,0 @@
-GOT_PERFLIB = 'no'
-FC=g95
-FCOPTS=-g
-MOD=mod
-LIBS=-llapack -lblas
-RANLIB=ranlib -c
-

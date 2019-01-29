@@ -1,5 +1,0 @@
-       parameter(ngapp=10)
-         
-         
-         
-         

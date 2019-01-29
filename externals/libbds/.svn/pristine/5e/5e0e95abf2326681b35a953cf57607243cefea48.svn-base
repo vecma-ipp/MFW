@@ -1,4 +1,0 @@
-FC       = gfortran 
-FFLAGS   = -fdefault-real-8 -fPIC -Jinclude -fno-second-underscore -ffree-line-length-none 
-DBGFLAGS = -g -O0 -Wall -fbacktrace -fcheck=all 
-OPTFLAGS = -O2 -fno-backtrace 

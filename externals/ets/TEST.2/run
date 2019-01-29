@@ -1,5 +1,0 @@
-#! /bin/csh -f
-cd `dirname $0`
-../obj/`cd .. ; make SYS`/solver_test
-../GNUPLOT/compare.gnuplot
-gv compare.ps

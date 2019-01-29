@@ -1,8 +1,0 @@
-!...  define vars from uu
-
-  psi=fsfc(i)%uu(0,mupsi,j)
-  theta=fsfc(i)%uu(0,mutheta,j)
-  current=fsfc(i)%uu(0,muj,j)
-  pressure=fsfc(i)%uu(0,mupressure,j)
-  phi=fsfc(i)%uu(0,muphi,j)
-  phige=fsfc(i)%uu(0,muphige,j)

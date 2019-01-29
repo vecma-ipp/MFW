@@ -1,6 +1,0 @@
-GOT_PERFLIB = 'yes'
-FC=ifort
-FCOPTS=-g -C -traceback
-MOD=mod
-LIBS=-llapack -lblas
-

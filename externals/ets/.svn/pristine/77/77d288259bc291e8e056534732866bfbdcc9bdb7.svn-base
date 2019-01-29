@@ -1,8 +1,0 @@
-The following bugs are known to exist:
-======================================
-2010-12-07: the change to the scaling of ohmic heating broke the analytic test case
-2010-12-07: the equations do not deal with a changing rho_tor
-2010-12-07: "xvpr_pr(1:nrho)                        = equilibrium(1)%profiles_1d%vprime" in neo.f90
-
-!!!DPC-EQ-4.08b
-!!!DPC-EQ-4.08b-problem

@@ -1,5 +1,0 @@
-GOT_PERFLIB = 'yes'
-FC=gfortran
-FCOPTS=-g
-MOD=mod
-LIBS=-llapack -lblas

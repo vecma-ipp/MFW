@@ -1,5 +1,0 @@
-Name: libbds
-Description: Numerics and tools shared by BDS codes (L3INTERPs, GAMMAx, BESSELx, RANs, FFT)
-Version: 1.0
-Libs: -L$ITM_LIBBDS_DIR/lib/amd64_intel_12 -lbds
-Cflags: -I$ITM_LIBBDS_DIR/include/amd64_intel_12

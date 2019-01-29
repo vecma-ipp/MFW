@@ -1,5 +1,0 @@
-#cf77 -D force=off -o creapict.exe creapict.o uni_to_ncar.o /usr/local/ncar3.2/lib/libncarg.a /usr/local/ncar3.2/lib/libncarg_gks.a /usr/local/ncar3.2/lib/libncarg_loc.a
-
-cf77 -Wf"-ez" -D force=off -o creapict.exe -Wl"$NCAR $NCARGKS" creapict.f uni_to_ncar.o 
-#cf77 -Wf"-ez" -D force=off -o creapict.exe -Wl"$NCAR $NCARGKS" creapict.o uni_to_ncar.f 
-

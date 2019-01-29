@@ -1,5 +1,0 @@
--pc_type hypre
--pc_hypre_type boomeramg
-# -pc_type icc
-# -ksp_view
-# -ksp_monitor

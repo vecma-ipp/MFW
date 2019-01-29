@@ -1,5 +1,0 @@
-!...  define vars from fuu
-
-  ne=fsfc(i)%fuu(1,j)
-  ni=fsfc(i)%fuu(2,j)
-  vor=ne-ni

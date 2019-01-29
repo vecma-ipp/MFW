@@ -1,6 +1,0 @@
-GOT_PERFLIB = 'yes'
-FC=gfortran
-FCOPTS=-g -fbounds-check -fbackslash
-FCOPTS=-g -fbackslash
-MOD=mod
-LIBS=-llapack -lblas
