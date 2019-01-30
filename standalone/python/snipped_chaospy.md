@@ -1,7 +1,8 @@
 
-**`Parameters description`**```python
-# Input
-coret  = read("data/ets_coretransp_in.cpo", "coretransp")
+**`Parameters description`**
+```python
+# Input data
+coret = read("ets_coretransp_in.cpo", "coretransp")
 # Uncertain parameters (numbers n=2) and distributions
 diff_eff = coret.values[0].te_transp.diff_eff
 c0 = cp.Normal(diff_eff[0], 0.2*diff_eff[0])
