@@ -1,5 +1,5 @@
 
-**Parameter description**
+    **Parameter description**
 ```python
 # Input
 coret  = read("data/ets_coretransp_in.cpo", "coretransp")
@@ -14,12 +14,12 @@ dist_joint = cp.J(dist_param)
 # Hermite polynomials (order k)
 P = cp.orth_ttr(k, dist)
 ```
-*Sampler*
+    **Sampler**
 ```
 # Quadrature nodes and weights
 nodes, w = cp.generate_quadrature(order=k+1, domain=dist, rule='Gaussian')
 ```
-*Campaign*
+    **Campaign**
 ```
 # Evaluate the computational model in the sample points (nodes)
 samples_te = []
@@ -29,12 +29,12 @@ for i in range((k+2)**n):
     corep        = read(tmp_file_out, "coreprof")
     samples_te.append(corep.te.value)
 ```
-**Decoder**
+    **Decoder**
 ```
 # Create approximate solver
 te_hat = cp.fit_quadrature(P, nodes, w, samples_te)
 ```
-*Analysis*
+    **Analysis**
 ```
 # Statistical infos
 mean = cp.E(te_hat, dist)
