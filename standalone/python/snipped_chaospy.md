@@ -1,5 +1,5 @@
 
-*Parameter description
+**Parameter description
 ```python
 # Input
 coret  = read("data/ets_coretransp_in.cpo", "coretransp")
@@ -37,7 +37,7 @@ te_hat = cp.fit_quadrature(P, nodes, w, samples_te)
 **Analysis**
 ```python
 # Statistical infos
-mean = cp.E(te_hat, dist)
-var  = cp.Var(te_hat, dist)
-std  = cp.Std(te_hat, dist)
+mean     = cp.E(te_hat, dist)
+variance = cp.Var(te_hat, dist)
+std      = cp.Std(te_hat, dist)
 ```
