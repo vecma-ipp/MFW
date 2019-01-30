@@ -11,12 +11,11 @@ c1 = cp.Normal(diff_eff[1], 0.2*diff_eff[1])
 dist = cp.J(c0, c1)
 # Hermite polynomials (order k=4)
 P = cp.orth_ttr(k, dist)
-# Quadrature nodes and weights
+# Quadrature nodes and weights: preparing Sampler
 nodes, w = cp.generate_quadrature(order=k+1, domain=dist, rule='Gaussian')
-# Preparing Sampler
 samples_te = []
 ```
-**Campaign**
+**`Campaign`**
 ```python
 # Evaluate the computational model in the sample points (nodes)
 for i in range((k+2)**n):
@@ -29,12 +28,12 @@ for i in range((k+2)**n):
     # Sampler
     samples_te.append(corep.te.value)
 ```
-**Decoder**
+**`Decoder`**
 ```python
 # Create approximate solver
 te_hat = cp.fit_quadrature(P, nodes, w, samples_te)
 ```
-**Analysis**
+**`Analysis`**
 ```python
 # Statistical infos
 mean     = cp.E(te_hat, dist)
