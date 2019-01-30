@@ -20,14 +20,14 @@ nodes, w = cp.generate_quadrature(order=k+1, domain=dist, rule='Gaussian')
 # Preparing Sampler
 samples_te = []
 ```
-**Campaign**: 
+**Campaign**
 ```python
 # Evaluate the computational model in the sample points (nodes)
 for i in range((k+2)**n):
     # Encoder: simulation input
     tmp_file_in  = update_coret("/ets_coretransp_in.cpo", nodes.T[i])
-    # Run execution 
-    tmp_file_out = run_ets(tmp_file)
+    # Run execution: call transport code
+    run_ets(tmp_file_in, tmp_file_out)
     # Collate
     corep = read(tmp_file_out, "coreprof")
     # Sampler
