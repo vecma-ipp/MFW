@@ -1,5 +1,5 @@
 
-**Parameter description
+_Parameter description_
 ```python
 # Input
 coret  = read("data/ets_coretransp_in.cpo", "coretransp")
