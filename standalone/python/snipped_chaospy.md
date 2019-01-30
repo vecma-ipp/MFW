@@ -4,29 +4,33 @@
 # Input
 coret  = read("data/ets_coretransp_in.cpo", "coretransp")
 
-# Uncertain parameters (numbers n)
+# Uncertain parameters (numbers n=2) and distributions
 diff_eff = coret.values[0].te_transp.diff_eff
+c0 = cp.Normal(diff_eff[0], 0.2*diff_eff[0])
+c1 = cp.Normal(diff_eff[1], 0.2*diff_eff[1])
 
-# Probability distribution
-dist_param = [cp.Normal(diff_eff[i], 0.2*diff_eff[i]) for i in range(n)]
-dist_joint = cp.J(dist_param)
-```
-**Sampler**
-```python
-# Hermite polynomials (order k)
+# Joint probability distribution
+dist = cp.J(c0, c1)
+
+# Hermite polynomials (order k=4)
 P = cp.orth_ttr(k, dist)
 
 # Quadrature nodes and weights
 nodes, w = cp.generate_quadrature(order=k+1, domain=dist, rule='Gaussian')
+# Preparing Sampler
+samples_te = []
 ```
-**Campaign**: Encoder + run + collate
+**Campaign**: 
 ```python
 # Evaluate the computational model in the sample points (nodes)
-samples_te = []
 for i in range((k+2)**n):
+    # Encoder: simulation input
     tmp_file_in  = update_coret("/ets_coretransp_in.cpo", nodes.T[i])
+    # Run execution 
     tmp_file_out = run_ets(tmp_file)
-    corep        = read(tmp_file_out, "coreprof")
+    # Collate
+    corep = read(tmp_file_out, "coreprof")
+    # Sampler
     samples_te.append(corep.te.value)
 ```
 **Decoder**
