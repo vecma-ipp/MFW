@@ -3,9 +3,6 @@
 # Input
 coret  = read("data/ets_coretransp_in.cpo", "coretransp")
 
-# Hermite polynomial order and numper of uncertain parameters
-k = 4
-
 # Uncertain parameters and distrubutions
 diff_eff = coret.values[0].te_transp.diff_eff
 c0 = cp.Normal(diff_eff[0], 0.2*diff_eff[0])
@@ -14,11 +11,12 @@ c1 = cp.Normal(diff_eff[1], 0.2*diff_eff[1])
 # Joint probability distribution
 dist = cp.J(c0, c1)
 
-# Generate orthogonal polynomials corresponding to the joint disctribution
+# Generate Hermite polynomials (order k)
+k = 4
 P = cp.orth_ttr(k, dist)
 
 # Quadrature nodes and weights
-nodes, weights = cp.generate_quadrature(order=k+1, domain=dist, rule='Gaussian')
+nodes, w = cp.generate_quadrature(order=k+1, domain=dist, rule='Gaussian')
 
 # Evaluate the computational model in the sample points (nodes)
 samples_te = []
@@ -29,7 +27,7 @@ for i in range((k+2)**2):
     samples_te.append(corep.te.value)
 
 # Create approximate solver
-te_hat = cp.fit_quadrature(P, nodes, weights, samples_te)
+te_hat = cp.fit_quadrature(P, nodes, w, samples_te)
 
 # Statistical infos
 mean = cp.E(te_hat, dist)
