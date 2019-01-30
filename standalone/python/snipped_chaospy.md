@@ -1,6 +1,5 @@
 
-**`Parameters description`**
-```python
+**`Parameters description`**```python
 # Input
 coret  = read("data/ets_coretransp_in.cpo", "coretransp")
 # Uncertain parameters (numbers n=2) and distributions
