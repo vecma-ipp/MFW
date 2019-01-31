@@ -37,7 +37,7 @@
         te_hat = cp.fit_quadrature(P, nodes, w, samples_te)
 ```
 ```python
-        # Statistical infos
+        # Statistical informations
         mean     = cp.E(te_hat, dist)
         variance = cp.Var(te_hat, dist)
         std      = cp.Std(te_hat, dist)
