@@ -1,6 +1,5 @@
 
 ```python
-        # Parameters description
         # Input data
         coret = read("ets_coretransp_in.cpo", "coretransp")
         
@@ -15,14 +14,14 @@
         # Hermite polynomials (order k=4)
         P = cp.orth_ttr(k, dist)
         
-        # Quadrature nodes and weights
-        nodes, w = cp.generate_quadrature(order=k+1, domain=dist, rule='Gaussian')
+        # Preparing the sampling
+        nodes, weights = cp.generate_quadrature(order=k+1, domain=dist, rule='Gaussian')
+        samples_te = [0]*(k+2)**n
 ```
 ```python
-        # Campaign
         # Evaluate the computational model in the sample points (nodes)
         for i in range((k+2)**n):
-            # Encoder: simulation input
+            # Simulation input
             tmp_file_in  = update_coret("/ets_coretransp_in.cpo", nodes.T[i])
             
             # Run execution: call transport code
@@ -30,17 +29,13 @@
             
             # Collate
             corep = read(tmp_file_out, "coreprof")
-            
-            # Sampler
             samples_te[i] = corep.te.value
 ```
 ```python
-        # Decoder
         # Create approximate solver
-        te_hat = cp.fit_quadrature(P, nodes, w, samples_te)
+        te_hat = cp.fit_quadrature(P, nodes, weights, samples_te)
 ```
 ```python
-        # Analysis
         # Statistical informations
         mean     = cp.E(te_hat, dist)
         variance = cp.Var(te_hat, dist)
