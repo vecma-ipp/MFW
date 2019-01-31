@@ -1,19 +1,18 @@
 
-**`Parameters description`**
 ```python
-# Input data
-coret = read("ets_coretransp_in.cpo", "coretransp")
-# Uncertain parameters (numbers n=2) and distributions
-diff_eff = coret.values[0].te_transp.diff_eff
-c0 = cp.Normal(diff_eff[0], 0.2*diff_eff[0])
-c1 = cp.Normal(diff_eff[1], 0.2*diff_eff[1])
-# Joint probability distribution
-dist = cp.J(c0, c1)
-# Hermite polynomials (order k=4)
-P = cp.orth_ttr(k, dist)
-# Quadrature nodes and weights: preparing Sampler
-nodes, w = cp.generate_quadrature(order=k+1, domain=dist, rule='Gaussian')
-samples_te = []
+    # Input data
+    coret = read("ets_coretransp_in.cpo", "coretransp")
+    # Uncertain parameters (numbers n=2) and distributions
+    diff_eff = coret.values[0].te_transp.diff_eff
+    c0 = cp.Normal(diff_eff[0], 0.2*diff_eff[0])
+    c1 = cp.Normal(diff_eff[1], 0.2*diff_eff[1])
+    # Joint probability distribution
+    dist = cp.J(c0, c1)
+    # Hermite polynomials (order k=4)
+    P = cp.orth_ttr(k, dist)
+    # Quadrature nodes and weights: preparing Sampler
+    nodes, w = cp.generate_quadrature(order=k+1, domain=dist, rule='Gaussian')
+    samples_te = []
 ```
 **`Campaign`**
 ```python
