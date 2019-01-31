@@ -1,6 +1,6 @@
 
 ```python
-        """ Parameters description """
+        # Parameters description
         # Input data
         coret = read("ets_coretransp_in.cpo", "coretransp")
         
@@ -19,7 +19,7 @@
         nodes, w = cp.generate_quadrature(order=k+1, domain=dist, rule='Gaussian')
 ```
 ```python
-        """ Campaign """
+        # Campaign
         # Evaluate the computational model in the sample points (nodes)
         for i in range((k+2)**n):
             # Encoder: simulation input
@@ -35,12 +35,12 @@
             samples_te[i] = corep.te.value
 ```
 ```python
-        """ Decoder """
+        # Decoder
         # Create approximate solver
         te_hat = cp.fit_quadrature(P, nodes, w, samples_te)
 ```
 ```python
-        """ Analysis """
+        # Analysis
         # Statistical informations
         mean     = cp.E(te_hat, dist)
         variance = cp.Var(te_hat, dist)
