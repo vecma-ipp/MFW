@@ -5,11 +5,11 @@
         
         # Uncertain parameters (numbers n=2) and distributions
         diff_eff = coret.values[0].te_transp.diff_eff
-        c0 = cp.Normal(diff_eff[0], 0.2*diff_eff[0])
-        c1 = cp.Normal(diff_eff[1], 0.2*diff_eff[1])
+        dist_1 = cp.Normal(diff_eff[0], 0.2*diff_eff[0])
+        dist_2 = cp.Normal(diff_eff[1], 0.2*diff_eff[1])
         
         # Joint probability distribution
-        dist = cp.J(c0, c1)
+        dist = cp.J(dist_1, dist_2)
         
         # Hermite polynomials (order k=4)
         P = cp.orth_ttr(k, dist)
@@ -30,7 +30,7 @@
             corep = read(tmp_file_out, "coreprof")
             
             # Sampler
-            samples_te.append(corep.te.value)
+            samples_te[i] = corep.te.value
 ```
 ```python
         # Create approximate solver
