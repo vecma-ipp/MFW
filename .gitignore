@@ -14,3 +14,12 @@ usr
 *.log
 
 externals/*
+!Makefile.bdseq  
+!Makefile.bohmgb  
+!Makefile.dfefi  
+!Makefile.ets  
+!Makefile.gem  
+!Makefile.gem0  
+!Makefile.imp4dv  
+!Makefile.libbds
+
