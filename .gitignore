@@ -7,6 +7,8 @@ externals/*
 !Makefile.gem0  
 !Makefile.imp4dv  
 !Makefile.libbds
+!chease-patch.diff
+!gem-tmppatch.diff
 
 ual/fortran_interface/*.o
 ual/xml/*.o
@@ -17,10 +19,10 @@ ual/lib
 
 standalone/bin
 standalone/lib
+standalone/obj
 standalone/include
 
 standalone/python/*.so
 standalone/python/*.pyc
 standalone/python/*dist*
 standalone/python/*cache*
-
