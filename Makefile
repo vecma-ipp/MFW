@@ -327,7 +327,7 @@ chease: ual get-chease patch-chease
 get-chease:
 	@if [ ! -d "externals/chease" ]; then \
 	  echo "Checking out chease..."; \
- 		svn co $(SVNURL_GFORGE)/chease/tags/4.10b.10_CHEASEv12_3b externals/chease; \
+ 		svn co $(SVNURL_GFORGE)/chease/chease/tags/4.10b.10_CHEASEv12_3b externals/chease; \
 	else  \
 		echo "Updating chease..."; \
 		svn up externals/chease; \
