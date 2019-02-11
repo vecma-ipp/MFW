@@ -14,3 +14,6 @@ The code can be installed by cloning the Github repository::
 The Standalone code can be compiled by using:: 
 
     make standalone MPI=yes
+    
+     
+In this case, the modules should be loaded are: ``intel``, ``impi``, ``mkl`` and ``fftw-mpi``.
