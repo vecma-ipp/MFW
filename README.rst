@@ -16,4 +16,4 @@ The Standalone code can be compiled by using::
     make standalone MPI=yes
     
      
-In this case, the modules should be loaded are: ``1) intel, 2) impi, 3) mkl, 4) fftw-mpi``.
+In this case, the modules should be loaded are: ``intel, impi, mkl, fftw-mpi``.
