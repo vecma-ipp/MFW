@@ -12,11 +12,12 @@ ual/fortran_interface/*.o
 ual/xml/*.o
 ual/constants/*.o
 ual/types/*.o
-ual/iclude
+ual/include
 ual/lib
 
 standalone/bin
 standalone/lib
+standalone/include
 
 standalone/python/*.so
 standalone/python/*.pyc
