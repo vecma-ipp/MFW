@@ -1,6 +1,6 @@
 *.pyc
 *.pyo
-.ipynb_checkpoints/
+*.o
 *.so
 
 ual/fortran_interface/*.o
