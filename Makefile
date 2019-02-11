@@ -27,7 +27,8 @@ include config
 
 export MAINMAKE=yes
 
-SVNROOT = https://gforge6.eufus.eu/svn
+SVNURL_GFORGE = https://gforge6.eufus.eu/svn
+SVNURL_SOLPS  = https://solps-mdsplus.aug.ipp.mpg.de/repos
 
 ################################################################################
 # global rules                                                                 #
@@ -112,7 +113,7 @@ libbds: ual get-libbds
 get-libbds:
 	@if [ ! -d "externals/libbds" ]; then \
 	  echo "Checking out libbds..."; \
- 		svn co $(SVNROOT)/libbds externals/libbds; \
+ 		svn co $(SVNURL_GFORGE)/libbds externals/libbds; \
 	else  \
 		echo "Updating libbds..."; \
 		svn up externals/libbds; \
@@ -135,7 +136,7 @@ ets: ual libbds get-ets
 get-ets:
 	@if [ ! -d "externals/ets" ]; then \
 	  echo "Checking out ets..."; \
- 		svn co $(SVNROOT)/ets externals/ets; \
+ 		svn co $(SVNURL_GFORGE)/ets externals/ets; \
 	else  \
 		echo "Updating ets..."; \
 		svn up externals/ets; \
@@ -158,7 +159,7 @@ bohmgb: ual libbds get-bohmgb
 get-bohmgb:
 	@if [ ! -d "externals/bohmgb" ]; then \
 	  echo "Checking out bohmgb..."; \
- 		svn co $(SVNROOT)/modtransp/tags/4.10b/bohmgb externals/bohmgb; \
+ 		svn co $(SVNURL_GFORGE)/modtransp/tags/4.10b/bohmgb externals/bohmgb; \
 	else  \
 		echo "Updating bohmgb..."; \
 		svn up externals/bohmgb; \
@@ -181,7 +182,7 @@ gem0: ual libbds get-gem0
 get-gem0:
 	@if [ ! -d "externals/gem0" ]; then \
 	  echo "Checking out gem0..."; \
- 		svn co $(SVNROOT)/modtransp/tags/4.10b/gem0 externals/gem0; \
+ 		svn co $(SVNURL_GFORGE)/modtransp/tags/4.10b/gem0 externals/gem0; \
 	else  \
 		echo "Updating gem0..."; \
 		svn up externals/gem0; \
@@ -204,7 +205,7 @@ bdseq: ual libbds get-bdseq
 get-bdseq:
 	@if [ ! -d "externals/bdseq" ]; then \
 	  echo "Checking out bdseq..."; \
- 		svn co $(SVNROOT)/bdseq externals/bdseq; \
+ 		svn co $(SVNURL_GFORGE)/bdseq externals/bdseq; \
 	else  \
 		echo "Updating bdseq..."; \
 		svn up externals/bdseq; \
@@ -242,7 +243,7 @@ gem: ual libbds get-gem patch-gem
 get-gem:
 	@if [ ! -d "externals/gem" ]; then \
 	  echo "Checking out gem..."; \
- 		svn co $(SVNROOT)/gem externals/gem; \
+ 		svn co $(SVNURL_SOLPS)/gem externals/gem; \
 	else  \
 		echo "Updating gem..."; \
 		svn up externals/gem; \
@@ -256,11 +257,20 @@ clean-gem: revert-gem
 
 
 # dfefi (version from IPP repos) ###############################################
-dfefi: ual libbds
+dfefi: ual libbds get-dfefi
 	@echo -e "\033[36m\033[1m ++++ Build dFEFI ++++ \033[0m"; \
 	($(MAKE) --no-print-directory -C externals -f Makefile.dfefi \
 	&& echo -e "\033[32m\033[1m -- OK -- \033[0m") \
 	|| echo -e "\033[31m\033[1m -- FAIL -- \033[0m"
+
+get-dfefi:
+	@if [ ! -d "externals/dfefi" ]; then \
+	  echo "Checking out dfefi..."; \
+ 		svn co $(SVNURL_SOLPS)/dfefi externals/dfefi; \
+	else  \
+		echo "Updating dfefi..."; \
+		svn up externals/dfefi; \
+	fi
 
 clean-dfefi:
 	@echo -e "\033[36m\033[1m ++++ Clean dFEFI ++++ \033[0m"; \
@@ -279,7 +289,7 @@ imp4dv: ual libbds get-imp4dv
 get-imp4dv:
 	@if [ ! -d "externals/imp4dv" ]; then \
 	  echo "Checking out imp4dv..."; \
- 		svn co $(SVNROOT)/modtransp/tags/4.10b/imp4dv externals/imp4dv; \
+ 		svn co $(SVNURL_GFORGE)/modtransp/tags/4.10b/imp4dv externals/imp4dv; \
 	else  \
 		echo "Updating imp4dv..."; \
 		svn up externals/imp4dv; \
@@ -317,7 +327,7 @@ chease: ual get-chease patch-chease
 get-chease:
 	@if [ ! -d "externals/chease" ]; then \
 	  echo "Checking out chease..."; \
- 		svn co $(SVNROOT)/chease externals/chease; \
+ 		svn co $(SVNURL_GFORGE)/chease externals/chease; \
 	else  \
 		echo "Updating chease..."; \
 		svn up externals/chease; \
