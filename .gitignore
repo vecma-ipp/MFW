@@ -3,6 +3,8 @@
 .ipynb_checkpoints/
 *.so
 
+ual/fortran_interface/*.o
+
 build
 *build*
 *egg*
