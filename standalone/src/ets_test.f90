@@ -47,7 +47,7 @@ program ets_test
   
   ! ... input structure and path for input files directory
   type (type_coretransp), pointer :: coret(:) => NULL()
-  character(len=*), parameter :: data_path = 'standalone/data/ETS/gem_spread_4/'
+  character(len=*), parameter :: data_path = 'standalone/data/AUG5/6spd05/'
   
   ! ... For MPI 
   integer :: ibeg, iend, nloc
@@ -72,8 +72,8 @@ program ets_test
   nfterme = 0
   npterme = 0
 
-  np   = 3   ! Ordnung P der Hermiteschen Polynome fuer Gauss Quadratur
-  npar = 4   ! number of parameters
+  np   = 4   ! Ordnung P der Hermiteschen Polynome fuer Gauss Quadratur
+  npar = 6 ! number of parameters
   ntar = 100 ! number of target values
   
   ! ... Arrays to collect  parameter values and uncertainty
@@ -291,11 +291,11 @@ program ets_test
   if (rank == 0) then
     print*, '>>> Elapsed time= ',  t2 - t1, npterme,nfterme, npar, mmax
     
-    open(4,file='standalone/logs/te_values_tr.dat',status='unknown')
+    open(4,file='standalone/logs/6spd05.dat',status='unknown')
     !open(5,file='standalone/logs/ak_values_tr.dat',status='unknown')
     
     do k = 1, ntar
-      write(5,*)k, akt_glo(1,k)
+      !write(5,*)k, akt_glo(1,k)
       
       sum1 = 0.d0
       do i = 2, npterme

@@ -6,23 +6,23 @@ module ets_standalone
 
 !hard-coded parameters -> set from muscle cxa config file otherwise
   logical, save :: d_limit = .true.
-  logical, save :: v_limit = .false.
+  logical, save :: v_limit = .true.
   logical, save :: limit_evo = .false.
   real(8), save :: d_max_evo = 0._8
   real(8), save :: v_max_evo = 0._8
   real(8), save :: d_floor = 0.0_8 !0.5_8
-  real(8), save :: d_ceil = 200._8
+  real(8), save :: d_ceil = 2000._8
   real(8), save :: floor_alpha = 0.01_8
   real(8), save :: floor_beta = 0._8
   real(8), save :: floor_gamma = 0._8
   real(8), save :: v_floor = 0._8
-  real(8), save :: v_ceil = 0._8
+  real(8), save :: v_ceil = 2000._8
   logical, save :: e_d_cst = .true.
   logical, save :: e_v_cst = .true.
-  logical, save :: c_d_cst = .false.
-  logical, save :: c_v_cst = .true.
+  logical, save :: c_d_cst = .true.
+  logical, save :: c_v_cst = .false.
   logical, save :: pseudo_conv = .false.
-  logical, save :: check_coretransp = .false. 
+  logical, save :: check_coretransp = .true. 
 
   integer, save :: init_step = 0     !initial step count
 
@@ -562,7 +562,7 @@ contains
 
     print *,"run ets"
 !...  run ETS
-    call fill_param(code_parameters, '../../workflows/ets.xml', '', '../../workflows/ets.xsd')
+    call fill_param(code_parameters, 'workflows/ets.xml', '', 'workflows/ets.xsd')
 
     write(cptstr,'(I4.4)') init_step+cpt
 
