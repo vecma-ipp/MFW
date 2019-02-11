@@ -27,7 +27,7 @@ include config
 
 export MAINMAKE=yes
 
-
+SVNROOT = https://gforge6.eufus.eu/svn
 
 ################################################################################
 # global rules                                                                 #
@@ -36,8 +36,6 @@ export MAINMAKE=yes
 #.SUFFIXES: obj/.o .f90 .F90
 
 .PHONY: clean all ual libbds codes 
-
-
 
 
 # whole project ################################################################
@@ -75,8 +73,6 @@ clean-standalone:
 	|| echo -e "\033[31m\033[1m -- FAIL -- \033[0m"
 
 
-
-
 # cleaning #####################################################################
 clean: clean-kernels clean-ual clean-libbds clean-ets clean-bohmgb \
 	clean-bdseq clean-gem clean-chease clean-dfefi clean-imp4dv \
@@ -84,8 +80,6 @@ clean: clean-kernels clean-ual clean-libbds clean-ets clean-bohmgb \
 #clean-orb5
 	rm -f *~
 	@echo -e "\033[35m\033[1m ==== Full Clean Completed ==== \033[0m"
-
-
 
 
 ################################################################################
@@ -100,6 +94,7 @@ ual:
 	&& echo -e "\033[32m\033[1m -- OK -- \033[0m") \
 	|| echo -e "\033[31m\033[1m -- FAIL -- \033[0m"
 
+
 clean-ual:
 	@echo -e "\033[36m\033[1m ++++ Clean UAL and TOOLS ++++ \033[0m"; \
 	($(MAKE) --no-print-directory -C ual clean \
@@ -107,28 +102,21 @@ clean-ual:
 	|| echo -e "\033[31m\033[1m -- FAIL -- \033[0m"
 
 
-
-# ets ##########################################################################
-ets: ual libbds
-	@echo -e "\033[36m\033[1m ++++ Build ETS ++++ \033[0m"; \
-	($(MAKE) --no-print-directory -C externals -f Makefile.ets \
-	&& echo -e "\033[32m\033[1m -- OK -- \033[0m") \
-	|| echo -e "\033[31m\033[1m -- FAIL -- \033[0m"
-
-clean-ets:
-	@echo -e "\033[36m\033[1m ++++ Clean ETS ++++ \033[0m"; \
-	($(MAKE) --no-print-directory -C externals -f Makefile.ets clean \
-	&& echo -e "\033[32m\033[1m -- OK -- \033[0m") \
-	|| echo -e "\033[31m\033[1m -- FAIL -- \033[0m"
-
-
-
 # libbds #######################################################################
-libbds: ual
+libbds: ual get-libbds
 	@echo -e "\033[36m\033[1m ++++ Build LIBBDS ++++ \033[0m"; \
 	($(MAKE) --no-print-directory -C externals -f Makefile.libbds \
-	&& echo -e "\033[32m\033[1m -- OK -- \033[0m") \
-	|| echo -e "\033[31m\033[1m -- FAIL -- \033[0m"
+  && echo -e "\033[32m\033[1m -- OK -- \033[0m") \
+ || echo -e "\033[31m\033[1m -- FAIL -- \033[0m"
+
+get-libbds:
+	@if [ ! -d "externals/libbds" ]; then \
+	  echo "Checking out libbds..."; \
+ 		svn co $(SVNROOT)/libbds externals/libbds; \
+	else  \
+		echo "Updating libbds..."; \
+		svn up externals/libbds; \
+	fi
 
 clean-libbds:
 	@echo -e "\033[36m\033[1m ++++ Clean LIBBDS ++++ \033[0m"; \
@@ -137,13 +125,44 @@ clean-libbds:
 	|| echo -e "\033[31m\033[1m -- FAIL -- \033[0m"
 
 
+# ets ##########################################################################
+ets: ual libbds get-ets
+	@echo -e "\033[36m\033[1m ++++ Build ETS ++++ \033[0m"; \
+	($(MAKE) --no-print-directory -C externals -f Makefile.ets \
+	&& echo -e "\033[32m\033[1m -- OK -- \033[0m") \
+	|| echo -e "\033[31m\033[1m -- FAIL -- \033[0m"
 
-# bohmgb #######################################################################
-bohmgb: ual libbds
+get-ets:
+	@if [ ! -d "externals/ets" ]; then \
+	  echo "Checking out ets..."; \
+ 		svn co $(SVNROOT)/ets externals/ets; \
+	else  \
+		echo "Updating ets..."; \
+		svn up externals/ets; \
+	fi
+
+clean-ets:
+	@echo -e "\033[36m\033[1m ++++ Clean ETS ++++ \033[0m"; \
+	($(MAKE) --no-print-directory -C externals -f Makefile.ets clean \
+	&& echo -e "\033[32m\033[1m -- OK -- \033[0m") \
+	|| echo -e "\033[31m\033[1m -- FAIL -- \033[0m"
+
+
+# bohmgb ####################################################################### 
+bohmgb: ual libbds get-bohmgb
 	@echo -e "\033[36m\033[1m ++++ Build BOHMGB ++++ \033[0m"; \
 	($(MAKE) --no-print-directory -C externals -f Makefile.bohmgb \
 	&& echo -e "\033[32m\033[1m -- OK -- \033[0m") \
 	|| echo -e "\033[31m\033[1m -- FAIL -- \033[0m"
+
+get-bohmgb:
+	@if [ ! -d "externals/bohmgb" ]; then \
+	  echo "Checking out bohmgb..."; \
+ 		svn co $(SVNROOT)/modtransp/tags/4.10b/bohmgb externals/bohmgb; \
+	else  \
+		echo "Updating bohmgb..."; \
+		svn up externals/bohmgb; \
+	fi
 
 clean-bohmgb:
 	@echo -e "\033[36m\033[1m ++++ Clean BOHMGB ++++ \033[0m"; \
@@ -152,13 +171,21 @@ clean-bohmgb:
 	|| echo -e "\033[31m\033[1m -- FAIL -- \033[0m"
 
 
-
 # gem0 #########################################################################
-gem0: ual libbds
+gem0: ual libbds get-gem0
 	@echo -e "\033[36m\033[1m ++++ Build GEM0 ++++ \033[0m"; \
 	($(MAKE) --no-print-directory -C externals -f Makefile.gem0 \
 	&& echo -e "\033[32m\033[1m -- OK -- \033[0m") \
 	|| echo -e "\033[31m\033[1m -- FAIL -- \033[0m"
+
+get-gem0:
+	@if [ ! -d "externals/gem0" ]; then \
+	  echo "Checking out gem0..."; \
+ 		svn co $(SVNROOT)/modtransp/tags/4.10b/gem0 externals/gem0; \
+	else  \
+		echo "Updating gem0..."; \
+		svn up externals/gem0; \
+	fi
 
 clean-gem0:
 	@echo -e "\033[36m\033[1m ++++ Clean GEM0 ++++ \033[0m"; \
@@ -167,20 +194,27 @@ clean-gem0:
 	|| echo -e "\033[31m\033[1m -- FAIL -- \033[0m"
 
 
-
 # bdseq ########################################################################
-bdseq: ual libbds
+bdseq: ual libbds get-bdseq
 	@echo -e "\033[36m\033[1m ++++ Build BDSEQ ++++ \033[0m"; \
 	($(MAKE) --no-print-directory -C externals -f Makefile.bdseq \
 	&& echo -e "\033[32m\033[1m -- OK -- \033[0m") \
 	|| echo -e "\033[31m\033[1m -- FAIL -- \033[0m"
+
+get-bdseq:
+	@if [ ! -d "externals/bdseq" ]; then \
+	  echo "Checking out bdseq..."; \
+ 		svn co $(SVNROOT)/bdseq externals/bdseq; \
+	else  \
+		echo "Updating bdseq..."; \
+		svn up externals/bdseq; \
+	fi
 
 clean-bdseq:
 	@echo -e "\033[36m\033[1m ++++ Clean BDSEQ ++++ \033[0m"; \
 	($(MAKE) --no-print-directory -C externals -f Makefile.bdseq clean \
 	&& echo -e "\033[32m\033[1m -- OK -- \033[0m") \
 	|| echo -e "\033[31m\033[1m -- FAIL -- \033[0m"
-
 
 
 # gem (version from IPP repos) #################################################
@@ -199,18 +233,26 @@ revert-gem:
 	&& echo -e "\033[32m\033[1m -- OK -- \033[0m") \
 	|| echo -e "\033[31m\033[1m -- FAIL -- \033[0m"
 
-gem: ual libbds patch-gem
+gem: ual libbds get-gem patch-gem
 	@echo -e "\033[36m\033[1m ++++ Build GEM ++++ \033[0m"; \
 	($(MAKE) --no-print-directory -C externals -f Makefile.gem \
 	&& echo -e "\033[32m\033[1m -- OK -- \033[0m") \
 	|| echo -e "\033[31m\033[1m -- FAIL -- \033[0m"
+
+get-gem:
+	@if [ ! -d "externals/gem" ]; then \
+	  echo "Checking out gem..."; \
+ 		svn co $(SVNROOT)/gem externals/gem; \
+	else  \
+		echo "Updating gem..."; \
+		svn up externals/gem; \
+	fi
 
 clean-gem: revert-gem
 	@echo -e "\033[36m\033[1m ++++ Clean GEM ++++ \033[0m"; \
 	($(MAKE) --no-print-directory -C externals -f Makefile.gem clean \
 	&& echo -e "\033[32m\033[1m -- OK -- \033[0m") \
 	|| echo -e "\033[31m\033[1m -- FAIL -- \033[0m"
-
 
 
 # dfefi (version from IPP repos) ###############################################
@@ -227,13 +269,21 @@ clean-dfefi:
 	|| echo -e "\033[31m\033[1m -- FAIL -- \033[0m"
 
 
-
 # imp4dv #######################################################################
-imp4dv: ual libbds
+imp4dv: ual libbds get-imp4dv
 	@echo -e "\033[36m\033[1m ++++ Build IMP4DV ++++ \033[0m"; \
 	($(MAKE) --no-print-directory -C externals -f Makefile.imp4dv \
 	&& echo -e "\033[32m\033[1m -- OK -- \033[0m") \
 	|| echo -e "\033[31m\033[1m -- FAIL -- \033[0m"
+
+get-imp4dv:
+	@if [ ! -d "externals/imp4dv" ]; then \
+	  echo "Checking out imp4dv..."; \
+ 		svn co $(SVNROOT)/modtransp/tags/4.10b/imp4dv externals/imp4dv; \
+	else  \
+		echo "Updating imp4dv..."; \
+		svn up externals/imp4dv; \
+	fi
 
 clean-imp4dv:
 	@echo -e "\033[36m\033[1m ++++ Clean IMP4DV ++++ \033[0m"; \
@@ -258,18 +308,26 @@ revert-chease:
 	&& echo -e "\033[32m\033[1m -- OK -- \033[0m") \
 	|| echo -e "\033[31m\033[1m -- FAIL -- \033[0m"
 
-chease: ual patch-chease 
+chease: ual get-chease patch-chease 
 	@echo -e "\033[36m\033[1m ++++ Build CHEASE ++++ \033[0m"; \
 	($(MAKE) --no-print-directory -C externals/chease/src-f90 libchease_muscle \
 	&& echo -e "\033[32m\033[1m -- OK -- \033[0m") \
 	|| echo -e "\033[31m\033[1m -- FAIL -- \033[0m"
+
+get-chease:
+	@if [ ! -d "externals/chease" ]; then \
+	  echo "Checking out chease..."; \
+ 		svn co $(SVNROOT)/chease externals/chease; \
+	else  \
+		echo "Updating chease..."; \
+		svn up externals/chease; \
+	fi
 
 clean-chease: revert-chease
 	@echo -e "\033[36m\033[1m ++++ Clean CHEASE ++++ \033[0m"; \
 	($(MAKE) --no-print-directory -C externals/chease/src-f90 clean \
 	&& echo -e "\033[32m\033[1m -- OK -- \033[0m") \
 	|| echo -e "\033[31m\033[1m -- FAIL -- \033[0m"
-
 
 
 # orb5 #########################################################################
