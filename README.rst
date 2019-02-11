@@ -11,9 +11,6 @@ The code can be installed by cloning the Github repository::
     git clone git@github.com:vecma-ipp/compat.git
     cd compat
     
-Standalone
-----------
- 
-The code can be compiled by using:: 
+The Standalone code can be compiled by using:: 
 
     make standalone MPI=yes
