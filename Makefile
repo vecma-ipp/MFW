@@ -113,7 +113,7 @@ libbds: ual get-libbds
 get-libbds:
 	@if [ ! -d "externals/libbds" ]; then \
 	  echo "Checking out libbds..."; \
- 		svn co $(SVNURL_GFORGE)/libbds externals/libbds; \
+ 		svn co $(SVNURL_GFORGE)/libbds/tags/4.10b externals/libbds; \
 	else  \
 		echo "Updating libbds..."; \
 		svn up externals/libbds; \
@@ -136,7 +136,7 @@ ets: ual libbds get-ets
 get-ets:
 	@if [ ! -d "externals/ets" ]; then \
 	  echo "Checking out ets..."; \
- 		svn co $(SVNURL_GFORGE)/ets externals/ets; \
+ 		svn co $(SVNURL_GFORGE)/ets/tags/4.10b.10_8 externals/ets; \
 	else  \
 		echo "Updating ets..."; \
 		svn up externals/ets; \
@@ -205,7 +205,7 @@ bdseq: ual libbds get-bdseq
 get-bdseq:
 	@if [ ! -d "externals/bdseq" ]; then \
 	  echo "Checking out bdseq..."; \
- 		svn co $(SVNURL_GFORGE)/bdseq externals/bdseq; \
+ 		svn co $(SVNURL_GFORGE)/bdseq/tags/4.10b externals/bdseq; \
 	else  \
 		echo "Updating bdseq..."; \
 		svn up externals/bdseq; \
@@ -327,7 +327,7 @@ chease: ual get-chease patch-chease
 get-chease:
 	@if [ ! -d "externals/chease" ]; then \
 	  echo "Checking out chease..."; \
- 		svn co $(SVNURL_GFORGE)/chease externals/chease; \
+ 		svn co $(SVNURL_GFORGE)/chease/tags/4.10b.10_CHEASEv12_3b externals/chease; \
 	else  \
 		echo "Updating chease..."; \
 		svn up externals/chease; \
