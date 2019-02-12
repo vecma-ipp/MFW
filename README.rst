@@ -1,6 +1,6 @@
 Welcome to MFW
 =================
-MFW is Multiscale Fusion application using transport, equilibrium and turbulence submodels coupled together.
+MFW is multiscale fusion workflow that is using coupled submodels applications: transport, equilibrium and turbulence.
 
 Installation
 ------------
