@@ -1,15 +1,14 @@
-Welcome to ComPat
+Welcome to MFW
 =================
-
-ComPat is a H2020 project on Computing Patterns for High Performance Multiscale Computing, for which a Fusion application is being developed using transport, equilibrium and turbulence submodels coupled together.
+MFW is Multiscale Fusion application using transport, equilibrium and turbulence submodels coupled together.
 
 Installation
 ------------
 
 The code can be installed by cloning the Github repository::
 
-    git clone git@github.com:vecma-ipp/compat.git
-    cd compat
+    git clone git@github.com:vecma-ipp/MFW.git
+    cd MFW
     
 The Standalone code can be compiled by using:: 
 
