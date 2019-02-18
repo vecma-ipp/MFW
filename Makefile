@@ -243,7 +243,7 @@ gem: ual libbds get-gem patch-gem
 get-gem:
 	@if [ ! -d "externals/gem" ]; then \
 	  echo "Checking out gem..."; \
- 		svn co $(SVNURL_SOLPS)/gem externals/gem; \
+ 		svn co $(SVNURL_SOLPS)/gem externals/gem/trunk; \
 	else  \
 		echo "Updating gem..."; \
 		svn up externals/gem; \
@@ -266,7 +266,7 @@ dfefi: ual libbds get-dfefi
 get-dfefi:
 	@if [ ! -d "externals/dfefi" ]; then \
 	  echo "Checking out dfefi..."; \
- 		svn co $(SVNURL_SOLPS)/dfefi externals/dfefi; \
+ 		svn co $(SVNURL_SOLPS)/dfefi externals/dfefi/trunk; \
 	else  \
 		echo "Updating dfefi..."; \
 		svn up externals/dfefi; \
@@ -327,7 +327,7 @@ chease: ual get-chease patch-chease
 get-chease:
 	@if [ ! -d "externals/chease" ]; then \
 	  echo "Checking out chease..."; \
- 		svn co $(SVNURL_GFORGE)/chease/tags/4.10b.10_CHEASEv12_3b externals/chease; \
+ 		svn co $(SVNURL_GFORGE)/chease/chease/tags/4.10b.10_CHEASEv12_3b externals/chease; \
 	else  \
 		echo "Updating chease..."; \
 		svn up externals/chease; \
