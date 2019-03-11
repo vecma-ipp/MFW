@@ -11,12 +11,11 @@ program combined_test
   character(255) :: equilibrium_file_in, coreprof_file_in, coretransp_file_in, &
        coresource_file_in, coreimpur_file_in, toroidfield_file_in
 
-  type(type_equilibrium), pointer :: equilibrium(:), equilibrium_out(:)
+  type(type_equilibrium), pointer :: equilibrium(:)
   type(type_coreprof), pointer :: coreprof(:), coreprof_out(:)
   type(type_coretransp), pointer :: coretransp(:), coretransp_dv(:)
   type(type_coresource), pointer :: coresource(:)
   type(type_coreimpur), pointer :: coreimpur(:)
-  type(type_toroidfield), pointer :: toroidfield(:)
 
   integer :: ios
 
@@ -26,14 +25,12 @@ program combined_test
   allocate(coretransp(1))
   allocate(coresource(1))
   allocate(coreimpur(1))
-  allocate(toroidfield(1))
   
   equilibrium_file_in = 'chease_equilibrium.cpo'
   coreprof_file_in    = 'ets_coreprof.cpo'
   coretransp_file_in  = 'gem_coretransp.cpo'
   coreimpur_file_in   = 'ets_coreimpur_in.cpo'
   coresource_file_in  = 'ets_coresource_in.cpo'
-  toroidfield_file_in = 'ets_toroidfield_in.cpo'
 
   open (unit = 10, file = coreprof_file_in, &
        status = 'old', form = 'formatted', &
@@ -95,18 +92,6 @@ program combined_test
      print *,"CPO file not found ", coreimpur_file_in
      STOP
   end if
-  open (unit = 15, file = toroidfield_file_in, &
-       status = 'old', form = 'formatted', &
-       action = 'read', iostat = ios)
-  if (ios == 0) then
-     close (15)
-     call open_read_file(15, toroidfield_file_in )
-     call read_cpo(toroidfield(1), 'toroidfield' )
-     call close_read_file
-  else
-     print *,"CPO file not found ", toroidfield_file_in
-     STOP
-  end if
 
 
   print *,"##### CALLING IMP4DV #####"
@@ -124,9 +109,7 @@ program combined_test
        coretransp_dv, &
        coresource, &
        coreimpur, &
-       toroidfield, &
-       coreprof_out, &
-       equilibrium_out)
+       coreprof_out)
 
 
   ! write output CPO to file: un-comment lines below if needed
@@ -143,9 +126,7 @@ program combined_test
   call deallocate_cpo(coretransp)
   call deallocate_cpo(coresource)
   call deallocate_cpo(coreimpur)
-  call deallocate_cpo(toroidfield)
   call deallocate_cpo(coretransp_dv)
-  call deallocate_cpo(equilibrium_out)
   call deallocate_cpo(coreprof_out)
 
 end program combined_test

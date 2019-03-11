@@ -3,8 +3,8 @@ module equilupdate_standalone
 contains
 
   subroutine equilupdate2cpo(corep_in, toroidf_in, equil_in, equil_out)
-    use euitm_schemas: only type_coreprof, type_toroidfield, type_equilibrium
-    use equilibrium_input: only equil_input
+    use euitm_schemas, only: type_coreprof, type_toroidfield, type_equilibrium
+    use equilibrium_input, only: equil_input
     implicit none
 
     type(type_coreprof), pointer :: corep_in(:)
@@ -17,19 +17,23 @@ contains
 
 
   subroutine equilupdate2file(corep_in_file, toroidf_in_file, equil_in_file, equil_out_file)
-    use euitm_schemas: only type_coreprof, type_toroidfield, type_equilibrium
-    use equilibrium_input: only equil_input
+    use euitm_schemas, only: type_coreprof, type_toroidfield, type_equilibrium
+    use equilibrium_input, only: equil_input
     use read_structures
     use write_structures
+    use deallocate_structures
     implicit none
 
     character(len=*), intent(in) :: corep_in_file
     character(len=*), intent(in) :: toroidf_in_file
-    character(len=*), intent(in) :: equil_in_file, equil_out_file
+    character(len=*), intent(in) :: equil_in_file
+    character(256), intent(out) :: equil_out_file
 
     type(type_coreprof), pointer :: corep_in(:)
     type(type_toroidfield), pointer :: toroidf_in(:)
     type(type_equilibrium), pointer :: equil_in(:), equil_out(:)
+
+    integer :: ios
 
     allocate(corep_in(1))
     allocate(toroidf_in(1))
