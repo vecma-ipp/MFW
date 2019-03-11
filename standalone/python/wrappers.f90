@@ -1,8 +1,17 @@
 ! -*- coding: UTF-8 -*- 
 !> @brief 
 ! Wrappers to call the Fortran functions from src/*_standalone.f90
-! -----------------------------------------------------------------------
-subroutine run_ets(data_path, run_id)
+!> @author
+! Jalal Lakhlili (jlakhlili@gmail.com)
+! -----------------------------------------------------------------
+
+! -----------------------------------------------------------------
+!> @brief     run the ets code 
+!>
+!> @param[in] data_path: the path to folder containnig cpo files, eg.: ../data/ETS/uq_8
+!> @param[in] npar: the number of uncertain parameters      
+!> @param[in] values: array (size is npar) of evaluation of uncertain values          
+subroutine run_ets(data_path, npar, values)
     use allocate_deallocate
     
     use euitm_schemas, only: type_coreprof,    & 
@@ -26,11 +35,13 @@ subroutine run_ets(data_path, run_id)
     
     implicit none
     
-    !... eg.: ../data/ETS/uq_8
+    ! Eg.: ../data/ETS/uq_8
     character(len=*), intent(in) :: data_path
-    integer         , intent(in) :: run_id
+    integer, intent(in) :: npar
+    real(kind=8), dimension (npar), intent(in) :: values 
+
     
-    !... local args
+    ! Local args
     character(len=64) :: corep_in_file 
     character(len=64) :: cores_in_file 
     character(len=64) :: corei_in_file 
@@ -40,6 +51,9 @@ subroutine run_ets(data_path, run_id)
     character(len=64) :: corep_out_file  
     character(len=64) :: equil_out_file  
     
+    integer      :: ios
+    
+    ! CPO structures 
     type (type_coreprof)   , pointer :: corep(:)   => NULL()
     type (type_equilibrium), pointer :: equil(:)   => NULL()
     type (type_coretransp) , pointer :: coret(:)   => NULL()
@@ -50,24 +64,18 @@ subroutine run_ets(data_path, run_id)
     type (type_coreprof)   , pointer :: corep_new(:) => NULL()
     type (type_equilibrium), pointer :: equil_new(:) => NULL()
     
-    integer      :: ios
-    character(4) :: str_run_id
     
-    ! ... TODO: to be modified
-    write (str_run_id,'(I0)')  run_id
+    ! CPO files
     corep_in_file   = data_path // "/ets_coreprof_in.cpo"
     equil_in_file   = data_path // "/ets_equilibrium_in.cpo"
     cores_in_file   = data_path // "/ets_coresource_in.cpo"
     corei_in_file   = data_path // "/ets_coreimpur_in.cpo"
     toroidf_in_file = data_path // "/ets_toroidfield_in.cpo"
-    coret_in_file  = data_path // "/tmp_"// Trim(str_run_id) // "/ets_coretransp_in.cpo"
+    coret_in_file   = data_path //  "/ets_coretransp_in.cpo"
+    corep_out_file  = data_path // "/ets_coreprof_out.cpo"
+    equil_out_file  = data_path // "/ets_equilibrium_out.cpo"
     
-    corep_out_file = data_path // "/tmp_"// Trim(str_run_id) // "/ets_coreprof_out.cpo"
-   ! equil_out_file = data_path // "/tmp_"// Trim(str_run_id) // "/ets_equilibrium_out.cpo"
-    
-    print*, '>>> run_id, data_path: ',  run_id, data_path
-    
-    ! .. allocate CPO strutures  
+    ! Allocate CPO strutures  
     allocate(corep(1))
     allocate(equil(1))
     allocate(coret(1))
@@ -78,7 +86,7 @@ subroutine run_ets(data_path, run_id)
     allocate(corep_new(1))
     allocate(equil_new(1))
     
-    ! ... read CPO file to CPO type    
+    ! Read CPO file and write corresponding structures   
     open (unit = 10, file = corep_in_file, &
          status = 'old', form = 'formatted', &
          action = 'read', iostat = ios)
@@ -110,8 +118,10 @@ subroutine run_ets(data_path, run_id)
          action = 'read', iostat = ios)
     if (ios == 0) then
        close (12)
-       call open_read_file(12, coret_in_file )
-       call read_cpo(coret(1), 'coretransp' )
+       call open_read_file(12, coret_in_file)
+       call read_cpo(coret(1), 'coretransp')
+       ! Update the transport coefficients
+       coret(1)%values(1)%te_transp%diff_eff(1:npar)=values
        call close_read_file
     else
        print *,"CPO file not found:",coret_in_file
@@ -157,7 +167,7 @@ subroutine run_ets(data_path, run_id)
        STOP
     end if  
     
-    ! ... call ets_standalone
+    ! Call ets_standalone
     call ets_cpo(corep, equil, coret, cores, corei, toroidf, corep_new, equil_new)
     
     ! ... write output files
@@ -182,52 +192,3 @@ subroutine run_ets(data_path, run_id)
 end subroutine run_ets
 ! -----------------------------------------------------------------------
 
-! -----------------------------------------------------------------------
-subroutine update_coret_file(filename, npar, values)
-    
-    use euitm_schemas,   only: type_coretransp 
-    
-    use read_structures, only: open_read_file,  &
-                            &  close_read_file, &
-                            &  read_cpo
-    
-    use write_structures, only: open_write_file,  &
-                             &  close_write_file, &
-                             &  write_cpo
-    
-    use deallocate_structures, only: deallocate_cpo
-    
-    implicit none
-    
-    character(len=*), intent(in) :: filename   
-    integer, intent(in) :: npar
-    real(kind=8), dimension (npar), intent(in) :: values 
-    
-    integer :: ios
-    type(type_coretransp) , pointer :: coret(:) => NULL()
-    allocate(coret(1))
-    
-   print*, '>>> VALUES = ', values 
-    ! ... 
-    open (unit = 10, file = filename, &
-         status = 'old', form = 'formatted', &
-         action = 'read', iostat = ios)
-    if (ios == 0) then
-       close (10)
-       call open_read_file(10, filename)
-       call read_cpo(coret(1), 'coretransp')
-       call close_read_file
-       coret(1)%values(1)%te_transp%diff_eff(1:npar)=values
-    else
-       print *,"CPO file not found:", filename
-       STOP
-    end if
-    
-    call open_write_file(10, filename)
-    call write_cpo(coret(1), 'coretransp')
-    call close_write_file
-  
-    call deallocate_cpo(coret)
-
-end subroutine update_coret_file
-! -----------------------------------------------------------------------
