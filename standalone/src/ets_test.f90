@@ -220,7 +220,6 @@ program ets_test
                   data_path // "ets_coretransp_in.cpo", &
                   data_path // "ets_coresource_in.cpo", &
                   data_path // "ets_coreimpur_in.cpo", &
-                  data_path // "ets_toroidfield_in.cpo", &
                   tau, &
                   npar, &
                   aspeicher(i,:), &
