@@ -8,38 +8,32 @@
 ! -----------------------------------------------------------------
 !> @brief     run the ets code 
 !>
-!> @param[in] data_path: the path to folder containnig cpo files, eg.: ../data/ETS/uq_8
-!> @param[in] npar: the number of uncertain parameters      
-!> @param[in] values: array (size is npar) of evaluation of uncertain values          
+!> @param[in] data_path: the path to folder containnig cpo files. 
+!                        eg.: ../data/ETS/uq_8.
+!> @param[in] npar: the number of uncertain parameters.      
+!> @param[in] values: array of uncertain values (size is npar).    
 subroutine run_ets(data_path, npar, values)
     use allocate_deallocate
-    
     use euitm_schemas, only: type_coreprof,    & 
                           &  type_equilibrium, &
                           &  type_coretransp,  &
                           &  type_coresource,  &
                           &  type_coreimpur,   &
                           &  type_toroidfield
-    
     use read_structures, only: open_read_file,  &
                             &  close_read_file, &
                             &  read_cpo
-    
     use write_structures, only: open_write_file,  &
                              &  close_write_file, &
                              &  write_cpo
-    
     use deallocate_structures, only: deallocate_cpo
-    
     use ets_standalone, only: ets_cpo
     
     implicit none
     
-    ! Eg.: ../data/ETS/uq_8
     character(len=*), intent(in) :: data_path
     integer, intent(in) :: npar
     real(kind=8), dimension (npar), intent(in) :: values 
-
     
     ! Local args
     character(len=64) :: corep_in_file 
