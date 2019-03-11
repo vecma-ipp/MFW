@@ -1,0 +1,23 @@
+!    -*- f90 -*-
+! Note: the context of this file is case sensitive.
+
+python module wrappers ! in 
+    interface  ! in :wrappers
+
+        subroutine run_ets(data_path,npar, values) ! in :wrappers:wrappers.f90
+            use allocate_deallocate
+            use euitm_schemas, only: type_coreprof,type_equilibrium,type_coretransp,type_coresource,type_coreimpur,type_toroidfield
+            use read_structures, only: open_read_file,close_read_file,read_cpo
+            use write_structures, only: open_write_file,close_write_file,write_cpo
+            use deallocate_structures, only: deallocate_cpo
+            use ets_standalone, only: ets_cpo
+            character*(*) intent(in) :: data_path
+            integer,intent(in) :: npar
+            real(kind=8) dimension(npar),intent(in), depend(npar) :: values
+        end subroutine run_ets
+
+    end interface 
+end python module wrappers
+
+! This file was auto-generated with f2py (version:2).
+! See http://cens.ioc.ee/projects/f2py2e/

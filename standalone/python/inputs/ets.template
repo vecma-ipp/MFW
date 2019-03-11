@@ -1,0 +1,5 @@
+&ets_input_file
+D1=#D1
+D2=#D2
+out_file=#"out_file"
+/
