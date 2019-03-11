@@ -102,14 +102,15 @@ SHARED_O = ${OBJDIR}/linterp.o ${OBJDIR}/string_binding.o ${OBJDIR}/uq_modules.o
 ETS_O = ${SHARED_O} ${OBJDIR}/ets_standalone.o ${OBJDIR}/ets_test.o 
 CHEASE_O = ${SHARED_O} ${OBJDIR}/chease_standalone.o ${OBJDIR}/chease_test.o 
 IMP4DV_O = ${SHARED_O} ${OBJDIR}/imp4dv_standalone.o ${OBJDIR}/imp4dv_test.o 
-
+EQUILUPDATE_O = ${SHARED_O} ${OBJDIR}/equilupdate_standalone.o ${OBJDIR}/equilupdate_test.o 
 
 #TESTS = ETS_TEST CHEASE_TEST 
-TESTS =  ETS_TEST IMP4DV_TEST CHEASE_TEST COMBINED_TEST
+TESTS =  ETS_TEST IMP4DV_TEST CHEASE_TEST COMBINED_TEST EQUILUPDATE_TEST
 ETS_EXE = ${BINDIR}/ets_test
 CHEASE_EXE = ${BINDIR}/chease_test
 IMP4DV_EXE = ${BINDIR}/imp4dv_test
 COMBINED_EXE = ${BINDIR}/combined_test
+EQUILUPDATE_EXE = ${BINDIR}/equilupdate_test
 
 #.PHONY: all clean
 # rules ########################################################################
@@ -140,6 +141,9 @@ CHEASE_TEST: ${CHEASE_O}
 
 COMBINED_TEST: ${SHARED_O} ${OBJDIR}/ets_standalone.o ${OBJDIR}/imp4dv_standalone.o ${OBJDIR}/combined_test.o
 	$(LD) -o ${COMBINED_EXE} $^ -L${IMP4DV} -L${ETS} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_XML} -L${LIB_UAL} -limp4dv -lets -lbds -litmconstants -litmtypes -lxmllib -lual ${LDFLAGS} ${LIBLAPACK}
+
+EQUILUPDATE_TEST: ${EQUILUPDATE_O}
+	$(LD) -o ${EQUILUPDATE_EXE} $^ -L${ETS} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_UAL} -lets -lbds -litmconstants -litmtypes -lual ${LDFLAGS} ${LIBLAPACK}
 
 ${SYS}: 
 	@mkdir -p ${OBJDIR}
@@ -177,3 +181,6 @@ ${OBJDIR}/chease_test.o: src/chease_test.f90
 
 ${OBJDIR}/combined_test.o: src/combined_test.f90
 	${FC90} -o $@ -c $< $(FC90FLAGS) -I${INC_TYPES}  
+
+${OBJDIR}/equilupdate_standalone.o: src/equilupdate_standalone.f90
+	${FC90} -o $@ -c $< $(FC90FLAGS) -I${ETS} -I${INC_CONSTANTS} -I${INC_TYPES} 
