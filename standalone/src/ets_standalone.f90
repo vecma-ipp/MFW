@@ -71,9 +71,7 @@ contains
        coret_in, &
        cores_in, &
        corei_in, &
-       toroidf_in, &
-       corep_out, &
-       equil_out)
+       corep_out)
 
     use itm_types
     use copy_structures
@@ -82,7 +80,6 @@ contains
     use allocate_deallocate
     use xml_file_reader
     use ets
-    use equilibrium_input
     use spitzer
     implicit none
 
@@ -103,10 +100,9 @@ contains
     type (type_coretransp), pointer :: coret_in(:) 
     type (type_coresource), pointer :: cores_in(:) 
     type (type_coreimpur), pointer :: corei_in(:) 
-    type (type_toroidfield), pointer :: toroidf_in(:) 
 
     type (type_coreprof), pointer :: corep_iter(:), corep_out(:)
-    type (type_equilibrium), pointer :: equil_iter(:), equil_out(:)
+    type (type_equilibrium), pointer :: equil_iter(:)
     type (type_param) :: code_parameters
 
     type (type_coretransp), pointer :: coret_work(:), coret_ext(:)
@@ -314,10 +310,8 @@ contains
     deallocate(dTe_frac)
     ! in all cases we want corep_old_test
     call copy_cpo(corep_old_test,corep_out)
-    call equil_input(corep_out,toroidf_in,equil_in,equil_out)
 
     write(*,"('Loop#',I4.4,': advanced with inner steps to a total step of ',F9.6,' (targeted tau=',F9.6,')')") init_step+cpt,(ii-1)*dtime,tau
-    equil_out(1)%time = time_in + (ii-1)*dtime
     corep_out(1)%time = time_in + (ii-1)*dtime
 
     write(cptstr,'(I4.4)') init_step+cpt
@@ -357,11 +351,8 @@ contains
        coret_in_file, &
        cores_in_file, &
        corei_in_file, &
-       toroidf_in_file, &
        tau_in, &
        npar, &
-!corep_out_file, &
-!equil_out_file, &
        ainput, &
        aoutput) 
     use iso_c_binding
@@ -374,8 +365,6 @@ contains
     use allocate_deallocate
     use xml_file_reader
     use ets
-    use equilibrium_input
-
     use spitzer
 
     implicit none
@@ -385,7 +374,6 @@ contains
     real(R8), intent(in) :: tau_in
     real(R8) :: ainput(:),aoutput(:)
     integer(kind=c_signed_char), pointer :: corep_out(:)
-    integer(kind=c_signed_char), pointer :: equil_out(:)
     integer(kind=c_signed_char), pointer :: tmpbuf(:)
 
     integer :: ios
@@ -399,7 +387,6 @@ contains
     type (type_coretransp), pointer :: coret(:) => NULL()
     type (type_coresource), pointer :: cores(:) => NULL()
     type (type_coreimpur), pointer :: corei(:) => NULL()
-    type (type_toroidfield), pointer :: toroidf(:) => NULL()
     type (type_param) :: code_parameters
 
     type (type_coretransp), pointer :: coret_work(:) => NULL(), coret_ext(:) => NULL()
@@ -427,7 +414,7 @@ contains
     character(len=*), intent(in) :: corep_in_file
     character(len=*), intent(in) :: equil_in_file
     character(len=*), intent(in) :: coret_in_file, cores_in_file
-    character(len=*), intent(in) :: corei_in_file, toroidf_in_file
+    character(len=*), intent(in) :: corei_in_file
 !character(F_STR_SIZE), intent(out) :: corep_out_file, equil_out_file
 
     integer, save :: cpt = 0
@@ -455,7 +442,6 @@ contains
     allocate(coret(1))
     allocate(cores(1))
     allocate(corei(1))
-    allocate(toroidf(1))
 
 !allocate(coret_work(1))
     allocate(coret_ext(1))
@@ -529,18 +515,6 @@ contains
        STOP
     end if
 
-    open (unit = 15, file = toroidf_in_file, &
-         status = 'old', form = 'formatted', &
-         action = 'read', iostat = ios)
-    if (ios == 0) then
-       close (15)
-       call open_read_file(15, toroidf_in_file )
-       call read_cpo(toroidf(1), 'toroidfield' )
-       call close_read_file
-    else
-       print *,"CPO file not found:",toroidf_in_file
-       STOP
-    end if  
 
     if (.not. ASSOCIATED(d_prof)) then 
        print *,"init background floor profile"
@@ -743,10 +717,8 @@ contains
 
 ! in all cases we want corep_old_test
     call copy_cpo(corep_old_test,corep_new)
-    call equil_input(corep_new,toroidf,equil_old,equil_iter)
 
     write(*,"('Loop#',I4.4,': advanced with inner steps to a total step of ',F9.6,' (targeted tau=',F9.6,')')") init_step+cpt,(ii-1)*dtime,tau
-    equil_iter(1)%time = time_in + (ii-1)*dtime
     corep_new(1)%time = time_in + (ii-1)*dtime
 
     write(cptstr,'(I4.4)') init_step+cpt
@@ -775,7 +747,6 @@ contains
     call deallocate_cpo(coret)
     call deallocate_cpo(cores)
     call deallocate_cpo(corei)
-    call deallocate_cpo(toroidf)
 
     call deallocate_cpo(coret_sigma)
 
