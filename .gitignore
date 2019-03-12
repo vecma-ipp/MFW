@@ -26,3 +26,6 @@ standalone/python/*.so
 standalone/python/*.pyc
 standalone/python/*dist*
 standalone/python/*cache*
+standalone/python/obj
+standalone/python/bin
+standalone/python/include

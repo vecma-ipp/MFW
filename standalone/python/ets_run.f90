@@ -5,29 +5,33 @@
 ! Jalal Lakhlili (jlakhlili@gmail.com)
 
 program ets_run
-  
-use iso_fortran_env
+
+!use csv_file 
 use allocate_deallocate
-use euitm_schemas, only: type_coreprof,    & 
-                      &  type_equilibrium, &
-                      &  type_coretransp,  &
-                      &  type_coresource,  &
-                      &  type_coreimpur,   &
-                      &  type_toroidfield
+
+use euitm_schemas,   only: type_coreprof,    & 
+                        &  type_equilibrium, &
+                        &  type_coretransp,  &
+                        &  type_coresource,  &
+                        &  type_coreimpur,   &
+                        &  type_toroidfield
 use read_structures, only: open_read_file,  &
                         &  close_read_file, &
                         &  read_cpo
 use write_structures, only: open_write_file,  &
                          &  close_write_file, &
                          &  write_cpo
+
 use deallocate_structures, only: deallocate_cpo
+
 use ets_standalone, only: ets_cpo
 
 implicit none
   
   ! INPUTS
-  character(len=*) :: cpo_dir  ! Path to the folder containing CPO files
-  character(len=*) :: in_fname ! NML file containing uncertain values
+  !character(len=64) :: cpo_dir  ! Path to the folder containing CPO files
+  character(len=*), parameter :: cpo_dir = '../data/SP2FT'
+  character(len=64) :: in_fname ! NML file containing uncertain values
   
   ! CPO file names
   character(len=64) :: corep_in_file 
@@ -35,7 +39,6 @@ implicit none
   character(len=64) :: corei_in_file 
   character(len=64) :: equil_in_file 
   character(len=64) :: coret_in_file   
-  character(len=64) :: toroidf_in_file 
   character(len=64) :: corep_out_file  
 
   ! CPO structures 
@@ -44,31 +47,32 @@ implicit none
   type (type_coretransp) , pointer :: coret(:)     => NULL()
   type (type_coresource) , pointer :: cores(:)     => NULL()
   type (type_coreimpur)  , pointer :: corei(:)     => NULL()
-  type (type_toroidfield), pointer :: toroidf(:)   => NULL()
   type (type_coreprof)   , pointer :: corep_new(:) => NULL()
   
-  ! Other local variables
+  ! Outputfile contraining values of interset (Te)
+  character(len=64) :: out_file
+
+  ! Other local variables  
   integer :: ios
   logical :: path_exist, file_exists 
   real(kind=8) :: D1, D2 
   
-  character(len=*) :: out_fname ! Outputfile contraining values of interset (Te)
   
   ! ...
-  if (command_argument_count() /=2) then
-    write(*,*) "ERROR: exactly 1 input argument is required"
-  STOP
-  end if
-  
-  call get_command_argument(1, cpo_dir)
-  inquire( file=trim(cpo_dir), exist=path_exist)
-  if (.not. path_exist) then
-    write(*,*) "ERROR: reference path '"//trim(cpo_dir)//"' does not exist"
-  STOP
-  end if
+!  if (command_argument_count() /=2) then
+!    write(*,*) "ERROR: exactly 1 input argument is required"
+!  STOP
+!  end if
+!  
+!  call get_command_argument(1, cpo_dir)
+!  inquire(file=trim(cpo_dir), exist=path_exist)
+!  if (.not. path_exist) then
+!    write(*,*) "ERROR: reference path '"//trim(cpo_dir)//"' does not exist"
+!  STOP
+!  end if
 
-  call get_command_argument(2, in_fname)
-  inquire( file=trim(in_fname), exist=file_exists)
+  call get_command_argument(1, in_fname)
+  inquire(file=trim(in_fname), exist=file_exists)
   if (.not. file_exists) then
     write(*,*) "ERROR: reference file '"//trim(in_fname)//"' does not exist"
     stop
@@ -82,12 +86,11 @@ implicit none
   open(unit=20, file=trim(in_fname))
   read(20, ets_input_file)
   
-  ! CPO files TODO: check names
+  ! CPO files
   corep_in_file   = cpo_dir // "/ets_coreprof_in.cpo"
   equil_in_file   = cpo_dir // "/ets_equilibrium_in.cpo"
   cores_in_file   = cpo_dir // "/ets_coresource_in.cpo"
   corei_in_file   = cpo_dir // "/ets_coreimpur_in.cpo"
-  toroidf_in_file = cpo_dir // "/ets_toroidfield_in.cpo"
   coret_in_file   = cpo_dir //  "/ets_coretransp_in.cpo"
   corep_out_file  = cpo_dir // "/ets_coreprof_out.cpo"
   
@@ -97,7 +100,6 @@ implicit none
   allocate(coret(1))
   allocate(cores(1))
   allocate(corei(1))
-  allocate(toroidf(1))
   
   allocate(corep_new(1))
   
@@ -170,32 +172,22 @@ implicit none
      STOP
   end if
   
-  open (unit = 15, file = toroidf_in_file, &
-       status = 'old', form = 'formatted', &
-       action = 'read', iostat = ios)
-  if (ios == 0) then
-     close (15)
-     call open_read_file(15, toroidf_in_file )
-     call read_cpo(toroidf(1), 'toroidfield' )
-     call close_read_file
-  else
-     print *,"CPO file not found:",toroidf_in_file
-     STOP
-  end if  
-  
   ! Call ets_standalone
-  call ets_cpo(corep, equil, coret, cores, corei, toroidf, corep_new)
+  call ets_cpo(corep, equil, coret, cores, corei, corep_new)
   
   ! ... write output files
   ! TODO extract quntity of interest, here: Te
   call open_write_file(16, corep_out_file)
   call write_cpo(corep_new(1),'coreprof')
   call close_write_file
-  
-  close(20)
+
+!  open(unit=17, file=out_file ,status='unknown')
+!  call csv_write(17, 'te', .true.)
+!  call csv_write(17, corep_new(1)%te%value, .true.)
+!  close(17)
+
   ! ... deallocations
   call deallocate_cpo(corep_new)  
-  call deallocate_cpo(toroidf)
   call deallocate_cpo(corei)
   call deallocate_cpo(cores)
   call deallocate_cpo(coret)  

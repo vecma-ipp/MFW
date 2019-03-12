@@ -15,7 +15,7 @@ cpo_dir = "../data/SP2FT"
 input_json  = "inputs/ets_in.json"
 
 # For the outputs
-tmp_dir = "/ptmp/ljala"
+tmp_dir = "/ptmp/ljala/"
 output_json = os.path.join(tmp_dir, "out_pce.json")
 
 # Get uncertain parameters and distrubutions
@@ -26,7 +26,8 @@ dist1 = cp.Normal(diff_eff[0], 0.2*diff_eff[0])
 dist2 = cp.Normal(diff_eff[1], 0.2*diff_eff[1])
 
 # Initialize Campaign object
-ets_campaign = uq.Campaign(state_filename=input_json, workdir=tmp_dir)
+ets_campaign = uq.Campaign(state_filename=input_json, workdir=tmp_dir,
+                           default_campaign_dir_prefix='ETS_Campaign_')
 
 # Define the parameters dictionary
 ets_campaign.vary_param("D1", dist=dist1)
@@ -40,8 +41,8 @@ ets_campaign.add_runs(ets_sampler)
 ets_campaign.populate_runs_dir()
 
 # Execute runs
-ets_campaign.apply_for_each_run_dir(
-    uq.actions.ExecuteLocal("ets_test.py ets_input.nml"))
+#ets_campaign.apply_for_each_run_dir(
+#    uq.actions.ExecuteLocal("ets_test.py ets_input.nml"))
 
 #
 #    corep_file = tmp_dir + '/ets_coreprof_out.cpo'
