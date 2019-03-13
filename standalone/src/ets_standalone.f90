@@ -22,7 +22,7 @@ module ets_standalone
   logical, save :: c_d_cst = .true.
   logical, save :: c_v_cst = .false.
   logical, save :: pseudo_conv = .false.
-  logical, save :: check_coretransp = .true. 
+  logical, save :: check_coretransp = .false. 
 
   integer, save :: init_step = 0     !initial step count
 
@@ -631,9 +631,9 @@ contains
 
 
 # 379
-    call open_write_file(30,"ets_coretransp-work_in_"//cptstr//".cpo")
-    call write_cpo(coret_work(1),'coretransp')
-    call close_write_file
+!    call open_write_file(30,"ets_coretransp-work_in_"//cptstr//".cpo")
+!    call write_cpo(coret_work(1),'coretransp')
+!    call close_write_file
 
     print *,"delTe_limit = ",delTe_limit*100,"%"
     print *,"deldTe_limit = ",deldTe_limit*100,"%"

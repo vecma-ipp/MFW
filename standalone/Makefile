@@ -97,7 +97,7 @@ MPIF90FLAGS += ${INCLUDES} ${MODSPEC}${INCDIR}
 
 
 # objects files ################################################################
-SHARED_O = ${OBJDIR}/linterp.o ${OBJDIR}/string_binding.o ${OBJDIR}/uq_modules.o
+SHARED_O = ${OBJDIR}/linterp.o ${OBJDIR}/string_binding.o ${OBJDIR}/csv_io.o  ${OBJDIR}/uq_modules.o
 
 ETS_O = ${SHARED_O} ${OBJDIR}/ets_standalone.o ${OBJDIR}/ets_test.o 
 CHEASE_O = ${SHARED_O} ${OBJDIR}/chease_standalone.o ${OBJDIR}/chease_test.o 
@@ -160,6 +160,9 @@ clean:
 ####### special rules (due to clash of versions with chease) #######
 ${OBJDIR}/linterp.o: src/tools/linterp.f90
 	${FC90} -o $@ -c $< $(FC90FLAGS) -I${INC_TYPES}
+
+${OBJDIR}/csv_io.o: src/tools/csv_io.f90
+	${FC90} -o $@ -c $< $(FC90FLAGS) 
 
 ${OBJDIR}/uq_modules.o: src/uq_modules.f90
 	${MPIF90} -o $@ -c $< $(FC90FLAGS) -I${ETS} -I${INC_CONSTANTS} -I${INC_TYPES} -I${INC_XML} 

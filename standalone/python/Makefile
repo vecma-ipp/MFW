@@ -17,7 +17,7 @@ export ETS = ../../externals/ets/obj/${SYS}
 # standalone
 export OBJ_STD = ../obj/${SYS}
 export INC_STD = ../include/${SYS}
-STD = I${INC_STD} L${OBJ_STD}/ets_standalone.o L${OBJ_STD}/linterp.o 
+STD = I${INC_STD} ${OBJ_STD}/ets_standalone.o ${OBJ_STD}/linterp.o  ${OBJ_STD}/csv_io.o
 
 # additional flags 
 # TODO
@@ -31,7 +31,7 @@ RUN_ETS_EXE = ${BINDIR}/ets_run
 RUNS = ETS_RUN
 
 # rules
-all: ${SYS} ${RUNS}
+all: ${RUNS}
 
 ETS_RUN: ${OBJDIR}/ets_run.o
 	$(MPIF90) -o ${RUN_ETS_EXE} $^ -${STD} -L${ETS} -lets -L${LIB_UAL} -lual -L${LIB_TYPES} -litmtypes -L${LIB_XML} -lxmllib -L${LIB_CONSTANTS} -litmconstants ${LDFLAGS} ${LIBLAPACK}
