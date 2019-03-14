@@ -146,6 +146,12 @@ contains
     real(R8)  :: control_double_test(6)
                                      !!! control_double that replaces tau with dtime
 
+!!!!! variables introduced to study Te_frac and dTe_frac only at coreprof rho_tor closest to coretransp rho_tor
+    integer :: nft, min_ind, i_low
+    real    :: min_rt_diff, diff_rt
+    real, allocatable :: rt_p2t(:), rt_ref_p2t(:), Te_ref_p2t(:), Te_new_p2t(:), dTe_ref_p2t(:), dTe_new_p2t(:)
+!!!!!
+
     character(F_STR_SIZE) :: corep_in_file, corep_out_file
     character(F_STR_SIZE) :: equil_in_file, equil_out_file
     character(F_STR_SIZE) :: coret_in_file, cores_in_file
@@ -436,8 +442,23 @@ contains
     inner_steps_cur = inner_steps_init
     dtime           = tau/REAL(inner_steps_cur)              !!! delta t value
     control_double_test(1) = dtime
-    allocate(Te_frac(nrho))
-    allocate(dTe_frac(nrho))
+!!!!!    allocate(Te_frac(nrho))    !!! evaluate Te_frac at corep_rho_tor
+!!!!!    allocate(dTe_frac(nrho))   !!! evaluate dTe_frac at corep_rho_tor
+
+!!!!! study Te_frac and dTe_frac only at coreprof rho_tor closest to coretransp rho_tor
+min_ind = 0
+
+nft = SIZE(coret(1)%values(1)%rho_tor)
+allocate(rt_p2t(nft))
+allocate(rt_ref_p2t(nft))
+allocate(Te_ref_p2t(nft))
+allocate(Te_new_p2t(nft))
+allocate(dTe_ref_p2t(nft))
+allocate(dTe_new_p2t(nft))
+
+allocate(Te_frac(nft))
+allocate(dTe_frac(nft))
+!!!!!
 
     do while (ii .le. inner_steps_cur)
 
@@ -447,11 +468,41 @@ contains
             control_integer, control_double_test,                    &
             code_parameters)
 
+!!!!! study Te_frac and dTe_frac only at coreprof rho_tor closest to coretransp rho_tor
+       i_low = 1
+
+       do j = 1,nft
+          min_rt_diff = 10000000000.0
+          do i = i_low,nrho
+             diff_rt = abs(coret(1)%values(1)%rho_tor(j) - corep_new_test(1)%rho_tor(i))
+             if (diff_rt .lt. min_rt_diff) then
+                min_rt_diff = diff_rt
+                min_ind = i
+             end if
+          end do
+          write(*,"('at ft #',I2,' rho_tor index, from coreprof_new to coretransp flux tube location: ',I5)") j, min_ind
+
+          rt_p2t(j) = corep_new_test(1)%rho_tor(min_ind)
+          rt_ref_p2t(j) = corep_ref(1)%rho_tor(min_ind)
+          Te_ref_p2t(j) = corep_ref(1)%te%value(min_ind)
+          Te_new_p2t(j) = corep_new_test(1)%te%value(min_ind)
+          dTe_ref_p2t(j) = corep_ref(1)%te%ddrho(min_ind)
+          dTe_new_p2t(j) = corep_new_test(1)%te%ddrho(min_ind)
+       
+          write(*,"('rho_tor values, from coreprof_new to coretransp flux tube location:',F10.5)") rt_p2t(j)
+          write(*,"('rho_tor values, from coreprof_ref to coretransp flux tube location:',F10.5)") rt_ref_p2t(j)
+
+          i_low = min_ind+1
+       end do
+!!!!!
+
        exceeds_limit = .false.
-       Te_frac = abs( (corep_ref(1)%te%value - corep_new_test(1)%te%value) / corep_ref(1)%te%value )
+!!!!!       Te_frac = abs( (corep_ref(1)%te%value - corep_new_test(1)%te%value) / corep_ref(1)%te%value )
+       Te_frac = abs( (Te_ref_p2t - Te_new_p2t) / Te_ref_p2t )  !!!!!
        Te_dev = MAXVAL(Te_frac)
 
-       dTe_frac = abs( (corep_ref(1)%te%ddrho - corep_new_test(1)%te%ddrho) / (abs(corep_ref(1)%te%ddrho) + corep_ref(1)%te%value / rho_tor_max) )
+!!!!!       dTe_frac = abs( (corep_ref(1)%te%ddrho - corep_new_test(1)%te%ddrho) / (abs(corep_ref(1)%te%ddrho) + corep_ref(1)%te%value / rho_tor_max) )
+       dTe_frac = abs( (dTe_ref_p2t - dTe_new_p2t) / (abs(dTe_ref_p2t) + Te_ref_p2t / rho_tor_max) )    !!!!!
        dTe_dev = MAXVAL(dTe_frac)
 
        if (Te_dev .ge. delTe_limit) then 
@@ -497,6 +548,10 @@ contains
 
     deallocate(Te_frac)
     deallocate(dTe_frac)
+
+!!!!!
+    deallocate(rt_p2t, rt_ref_p2t, Te_ref_p2t, Te_new_p2t, dTe_ref_p2t, dTe_new_p2t)
+!!!!!
 
     ! in all cases we want corep_old_test
     call copy_cpo(corep_old_test,corep_new)
@@ -626,7 +681,7 @@ contains
              call Linterp(CORETRANSP_in%values(1)%ni_transp%diff_eff(:,iion,icon), CORETRANSP_in%values(1)%rho_tor, nrho_in,  &
                   CORETRANSP_out%values(1)%ni_transp%diff_eff(:,iion,icon), CORETRANSP_out%values(1)%rho_tor, nrho_out)
           enddo
-          if (d_limit) then
+         if (d_limit) then
              icon = 2
              CORETRANSP_out%values(1)%ni_transp%diff_eff(:,iion,icon) = MAX(CORETRANSP_out%values(1)%ni_transp%diff_eff(:,iion,icon),d_prof)!,d_ceil)
           endif
@@ -645,7 +700,7 @@ contains
 !!$             CORETRANSP_out%values(1)%ni_transp%vconv_eff(:,iion,icon) = MAX(CORETRANSP_out%values(1)%ni_transp%vconv_eff(:,iion,icon),v_prof)!,v_ceil)
 !!$          endif
        enddo
-    endif
+   endif
        
 ! ne
     if(associated(CORETRANSP_in%values(1)%ne_transp%diff_eff)) then
@@ -655,7 +710,7 @@ contains
           call Linterp(CORETRANSP_in%values(1)%ne_transp%diff_eff(:,icon), CORETRANSP_in%values(1)%rho_tor, nrho_in,  &
                CORETRANSP_out%values(1)%ne_transp%diff_eff(:,icon), CORETRANSP_out%values(1)%rho_tor, nrho_out)
        enddo
-       if (d_limit) then
+      if (d_limit) then
           icon = 2
           CORETRANSP_out%values(1)%ne_transp%diff_eff(:,icon) = MAX(CORETRANSP_out%values(1)%ne_transp%diff_eff(:,icon),d_prof)!,d_ceil)
        endif
