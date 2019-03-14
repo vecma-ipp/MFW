@@ -25,6 +25,7 @@ use write_structures, only: open_write_file,  &
 use deallocate_structures, only: deallocate_cpo
 
 use ets_standalone, only: ets_cpo
+use csv_module
 
 implicit none
   
@@ -49,15 +50,15 @@ implicit none
   type (type_coreimpur)  , pointer :: corei(:)     => NULL()
   type (type_coreprof)   , pointer :: corep_new(:) => NULL()
   
-  ! Outputfile contraining values of interset (Te)
+  ! Outputfile contraining values of interset (Te, Ti, ...)
   character(len=64) :: out_file
-  character(len=80) :: record
+  type(csv_file) :: csv_out_file
+  real(kind=8), dimension(:,:), allocatable :: out_data
 
   ! Other local variables  
-  integer :: i, n, ios, csv_file_unit
-  logical :: path_exist, file_exists 
+  integer :: ios, n_values, n_outputs
+  logical :: infile_status, outfile_status 
   real(kind=8) :: D1, D2 
-  
   
   ! ...
 !  if (command_argument_count() /=2) then
@@ -65,16 +66,9 @@ implicit none
 !  STOP
 !  end if
 !  
-!  call get_command_argument(1, cpo_dir)
-!  inquire(file=trim(cpo_dir), exist=path_exist)
-!  if (.not. path_exist) then
-!    write(*,*) "ERROR: reference path '"//trim(cpo_dir)//"' does not exist"
-!  STOP
-!  end if
-
   call get_command_argument(1, in_fname)
-  inquire(file=trim(in_fname), exist=file_exists)
-  if (.not. file_exists) then
+  inquire(file=trim(in_fname), exist=infile_status)
+  if (.not. infile_status) then
     write(*,*) "ERROR: reference file '"//trim(in_fname)//"' does not exist"
     stop
   end if
@@ -176,28 +170,39 @@ implicit none
   ! Call ets_standalone
   call ets_cpo(corep, equil, coret, cores, corei, corep_new)
   
-  ! Write output files
-  call open_write_file(16, corep_out_file)
-  call write_cpo(corep_new(1),'coreprof')
-  call close_write_file
+  ! To collect outputs data
+  n_values  = size(corep_new(1)%te%value)
+  n_outputs = 2   
+  allocate(out_data(n_values, n_outputs))
   
-  ! Extract the quantity of interest and save them in the output file
+  ! the quantity of interest is Te for the moment (n_outputs = 1)
+  out_data(:, 1) = corep_new(1)%te%value(:)
+  out_data(:, 2) = corep_new(1)%ti%value(:, 1)
   
-  ! Write the header line.
-  call csv_file_open_write (out_file, csv_file_unit)
-  record = 'Te'
-  call csv_file_record_write(out_file, csv_file_unit, record)
+!  ! Write CPO output files
+!  call open_write_file(16, corep_out_file)
+!  call write_cpo(corep_new(1),'coreprof')
+!  call close_write_file
   
-  ! Write corresponding values
-  n =  size(corep_new(1)%te%value)
-  do i = 1, n
-    record = ''
-    call csv_record_append_r8(corep_new(1)%te%value(i), record)
-    call csv_file_record_write(out_file, csv_file_unit, record)
-  end do
+  ! Open the CSV output file
+  call csv_out_file%open(out_file, n_cols=n_outputs, status_ok=outfile_status)
+  print*, '1> ', out_data(1, :)
+  print*, '2> ', out_data(2, :)
+  print*, '3> ', out_data(3, :)
+  
+  ! Add headers
+  call csv_out_file%add('Te')
+  call csv_out_file%add('Ti')
+  call csv_out_file%next_row()
+  
+  ! Add data
+  call csv_out_file%add(out_data)
+  
+  ! Finished
+  call csv_out_file%close(outfile_status)
+  deallocate(out_data)
 
-  call csv_file_close_write(out_file, csv_file_unit)
-  ! ... deallocations
+  ! CPO deallocations
   call deallocate_cpo(corep_new)  
   call deallocate_cpo(corei)
   call deallocate_cpo(cores)
