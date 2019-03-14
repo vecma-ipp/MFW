@@ -51,9 +51,10 @@ implicit none
   
   ! Outputfile contraining values of interset (Te)
   character(len=64) :: out_file
+  character(len=80) :: record
 
   ! Other local variables  
-  integer :: ios
+  integer :: i, n, ios, csv_file_unit
   logical :: path_exist, file_exists 
   real(kind=8) :: D1, D2 
   
@@ -175,17 +176,27 @@ implicit none
   ! Call ets_standalone
   call ets_cpo(corep, equil, coret, cores, corei, corep_new)
   
-  ! ... write output files
-  ! TODO extract quntity of interest, here: Te
+  ! Write output files
   call open_write_file(16, corep_out_file)
   call write_cpo(corep_new(1),'coreprof')
   call close_write_file
+  
+  ! Extract the quantity of interest and save them in the output file
+  
+  ! Write the header line.
+  call csv_file_open_write (out_file, csv_file_unit)
+  record = 'Te'
+  call csv_file_record_write(out_file, csv_file_unit, record)
+  
+  ! Write corresponding values
+  n =  size(corep_new(1)%te%value)
+  do i = 1, n
+    record = ''
+    call csv_record_append_r8(corep_new(1)%te%value(i), record)
+    call csv_file_record_write(out_file, csv_file_unit, record)
+  end do
 
-!  open(unit=17, file=out_file ,status='unknown')
-!  call csv_write(17, 'te', .true.)
-!  call csv_write(17, corep_new(1)%te%value, .true.)
-!  close(17)
-
+  call csv_file_close_write(out_file, csv_file_unit)
   ! ... deallocations
   call deallocate_cpo(corep_new)  
   call deallocate_cpo(corei)
