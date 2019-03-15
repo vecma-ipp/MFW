@@ -737,19 +737,7 @@ contains
     integer :: i !! counter
 
     do i=1,size(val)
-
-#ifdef _GFORTRAN_
-        ! This is a stupid workaround for gfortran bugs (tested with 7.2.0)
-        select type (val)
-        type is (character(len=*))
-            call me%add(val(i),int_fmt,real_fmt,trim_str)
-        class default
-            call me%add(val(i),int_fmt,real_fmt,trim_str)
-        end select
-#else
-        call me%add(val(i),int_fmt,real_fmt,trim_str)
-#endif
-
+      call me%add(val(i),int_fmt,real_fmt,trim_str)
     end do
 
   end subroutine add_vector
@@ -1103,19 +1091,7 @@ contains
 
         do i=1,me%n_rows  ! row loop
 
-#ifdef _GFORTRAN_
-            ! the following is a workaround for gfortran bugs:
-            select type (r)
-            type is (character(len=*))
-                tmp = repeat(' ',len(r)) ! size the string
-                call me%csv_get_value(i,icol,tmp,status_ok)
-                r(i) = tmp
-            class default
-                call me%csv_get_value(i,icol,r(i),status_ok)
-            end select
-#else
             call me%csv_get_value(i,icol,r(i),status_ok)
-#endif
             if (.not. status_ok) then
                 select type (r)
                 ! note: character conversion can never fail, so not

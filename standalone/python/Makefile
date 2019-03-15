@@ -40,4 +40,4 @@ ${OBJDIR}/ets_run.o: ets_run.f90
 	${MPIF90} -o $@ -c $< $(FC90FLAGS) -I${INC_STD} -I${ETS} -I${INC_UAL} -I${INC_TYPES} -I${INC_XML} -I${INC_CONSTANTS}  
 
 clean:
-	rm -rf ${OBJDIR}/ets_run.o ${INCDIR}/ets_rum.mod ${BINDIR}/ets_run 
+	rm -rf ${OBJDIR}/ets_run.o ${INCDIR}/ets_run.mod ${BINDIR}/ets_run 

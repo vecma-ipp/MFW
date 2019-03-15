@@ -1,6 +1,6 @@
 ! -*- coding: UTF-8 -*- 
 !> @brief 
-! Wrappers to call the Fortran functions from src/*_standalone.f90
+! UQ test for ets (4 uncertain params)
 !> @author
 ! Jalal Lakhlili (jlakhlili@gmail.com)
 
@@ -30,17 +30,16 @@ use csv_module
 implicit none
   
   ! INPUTS
-  !character(len=64) :: cpo_dir  ! Path to the folder containing CPO files
-  character(len=*), parameter :: cpo_dir = '../data/SP2FT'
-  character(len=64) :: in_fname ! NML file containing uncertain values
+  character(len=128) :: cpo_dir  ! Path to the folder containing CPO files
+  character(len=128) :: in_fname ! NML file containing uncertain values
   
   ! CPO file names
-  character(len=64) :: corep_in_file 
-  character(len=64) :: cores_in_file 
-  character(len=64) :: corei_in_file 
-  character(len=64) :: equil_in_file 
-  character(len=64) :: coret_in_file   
-  character(len=64) :: corep_out_file  
+  character(len=128) :: corep_in_file 
+  character(len=128) :: cores_in_file 
+  character(len=128) :: corei_in_file 
+  character(len=128) :: equil_in_file 
+  character(len=128) :: coret_in_file   
+  character(len=128) :: corep_out_file  
 
   ! CPO structures 
   type (type_coreprof)   , pointer :: corep(:)     => NULL()
@@ -51,43 +50,46 @@ implicit none
   type (type_coreprof)   , pointer :: corep_new(:) => NULL()
   
   ! Outputfile contraining values of interset (Te, Ti, ...)
-  character(len=64) :: out_file
+  character(len=128) :: out_file
   type(csv_file) :: csv_out_file
-  real(kind=8), dimension(:,:), allocatable :: out_data
 
   ! Other local variables  
-  integer :: ios, n_values, n_outputs
+  integer :: ios, i, n_data, n_outputs
   logical :: infile_status, outfile_status 
-  real(kind=8) :: D1, D2 
+  real(kind=8) :: D1, D2, D3, D4 
   
   ! ...
-!  if (command_argument_count() /=2) then
-!    write(*,*) "ERROR: exactly 1 input argument is required"
-!  STOP
-!  end if
-!  
-  call get_command_argument(1, in_fname)
+  if (command_argument_count() /=2) then
+    write(*,*) "ERROR: exactly 2 input arguments are required"
+  STOP
+  end if
+  
+  call get_command_argument(1, cpo_dir)
+
+  call get_command_argument(2, in_fname)
   inquire(file=trim(in_fname), exist=infile_status)
   if (.not. infile_status) then
     write(*,*) "ERROR: reference file '"//trim(in_fname)//"' does not exist"
     stop
   end if
-
+ 
   ! Read uncertain paramters (cf. inputs/ets.template) 
   namelist /ets_input_file/  D1, &
                            & D2, &
+                           & D3, &
+                           & D4, &
                            & out_file  
   
   open(unit=20, file=trim(in_fname))
   read(20, ets_input_file)
   
   ! CPO files
-  corep_in_file   = cpo_dir // "/ets_coreprof_in.cpo"
-  equil_in_file   = cpo_dir // "/ets_equilibrium_in.cpo"
-  cores_in_file   = cpo_dir // "/ets_coresource_in.cpo"
-  corei_in_file   = cpo_dir // "/ets_coreimpur_in.cpo"
-  coret_in_file   = cpo_dir //  "/ets_coretransp_in.cpo"
-  corep_out_file  = cpo_dir // "/ets_coreprof_out.cpo"
+  corep_in_file   = trim(cpo_dir) // "/ets_coreprof_in.cpo"
+  equil_in_file   = trim(cpo_dir) // "/ets_equilibrium_in.cpo"
+  cores_in_file   = trim(cpo_dir) // "/ets_coresource_in.cpo"
+  corei_in_file   = trim(cpo_dir) // "/ets_coreimpur_in.cpo"
+  coret_in_file   = trim(cpo_dir) //  "/ets_coretransp_in.cpo"
+  corep_out_file  = trim(cpo_dir) // "/ets_coreprof_out.cpo"
   
   ! Allocate CPO strutures  
   allocate(corep(1))
@@ -95,7 +97,6 @@ implicit none
   allocate(coret(1))
   allocate(cores(1))
   allocate(corei(1))
-  
   allocate(corep_new(1))
   
   ! Read CPO file and write corresponding structures   
@@ -135,6 +136,8 @@ implicit none
      ! Update the transport coefficients
      coret(1)%values(1)%te_transp%diff_eff(1)=D1
      coret(1)%values(1)%te_transp%diff_eff(2)=D2
+     coret(1)%values(1)%te_transp%diff_eff(3)=D3
+     coret(1)%values(1)%te_transp%diff_eff(4)=D4
      call close_read_file
   else
      print *,"CPO file not found:",coret_in_file
@@ -170,37 +173,29 @@ implicit none
   ! Call ets_standalone
   call ets_cpo(corep, equil, coret, cores, corei, corep_new)
   
-  ! To collect outputs data
-  n_values  = size(corep_new(1)%te%value)
-  n_outputs = 2   
-  allocate(out_data(n_values, n_outputs))
+  !  ! Write CPO output files
+  !  call open_write_file(16, corep_out_file)
+  !  call write_cpo(corep_new(1),'coreprof')
+  !  call close_write_file
   
-  ! the quantity of interest is Te for the moment (n_outputs = 1)
-  out_data(:, 1) = corep_new(1)%te%value(:)
-  out_data(:, 2) = corep_new(1)%ti%value(:, 1)
-  
-!  ! Write CPO output files
-!  call open_write_file(16, corep_out_file)
-!  call write_cpo(corep_new(1),'coreprof')
-!  call close_write_file
-  
+  ! To collect outputs data, the quantity of interest is Te
+  n_data    = size(corep_new(1)%te%value)
+  n_outputs = 1  
   ! Open the CSV output file
   call csv_out_file%open(out_file, n_cols=n_outputs, status_ok=outfile_status)
-  print*, '1> ', out_data(1, :)
-  print*, '2> ', out_data(2, :)
-  print*, '3> ', out_data(3, :)
-  
+
   ! Add headers
   call csv_out_file%add('Te')
-  call csv_out_file%add('Ti')
   call csv_out_file%next_row()
   
   ! Add data
-  call csv_out_file%add(out_data)
-  
+  do i=1, n_data
+    call csv_out_file%add(corep_new(1)%te%value(i))
+    call csv_out_file%next_row()
+  end do
+
   ! Finished
   call csv_out_file%close(outfile_status)
-  deallocate(out_data)
 
   ! CPO deallocations
   call deallocate_cpo(corep_new)  
