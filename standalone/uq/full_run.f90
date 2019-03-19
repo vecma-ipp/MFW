@@ -28,8 +28,6 @@ use ets_standalone,         only: ets_cpo
 use equilupdate_standalone, only: equilupdate2cpo
 use chease_standalone,      only: chease_cpo
 
-use csv_module
-
 implicit none
   
   ! INPUT: Path to the folder containing CPO files
