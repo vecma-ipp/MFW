@@ -32,7 +32,7 @@ use csv_module
 
 implicit none
   
-  ! INPUT: Path to the folder containing CPO file
+  ! INPUT: Path to the folder containing CPO files
   character(len=128) :: cpo_dir 
   
   ! CPO file names
@@ -86,7 +86,7 @@ implicit none
   allocate(equil_up(1))
   allocate(equil_new(1))
   
-  ! Read CPO file and write corresponding structures   
+  ! Read CPO files and write corresponding structures   
   open (unit = 10, file = corep_in_file, &
        status = 'old', form = 'formatted', &
        action = 'read', iostat = ios)
