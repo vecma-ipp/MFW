@@ -29,7 +29,7 @@ use csv_module
 
 implicit none
   
-  ! INPUTS: Path to the folder containing CPO file
+  ! INPUT: Path to the folder containing CPO file
   character(len=128) :: cpo_dir 
   
   ! CPO file names
@@ -53,7 +53,7 @@ implicit none
   type (type_equilibrium), pointer :: equil_up(:) => NULL()
   type (type_equilibrium), pointer :: equil_new(:) => NULL()
   
-  !  To test CPO files presence
+  ! To test CPO files presence in cpo_dir
   integer :: ios 
   
   ! Read the Path to CPO dir from the consol 
@@ -179,7 +179,7 @@ implicit none
   call write_cpo(equil_up(1),'equilibrium')
   call close_write_file
 
-  call open_write_file(17, equil_out_file)
+  call open_write_file(18, equil_out_file)
   call write_cpo(equil_new(1),'equilibrium')
   call close_write_file
 
