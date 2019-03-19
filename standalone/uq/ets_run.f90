@@ -1,5 +1,5 @@
 ! -*- coding: UTF-8 -*- 
-!> @brief  UQ for the transport code (ETS + Update equilibrium)
+!> @brief  The code to run UQ script ets_test. It concerns the transport model
 !> @author Jalal Lakhlili (jlakhlili@gmail.com)
 
 program ets_run
