@@ -9,7 +9,7 @@ from ascii_cpo import read
 start_time = time.time()
 
 # To be read using sys.argv
-cpo_dir  = os.path.abspath("../data/SP2FT")
+cpo_dir  = os.path.abspath("../data/AUG_2806_5/BGD_GEM_SPREAD/4FT")
 tmp_dir  = "/ptmp/ljala/"
 bin_file = "../bin/DRACO/chease_run "
 

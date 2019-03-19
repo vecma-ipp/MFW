@@ -9,7 +9,7 @@ from ascii_cpo import read
 start_time = time.time()
 
 # To be read using sys.argv
-cpo_dir  = os.path.abspath("../data/SP4FT")
+cpo_dir  = os.path.abspath("../data/AUG_28906_5/BGB_GEM_SPREAD/4FT")
 tmp_dir  = "/ptmp/ljala/"
 bin_file = "../bin/DRACO/ets_run "
 
@@ -84,37 +84,35 @@ corep = read(corep_file, 'coreprof')
 rho = corep.rho_tor
 
 # Statistical Moments
-fig1 = plt.figure()
+fig1 = plt.figure(figsize=(12,9))
 ax11 = fig1.add_subplot(111)
 ax11.plot(rho, mean,     'g-', alpha=0.75, label='Mean')
 ax11.plot(rho, mean-std, 'b-', alpha=0.25)
 ax11.plot(rho, mean+std, 'b-', alpha=0.25)
 ax11.fill_between(rho, mean-std, mean+std, alpha=0.25, label= r'Mean $\pm$ deviation')
-ax11.set_xlabel(r'$\rho_{tor}$ normalized')
-ax11.set_ylabel('q profile', color='b')
+ax11.set_xlabel(r'$\rho_{tor} \quad [m]$')
+ax11.set_ylabel('Mean', color='b')
 ax11.tick_params('y', colors='b')
 ax11.legend()
 
 ax12 = ax11.twinx()
-ax12.plot(rho, var, 'r-', alpha=0.5)
+ax12.plot(rho, var, 'r-', alpha=0.5, label='Variance')
 ax12.set_ylabel('Variance', color='r')
 ax12.tick_params('y', colors='r')
-
-ax11.grid()
-plt.title('Statistical moments')
+ax12.legend()
+ax12.grid()
+plt.title('Electron temperature [eV]')
 
 # Sobols indicies
-fig2 = plt.figure()
-ax2 = fig2.add_subplot(111)
+fig2 = plt.figure(figsize=(12,9))
+ax21 = fig2.add_subplot(111)
 for i in range(n_par):
-    ax2.plot(rho, s1i[i], label=par_names[i])
-ax2.legend()
-ax2.set_xlabel(r'$\rho_{tor}$')
-ax2.set_ylabel('Sobol indices')
-ax2.set_title('First order Sobol indices')
-
-ax2.grid()
-ax2.legend()
+    ax21.plot(rho, s1i[i], label=par_names[i])
+ax21.set_xlabel(r'$\rho_{tor} \quad [m]$')
+ax21.set_ylabel('Sobol indices')
+ax21.legend()
+ax21.grid()
+plt.title('First order Sobol indices')
 
 # Correlation matrix
 #fig3 = plt.figure()

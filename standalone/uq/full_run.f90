@@ -40,6 +40,7 @@ implicit none
   character(len=128) :: coret_in_file   
   character(len=128) :: toroidf_in_file
   character(len=128) :: corep_out_file  
+  character(len=128) :: equil_up_file  
   character(len=128) :: equil_out_file  
 
   ! CPO structures 

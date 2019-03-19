@@ -19,9 +19,9 @@ export CHEASE = ../../externals/chease/src-f90
 export OBJ_STD = ../obj/${SYS}
 export INC_STD = ../include/${SYS}
 
-TOOLS_STD  = I${INC_STD} ${OBJ_STD}/linterp.o  ${OBJ_STD}/csv_io.o
-ETS_STD    = I${INC_STD} ${OBJ_STD}/ets_standalone.o ${OBJ_STD}/equilupdate_standalone.o 
-CHEASE_STD = I${INC_STD} ${OBJ_STD}/chease_standalone.o 
+TOOLS_STD  = ${INC_STD} ${OBJ_STD}/linterp.o  ${OBJ_STD}/csv_io.o
+ETS_STD    = ${INC_STD} ${OBJ_STD}/ets_standalone.o ${OBJ_STD}/equilupdate_standalone.o 
+CHEASE_STD = ${INC_STD} ${OBJ_STD}/chease_standalone.o 
 
 # Object files 
 OBJDIR = ../obj/${SYS}
@@ -32,28 +32,28 @@ RUN_ETS_EXE    = ${BINDIR}/ets_run
 RUN_CHEASE_EXE = ${BINDIR}/chease_run
 RUN_FULL_EXE   = ${BINDIR}/full_run
 
-RUNS = ETS_RUN CHEASE_RUN
+RUNS = ETS_RUN CHEASE_RUN FULL_RUN
 
 # Rules
 all: ${RUNS}
 
 ETS_RUN: ${OBJDIR}/ets_run.o
-	$(MPIF90) -o ${RUN_ETS_EXE} $^ -${ETS_STD} -${TOOLS_STD} -L${ETS} -lets -L${LIB_UAL} -lual -L${LIB_TYPES} -litmtypes -L${LIB_XML} -lxmllib -L${LIB_CONSTANTS} -litmconstants ${LDFLAGS} ${LIBLAPACK}
+	$(MPIF90) -o ${RUN_ETS_EXE} $^ -I${ETS_STD} -I${TOOLS_STD} -L${ETS} -L${LIB_UAL} -L${LIB_TYPES} -L${LIB_XML} -L${LIB_CONSTANTS} -lets -lual -litmconstants -litmtypes -lxmllib ${LDFLAGS} ${LIBLAPACK}
 
 ${OBJDIR}/ets_run.o: ets_run.f90
 	${MPIF90} -o $@ -c $< $(FC90FLAGS) -I${INC_STD} -I${ETS} -I${INC_UAL} -I${INC_TYPES} -I${INC_XML} -I${INC_CONSTANTS} 
 
 CHEASE_RUN: ${OBJDIR}/chease_run.o
-	$(MPIF90) -o ${RUN_CHEASE_EXE} $^ -${CHEASE_STD} -${TOOLS_STD} -L${CHEASE} -L${LIB_UAL} -lchease_muscle -lual -lxml2 ${LDFLAGS} ${LIBLAPACK}
+	$(MPIF90) -o ${RUN_CHEASE_EXE} $^ -I${CHEASE_STD} -I${TOOLS_STD} -L${CHEASE} -L${LIB_UAL} -lchease_muscle -lual -lxml2 ${LDFLAGS} ${LIBLAPACK}
 
 ${OBJDIR}/chease_run.o: chease_run.f90
 	${MPIF90} -o $@ -c $< $(FC90FLAGS) -I${INC_STD} -I${CHEASE} -I${INC_UAL} -I${INC_TYPES}
 	
-#FULL_RUN: ${OBJDIR}/full_run.o
-#	$(MPIF90) -o ${RUN_FULL_EXE} $^ -${ETS_STD} -${CHEASE_STD} -${TOOLS_STD} -L${ETS} -L${LIB_UAL} -L${CHEASE} -lets -lchease_muscle -lual -lxml2 ${LDFLAGS} ${LIBLAPACK}
-#
-#${OBJDIR}/full_run.o: full_run.f90
-#	${MPIF90} -o $@ -c $< $(FC90FLAGS) -I${INC_STD} -I${ETS} -I${CHEASE} -I${INC_UAL} 
+FULL_RUN: ${OBJDIR}/full_run.o
+	$(MPIF90) -o ${RUN_FULL_EXE} $^ -I${ETS_STD} -I${CHEASE_STD} -I${TOOLS_STD} -L${ETS} -L${CHEASE} -L${LIB_UAL} -L${LIB_TYPES} -L${LIB_CONSTANTS} -lets -lchease_muscle -lxml2 -lual -litmtypes -litmconstants ${LDFLAGS} ${LIBLAPACK}
+
+${OBJDIR}/full_run.o: full_run.f90
+	${MPIF90} -o $@ -c $< $(FC90FLAGS) -I${INC_STD} -I${ETS} -I${CHEASE} -I/usr/include/libxml2 -I${INC_UAL} -I${INC_TYPES} -I${INC_CONSTANTS} 
 
 # 
 clean:
