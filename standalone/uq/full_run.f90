@@ -2,7 +2,7 @@
 !> @brief  run: ETS + Update EQ + CHEASE
 !> @author Jalal Lakhlili 
 !> Example of usage:
-!>  ../bin/DRACO/full_run ../data/AUG_28906_5/BGB_GEM_SPREAD/4FT
+!>  ../bin/DRACO/full_run ../../data/AUG_28906_5/BGB_GEM_SPREAD/4FT
 !
 
 program ets_run

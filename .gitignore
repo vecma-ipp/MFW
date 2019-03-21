@@ -11,6 +11,8 @@ externals/*
 !gem-tmppatch.diff
 
 ual/fortran_interface/*.o
+ual/python_interface/*.pyc
+ual/python_interface/*cache*_
 ual/xml/*.o
 ual/constants/*.o
 ual/types/*.o
@@ -22,10 +24,6 @@ standalone/lib
 standalone/obj
 standalone/include
 
-standalone/python/*.so
-standalone/python/*.pyc
-standalone/python/*dist*
-standalone/python/*cache*
-standalone/python/obj
-standalone/python/bin
-standalone/python/include
+standalone/uq/*.so
+standalone/uq/*.pyc
+standalone/uq/*cache*
