@@ -54,7 +54,7 @@ ets_campaign.apply_for_each_run_dir(uq.actions.ExecuteLocal(cmd))
 
 # Aggregate the results from all runs.
 output_filename = ets_campaign.params_info['out_file']['default']
-output_columns = ['te']
+output_columns = ['te', 'ti']
 
 aggregate = uq.elements.collate.AggregateSamples( ets_campaign,
                                             output_filename=output_filename,

@@ -77,23 +77,23 @@ if __name__ == "__main__":
     #
     corep_file = cpo_dir + '/ets_coreprof_in.cpo'
     corep = read(corep_file, 'coreprof')
-    rho = corep.rho_tor
+    rho = corep.rho_tor_norm
     te  = corep.te.value
 
     #
     n = 3
-    p = 4
+    p = 3
     u = compute_sites(rho, te)
     tck_x, tck_y = approximate_curve(rho, te, u, n, p)
     xa, ya = spl(u, tck_x, tck_y)
-
+    print(len(tck_x[0]))
     # Control points:
     Px = tck_x[1][:n+p]
     Py = tck_y[1][:n+p]
 
     plt.plot(rho, te, 'b-', label='Te Profile')
-    plt.plot(rho, ya, 'g-', label='Approximation')
-    plt.plot(Px, Py, 'ro')
+    plt.plot(xa, ya, 'g-', label='Approximation')
+    plt.plot(Px, Py, 'ro', label='Control Points')
 
     plt.legend()
     plt.grid()
