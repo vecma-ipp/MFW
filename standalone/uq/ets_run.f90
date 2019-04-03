@@ -195,29 +195,28 @@ implicit none
 
   ! Call ets_standalone and update the equibrium
   call ets_cpo(corep, equil, coret, cores, corei, corep_new)
-  
-  !call equilupdate2cpo(corep_new, toroidf, equil, equil_new)
+  call equilupdate2cpo(corep_new, toroidf, equil, equil_new)
 
-  ! To collect outputs data, the quantity of interest is Te
-  n_data    = size(corep_new(1)%te%value)
-  n_outputs = 1 
-  ! Open the CSV output file
-  call csv_out_file%open(out_file, n_cols=n_outputs, status_ok=outfile_status)
-
-  ! Add headers
-  call csv_out_file%add('te')
-  !call csv_out_file%add('ti')
-  call csv_out_file%next_row()
-  
-  ! Add data
-  do i=1, n_data
-    call csv_out_file%add(corep_new(1)%te%value(i))
-    !call csv_out_file%add(corep_new(1)%ti%value(i, 2))
-    call csv_out_file%next_row()
-  end do
+!  ! To collect outputs data, the quantity of interest is Te
+!  n_data    = size(corep_new(1)%te%value)
+!  n_outputs = 1 
+!  ! Open the CSV output file
+!  call csv_out_file%open(out_file, n_cols=n_outputs, status_ok=outfile_status)
+!
+!  ! Add headers
+!  call csv_out_file%add('te')
+!  !call csv_out_file%add('ti')
+!  call csv_out_file%next_row()
+!  
+!  ! Add data
+!  do i=1, n_data
+!    call csv_out_file%add(corep_new(1)%te%value(i))
+!    !call csv_out_file%add(corep_new(1)%ti%value(i, 1))
+!    call csv_out_file%next_row()
+!  end do
 
   ! Finished
-  call csv_out_file%close(outfile_status)
+!  call csv_out_file%close(outfile_status)
 
   ! CPO deallocations
   call deallocate_cpo(equil_new)

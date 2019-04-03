@@ -91,10 +91,11 @@ if __name__ == "__main__":
     Px = tck_x[1][:n+p]
     Py = tck_y[1][:n+p]
 
-    plt.plot(rho, te, 'b-', label='Te Profile')
+    plt.plot(rho, te, 'b.', label='Te Profile')
     plt.plot(xa, ya, 'g-', label='Approximation')
     plt.plot(Px, Py, 'ro', label='Control Points')
 
+    plt.title('Approximation using cubic splines')
     plt.legend()
     plt.grid()
     plt.show()
