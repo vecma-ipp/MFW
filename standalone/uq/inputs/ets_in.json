@@ -11,6 +11,6 @@
       "D2": {"type": "real", "min": "0.0", "max": "10.0", "default": "1.0"},
       "D3": {"type": "real", "min": "0.0", "max": "10.0", "default": "1.0"},
       "D4": {"type": "real", "min": "0.0", "max": "10.0", "default": "1.0"},
-      "out_file": {"type": "str", "default": "output.cpo"}
+      "out_file": {"type": "str", "default": "p.csv"}
     }
 }

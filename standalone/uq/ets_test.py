@@ -5,11 +5,13 @@ import chaospy  as cp
 import easyvvuq as uq
 import matplotlib.pylab as plt
 from ascii_cpo import read
+from .utils import plots
 
 # UQ test of ETS
 # inputs:
 # outputs:
 # related code model:
+
 
 start_time = time.time()
 
@@ -68,7 +70,7 @@ ets_campaign.apply_for_each_run_dir(uq.actions.ExecuteLocal(cmd))
 
 # Aggregate the results from all runs.
 output_filename = ets_campaign.params_info['out_file']['default']
-output_columns = ['te']
+output_columns = ['p']
 
 aggregate = uq.elements.collate.AggregateSamples( ets_campaign,
                                             output_filename=output_filename,
@@ -82,64 +84,22 @@ aggregate.apply()
 analysis = uq.elements.analysis.PCEAnalysis(ets_campaign, value_cols=output_columns)
 
 # Analysis results
-stats, corr, sobols = analysis.apply()
+dist_p = analysis.apply()
+
+stat = analysis.statistical_moments('p')
+pctl = analysis.percentiles('p')
 
 # Elapsed time
 end_time = time.time()
 print('>>>>> elapsed time = ', end_time - start_time)
 
-#  Plot satatistical infos and sensitivity analysis
-__stats = True
-__sobols = False
-__corr = False
+#corep_file = common_dir + '/ets_coreprof_in.cpo'
+#corep = read(corep_file, 'coreprof')
+#rho = corep.rho_tor
 
-corep_file = common_dir + '/ets_coreprof_in.cpo'
-corep = read(corep_file, 'coreprof')
-rho = corep.rho_tor
+equil_file = common_dir + '/ets_equilibrium_in.cpo'
+equil = read(equil_file, 'equilibrium')
+rho = equil.profiles_1d.rho_tor
 
-# Statistical Moments
-if __stats:
-    mean = stats['te']["mean"].to_numpy()
-    var  = stats['te']["var"].to_numpy()
-
-    fig1 = plt.figure(figsize=(12,9))
-    ax11 = fig1.add_subplot(111)
-    ax11.plot(rho, mean,     'g-', alpha=0.75, label='Mean')
-    ax11.plot(rho, mean-std, 'b-', alpha=0.25)
-    ax11.plot(rho, mean+std, 'b-', alpha=0.25)
-    ax11.fill_between(rho, mean-std, mean+std, alpha=0.25, label= r'Mean $\pm$ deviation')
-    ax11.set_xlabel(r'$\rho_{tor} \quad [m]$')
-    ax11.set_ylabel('Mean', color='b')
-    ax11.tick_params('y', colors='b')
-    ax11.legend()
-
-    ax12 = ax11.twinx()
-    ax12.plot(rho, var, 'r-', alpha=0.5, label='Variance')
-    ax12.set_ylabel('Variance', color='r')
-    ax12.tick_params('y', colors='r')
-    ax12.legend()
-    ax12.grid()
-    plt.title('Electron temperature [eV]')
-
-# Sobols indicies
-if __sobols:
-    s1i  = [sobols[pname].to_numpy() for pname in params]
-    fig2 = plt.figure(figsize=(12,9))
-    ax21 = fig2.add_subplot(111)
-    for i in range(n_params):
-        ax21.plot(rho, s1i[i], label=params[i])
-    ax21.set_xlabel(r'$\rho_{tor} \quad [m]$')
-    ax21.set_ylabel('Sobol indices')
-    ax21.legend()
-    ax21.grid()
-    plt.title('First order Sobol indices')
-
-# Correlation matrix
-if __corr:
-    fig3 = plt.figure()
-    ax3  = fig3.add_subplot(111)
-    ax3.imshow(corr, cmap=plt.cm.jet)
-    ax3.colorbar()
-    ax3.title('Corrolation matrix)')
-
-plt.show()
+#  Graphics for descriptive satatistics
+plots.plot_stats(rho, stat, pctl, 'pressure profile')

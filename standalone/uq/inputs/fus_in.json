@@ -3,8 +3,8 @@
       "input_encoder":  "generic_template",
       "encoder_delimiter": "#",
       "output_decoder": "csv",
-      "template":       "inputs/ets.template",
-      "input_filename": "ets_input.nml"
+      "template":       "inputs/fus.template",
+      "input_filename": "fus_input.nml"
     },
     "params": {
       "D1": {"type": "real", "min": "0.0", "max": "10.0", "default": "1.0"},

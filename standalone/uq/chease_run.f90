@@ -29,13 +29,14 @@ implicit none
   
   ! INPUT: the ets_run output file
   character(len=128) :: equil_in_file =  "ets_equilibrium_up.cpo"
+  character(len=128) :: equil_out_file =  "ets_equilibrium_out.cpo"
   
   ! CPO structures 
   type (type_equilibrium), pointer :: equil(:)  => NULL()
   type (type_equilibrium), pointer :: equil_new(:) => NULL()
   
   ! Outputfile contraining values of interset (Q)
-  character(len=128) :: out_file = "q_output.csv"
+  character(len=128) :: out_file = "q_prof.csv"
   type(csv_file) :: csv_out_file
 
   ! Other local variables  
@@ -52,7 +53,7 @@ implicit none
        action = 'read', iostat = ios)
   if (ios == 0) then
      close (20)
-     call open_read_file(19, equil_in_file )
+     call open_read_file(20, equil_in_file )
      call read_cpo(equil(1), 'equilibrium' )
      call close_read_file
   else
@@ -62,7 +63,11 @@ implicit none
   
   ! CHEASE 
   call chease_cpo(equil, equil_new) 
-
+  
+  call open_write_file(21, equil_out_file)
+  call write_cpo(equil_new(1),'equilibrium')
+  call close_write_file
+  
   ! Collect outputs data (the quantity of interest is q)
   ! q profile size
   n_data = size(equil_new(1)%profiles_1d%q)

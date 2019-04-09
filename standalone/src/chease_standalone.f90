@@ -22,7 +22,7 @@ contains
     use string_binding
     use xml_file_reader
     use deallocate_structures
-    use ifport, only: FULLPATHQQ
+    !use ifport, only: FULLPATHQQ
 
     implicit none
     type (type_equilibrium), pointer :: equil_in(:)
@@ -35,11 +35,13 @@ contains
     integer :: len
     
     ! Get code params
-    len = FULLPATHQQ('../../workflows/', workflows_dir)
-    call fill_param(code_parameters, workflows_dir(:len)// 'chease.xml', '', &
-                                     workflows_dir(:len)// 'chease.xsd')
+    call fill_param(code_parameters, '../../workflows/chease.xml', '', '../../workflows/chease.xsd')
 
-    !...  run CHEASE
+    ! FULLPATHQQ is just available with intel compiler
+!    len = FULLPATHQQ('../../workflows/', workflows_dir)
+!    call fill_param(code_parameters, workflows_dir(:len)// 'chease.xml', '', &
+!                                     workflows_dir(:len)// 'chease.xsd')
+!    !...  run CHEASE
     call chease(equil_in, equil_out, code_parameters)
 
     ! deallocations
@@ -66,7 +68,7 @@ contains
     use write_structures
     use xml_file_reader
     use deallocate_structures
-    use ifport, only: FULLPATHQQ
+    !use ifport, only: FULLPATHQQ
     implicit none
     type (type_equilibrium), pointer :: equil_old(:)
     real(R8) :: aoutput(:)
@@ -91,10 +93,14 @@ contains
     
     print *,"get code params"
     !...  run CHEASE
-    len = FULLPATHQQ('../../workflows/', workflows_dir)
-    call fill_param(code_parameters, workflows_dir(:len)// 'chease.xml', '', &
-                                     workflows_dir(:len)// 'chease.xsd')
-
+    call fill_param(code_parameters, '../../workflows/chease.xml', '', '../../workflows/chease.xsd')
+    
+    ! FULLPATHQQ is just available with intel compiler
+!    len = FULLPATHQQ('../../workflows/', workflows_dir)
+!    call fill_param(code_parameters, workflows_dir(:len)// 'chease.xml', '', &
+!                                     workflows_dir(:len)// 'chease.xsd')
+!
+    
     print *,"run chease routine"
     call chease(equil_old, equil_new, code_parameters)
     
