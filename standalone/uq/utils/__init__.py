@@ -1,1 +1,1 @@
-from .plots import *
+from .plots import plot_stats

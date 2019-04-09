@@ -5,7 +5,7 @@ import chaospy  as cp
 import easyvvuq as uq
 import matplotlib.pylab as plt
 from ascii_cpo import read
-from .utils import plots
+from utils import plots
 
 # UQ test of ETS
 # inputs:
@@ -102,4 +102,4 @@ equil = read(equil_file, 'equilibrium')
 rho = equil.profiles_1d.rho_tor
 
 #  Graphics for descriptive satatistics
-plots.plot_stats(rho, stat, pctl, 'pressure profile')
+plots.plot_stats(rho, stat, pctl, 'Pressure profile', 'rho_tor [m]', 'pressure')

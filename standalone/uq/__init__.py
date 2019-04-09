@@ -1,1 +1,2 @@
-from .utils import plots
+from . import utils
+from .utils import *

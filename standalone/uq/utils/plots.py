@@ -20,7 +20,7 @@ def format_exponent(ax, axis='y'):
         verticalalignment='top'
 
 # Statistical Moments
-def plot_stats(x, stat, pctl, title, savefig=False):
+def plot_stats(x, stat, pctl, title, xlabel, ylabel, savefig=False):
     mean = stat["mean"]
     var  = stat["var"]
     p10 = pctl['p10']
@@ -28,13 +28,13 @@ def plot_stats(x, stat, pctl, title, savefig=False):
 
     fig = plt.figure(figsize=(12,9))
 
-    ax1 = fig1.add_subplot(111)
+    ax1 = fig.add_subplot(111)
     ax1.plot(x, mean, 'g-', alpha=0.75, label='Mean')
     ax1.plot(x, p10, 'b-', alpha=0.25)
     ax1.plot(x, p90, 'b-', alpha=0.25)
-    ax1.fill_between(x, p10, p90, alpha=0.25, label= r'$90%$ prediction interval')
-    ax1.set_xlabel(r'$\rho_{tor} \quad [m]$')
-    ax1.set_ylabel('Mean', color='b')
+    ax1.fill_between(x, p10, p90, alpha=0.25, label='90% prediction interval')
+    ax1.set_xlabel(xlabel)
+    ax1.set_ylabel(ylabel, color='b')
     ax1.tick_params('y', colors='b')
     ax1.grid()
     ax1.legend()
