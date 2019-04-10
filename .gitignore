@@ -27,6 +27,7 @@ standalone/include
 standalone/uq/*.so
 standalone/uq/*.pyc
 standalone/uq/*cache*
+standalone/uq/*.log
 standalone/uq/utils/*.so
 standalone/uq/utils/*.pyc
 standalone/uq/utils/*cache*
