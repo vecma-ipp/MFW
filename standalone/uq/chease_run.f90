@@ -27,16 +27,17 @@ use csv_module
 
 implicit none
   
-  ! INPUT: the ets_run output file
-  character(len=128) :: equil_in_file =  "ets_equilibrium_up.cpo"
-  character(len=128) :: equil_out_file =  "ets_equilibrium_out.cpo"
+  ! INPUT: the ets_run output files
+  character(len=128) :: equil_in_file  = "ets_equilibrium_up.cpo"
+  character(len=128) :: equil_out_file = "ets_equilibrium_out.cpo"
   
   ! CPO structures 
-  type (type_equilibrium), pointer :: equil(:)  => NULL()
+  type (type_equilibrium), pointer :: equil(:)     => NULL()
   type (type_equilibrium), pointer :: equil_new(:) => NULL()
   
-  ! Outputfile contraining values of interset (Q)
-  character(len=128) :: out_file = "q_prof.csv"
+  ! Outputfile contraining values of interset
+  ! TODO Read via NML file like ets_run. Now: check if it is the same name in inputs/fus_in.json
+  character(len=128) :: out_file = "chease_output.csv"
   type(csv_file) :: csv_out_file
 
   ! Other local variables  
@@ -64,24 +65,27 @@ implicit none
   ! CHEASE 
   call chease_cpo(equil, equil_new) 
   
-  call open_write_file(21, equil_out_file)
-  call write_cpo(equil_new(1),'equilibrium')
-  call close_write_file
+!  call open_write_file(21, equil_out_file)
+!  call write_cpo(equil_new(1),'equilibrium')
+!  call close_write_file
   
-  ! Collect outputs data (the quantity of interest is q)
-  ! q profile size
-  n_data = size(equil_new(1)%profiles_1d%q)
+  ! Collect outputs data
+  n_data = size(equil_new(1)%profiles_1d%gm3)
   
   ! Open the CSV output file
-  call csv_out_file%open(out_file, n_cols=1, status_ok=outfile_status)
+  call csv_out_file%open(out_file, n_cols=3, status_ok=outfile_status)
 
   ! Add headers
-  call csv_out_file%add('q')
+  call csv_out_file%add('gm5')
+  call csv_out_file%add('gm7')
+  call csv_out_file%add('gm8')
   call csv_out_file%next_row()
   
   ! Add data
   do i=1, n_data
-    call csv_out_file%add(equil_new(1)%profiles_1d%q(i))
+    call csv_out_file%add(equil_new(1)%profiles_1d%gm5(i))
+    call csv_out_file%add(equil_new(1)%profiles_1d%gm7(i))
+    call csv_out_file%add(equil_new(1)%profiles_1d%gm8(i))
     call csv_out_file%next_row()
   end do
 

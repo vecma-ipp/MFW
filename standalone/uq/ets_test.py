@@ -7,16 +7,18 @@ import matplotlib.pylab as plt
 from ascii_cpo import read
 from utils import plots
 
-# UQ test of ETS
-# inputs:
-# outputs:
-# related code model:
+'''
+UQ test of ETS
+'''
 
 
 start_time = time.time()
 
 # CPO files
-cpo_dir = os.path.abspath("../data/AUG_28906_5/BGB_GEM_SPREAD/4FT")
+cpo_dir = os.path.abspath("../data/AUG_28906_5/BGB_GEM_SPREAD/4FT/")
+
+# Uncertain parameters
+uncert_params = ["D1", "D2", "D3", "D4"]
 
 # To store input/ouput files
 tmp_dir = "/ptmp/ljala/"
@@ -40,21 +42,19 @@ os.system("cp ../../workflows/ets.xml "+ campaign_dir +"/workflows")
 os.system("cp ../../workflows/ets.xsd "+ campaign_dir +"/workflows")
 
 # Copy CPO files in common directory
-common_dir = campaign_dir +"/common"
-os.system("cp " + cpo_dir + "/*.cpo " + common_dir)
+common_dir = campaign_dir +"/common/"
+os.system("cp " + cpo_dir + "*.cpo " + common_dir)
 
-# Get uncertain parameters and distrubutions
-coret_file = common_dir + "/ets_coretransp_in.cpo"
+# Get uncertain parameters distrubutions
+coret_file = common_dir + "ets_coretransp_in.cpo"
 coret      = read(coret_file, "coretransp")
-n_params = 4
-params = ["D1", "D2", "D3", "D4"]
+n_params = len(uncert_params)
 diff_eff   = coret.values[0].te_transp.diff_eff
 list_dist  = [cp.Normal(diff_eff[i], 0.2*diff_eff[i]) for i in range(n_params)]
 
 # Define the parameters dictionary
-
 for i in range(n_params):
-    ets_campaign.vary_param(params[i], dist=list_dist[i])
+    ets_campaign.vary_param(uncert_params[i], dist=list_dist[i])
 
 # Create the sampler
 ets_sampler  = uq.elements.sampling.PCESampler(ets_campaign)
@@ -79,12 +79,11 @@ aggregate = uq.elements.collate.AggregateSamples( ets_campaign,
 
 aggregate.apply()
 
-# Post-processing analysis: computes the 1st two statistical moments and SA
+# Analysis
 analysis = uq.elements.analysis.PCEAnalysis(ets_campaign, value_cols=output_columns)
+out_dist = analysis.apply()
 
-# Analysis results
-dist_p = analysis.apply()
-
+# Results
 stat = analysis.statistical_moments('p')
 pctl = analysis.percentiles('p')
 
@@ -96,7 +95,7 @@ print('>>>>> elapsed time = ', (end_time - start_time)/60.)
 #corep = read(corep_file, 'coreprof')
 #rho = corep.rho_tor
 
-equil_file = common_dir + '/ets_equilibrium_in.cpo'
+equil_file = common_dir + 'ets_equilibrium_in.cpo'
 equil = read(equil_file, 'equilibrium')
 rho = equil.profiles_1d.rho_tor
 

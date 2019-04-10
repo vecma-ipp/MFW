@@ -20,7 +20,7 @@ def format_exponent(ax, axis='y'):
         verticalalignment='top'
 
 # Statistical Moments
-def plot_stats(x, stat, pctl, title, xlabel, ylabel, savefig=False):
+def plot_stats(x, stat, pctl, xlabel, ylabel, ftitle, fname=None):
     mean = stat["mean"]
     var  = stat["var"]
     p10 = pctl['p10']
@@ -46,13 +46,15 @@ def plot_stats(x, stat, pctl, title, xlabel, ylabel, savefig=False):
     ax2.tick_params('y', colors='r')
     ax2 = format_exponent(ax2, axis='y')
 
-    plt.title(title)
+    plt.title(ftitle)
 
-    if savefig:
-        fig.savefig(title.replace(' ', '_')+'.png')
-        plt.close(fig)
-    else:
+    if fig is None:
         plt.show()
+    else:
+        fig.savefig(fname)
+        plt.close(fig)
+
+    plt.close()
 
 # Sobols indicies
 #if __sobols:

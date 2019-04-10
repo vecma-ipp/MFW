@@ -1,6 +1,5 @@
 ! -*- coding: UTF-8 -*- 
 !> @brief  The code to run UQ script ets_test. It concerns the transport model
-!> @author Jalal Lakhlili (jlakhlili@gmail.com)
 
 program ets_run
 
@@ -28,9 +27,9 @@ use csv_module
 
 implicit none
   
-  ! INPUTS
-  character(len=128) :: cpo_dir  ! Path to the folder containing CPO files
-  character(len=128) :: in_fname ! NML file containing uncertain values
+  ! INPUTS (given by command arguments)
+  character(len=128) :: cpo_dir  ! Path to the folder containing CPO files for ets
+  character(len=128) :: in_fname ! NML file containing uncertain parameters values
   
   ! CPO file names
   character(len=128) :: corep_in_file 
@@ -56,7 +55,7 @@ implicit none
   !real(kind=8), allocatable, dimension(:) :: params 
   real(kind=8) :: D1, D2, D3, D4 
   
-  ! Output file contraining values of interset (Te, Ti, ...)
+  ! Output file contraining values of interset (te, ti, pressure ...)
   character(len=128) :: out_file
   type(csv_file)     :: csv_out_file
 
@@ -70,16 +69,15 @@ implicit none
   STOP
   end if
   
-  call get_command_argument(1, cpo_dir)
-
-
+  ! NML file
   call get_command_argument(2, in_fname)
+
   inquire(file=trim(in_fname), exist=infile_status)
   if (.not. infile_status) then
     write(*,*) "ERROR: reference file '"//trim(in_fname)//"' does not exist"
     stop
   end if
-   
+ 
   ! Read uncertain paramters (cf. inputs/ets.template) 
   namelist /ets_input_file/  D1, D2, D3, D4, &
                            & out_file  
@@ -88,12 +86,14 @@ implicit none
   read(20, ets_input_file)
   
   ! CPO files
+  call get_command_argument(1, cpo_dir)
+  
   corep_in_file   = trim(cpo_dir) // "/ets_coreprof_in.cpo"
   equil_in_file   = trim(cpo_dir) // "/ets_equilibrium_in.cpo"
   cores_in_file   = trim(cpo_dir) // "/ets_coresource_in.cpo"
   corei_in_file   = trim(cpo_dir) // "/ets_coreimpur_in.cpo"
-  coret_in_file   = trim(cpo_dir) //  "/ets_coretransp_in.cpo"
-  toroidf_in_file  = trim(cpo_dir) // "/ets_toroidfield_in.cpo"
+  coret_in_file   = trim(cpo_dir) // "/ets_coretransp_in.cpo"
+  toroidf_in_file = trim(cpo_dir) // "/ets_toroidfield_in.cpo"
   
   corep_out_file  = "ets_coreprof_out.cpo"
   equil_out_file  = "ets_equilibrium_up.cpo"
@@ -197,30 +197,35 @@ implicit none
   call ets_cpo(corep, equil, coret, cores, corei, corep_new)
   call equilupdate2cpo(corep_new, toroidf, equil, equil_new)
   
-!  call open_write_file(16, equil_out_file)
-!  call write_cpo(equil_new(1),'equilibrium')
-!  call close_write_file
+  ! ====== UQ for ETS + CHEASE
+  ! Save ets_equilibrium_up.cpo and use it in chease_test
+  ! TODO: fix XML conflict and use fus_run
+  call open_write_file(16, equil_out_file)
+  call write_cpo(equil_new(1),'equilibrium')
+  call close_write_file
 
-  ! To collect outputs data, the quantity of interest is Te
-  n_data    = size(equil_new(1)%profiles_1d%pressure)
-  n_outputs = 1 
-  ! Open the CSV output file
-  call csv_out_file%open(out_file, n_cols=n_outputs, status_ok=outfile_status)
 
-  ! Add headers
-  call csv_out_file%add('p')
-  !call csv_out_file%add('ti')
-  call csv_out_file%next_row()
-  
-  ! Add data
-  do i=1, n_data
-    call csv_out_file%add(equil_new(1)%profiles_1d%pressure(i))
-    !call csv_out_file%add(corep_new(1)%ti%value(i, 1))
-    call csv_out_file%next_row()
-  end do
-
- ! Finished
-  call csv_out_file%close(outfile_status)
+  ! ====== UQ for ETS
+!  ! To collect outputs data, the quantity of interest is Te
+!  n_data    = size(equil_new(1)%profiles_1d%pressure)
+!  n_outputs = 1 
+!  ! Open the CSV output file
+!  call csv_out_file%open(out_file, n_cols=n_outputs, status_ok=outfile_status)
+!
+!  ! Add headers
+!  call csv_out_file%add('p')
+!  !call csv_out_file%add('ti')
+!  call csv_out_file%next_row()
+!  
+!  ! Add data
+!  do i=1, n_data
+!    call csv_out_file%add(equil_new(1)%profiles_1d%pressure(i))
+!    !call csv_out_file%add(corep_new(1)%ti%value(i, 1))
+!    call csv_out_file%next_row()
+!  end do
+!
+!  ! Finished
+!  call csv_out_file%close(outfile_status)
 
   ! CPO deallocations
   call deallocate_cpo(equil_new)

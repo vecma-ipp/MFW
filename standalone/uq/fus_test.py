@@ -7,20 +7,23 @@ import matplotlib.pylab as plt
 from ascii_cpo import read
 from utils import plots
 
-# UQ test of ETS + CHESAE
-# inputs:
-# outputs:
-# related code model:
+'''
+UQ test of ETS+CHEASE (UQP1: non intrusive case)
+'''
+
 
 start_time = time.time()
 
 # CPO files
-cpo_dir = os.path.abspath("../data/AUG_28906_5/BGB_GEM_SPREAD/4FT")
+cpo_dir = os.path.abspath("../data/AUG_28906_5/BGB_GEM_SPREAD/4FT/")
 
-# To store input/ouput files
+# Uncertain parameters
+uncert_params = ["D1", "D2", "D3", "D4"]
+
+# To store input/ouput files and Campaign directories
 tmp_dir = "/ptmp/ljala/"
 
-# To run fus and CHEASE
+# To run ETS and CHEASE
 ets_exec = "../bin/DRACO/ets_run "
 chease_exec = "../bin/DRACO/chease_run "
 
@@ -34,7 +37,7 @@ fus_campaign = uq.Campaign(state_filename=input_json, workdir=tmp_dir,
 
 campaign_dir = fus_campaign.campaign_dir
 
-# Copy xml files needed in the fus code
+# Copy XML files needed in the ETS and CHEASE codes
 os.system("mkdir " + campaign_dir +"/workflows")
 os.system("cp ../../workflows/ets.xml "+ campaign_dir +"/workflows")
 os.system("cp ../../workflows/ets.xsd "+ campaign_dir +"/workflows")
@@ -42,25 +45,23 @@ os.system("cp ../../workflows/chease.xml "+ campaign_dir +"/workflows")
 os.system("cp ../../workflows/chease.xsd "+ campaign_dir +"/workflows")
 
 # Copy CPO files in common directory
-common_dir = campaign_dir +"/common"
+common_dir = campaign_dir +"/common/"
 os.system("cp " + cpo_dir + "/*.cpo " + common_dir)
 
-# Get uncertain parameters and distrubutions
-coret_file = common_dir + "/ets_coretransp_in.cpo"
+# Get uncertain parameters distrubutions
+coret_file = common_dir + "ets_coretransp_in.cpo"
 coret = read(coret_file, "coretransp")
-n_params = 4
-params = ["D1", "D2", "D3", "D4"]
+n_params = len(uncert_params)
 diff_eff = coret.values[0].te_transp.diff_eff
 list_dist = [cp.Normal(diff_eff[i], 0.3*diff_eff[i]) for i in range(n_params)]
 
 # Define the parameters dictionary
 for i in range(n_params):
-    fus_campaign.vary_param(params[i], dist=list_dist[i])
+    fus_campaign.vary_param(uncert_params[i], dist=list_dist[i])
 
 # Create the sampler
 fus_sampler = uq.elements.sampling.PCESampler(fus_campaign)
 # Generate runs
-
 fus_campaign.add_runs(fus_sampler)
 fus_campaign.populate_runs_dir()
 
@@ -78,7 +79,7 @@ t_chease = time.time() - t_chease
 
 # Aggregate the results from all runs.
 output_filename = fus_campaign.params_info['out_file']['default']
-output_columns = ['gm3']
+output_columns = ['gm5', 'gm7', 'gm8']
 
 aggregate = uq.elements.collate.AggregateSamples( fus_campaign,
                                             output_filename=output_filename,
@@ -90,27 +91,39 @@ aggregate.apply()
 
 # Analysis
 analysis = uq.elements.analysis.PCEAnalysis(fus_campaign, value_cols=output_columns)
-out_dist = analysis.apply()
+oout_distut_dist = analysis.apply()
 
 # Results
-stat_gm3 = analysis.statistical_moments('gm3')
-pctl_gm3 = analysis.percentiles('gm3')
+stat_gm5 = analysis.statistical_moments('gm5')
+pctl_gm5 = analysis.percentiles('gm5')
 
-#stat_gm7 = analysis.statistical_moments('gm7')
-#pctl_gm7 = analysis.percentiles('gm7')
+stat_gm7 = analysis.statistical_moments('gm7')
+pctl_gm7 = analysis.percentiles('gm7')
+
+stat_gm8 = analysis.statistical_moments('gm8')
+pctl_gm8 = analysis.percentiles('gm8')
 
 # Elapsed time
 end_time = time.time()
-print('=========== elapsed times =============')
+print('>>>>> Elapsed times')
 print('- ets   : ', t_ets/60.)
 print('- chease: ', t_chease/60.)
 print('- total : ', (end_time - start_time)/60.)
 
-equil_file = common_dir + '/ets_equilibrium_in.cpo'
+#  Graphics for descriptive satatistics
+equil_file = common_dir + 'ets_equilibrium_in.cpo'
 equil = read(equil_file, 'equilibrium')
 rho = equil.profiles_1d.rho_tor
 
-#  Graphics for descriptive satatistics
-plots.plot_stats(rho, stat_gm3, pctl_gm3,
-                 title='GM3 profile', xlabel='rho_tor [m]',
-                 ylabel='gm3', savefig=True)
+plots.plot_stats(rho, stat_gm5, pctl_gm5,
+                 xlabel=r'$\rho_{tor} [m]$', ylabel=r'$<B^{2}>$',
+                 ftitle='UQP1 - Chease output: GM5 profile', fname='gm5.png')
+
+plots.plot_stats(rho, stat_gm7, pctl_gm7,
+                 xlabel=r'$\rho_{tor} [m]$', ylabel=r'$<\nabla \rho>$',
+                 ftitle='UQP1 - Chease output: GM7 profile', fname='gm7.png')
+
+plots.plot_stats(rho, stat_gm8, pctl_gm8,
+                 xlabel=r'$\rho_{tor} [m]$', ylabel=r'$<R>$',
+                 ftitle='UQP1 - Chease output: GM8 profile', fname='gm8.png')
+
