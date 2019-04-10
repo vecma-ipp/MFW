@@ -69,22 +69,22 @@ implicit none
 !  call write_cpo(equil_new(1),'equilibrium')
 !  call close_write_file
   
-  ! Collect outputs data
-  n_data = size(equil_new(1)%profiles_1d%gm3)
-  
+  ! Collect outputs data: QoI values. TODO: use HDF5 instead of CSV?
+
   ! Open the CSV output file
   call csv_out_file%open(out_file, n_cols=3, status_ok=outfile_status)
 
   ! Add headers
+  call csv_out_file%add('gm4')
   call csv_out_file%add('gm5')
-  call csv_out_file%add('gm7')
   call csv_out_file%add('gm8')
   call csv_out_file%next_row()
   
   ! Add data
+  n_data = size(equil_new(1)%profiles_1d%gm4)
   do i=1, n_data
+    call csv_out_file%add(equil_new(1)%profiles_1d%gm4(i))
     call csv_out_file%add(equil_new(1)%profiles_1d%gm5(i))
-    call csv_out_file%add(equil_new(1)%profiles_1d%gm7(i))
     call csv_out_file%add(equil_new(1)%profiles_1d%gm8(i))
     call csv_out_file%next_row()
   end do

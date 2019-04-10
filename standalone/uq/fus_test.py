@@ -11,7 +11,6 @@ from utils import plots
 UQ test of ETS+CHEASE (UQP1: non intrusive case)
 '''
 
-
 start_time = time.time()
 
 # CPO files
@@ -79,7 +78,7 @@ t_chease = time.time() - t_chease
 
 # Aggregate the results from all runs.
 output_filename = fus_campaign.params_info['out_file']['default']
-output_columns = ['gm5', 'gm7', 'gm8']
+output_columns = ['gm4', 'gm5', 'gm8']
 
 aggregate = uq.elements.collate.AggregateSamples( fus_campaign,
                                             output_filename=output_filename,
@@ -94,36 +93,36 @@ analysis = uq.elements.analysis.PCEAnalysis(fus_campaign, value_cols=output_colu
 oout_distut_dist = analysis.apply()
 
 # Results
+stat_gm4 = analysis.statistical_moments('gm4')
+pctl_gm4 = analysis.percentiles('gm4')
+
 stat_gm5 = analysis.statistical_moments('gm5')
 pctl_gm5 = analysis.percentiles('gm5')
-
-stat_gm7 = analysis.statistical_moments('gm7')
-pctl_gm7 = analysis.percentiles('gm7')
 
 stat_gm8 = analysis.statistical_moments('gm8')
 pctl_gm8 = analysis.percentiles('gm8')
 
 # Elapsed time
 end_time = time.time()
-print('>>>>> Elapsed times')
-print('- ets   : ', t_ets/60.)
-print('- chease: ', t_chease/60.)
-print('- total : ', (end_time - start_time)/60.)
+print('======= Elapsed times')
+print('- ETS   : ', t_ets/60.)
+print('- CHEASE: ', t_chease/60.)
+print('- TOTAL : ', (end_time - start_time)/60.)
 
 #  Graphics for descriptive satatistics
 equil_file = common_dir + 'ets_equilibrium_in.cpo'
 equil = read(equil_file, 'equilibrium')
 rho = equil.profiles_1d.rho_tor
 
-plots.plot_stats(rho, stat_gm5, pctl_gm5,
-                 xlabel=r'$\rho_{tor} [m]$', ylabel=r'$<B^{2}>$',
+plots.plot_stats(rho, stat_gm4,
+                 xlabel=r'$\rho_{tor} ~ [m]$', ylabel=r'$\langle \frac{1}{B^2} \rangle$',
+                 ftitle='UQP1 - Chease output: GM4 profile', fname='gm4.png')
+
+plots.plot_stats(rho, stat_gm5,
+                 xlabel=r'$\rho_{tor} ~ [m]$', ylabel=r'$\langle B^{2} \rangle$',
                  ftitle='UQP1 - Chease output: GM5 profile', fname='gm5.png')
 
-plots.plot_stats(rho, stat_gm7, pctl_gm7,
-                 xlabel=r'$\rho_{tor} [m]$', ylabel=r'$<\nabla \rho>$',
-                 ftitle='UQP1 - Chease output: GM7 profile', fname='gm7.png')
-
-plots.plot_stats(rho, stat_gm8, pctl_gm8,
-                 xlabel=r'$\rho_{tor} [m]$', ylabel=r'$<R>$',
+plots.plot_stats(rho, stat_gm8,
+                 xlabel=r'$\rho_{tor} ~ [m]$', ylabel=r'$\langle R \rangle$',
                  ftitle='UQP1 - Chease output: GM8 profile', fname='gm8.png')
 

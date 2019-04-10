@@ -5,7 +5,23 @@ from scipy.interpolate import splrep, splev
 from ascii_cpo import read
 import matplotlib.pylab as plt
 
-# Computes the parameter ui such that C(ui) = (xi, yi)
+# Knot vector
+def knot_vector(n, p, u):
+    # u: parameterization
+    # p: spline degree
+    # n: number of control points
+
+    T = np.zeros(n+p+1)
+    T[n:] = 1.
+    for  j in range(1, n-p):
+        for i in range(j, j+p):
+            T[j+p] = T[j+p] + u[i]
+
+        T[j+p] = T[j+p]/p
+
+    return T
+
+# Computes the Spline parameterization
 def compute_sites(x, y, method="uniform"):
     assert len(x) == len(y)
 
@@ -75,27 +91,37 @@ if __name__ == "__main__":
     cpo_dir  = os.path.abspath("../../data/AUG_28906_5/BGB_GEM_SPREAD/4FT")
 
     #
-    corep_file = cpo_dir + '/ets_coreprof_in.cpo'
-    corep = read(corep_file, 'coreprof')
-    rho = corep.rho_tor_norm
-    te  = corep.te.value
+    eq_file = cpo_dir + '/ets_equilibrium_in.cpo'
+    eq = read(eq_file, 'equilibrium')
+    rho = eq.profiles_1d.rho_tor
+    pr = eq.profiles_1d.pressure
 
     #
-    n = 3
+    ne = 2
     p = 3
-    u = compute_sites(rho, te)
-    tck_x, tck_y = approximate_curve(rho, te, u, n, p)
+    method = 'centripetal'
+
+    u = compute_sites(rho, pr, method)
+
+    tck_x, tck_y = approximate_curve(rho, pr, u, ne, p)
     xa, ya = spl(u, tck_x, tck_y)
-    print(len(tck_x[0]))
-    # Control points:
-    Px = tck_x[1][:n+p]
-    Py = tck_y[1][:n+p]
 
-    plt.plot(rho, te, 'b.', label='Te Profile')
-    plt.plot(xa, ya, 'g-', label='Approximation')
-    plt.plot(Px, Py, 'ro', label='Control Points')
+    print('tt: ', tck_x[0])
 
-    plt.title('Approximation using cubic splines')
-    plt.legend()
-    plt.grid()
+    Px = tck_x[1][:ne+p]
+    Py = tck_y[1][:ne+p]
+
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+
+    ax.plot(rho, pr, "b.",  markersize=5, alpha=0.75, label='Pressure Profile')
+    ax.plot(xa, ya, 'g-', label='Approximation')
+    ax.plot(Px, Py, 'ro', label='Control Points')
+    ax.set_xlabel(r'$\rho_{tor} \, [m]$')
+    ax.set_ylabel('P [bar]')
+
+    ax.set_title('ETS + EQ Update output  \n Spline approximation of the pressure profile')
+    ax.legend()
+    ax.grid()
     plt.show()
+
