@@ -1,11 +1,11 @@
 import os
 import time
-import numpy    as np
-import chaospy  as cp
+import numpy as np
+import chaospy as cp
 import easyvvuq as uq
 import matplotlib.pylab as plt
 from ascii_cpo import read
-from . import utils
+from utils import plots
 
 # UQ test of ETS + CHESAE
 # inputs:
@@ -15,17 +15,17 @@ from . import utils
 start_time = time.time()
 
 # CPO files
-cpo_dir  = os.path.abspath("../data/AUG_28906_5/BGB_GEM_SPREAD/2FT")
+cpo_dir = os.path.abspath("../data/AUG_28906_5/BGB_GEM_SPREAD/4FT")
 
 # To store input/ouput files
-tmp_dir  = "/ptmp/ljala/"
+tmp_dir = "/ptmp/ljala/"
 
 # To run fus and CHEASE
 ets_exec = "../bin/DRACO/ets_run "
 chease_exec = "../bin/DRACO/chease_run "
 
 # Input/Output template
-input_json  = "inputs/fus_in.json"
+input_json = "inputs/fus_in.json"
 output_json = os.path.join(tmp_dir, "out_fus.json")
 
 # Initialize Campaign object
@@ -47,18 +47,18 @@ os.system("cp " + cpo_dir + "/*.cpo " + common_dir)
 
 # Get uncertain parameters and distrubutions
 coret_file = common_dir + "/ets_coretransp_in.cpo"
-coret      = read(coret_file, "coretransp")
-n_params = 2
-params = ["D1", "D2"]
-diff_eff   = coret.values[0].te_transp.diff_eff
-list_dist  = [cp.Normal(diff_eff[i], 0.3*diff_eff[i]) for i in range(n_params)]
+coret = read(coret_file, "coretransp")
+n_params = 4
+params = ["D1", "D2", "D3", "D4"]
+diff_eff = coret.values[0].te_transp.diff_eff
+list_dist = [cp.Normal(diff_eff[i], 0.3*diff_eff[i]) for i in range(n_params)]
 
 # Define the parameters dictionary
 for i in range(n_params):
     fus_campaign.vary_param(params[i], dist=list_dist[i])
 
 # Create the sampler
-fus_sampler  = uq.elements.sampling.PCESampler(fus_campaign)
+fus_sampler = uq.elements.sampling.PCESampler(fus_campaign)
 # Generate runs
 
 fus_campaign.add_runs(fus_sampler)
@@ -88,33 +88,29 @@ aggregate = uq.elements.collate.AggregateSamples( fus_campaign,
 
 aggregate.apply()
 
-# Post-processing analysis: computes the 1st two statistical moments and SA
+# Analysis
 analysis = uq.elements.analysis.PCEAnalysis(fus_campaign, value_cols=output_columns)
 out_dist = analysis.apply()
 
-# Descriptive Statistics results
+# Results
 stat_gm3 = analysis.statistical_moments('gm3')
 pctl_gm3 = analysis.percentiles('gm3')
 
-#stats_g = analysis.statistical_moments('gm8')
-#per_g = analysis.percentiles('gm8')
+#stat_gm7 = analysis.statistical_moments('gm7')
+#pctl_gm7 = analysis.percentiles('gm7')
+
 # Elapsed time
 end_time = time.time()
-print('======================================================')
-print('>>>>> elapsed times:')
+print('=========== elapsed times =============')
 print('- ets   : ', t_ets/60.)
 print('- chease: ', t_chease/60.)
 print('- total : ', (end_time - start_time)/60.)
-print('=======================================================')
-
-#  Plot satatistical infos and sensitivity analysis
-__stats = True
-__sobols = False
-__corr = False
 
 equil_file = common_dir + '/ets_equilibrium_in.cpo'
 equil = read(equil_file, 'equilibrium')
 rho = equil.profiles_1d.rho_tor
 
-#
-utils.plots.plot_stats(rho, stat_gm3, pctl_gm3, 'gm3 profile')
+#  Graphics for descriptive satatistics
+plots.plot_stats(rho, stat_gm3, pctl_gm3,
+                 title='GM3 profile', xlabel='rho_tor [m]',
+                 ylabel='gm3', savefig=True)

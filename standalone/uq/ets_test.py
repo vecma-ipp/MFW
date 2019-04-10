@@ -1,7 +1,7 @@
 import os
 import time
-import numpy    as np
-import chaospy  as cp
+import numpy as np
+import chaospy as cp
 import easyvvuq as uq
 import matplotlib.pylab as plt
 from ascii_cpo import read
@@ -16,10 +16,10 @@ from utils import plots
 start_time = time.time()
 
 # CPO files
-cpo_dir  = os.path.abspath("../data/AUG_28906_5/BGB_GEM_SPREAD/4FT")
+cpo_dir = os.path.abspath("../data/AUG_28906_5/BGB_GEM_SPREAD/4FT")
 
 # To store input/ouput files
-tmp_dir  = "/ptmp/ljala/"
+tmp_dir = "/ptmp/ljala/"
 
 # The ets_run executable (to run the ets model)
 bin_file = "../bin/DRACO/ets_run "
@@ -38,7 +38,6 @@ campaign_dir = ets_campaign.campaign_dir
 os.system("mkdir " + campaign_dir +"/workflows")
 os.system("cp ../../workflows/ets.xml "+ campaign_dir +"/workflows")
 os.system("cp ../../workflows/ets.xsd "+ campaign_dir +"/workflows")
-
 
 # Copy CPO files in common directory
 common_dir = campaign_dir +"/common"
@@ -91,7 +90,7 @@ pctl = analysis.percentiles('p')
 
 # Elapsed time
 end_time = time.time()
-print('>>>>> elapsed time = ', end_time - start_time)
+print('>>>>> elapsed time = ', (end_time - start_time)/60.)
 
 #corep_file = common_dir + '/ets_coreprof_in.cpo'
 #corep = read(corep_file, 'coreprof')
@@ -102,4 +101,6 @@ equil = read(equil_file, 'equilibrium')
 rho = equil.profiles_1d.rho_tor
 
 #  Graphics for descriptive satatistics
-plots.plot_stats(rho, stat, pctl, 'Pressure profile', 'rho_tor [m]', 'pressure')
+plots.plot_stats(rho, stat, pctl,
+                 title='Pressure profile', xlabel='rho_tor [m]',
+                 ylabel='pressure', savefig=True)

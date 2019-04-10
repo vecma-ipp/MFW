@@ -26,6 +26,7 @@ def plot_stats(x, stat, pctl, title, xlabel, ylabel, savefig=False):
     p10 = pctl['p10']
     p90 = pctl['p90']
 
+    plt.switch_backend('agg')
     fig = plt.figure(figsize=(12,9))
 
     ax1 = fig.add_subplot(111)
@@ -48,7 +49,8 @@ def plot_stats(x, stat, pctl, title, xlabel, ylabel, savefig=False):
     plt.title(title)
 
     if savefig:
-        fig.savefig(title+'.png')
+        fig.savefig(title.replace(' ', '_')+'.png')
+        plt.close(fig)
     else:
         plt.show()
 
