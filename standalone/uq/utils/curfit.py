@@ -5,22 +5,6 @@ from scipy.interpolate import splrep, splev
 from ascii_cpo import read
 import matplotlib.pylab as plt
 
-# Knot vector
-def knot_vector(n, p, u):
-    # u: parameterization
-    # p: spline degree
-    # n: number of control points
-
-    T = np.zeros(n+p+1)
-    T[n:] = 1.
-    for  j in range(1, n-p):
-        for i in range(j, j+p):
-            T[j+p] = T[j+p] + u[i]
-
-        T[j+p] = T[j+p]/p
-
-    return T
-
 # Computes the Spline parameterization
 def compute_sites(x, y, method="uniform"):
     assert len(x) == len(y)
@@ -58,18 +42,17 @@ def spl(u, tck_x, tck_y):
     return xa, ya
 
 
-# Parameterization of y=f(x) using splines
-def approximate_curve(x, y, u, n, p):
-    """
-    Approximate a set points of coordinates (x,y) using a spline of degree p
-    with n elements.
-
-    """
-
+# Approximate a set points of coordinates (x,y) using a Splines
+def approximate_curve(x, y, n_elemts=2, degree=3, param_method="centripetal"):
     assert len(x) == len(y)
 
+    # For the  parameterization
+    u = compute_sites(x, y, param_method)
+    #m = max(x)
+    #u = [i/m for i in x]
+
     # Knots vector to define spline space
-    T = np.linspace(0., 1., n+1)[1:-1]
+    T = np.linspace(0., 1., n_elements+1)[1:-1]
 
     # Weights
     w = np.ones(len(x))
@@ -81,8 +64,8 @@ def approximate_curve(x, y, u, n, p):
     #  The parameterization
 
     # Find the knot points
-    tck_x = splrep(u, x, w=w, k=p, xb=0., xe=1., t=T)
-    tck_y = splrep(u, y, w=w, k=p, xb=0., xe=1., t=T)
+    tck_x = splrep(u, x, w=w, k=degree, xb=0., xe=1., t=T)
+    tck_y = splrep(u, y, w=w, k=degree, xb=0., xe=1., t=T)
 
     return tck_x, tck_y
 
@@ -94,28 +77,28 @@ if __name__ == "__main__":
     eq_file = cpo_dir + '/ets_equilibrium_in.cpo'
     eq = read(eq_file, 'equilibrium')
     rho = eq.profiles_1d.rho_tor
-    pr = eq.profiles_1d.pressure
+    p = eq.profiles_1d.pressure
 
+    m = max(rho)
+    rho_norm = [i/m for i in rho]
     #
-    ne = 2
-    p = 3
-    method = 'centripetal'
+    n_elements = 2
+    degree = 3
+    u = compute_sites(rho, p, "centripetal")
 
-    u = compute_sites(rho, pr, method)
-
-    tck_x, tck_y = approximate_curve(rho, pr, u, ne, p)
+    tck_x, tck_y = approximate_curve(rho, p)
     xa, ya = spl(u, tck_x, tck_y)
+    xb, yb = spl(rho_norm, tck_x, tck_y)
 
-    print('tt: ', tck_x[0])
-
-    Px = tck_x[1][:ne+p]
-    Py = tck_y[1][:ne+p]
+    Px = tck_x[1][: n_elements + degree]
+    Py = tck_y[1][: n_elements + degree]
 
     fig = plt.figure()
     ax = fig.add_subplot(111)
 
-    ax.plot(rho, pr, "b.",  markersize=5, alpha=0.75, label='Pressure Profile')
-    ax.plot(xa, ya, 'g-', label='Approximation')
+    ax.plot(rho, p, "b-",  markersize=5, alpha=0.75, label='Pressure Profile')
+    ax.plot(xa, ya, 'C1.', alpha=1., label='using u')
+    ax.plot(xb, yb, 'C2+', label='using rho_norm')
     ax.plot(Px, Py, 'ro', label='Control Points')
     ax.set_xlabel(r'$\rho_{tor} \, [m]$')
     ax.set_ylabel('P [bar]')
