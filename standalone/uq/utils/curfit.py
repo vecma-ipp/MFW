@@ -4,6 +4,8 @@ import numpy as np
 from scipy.interpolate import splrep, splev
 from ascii_cpo import read
 import matplotlib.pylab as plt
+from mpl_toolkits.mplot3d import Axes3D
+
 
 # Computes the Spline parameterization
 def compute_sites(x, y, method="uniform"):
@@ -35,7 +37,6 @@ def compute_sites(x, y, method="uniform"):
 
     return u
 
-
 # Approximate a set points of coordinates (x,y) using a Splines
 def approximate_curve(x, y, n_elements, degree, param_method="centripetal"):
     assert len(x) == len(y)
@@ -60,8 +61,9 @@ def approximate_curve(x, y, n_elements, degree, param_method="centripetal"):
     return tck_x, tck_y
 
 # Approximation and plot of the pressure profile
-def test_approximation(eq_file):
+def test_approximation(cpo_dir):
     # get pressure fom the equilibrium
+    eq_file = cpo_dir + '/ets_equilibrium_in.cpo'
     eq = read(eq_file, 'equilibrium')
     rho = eq.profiles_1d.rho_tor
     p = eq.profiles_1d.pressure
@@ -99,65 +101,30 @@ def test_approximation(eq_file):
     plt.show()
 
 # Print correlation between coeffs
-def test_correlations():
-    fig1 = plt.figure()
-    ax1  = fig1.add_subplot(111)
-    fig2 = plt.figure()
-    ax2  = fig2.add_subplot(111)
-    fig3 = plt.figure()
-    ax3  = fig3.add_subplot(111)
-    fig4 = plt.figure()
-    ax4  = fig4.add_subplot(111)
-    fig5 = plt.figure()
-    ax5  = fig5.add_subplot(111)
+def test_correlations(runs_dir):
+    # 3D scatterplot
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
 
-    n = 3
-    p = 3
-    corep_file = 'Run_0/ets_coreprof_out.cpo'
-    corep = read(corep_file, 'coreprof')
-    rho = corep.rho_tor_norm
+    eq_file = runs_dir + '/ets_equilibrium_0.cpo'
+    eq = read(eq_file, 'equilibrium')
+    rho = eq.profiles_1d.rho_tor
 
-    for i in range(36):
-        corep_file = 'Run_'+str(i)+  '/ets_coreprof_out.cpo'
-        corep = read(corep_file, 'coreprof')
-        te  = corep.te.value
-        u = compute_sites(rho, te)
-        tck_x, tck_y = approximate_curve(rho, te, u, n, p)
-        xa, ya = spl(rho, tck_x, tck_y)
-        # Control points:
-        Px = tck_x[1][:n+p]
-        Py = tck_y[1][:n+p]
+    for i in range(1296):
+        eq_file = runs_dir + '/ets_equilibrium_'+str(i)+'.cpo'
+        eq = read(eq_file, 'equilibrium')
+        p = eq.profiles_1d.pressure
 
+        tck_x, tck_y = approximate_curve(rho, p, n_elements=2, degree=3)
+        X = tck_y[1][3]
+        Y = tck_y[1][2]
+        Z = tck_y[1][1]
+        ax.scatter(X, Y, Z, marker ='o')
 
-        #ax1.plot(rho, te, 'b.')
-        #ax1.plot(xa, ya, 'r-')
-        #ax3.plot(Px, Py, 'r.')
-        ax1.plot(Py[0], Py[1], 'C1.')
-        ax2.plot(Py[0], Py[2], 'C2.')
-        ax3.plot(Py[0], Py[3], 'C3.')
-        ax4.plot(Py[0], Py[4], 'C4.')
-        ax5.plot(Py[0], Py[5], 'C5.')
-
-    #ax1.set_title('Te Profiles + Spline approximations')
-    ax1.set_title(r'$\alpha_2 \quad vs. \quad \alpha_1$')
-    ax1.set_xlabel(r'$\alpha_1$')
-    ax1.set_ylabel(r'$\alpha_2$')
-
-    ax2.set_title(r'$\alpha_3 \quad vs. \quad \alpha_1$')
-    ax2.set_xlabel(r'$\alpha_1$')
-    ax2.set_ylabel(r'$\alpha_3$')
-
-    ax3.set_title(r'$\alpha_4 \quad vs. \quad \alpha_1$')
-    ax3.set_xlabel(r'$\alpha_1$')
-    ax3.set_ylabel(r'$\alpha_4$')
-
-    ax4.set_title(r'$\alpha_5 \quad vs. \quad \alpha_1$')
-    ax4.set_xlabel(r'$\alpha_1$')
-    ax4.set_ylabel(r'$\alpha_5$')
-
-    ax5.set_title(r'$\alpha_6 \quad vs. \quad \alpha_1$')
-    ax5.set_xlabel(r'$\alpha_1$')
-    ax5.set_ylabel(r'$\alpha_6$')
+    ax.set_xlabel(r'$P_4$')
+    ax.set_ylabel(r'$P_3$')
+    ax.set_zlabel(r'$P_1$')
+    ax.set_title('Pressure approximation: spline coeffs. correlation')
 
     plt.grid()
     plt.show()
@@ -165,8 +132,7 @@ def test_correlations():
 if __name__ == "__main__":
 
     cpo_dir  = os.path.abspath("../../data/AUG_28906_5/BGB_GEM_SPREAD/4FT")
+    test_approximation(cpo_dir)
 
-    # approxiamtion of the pressure profile
-    eq_file = cpo_dir + '/ets_equilibrium_in.cpo'
-    test_approximation(eq_file)
-
+    runs_dir = os.path.abspath("/ptmp/ljala/runs")
+    test_correlations(runs_dir)
