@@ -20,44 +20,44 @@ def format_exponent(ax, axis='y'):
         verticalalignment='top'
 
 # Statistical Moments
-#def plot_stats(x, stat, pctl, xlabel, ylabel, ftitle, fname=None):
-#    mean = stat["mean"]
-#    var  = stat["var"]
-#    p10 = pctl['p10']
-#    p90 = pctl['p90']
-#
-#    plt.switch_backend('agg')
-#    fig = plt.figure(figsize=(12,9))
-#
-#    ax1 = fig.add_subplot(111)
-#    ax1.plot(x, mean, 'g-', alpha=0.75, label='Mean')
-#    ax1.plot(x, p10, 'b-', alpha=0.25)
-#    ax1.plot(x, p90, 'b-', alpha=0.25)
-#    ax1.fill_between(x, p10, p90, alpha=0.25, label='90% prediction interval')
-#    ax1.set_xlabel(xlabel)
-#    ax1.set_ylabel(ylabel, color='b')
-#    ax1.tick_params('y', colors='b')
-#    ax1.grid()
-#    ax1.legend()
-#
-#    ax2 = ax1.twinx()
-#    ax2.plot(x, var, 'r-', alpha=0.5)
-#    ax2.set_ylabel('Variance', color='r')
-#    ax2.tick_params('y', colors='r')
-#    ax2 = format_exponent(ax2, axis='y')
-#
-#    plt.title(ftitle)
-#
-#    if fig is None:
-#        plt.show()
-#    else:
-#        fig.savefig(fname)
-#        plt.close(fig)
-#
-#    plt.close()
+def plot_stats(x, stat, pctl, xlabel, ylabel, ftitle, fname=None):
+    mean = stat["mean"]
+    var  = stat["var"]
+    p10 = pctl['p10']
+    p90 = pctl['p90']
 
-# Statistical Moments
-def plot_stats(x, stat, xlabel, ylabel, ftitle, fname=None):
+    plt.switch_backend('agg')
+    fig = plt.figure(figsize=(12,9))
+
+    ax1 = fig.add_subplot(111)
+    ax1.plot(x, mean, 'g-', alpha=0.75, label='Mean')
+    ax1.plot(x, p10, 'b-', alpha=0.25)
+    ax1.plot(x, p90, 'b-', alpha=0.25)
+    ax1.fill_between(x, p10, p90, alpha=0.25, label='90% prediction interval')
+    ax1.set_xlabel(xlabel)
+    ax1.set_ylabel(ylabel, color='b')
+    ax1.tick_params('y', colors='b')
+    ax1.grid()
+    ax1.legend()
+
+    ax2 = ax1.twinx()
+    ax2.plot(x, var, 'r-', alpha=0.5)
+    ax2.set_ylabel('Variance', color='r')
+    ax2.tick_params('y', colors='r')
+    ax2 = format_exponent(ax2, axis='y')
+
+    plt.title(ftitle)
+
+    if fig is None:
+        plt.show()
+    else:
+        fig.savefig(fname)
+        plt.close(fig)
+
+    plt.close()
+
+# Statistical Moments (+- deviation)
+def plot_stats_bis(x, stat, xlabel, ylabel, ftitle, fname=None):
     mean = np.array(stat["mean"])
     var  = stat["var"]
     std = np.array(stat['std'])
@@ -105,7 +105,8 @@ def plot_stats(x, stat, xlabel, ylabel, ftitle, fname=None):
 #    ax21.legend()
 #    ax21.grid()
 #    plt.title('First order Sobol indices')
-#
+
+
 ## Correlation matrix
 #if __corr:
 #    fig3 = plt.figure()
@@ -114,19 +115,21 @@ def plot_stats(x, stat, xlabel, ylabel, ftitle, fname=None):
 #    ax3.colorbar()
 #    ax3.title('Corrolation matrix)')
 
-#def plot_dist(i, rho):
-#    m = mean[i]
-#    sd = std[i]
-#    r=rho[i]
-#    p0_samples = np.linspace(m-3*std, m+3*std, 200)
-#    plt.plot(p0_samples, distp[i].pdf(p0_samples), 'b-')
-#    plt.axvline(x=m, color= 'r', linestyle='-')
-#    plt.axvline(x=m-sd, color= 'r', linestyle='--')
-#    plt.axvline(x=m+sd, color= 'r', linestyle='--')
-#    #plt.axvline(x=m+3*sd, color= 'g', linestyle='--')
-#    #plt.axvline(x=m-3*sd, color= 'g', linestyle='--')
-#    plt.title(r'Output distribution: pressure in $\rho = $'+str(r))
-#    plt.xlabel('p')
-#    plt.ylabel('p_dist')
-#    plt.grid()
-#    plt.show()
+# QoI distribution, in the index grid i
+def plot_dist(i, dist, rho, mean, std):
+    r  = rho[i]
+    m = mean[i]
+    sd = std[i]
+
+    samples = np.linspace(m-3*std, m+3*std, 200)
+    plt.plot(samples, dist[i].pdf(samples), 'b-')
+
+    plt.axvline(x=m, color= 'C1', linestyle='-')
+    plt.axvline(x=m-sd, color= 'C1', linestyle='--')
+    plt.axvline(x=m+sd, color= 'C1', linestyle='--')
+
+    plt.title(r'Output distribution: pressure in $\rho = $'+str(r))
+    plt.xlabel('p')
+    plt.ylabel('p_dist')
+    plt.grid()
+    plt.show()

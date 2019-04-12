@@ -78,7 +78,7 @@ t_chease = time.time() - t_chease
 
 # Aggregate the results from all runs.
 output_filename = fus_campaign.params_info['out_file']['default']
-output_columns = ['gm4', 'gm5', 'gm8']
+output_columns = ['gm5', 'gm8']
 
 aggregate = uq.elements.collate.AggregateSamples( fus_campaign,
                                             output_filename=output_filename,
@@ -90,17 +90,14 @@ aggregate.apply()
 
 # Analysis
 analysis = uq.elements.analysis.PCEAnalysis(fus_campaign, value_cols=output_columns)
-oout_distut_dist = analysis.apply()
+analysis.apply()
 
 # Results
-stat_gm4 = analysis.statistical_moments('gm4')
-pctl_gm4 = analysis.percentiles('gm4')
+stat_1 = analysis.statistical_moments('gm5')
+pctl_1 = analysis.percentiles('gm5')
 
-stat_gm5 = analysis.statistical_moments('gm5')
-pctl_gm5 = analysis.percentiles('gm5')
-
-stat_gm8 = analysis.statistical_moments('gm8')
-pctl_gm8 = analysis.percentiles('gm8')
+stat_2 = analysis.statistical_moments('gm8')
+pctl_2 = analysis.percentiles('gm8')
 
 # Elapsed time
 end_time = time.time()
@@ -114,15 +111,11 @@ equil_file = common_dir + 'ets_equilibrium_in.cpo'
 equil = read(equil_file, 'equilibrium')
 rho = equil.profiles_1d.rho_tor
 
-plots.plot_stats(rho, stat_gm4,
-                 xlabel=r'$\rho_{tor} ~ [m]$', ylabel=r'$\langle \frac{1}{B^2} \rangle$',
-                 ftitle='UQP1 - Chease output: GM4 profile', fname='gm4.png')
-
-plots.plot_stats(rho, stat_gm5,
+plots.plot_stats(rho, stat_1, pctl_1,
                  xlabel=r'$\rho_{tor} ~ [m]$', ylabel=r'$\langle B^{2} \rangle$',
                  ftitle='UQP1 - Chease output: GM5 profile', fname='gm5.png')
 
-plots.plot_stats(rho, stat_gm8,
+plots.plot_stats(rho, stat_2, pctl_2,
                  xlabel=r'$\rho_{tor} ~ [m]$', ylabel=r'$\langle R \rangle$',
                  ftitle='UQP1 - Chease output: GM8 profile', fname='gm8.png')
 
