@@ -137,7 +137,7 @@ IMP4DV_TEST: ${IMP4DV_O}
 	$(LD) -o ${IMP4DV_EXE} $^ -L${IMP4DV} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_UAL} -limp4dv -lbds -litmconstants -litmtypes -lual ${LDFLAGS} 
 
 CHEASE_TEST: ${CHEASE_O}
-	$(MPIF90) -o ${CHEASE_EXE} $^ -L${CHEASE} -L${LIB_UAL} -lchease_muscle -lual -lxml2 ${LDFLAGS} ${LIBLAPACK}
+	$(MPIF90) -o ${CHEASE_EXE} $^ -L${CHEASE} -L${LIB_XML} -L${LIB_UAL} -lchease_muscle -lual -lxmllib -lxml2 ${LDFLAGS} ${LIBLAPACK}
 
 COMBINED_TEST: ${SHARED_O} ${OBJDIR}/ets_standalone.o ${OBJDIR}/imp4dv_standalone.o ${OBJDIR}/combined_test.o
 	$(LD) -o ${COMBINED_EXE} $^ -L${IMP4DV} -L${ETS} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_XML} -L${LIB_UAL} -limp4dv -lets -lbds -litmconstants -litmtypes -lxmllib -lual ${LDFLAGS} ${LIBLAPACK}
@@ -177,7 +177,7 @@ ${OBJDIR}/imp4dv_standalone.o: src/imp4dv_standalone.f90
 	${FC90} -o $@ -c $< $(FC90FLAGS) -I${INC_BDS}  
 
 ${OBJDIR}/chease_standalone.o: src/chease_standalone.f90
-	${MPIF90} -o $@ -c $< $(MPIF90FLAGS) -I${CHEASE} -I/usr/include/libxml2
+	${MPIF90} -o $@ -c $< $(MPIF90FLAGS) -I${CHEASE} -I${INC_UAL} -I/usr/include/libxml2
 
 ${OBJDIR}/chease_test.o: src/chease_test.f90
 	${MPIF90} -o $@ -c $< $(MPIF90FLAGS) -I${CHEASE} -I${INC_UAL} -I${INC_TYPES} 
