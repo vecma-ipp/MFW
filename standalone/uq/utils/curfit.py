@@ -90,7 +90,7 @@ def test_approximation(cpo_dir):
     ax.plot(rho, p, "b.",  markersize=5, alpha=0.8, label='Pressure Profile')
     ax.plot(ra, pa, 'g-', label='Approxiamtion')
     ax.plot(Px, Py, 'ro', label='Control Points')
-    ax.errorbar(Px[:-1], Py[:-1], yerr=800, fmt='ro')
+    ax.errorbar(Px, Py, yerr=600, fmt='r.', capsize=5)
 
     ax.set_xlabel(r'$\rho_{tor} \, [m]$')
     ax.set_ylabel('P [bar]')
@@ -134,5 +134,5 @@ if __name__ == "__main__":
     cpo_dir  = os.path.abspath("../../data/AUG_28906_5/BGB_GEM_SPREAD/4FT")
     test_approximation(cpo_dir)
 
-    runs_dir = os.path.abspath("/ptmp/ljala/runs")
-    test_correlations(runs_dir)
+#    runs_dir = os.path.abspath("/ptmp/ljala/runs")
+#    test_correlations(runs_dir)
