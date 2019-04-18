@@ -19,7 +19,7 @@ FC90FLAGS += ${INCLUDES} ${MODSPEC}${INCDIR}
 # objects files ################################################################
 OBJ = 	euitm_ual_defs.o euitm_schemas.o copy_structures.o             \
 	deallocate_structures.o is_set_structures.o read_structures.o  \
-	size_of_structures.o write_structures.o 
+	size_of_structures.o write_structures.o euitm_routines.o
 
 
 
