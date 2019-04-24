@@ -54,7 +54,7 @@ def plot_stats(x, stat, pctl, xlabel, ylabel, ftitle, fname=None):
         fig.savefig(fname)
         plt.close(fig)
 
-    plt.close()
+    #plt.close()
 
 # Statistical Moments (+- deviation)
 def plot_stats_bis(x, stat, xlabel, ylabel, ftitle, fname=None):
@@ -90,22 +90,42 @@ def plot_stats_bis(x, stat, xlabel, ylabel, ftitle, fname=None):
         fig.savefig(fname)
         plt.close(fig)
 
-    plt.close()
+    #plt.close()
 
+# TODO: generic plots (here for 4 params)
+def plot_sobols(x, sobols, params):
+    plt.switch_backend('agg')
 
-# Sobols indicies
-#if __sobols:
-#    s1i  = [sobols['q'][pname].to_numpy() for pname in params]
-#    fig2 = plt.figure(figsize=(12,9))
-#    ax21 = fig2.add_subplot(111)
-#    for i in range(n_params):
-#        ax21.plot(rho, s1i[i], label=params[i])
-#    ax21.set_xlabel(r'$\rho_{tor} \quad [m]$')
-#    ax21.set_ylabel('Sobol indices')
-#    ax21.legend()
-#    ax21.grid()
-#    plt.title('First order Sobol indices')
+    s1 = sobols[params[0]]
+    s2 = sobols[params[1]]
+    s3 = sobols[params[2]]
+    s4 = sobols[params[3]]
 
+    fig, axs = plt.subplots(nrows=2, ncols=2, sharex=True)
+
+    ax = axs[0,0]
+    ax.plot(x, s1)
+    ax.set_title('D1')
+
+    #ax.locator_params(nbins=4)
+
+    ax = axs[0,1]
+    ax.plot(x, s2)
+    ax.set_title('D2')
+
+    ax = axs[1,0]
+    ax.plot(x, s3)
+    ax.set_title('D3')
+
+    ax = axs[1,1]
+    ax.plot(x, s4)
+    ax.set_title('D4')
+
+    fig.suptitle('First-Order Sobol indices')
+    fig.savefig('sobols.png')
+    plt.close(fig)
+
+    #plt.show()
 
 ## Correlation matrix
 #if __corr:

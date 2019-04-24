@@ -43,7 +43,7 @@ os.system("cp ../../workflows/ets.xsd "+ campaign_dir +"/workflows")
 
 # Copy CPO files in common directory
 common_dir = campaign_dir +"/common/"
-os.system("cp " + cpo_dir + "*.cpo " + common_dir)
+os.system("cp " + cpo_dir + "/*.cpo " + common_dir)
 
 # Get uncertain parameters distrubutions
 coret_file = common_dir + "ets_coretransp_in.cpo"
@@ -86,6 +86,7 @@ out_dist = analysis.apply()
 # Results
 stat = analysis.statistical_moments('p')
 pctl = analysis.percentiles('p')
+sobols = analysis.sobol_indices('p', 'first_order')
 
 # Elapsed time
 end_time = time.time()
@@ -101,5 +102,7 @@ rho = equil.profiles_1d.rho_tor
 
 #  Graphics for descriptive satatistics
 plots.plot_stats(rho, stat, pctl,
-                 title='Pressure profile', xlabel='rho_tor [m]',
-                 ylabel='pressure', savefig=True)
+                 xlabel=r'$\rho_{tor} ~ [m]$', ylabel='pressure',
+                 ftitle='UQP1 - ETS output: pressure profile', fname='pressure.png')
+
+#plots.plot_sobols(rho, sobols, uncert_params)

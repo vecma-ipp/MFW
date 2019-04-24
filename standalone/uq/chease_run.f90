@@ -72,18 +72,16 @@ implicit none
   ! Collect outputs data: QoI values. TODO: use HDF5 instead of CSV?
 
   ! Open the CSV output file
-  call csv_out_file%open(out_file, n_cols=2, status_ok=outfile_status)
+  call csv_out_file%open(out_file, n_cols=1, status_ok=outfile_status)
 
   ! Add headers
   call csv_out_file%add('gm5')
-  call csv_out_file%add('gm8')
   call csv_out_file%next_row()
   
   ! Add data
   n_data = size(equil_new(1)%profiles_1d%gm5)
   do i=1, n_data
     call csv_out_file%add(equil_new(1)%profiles_1d%gm5(i))
-    call csv_out_file%add(equil_new(1)%profiles_1d%gm8(i))
     call csv_out_file%next_row()
   end do
 

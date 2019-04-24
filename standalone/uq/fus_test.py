@@ -78,7 +78,7 @@ t_chease = time.time() - t_chease
 
 # Aggregate the results from all runs.
 output_filename = fus_campaign.params_info['out_file']['default']
-output_columns = ['gm5', 'gm8']
+output_columns = ['gm5']
 
 aggregate = uq.elements.collate.AggregateSamples( fus_campaign,
                                             output_filename=output_filename,
@@ -93,11 +93,9 @@ analysis = uq.elements.analysis.PCEAnalysis(fus_campaign, value_cols=output_colu
 analysis.apply()
 
 # Results
-stat_1 = analysis.statistical_moments('gm5')
-pctl_1 = analysis.percentiles('gm5')
-
-stat_2 = analysis.statistical_moments('gm8')
-pctl_2 = analysis.percentiles('gm8')
+stat = analysis.statistical_moments('gm5')
+pctl = analysis.percentiles('gm5')
+sobols = analysis.sobol_indices('gm5', 'first_order')
 
 # Elapsed time
 end_time = time.time()
@@ -111,11 +109,8 @@ equil_file = common_dir + 'ets_equilibrium_in.cpo'
 equil = read(equil_file, 'equilibrium')
 rho = equil.profiles_1d.rho_tor
 
-plots.plot_stats(rho, stat_1, pctl_1,
+plots.plot_stats(rho, stat, pctl,
                  xlabel=r'$\rho_{tor} ~ [m]$', ylabel=r'$\langle B^{2} \rangle$',
                  ftitle='UQP1 - Chease output: GM5 profile', fname='gm5.png')
 
-plots.plot_stats(rho, stat_2, pctl_2,
-                 xlabel=r'$\rho_{tor} ~ [m]$', ylabel=r'$\langle R \rangle$',
-                 ftitle='UQP1 - Chease output: GM8 profile', fname='gm8.png')
-
+plots.plot_sobols(rho, sobols, uncert_params)
