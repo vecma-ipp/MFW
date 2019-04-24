@@ -10,7 +10,7 @@ OBJDIR = ets/obj/${SYS}
 VPATH = ${SRCDIR}/solvers ${SRCDIR}/ets ${SRCDIR}/types 
 VPATH += ${SRCDIR}/xmllib ${SRCDIR}/itm_types ${SRCDIR}/itm_constants 
 VPATH += ${SRCDIR}/itm_shared ${SRCDIR}/version ${SRCDIR}/equilibrium 
-VPATH += ${SRCDIR}/itm_tools ${SRCDIR}/transport
+VPATH += ${SRCDIR}/itm_tools ${SRCDIR}/transport ${SRCDIR}/sources
 
 
 # additional flags #############################################################
@@ -38,10 +38,12 @@ ETS_O = ${OBJDIR}/s4_parameters.o ${OBJDIR}/plasma_collisionality.o \
 	${OBJDIR}/pedestal.o ${OBJDIR}/main_plasma.o ${OBJDIR}/ets.o \
 	${OBJDIR}/equilibrium_input.o ${OBJDIR}/spitzer.o
 
+SOURCES_O = ${OBJDIR}/gausian_src.o
+
 SHARED_O = ${OBJDIR}/itm_toolbox.o ${OBJDIR}/l3interp.o 
 ### add local l3interp waiting for usage from itm_toolbox or l3interps modules
 
-LIB_ETS_O = ${SHARED_O} ${TYPES_O} ${SOLVERS_O} ${ETS_O} 
+LIB_ETS_O = ${SHARED_O} ${TYPES_O} ${SOLVERS_O} ${SOURCES_O} ${ETS_O} 
 
 #WRAPPER_O = ${OBJDIR}/ets_wrapper.o
 
