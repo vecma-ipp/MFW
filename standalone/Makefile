@@ -177,7 +177,7 @@ ${OBJDIR}/imp4dv_standalone.o: src/imp4dv_standalone.f90
 	${FC90} -o $@ -c $< $(FC90FLAGS) -I${INC_BDS}  
 
 ${OBJDIR}/chease_standalone.o: src/chease_standalone.f90
-	${MPIF90} -o $@ -c $< $(MPIF90FLAGS) -I${CHEASE} -I${INC_UAL} -I/usr/include/libxml2
+	${MPIF90} -o $@ -c $< $(MPIF90FLAGS) -I${CHEASE} -I${INC_UAL} -I${INC_XML} -I/usr/include/libxml2
 
 ${OBJDIR}/chease_test.o: src/chease_test.f90
 	${MPIF90} -o $@ -c $< $(MPIF90FLAGS) -I${CHEASE} -I${INC_UAL} -I${INC_TYPES} 
