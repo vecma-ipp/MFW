@@ -113,7 +113,7 @@ libbds: ual get-libbds
 get-libbds:
 	@if [ ! -d "externals/libbds" ]; then \
 	  echo "Checking out libbds..."; \
- 		svn co $(SVNURL_GFORGE)/libbds/tags/4.10b externals/libbds; \
+		svn co $(SVNURL_GFORGE)/libbds/tags/4.10b externals/libbds; \
 	else  \
 		echo "Updating libbds..."; \
 		svn up externals/libbds; \
@@ -136,7 +136,7 @@ ets: ual libbds get-ets
 get-ets:
 	@if [ ! -d "externals/ets" ]; then \
 	  echo "Checking out ets..."; \
- 		svn co $(SVNURL_GFORGE)/ets/tags/4.10b.10_8 externals/ets; \
+		svn co $(SVNURL_GFORGE)/ets/tags/4.10b.10_8 externals/ets; \
 	else  \
 		echo "Updating ets..."; \
 		svn up externals/ets; \
@@ -159,7 +159,7 @@ bohmgb: ual libbds get-bohmgb
 get-bohmgb:
 	@if [ ! -d "externals/bohmgb" ]; then \
 	  echo "Checking out bohmgb..."; \
- 		svn co $(SVNURL_GFORGE)/modtransp/tags/4.10b/bohmgb externals/bohmgb; \
+		svn co $(SVNURL_GFORGE)/modtransp/tags/4.10b/bohmgb externals/bohmgb; \
 	else  \
 		echo "Updating bohmgb..."; \
 		svn up externals/bohmgb; \
@@ -182,7 +182,7 @@ gem0: ual libbds get-gem0
 get-gem0:
 	@if [ ! -d "externals/gem0" ]; then \
 	  echo "Checking out gem0..."; \
- 		svn co $(SVNURL_GFORGE)/modtransp/tags/4.10b/gem0 externals/gem0; \
+		svn co $(SVNURL_GFORGE)/modtransp/tags/4.10b/gem0 externals/gem0; \
 	else  \
 		echo "Updating gem0..."; \
 		svn up externals/gem0; \
@@ -205,7 +205,7 @@ bdseq: ual libbds get-bdseq
 get-bdseq:
 	@if [ ! -d "externals/bdseq" ]; then \
 	  echo "Checking out bdseq..."; \
- 		svn co $(SVNURL_GFORGE)/bdseq/tags/4.10b externals/bdseq; \
+		svn co $(SVNURL_GFORGE)/bdseq/tags/4.10b externals/bdseq; \
 	else  \
 		echo "Updating bdseq..."; \
 		svn up externals/bdseq; \
@@ -243,7 +243,7 @@ gem: ual libbds get-gem patch-gem
 get-gem:
 	@if [ ! -d "externals/gem" ]; then \
 	  echo "Checking out gem..."; \
- 		svn co $(SVNURL_SOLPS)/gem externals/gem/trunk; \
+		svn co $(SVNURL_SOLPS)/gem externals/gem/trunk; \
 	else  \
 		echo "Updating gem..."; \
 		svn up externals/gem; \
@@ -266,7 +266,7 @@ dfefi: ual libbds get-dfefi
 get-dfefi:
 	@if [ ! -d "externals/dfefi" ]; then \
 	  echo "Checking out dfefi..."; \
- 		svn co $(SVNURL_SOLPS)/dfefi externals/dfefi/trunk; \
+		svn co $(SVNURL_SOLPS)/dfefi externals/dfefi/trunk; \
 	else  \
 		echo "Updating dfefi..."; \
 		svn up externals/dfefi; \
@@ -289,7 +289,7 @@ imp4dv: ual libbds get-imp4dv
 get-imp4dv:
 	@if [ ! -d "externals/imp4dv" ]; then \
 	  echo "Checking out imp4dv..."; \
- 		svn co $(SVNURL_GFORGE)/modtransp/tags/4.10b/imp4dv externals/imp4dv; \
+		svn co $(SVNURL_GFORGE)/modtransp/tags/4.10b/imp4dv externals/imp4dv; \
 	else  \
 		echo "Updating imp4dv..."; \
 		svn up externals/imp4dv; \
@@ -312,13 +312,25 @@ patch-chease:
 	&& echo -e "\033[32m\033[1m -- OK -- \033[0m") \
 	|| echo -e "\033[31m\033[1m -- FAIL -- \033[0m")
 
+strip-chease:
+	@find externals/chease/src-f90 -name euitm_xml_parser.f90 \
+	&& (echo -e "\033[36m\033[1m ++++ Strip CHEASE from XML stuff ++++ \033[0m"; \
+	(rm externals/chease/src-f90/euitm_xml_parser.f90 \
+	externals/chease/src-f90/string_manipulation_tools.f90 \
+	externals/chease/src-f90/xml2eg.f90 \
+	externals/chease/src-f90/xml2eg_c.c \
+	externals/chease/src-f90/xml_file_reader.f90 \
+	&& echo -e "\033[32m\033[1m -- OK -- \033[0m") \
+	|| echo -e "\033[31m\033[1m -- FAIL -- \033[0m") \
+	|| echo -e "\033[32m\033[1m -- ALREADY STRIPPED -- \033[0m" 
+
 revert-chease:
 	@echo -e "\033[36m\033[1m ++++ Revert CHEASE makefiles ++++ \033[0m"; \
 	(svn revert externals/chease/src-f90/Make* \
 	&& echo -e "\033[32m\033[1m -- OK -- \033[0m") \
 	|| echo -e "\033[31m\033[1m -- FAIL -- \033[0m"
 
-chease: ual get-chease patch-chease 
+chease: ual get-chease strip-chease patch-chease 
 	@echo -e "\033[36m\033[1m ++++ Build CHEASE ++++ \033[0m"; \
 	($(MAKE) --no-print-directory -C externals/chease/src-f90 libchease_muscle \
 	&& echo -e "\033[32m\033[1m -- OK -- \033[0m") \
@@ -327,7 +339,7 @@ chease: ual get-chease patch-chease
 get-chease:
 	@if [ ! -d "externals/chease" ]; then \
 	  echo "Checking out chease..."; \
- 		svn co $(SVNURL_GFORGE)/chease/chease/tags/4.10b.10_CHEASEv12_3b externals/chease; \
+		svn co $(SVNURL_GFORGE)/chease/chease/tags/4.10b.10_CHEASEv12_3b externals/chease; \
 	else  \
 		echo "Updating chease..."; \
 		svn up externals/chease; \
