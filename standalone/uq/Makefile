@@ -44,17 +44,17 @@ ${OBJDIR}/ets_run.o: ets_run.f90
 	${MPIF90} -o $@ -c $< $(FC90FLAGS) -I${INC_STD} -I${ETS} -I${INC_UAL} -I${INC_TYPES} -I${INC_XML} -I${INC_CONSTANTS} 
 
 CHEASE_RUN: ${OBJDIR}/chease_run.o
-	$(MPIF90) -o ${RUN_CHEASE_EXE} $^ -I${CHEASE_STD} -I${TOOLS_STD} -L${CHEASE} -L${LIB_UAL} -lchease_muscle -lual -lxml2 ${LDFLAGS} ${LIBLAPACK}
+	$(MPIF90) -o ${RUN_CHEASE_EXE} $^ -I${CHEASE_STD} -I${TOOLS_STD} -L${CHEASE} -L${LIB_XML} -L${LIB_UAL} -lchease_muscle -lual -lxmllib -lxml2 ${LDFLAGS} ${LIBLAPACK}
 
 ${OBJDIR}/chease_run.o: chease_run.f90
-	${MPIF90} -o $@ -c $< $(FC90FLAGS) -I${INC_STD} -I${CHEASE} -I${INC_UAL} -I${INC_TYPES}
+	${MPIF90} -o $@ -c $< $(FC90FLAGS) -I${INC_STD} -I${CHEASE} -I${INC_XML} -i/usr/include/libxml2 -I${INC_UAL} -I${INC_TYPES}
 
 # TODO check link-editing  between chease and ets (xml dependencies?)
 FULL_RUN: ${OBJDIR}/full_run.o
 	$(MPIF90) -o ${RUN_FULL_EXE} $^ -I${ETS_STD} -I${CHEASE_STD} -I${TOOLS_STD} -L${ETS} -L${CHEASE} -L${LIB_UAL} -L${LIB_TYPES} -L${LIB_XML} -L${LIB_CONSTANTS} -lets -lchease_muscle -lxml2 -lual -litmtypes -lxmllib -litmconstants ${LDFLAGS} ${LIBLAPACK}
 
 ${OBJDIR}/full_run.o: full_run.f90
-	${MPIF90} -o $@ -c $< $(FC90FLAGS) -I${INC_STD} -I${ETS} -I${CHEASE} -I/usr/include/libxml2 -I${INC_UAL} -I${INC_TYPES} -I${INC_CONSTANTS} 
+	${MPIF90} -o $@ -c $< $(FC90FLAGS) -I${INC_STD} -I${ETS} -I${CHEASE} -I${INC_XML} -i/usr/include/libxml2 -I${INC_UAL} -I${INC_TYPES} -I${INC_CONSTANTS} 
 
 # 
 clean:
