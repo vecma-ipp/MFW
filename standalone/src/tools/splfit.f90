@@ -1,6 +1,11 @@
-! Fortran module for curves approximation by non periodic splines.
-! Extracted from FITpack distribution (http://www.netlib.org/dierckx).
+!> Added by Jalal Lakhlili (jlakhlili@gmail.com) on April 29, 2019.
+!> 
+!> This file contains two fortran modules:
+!> fitpack: extracted from DIERCKX package (http://www.netlib.org/dierckx). 
+!> splfit: for curve approximations and evalution using non periodic splines.
 
+
+!*****************************************************************************************
 module fitpack
 contains
 
@@ -824,10 +829,13 @@ contains
 !***************************************************************************
 
 end module fitpack
+!*****************************************************************************************
 
 !*****************************************************************************************
 module splfit
+
   use fitpack
+
 contains
 
   ! given the set of data points (x(i),y(i)) and the set of positive
@@ -909,4 +917,8 @@ contains
 
   end subroutine splrep
 
+  ! TODO evaluate the spline or its derivatives.
+
 end module splfit
+!*****************************************************************************************
+
