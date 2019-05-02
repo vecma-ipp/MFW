@@ -19,7 +19,7 @@ export CHEASE = ../../externals/chease/src-f90
 export OBJ_STD = ../obj/${SYS}
 export INC_STD = ../include/${SYS}
 
-TOOLS_STD  = ${INC_STD} ${OBJ_STD}/linterp.o  ${OBJ_STD}/csv_io.o
+TOOLS_STD  = ${INC_STD} ${OBJ_STD}/linterp.o  ${OBJ_STD}/csv_io.o  ${OBJ_STD}/splfit.o
 ETS_STD    = ${INC_STD} ${OBJ_STD}/ets_standalone.o ${OBJ_STD}/equilupdate_standalone.o 
 CHEASE_STD = ${INC_STD} ${OBJ_STD}/chease_standalone.o 
 SRC_STD = ${INC_STD} ${OBJ_STD}/sources_standalone.o 
@@ -60,10 +60,10 @@ ${OBJDIR}/full_run.o: full_run.f90
 	${MPIF90} -o $@ -c $< $(FC90FLAGS) -I${INC_STD} -I${ETS} -I${CHEASE} -I${INC_XML} -i/usr/include/libxml2 -I${INC_UAL} -I${INC_TYPES} -I${INC_CONSTANTS} 
 
 # SOURCES
-ETS_RUN: ${OBJDIR}/sources_standalone.o
+SRC_RUN: ${OBJDIR}/src_run.o
 	$(MPIF90) -o ${RUN_ETS_EXE} $^ -I${SRC_STD} -I${TOOLS_STD} -L${ETS} -L${LIB_UAL} -L${LIB_TYPES} -L${LIB_XML} -L${LIB_CONSTANTS} -lets -lual -litmtypes -lxmllib -litmconstants
 
-${OBJDIR}/sources_standalone.o: sources_standalone.f90
+${OBJDIR}/src_run.o: src_run.f90
 	${MPIF90} -o $@ -c $< $(FC90FLAGS) -I${INC_STD} -I${ETS} -I${INC_UAL} -I${INC_TYPES} -I${INC_XML} -I${INC_CONSTANTS} 
 
 # 

@@ -24,6 +24,7 @@ use ets_standalone,         only: ets_cpo
 use equilupdate_standalone, only: equilupdate2cpo
 
 use csv_module
+use splfit, only:approximate_curve
 
 implicit none
   
@@ -62,6 +63,13 @@ implicit none
   ! Other local variables  
   integer :: ios, i, n_data, n_outputs
   logical :: infile_status, outfile_status 
+
+  real(8) :: x(101)
+  real(8) :: y(101)
+  real(8) :: w(101)
+  real(8), allocatable :: cx(:)
+  real(8) , allocatable:: cy(:)
+  real(8) , allocatable:: t(:)
   
   ! ...
   if (command_argument_count() /=2) then
@@ -203,7 +211,18 @@ implicit none
   call open_write_file(16, equil_out_file)
   call write_cpo(equil_new(1),'equilibrium')
   call close_write_file
-
+  
+  x = (/((i/10.0),i=0,100)/) 
+  do i=1, 101
+    y(i) = sin(6.2831853*x(i))
+  enddo
+  
+  print*,'>> x = ', x
+  print*,'>> y = ', y
+  call approximate_curve(x, y, 3, 3, "uniform", t, cx, cy)
+  print*,'>> cx = ', cx
+  print*,'>> cy = ', cy
+  print*,'>> t = ', t
 
   ! ====== UQ for ETS
 !  ! To collect outputs data, the quantity of interest is Te
