@@ -103,15 +103,17 @@ CHEASE_O = ${SHARED_O} ${OBJDIR}/chease_standalone.o ${OBJDIR}/chease_test.o
 IMP4DV_O = ${SHARED_O} ${OBJDIR}/imp4dv_standalone.o ${OBJDIR}/imp4dv_test.o 
 EQUILUPDATE_O = ${SHARED_O} ${OBJDIR}/equilupdate_standalone.o ${OBJDIR}/equilupdate_test.o 
 SOURCES_O = ${SHARED_O} ${OBJDIR}/sources_standalone.o ${OBJDIR}/sources_test.o
+BOHMGB_O = ${SHARED_O} ${OBJDIR}/bohmgb_standalone.o ${OBJDIR}/bohmgb_test.o
 
 #TESTS = ETS_TEST CHEASE_TEST 
-TESTS =  ETS_TEST IMP4DV_TEST CHEASE_TEST COMBINED_TEST EQUILUPDATE_TEST SOURCES_TEST
+TESTS =  ETS_TEST IMP4DV_TEST CHEASE_TEST COMBINED_TEST EQUILUPDATE_TEST SOURCES_TEST BOHMGB_TEST
 ETS_EXE = ${BINDIR}/ets_test
 CHEASE_EXE = ${BINDIR}/chease_test
 IMP4DV_EXE = ${BINDIR}/imp4dv_test
 COMBINED_EXE = ${BINDIR}/combined_test
 EQUILUPDATE_EXE = ${BINDIR}/equilupdate_test
 SOURCES_EXE = ${BINDIR}/sources_test
+BOHMGB_EXE = ${BINDIR}/bohmgb_test
 
 #.PHONY: all clean
 # rules ########################################################################
@@ -148,6 +150,9 @@ EQUILUPDATE_TEST: ${EQUILUPDATE_O}
 
 SOURCES_TEST: ${SOURCES_O}
 	$(LD) -o ${SOURCES_EXE} $^ -L${ETS} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_UAL} -L${LIB_XML} -lets -lbds -litmconstants -litmtypes -lual -lxmllib ${LDFLAGS} 
+
+BOHMGB_TEST: ${BOHMGB_O}
+	$(LD) -o ${BOHMGB_EXE} $^ -L${BOHMGB} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_XML} -L${LIB_UAL} -lbohmgb -lbds -litmconstants -litmtypes -lxmllib -lual ${LDFLAGS} 
 
 
 
@@ -202,3 +207,6 @@ ${OBJDIR}/sources_standalone.o: src/sources_standalone.f90
 
 ${OBJDIR}/sources_test.o: src/sources_test.f90
 	${MPIF90} -o $@ -c $< $(MPIF90FLAGS) -I${ETS} -I${INC_TYPES} 
+
+${OBJDIR}/bohmgb_standalone.o: src/bohmgb_standalone.f90
+	${FC90} -o $@ -c $< $(FC90FLAGS) -I${INC_BDS} -I${INC_XML} 
