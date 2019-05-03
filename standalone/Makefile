@@ -13,7 +13,7 @@ ifneq (${MAINMAKE},yes)
  export LIB_CONSTANTS = ../ual/lib/${SYS}/constants
  export INC_XML = ../ual/include/${SYS}/xml
  export LIB_XML = ../ual/lib/${SYS}/xml
- 
+
  export DATAVERSION = 4.10b.10
 
  include ../config
@@ -107,7 +107,8 @@ SOURCES_O = ${SHARED_O} ${OBJDIR}/sources_standalone.o ${OBJDIR}/sources_test.o
 BOHMGB_O = ${SHARED_O} ${OBJDIR}/bohmgb_standalone.o ${OBJDIR}/bohmgb_test.o
 
 #TESTS = ETS_TEST CHEASE_TEST 
-TESTS =  ETS_TEST IMP4DV_TEST CHEASE_TEST COMBINED_TEST EQUILUPDATE_TEST SOURCES_TEST BOHMGB_TEST
+TESTS =  ETS_TEST IMP4DV_TEST CHEASE_TEST COMBINED_TEST EQUILUPDATE_TEST SOURCES_TEST BOHMGB_TEST LOOP_TEST
+
 ETS_EXE = ${BINDIR}/ets_test
 CHEASE_EXE = ${BINDIR}/chease_test
 IMP4DV_EXE = ${BINDIR}/imp4dv_test
@@ -115,6 +116,7 @@ COMBINED_EXE = ${BINDIR}/combined_test
 EQUILUPDATE_EXE = ${BINDIR}/equilupdate_test
 SOURCES_EXE = ${BINDIR}/sources_test
 BOHMGB_EXE = ${BINDIR}/bohmgb_test
+LOOP_EXE = ${BINDIR}/loop_test
 
 #.PHONY: all clean
 # rules ########################################################################
@@ -154,6 +156,9 @@ SOURCES_TEST: ${SOURCES_O}
 
 BOHMGB_TEST: ${BOHMGB_O}
 	$(LD) -o ${BOHMGB_EXE} $^ -L${BOHMGB} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_XML} -L${LIB_UAL} -lbohmgb -lbds -litmconstants -litmtypes -lxmllib -lual ${LDFLAGS} 
+
+LOOP_TEST: ${SHARED_O} ${OBJDIR}/ets_standalone.o ${OBJDIR}/equilupdate_standalone.o ${OBJDIR}/chease_standalone.o ${OBJDIR}/bohmgb_standalone.o ${OBJDIR}/loop_test.o
+	$(LD) -o ${LOOP_EXE} $^ -L${ETS} -L${CHEASE} -L${BOHMGB} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_XML} -L${LIB_UAL} -lets -lchease_muscle -lbohmgb -lbds -litmconstants -litmtypes -lual -lxmllib -lxml2 ${LDFLAGS} ${LIBLAPACK}
 
 
 
@@ -211,3 +216,6 @@ ${OBJDIR}/sources_test.o: src/sources_test.f90
 
 ${OBJDIR}/bohmgb_standalone.o: src/bohmgb_standalone.f90
 	${FC90} -o $@ -c $< $(FC90FLAGS) -I${INC_BDS} -I${INC_XML} 
+
+${OBJDIR}/loop_test.o: src/loop_test.f90 
+	${FC90} -o $@ -c $< $(FC90FLAGS) 
