@@ -218,4 +218,4 @@ ${OBJDIR}/bohmgb_standalone.o: src/bohmgb_standalone.f90
 	${FC90} -o $@ -c $< $(FC90FLAGS) -I${INC_BDS} -I${INC_XML} 
 
 ${OBJDIR}/loop_test.o: src/loop_test.f90 
-	${FC90} -o $@ -c $< $(FC90FLAGS) 
+	${FC90} -o $@ -c $< $(FC90FLAGS) -I${INC_TYPES} 
