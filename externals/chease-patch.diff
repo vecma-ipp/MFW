@@ -213,6 +213,21 @@ Index: externals/chease/src-f90/Makefile.define_FLAGS
 +    OBJS_euitm = 
 +  endif 
 +endif 
++ifeq ($(CHEASE_MACHINE),cobra) 
++  ifeq ($(CHEASE_F90),ifort) 
++    F90 = ifort 
++    F90FLAGS = -O2 -g -r8 -fPIC  -I$(INC_UAL) -I$(INC_XML) -I$(DIR_interpos) 
++    F90FLAGS_parser = -O1 -r8 -fPIC  -I$(INC_UAL) -I$(INC_XML) -I$(DIR_interpos) 
++    LDFLAGS = -O2 -g -r8 -fPIC  -I$(INC_UAL) -I$(INC_XML)
++    FUTILS = $(PWD)/futils_src 
++    INCL_FUTILS= -I$(FUTILS) 
++    INCL_HDF5 = -I$(HDF5_HOME)/include 
++    LIBS =  -L$(LIB_UAL) -lual -L$(LIB_XML) -lxmllib -lz -L$(MKL_LIB) -llapack -lblas 
++    LIBS_HDF5 =  -L$(FUTILS) -lfutils -L$(HDF5_HOME)/lib -lhdf5_fortran -lhdf5 -lz $(LIBS) 
++    LIBSlibxml = -lxml2
++    OBJS_euitm = 
++  endif 
++endif 
 +
 +ifeq ($(CHEASE_MACHINE),neale) 
 +  ifeq ($(CHEASE_F90),ifort) 
@@ -261,6 +276,9 @@ Index: externals/chease/src-f90/Makefile.define_MACHINE
 + endif
 + ifeq ($(SYS),DRACO)
 +   CHEASE_MACHINE = draco
++ endif
++ ifeq ($(SYS),COBRA)
++   CHEASE_MACHINE = cobra
 + endif
 + ifeq ($(SYS),NEALE)
 +   CHEASE_MACHINE = neale
