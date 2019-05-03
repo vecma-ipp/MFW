@@ -24,13 +24,14 @@ module ets_standalone
   logical, save :: pseudo_conv = .false.
   logical, save :: check_coretransp = .false. 
 
+  logical, save :: adaptive_timestep = .false.
   integer, save :: init_step = 0     !initial step count
 
   integer, save :: inner_steps_init = 1         !!! initial inner steps count
-  integer, save :: inner_steps_limit = 1        !!! max number of inner steps (power of ten)
+  integer, save :: inner_steps_limit = 1000000        !!! max number of inner steps (power of ten)
   integer, save :: inner_steps_incr_factor = 10 !!! factor to increase inner_steps_counts
-  real(8), save :: delTe_limit = 20.2_8          !!! limit value for Te_frac
-  real(8), save :: deldTe_limit = 20.1_8         !!! limit value for dTe_frac
+  real(8), save :: delTe_limit = 0.2_8          !!! limit value for Te_frac
+  real(8), save :: deldTe_limit = 0.1_8         !!! limit value for dTe_frac
 
   real(8), pointer :: d_prof(:) => NULL() ! 1. !(/ ((1/log(i+1.)),i=1,100) /)
   real(8), pointer :: v_prof(:) => NULL() ! 1. !(/ ((1/log(i+1.)),i=1,100) /)
@@ -130,9 +131,10 @@ contains
 
     
     ! hard-coded, usually input of ets_wrapper and set by muscle cxa config file
+
+    tau = 0.001_8!control_double(1)
     control_integer = (/ 4, 0, 0 /)
-    control_double = (/ 0.01_8, 1.0_8, 1.0_8, 1.e0_8, 1.e-4_8, 1.0_8 /) 
-    tau = 0.005_8!control_double(1)
+    control_double = (/ tau, 1.0_8, 1.0_8, 1.e0_8, 1.e-4_8, 1.0_8 /) 
 
     allocate(coret_ext(1))
     allocate(cores_work(1))
@@ -246,70 +248,83 @@ contains
     call copy_cpo(corep_in(1),corep_old_test(1))
     call copy_cpo(corep_iter(1),corep_iter_test(1))
 
-    ii              = 1
-    inner_steps_cur = inner_steps_init
-    dtime           = tau/REAL(inner_steps_cur)              !!! delta t value
-    control_double_test(1) = dtime
-    allocate(Te_frac(nrho))
-    allocate(dTe_frac(nrho))
+    
+    if (adaptive_timestep) then
+      ii              = 1
+      inner_steps_cur = inner_steps_init
+      dtime           = tau/REAL(inner_steps_cur)              !!! delta t value
+      control_double_test(1) = dtime
+      allocate(Te_frac(nrho))
+      allocate(dTe_frac(nrho))
 
-    do while (ii .le. inner_steps_cur)
+      do while (ii .le. inner_steps_cur)
 
-       call ITM_ETS(corep_old_test, corep_iter_test, corep_new_test, &
-            equil_in, equil_iter, coret_work,                        &
-            cores_in, corei_in,                                      &
-            control_integer, control_double_test,                    &
-            code_parameters)
+         call ITM_ETS(corep_old_test, corep_iter_test, corep_new_test, &
+              equil_in, equil_iter, coret_work,                        &
+              cores_in, corei_in,                                      &
+              control_integer, control_double_test,                    &
+              code_parameters)
 
-       exceeds_limit = .false.
-       Te_frac = abs( (corep_ref(1)%te%value - corep_new_test(1)%te%value) / corep_ref(1)%te%value )
-       Te_dev = MAXVAL(Te_frac)
+         exceeds_limit = .false.
+         Te_frac = abs( (corep_ref(1)%te%value - corep_new_test(1)%te%value) / corep_ref(1)%te%value )
+         Te_dev = MAXVAL(Te_frac)
 
-       dTe_frac = abs( (corep_ref(1)%te%ddrho - corep_new_test(1)%te%ddrho) / (abs(corep_ref(1)%te%ddrho) + corep_ref(1)%te%value / rho_tor_max) )
-       dTe_dev = MAXVAL(dTe_frac)
+         dTe_frac = abs( (corep_ref(1)%te%ddrho - corep_new_test(1)%te%ddrho) / (abs(corep_ref(1)%te%ddrho) + corep_ref(1)%te%value / rho_tor_max) )
+         dTe_dev = MAXVAL(dTe_frac)
 
-       if (Te_dev .ge. delTe_limit) then 
-          write(*,"('At inner step ',I2,': Te deviates by ',F6.2,'%')") ii, Te_dev*100
-          exceeds_limit = .true.
-       end if
-       if (dTe_dev .ge. deldTe_limit) then 
-          write(*,"('At inner step ',I2,': dTe/drho deviates by ',F6.2,'%')") ii, dTe_dev*100
-          exceeds_limit = .true.
-       end if
+         if (Te_dev .ge. delTe_limit) then 
+            write(*,"('At inner step ',I2,': Te deviates by ',F6.2,'%')") ii, Te_dev*100
+            exceeds_limit = .true.
+         end if
+         if (dTe_dev .ge. deldTe_limit) then 
+            write(*,"('At inner step ',I2,': dTe/drho deviates by ',F6.2,'%')") ii, dTe_dev*100
+            exceeds_limit = .true.
+         end if
 
-       if (exceeds_limit) then
-          if (ii.eq.1) then
-             ! increase number of inner steps and try again (with smaller dtime)
-             inner_steps_cur = inner_steps_cur * inner_steps_incr_factor
-             if (inner_steps_cur > inner_steps_limit) then
-                print *,"!!!!!Exceeded inner stepping limit, stopping!!!!!"
-                write(*,"('inner_steps_cur=',I11,' and inner_steps_limit=',I11)") inner_steps_cur,inner_steps_limit
-                write(*,"('Inner dt=',F15.12,' max deviation Te=',F6.2,'% and dTe=',F6.2,'%')") tau/REAL(inner_steps_cur),Te_dev*100,dTe_dev*100
-                write(*,"('Te_frac = ',100(F6.2))") Te_frac
-                write(*,"('dTe_frac = ',100(F6.2))") dTe_frac
-# 444
+         if (exceeds_limit) then
+            if (ii.eq.1) then
+               ! increase number of inner steps and try again (with smaller dtime)
+               inner_steps_cur = inner_steps_cur * inner_steps_incr_factor
+               if (inner_steps_cur > inner_steps_limit) then
+                  print *,"!!!!!Exceeded inner stepping limit, stopping!!!!!"
+                  write(*,"('inner_steps_cur=',I11,' and inner_steps_limit=',I11)") inner_steps_cur,inner_steps_limit
+                  write(*,"('Inner dt=',F15.12,' max deviation Te=',F6.2,'% and dTe=',F6.2,'%')") tau/REAL(inner_steps_cur),Te_dev*100,dTe_dev*100
+                  write(*,"('Te_frac = ',100(F6.2))") Te_frac
+                  write(*,"('dTe_frac = ',100(F6.2))") dTe_frac
+  # 444
 
-                STOP
-             endif
-             dtime = tau/REAL(inner_steps_cur)
-             control_double_test(1) = dtime
-          else
-             ! stop the inner stepping
-             write(*,"('Stops advancing before inner step ',I2,' for total time = ',F9.6,': max deviation for Te = ',F6.2,'% and dTe/drho = ',F6.2,'%')") ii, ii*dtime, Te_dev*100, dTe_dev*100
-             EXIT
-          end if
-       else
-          ii = ii + 1
-          call copy_cpo(corep_new_test(1),corep_old_test(1))    !!! replace corep_in with corep_new in Te test
-          call copy_cpo(corep_new_test(1),corep_iter_test(1))
-       endif
-       
-    end do
+                  STOP
+               endif
+               dtime = tau/REAL(inner_steps_cur)
+               control_double_test(1) = dtime
+            else
+               ! stop the inner stepping
+               write(*,"('Stops advancing before inner step ',I2,' for total time = ',F9.6,': max deviation for Te = ',F6.2,'% and dTe/drho = ',F6.2,'%')") ii, ii*dtime, Te_dev*100, dTe_dev*100
+               EXIT
+            end if
+         else
+            ii = ii + 1
+            call copy_cpo(corep_new_test(1),corep_old_test(1))    !!! replace corep_in with corep_new in Te test
+            call copy_cpo(corep_new_test(1),corep_iter_test(1))
+         endif
+         
+      end do
+    call copy_cpo(corep_old_test,corep_out)
 
     deallocate(Te_frac)
     deallocate(dTe_frac)
+
+    else
+      call ITM_ETS(corep_old_test, corep_iter_test, corep_out, &
+              equil_in, equil_iter, coret_work,                        &
+              cores_in, corei_in,                                      &
+              control_integer, control_double_test,                    &
+              code_parameters)
+
+      dtime = tau
+    endif
+
     ! in all cases we want corep_old_test
-    call copy_cpo(corep_old_test,corep_out)
 
     write(*,"('Loop#',I4.4,': advanced with inner steps to a total step of ',F9.6,' (targeted tau=',F9.6,')')") init_step+cpt,(ii-1)*dtime,tau
     corep_out(1)%time = time_in + (ii-1)*dtime
