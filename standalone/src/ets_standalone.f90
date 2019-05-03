@@ -132,7 +132,7 @@ contains
     
     ! hard-coded, usually input of ets_wrapper and set by muscle cxa config file
 
-    tau = 0.001_8!control_double(1)
+    tau = 0.005_8!control_double(1)
     control_integer = (/ 4, 0, 0 /)
     control_double = (/ tau, 1.0_8, 1.0_8, 1.e0_8, 1.e-4_8, 1.0_8 /) 
 
@@ -314,6 +314,9 @@ contains
     deallocate(Te_frac)
     deallocate(dTe_frac)
 
+    write(*,"('Loop#',I4.4,': advanced with inner steps to a total step of ',F9.6,' (targeted tau=',F9.6,')')") init_step+cpt,(ii-1)*dtime,tau
+    corep_out(1)%time = time_in + (ii-1)*dtime
+
     else
       call ITM_ETS(corep_old_test, corep_iter_test, corep_out, &
               equil_in, equil_iter, coret_work,                        &
@@ -322,12 +325,11 @@ contains
               code_parameters)
 
       dtime = tau
+      corep_out(1)%time = time_in + dtime
     endif
 
     ! in all cases we want corep_old_test
 
-    write(*,"('Loop#',I4.4,': advanced with inner steps to a total step of ',F9.6,' (targeted tau=',F9.6,')')") init_step+cpt,(ii-1)*dtime,tau
-    corep_out(1)%time = time_in + (ii-1)*dtime
 
     write(cptstr,'(I4.4)') init_step+cpt
     cpt = cpt+1
