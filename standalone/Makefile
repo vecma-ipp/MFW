@@ -12,7 +12,8 @@ ifneq (${MAINMAKE},yes)
  export INC_CONSTANTS = ../ual/include/${SYS}/constants
  export LIB_CONSTANTS = ../ual/lib/${SYS}/constants
  export INC_XML = ../ual/include/${SYS}/xml
-
+ export LIB_XML = ../ual/lib/${SYS}/xml
+ 
  export DATAVERSION = 4.10b.10
 
  include ../config
