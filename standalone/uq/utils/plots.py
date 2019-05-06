@@ -93,7 +93,7 @@ def plot_stats_bis(x, stat, xlabel, ylabel, ftitle, fname=None):
     #plt.close()
 
 # TODO: generic plots (here for 4 params)
-def plot_sobols(x, sobols, params):
+def plot_sobols_4(x, sobols, params):
     plt.switch_backend('agg')
 
     s1 = sobols[params[0]]
@@ -123,6 +123,28 @@ def plot_sobols(x, sobols, params):
 
     fig.suptitle('First-Order Sobol indices')
     fig.savefig('sobols.png')
+    plt.close(fig)
+
+def plot_sobols(x, sobols, params):
+    plt.switch_backend('agg')
+
+    s1 = sobols[params[0]]
+    s2 = sobols[params[1]]
+
+    fig, axs = plt.subplots(nrows=1, ncols=2, sharex=True)
+
+    ax = axs[0]
+    ax.plot(x, s1)
+    ax.set_title(r'$T_e(\||\rho_{tor}\||=0.)$')
+
+    #ax.locator_params(nbins=4)
+
+    ax = axs[1]
+    ax.plot(x, s2)
+    ax.set_title(r'$T_e(\||\rho_{tor}\||=1.)$')
+
+    fig.suptitle('First-Order Sobol indices')
+    fig.savefig('loop_sobols.png')
     plt.close(fig)
 
     #plt.show()

@@ -1,7 +1,7 @@
 ! -*- coding: UTF-8 -*- 
-!> @brief  The code to run UQ script ets_test. It concerns the transport model
+!> @brief  run UQ for the loop:  ETS + Update EQ + CHEASE + BOHMGB
 
-program ets_run
+program loop_run
 
 use allocate_deallocate
 
@@ -20,16 +20,32 @@ use write_structures, only: open_write_file,  &
 
 use deallocate_structures, only: deallocate_cpo
 
+use copy_structures, only: copy_cpo
+
 use ets_standalone,         only: ets_cpo
 use equilupdate_standalone, only: equilupdate2cpo
+use chease_standalone,      only: chease_cpo
+use bohmgb_standalone,      only: bohmgb_cpo
 
 use csv_module
 
 implicit none
   
-  ! INPUTS (given by command arguments)
-  character(len=128) :: cpo_dir  ! Path to the folder containing CPO files for ets
-  character(len=128) :: in_fname ! NML file containing uncertain parameters values
+  ! INPUT: Path to the folder containing CPO files
+  character(len=128) :: cpo_dir 
+  ! INPUT: nml file containing uncertain parameters values
+  character(len=128) :: in_fname   
+
+  ! Uncertain parameters: 
+  ! Initial conditions: Te in the Eadge and Center
+  real(kind=8) :: Te_0, Te_1
+  
+  ! Output file contraining values of interset (te, ti, pressure ...)
+  character(len=128) :: out_file
+  type(csv_file)     :: csv_out_file
+
+  ! LOOP paramaters
+  integer, parameter :: STEPS = 50
   
   ! CPO file names
   character(len=128) :: corep_in_file 
@@ -39,38 +55,32 @@ implicit none
   character(len=128) :: coret_in_file   
   character(len=128) :: toroidf_in_file
   character(len=128) :: corep_out_file  
+  character(len=128) :: equil_up_file  
   character(len=128) :: equil_out_file  
 
   ! CPO structures 
-  type (type_coreprof)   , pointer :: corep(:)     => NULL()
-  type (type_equilibrium), pointer :: equil(:)     => NULL()
-  type (type_coretransp) , pointer :: coret(:)     => NULL()
-  type (type_coresource) , pointer :: cores(:)     => NULL()
-  type (type_coreimpur)  , pointer :: corei(:)     => NULL()
-  type (type_toroidfield), pointer :: toroidf(:)   => NULL()
+  type (type_coreprof)   , pointer :: corep_in(:)   => NULL()
+  type (type_equilibrium), pointer :: equil_in(:)   => NULL()
+  type (type_coretransp) , pointer :: coret_in(:)   => NULL()
+  type (type_coresource) , pointer :: cores_in(:)   => NULL()
+  type (type_coreimpur)  , pointer :: corei_in(:)   => NULL()
+  type (type_toroidfield), pointer :: toroidf_in(:) => NULL()
+
+  type (type_coreprof)   , pointer :: corep_old(:) => NULL()
   type (type_coreprof)   , pointer :: corep_new(:) => NULL()
-  type (type_equilibrium), pointer :: equil_new(:) => NULL()
+  type (type_coreprof)   , pointer :: corep_ets(:) => NULL()
   
-  ! Uncertain parameters
-  !real(kind=8), allocatable, dimension(:) :: params 
-  real(kind=8) :: D1, D2, D3, D4 
-  
-  ! Output file contraining values of interset (te, ti, pressure ...)
-  character(len=128) :: out_file
-  type(csv_file)     :: csv_out_file
+  type (type_equilibrium), pointer :: equil_up(:)  => NULL()
+  type (type_equilibrium), pointer :: equil_chease(:) => NULL()
 
-  ! Other local variables  
-  integer :: ios, i, n_data, n_outputs
+  type(type_coretransp), pointer :: coret_bohmgb(:) => null()
+  
+  ! Other variables
+  integer :: ios, it, i, n_outputs, n_data
   logical :: infile_status, outfile_status 
-
-  real(8) :: x(101)
-  real(8) :: y(101)
-  real(8) :: w(101)
-  real(8), allocatable :: cx(:)
-  real(8) , allocatable:: cy(:)
-  real(8) , allocatable:: t(:)
-  
-  ! ...
+  character(4)  :: itstr
+ 
+    ! ...
   if (command_argument_count() /=2) then
     write(*,*) "ERROR: exactly 2 input arguments are required"
   STOP
@@ -85,45 +95,43 @@ implicit none
     stop
   end if
  
-  ! Read uncertain paramters (cf. inputs/ets.template) 
-  namelist /ets_input_file/  D1, D2, D3, D4, &
+  ! Read uncertain paramters (cf. inputs/ic.template) 
+  namelist /loop_input_file/  Te_0, Te_1, &
                            & out_file  
- 
-  open(unit=20, file=trim(in_fname))
-  read(20, ets_input_file)
   
-  ! CPO files
+  open(unit=20, file=trim(in_fname))
+  read(20, loop_input_file)
+  
+  ! Read the Path to CPO dir from the consol 
   call get_command_argument(1, cpo_dir)
   
+  ! INPUT CPO files
   corep_in_file   = trim(cpo_dir) // "/ets_coreprof_in.cpo"
   equil_in_file   = trim(cpo_dir) // "/ets_equilibrium_in.cpo"
   cores_in_file   = trim(cpo_dir) // "/ets_coresource_in.cpo"
   corei_in_file   = trim(cpo_dir) // "/ets_coreimpur_in.cpo"
-  coret_in_file   = trim(cpo_dir) // "/ets_coretransp_in.cpo"
+  coret_in_file   = trim(cpo_dir) //  "/ets_coretransp_in.cpo"
   toroidf_in_file = trim(cpo_dir) // "/ets_toroidfield_in.cpo"
   
-  corep_out_file  = "ets_coreprof_out.cpo"
-  equil_out_file  = "ets_equilibrium_up.cpo"
-  
   ! Allocate CPO strutures  
-  allocate(corep(1))
-  allocate(equil(1))
-  allocate(coret(1))
-  allocate(cores(1))
-  allocate(corei(1))
-  allocate(toroidf(1))
-  
-  allocate(corep_new(1))
-  allocate(equil_new(1))
-  
-  ! Read CPO file and write corresponding structures   
+  allocate(corep_in(1))
+  allocate(equil_in(1))
+  allocate(coret_in(1))
+  allocate(cores_in(1))
+  allocate(corei_in(1))
+  allocate(toroidf_in(1))
+
+  ! Read CPO files and write corresponding structures   
   open (unit = 10, file = corep_in_file, &
        status = 'old', form = 'formatted', &
        action = 'read', iostat = ios)
   if (ios == 0) then
      close (10)
      call open_read_file(10, corep_in_file)
-     call read_cpo(corep(1), 'coreprof' )
+     call read_cpo(corep_in(1), 'coreprof' )
+     ! Update the initial conditions
+     corep_in(1)%te%value(1)   = Te_0
+     corep_in(1)%te%value(100) = Te_1
      call close_read_file
   else
      print *,"ERROR. CPO file not found:",corep_in_file
@@ -136,7 +144,7 @@ implicit none
   if (ios == 0) then
      close (11)
      call open_read_file(11, equil_in_file )
-     call read_cpo(equil(1), 'equilibrium' )
+     call read_cpo(equil_in(1), 'equilibrium' )
      call close_read_file
   else
      print *,"CPO file not found:",equil_in_file
@@ -149,12 +157,7 @@ implicit none
   if (ios == 0) then
      close (12)
      call open_read_file(12, coret_in_file)
-     call read_cpo(coret(1), 'coretransp')
-     ! Update the transport coefficients
-     coret(1)%values(1)%te_transp%diff_eff(1)=D1
-     coret(1)%values(1)%te_transp%diff_eff(2)=D2
-     coret(1)%values(1)%te_transp%diff_eff(3)=D3
-     coret(1)%values(1)%te_transp%diff_eff(4)=D4
+     call read_cpo(coret_in(1), 'coretransp')
      call close_read_file
   else
      print *,"CPO file not found:",coret_in_file
@@ -167,7 +170,7 @@ implicit none
   if (ios == 0) then
      close (13)
      call open_read_file(13, cores_in_file )
-     call read_cpo(cores(1), 'coresource' )
+     call read_cpo(cores_in(1), 'coresource' )
      call close_read_file
   else
      print *,"CPO file not found:",cores_in_file
@@ -180,7 +183,7 @@ implicit none
   if (ios == 0) then
      close (14)
      call open_read_file(14, corei_in_file )
-     call read_cpo(corei(1), 'coreimpur' )
+     call read_cpo(corei_in(1), 'coreimpur' )
      call close_read_file
   else
      print *,"CPO file not found:",corei_in_file
@@ -193,31 +196,63 @@ implicit none
   if (ios == 0) then
      close (15)
      call open_read_file(15, toroidf_in_file )
-     call read_cpo(toroidf(1), 'toroidfield' )
+     call read_cpo(toroidf_in(1), 'toroidfield' )
      call close_read_file
   else
      print *,"CPO file not found:",toroidf_in_file
      STOP
   end if 
-
-  ! Call ets_standalone and update the equibrium
-  call ets_cpo(corep, equil, coret, cores, corei, corep_new)
-  call equilupdate2cpo(corep_new, toroidf, equil, equil_new)
   
-  ! ====== UQ for ETS
-  ! To collect outputs data, the quantity of interest is Te
-  n_data    = size(equil_new(1)%profiles_1d%pressure)
+  ! Loop: ETS - CHEASE - BOHNGB
+  allocate(corep_old(1))
+  allocate(corep_ets(1))
+  allocate(equil_chease(1))
+  allocate(coret_bohmgb(1))
+
+  call copy_cpo(corep_in(1), corep_ets(1))
+  call copy_cpo(equil_in(1), equil_chease(1))
+  call copy_cpo(coret_in(1), coret_bohmgb(1))
+
+  do it=1, STEPS
+    write(itstr,'(I4.4)') it
+    print *,"**** iteration = "//itstr//" ****"
+
+    ! ETS
+    call copy_cpo(corep_ets(1),corep_old(1))
+    call deallocate_cpo(corep_ets)
+    nullify(corep_ets)
+    call ets_cpo(corep_old, equil_chease, coret_bohmgb, cores_in, corei_in, corep_ets)
+
+    ! EQUILUPDATE
+    call deallocate_cpo(equil_up)
+    nullify(equil_up)
+    call equilupdate2cpo(corep_ets, toroidf_in, equil_chease, equil_up)
+
+    ! CHEASE
+    call deallocate_cpo(equil_chease)
+    nullify(equil_chease)
+    call chease_cpo(equil_up, equil_chease)
+
+    ! BOHMGB
+    call deallocate_cpo(coret_bohmgb)
+    nullify(coret_bohmgb)
+    call bohmgb_cpo(equil_chease, corep_ets, coret_bohmgb)
+
+  end do
+
+  ! UQ Analysis: collect outputs data, the quantity of interest is Te
+  n_data    = 100 
   n_outputs = 1 
   ! Open the CSV output file
   call csv_out_file%open(out_file, n_cols=n_outputs, status_ok=outfile_status)
 
   ! Add headers
-  call csv_out_file%add('p')
+  call csv_out_file%add('te')
   call csv_out_file%next_row()
   
   ! Add data
   do i=1, n_data
-    call csv_out_file%add(equil_new(1)%profiles_1d%pressure(i))
+    call csv_out_file%add(corep_ets(1)%te%value(i))
     call csv_out_file%next_row()
   end do
 
@@ -225,13 +260,16 @@ implicit none
   call csv_out_file%close(outfile_status)
 
   ! CPO deallocations
-  call deallocate_cpo(equil_new)
-  call deallocate_cpo(corep_new)  
-  call deallocate_cpo(toroidf)
-  call deallocate_cpo(corei)
-  call deallocate_cpo(cores)
-  call deallocate_cpo(coret)  
-  call deallocate_cpo(equil)
-  call deallocate_cpo(corep)
+  call deallocate_cpo(corep_in)
+  call deallocate_cpo(corep_old)
+  call deallocate_cpo(corep_ets)
+  call deallocate_cpo(coret_in)
+  call deallocate_cpo(coret_bohmgb)
+  call deallocate_cpo(equil_in)
+  call deallocate_cpo(equil_up)
+  call deallocate_cpo(equil_chease)
+  call deallocate_cpo(cores_in)
+  call deallocate_cpo(corei_in)
+  call deallocate_cpo(toroidf_in)
  
-end program ets_run
+end program loop_run

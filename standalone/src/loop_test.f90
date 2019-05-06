@@ -12,8 +12,8 @@ program loop
   !character(len=*), parameter :: data_path = './'
   character(len=128) :: data_path
 
-  integer, parameter :: STEPS = 100
-  logical, parameter :: TIMETRACE = .true.
+  integer, parameter :: STEPS = 50
+  logical, parameter :: TIMETRACE = .FALSE.
 
   type(type_coreprof), pointer :: corep_in(:), corep_old(:) => null(), corep_ets(:) => null()
   type(type_coretransp), pointer :: coret_in(:), coret_bohmgb(:) => null()

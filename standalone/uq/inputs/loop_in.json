@@ -1,0 +1,14 @@
+{
+    "app": {
+      "input_encoder":  "generic_template",
+      "encoder_delimiter": "#",
+      "output_decoder": "csv",
+      "template":       "inputs/loop.template",
+      "input_filename": "loop_input.nml"
+    },
+    "params": {
+      "Te_0": {"type": "real", "min": "0.0", "max": "10000.0", "default": "1.0"},
+      "Te_1": {"type": "real", "min": "0.0", "max": "10000.0", "default": "1.0"},
+      "out_file": {"type": "str", "default": "te_output.csv"}
+    }
+}
