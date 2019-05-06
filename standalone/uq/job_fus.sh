@@ -19,4 +19,4 @@
 #SBATCH --time=2:00:00
 
 # Run the program:
-srun python fus_test.py  > fus_test.log
+srun python loop_test.py  > loop_test.log

@@ -218,7 +218,7 @@ implicit none
     print *,"**** iteration = "//itstr//" ****"
 
     ! ETS
-    call copy_cpo(corep_ets(1),corep_old(1))
+    call copy_cpo(corep_ets(1), corep_old(1))
     call deallocate_cpo(corep_ets)
     nullify(corep_ets)
     call ets_cpo(corep_old, equil_chease, coret_bohmgb, cores_in, corei_in, corep_ets)

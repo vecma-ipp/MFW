@@ -20,7 +20,7 @@ def format_exponent(ax, axis='y'):
         verticalalignment='top'
 
 # Statistical Moments
-def plot_stats(x, stat, pctl, xlabel, ylabel, ftitle, fname=None):
+def plot_stats_bis(x, stat, pctl, xlabel, ylabel, ftitle, fname=None):
     mean = stat["mean"]
     var  = stat["var"]
     p10 = pctl['p10']
@@ -57,7 +57,7 @@ def plot_stats(x, stat, pctl, xlabel, ylabel, ftitle, fname=None):
     #plt.close()
 
 # Statistical Moments (+- deviation)
-def plot_stats_bis(x, stat, xlabel, ylabel, ftitle, fname=None):
+def plot_stats(x, stat, xlabel, ylabel, ftitle, fname=None):
     mean = np.array(stat["mean"])
     var  = stat["var"]
     std = np.array(stat['std'])

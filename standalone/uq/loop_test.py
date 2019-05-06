@@ -53,8 +53,8 @@ corep_file = common_dir + "ets_coreprof_in.cpo"
 corep = read(corep_file, "coreprof")
 te_0 = corep.te.value[0]
 te_1 = corep.te.value[-1]
-dist_0 = cp.Normal(te_0, 0.2*te_0)
-dist_1 = cp.Normal(te_1, 0.2*te_1)
+dist_0 = cp.Normal(te_0, 0.25*te_0)
+dist_1 = cp.Normal(te_1, 0.25*te_1)
 print('>>>>> T0 and T1 = ',te_0, te_1)
 
 # Define the parameters dictionary
@@ -105,8 +105,8 @@ print('- TOTAL : ', (end_time - start_time)/60.)
 #  Graphics for descriptive satatistics
 rho_nom = corep.rho_tor_norm
 
-plots.plot_stats(rho_nom, stat, pctl,
-                 xlabel=r'$\rho_{tor} ~ [m]$', ylabel=r'$T_e \rangle$',
+plots.plot_stats(rho_nom, stat,
+                 xlabel=r'$\rho_{tor} ~ [m]$', ylabel=r'$T_e$',
                  ftitle='UQP1. ETS-CHEASE-BOHMGB output: Te profile', fname='te_loop.png')
 
-plots.plot_sobols(rho, sobols, uncert_params)
+plots.plot_sobols(rho_nom, sobols, uncert_params)
