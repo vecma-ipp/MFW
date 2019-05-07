@@ -16,7 +16,7 @@
 #SBATCH --mail-user=ljala@rzg.mpg.de
 #
 # Wall clock limit:
-#SBATCH --time=2:00:00
+#SBATCH --time=3:00:00
 
 # Run the program:
 srun python loop_test.py  > loop_test.log

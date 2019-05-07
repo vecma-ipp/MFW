@@ -17,7 +17,7 @@ start_time = time.time()
 cpo_dir = os.path.abspath("../data/AUG_28906_5/BGB_GEM_SPREAD/4FT/")
 
 # Uncertain parameters: Initial conditions
-uncert_params = ["Te_0", "Te_1"]
+uncert_params = ["Te0", "Ti0"]
 
 # To store input/ouput files and Campaign directories
 tmp_dir = "/ptmp/ljala/"
@@ -30,8 +30,12 @@ input_json = "inputs/loop_in.json"
 output_json = os.path.join(tmp_dir, "out_loop.json")
 
 # Initialize Campaign object
-loop_campaign = uq.Campaign(state_filename=input_json, workdir=tmp_dir,
-                           default_campaign_dir_prefix='LOOP_Campaign_')
+loop_campaign = uq.Campaign(
+    name = 'loop_campaign',
+    state_filename=input_json,
+    workdir=tmp_dir,
+    default_campaign_dir_prefix='LOOP_Campaign_'
+)
 
 campaign_dir = loop_campaign.campaign_dir
 
@@ -51,15 +55,14 @@ os.system("cp " + cpo_dir + "/*.cpo " + common_dir)
 # Get uncertain parameters distrubutions
 corep_file = common_dir + "ets_coreprof_in.cpo"
 corep = read(corep_file, "coreprof")
-te_0 = corep.te.value[0]
-te_1 = corep.te.value[-1]
-dist_0 = cp.Normal(te_0, 0.25*te_0)
-dist_1 = cp.Normal(te_1, 0.25*te_1)
-print('>>>>> T0 and T1 = ',te_0, te_1)
+te0 = corep.te.boundary.value[0]
+ti0 = corep.ti.boundary.value[0][0]
+dist_1 = cp.Normal(te0, 0.2*te0)
+dist_2 = cp.Normal(ti0, 0.2*ti0)
 
 # Define the parameters dictionary
-loop_campaign.vary_param(uncert_params[0], dist=dist_0)
-loop_campaign.vary_param(uncert_params[1], dist=dist_1)
+loop_campaign.vary_param(uncert_params[0], dist=dist_1)
+loop_campaign.vary_param(uncert_params[1], dist=dist_2)
 
 # Create the sampler
 loop_sampler = uq.elements.sampling.PCESampler(loop_campaign)
@@ -77,7 +80,7 @@ t_loop = time.time() - t_loop
 
 # Aggregate the results from all runs.
 output_filename = loop_campaign.params_info['out_file']['default']
-output_columns = ['te']
+output_columns = ['te', 'ti']
 
 aggregate = uq.elements.collate.AggregateSamples( loop_campaign,
                                             output_filename=output_filename,
@@ -92,9 +95,11 @@ analysis = uq.elements.analysis.PCEAnalysis(loop_campaign, value_cols=output_col
 analysis.apply()
 
 # Results
-stat = analysis.statistical_moments('te')
-pctl = analysis.percentiles('te')
-sobols = analysis.sobol_indices('te', 'first_order')
+stat_te = analysis.statistical_moments('te')
+stat_ti = analysis.statistical_moments('ti')
+#pctl = analysis.percentiles('te')
+sobol_te = analysis.sobol_indices('te', 'first_order')
+sobol_ti = analysis.sobol_indices('ti', 'first_order')
 
 # Elapsed time
 end_time = time.time()
@@ -103,10 +108,27 @@ print('- LOOP  : ', t_loop/60.)
 print('- TOTAL : ', (end_time - start_time)/60.)
 
 #  Graphics for descriptive satatistics
-rho_nom = corep.rho_tor_norm
+rho = corep.rho_tor
+#equil_file = common_dir + 'ets_equilibrium_in.cpo'
+#equil = read(equil_file, 'equilibrium')
+#rho = equil.profiles_1d.rho_tor
 
-plots.plot_stats(rho_nom, stat,
+plots.plot_stats(rho, stat_te,
                  xlabel=r'$\rho_{tor} ~ [m]$', ylabel=r'$T_e$',
-                 ftitle='UQP1. ETS-CHEASE-BOHMGB output: Te profile', fname='te_loop.png')
+                 ftitle='UQP1. ETS-CHEASE-BOHMGB output: Te profile',
+                 fname='te_loop.png')
 
-plots.plot_sobols(rho_nom, sobols, uncert_params)
+#plots.plot_sobols(rho, sobol_te, uncert_params,
+#                  ftitle='QoI: Te. First-Order Sobol indices: UQ in init conditions of Te and Ti ',
+#                  fname='te_sob_loop.png')
+#
+plots.plot_sobols(rho, sobol_te, sobol_ti, uncert_params)
+
+plots.plot_stats(rho, stat_ti,
+                 xlabel=r'$\rho_{tor} ~ [m]$', ylabel=r'$T_i$',
+                 ftitle='UQP1. ETS-CHEASE-BOHMGB output: Ti profile',
+                 fname='ti_loop.png')
+
+#plots.plot_sobols(rho, sobol_ti, uncert_params,
+#                  ftitle='QoI: Ti. First-Order Sobol indices: UQ in init conditions of Te and Ti ',
+#                  fname='ti_sob_loop.png')

@@ -38,7 +38,7 @@ implicit none
 
   ! Uncertain parameters: 
   ! Initial conditions: Te in the Eadge and Center
-  real(kind=8) :: Te_0, Te_1
+  real(kind=8) :: Te0, Ti0
   
   ! Output file contraining values of interset (te, ti, pressure ...)
   character(len=128) :: out_file
@@ -46,6 +46,7 @@ implicit none
 
   ! LOOP paramaters
   integer, parameter :: STEPS = 50
+  logical, parameter :: TIMETRACE = .FALSE.
   
   ! CPO file names
   character(len=128) :: corep_in_file 
@@ -70,7 +71,7 @@ implicit none
   type (type_coreprof)   , pointer :: corep_new(:) => NULL()
   type (type_coreprof)   , pointer :: corep_ets(:) => NULL()
   
-  type (type_equilibrium), pointer :: equil_up(:)  => NULL()
+  type (type_equilibrium), pointer :: equil_update(:)  => NULL()
   type (type_equilibrium), pointer :: equil_chease(:) => NULL()
 
   type(type_coretransp), pointer :: coret_bohmgb(:) => null()
@@ -96,11 +97,10 @@ implicit none
   end if
  
   ! Read uncertain paramters (cf. inputs/ic.template) 
-  namelist /loop_input_file/  Te_0, Te_1, &
-                           & out_file  
+  namelist /loop_input_file/  Te0, Ti0, out_file  
   
-  open(unit=20, file=trim(in_fname))
-  read(20, loop_input_file)
+  open(unit=9, file=trim(in_fname))
+  read(9, loop_input_file)
   
   ! Read the Path to CPO dir from the consol 
   call get_command_argument(1, cpo_dir)
@@ -129,9 +129,9 @@ implicit none
      close (10)
      call open_read_file(10, corep_in_file)
      call read_cpo(corep_in(1), 'coreprof' )
-     ! Update the initial conditions
-     corep_in(1)%te%value(1)   = Te_0
-     corep_in(1)%te%value(100) = Te_1
+     ! Update the initial conditions (Te in rho_tor_norm=1)
+     corep_in(1)%te%boundary%value(1) = Te0
+     corep_in(1)%ti%boundary%value(1,1) = Ti0
      call close_read_file
   else
      print *,"ERROR. CPO file not found:",corep_in_file
@@ -223,36 +223,63 @@ implicit none
     nullify(corep_ets)
     call ets_cpo(corep_old, equil_chease, coret_bohmgb, cores_in, corei_in, corep_ets)
 
+    if (TIMETRACE) then
+      call open_write_file(20,'ets_coreprof_'//itstr//'.cpo')
+      call write_cpo(corep_ets(1),'coreprof')
+      call close_write_file
+    end if
+
     ! EQUILUPDATE
-    call deallocate_cpo(equil_up)
-    nullify(equil_up)
-    call equilupdate2cpo(corep_ets, toroidf_in, equil_chease, equil_up)
+    call deallocate_cpo(equil_update)
+    nullify(equil_update)
+    call equilupdate2cpo(corep_ets, toroidf_in, equil_chease, equil_update)
+
+    if (TIMETRACE) then
+      call open_write_file(21,'equilupdate_equilibrium_'//itstr//'.cpo')
+      call write_cpo(equil_update(1),'equilibrium')
+      call close_write_file
+    end if
 
     ! CHEASE
     call deallocate_cpo(equil_chease)
     nullify(equil_chease)
-    call chease_cpo(equil_up, equil_chease)
+    call chease_cpo(equil_update, equil_chease)
+
+    if (TIMETRACE) then
+      call open_write_file(22,'chease_equilibrium_'//itstr//'.cpo')
+      call write_cpo(equil_chease(1),'equilibrium')
+      call close_write_file
+    end if
 
     ! BOHMGB
     call deallocate_cpo(coret_bohmgb)
     nullify(coret_bohmgb)
     call bohmgb_cpo(equil_chease, corep_ets, coret_bohmgb)
 
+    if (TIMETRACE) then
+      call open_write_file(23,'bohmgb_coretransp_'//itstr//'.cpo')
+      call write_cpo(coret_bohmgb(1),'coretransp')
+      call close_write_file
+    end if
+
   end do
 
   ! UQ Analysis: collect outputs data, the quantity of interest is Te
   n_data    = 100 
-  n_outputs = 1 
+  n_outputs = 2 
   ! Open the CSV output file
   call csv_out_file%open(out_file, n_cols=n_outputs, status_ok=outfile_status)
 
   ! Add headers
   call csv_out_file%add('te')
+  call csv_out_file%add('ti')
   call csv_out_file%next_row()
   
   ! Add data
   do i=1, n_data
     call csv_out_file%add(corep_ets(1)%te%value(i))
+    call csv_out_file%add(corep_ets(1)%ti%value(i, 1))
+    !call csv_out_file%add(equil_chease(1)%profiles_1d%pressure(i))
     call csv_out_file%next_row()
   end do
 
@@ -266,7 +293,7 @@ implicit none
   call deallocate_cpo(coret_in)
   call deallocate_cpo(coret_bohmgb)
   call deallocate_cpo(equil_in)
-  call deallocate_cpo(equil_up)
+  call deallocate_cpo(equil_update)
   call deallocate_cpo(equil_chease)
   call deallocate_cpo(cores_in)
   call deallocate_cpo(corei_in)

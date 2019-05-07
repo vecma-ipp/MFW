@@ -53,7 +53,7 @@ implicit none
   
   ! Uncertain parameters
   !real(kind=8), allocatable, dimension(:) :: params 
-  real(kind=8) :: D1, D2, D3, D4 
+  real(kind=8) :: D1, D2, D3, D4, Te0 
   
   ! Output file contraining values of interset (te, ti, pressure ...)
   character(len=128) :: out_file
@@ -63,13 +63,6 @@ implicit none
   integer :: ios, i, n_data, n_outputs
   logical :: infile_status, outfile_status 
 
-  real(8) :: x(101)
-  real(8) :: y(101)
-  real(8) :: w(101)
-  real(8), allocatable :: cx(:)
-  real(8) , allocatable:: cy(:)
-  real(8) , allocatable:: t(:)
-  
   ! ...
   if (command_argument_count() /=2) then
     write(*,*) "ERROR: exactly 2 input arguments are required"
@@ -86,7 +79,7 @@ implicit none
   end if
  
   ! Read uncertain paramters (cf. inputs/ets.template) 
-  namelist /ets_input_file/  D1, D2, D3, D4, &
+  namelist /ets_input_file/  Te0, &
                            & out_file  
  
   open(unit=20, file=trim(in_fname))
@@ -124,6 +117,8 @@ implicit none
      close (10)
      call open_read_file(10, corep_in_file)
      call read_cpo(corep(1), 'coreprof' )
+     corep(1)%te%boundary%value(1)   = Te0
+     print*, '=======>>>> ti = ',corep(1)%ti%value(:, 1)
      call close_read_file
   else
      print *,"ERROR. CPO file not found:",corep_in_file
@@ -151,10 +146,10 @@ implicit none
      call open_read_file(12, coret_in_file)
      call read_cpo(coret(1), 'coretransp')
      ! Update the transport coefficients
-     coret(1)%values(1)%te_transp%diff_eff(1)=D1
-     coret(1)%values(1)%te_transp%diff_eff(2)=D2
-     coret(1)%values(1)%te_transp%diff_eff(3)=D3
-     coret(1)%values(1)%te_transp%diff_eff(4)=D4
+     !coret(1)%values(1)%te_transp%diff_eff(1)=D1
+     !coret(1)%values(1)%te_transp%diff_eff(2)=D2
+     !coret(1)%values(1)%te_transp%diff_eff(3)=D3
+     !coret(1)%values(1)%te_transp%diff_eff(4)=D4
      call close_read_file
   else
      print *,"CPO file not found:",coret_in_file
@@ -206,18 +201,18 @@ implicit none
   
   ! ====== UQ for ETS
   ! To collect outputs data, the quantity of interest is Te
-  n_data    = size(equil_new(1)%profiles_1d%pressure)
+  n_data    = 100!size(equil_new(1)%profiles_1d%pressure)
   n_outputs = 1 
   ! Open the CSV output file
   call csv_out_file%open(out_file, n_cols=n_outputs, status_ok=outfile_status)
 
   ! Add headers
-  call csv_out_file%add('p')
+  call csv_out_file%add('te')
   call csv_out_file%next_row()
   
   ! Add data
   do i=1, n_data
-    call csv_out_file%add(equil_new(1)%profiles_1d%pressure(i))
+    call csv_out_file%add(corep_new(1)%te%value(i))
     call csv_out_file%next_row()
   end do
 

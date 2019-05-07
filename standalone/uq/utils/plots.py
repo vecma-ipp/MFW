@@ -125,26 +125,55 @@ def plot_sobols_4(x, sobols, params):
     fig.savefig('sobols.png')
     plt.close(fig)
 
-def plot_sobols(x, sobols, params):
+def plot_sobols(x, sobols1, sobols2, params):
+    plt.switch_backend('agg')
+
+    s1 = sobols1[params[0]]
+    s2 = sobols1[params[1]]
+    s3 = sobols2[params[0]]
+    s4 = sobols2[params[1]]
+
+    fig, axs = plt.subplots(nrows=1, ncols=2, sharex=True)
+
+    ax = axs[0]
+    ax.plot(x, s1, label='Te Init cond.')
+    ax.plot(x, s2, label='Ti Init cond.')
+    ax.set_xlabel(r'$\rho_{tor} ~ [m]$')
+
+    ax.set_ylabel(r'$1^{st} ~ Sobol$')
+    ax.set_title('Sobols for Te')
+
+    ax = axs[1]
+    ax.plot(x, s3, label='Te Init cond.')
+    ax.plot(x, s4, label='Ti Init cond.')
+    ax.set_title('Sobols for Ti')
+
+    ax.set_xlabel(r'$\rho_{tor} ~ [m]$')
+    plt.legend()
+
+    fig.suptitle('First-Order Sobol indices')
+    fig.savefig('Temp_sobols.png')
+    plt.close(fig)
+
+def plot_sobols_bis(x, sobols, params, ftitle, fname):
     plt.switch_backend('agg')
 
     s1 = sobols[params[0]]
     s2 = sobols[params[1]]
 
-    fig, axs = plt.subplots(nrows=1, ncols=2, sharex=True)
+    plt.switch_backend('agg')
+    fig = plt.figure(figsize=(12,9))
 
-    ax = axs[0]
-    ax.plot(x, s1)
-    ax.set_title(r'$T_e(\||\rho_{tor}\||=0.)$')
+    ax = fig.add_subplot(111)
 
-    #ax.locator_params(nbins=4)
+    ax.plot(x, s1, label=r'$T_e$')
+    ax.plot(x, s2, label=r'$T_i$')
+    ax.set_xlabel(r'$\rho_{tor} ~ [m]$')
+    ax.set_ylabel(r'$1^{st} ~ Sobol$')
 
-    ax = axs[1]
-    ax.plot(x, s2)
-    ax.set_title(r'$T_e(\||\rho_{tor}\||=1.)$')
-
-    fig.suptitle('First-Order Sobol indices')
-    fig.savefig('loop_sobols.png')
+    ax.set_title(ftitle)
+    plt.legend()
+    fig.savefig(fname)
     plt.close(fig)
 
     #plt.show()
