@@ -266,18 +266,18 @@ implicit none
 
   ! UQ Analysis: collect outputs data, the quantity of interest is Te
   n_data    = 100 
-  n_outputs = 2 
+  n_outputs = 1 
   ! Open the CSV output file
   call csv_out_file%open(out_file, n_cols=n_outputs, status_ok=outfile_status)
 
   ! Add headers
-  call csv_out_file%add('te')
+  !call csv_out_file%add('te')
   call csv_out_file%add('ti')
   call csv_out_file%next_row()
   
   ! Add data
   do i=1, n_data
-    call csv_out_file%add(corep_ets(1)%te%value(i))
+    !call csv_out_file%add(corep_ets(1)%te%value(i))
     call csv_out_file%add(corep_ets(1)%ti%value(i, 1))
     !call csv_out_file%add(equil_chease(1)%profiles_1d%pressure(i))
     call csv_out_file%next_row()

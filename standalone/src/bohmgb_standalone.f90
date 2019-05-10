@@ -3,7 +3,7 @@ module bohmgb_standalone
   implicit none
 
   integer, save :: init_step             !initial step count
-  logical, save :: cus_ftubes = .false.  !Y/N on f.tubes customisa
+  logical, save :: cus_ftubes = .true.  !Y/N on f.tubes customisa
   integer, save :: nftubes = 4           !# of fluxtubes (customise)
 
 

@@ -125,7 +125,7 @@ def plot_sobols_4(x, sobols, params):
     fig.savefig('sobols.png')
     plt.close(fig)
 
-def plot_sobols(x, sobols1, sobols2, params):
+def plot_sobols_2(x, sobols1, sobols2, params):
     plt.switch_backend('agg')
 
     s1 = sobols1[params[0]]
@@ -152,10 +152,10 @@ def plot_sobols(x, sobols1, sobols2, params):
     plt.legend()
 
     fig.suptitle('First-Order Sobol indices')
-    fig.savefig('Temp_sobols.png')
+    fig.savefig('Temp_sobols_4ft.png')
     plt.close(fig)
 
-def plot_sobols_bis(x, sobols, params, ftitle, fname):
+def plot_sobols(x, sobols, params, ftitle, fname):
     plt.switch_backend('agg')
 
     s1 = sobols[params[0]]
@@ -166,8 +166,8 @@ def plot_sobols_bis(x, sobols, params, ftitle, fname):
 
     ax = fig.add_subplot(111)
 
-    ax.plot(x, s1, label=r'$T_e$')
-    ax.plot(x, s2, label=r'$T_i$')
+    ax.plot(x, s1, label=r'$T_e ~ bc$')
+    ax.plot(x, s2, label=r'$T_i ~ bc$')
     ax.set_xlabel(r'$\rho_{tor} ~ [m]$')
     ax.set_ylabel(r'$1^{st} ~ Sobol$')
 
