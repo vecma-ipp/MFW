@@ -1,3 +1,4 @@
+!> Module for curves approximation and evalution using non periodic splines.
 
 module splfit
 
@@ -127,7 +128,7 @@ contains
     real(8), dimension(:), intent(in) :: y
     character(*), intent(in) :: method
 
-    real(8), dimension(:), allocatable :: u
+    real(8), dimension(:) :: u
     real(8), dimension(:), allocatable :: di
     integer :: i, n, d
 
@@ -137,7 +138,6 @@ contains
       stop
     end if
     
-    allocate(u(n))
     allocate(di(n-1))
 
     if (method == "uniform") then
@@ -169,88 +169,113 @@ contains
         u(i) = u(i-1) + di(i-1)/d
       enddo
       
-     endif
+    endif
 
-     deallocate(di)
+    deallocate(di)
     return 
     
   end function sites
-!
-!  ! 
-!  ! .......................................................
-!  !> @brief    Curve fitting of a set of m points (coordinates are (x[i], y[i]) 
-!  !           using Least Squares approximation. The endpoints are interpolated.
-!  !>
-!  !> @param[in]  x,y     The coordinates of the 1D curve.
-!  !> @param[in]  n       The number of elements.
-!  !> @param[in]  p       spline degree 
-!  !> @param[in]  method  The parameterization method 
-!  !> @param[out]  t  The knots  method
-!  !> @param[out]  c  The control points.
-!  subroutine approximate_curve(x, y, n, p, method, t, c):
-!    implicit none
-!
-!    real(8), dimension(:), intent(in) :: x
-!    real(8), dimension(:), intent(in) :: y
-!    integer, intent(in) :: n
-!    integer, intent(in) :: k
-!    character(*), intent(in) :: method
-!
-!    real(8), dimension(:), allocatable, intent(out) :: t
-!    real(8), dimension(:, :), allocatable, intent(out) :: c
-!
-!    ! The parameter values
-!    u = sites(x, y, method)
-!
-!    ! Knots vector   
-!    allocate(t(n+2*p))
-!    do i =1, p+1
-!      t(i) = 0.
-!      t(n+p+i-1) = 1.
-!    enddo
-!    do i = 1, n-2
-!      t(p+i+1) = 1.0*i/(n-1)
-!    enddo
-!
-!    ! Number of vertices and control points
-!    nv = size(x)
-!    nc = n+p-1
-!
-!    ! Collocation matrix of size (nc, nv)
-!    collocation_matrix(nv, p, t, u, Mc)
-!
-!    ! Get matrix and rhs for Least Squares Linear system
-!    ! M = Dt*D (D = Mc(1:nv-1, 1:nc-1)
-!    ! Removed lines and rows correspond to the interpolated endpoints
-!    ! TODO optimize loops
-!    do i=1, nc-1
-!      do j=1, nc-1
-!        do k=1, nv-1
-!          M(i,j) = M(i,j) + Mc(k,i)*Mc(k,j)
-!        enddo
-!      enddo
-!    enddo  
-!
-!    allocate(b(nc-2, 2))
-!    allocate(z(nv-2, 2))
-!
-!    do i=2, nv-1
-!      z(i-1, 1) = x(i) - Mc(i,1)*x(1) - Mc(i,nc)*x(m)
-!      z(i-1, 2) = y(i) - Mc(i,1)*y(1) - Mc(i,nc)*y(m)
-!    enddo
-!
-!    b(:, 1) = matmul(Mc(1:nc-1, 1:nv-1), z(:, 1))
-!    b(:, 2) = matmul(Mc(1:nc-1, 1:nv-1), z(:, 2))
-! 
-!    ! ... Solve linear syestem
-!    M    = csc_matrix(M)
-!    M_op = splu(M)
-!    C    =  M_op.solve(B)
-!
-!    ! ...  Control points
-!    C = np.array([[x[0], y[0]]] + list(C) + [[x[-1], y[-1]]])
-!  
-!  subroutine approximate_curve
 
-# ...
+  !> @brief  Curve fitting of a set of m points (coordinates are (x[i], y[i]) 
+  !          using Least Squares approximation. The endpoints are interpolated.
+  !>
+  !> @param[in]  X,Y     The coordinates of the 1D curve
+  !> @param[in]  ne      The number of elements
+  !> @param[in]  p       Spline degree 
+  !> @param[in]  method  The parameterization method 
+  !> @param[out] T       The Knots  vector
+  !> @param[out] C       The control points
+  subroutine approximate_curve(X, Y, ne, p, method, T, C):
+    implicit none
+
+    real(8), dimension(:), intent(in) :: X
+    real(8), dimension(:), intent(in) :: Y
+    integer, intent(in) :: ne
+    integer, intent(in) :: p
+    character(*), intent(in) :: method
+
+    real(8), dimension(:), allocatable, intent(out) :: T
+    real(8), dimension(:, :), allocatable, intent(out) :: C
+
+    real(8), dimension(:), allocatable :: u
+    real(8), dimension(:, :), allocatable :: N, M, R, B
+
+    integer, dimension(:), allocatable :: IPIV
+    integer :: info
+
+    ! Number of vertices and control points
+    nv = size(X)
+    nc = ne+p-1
+
+    ! The parameter values
+    allocate(u(nv))
+    u = sites(X, Y, method)
+
+    ! Knots vector   
+    allocate(T(ne+2*p))
+    do i =1, p+1
+      T(i) = 0.0
+      T(ne+p+i-1) = 1.0
+    enddo
+    do i = 1, ne-2
+      T(p+i+1) = 1.0*i/(ne-1)
+    enddo
+
+    ! Collocation matrix of size (nc, nv)
+    allocate(N(nc, nv))
+    call collocation_matrix(nv, p, T, u, N)
+
+    ! Get matrix and rhs for Least Squares Linear system
+    ! M = Dt*D (D = N(1:nv-1, 1:nc-1)
+    ! removed lines and rows correspond to the interpolated endpoints
+    allocate(M(nc-2, nc-2))
+    M = matmul(transpose(N(1:nv-1, 1:nc-1), N(1:nv-1, 1:nc-1))
+    
+    ! RHS
+    allocate(B(nc-2, 2))
+    allocate(R(nv-2, 2))
+
+    do i=2, nv-1
+      R(i-1, 1) = x(i) - N(i,1)*x(1) - N(i,nc)*x(m)
+      R(i-1, 2) = y(i) - N(i,1)*y(1) - N(i,nc)*y(m)
+    enddo
+
+    B(:, 1) = matmul(N(1:nc-1, 1:nv-1), R(:, 1))
+    B(:, 2) = matmul(N(1:nc-1, 1:nv-1), R(:, 2))
+
+    ! For  factorization
+    allocate(IPIV(nc-2))
+
+    ! Solve the linear syestem using  LAPACK
+    call DGESV(nc, 2, M, nc-2, IPIV, B, nc-2, info) 
+
+   ! Check for the exact singularity.
+    if( info.gt.0 ) then
+      write(*,*)'The diagonal element of the triangular factor of M,'
+      write(*,*)'U(',INFO,',',INFO,') is zero, so that'
+      write(*,*)'M is singular; the solution could not be computed.'
+      stop
+    end if
+
+    ! Control points
+    allocate(C(nc, 2))
+    
+    ! Interpolate endpoints
+    C(1,1) = X(1)
+    C(1,2) = Y(1)
+    C(nc,1) = X(nv)
+    C(nc,2) = Y(nv)
+    C(1:nc-1,1) = B(:,1)
+    C(1:nc-1,1) = B(:,2)
+
+    ! Dellocations
+    deallocate(u) 
+    deallocate(N) 
+    deallocate(M) 
+    deallocate(B) 
+    deallocate(R) 
+    deallocate(IPIV) 
+
+  subroutine approximate_curve
+
 end module splfit
