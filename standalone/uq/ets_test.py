@@ -51,11 +51,12 @@ os.system("cp " + cpo_dir + "/*.cpo " + common_dir)
 
 # Get uncertain parameters distrubutions
 coret_file = common_dir + "ets_coretransp_in.cpo"
-coret      = read(coret_file, "coretransp")
-list_dist  = [cp.Normal(diff_eff[i], 0.2*diff_eff[i]) for i in range(4)]
+coret = read(coret_file, "coretransp")
+diff_eff = coret.values[0].te_transp.diff_eff
+list_dist = [cp.Normal(diff_eff[i], 0.2*diff_eff[i]) for i in range(4)]
 
 # Define the parameters dictionary
-for i in range(n_params):
+for i in range(4):
     ets_campaign.vary_param(uncert_params[i], dist=list_dist[i])
 
 # Create the sampler

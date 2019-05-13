@@ -19,4 +19,5 @@
 #SBATCH --time=3:00:00
 
 # Run the program:
-srun python loop_test.py  > loop_test.log
+#srun python loop_test.py  > loop_test.log
+srun ../bin/DRACO/loop_src_run ../data/AUG_28906_5/BGB_GEM_SPREAD/4FT/ ets_input.nml

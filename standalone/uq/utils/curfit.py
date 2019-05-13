@@ -76,7 +76,9 @@ def test_approximation(cpo_dir):
     # Get the control points
     Px = tck_x[1][: n_elements + degree]
     Py = tck_y[1][: n_elements + degree]
-
+    print('>>> T = ', tck_x[0])
+    print(">>>> Cx = ", Px)
+    print(">>>> Cy = ", Py)
     # Evaluate spline
     # r_norm = [i/max(r) for i in r]
     r = np.linspace(0., 1., 200)

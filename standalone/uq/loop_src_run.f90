@@ -1,7 +1,8 @@
 ! -*- coding: UTF-8 -*- 
 !> @brief  run UQ for the loop:  ETS + Update EQ + CHEASE + BOHMGB
+!> Uncertainty in sources 
 
-program loop_run
+program loop_src_run
 
 use allocate_deallocate
 
@@ -26,6 +27,7 @@ use ets_standalone,         only: ets_cpo
 use equilupdate_standalone, only: equilupdate2cpo
 use chease_standalone,      only: chease_cpo
 use bohmgb_standalone,      only: bohmgb_cpo
+use sources_standalone, only: gaussian_source_cpo
 
 use csv_module
 
@@ -38,7 +40,7 @@ implicit none
 
   ! Uncertain parameters: 
   ! Initial conditions: Te in the Eadge and Center
-  real(kind=8) :: Te0, Ti0
+  real(kind=8) :: D1, D2, D3, D4
   
   ! Output file contraining values of interset (te, ti, pressure ...)
   character(len=128) :: out_file
@@ -46,7 +48,7 @@ implicit none
 
   ! LOOP paramaters
   integer, parameter :: STEPS = 50
-  logical, parameter :: TIMETRACE = .FALSE.
+  logical, parameter :: TIMETRACE = .TRUE.
   
   ! CPO file names
   character(len=128) :: corep_in_file 
@@ -97,7 +99,7 @@ implicit none
   end if
  
   ! Read uncertain paramters (cf. inputs/ic.template) 
-  namelist /loop_input_file/  Te0, Ti0, out_file  
+  namelist /loop_input_file/ D1, D2, D3, D4, out_file  
   
   open(unit=9, file=trim(in_fname))
   read(9, loop_input_file)
@@ -129,9 +131,6 @@ implicit none
      close (10)
      call open_read_file(10, corep_in_file)
      call read_cpo(corep_in(1), 'coreprof' )
-     ! Update the initial conditions (Te in rho_tor_norm=1)
-     corep_in(1)%te%boundary%value(1) = Te0
-     corep_in(1)%ti%boundary%value(1,1) = Ti0
      call close_read_file
   else
      print *,"ERROR. CPO file not found:",corep_in_file
@@ -164,18 +163,18 @@ implicit none
      STOP
   end if
   
-  open (unit = 13, file = cores_in_file, &
-       status = 'old', form = 'formatted', &
-       action = 'read', iostat = ios)
-  if (ios == 0) then
-     close (13)
-     call open_read_file(13, cores_in_file )
-     call read_cpo(cores_in(1), 'coresource' )
-     call close_read_file
-  else
-     print *,"CPO file not found:",cores_in_file
-     STOP
-  end if
+!  open (unit = 13, file = cores_in_file, &
+!       status = 'old', form = 'formatted', &
+!       action = 'read', iostat = ios)
+!  if (ios == 0) then
+!     close (13)
+!     call open_read_file(13, cores_in_file )
+!     call read_cpo(cores_in(1), 'coresource' )
+!     call close_read_file
+!  else
+!     print *,"CPO file not found:",cores_in_file
+!     STOP
+!  end if
   
   open (unit = 14, file = corei_in_file, &
        status = 'old', form = 'formatted', &
@@ -201,7 +200,10 @@ implicit none
   else
      print *,"CPO file not found:",toroidf_in_file
      STOP
-  end if 
+  end if
+  
+  ! SOURCES 
+  call gaussian_source_cpo(corep_in, equil_in, cores_in)
   
   ! Loop: ETS - CHEASE - BOHNGB
   allocate(corep_old(1))
@@ -299,4 +301,4 @@ implicit none
   call deallocate_cpo(corei_in)
   call deallocate_cpo(toroidf_in)
  
-end program loop_run
+end program loop_src_run

@@ -85,7 +85,7 @@ contains
     integer,                 intent(in)  :: p
     real(8), dimension(:),   intent(in)  :: knots
     real(8), dimension(:),   intent(in)  :: arr_x 
-    real(8), dimension(:,:), intent(out) :: mat 
+    real(8), dimension(:,:), intent(inout) :: mat 
     
     integer :: i
     integer :: j
@@ -120,15 +120,15 @@ contains
   end subroutine collocation_matrix 
   
   ! Computes the Spline parameterization
-  function sites(x, y, method) result(u)
+  subroutine sites(x, y, method, u)
 
     implicit none
 
     real(8), dimension(:), intent(in) :: x
     real(8), dimension(:), intent(in) :: y
     character(*), intent(in) :: method
+    real(8), dimension(:), intent(inout) :: u
 
-    real(8), dimension(:) :: u
     real(8), dimension(:), allocatable :: di
     integer :: i, n, d
 
@@ -174,7 +174,7 @@ contains
     deallocate(di)
     return 
     
-  end function sites
+  end subroutine sites
 
   !> @brief  Curve fitting of a set of m points (coordinates are (x[i], y[i]) 
   !          using Least Squares approximation. The endpoints are interpolated.
@@ -185,7 +185,7 @@ contains
   !> @param[in]  method  The parameterization method 
   !> @param[out] T       The Knots  vector
   !> @param[out] C       The control points
-  subroutine approximate_curve(X, Y, ne, p, method, T, C):
+  subroutine approximate_curve(X, Y, ne, p, method, T, C)
     implicit none
 
     real(8), dimension(:), intent(in) :: X
@@ -194,60 +194,71 @@ contains
     integer, intent(in) :: p
     character(*), intent(in) :: method
 
-    real(8), dimension(:), allocatable, intent(out) :: T
-    real(8), dimension(:, :), allocatable, intent(out) :: C
+    real(8), dimension(:), intent(inout) :: T
+    real(8), dimension(:, :), intent(inout) :: C
 
     real(8), dimension(:), allocatable :: u
     real(8), dimension(:, :), allocatable :: N, M, R, B
 
     integer, dimension(:), allocatable :: IPIV
-    integer :: info
+    integer :: info, nc, nv, i
+    
+
+    ! Check sizes
+    if (size(T) /= ne+2*p+1) then
+      write(*,*) "ERROR: T has wrong size."
+      stop
+    end if
+    if( (size(C,1) /= ne+p).or.(size(C,2) /= 2)) then
+      write(*,*) "ERROR: C has wrong size."
+      stop
+    end if
 
     ! Number of vertices and control points
     nv = size(X)
-    nc = ne+p-1
+    nc = ne+p!-1
 
     ! The parameter values
     allocate(u(nv))
-    u = sites(X, Y, method)
+    call sites(X, Y, method, u)
 
     ! Knots vector   
-    allocate(T(ne+2*p))
     do i =1, p+1
       T(i) = 0.0
-      T(ne+p+i-1) = 1.0
+      T(ne+p+i) = 1.0
     enddo
-    do i = 1, ne-2
-      T(p+i+1) = 1.0*i/(ne-1)
+    do i = 1, ne-1
+      T(p+i+1) = 1.0*i/ne
     enddo
-
+    
     ! Collocation matrix of size (nc, nv)
-    allocate(N(nc, nv))
-    call collocation_matrix(nv, p, T, u, N)
+    allocate(N(nv, nc))
+
+    call collocation_matrix(nc, p, T, u, N)
 
     ! Get matrix and rhs for Least Squares Linear system
-    ! M = Dt*D (D = N(1:nv-1, 1:nc-1)
+    ! M = Dt*D (D = N(2:nv-1, 2:nc-1)
     ! removed lines and rows correspond to the interpolated endpoints
     allocate(M(nc-2, nc-2))
-    M = matmul(transpose(N(1:nv-1, 1:nc-1), N(1:nv-1, 1:nc-1))
+    M = matmul(transpose(N(2:nv-1, 2:nc-1)), N(2:nv-1, 2:nc-1))
     
     ! RHS
     allocate(B(nc-2, 2))
     allocate(R(nv-2, 2))
 
     do i=2, nv-1
-      R(i-1, 1) = x(i) - N(i,1)*x(1) - N(i,nc)*x(m)
-      R(i-1, 2) = y(i) - N(i,1)*y(1) - N(i,nc)*y(m)
+      R(i-1, 1) = x(i) - N(i,1)*x(1) - N(i,nc)*x(nv)
+      R(i-1, 2) = y(i) - N(i,1)*y(1) - N(i,nc)*y(nv)
     enddo
 
-    B(:, 1) = matmul(N(1:nc-1, 1:nv-1), R(:, 1))
-    B(:, 2) = matmul(N(1:nc-1, 1:nv-1), R(:, 2))
+    B(:, 1) = matmul(N(2:nv-1, 2:nc-1), R(:, 1))
+    B(:, 2) = matmul(N(2:nv-1, 2:nc-1), R(:, 2))
 
     ! For  factorization
     allocate(IPIV(nc-2))
 
     ! Solve the linear syestem using  LAPACK
-    call DGESV(nc, 2, M, nc-2, IPIV, B, nc-2, info) 
+    call dgesv(nc-2, 2, M, nc-2, IPIV, B, nc-2, info) 
 
    ! Check for the exact singularity.
     if( info.gt.0 ) then
@@ -258,15 +269,14 @@ contains
     end if
 
     ! Control points
-    allocate(C(nc, 2))
     
     ! Interpolate endpoints
     C(1,1) = X(1)
     C(1,2) = Y(1)
     C(nc,1) = X(nv)
     C(nc,2) = Y(nv)
-    C(1:nc-1,1) = B(:,1)
-    C(1:nc-1,1) = B(:,2)
+    C(2:nc-1,1) = B(:,1)
+    C(2:nc-1,1) = B(:,2)
 
     ! Dellocations
     deallocate(u) 
@@ -276,6 +286,6 @@ contains
     deallocate(R) 
     deallocate(IPIV) 
 
-  subroutine approximate_curve
+  end subroutine approximate_curve
 
 end module splfit

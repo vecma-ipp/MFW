@@ -9,6 +9,7 @@ from utils import plots
 
 '''
 UQ test of ETS + CHEASE + BOHMGB (UQP1: non intrusive case)
+Uncertainties in initial conditions
 '''
 
 start_time = time.time()
@@ -23,7 +24,7 @@ uncert_params = ["Te0", "Ti0"]
 tmp_dir = "/ptmp/ljala/"
 
 # To run F90 code
-loop_exec = "../bin/DRACO/loop_run "
+loop_exec = "../bin/DRACO/loop_bc_run "
 
 # Input/Output template
 input_json = "inputs/loop_in.json"

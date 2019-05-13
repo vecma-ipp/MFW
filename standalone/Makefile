@@ -97,7 +97,7 @@ MPIF90FLAGS += ${INCLUDES} ${MODSPEC}${INCDIR}
 
 
 # objects files ################################################################
-SHARED_O = ${OBJDIR}/linterp.o ${OBJDIR}/string_binding.o ${OBJDIR}/csv_io.o  ${OBJDIR}/uq_modules.o ${OBJDIR}/splfit.o
+SHARED_O = ${OBJDIR}/linterp.o ${OBJDIR}/string_binding.o  ${OBJDIR}/uq_modules.o ${OBJDIR}/csv_io.o ${OBJDIR}/splfit.o
 
 ETS_O = ${SHARED_O} ${OBJDIR}/ets_standalone.o ${OBJDIR}/ets_test.o 
 CHEASE_O = ${SHARED_O} ${OBJDIR}/chease_standalone.o ${OBJDIR}/chease_test.o 
@@ -140,7 +140,7 @@ ETS_TEST: ${ETS_O}
 	$(MPIF90) -o ${ETS_EXE} $^ -L${ETS} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_XML} -L${LIB_UAL} -lets -lbds -lxmllib -litmconstants -litmtypes -lual ${LDFLAGS} ${LIBLAPACK}
 
 IMP4DV_TEST: ${IMP4DV_O}
-	$(LD) -o ${IMP4DV_EXE} $^ -L${IMP4DV} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_UAL} -limp4dv -lbds -litmconstants -litmtypes -lual ${LDFLAGS} 
+	$(LD) -o ${IMP4DV_EXE} $^ -L${IMP4DV} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_UAL} -limp4dv -lbds -litmconstants -litmtypes -lual ${LDFLAGS} ${LIBLAPACK}
 
 CHEASE_TEST: ${CHEASE_O}
 	$(MPIF90) -o ${CHEASE_EXE} $^ -L${CHEASE} -L${LIB_XML} -L${LIB_UAL} -lchease_muscle -lual -lxmllib -lxml2 ${LDFLAGS} ${LIBLAPACK}
@@ -152,10 +152,10 @@ EQUILUPDATE_TEST: ${EQUILUPDATE_O}
 	$(LD) -o ${EQUILUPDATE_EXE} $^ -L${ETS} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_UAL} -lets -lbds -litmconstants -litmtypes -lual ${LDFLAGS} ${LIBLAPACK}
 
 SOURCES_TEST: ${SOURCES_O}
-	$(LD) -o ${SOURCES_EXE} $^ -L${ETS} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_UAL} -L${LIB_XML} -lets -lbds -litmconstants -litmtypes -lual -lxmllib ${LDFLAGS} 
+	$(LD) -o ${SOURCES_EXE} $^ -L${ETS} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_UAL} -L${LIB_XML} -lets -lbds -litmconstants -litmtypes -lual -lxmllib ${LDFLAGS} ${LIBLAPACK}
 
 BOHMGB_TEST: ${BOHMGB_O}
-	$(LD) -o ${BOHMGB_EXE} $^ -L${BOHMGB} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_XML} -L${LIB_UAL} -lbohmgb -lbds -litmconstants -litmtypes -lxmllib -lual ${LDFLAGS} 
+	$(LD) -o ${BOHMGB_EXE} $^ -L${BOHMGB} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_XML} -L${LIB_UAL} -lbohmgb -lbds -litmconstants -litmtypes -lxmllib -lual ${LDFLAGS} ${LIBLAPACK}
 
 LOOP_TEST: ${SHARED_O} ${OBJDIR}/ets_standalone.o ${OBJDIR}/equilupdate_standalone.o ${OBJDIR}/chease_standalone.o ${OBJDIR}/bohmgb_standalone.o ${OBJDIR}/loop_test.o
 	$(LD) -o ${LOOP_EXE} $^ -L${ETS} -L${CHEASE} -L${BOHMGB} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_XML} -L${LIB_UAL} -lets -lchease_muscle -lbohmgb -lbds -litmconstants -litmtypes -lual -lxmllib -lxml2 ${LDFLAGS} ${LIBLAPACK}
@@ -182,7 +182,7 @@ ${OBJDIR}/csv_io.o: src/tools/csv_io.f90
 	${FC90} -o $@ -c $< $(FC90FLAGS) 
 
 ${OBJDIR}/splfit.o: src/tools/splfit.f90
-	${FC90} -o $@ -c $< $(FC90FLAGS) 
+	${MPIF90} -o $@ -c $< $(FC90FLAGS) -traceback -check all -fp-stack-check -I${MKL_LIB} 
 
 ${OBJDIR}/uq_modules.o: src/uq_modules.f90
 	${MPIF90} -o $@ -c $< $(FC90FLAGS) -I${ETS} -I${INC_CONSTANTS} -I${INC_TYPES} -I${INC_XML} 

@@ -23,6 +23,7 @@ use deallocate_structures, only: deallocate_cpo
 use ets_standalone,         only: ets_cpo
 use equilupdate_standalone, only: equilupdate2cpo
 
+use splfit, only: approximate_curve
 use csv_module
 
 implicit none
@@ -51,16 +52,19 @@ implicit none
   type (type_coreprof)   , pointer :: corep_new(:) => NULL()
   type (type_equilibrium), pointer :: equil_new(:) => NULL()
   
+  real(8), dimension(:), allocatable :: T
+  real(8), dimension(:, :), allocatable :: C
+
   ! Uncertain parameters
   !real(kind=8), allocatable, dimension(:) :: params 
-  real(kind=8) :: D1, D2, D3, D4, Te0 
+  real(kind=8) :: D1, D2, D3, D4 
   
   ! Output file contraining values of interset (te, ti, pressure ...)
   character(len=128) :: out_file
   type(csv_file)     :: csv_out_file
 
   ! Other local variables  
-  integer :: ios, i, n_data, n_outputs
+  integer :: ios, i, n_data, n_outputs, ne, deg
   logical :: infile_status, outfile_status 
 
   ! ...
@@ -79,7 +83,7 @@ implicit none
   end if
  
   ! Read uncertain paramters (cf. inputs/ets.template) 
-  namelist /ets_input_file/  Te0, &
+  namelist /ets_input_file/  D1, D2, D3, D4, &
                            & out_file  
  
   open(unit=20, file=trim(in_fname))
@@ -114,12 +118,23 @@ implicit none
        status = 'old', form = 'formatted', &
        action = 'read', iostat = ios)
   if (ios == 0) then
-     close (10)
-     call open_read_file(10, corep_in_file)
-     call read_cpo(corep(1), 'coreprof' )
-     corep(1)%te%boundary%value(1)   = Te0
-     print*, '=======>>>> ti = ',corep(1)%ti%value(:, 1)
-     call close_read_file
+    close (10)
+    call open_read_file(10, corep_in_file)
+    call read_cpo(corep(1), 'coreprof' )
+    ! testing approximate cuvre
+    ne =2
+    deg =3 
+    allocate(T(ne+2*deg+1))
+    allocate(C(ne+deg, 2))
+    print*, 'BEFOOOREEE'
+    call approximate_curve(corep(1)%rho_tor, corep(1)%te%value, ne, deg, "centripetal", T, C)
+    print*, 'AFTERRRRR'
+    print*, ">>>> T = ", T
+    print*, ">>>> Cx = ", C(:, 1)
+    print*, ">>>> Cy = ", C(:, 2)
+    deallocate(T)
+    deallocate(C)
+    call close_read_file
   else
      print *,"ERROR. CPO file not found:",corep_in_file
      STOP
@@ -146,10 +161,10 @@ implicit none
      call open_read_file(12, coret_in_file)
      call read_cpo(coret(1), 'coretransp')
      ! Update the transport coefficients
-     !coret(1)%values(1)%te_transp%diff_eff(1)=D1
-     !coret(1)%values(1)%te_transp%diff_eff(2)=D2
-     !coret(1)%values(1)%te_transp%diff_eff(3)=D3
-     !coret(1)%values(1)%te_transp%diff_eff(4)=D4
+     coret(1)%values(1)%te_transp%diff_eff(1)=D1
+     coret(1)%values(1)%te_transp%diff_eff(2)=D2
+     coret(1)%values(1)%te_transp%diff_eff(3)=D3
+     coret(1)%values(1)%te_transp%diff_eff(4)=D4
      call close_read_file
   else
      print *,"CPO file not found:",coret_in_file
@@ -201,7 +216,7 @@ implicit none
   
   ! ====== UQ for ETS
   ! To collect outputs data, the quantity of interest is Te
-  n_data    = 100!size(equil_new(1)%profiles_1d%pressure)
+  n_data    = 100
   n_outputs = 1 
   ! Open the CSV output file
   call csv_out_file%open(out_file, n_cols=n_outputs, status_ok=outfile_status)
