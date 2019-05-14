@@ -152,7 +152,7 @@ def plot_sobols_2(x, sobols1, sobols2, params):
     plt.legend()
 
     fig.suptitle('First-Order Sobol indices')
-    fig.savefig('Temp_sobols_4ft.png')
+    fig.savefig('TiTe_sobols.png')
     plt.close(fig)
 
 def plot_sobols(x, sobols, params, ftitle, fname):

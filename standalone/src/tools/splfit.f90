@@ -180,12 +180,12 @@ contains
   !          using Least Squares approximation. The endpoints are interpolated.
   !>
   !> @param[in]  X,Y     The coordinates of the 1D curve
-  !> @param[in]  ne      The number of elements
+  !> @param[in]  n       The number of control points (n>p)
   !> @param[in]  p       Spline degree 
   !> @param[in]  method  The parameterization method 
   !> @param[out] T       The Knots  vector
   !> @param[out] C       The control points
-  subroutine approximate_curve(X, Y, ne, p, method, T, C)
+  subroutine approximate_curve(X, Y, n, p, method, T, C)
     implicit none
 
     real(8), dimension(:), intent(in) :: X
@@ -205,60 +205,59 @@ contains
     
 
     ! Check sizes
-    if (size(T) /= ne+2*p+1) then
+    if (size(T) /= n+p+1) then
       write(*,*) "ERROR: T has wrong size."
       stop
     end if
-    if( (size(C,1) /= ne+p).or.(size(C,2) /= 2)) then
+    if( (size(C,1) /= n).or.(size(C,2) /= 2)) then
       write(*,*) "ERROR: C has wrong size."
       stop
     end if
 
-    ! Number of vertices and control points
-    nv = size(X)
-    nc = ne+p!-1
+    ! Number of verticies
+    m = size(X)
 
     ! The parameter values
-    allocate(u(nv))
+    allocate(u(m))
     call sites(X, Y, method, u)
 
     ! Knots vector   
     do i =1, p+1
       T(i) = 0.0
-      T(ne+p+i) = 1.0
+      T(n+i) = 1.0
     enddo
-    do i = 1, ne-1
-      T(p+i+1) = 1.0*i/ne
+    do i = 1, n-p-1
+      T(p+i+1) = 1.0*i/(n-p)
     enddo
     
     ! Collocation matrix of size (nc, nv)
-    allocate(N(nv, nc))
+    allocate(N(m, n))
 
     call collocation_matrix(nc, p, T, u, N)
 
     ! Get matrix and rhs for Least Squares Linear system
-    ! M = Dt*D (D = N(2:nv-1, 2:nc-1)
+    ! M = Dt*D (D = N(2:m-1, 2:n-1)
     ! removed lines and rows correspond to the interpolated endpoints
-    allocate(M(nc-2, nc-2))
-    M = matmul(transpose(N(2:nv-1, 2:nc-1)), N(2:nv-1, 2:nc-1))
+    allocate(M(n-2, n-2))
+    M = matmul(transpose(N(2:m-1, 2:n-1)), N(2:m-1, 2:n-1))
     
     ! RHS
-    allocate(B(nc-2, 2))
-    allocate(R(nv-2, 2))
+    allocate(B(n-2, 2))
+    allocate(R(m-2, 2))
 
-    do i=2, nv-1
-      R(i-1, 1) = x(i) - N(i,1)*x(1) - N(i,nc)*x(nv)
-      R(i-1, 2) = y(i) - N(i,1)*y(1) - N(i,nc)*y(nv)
+    do i=2, m-1
+      R(i-1, 1) = x(i) - N(i,1)*x(1) - N(i,n)*x(m)
+      R(i-1, 2) = y(i) - N(i,1)*y(1) - N(i,n)*y(m)
     enddo
 
-    B(:, 1) = matmul(N(2:nv-1, 2:nc-1), R(:, 1))
-    B(:, 2) = matmul(N(2:nv-1, 2:nc-1), R(:, 2))
+    B(:, 1) = matmul(N(2:m-1, 2:n-1), R(:, 1))
+    B(:, 2) = matmul(N(2:m-1, 2:n-1), R(:, 2))
 
     ! For  factorization
-    allocate(IPIV(nc-2))
+    allocate(IPIV(n-2))
 
     ! Solve the linear syestem using  LAPACK
-    call dgesv(nc-2, 2, M, nc-2, IPIV, B, nc-2, info) 
+    call dgesv(n-2, 2, M, n-2, IPIV, B, n-2, info) 
 
    ! Check for the exact singularity.
     if( info.gt.0 ) then
@@ -273,8 +272,8 @@ contains
     ! Interpolate endpoints
     C(1,1) = X(1)
     C(1,2) = Y(1)
-    C(nc,1) = X(nv)
-    C(nc,2) = Y(nv)
+    C(n,1) = X(m)
+    C(n,2) = Y(m)
     C(2:nc-1,1) = B(:,1)
     C(2:nc-1,1) = B(:,2)
 

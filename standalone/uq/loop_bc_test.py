@@ -81,7 +81,7 @@ t_loop = time.time() - t_loop
 
 # Aggregate the results from all runs.
 output_filename = loop_campaign.params_info['out_file']['default']
-output_columns = ['ti']
+output_columns = ['ti', 'te']
 
 aggregate = uq.elements.collate.AggregateSamples( loop_campaign,
                                             output_filename=output_filename,
@@ -96,10 +96,10 @@ analysis = uq.elements.analysis.PCEAnalysis(loop_campaign, value_cols=output_col
 analysis.apply()
 
 # Results
-#stat_te = analysis.statistical_moments('te')
+stat_te = analysis.statistical_moments('te')
 stat_ti = analysis.statistical_moments('ti')
 #pctl = analysis.percentiles('te')
-#sobol_te = analysis.sobol_indices('te', 'first_order')
+sobol_te = analysis.sobol_indices('te', 'first_order')
 sobol_ti = analysis.sobol_indices('ti', 'first_order')
 
 # Elapsed time
@@ -114,22 +114,22 @@ rho = corep.rho_tor
 #equil = read(equil_file, 'equilibrium')
 #rho = equil.profiles_1d.rho_tor
 
-#plots.plot_stats(rho, stat_te,
-#                 xlabel=r'$\rho_{tor} ~ [m]$', ylabel=r'$T_e$',
-#                 ftitle='UQP1. ETS-CHEASE-BOHMGB output: Te profile',
-#                 fname='te_loop_4ft.png')
+plots.plot_stats(rho, stat_te,
+                 xlabel=r'$\rho_{tor} ~ [m]$', ylabel=r'$T_e$',
+                 ftitle='Te profile',
+                 fname='te_prof.png')
 
 #plots.plot_sobols(rho, sobol_te, uncert_params,
 #                  ftitle='QoI: Te. First-Order Sobol indices: UQ in init conditions of Te and Ti ',
 #                  fname='te_sob_loop.png')
-#
-#plots.plot_sobols(rho, sobol_te, sobol_ti, uncert_params)
+
+plots.plot_sobols_2(rho, sobol_te, sobol_ti, uncert_params)
 
 plots.plot_stats(rho, stat_ti,
                  xlabel=r'$\rho_{tor} ~ [m]$', ylabel=r'$T_i$',
-                 ftitle='UQ: Ti profile',
+                 ftitle='Ti profile',
                  fname='ti_prof.png')
 
-plots.plot_sobols(rho, sobol_ti, uncert_params,
-                  ftitle='Ti UQ: First-Order Sobol indices',
-                  fname='ti_sobol.png')
+#plots.plot_sobols(rho, sobol_ti, uncert_params,
+#                  ftitle='Ti UQ: First-Order Sobol indices',
+#                  fname='ti_sobol.png')
