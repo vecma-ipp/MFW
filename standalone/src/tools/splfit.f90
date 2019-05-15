@@ -130,25 +130,25 @@ contains
     real(8), dimension(:), intent(inout) :: u
 
     real(8), dimension(:), allocatable :: di
-    integer :: i, n, d
+    real(8) :: d
+    integer :: i, n
 
     n  = size(x, 1)  
-    if (size(y) /= n) then
-      write(*,*) "ERROR: x and y should have the same size."
+    if ((size(y) /= n).or.(size(u) /= n)) then
+      write(*,*) "ERROR: x, y and u should have the same size."
       stop
     end if
-    
-    allocate(di(n-1))
 
     if (method == "uniform") then
       do i = 0, n-1
-        u(i+1) = i/(n-1)
+        u(i+1) = 1.0*i/(n-1)
       enddo
 
     else
-      u(:) = 0.0
-      u(n) = 1.
-      di(:) = 0.0
+      allocate(di(n-1))
+      u = 0.0
+      u(n) = 1.0
+      di = 0.0
       d = 0.0
 
       if (method == "chord") then
@@ -164,53 +164,50 @@ contains
           d = d + di(i-1)
         enddo
       endif
-
+      
       do i = 2, n-1
         u(i) = u(i-1) + di(i-1)/d
       enddo
+
+      deallocate(di)
       
     endif
 
-    deallocate(di)
-    return 
-    
   end subroutine sites
 
   !> @brief  Curve fitting of a set of m points (coordinates are (x[i], y[i]) 
   !          using Least Squares approximation. The endpoints are interpolated.
   !>
   !> @param[in]  X,Y     The coordinates of the 1D curve
-  !> @param[in]  n       The number of control points (n>p)
-  !> @param[in]  p       Spline degree 
+  !> @param[in]  n       The number of control points (n>k)
+  !> @param[in]  k       Spline degree 
   !> @param[in]  method  The parameterization method 
   !> @param[out] T       The Knots  vector
-  !> @param[out] C       The control points
-  subroutine approximate_curve(X, Y, n, p, method, T, C)
+  !> @param[out] P       The control points
+  subroutine approximate_curve(X, Y, n, k, method, T, P)
     implicit none
 
     real(8), dimension(:), intent(in) :: X
     real(8), dimension(:), intent(in) :: Y
-    integer, intent(in) :: ne
-    integer, intent(in) :: p
+    integer, intent(in) :: n
+    integer, intent(in) :: k
     character(*), intent(in) :: method
 
     real(8), dimension(:), intent(inout) :: T
-    real(8), dimension(:, :), intent(inout) :: C
+    real(8), dimension(:, :), intent(inout) :: P
 
     real(8), dimension(:), allocatable :: u
-    real(8), dimension(:, :), allocatable :: N, M, R, B
+    real(8), dimension(:, :), allocatable :: C, A, R, B
 
-    integer, dimension(:), allocatable :: IPIV
-    integer :: info, nc, nv, i
+    integer :: info, m, i 
     
-
     ! Check sizes
-    if (size(T) /= n+p+1) then
+    if (size(T) /= n+k+1) then
       write(*,*) "ERROR: T has wrong size."
       stop
     end if
-    if( (size(C,1) /= n).or.(size(C,2) /= 2)) then
-      write(*,*) "ERROR: C has wrong size."
+    if( (size(P,1) /= n).or.(size(P,2) /= 2)) then
+      write(*,*) "ERROR: P has wrong size."
       stop
     end if
 
@@ -220,70 +217,63 @@ contains
     ! The parameter values
     allocate(u(m))
     call sites(X, Y, method, u)
-
+    
     ! Knots vector   
-    do i =1, p+1
+    do i =1, k+1
       T(i) = 0.0
       T(n+i) = 1.0
     enddo
-    do i = 1, n-p-1
-      T(p+i+1) = 1.0*i/(n-p)
+    do i = 1, n-k-1
+      T(k+i+1) = 1.0*i/(n-k)
     enddo
     
-    ! Collocation matrix of size (nc, nv)
-    allocate(N(m, n))
-
-    call collocation_matrix(nc, p, T, u, N)
+    ! Collocation matrix of size (m, n)
+    allocate(C(m, n))
+    call collocation_matrix(n, k, T, u, C)
 
     ! Get matrix and rhs for Least Squares Linear system
-    ! M = Dt*D (D = N(2:m-1, 2:n-1)
+    ! A = Dt*D (D = C(2:n-1, 2:m-1)
     ! removed lines and rows correspond to the interpolated endpoints
-    allocate(M(n-2, n-2))
-    M = matmul(transpose(N(2:m-1, 2:n-1)), N(2:m-1, 2:n-1))
+    allocate(A(n-2, n-2))
+    A = matmul(transpose(C(2:m-1, 2:n-1)), C(2:m-1, 2:n-1))
     
     ! RHS
     allocate(B(n-2, 2))
     allocate(R(m-2, 2))
 
     do i=2, m-1
-      R(i-1, 1) = x(i) - N(i,1)*x(1) - N(i,n)*x(m)
-      R(i-1, 2) = y(i) - N(i,1)*y(1) - N(i,n)*y(m)
+      R(i-1, 1) = x(i) - C(i,1)*x(1) - C(i,n)*x(m)
+      R(i-1, 2) = y(i) - C(i,1)*y(1) - C(i,n)*y(m)
     enddo
 
-    B(:, 1) = matmul(N(2:m-1, 2:n-1), R(:, 1))
-    B(:, 2) = matmul(N(2:m-1, 2:n-1), R(:, 2))
-
-    ! For  factorization
-    allocate(IPIV(n-2))
+    B(:, 1) = matmul(transpose(C(2:m-1, 2:n-1)), R(:, 1))
+    B(:, 2) = matmul(transpose(C(2:m-1, 2:n-1)), R(:, 2))
 
     ! Solve the linear syestem using  LAPACK
-    call dgesv(n-2, 2, M, n-2, IPIV, B, n-2, info) 
-
-   ! Check for the exact singularity.
+    call DPOSV('Upper', n-2, 2, A, n-2, B, n-2, INFO)
+    
+    ! Check for the exact singularity. 
     if( info.gt.0 ) then
-      write(*,*)'The diagonal element of the triangular factor of M,'
-      write(*,*)'U(',INFO,',',INFO,') is zero, so that'
-      write(*,*)'M is singular; the solution could not be computed.'
-      stop
+         WRITE(*,*)'The leading minor of order ',INFO,' is not positive'
+         WRITE(*,*)'definite; the solution could not be computed.'
+         STOP
     end if
-
-    ! Control points
     
     ! Interpolate endpoints
-    C(1,1) = X(1)
-    C(1,2) = Y(1)
-    C(n,1) = X(m)
-    C(n,2) = Y(m)
-    C(2:nc-1,1) = B(:,1)
-    C(2:nc-1,1) = B(:,2)
+    P(1,1) = X(1)
+    P(1,2) = Y(1)
+    P(n,1) = X(m)
+    P(n,2) = Y(m)
+    ! The rest of the Control points
+    P(2:n-1,1) = B(:,1)
+    P(2:n-1,2) = B(:,2)
 
     ! Dellocations
     deallocate(u) 
-    deallocate(N) 
-    deallocate(M) 
+    deallocate(C) 
+    deallocate(A) 
     deallocate(B) 
     deallocate(R) 
-    deallocate(IPIV) 
 
   end subroutine approximate_curve
 

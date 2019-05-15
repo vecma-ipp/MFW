@@ -32,6 +32,9 @@ implicit none
   character(len=128) :: cpo_dir  ! Path to the folder containing CPO files for ets
   character(len=128) :: in_fname ! NML file containing uncertain parameters values
   
+  ! UQP method
+  character(*), parameter :: uqp = "uqp2"
+  
   ! CPO file names
   character(len=128) :: corep_in_file 
   character(len=128) :: cores_in_file 
@@ -52,6 +55,7 @@ implicit none
   type (type_coreprof)   , pointer :: corep_new(:) => NULL()
   type (type_equilibrium), pointer :: equil_new(:) => NULL()
   
+  ! For UQP2
   real(8), dimension(:), allocatable :: T
   real(8), dimension(:, :), allocatable :: C
 
@@ -64,7 +68,7 @@ implicit none
   type(csv_file)     :: csv_out_file
 
   ! Other local variables  
-  integer :: ios, i, n_data, n_outputs, ne, deg
+  integer :: ios, i, n_data, n_outputs, n, k
   logical :: infile_status, outfile_status 
 
   ! ...
@@ -121,19 +125,6 @@ implicit none
     close (10)
     call open_read_file(10, corep_in_file)
     call read_cpo(corep(1), 'coreprof' )
-    ! testing approximate cuvre
-    ne =2
-    deg =3 
-    allocate(T(ne+2*deg+1))
-    allocate(C(ne+deg, 2))
-    print*, 'BEFOOOREEE'
-    call approximate_curve(corep(1)%rho_tor, corep(1)%te%value, ne, deg, "centripetal", T, C)
-    print*, 'AFTERRRRR'
-    print*, ">>>> T = ", T
-    print*, ">>>> Cx = ", C(:, 1)
-    print*, ">>>> Cy = ", C(:, 2)
-    deallocate(T)
-    deallocate(C)
     call close_read_file
   else
      print *,"ERROR. CPO file not found:",corep_in_file
@@ -214,22 +205,64 @@ implicit none
   call ets_cpo(corep, equil, coret, cores, corei, corep_new)
   call equilupdate2cpo(corep_new, toroidf, equil, equil_new)
   
-  ! ====== UQ for ETS
-  ! To collect outputs data, the quantity of interest is Te
-  n_data    = 100
-  n_outputs = 1 
-  ! Open the CSV output file
-  call csv_out_file%open(out_file, n_cols=n_outputs, status_ok=outfile_status)
+  select case(uqp)
+    ! ====== UQP 1
+    case('uqp1')
+      ! To collect outputs data, the quantity of interest is Te
+      n_data    = 100
+      n_outputs = 1 
+      ! Open the CSV output file
+      call csv_out_file%open(out_file, n_cols=n_outputs, status_ok=outfile_status)
 
-  ! Add headers
-  call csv_out_file%add('te')
-  call csv_out_file%next_row()
-  
-  ! Add data
-  do i=1, n_data
-    call csv_out_file%add(corep_new(1)%te%value(i))
-    call csv_out_file%next_row()
-  end do
+      ! Add headers
+      call csv_out_file%add('te')
+      call csv_out_file%next_row()
+      
+      ! Add data
+      do i=1, n_data
+        call csv_out_file%add(corep_new(1)%te%value(i))
+        call csv_out_file%next_row()
+      end do
+    
+    ! ====== UQP 2
+    case('uqp2')
+      ! Cubic spline
+      k = 3
+      
+      ! Control points 
+      n = 5
+      allocate(C(n, 2))
+      
+      ! Knot vectors
+      allocate(T(n+k+1))
+      
+      ! Approximation of Te 
+      call approximate_curve(corep_new(1)%rho_tor, corep_new(1)%te%value, n, k, "centripetal", T, C)
+      
+      n_data    = n
+      n_outputs = 2
+      ! Open the CSV output file
+      call csv_out_file%open(out_file, n_cols=n_outputs, status_ok=outfile_status)
+      
+      ! Add headers
+      call csv_out_file%add('cx')
+      call csv_out_file%add('cy')
+      call csv_out_file%next_row()
+      
+      ! Add data
+      do i=1, n_data
+        call csv_out_file%add(C(i, 1))
+        call csv_out_file%add(C(i, 2))
+        call csv_out_file%next_row()
+      end do
+      
+      deallocate(T)
+      deallocate(C)
+      
+    case default
+      write(*,*) 'Error: Invalid UQP type!'
+      STOP
+   end select
 
   ! Finished
   call csv_out_file%close(outfile_status)

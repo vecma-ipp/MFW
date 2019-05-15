@@ -63,22 +63,20 @@ def approximate_curve(x, y, n_elements, degree, param_method="centripetal"):
 # Approximation and plot of the pressure profile
 def test_approximation(cpo_dir):
     # get pressure fom the equilibrium
-    eq_file = cpo_dir + '/ets_equilibrium_in.cpo'
-    eq = read(eq_file, 'equilibrium')
-    rho = eq.profiles_1d.rho_tor
-    p = eq.profiles_1d.pressure
+    corepfile = cpo_dir + '/ets_coreprof_in.cpo'
+    corep = read(corepfile, 'coreprof')
+    rho = corep.rho_tor
+    te = corep.te.value
 
     # Spline approximation (control points = n_elements + degree)
     n_elements = 2
     degree = 3
-    tck_x, tck_y = approximate_curve(rho, p, n_elements, degree)
+    tck_x, tck_y = approximate_curve(rho, te, n_elements, degree)
 
     # Get the control points
     Px = tck_x[1][: n_elements + degree]
     Py = tck_y[1][: n_elements + degree]
-    print('>>> T = ', tck_x[0])
-    print(">>>> Cx = ", Px)
-    print(">>>> Cy = ", Py)
+
     # Evaluate spline
     # r_norm = [i/max(r) for i in r]
     r = np.linspace(0., 1., 200)
@@ -89,10 +87,11 @@ def test_approximation(cpo_dir):
     fig = plt.figure()
     ax = fig.add_subplot(111)
 
-    ax.plot(rho, p, "b.",  markersize=5, alpha=0.8, label='Pressure Profile')
-    ax.plot(ra, pa, 'g-', label='Approxiamtion')
-    ax.plot(Px, Py, 'ro', label='Control Points')
-    ax.errorbar(Px, Py, yerr=600, fmt='r.', capsize=5)
+
+    ax.plot(rho, te, "b.",  markersize=5, alpha=0.8, label='Pressure Profile')
+    #ax.plot(ra, pa, 'g-', label='Approxiamtion')
+    ax.plot(Px, Py, 'go', label='Control Points')
+    #ax.errorbar(Px, Py, yerr=600, fmt='r.', capsize=5)
 
     ax.set_xlabel(r'$\rho_{tor} \, [m]$')
     ax.set_ylabel('P [bar]')

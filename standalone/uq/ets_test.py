@@ -72,7 +72,7 @@ ets_campaign.apply_for_each_run_dir(uq.actions.ExecuteLocal(cmd))
 
 # Aggregate the results from all runs.
 output_filename = ets_campaign.params_info['out_file']['default']
-output_columns = ['te', 'ti', 'p']
+output_columns = ['cx', 'cy']
 
 aggregate = uq.elements.collate.AggregateSamples(
     ets_campaign,
@@ -87,12 +87,11 @@ aggregate.apply()
 analysis = uq.elements.analysis.PCEAnalysis(
     ets_campaign, value_cols=output_columns)
 
-analysis.apply()
+output_dist = analysis.apply()
 
 # Results
-stat = analysis.statistical_moments('te')
-pctl = analysis.percentiles('te')
-sobols = analysis.sobol_indices('te', 'first_order')
+statx = analysis.statistical_moments('cx')
+staty = analysis.statistical_moments('cy')
 
 # Elapsed time
 end_time = time.time()
@@ -103,9 +102,3 @@ corep = read(corep_file, 'coreprof')
 rho = corep.rho_tor
 
 #  Graphics for descriptive satatistics
-plots.plot_stats(rho, stat,
-                 xlabel=r'$\rho_{tor} ~ [m]$', ylabel='Te',
-                 ftitle='UQP1 - ETS output: Te profile',
-                 fname='te_profile.png')
-
-plots.plot_sobols(rho, sobols, uncert_params)
