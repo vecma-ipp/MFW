@@ -97,7 +97,7 @@ MPIF90FLAGS += ${INCLUDES} ${MODSPEC}${INCDIR}
 
 
 # objects files ################################################################
-SHARED_O = ${OBJDIR}/linterp.o ${OBJDIR}/string_binding.o  ${OBJDIR}/uq_modules.o ${OBJDIR}/csv_io.o ${OBJDIR}/splfit.o
+SHARED_O = ${OBJDIR}/linterp.o ${OBJDIR}/string_binding.o  ${OBJDIR}/uq_modules.o ${OBJDIR}/csv_io.o ${OBJDIR}/spl.o
 
 ETS_O = ${SHARED_O} ${OBJDIR}/ets_standalone.o ${OBJDIR}/ets_test.o 
 CHEASE_O = ${SHARED_O} ${OBJDIR}/chease_standalone.o ${OBJDIR}/chease_test.o 
@@ -181,7 +181,7 @@ ${OBJDIR}/linterp.o: src/tools/linterp.f90
 ${OBJDIR}/csv_io.o: src/tools/csv_io.f90
 	${FC90} -o $@ -c $< $(FC90FLAGS) 
 
-${OBJDIR}/splfit.o: src/tools/splfit.f90
+${OBJDIR}/spl.o: src/tools/spl.f90
 	${MPIF90} -o $@ -c $< $(FC90FLAGS) -traceback -check all -fp-stack-check -I${MKL_LIB} 
 
 ${OBJDIR}/uq_modules.o: src/uq_modules.f90

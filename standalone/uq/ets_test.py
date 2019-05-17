@@ -5,7 +5,7 @@ import chaospy as cp
 import easyvvuq as uq
 import matplotlib.pylab as plt
 from ascii_cpo import read
-from utils import plots
+from tools import plots, spl
 
 '''
 UQ test of ETS
@@ -72,7 +72,7 @@ ets_campaign.apply_for_each_run_dir(uq.actions.ExecuteLocal(cmd))
 
 # Aggregate the results from all runs.
 output_filename = ets_campaign.params_info['out_file']['default']
-output_columns = ['cx', 'cy']
+output_columns = ['c']
 
 aggregate = uq.elements.collate.AggregateSamples(
     ets_campaign,
@@ -87,11 +87,12 @@ aggregate.apply()
 analysis = uq.elements.analysis.PCEAnalysis(
     ets_campaign, value_cols=output_columns)
 
-output_dist = analysis.apply()
+dist, cov = analysis.apply()
 
 # Results
-statx = analysis.statistical_moments('cx')
-staty = analysis.statistical_moments('cy')
+print(">>> Covariance Matrix:")
+print(cov["c"])
+stat = analysis.statistical_moments('c')
 
 # Elapsed time
 end_time = time.time()
@@ -101,4 +102,14 @@ corep_file = common_dir + '/ets_coreprof_in.cpo'
 corep = read(corep_file, 'coreprof')
 rho = corep.rho_tor
 
+n=5
+p=3
+knot, crho = spl.spl_fit(rho, n, p)
+
 #  Graphics for descriptive satatistics
+plots.plot_stats(crho, stat,
+                 xlabel=r'$\rho_{tor} app ~ [m]$', ylabel=r'$CP$',
+                 ftitle='Approximation of Te profile',
+                 fname='cp_te_prof.png')
+
+plots.plot_dist(dist["c"], stat)

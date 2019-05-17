@@ -66,7 +66,7 @@ def plot_stats(x, stat, xlabel, ylabel, ftitle, fname=None):
     fig = plt.figure(figsize=(12,9))
 
     ax1 = fig.add_subplot(111)
-    ax1.plot(x, mean, 'g-', alpha=0.75, label='Mean')
+    ax1.plot(x, mean, 'ro', alpha=0.75, label='Mean')
     ax1.plot(x, mean-std, 'b-', alpha=0.25)
     ax1.plot(x, mean+std, 'b-', alpha=0.25)
     ax1.fill_between(x, mean-std, mean+std, alpha=0.25, label=r'Mean $\pm$ deviation')
@@ -76,11 +76,11 @@ def plot_stats(x, stat, xlabel, ylabel, ftitle, fname=None):
     ax1.grid()
     ax1.legend()
 
-    ax2 = ax1.twinx()
-    ax2.plot(x, var, 'r-', alpha=0.5)
-    ax2.set_ylabel('Variance', color='r')
-    ax2.tick_params('y', colors='r')
-    ax2 = format_exponent(ax2, axis='y')
+    #ax2 = ax1.twinx()
+    #ax2.plot(x, var, 'r-', alpha=0.5)
+    #ax2.set_ylabel('Variance', color='r')
+    #ax2.tick_params('y', colors='r')
+    #ax2 = format_exponent(ax2, axis='y')
 
     plt.title(ftitle)
 
@@ -187,20 +187,28 @@ def plot_sobols(x, sobols, params, ftitle, fname):
 #    ax3.title('Corrolation matrix)')
 
 # QoI distribution, in the index grid i
-def plot_dist(i, dist, rho, mean, std):
-    r  = rho[i]
-    m = mean[i]
-    sd = std[i]
+def plot_dist(dist, stat):
+    plt.switch_backend('agg')
+    m = np.array(stat["mean"])
+    sd = np.array(stat['std'])
 
-    samples = np.linspace(m-3*std, m+3*std, 200)
-    plt.plot(samples, dist[i].pdf(samples), 'b-')
+    fig, axs = plt.subplots(nrows=2, ncols=2, sharex=True, figsize=(12,9))
 
-    plt.axvline(x=m, color= 'C1', linestyle='-')
-    plt.axvline(x=m-sd, color= 'C1', linestyle='--')
-    plt.axvline(x=m+sd, color= 'C1', linestyle='--')
+    #fig = plt.figure(figsize=(12,9))
+    #ax1 = fig.add_subplot(111)
 
-    plt.title(r'Output distribution: pressure in $\rho = $'+str(r))
-    plt.xlabel('p')
-    plt.ylabel('p_dist')
-    plt.grid()
-    plt.show()
+    for i in range(4):
+        s = np.linspace(m[i]-3*sd[i], m[i]+3*sd[i], 100)
+        d = dist[i].pdf(s)
+
+        ax = axs[i//2, i%2]
+        ax.plot(s, d, 'b-')
+        ax.axvline(x=m[i], color= 'C1', linestyle='-')
+        ax.axvline(x=m[i]-sd[i], color= 'C1', linestyle='--')
+        ax.axvline(x=m[i]+sd[i], color= 'C1', linestyle='--')
+        ax.set_title(r'dist in: $C_'+str(i)+'$')
+        ax.grid()
+
+    fig.suptitle('Output distiburions')
+    fig.savefig('dist_out.png')
+    plt.close(fig)

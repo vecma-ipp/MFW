@@ -23,7 +23,7 @@ use deallocate_structures, only: deallocate_cpo
 use ets_standalone,         only: ets_cpo
 use equilupdate_standalone, only: equilupdate2cpo
 
-use splfit, only: approximate_curve
+use spl_module, only: splrep, splev
 use csv_module
 
 implicit none
@@ -35,6 +35,10 @@ implicit none
   ! UQP method
   character(*), parameter :: uqp = "uqp2"
   
+  ! Spline degree and Control points number
+  integer, parameter :: p = 3 
+  integer, parameter :: n = 6
+
   ! CPO file names
   character(len=128) :: corep_in_file 
   character(len=128) :: cores_in_file 
@@ -55,20 +59,20 @@ implicit none
   type (type_coreprof)   , pointer :: corep_new(:) => NULL()
   type (type_equilibrium), pointer :: equil_new(:) => NULL()
   
-  ! For UQP2
-  real(8), dimension(:), allocatable :: T
-  real(8), dimension(:, :), allocatable :: C
+  ! For UQP2: knots vector and conrol points
+  real(8), dimension(:), allocatable :: knots, c
+
 
   ! Uncertain parameters
   !real(kind=8), allocatable, dimension(:) :: params 
   real(kind=8) :: D1, D2, D3, D4 
   
   ! Output file contraining values of interset (te, ti, pressure ...)
-  character(len=128) :: out_file
-  type(csv_file)     :: csv_out_file
+  character(len=128) :: out_file 
+  type(csv_file)     :: csv_out_file 
 
   ! Other local variables  
-  integer :: ios, i, n_data, n_outputs, n, k
+  integer :: ios, i, n_data, n_outputs 
   logical :: infile_status, outfile_status 
 
   ! ...
@@ -226,39 +230,29 @@ implicit none
     
     ! ====== UQP 2
     case('uqp2')
-      ! Cubic spline
-      k = 3
-      
-      ! Control points 
-      n = 5
-      allocate(C(n, 2))
-      
-      ! Knot vectors
-      allocate(T(n+k+1))
+      ! knotd vector and control points
+      allocate(knots(n+p+1)) ! could be done inside splrep
+      allocate(c(n))
       
       ! Approximation of Te 
-      call approximate_curve(corep_new(1)%rho_tor, corep_new(1)%te%value, n, k, "centripetal", T, C)
+      call splrep(corep_new(1)%te%value, n, p, knots, c)
       
-      n_data    = n
-      n_outputs = 2
       ! Open the CSV output file
-      call csv_out_file%open(out_file, n_cols=n_outputs, status_ok=outfile_status)
+      call csv_out_file%open(out_file, n_cols=1, status_ok=outfile_status)
       
       ! Add headers
-      call csv_out_file%add('cx')
-      call csv_out_file%add('cy')
+      call csv_out_file%add('c')
       call csv_out_file%next_row()
       
       ! Add data
-      do i=1, n_data
-        call csv_out_file%add(C(i, 1))
-        call csv_out_file%add(C(i, 2))
+      do i=1, n-1
+        call csv_out_file%add(c(i))
         call csv_out_file%next_row()
       end do
       
-      deallocate(T)
-      deallocate(C)
-      
+      deallocate(knots)
+      deallocate(c) 
+
     case default
       write(*,*) 'Error: Invalid UQP type!'
       STOP

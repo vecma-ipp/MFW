@@ -22,7 +22,7 @@ export BOHMGB = ../../externals/bohmgb/${SYS}
 export OBJ_STD = ../obj/${SYS}
 export INC_STD = ../include/${SYS}
 
-TOOLS_STD  = ${INC_STD} ${OBJ_STD}/linterp.o  ${OBJ_STD}/csv_io.o  ${OBJ_STD}/splfit.o
+TOOLS_STD  = ${INC_STD} ${OBJ_STD}/linterp.o  ${OBJ_STD}/csv_io.o  ${OBJ_STD}/spl.o
 ETS_STD    = ${INC_STD} ${OBJ_STD}/ets_standalone.o ${OBJ_STD}/equilupdate_standalone.o 
 CHEASE_STD = ${INC_STD} ${OBJ_STD}/chease_standalone.o 
 SRC_STD 	 = ${INC_STD} ${OBJ_STD}/sources_standalone.o 
@@ -48,7 +48,7 @@ ETS_RUN: ${OBJDIR}/ets_run.o
 	$(MPIF90) -o ${RUN_ETS_EXE} $^ -I${ETS_STD} -I${TOOLS_STD} -L${ETS} -L${LIB_UAL} -L${LIB_TYPES} -L${LIB_XML} -L${LIB_CONSTANTS} -lets -lual -litmtypes -lxmllib -litmconstants ${LDFLAGS} ${LIBLAPACK}
 
 ${OBJDIR}/ets_run.o: ets_run.f90
-	${MPIF90} -o $@ -c $< $(FC90FLAGS) -I${INC_STD} -I${ETS} -I${INC_UAL} -I${INC_TYPES} -I${INC_XML} -I${INC_CONSTANTS} 
+	${MPIF90} -o $@ -c $< $(FC90FLAGS) -traceback -check all -fp-stack-check  -I${INC_STD} -I${ETS} -I${INC_UAL} -I${INC_TYPES} -I${INC_XML} -I${INC_CONSTANTS} 
 
 # CHEASE
 CHEASE_RUN: ${OBJDIR}/chease_run.o

@@ -19,4 +19,4 @@
 #SBATCH --time=3:00:00
 
 # Run the program:
-srun python ets_test.py  > est_test.log
+srun python ets_test.py  > test.log.${SLURM_JOBID}

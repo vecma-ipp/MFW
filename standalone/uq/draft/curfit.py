@@ -5,7 +5,7 @@ from scipy.interpolate import splrep, splev
 from ascii_cpo import read
 import matplotlib.pylab as plt
 from mpl_toolkits.mplot3d import Axes3D
-
+import pandas as pd
 
 # Computes the Spline parameterization
 def compute_sites(x, y, method="uniform"):
@@ -38,7 +38,7 @@ def compute_sites(x, y, method="uniform"):
     return u
 
 # Approximate a set points of coordinates (x,y) using a Splines
-def approximate_curve(x, y, n_elements, degree, param_method="centripetal"):
+def approximate_curve(x, y, n_elements, degree, param_method="uniform"):
     assert len(x) == len(y)
 
     # The parameterization
@@ -60,16 +60,40 @@ def approximate_curve(x, y, n_elements, degree, param_method="centripetal"):
 
     return tck_x, tck_y
 
+#
+def spl_fit(x, n, p):
+
+    m = len(x)
+
+    # The parameterization
+    u = np.linspace(0., 1., m)
+
+    # Knots vector to define spline space
+    T = np.linspace(0., 1., n-p+1)[1:-1]
+
+    # Weights
+    w = np.ones(m)
+
+    # To interpolate the endpoints
+    w[0]  = 1.e16
+    w[-1] = 1.e16
+
+    # Find the knot points
+    tck_x = splrep(u, x, w=w, k=p, xb=0., xe=1., t=T)
+
+    return tck_x[0], tck[1][:n]
+
 # Approximation and plot of the pressure profile
 def test_approximation(cpo_dir):
     # get pressure fom the equilibrium
     corepfile = cpo_dir + '/ets_coreprof_in.cpo'
     corep = read(corepfile, 'coreprof')
     rho = corep.rho_tor
+    rn = corep.rho_tor_norm
     te = corep.te.value
 
     # Spline approximation (control points = n_elements + degree)
-    n_elements = 2
+    n_elements = 3
     degree = 3
     tck_x, tck_y = approximate_curve(rho, te, n_elements, degree)
 
@@ -86,11 +110,18 @@ def test_approximation(cpo_dir):
     # Plots
     fig = plt.figure()
     ax = fig.add_subplot(111)
-
+    df1 = pd.read_csv("xy.csv")
+    df2 = pd.read_csv("cp.csv")
+    r2 = df2["px"].to_numpy()
+    t2 = df2["py"].to_numpy()
+    cx = df1["cx"].to_numpy()
+    cy = df1["cy"].to_numpy()
 
     ax.plot(rho, te, "b.",  markersize=5, alpha=0.8, label='Pressure Profile')
-    #ax.plot(ra, pa, 'g-', label='Approxiamtion')
+    ax.plot(ra, pa, 'g-', label='Approxiamtion')
+    ax.plot(r2, t2, 'r-', label='Approxiamtion ++')
     ax.plot(Px, Py, 'go', label='Control Points')
+    ax.plot(cx, cy, 'r+', label='Control Points ++')
     #ax.errorbar(Px, Py, yerr=600, fmt='r.', capsize=5)
 
     ax.set_xlabel(r'$\rho_{tor} \, [m]$')

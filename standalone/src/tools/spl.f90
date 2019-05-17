@@ -1,6 +1,6 @@
 !> Module for curves approximation and evalution using non periodic splines.
 
-module splfit
+module spl_module
 
 contains
   
@@ -121,9 +121,7 @@ contains
   
   ! Computes the Spline parameterization
   subroutine sites(x, y, method, u)
-
     implicit none
-
     real(8), dimension(:), intent(in) :: x
     real(8), dimension(:), intent(in) :: y
     character(*), intent(in) :: method
@@ -172,7 +170,6 @@ contains
       deallocate(di)
       
     endif
-
   end subroutine sites
 
   !> @brief  Curve fitting of a set of m points (coordinates are (x[i], y[i]) 
@@ -186,7 +183,6 @@ contains
   !> @param[out] P       The control points
   subroutine approximate_curve(X, Y, n, k, method, T, P)
     implicit none
-
     real(8), dimension(:), intent(in) :: X
     real(8), dimension(:), intent(in) :: Y
     integer, intent(in) :: n
@@ -276,5 +272,127 @@ contains
     deallocate(R) 
 
   end subroutine approximate_curve
+  ! ================================================================================
+  
+  ! ================================================================================
+  !> @brief     elevate the spline at X 
+  !>
+  !> @param[in] d manifold dimension for the control points  
+  !> @param[in] n number of control points 
+  !> @param[in] p spline degree 
+  !> @param[in] U Initial Knot vector 
+  !> @param[in] Q Initial Control points  
+  !> @param[in] r dimension of X - 1 
+  !> @param[in] X the positions on wich evaluation is done  
+  !> @param[out] Cw Values  
+  subroutine splev(d, n, p, U, Q, r, X, Cw)
+    implicit none
 
-end module splfit
+    integer(kind=4), intent(in)  :: d
+    integer(kind=4), intent(in)  :: n, p
+    real   (kind=8), intent(in)  :: U(n+p+1)
+    real   (kind=8), intent(in)  :: Q(d,n)
+    integer(kind=4), intent(in)  :: r
+    real   (kind=8), intent(in)  :: X(r)
+    real   (kind=8), intent(out) :: Cw(d,r)
+    integer(kind=4) :: i, j, span
+    real   (kind=8) :: basis(p+1)
+    
+    Cw = 0.0
+    do i = 1, r
+      span = find_span(n-1, p, X(i), U)
+      call basis_funs(span, X(i), p, U, basis)
+      
+      do j = 0, p
+        Cw(:, i) = Cw(:, i) + basis(j+1) * Q(:,span-p+j+1)
+      end do
+    end do
+
+  end subroutine splev
+
+  !> @brief  Curve fitting of a set of m points (coordinates are (x[i], y[i]) 
+  !          using Least Squares approximation. The endpoints are interpolated.
+  !>
+  !> @param[in]  x       The coordinates of the 1D curve
+  !> @param[in]  n       The number of control points (n>p)
+  !> @param[in]  p       Spline degree 
+  !> @param[out] knots   The Knots  vector
+  !> @param[out] c       The control points
+  subroutine splrep(x, n, p, knots, c)
+    implicit none
+    real(8), dimension(:), intent(in) :: x
+    integer, intent(in) :: n
+    integer, intent(in) :: p
+
+    real(8), dimension(:), intent(out) :: knots
+    real(8), dimension(:), intent(out) :: c
+
+    real(8), dimension(:), allocatable :: u, b, r 
+    real(8), dimension(:, :), allocatable :: A, mat
+
+    integer :: info, m, i 
+    
+    ! Number of verticies
+    m = size(x)
+    
+    ! The parameter values
+    allocate(u(m))
+    do i = 0, m-1
+      u(i+1) = 1.0*i/(m-1)
+    enddo
+    
+    ! Knots vector   
+    do i =1, p+1
+      knots(i) = 0.0
+      knots(n+i) = 1.0
+    enddo
+    
+    do i = 1, n-p-1
+      knots(p+i+1) = 1.0*i/(n-p)
+    enddo
+    
+    ! Collocation matrix of size (m, n)
+    allocate(mat(m, n))
+    call collocation_matrix(n, p, knots, u, mat)
+    
+    ! Get matrix and rhs for Least Squares Linear system
+    ! A = Dt*D (D = mat(2:n-1, 2:m-1)
+    ! removed lines and rows correspond to the interpolated endpoints
+    allocate(A(n-2, n-2))
+    A = matmul(transpose(mat(2:m-1, 2:n-1)), mat(2:m-1, 2:n-1))
+    
+    ! RHS
+    allocate(b(n-2))
+    allocate(r(m-2))
+
+    do i=2, m-1
+      r(i-1) = x(i) - mat(i,1)*x(1) - mat(i,n)*x(m)
+    enddo
+
+    b(:) = matmul(transpose(mat(2:m-1, 2:n-1)), r(:))
+    
+    ! Solve the linear syestem using  LAPACK
+    call DPOSV('Upper', n-2, 1, A, n-2, b, n-2, INFO)
+    
+    ! Check for the exact singularity. 
+    if( info.gt.0 ) then
+         WRITE(*,*)'The leading minor of order ',INFO,' is not positive'
+         WRITE(*,*)'definite; the solution could not be computed.'
+         STOP
+    end if
+    
+    ! Interpolate endpoints
+    c(1) = x(1)
+    c(n) = x(m)
+    ! The rest of the Control points
+    c(2:n-1) = b(:)
+
+    ! Dellocations
+    deallocate(u) 
+    deallocate(mat) 
+    deallocate(A) 
+    deallocate(b) 
+    deallocate(r) 
+  end subroutine splrep
+
+end module spl_module
