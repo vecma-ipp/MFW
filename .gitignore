@@ -28,6 +28,6 @@ standalone/uq/*.so
 standalone/uq/*.pyc
 standalone/uq/*cache*
 standalone/uq/*.log
-standalone/uq/utils/*.so
-standalone/uq/utils/*.pyc
-standalone/uq/utils/*cache*
+standalone/uq/tools/*.so
+standalone/uq/tools/*.pyc
+standalone/uq/tools/*cache*
