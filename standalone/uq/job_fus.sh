@@ -19,4 +19,4 @@
 #SBATCH --time=6:00:00
 
 # Run the program:
-srun python ets_test.py  > test.log.${SLURM_JOBID}
+srun python src_test.py  > test.log.${SLURM_JOBID}

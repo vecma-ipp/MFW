@@ -213,7 +213,7 @@ implicit none
     ! ====== UQP 1
     case('uqp1')
       ! To collect outputs data, the quantity of interest is Te
-      n_data    = 100
+      n_data    = 101
       n_outputs = 1 
       ! Open the CSV output file
       call csv_out_file%open(out_file, n_cols=n_outputs, status_ok=outfile_status)
@@ -234,8 +234,8 @@ implicit none
       allocate(knots(n+p+1)) ! could be done inside splrep
       allocate(c(n))
       
-      ! Approximation of Te 
-      call splrep(corep_new(1)%te%value, n, p, knots, c)
+      ! Approximation of p
+      call splrep(equil_new(1)%profiles_1d%pressure, n, p, knots, c)
       
       ! the first derivative = 0 in rho=0
       c(2) = c(1) 
@@ -248,7 +248,7 @@ implicit none
       call csv_out_file%next_row()
       
       ! Add data
-      do i=1, n-1
+      do i=2, n-1
         call csv_out_file%add(c(i))
         call csv_out_file%next_row()
       end do

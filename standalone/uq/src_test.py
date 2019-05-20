@@ -122,7 +122,7 @@ plots.plot_stats(rho, stat_te,
                  ftitle='UQ: Te profile',
                  fname='te_prof.png')
 
-plots.plot_sobols3(rho, sobol_te, uncert_params,
+plots.plot_sobols_3(rho, sobol_te, uncert_params,
                   ftitle='Te UQ: First-Order Sobol indices',
                   fname='te_sobol.png')
 
@@ -131,6 +131,6 @@ plots.plot_stats(rho, stat_j,
                  ftitle='UQ: Ti profile',
                  fname='ti_prof.png')
 
-plots.plot_sobols3(rho, sobol_j, uncert_params,
+plots.plot_sobols_3(rho, sobol_j, uncert_params,
                   ftitle='Ti UQ: First-Order Sobol indices',
                   fname='ti_sobol.png')

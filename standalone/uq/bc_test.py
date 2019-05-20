@@ -130,6 +130,4 @@ plots.plot_stats(rho, stat_ti,
                  ftitle='Ti profile',
                  fname='ti_prof.png')
 
-#plots.plot_sobols(rho, sobol_ti, uncert_params,
-#                  ftitle='Ti UQ: First-Order Sobol indices',
-#                  fname='ti_sobol.png')
+

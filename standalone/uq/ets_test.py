@@ -11,7 +11,7 @@ from tools import plots, spl
 UQ test of ETS
 '''
 
-
+print('ETS_TEST: start')
 start_time = time.time()
 
 # CPO files
@@ -102,7 +102,7 @@ corep_file = common_dir + '/ets_coreprof_in.cpo'
 corep = read(corep_file, 'coreprof')
 rho = corep.rho_tor
 
-n=5
+n=6
 p=3
 knot, crho = spl.spl_fit(rho, n, p)
 
@@ -113,4 +113,3 @@ plots.plot_stats(crho, stat,
                  fname='cp_te_prof.png')
 
 plots.plot_dist(dist["c"], stat)
-plots.plot_dist01(dist["c"], stat)

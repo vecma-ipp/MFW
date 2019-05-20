@@ -47,7 +47,7 @@ implicit none
   type(csv_file)     :: csv_out_file
 
   ! LOOP paramaters
-  integer, parameter :: STEPS = 35
+  integer, parameter :: STEPS = 25
   logical, parameter :: TIMETRACE = .FALSE.
   
   ! CPO file names

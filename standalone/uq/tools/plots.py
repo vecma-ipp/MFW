@@ -66,7 +66,7 @@ def plot_stats(x, stat, xlabel, ylabel, ftitle, fname=None):
     fig = plt.figure(figsize=(12,9))
 
     ax1 = fig.add_subplot(111)
-    ax1.plot(x, mean, 'g-', alpha=0.75, label='Mean')
+    ax1.plot(x, mean, 'ro', alpha=0.75, label='Mean')
     ax1.plot(x, mean-std, 'b-', alpha=0.25)
     ax1.plot(x, mean+std, 'b-', alpha=0.25)
     ax1.fill_between(x, mean-std, mean+std, alpha=0.25, label=r'Mean $\pm$ deviation')
@@ -76,11 +76,11 @@ def plot_stats(x, stat, xlabel, ylabel, ftitle, fname=None):
     ax1.grid()
     ax1.legend()
 
-    ax2 = ax1.twinx()
-    ax2.plot(x, var, 'r-', alpha=0.5)
-    ax2.set_ylabel('Variance', color='r')
-    ax2.tick_params('y', colors='r')
-    ax2 = format_exponent(ax2, axis='y')
+#    ax2 = ax1.twinx()
+#    ax2.plot(x, var, 'r-', alpha=0.5)
+#    ax2.set_ylabel('Variance', color='r')
+#    ax2.tick_params('y', colors='r')
+#    ax2 = format_exponent(ax2, axis='y')
 
     plt.title(ftitle)
 
@@ -93,7 +93,7 @@ def plot_stats(x, stat, xlabel, ylabel, ftitle, fname=None):
     #plt.close()
 
 # TODO: generic plots (here for 4 params)
-def plot_sobols_4(x, sobols, params):
+def plot_sobols_4(x, sobols, params, typ):
     plt.switch_backend('agg')
 
     s1 = sobols[params[0]]
@@ -121,8 +121,8 @@ def plot_sobols_4(x, sobols, params):
     ax.plot(x, s4)
     ax.set_title('D4')
 
-    fig.suptitle('First-Order Sobol indices')
-    fig.savefig('sobols.png')
+    fig.suptitle(typ+' - First-Order Sobol indices')
+    fig.savefig(typ+'sobols.png')
     plt.close(fig)
 
 def plot_sobols_2(x, sobols1, sobols2, params):
@@ -155,7 +155,7 @@ def plot_sobols_2(x, sobols1, sobols2, params):
     fig.savefig('TiTe_sobols.png')
     plt.close(fig)
 
-def plot_sobols3(x, sobols, params, ftitle, fname):
+def plot_sobols_3(x, sobols, params, ftitle, fname):
     plt.switch_backend('agg')
 
     s1 = sobols[params[0]]
@@ -232,32 +232,32 @@ def plot_dist(dist, stat):
         ax.axvline(x=m[j]+sd[j], color= 'C1', linestyle='--')
         ax.set_title(r'dist in: $C_'+str(j)+'$')
         ax.grid()
-        j = i+1
+        j = i+2
 
     fig.suptitle('Output distiburions')
     fig.savefig('dist_out.png')
     plt.close(fig)
 
-def plot_dist01(dist, stat):
-    plt.switch_backend('agg')
-    m = np.array(stat["mean"])
-    sd = np.array(stat['std'])
-
-    fig = plt.figure(figsize=(12,9))
-    ax = fig.add_subplot(111)
-
-    s0 = np.linspace(m[0]-3*sd[0], m[0]+3*sd[0], 100)
-    d0 = dist[0].pdf(s0)
-    ax.plot(s0, d0, label=r'$C_0$')
-
-    s1 = np.linspace(m[1]-3*sd[1], m[1]+3*sd[1], 100)
-    d1 = dist[1].pdf(s1)
-    ax.plot(s1, d1, label=r'$C_1$')
-
-    ax.set_title(r'dist in: $C_0$ and $C_1$')
-    ax.grid()
-
-    ax.legend()
-
-    fig.savefig('dist_out01.png')
-    plt.close(fig
+#def plot_dist01(dist, stat):
+#    plt.switch_backend('agg')
+#    m = np.array(stat["mean"])
+#    sd = np.array(stat['std'])
+#
+#    fig = plt.figure(figsize=(12,9))
+#    ax = fig.add_subplot(111)
+#
+#    s0 = np.linspace(m[0]-3*sd[0], m[0]+3*sd[0], 100)
+#    d0 = dist[0].pdf(s0)
+#    ax.plot(s0, d0, label=r'$C_0$')
+#
+#    s1 = np.linspace(m[1]-3*sd[1], m[1]+3*sd[1], 100)
+#    d1 = dist[1].pdf(s1)
+#    ax.plot(s1, d1, label=r'$C_1$')
+#
+#    ax.set_title(r'dist in: $C_0$ and $C_1$')
+#    ax.grid()
+#
+#    ax.legend()
+#
+#    fig.savefig('dist_out01.png')
+#    plt.close(fig)
