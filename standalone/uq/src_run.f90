@@ -2,7 +2,7 @@
 !> @brief  run UQ for the loop:  ETS + Update EQ + CHEASE + BOHMGB
 !> Uncertainty in sources 
 
-program loop_src_run
+program src_run
 
 use allocate_deallocate
 
@@ -39,16 +39,16 @@ implicit none
   character(len=128) :: in_fname   
 
   ! Uncertain parameters: 
-  ! Initial conditions: Te in the Eadge and Center
-  real(kind=8) :: D1, D2, D3, D4
+  real(kind=8) :: E_AMP, E_MEAN, E_STD
+  real(8) :: params_in(3)
   
   ! Output file contraining values of interset (te, ti, pressure ...)
   character(len=128) :: out_file
   type(csv_file)     :: csv_out_file
 
   ! LOOP paramaters
-  integer, parameter :: STEPS = 50
-  logical, parameter :: TIMETRACE = .TRUE.
+  integer, parameter :: STEPS = 35
+  logical, parameter :: TIMETRACE = .FALSE.
   
   ! CPO file names
   character(len=128) :: corep_in_file 
@@ -99,10 +99,10 @@ implicit none
   end if
  
   ! Read uncertain paramters (cf. inputs/ic.template) 
-  namelist /loop_input_file/ D1, D2, D3, D4, out_file  
+  namelist /src_input_file/ E_AMP, E_MEAN, E_STD, out_file  
   
   open(unit=9, file=trim(in_fname))
-  read(9, loop_input_file)
+  read(9, src_input_file)
   
   ! Read the Path to CPO dir from the consol 
   call get_command_argument(1, cpo_dir)
@@ -202,8 +202,13 @@ implicit none
      STOP
   end if
   
-  ! SOURCES 
-  call gaussian_source_cpo(corep_in, equil_in, cores_in)
+  ! To update code_parameters
+  params_in(1) = E_AMP  ! WTOT_el
+  params_in(2) = E_MEAN ! RHEAT_el
+  params_in(3) = E_STD  ! FWHEAT_el
+
+  ! Run gausian_sources
+  call gaussian_source_cpo(corep_in, equil_in, params_in, cores_in)
   
   ! Loop: ETS - CHEASE - BOHNGB
   allocate(corep_old(1))
@@ -268,18 +273,19 @@ implicit none
 
   ! UQ Analysis: collect outputs data, the quantity of interest is Te
   n_data    = 100 
-  n_outputs = 1 
+  n_outputs = 2 
   ! Open the CSV output file
   call csv_out_file%open(out_file, n_cols=n_outputs, status_ok=outfile_status)
 
   ! Add headers
   !call csv_out_file%add('te')
+  call csv_out_file%add('te')
   call csv_out_file%add('ti')
   call csv_out_file%next_row()
   
   ! Add data
   do i=1, n_data
-    !call csv_out_file%add(corep_ets(1)%te%value(i))
+    call csv_out_file%add(corep_ets(1)%te%value(i))
     call csv_out_file%add(corep_ets(1)%ti%value(i, 1))
     !call csv_out_file%add(equil_chease(1)%profiles_1d%pressure(i))
     call csv_out_file%next_row()
@@ -301,4 +307,4 @@ implicit none
   call deallocate_cpo(corei_in)
   call deallocate_cpo(toroidf_in)
  
-end program loop_src_run
+end program src_run

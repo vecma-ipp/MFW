@@ -16,7 +16,7 @@
 #SBATCH --mail-user=ljala@rzg.mpg.de
 #
 # Wall clock limit:
-#SBATCH --time=3:00:00
+#SBATCH --time=6:00:00
 
 # Run the program:
 srun python ets_test.py  > test.log.${SLURM_JOBID}

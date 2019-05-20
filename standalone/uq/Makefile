@@ -35,10 +35,10 @@ BINDIR = ../bin/${SYS}
 
 RUN_ETS_EXE    = ${BINDIR}/ets_run
 RUN_CHEASE_EXE = ${BINDIR}/chease_run
-RUN_LOOP_BC_EXE   = ${BINDIR}/loop_bc_run
-RUN_LOOP_SRC_EXE   = ${BINDIR}/loop_src_run
+RUN_BC_EXE   = ${BINDIR}/bc_run
+RUN_SRC_EXE   = ${BINDIR}/src_run
 
-RUNS = ETS_RUN CHEASE_RUN LOOP_BC_RUN LOOP_SRC_RUN
+RUNS = ETS_RUN CHEASE_RUN BC_RUN SRC_RUN
 
 # Rules
 all: ${RUNS}
@@ -58,17 +58,17 @@ ${OBJDIR}/chease_run.o: chease_run.f90
 	${MPIF90} -o $@ -c $< $(FC90FLAGS) -I${INC_STD} -I${CHEASE} -I${INC_XML} -I/usr/include/libxml2 -I${INC_UAL} -I${INC_TYPES}
 
 # LOOP BC: ETS + CHEASE + BOHMGB
-LOOP_BC_RUN: ${OBJDIR}/loop_bc_run.o
-	$(MPIF90) -o ${RUN_LOOP_BC_EXE} $^ -I${ETS_STD} -I${CHEASE_STD} -I${BOHMGB_STD} -I${TOOLS_STD} -L${ETS} -L${CHEASE} -L${BOHMGB} -L${LIB_BDS} -L${LIB_UAL} -L${LIB_TYPES} -L${LIB_XML} -L${LIB_CONSTANTS} -lets -lchease_muscle -lbohmgb -lbds -lual -litmtypes -lxmllib -lxml2 -litmconstants ${LDFLAGS} ${LIBLAPACK}
+BC_RUN: ${OBJDIR}/bc_run.o
+	$(MPIF90) -o ${RUN_BC_EXE} $^ -I${ETS_STD} -I${CHEASE_STD} -I${BOHMGB_STD} -I${TOOLS_STD} -L${ETS} -L${CHEASE} -L${BOHMGB} -L${LIB_BDS} -L${LIB_UAL} -L${LIB_TYPES} -L${LIB_XML} -L${LIB_CONSTANTS} -lets -lchease_muscle -lbohmgb -lbds -lual -litmtypes -lxmllib -lxml2 -litmconstants ${LDFLAGS} ${LIBLAPACK}
 
-${OBJDIR}/loop_bc_run.o: loop_bc_run.f90
+${OBJDIR}/bc_run.o: bc_run.f90
 	${MPIF90} -o $@ -c $< $(FC90FLAGS) -I${INC_STD} -I${ETS} -I${CHEASE} -I${BOHMGB} -I${INC_BDS} -I${INC_XML} -I/usr/include/libxml2 -I${INC_UAL} -I${INC_TYPES} -I${INC_CONSTANTS} 
 	
 # LOOP SRC: ETS + CHEASE + BOHMGB
-LOOP_SRC_RUN: ${OBJDIR}/loop_src_run.o
-	$(MPIF90) -o ${RUN_LOOP_SRC_EXE} $^ -I${SRC_STD} -I${ETS_STD} -I${CHEASE_STD} -I${BOHMGB_STD} -I${TOOLS_STD} -L${ETS} -L${CHEASE} -L${BOHMGB} -L${LIB_BDS} -L${LIB_UAL} -L${LIB_TYPES} -L${LIB_XML} -L${LIB_CONSTANTS} -lets -lchease_muscle -lbohmgb -lbds -lual -litmtypes -lxmllib -lxml2 -litmconstants ${LDFLAGS} ${LIBLAPACK}
+SRC_RUN: ${OBJDIR}/src_run.o
+	$(MPIF90) -o ${RUN_SRC_EXE} $^ -I${SRC_STD} -I${ETS_STD} -I${CHEASE_STD} -I${BOHMGB_STD} -I${TOOLS_STD} -L${ETS} -L${CHEASE} -L${BOHMGB} -L${LIB_BDS} -L${LIB_UAL} -L${LIB_TYPES} -L${LIB_XML} -L${LIB_CONSTANTS} -lets -lchease_muscle -lbohmgb -lbds -lual -litmtypes -lxmllib -lxml2 -litmconstants ${LDFLAGS} ${LIBLAPACK}
 
-${OBJDIR}/loop_src_run.o: loop_src_run.f90
+${OBJDIR}/src_run.o: src_run.f90
 	${MPIF90} -o $@ -c $< $(FC90FLAGS) -I${INC_STD} -I${ETS} -I${CHEASE} -I${BOHMGB} -I${INC_BDS} -I${INC_XML} -I/usr/include/libxml2 -I${INC_UAL} -I${INC_TYPES} -I${INC_CONSTANTS} 
 
 
@@ -76,5 +76,5 @@ ${OBJDIR}/loop_src_run.o: loop_src_run.f90
 clean:
 	rm -rf ${OBJDIR}/ets_run.o ${INCDIR}/ets_run.mod ${BINDIR}/ets_run 
 	rm -rf ${OBJDIR}/chease_run.o ${INCDIR}/chease_run.mod ${BINDIR}/chease_run 
-	rm -rf ${OBJDIR}/loop_bc_run.o ${INCDIR}/loop_bc_run.mod ${BINDIR}/loop_bc_run 
-	rm -rf ${OBJDIR}/loop_src_run.o ${INCDIR}/loop_src_run.mod ${BINDIR}/loop_src_run 
+	rm -rf ${OBJDIR}/bc_run.o ${INCDIR}/bc_run.mod ${BINDIR}/bc_run 
+	rm -rf ${OBJDIR}/src_run.o ${INCDIR}/src_run.mod ${BINDIR}/src_run 

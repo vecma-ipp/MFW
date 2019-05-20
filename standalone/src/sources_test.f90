@@ -10,6 +10,7 @@ program sources_test
   type(type_coreprof), pointer :: corep(:)
   type(type_equilibrium), pointer :: equil(:)
   type(type_coresource), pointer :: cores(:)
+  real(8) :: params(3)
 
   integer :: ios
 
@@ -43,8 +44,14 @@ program sources_test
      print *,"CPO file not found ", equil_file_in
      STOP
   end if
+  params(1) = 906753.0485796847 
+!  params(2) = 0.4533765242898424
+!  params(3) = 0.18135060971593694
 
-  call gaussian_source_cpo(corep, equil, cores)
+  params(2)=0.5466234757101576
+  params(3)=0.21864939028406308
+  
+  call gaussian_source_cpo(corep, equil, params, cores)
 
   ! transfer CPO to buf
   call open_write_file(12,'gaussian_coresource_out.cpo')

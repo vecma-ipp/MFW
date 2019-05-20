@@ -1,0 +1,15 @@
+{
+    "app": {
+      "input_encoder":  "generic_template",
+      "encoder_delimiter": "#",
+      "output_decoder": "csv",
+      "template":       "inputs/src.template",
+      "input_filename": "src_input.nml"
+    },
+    "params": {
+      "E_AMP": {"type": "real", "min": "0.0", "max": "1000000.0", "default": "1000000.0"},
+      "E_MEAN": {"type": "real", "min": "0.0", "max": "1.0", "default": "0.5"},
+      "E_STD": {"type": "real", "min": "0.0", "max": "1.0", "default": "0.2"},
+      "out_file": {"type": "str", "default": "te_output.csv"}
+    }
+}

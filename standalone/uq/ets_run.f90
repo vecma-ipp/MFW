@@ -237,6 +237,9 @@ implicit none
       ! Approximation of Te 
       call splrep(corep_new(1)%te%value, n, p, knots, c)
       
+      ! the first derivative = 0 in rho=0
+      c(2) = c(1) 
+      
       ! Open the CSV output file
       call csv_out_file%open(out_file, n_cols=1, status_ok=outfile_status)
       

@@ -113,3 +113,4 @@ plots.plot_stats(crho, stat,
                  fname='cp_te_prof.png')
 
 plots.plot_dist(dist["c"], stat)
+plots.plot_dist01(dist["c"], stat)

@@ -20,7 +20,7 @@ module sources_standalone
 contains
   
   ! ... fortran wrapper
-  subroutine gaussian_source_cpo(corep_in, equil_in, cores_out) 
+  subroutine gaussian_source_cpo(corep_in, equil_in, params_in, cores_out) 
     use iso_c_binding
     use string_binding
     use xml_file_reader
@@ -30,20 +30,31 @@ contains
 
     type (type_coreprof), pointer :: corep_in(:)
     type (type_equilibrium), pointer :: equil_in(:)
+    ! TODO find a way to write in code params like cops 
+    real(8):: params_in(3) ! temporary params 
     type (type_coresource), pointer :: cores_out(:)
     type (type_param) :: code_parameters
 
     ! Path to the workflows directory
-    character(len=128) :: workflows_dir  
-    integer :: len
+    character(len=10) :: WTOT_el, RHEAT_el, FWHEAT_el
     
     ! Get code params
     call fill_param(code_parameters, '../../workflows/source_dummy.xml', '', '../../workflows/source_dummy.xsd')
-
-!    !...  run gausian_sources
+    
+    !i_JNITOT = INDEX(code_parameters%parameters(9), "1.E5")
+    
+    write(WTOT_el,'(ES10.3)') params_in(1)
+    write(RHEAT_el,'(ES10.3)') params_in(2)
+    write(FWHEAT_el,'(ES10.3)') params_in(3)
+    
+    code_parameters%parameters(19)(26:35) = WTOT_el   ! Amplitude
+    code_parameters%parameters(20)(26:35) = RHEAT_el  ! Mean
+    code_parameters%parameters(21)(26:35) = FWHEAT_el ! STD
+    
+    ! Run gausian_sources
     call gausian_sources(corep_in, equil_in, cores_out, code_parameters)
 
-    ! deallocations
+    ! Deallocations
     if (associated(code_parameters%schema)) then
        deallocate(code_parameters%schema)
     endif

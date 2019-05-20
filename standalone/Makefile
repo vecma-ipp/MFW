@@ -209,10 +209,10 @@ ${OBJDIR}/equilupdate_standalone.o: src/equilupdate_standalone.f90
 	${FC90} -o $@ -c $< $(FC90FLAGS) -I${ETS} -I${INC_CONSTANTS} -I${INC_TYPES} 
 
 ${OBJDIR}/sources_standalone.o: src/sources_standalone.f90
-	${FC90} -o $@ -c $< $(FC90FLAGS) -I${ETS} -I${INC_XML} -I${INC_CONSTANTS} -I${INC_TYPES} 
+	${FC90} -o $@ -c $< $(FC90FLAGS) -traceback -check all -fp-stack-check -I${ETS} -I${INC_XML} -I${INC_CONSTANTS} -I${INC_TYPES} 
 
 ${OBJDIR}/sources_test.o: src/sources_test.f90
-	${MPIF90} -o $@ -c $< $(MPIF90FLAGS) -I${ETS} -I${INC_TYPES} 
+	${MPIF90} -o $@ -c $< $(MPIF90FLAGS) -traceback -check all -fp-stack-check -I${ETS} -I${INC_TYPES} 
 
 ${OBJDIR}/bohmgb_standalone.o: src/bohmgb_standalone.f90
 	${FC90} -o $@ -c $< $(FC90FLAGS) -I${INC_BDS} -I${INC_XML} 

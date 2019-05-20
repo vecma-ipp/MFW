@@ -98,6 +98,7 @@ def test_approximation(cpo_dir):
     tck_x, tck_y = approximate_curve(rho, te, n_elements, degree)
 
     # Get the control points
+    tck_y[1][1] =  tck_y[1][0]
     Px = tck_x[1][: n_elements + degree]
     Py = tck_y[1][: n_elements + degree]
 
@@ -110,23 +111,23 @@ def test_approximation(cpo_dir):
     # Plots
     fig = plt.figure()
     ax = fig.add_subplot(111)
-    df1 = pd.read_csv("xy.csv")
-    df2 = pd.read_csv("cp.csv")
-    r2 = df2["px"].to_numpy()
-    t2 = df2["py"].to_numpy()
-    cx = df1["cx"].to_numpy()
-    cy = df1["cy"].to_numpy()
+#    df1 = pd.read_csv("xy.csv")
+#    df2 = pd.read_csv("cp.csv")
+#    r2 = df2["px"].to_numpy()
+#    t2 = df2["py"].to_numpy()
+#    cx = df1["cx"].to_numpy()
+#    cy = df1["cy"].to_numpy()
 
-    ax.plot(rho, te, "b.",  markersize=5, alpha=0.8, label='Pressure Profile')
+    ax.plot(rho, te, "b.",  markersize=5, alpha=0.8, label='Te Profile')
     ax.plot(ra, pa, 'g-', label='Approxiamtion')
-    ax.plot(r2, t2, 'r-', label='Approxiamtion ++')
-    ax.plot(Px, Py, 'go', label='Control Points')
-    ax.plot(cx, cy, 'r+', label='Control Points ++')
+    #ax.plot(r2, t2, 'r-', label='Approxiamtion ++')
+    ax.plot(Px, Py, 'ro', label='Control Points')
+    #ax.plot(cx, cy, 'r+', label='Control Points ++')
     #ax.errorbar(Px, Py, yerr=600, fmt='r.', capsize=5)
 
     ax.set_xlabel(r'$\rho_{tor} \, [m]$')
-    ax.set_ylabel('P [bar]')
-    ax.set_title('ETS + EQ Update output  \n Spline approximation of the pressure profile')
+    ax.set_ylabel('Te [eV]')
+    ax.set_title('ETS + EQ Update output  \n Spline approximation of the Te profile')
 
     ax.legend()
     plt.grid()
