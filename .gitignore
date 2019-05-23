@@ -31,3 +31,6 @@ standalone/uq/*.log
 standalone/uq/tools/*.so
 standalone/uq/tools/*.pyc
 standalone/uq/tools/*cache*
+standalone/plots/*.png
+standalone/logs/test*
+
