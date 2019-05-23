@@ -25,7 +25,7 @@ uncert_params =["S1", "S2", "S3"]
 tmp_dir = "/ptmp/ljala/"
 
 # To run F90 code
-src_exec = "../bin/DRACO/src_run "
+src_exec = "../bin/DRACO/gauss_src_run "
 
 # Input/Output template
 input_json = "inputs/src_in.json"
@@ -121,18 +121,18 @@ rho = corep.rho_tor
 plots.plot_stats(rho, stats_te,
                  xlabel=r'$\rho_{tor} ~ [m]$', ylabel=r'$T_e ~ [eV]$',
                  ftitle='UQ: Te profile',
-                 fname='te_prof_src.png')
+                 fname='plots/te_prof_src.png')
 
 plots.plot_stats(rho, stats_ti,
                  xlabel=r'$\rho_{tor} ~ [m]$', ylabel=r'$T_i ~ [eV]$',
                  ftitle='UQ: Ti profile',
-                 fname='ti_prof_src.png')
+                 fname='plots/ti_prof_src.png')
 
-plot_sobols_3(rho, sobols_te, uncert_params,
+plots.plot_sobols_3(rho, sobols_te, uncert_params,
               ftitle='First-Order Sobol indices - QoI: Te',
-              fname='te_sobol_src.png')
+              fname='plots/te_sobol_src.png')
 
-plot_sobols_3(rho, sobols_ti, uncert_params,
+plots.plot_sobols_3(rho, sobols_ti, uncert_params,
               ftitle='First-Order Sobol indices - QoI: Ti',
-              fname='ti_sobol_src.png')
+              fname='plots/ti_sobol_src.png')
 

@@ -1,7 +1,7 @@
 #!/bin/bash -l
 # Standard output and error:
-#SBATCH -o ./test.out.%j
-#SBATCH -e ./test.err.%j
+#SBATCH -o logs/test.out.%j
+#SBATCH -e logs/test.err.%j
 # Initial working directory:
 #SBATCH -D ./
 # Job Name:
@@ -19,4 +19,4 @@
 #SBATCH --time=6:00:00
 
 # Run the program:
-srun python src_test.py  > test.log.${SLURM_JOBID}
+srun python gauss_src_test.py  > logs/test.log.${SLURM_JOBID}

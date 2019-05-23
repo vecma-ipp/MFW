@@ -159,8 +159,8 @@ def plot_sobols_3(x, sobols, params, ftitle, fname):
     plt.switch_backend('agg')
 
     s1 = sobols[params[0]]
-    s2 = sobols[params[0]]
-    s3 = sobols[params[1]]
+    s2 = sobols[params[1]]
+    s3 = sobols[params[2]]
 
     plt.switch_backend('agg')
     fig = plt.figure(figsize=(12,9))

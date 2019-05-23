@@ -2,7 +2,7 @@
 !> @brief  run UQ for the loop:  ETS + Update EQ + CHEASE + BOHMGB
 !> Uncertainty in sources 
 
-program src_run
+program gauss_src_run
 
 use allocate_deallocate
 
@@ -47,7 +47,7 @@ implicit none
   type(csv_file)     :: csv_out_file
 
   ! LOOP paramaters
-  integer, parameter :: STEPS = 1
+  integer, parameter :: STEPS = 50
   logical, parameter :: TIMETRACE = .FALSE.
   
   ! CPO file names
@@ -213,11 +213,11 @@ implicit none
   ! Run gausian_sources
   call gaussian_source_cpo(corep_in, equil_in, params_in, cores_in)
   
-  if (.not.TIMETRACE) then
-    call open_write_file(19,'ets_coresource_out.cpo')
-    call write_cpo(cores_in(1),'coresource')
-    call close_write_file
-  end if
+!  if (.not.TIMETRACE) then
+!    call open_write_file(19,'ets_coresource_out.cpo')
+!    call write_cpo(cores_in(1),'coresource')
+!    call close_write_file
+!  end if
   
   ! Loop: ETS - CHEASE - BOHNGB
   allocate(corep_old(1))
@@ -280,11 +280,11 @@ implicit none
 
   end do
   
-  if (.not.TIMETRACE) then
-     call open_write_file(20,'ets_coreprof_'//itstr//'.cpo')
-     call write_cpo(corep_ets(1),'coreprof')
-     call close_write_file
-  end if
+!  if (.not.TIMETRACE) then
+!     call open_write_file(20,'ets_coreprof_'//itstr//'.cpo')
+!     call write_cpo(corep_ets(1),'coreprof')
+!     call close_write_file
+!  end if
   
   ! UQ Analysis: collect outputs data, the quantity of interest is Te
   n_data    = 100 
@@ -322,4 +322,4 @@ implicit none
   call deallocate_cpo(corei_in)
   call deallocate_cpo(toroidf_in)
  
-end program src_run
+end program gauss_src_run
