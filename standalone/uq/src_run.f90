@@ -39,7 +39,7 @@ implicit none
   character(len=128) :: in_fname   
 
   ! Uncertain parameters: 
-  real(kind=8) :: E_AMP, E_MEAN, E_STD
+  real(kind=8) :: S1, S2, S3
   real(8) :: params_in(3)
   
   ! Output file contraining values of interset (te, ti, pressure ...)
@@ -47,7 +47,7 @@ implicit none
   type(csv_file)     :: csv_out_file
 
   ! LOOP paramaters
-  integer, parameter :: STEPS = 25
+  integer, parameter :: STEPS = 1
   logical, parameter :: TIMETRACE = .FALSE.
   
   ! CPO file names
@@ -99,7 +99,7 @@ implicit none
   end if
  
   ! Read uncertain paramters (cf. inputs/ic.template) 
-  namelist /src_input_file/ E_AMP, E_MEAN, E_STD, out_file  
+  namelist /src_input_file/ S1, S2, S3, out_file  
   
   open(unit=9, file=trim(in_fname))
   read(9, src_input_file)
@@ -203,12 +203,21 @@ implicit none
   end if
   
   ! To update code_parameters
-  params_in(1) = E_AMP  ! WTOT_el
-  params_in(2) = E_MEAN ! RHEAT_el
-  params_in(3) = E_STD  ! FWHEAT_el
+  ! S1 = 1.5E6
+  ! S2 = 0.0
+  ! S3 = 0.2
+  params_in(1) = S1 ! WTOT_el
+  params_in(2) = S2 ! RHEAT_el
+  params_in(3) = S3 ! FWHEAT_el
 
   ! Run gausian_sources
   call gaussian_source_cpo(corep_in, equil_in, params_in, cores_in)
+  
+  if (.not.TIMETRACE) then
+    call open_write_file(19,'ets_coresource_out.cpo')
+    call write_cpo(cores_in(1),'coresource')
+    call close_write_file
+  end if
   
   ! Loop: ETS - CHEASE - BOHNGB
   allocate(corep_old(1))
@@ -270,7 +279,13 @@ implicit none
     end if
 
   end do
-
+  
+  if (.not.TIMETRACE) then
+     call open_write_file(20,'ets_coreprof_'//itstr//'.cpo')
+     call write_cpo(corep_ets(1),'coreprof')
+     call close_write_file
+  end if
+  
   ! UQ Analysis: collect outputs data, the quantity of interest is Te
   n_data    = 100 
   n_outputs = 2 
@@ -278,7 +293,6 @@ implicit none
   call csv_out_file%open(out_file, n_cols=n_outputs, status_ok=outfile_status)
 
   ! Add headers
-  !call csv_out_file%add('te')
   call csv_out_file%add('te')
   call csv_out_file%add('ti')
   call csv_out_file%next_row()
@@ -286,6 +300,7 @@ implicit none
   ! Add data
   do i=1, n_data
     call csv_out_file%add(corep_ets(1)%te%value(i))
+    !call csv_out_file%add(corep_ets(1)%te%source_term%value(i))
     call csv_out_file%add(corep_ets(1)%ti%value(i, 1))
     !call csv_out_file%add(equil_chease(1)%profiles_1d%pressure(i))
     call csv_out_file%next_row()

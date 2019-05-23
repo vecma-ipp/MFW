@@ -1,6 +1,6 @@
 &src_input_file
-E_AMP=#E_MEAN
-E_MEAN=#E_MEAN
-E_STD=#E_STD
+S1=#S1
+S2=#S2
+S3=#S3
 out_file=#out_file
 /

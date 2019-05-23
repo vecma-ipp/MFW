@@ -17,8 +17,8 @@ program sources_test
   allocate(corep(1))
   allocate(equil(1))
   
-  corep_file_in = 'ets_coreprof_in.cpo'
-  equil_file_in = 'ets_equilibrium_in.cpo'
+  corep_file_in = '../data/TESTS/ets_coreprof_in.cpo'
+  equil_file_in = '../data/TESTS/ets_equilibrium_in.cpo'
 
   open (unit = 10, file = corep_file_in, &
        status = 'old', form = 'formatted', &
@@ -44,17 +44,16 @@ program sources_test
      print *,"CPO file not found ", equil_file_in
      STOP
   end if
-  params(1) = 906753.0485796847 
-!  params(2) = 0.4533765242898424
-!  params(3) = 0.18135060971593694
 
-  params(2)=0.5466234757101576
-  params(3)=0.21864939028406308
+  !  source_dummy.xml: heating_el
+  params(1) = 1.E6     ! WTOT_el   : Amplitude 
+  params(2) = 0.5      ! RHEAT_el  : Mean
+  params(3) = 0.2      ! FWHEAT_el : STD
   
   call gaussian_source_cpo(corep, equil, params, cores)
 
   ! transfer CPO to buf
-  call open_write_file(12,'gaussian_coresource_out.cpo')
+  call open_write_file(12,'gaussian_coresource_02.cpo')
   call write_cpo(cores(1),'coresource')
   call close_write_file
 

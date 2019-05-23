@@ -132,7 +132,7 @@ contains
     
     ! hard-coded, usually input of ets_wrapper and set by muscle cxa config file
 
-    tau = 0.008_8!control_double(1)
+    tau = 0.01_8!control_double(1)
     control_integer = (/ 4, 0, 0 /)
     control_double = (/ tau, 1.0_8, 1.0_8, 1.e0_8, 1.e-4_8, 1.0_8 /) 
 

@@ -135,7 +135,7 @@ def chease_test(cpo_dir, tmp_dir, list_dist):
 
     # Aggregate the results from all runs.
     output_filename = eq_campaign.params_info['out_file']['default']
-    output_columns = ['b_av', 'gm8']
+    output_columns = ['b_av']
 
     aggregate = uq.elements.collate.AggregateSamples(
         eq_campaign,
@@ -150,16 +150,13 @@ def chease_test(cpo_dir, tmp_dir, list_dist):
     analysis = uq.elements.analysis.PCEAnalysis(
         eq_campaign, value_cols=output_columns)
 
-    dist, cov = analysis.apply()
+    analysis.apply()
 
     # Results
-    stats_b = analysis.statistical_moments('b_av')
-    sobols_b= analysis.sobol_indices('b_av', 'first_order')
+    stats = analysis.statistical_moments('b_av')
+    sobols= analysis.sobol_indices('b_av', 'first_order')
 
-    stats_r = analysis.statistical_moments('gm8')
-    sobols_r= analysis.sobol_indices('gm8', 'first_order')
-
-    return stats_b, sobols_b, stats_r, sobols_r
+    return stats, sobols
 
 if __name__ == "__main__":
 
@@ -176,7 +173,7 @@ if __name__ == "__main__":
     dist = ets_test(cpo_dir, tmp_dir, uncert_params_in)
 
     # EQ
-    stats_b, sobols_b, stats_r, sobols_r =  chease_test(cpo_dir, tmp_dir, dist)
+    stats, sobols =  chease_test(cpo_dir, tmp_dir, dist)
 
     # PLOTS
     eq_file = cpo_dir + "/ets_equilibrium_in.cpo"
@@ -184,15 +181,9 @@ if __name__ == "__main__":
 
     rho = eq.profiles_1d.rho_tor
 
-    plots.plot_stats(rho, stat_b,
-                 xlabel=r'$\rho_{tor} ~ [m]$', ylabel=r'<B>$',
+    plots.plot_stats(rho, stats,
+                 xlabel=r'$\rho_{tor} ~ [m]$', ylabel=r'<B>',
                  ftitle='B_av profile',
                  fname='b_prof.png')
 
-    plots.plot_stats(rho, stat_r,
-                 xlabel=r'$\rho_{tor} ~ [m]$', ylabel=r'<R>$',
-                 ftitle='R_av profile',
-                 fname='r_prof.png')
-
-    plot.plot_sobols_4(rho, sobols_b, uncert_params_in, 'b_av')
-    plot.plot_sobols_4(rho, sobols_r, uncert_params_in, 'r_av')
+    plot.plot_sobols_4(rho, sobols, uncert_params_in, 'b_av')

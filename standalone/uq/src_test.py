@@ -15,10 +15,11 @@ Unvertainties in SOURCES (current)
 start_time = time.time()
 
 # CPO files
-cpo_dir = os.path.abspath("../data/AUG_28906_5/BGB_GEM_SPREAD/4FT/")
+cpo_dir = os.path.abspath("../data/TESTS/")
 
-# Uncertain parameters: Initial conditions
-uncert_params = ["E_AMP", "E_MEAN", "E_STD"]
+# Uncertain parameters: Gaussian Sources
+# For electrons: S1=WTOT_el (amplitude), S2=RHEAT_el (mean), S3=FWHEAT_el (std)
+uncert_params =["S1", "S2", "S3"]
 
 # To store input/ouput files and Campaign directories
 tmp_dir = "/ptmp/ljala/"
@@ -48,7 +49,7 @@ os.system("cp ../../workflows/chease.xml "+ campaign_dir +"/workflows")
 os.system("cp ../../workflows/chease.xsd "+ campaign_dir +"/workflows")
 os.system("cp ../../workflows/bohmgb.xml "+ campaign_dir +"/workflows")
 os.system("cp ../../workflows/bohmgb.xsd "+ campaign_dir +"/workflows")
-os.system("cp ../../workflows/source_dummy.xml "+ campaign_dir +"/workflows")
+os.system("cp ../../workflows/source_dummy_new.xml "+ campaign_dir +"/workflows/source_dummy.xml")
 os.system("cp ../../workflows/source_dummy.xsd "+ campaign_dir +"/workflows")
 
 # Copy CPO files in common directory
@@ -56,13 +57,13 @@ common_dir = campaign_dir +"/common/"
 os.system("cp " + cpo_dir + "/*.cpo " + common_dir)
 
 # Get uncertain parameters distrubutions
-# Read JNITOT, RCURR, FWCURR from source_dummy.xml file
-E_AMP = 1.E6
-E_MEAN = 0.5
-E_STD = 0.2
-dist_1 = cp.Uniform(0.9*E_AMP, 1.1*E_AMP)
-dist_2 = cp.Uniform(0.9*E_MEAN, 1.1*E_MEAN)
-dist_3 = cp.Uniform(0.9*E_STD, 1.1*E_STD)
+# Read WTOT_el, RHEAT_el, FWCURR_el from source_dummy.xml file
+S1 = 1.5E6
+S2 = 0.0
+S3 = 0.2
+dist_1 = cp.Uniform(0.9*S1, 1.1*S1)
+dist_2 = cp.Uniform(0.0, 0.1)
+dist_3 = cp.Uniform(0.9*S3, 1.1*S3)
 
 # Define the parameters dictionary
 src_campaign.vary_param(uncert_params[0], dist=dist_1)
@@ -97,14 +98,14 @@ aggregate.apply()
 
 # Analysis
 analysis = uq.elements.analysis.PCEAnalysis(src_campaign, value_cols=output_columns)
-analysis.apply()
+dist_out, cov_out = analysis.apply()
 
 # Results
-stat_te = analysis.statistical_moments('te')
-sobol_te = analysis.sobol_indices('te', 'first_order')
+stats_te = analysis.statistical_moments('te')
+sobols_te = analysis.sobol_indices('te', 'first_order')
 
-stat_ti = analysis.statistical_moments('ti')
-sobol_ti = analysis.sobol_indices('ti', 'first_order')
+stats_ti = analysis.statistical_moments('ti')
+sobols_ti = analysis.sobol_indices('ti', 'first_order')
 
 # Elapsed time
 end_time = time.time()
@@ -117,20 +118,21 @@ corep_file = common_dir + '/ets_coreprof_in.cpo'
 corep = read(corep_file, 'coreprof')
 rho = corep.rho_tor
 
-plots.plot_stats(rho, stat_te,
-                 xlabel=r'$\rho_{tor} ~ [m]$', ylabel=r'$T_e$',
+plots.plot_stats(rho, stats_te,
+                 xlabel=r'$\rho_{tor} ~ [m]$', ylabel=r'$T_e ~ [eV]$',
                  ftitle='UQ: Te profile',
-                 fname='te_prof.png')
+                 fname='te_prof_src.png')
 
-plots.plot_sobols_3(rho, sobol_te, uncert_params,
-                  ftitle='Te UQ: First-Order Sobol indices',
-                  fname='te_sobol.png')
-
-plots.plot_stats(rho, stat_j,
-                 xlabel=r'$\rho_{tor} ~ [m]$', ylabel=r'$T_i$',
+plots.plot_stats(rho, stats_ti,
+                 xlabel=r'$\rho_{tor} ~ [m]$', ylabel=r'$T_i ~ [eV]$',
                  ftitle='UQ: Ti profile',
-                 fname='ti_prof.png')
+                 fname='ti_prof_src.png')
 
-plots.plot_sobols_3(rho, sobol_j, uncert_params,
-                  ftitle='Ti UQ: First-Order Sobol indices',
-                  fname='ti_sobol.png')
+plot_sobols_3(rho, sobols_te, uncert_params,
+              ftitle='First-Order Sobol indices - QoI: Te',
+              fname='te_sobol_src.png')
+
+plot_sobols_3(rho, sobols_ti, uncert_params,
+              ftitle='First-Order Sobol indices - QoI: Ti',
+              fname='ti_sobol_src.png')
+

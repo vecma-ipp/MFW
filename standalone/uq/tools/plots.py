@@ -66,7 +66,7 @@ def plot_stats(x, stat, xlabel, ylabel, ftitle, fname=None):
     fig = plt.figure(figsize=(12,9))
 
     ax1 = fig.add_subplot(111)
-    ax1.plot(x, mean, 'ro', alpha=0.75, label='Mean')
+    ax1.plot(x, mean, 'g-', alpha=0.75, label='Mean')
     ax1.plot(x, mean-std, 'b-', alpha=0.25)
     ax1.plot(x, mean+std, 'b-', alpha=0.25)
     ax1.fill_between(x, mean-std, mean+std, alpha=0.25, label=r'Mean $\pm$ deviation')
@@ -76,11 +76,11 @@ def plot_stats(x, stat, xlabel, ylabel, ftitle, fname=None):
     ax1.grid()
     ax1.legend()
 
-#    ax2 = ax1.twinx()
-#    ax2.plot(x, var, 'r-', alpha=0.5)
-#    ax2.set_ylabel('Variance', color='r')
-#    ax2.tick_params('y', colors='r')
-#    ax2 = format_exponent(ax2, axis='y')
+    ax2 = ax1.twinx()
+    ax2.plot(x, var, 'r-', alpha=0.5)
+    ax2.set_ylabel('Variance', color='r')
+    ax2.tick_params('y', colors='r')
+    ax2 = format_exponent(ax2, axis='y')
 
     plt.title(ftitle)
 
@@ -138,7 +138,7 @@ def plot_sobols_2(x, sobols1, sobols2, params):
     ax = axs[0]
     ax.plot(x, s1, label='Te Init cond.')
     ax.plot(x, s2, label='Ti Init cond.')
-    ax.set_xlabel(r'$\rho_{tor} ~ [m]$')
+    ax.set_xlabel(r'$\rho_{tor} ~ [mR]$')
 
     ax.set_ylabel(r'$1^{st} ~ Sobol$')
     ax.set_title('Sobols for Te')
@@ -167,9 +167,9 @@ def plot_sobols_3(x, sobols, params, ftitle, fname):
 
     ax = fig.add_subplot(111)
 
-    ax.plot(x, s1, label='AMP')
-    ax.plot(x, s2, label='MEAN')
-    ax.plot(x, s3, label='STD')
+    ax.plot(x, s1, label='WTOT')
+    ax.plot(x, s2, label=r'RHEAT ($\mu$)')
+    ax.plot(x, s3, label=r'FWHEAT ($\sigma$)')
     ax.set_xlabel(r'$\rho_{tor} ~ [m]$')
     ax.set_ylabel(r'$1^{st} ~ Sobol$')
 
@@ -190,8 +190,8 @@ def plot_sobols(x, sobols, params, ftitle, fname):
 
     ax = fig.add_subplot(111)
 
-    ax.plot(x, s1, label=r'$T_e ~ bc$')
-    ax.plot(x, s2, label=r'$T_i ~ bc$')
+    ax.plot(x, s1, label=r'WTOT')
+    ax.plot(x, s2, label=r'FWHEAT')
     ax.set_xlabel(r'$\rho_{tor} ~ [m]$')
     ax.set_ylabel(r'$1^{st} ~ Sobol$')
 

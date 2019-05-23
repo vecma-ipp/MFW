@@ -30,8 +30,8 @@ contains
 
     type (type_coreprof), pointer :: corep_in(:)
     type (type_equilibrium), pointer :: equil_in(:)
-    ! TODO find a way to write in code params like cops 
-    real(8):: params_in(3) ! temporary params 
+    ! Temporary params:
+    real(8) :: params_in(3) 
     type (type_coresource), pointer :: cores_out(:)
     type (type_param) :: code_parameters
 
@@ -41,13 +41,13 @@ contains
     ! Get code params
     call fill_param(code_parameters, '../../workflows/source_dummy.xml', '', '../../workflows/source_dummy.xsd')
     
-    !i_JNITOT = INDEX(code_parameters%parameters(9), "1.E5")
-    
+    ! Uncertrainties in Sources
     write(WTOT_el,'(ES10.3)') params_in(1)
     write(RHEAT_el,'(ES10.3)') params_in(2)
     write(FWHEAT_el,'(ES10.3)') params_in(3)
     
-    code_parameters%parameters(19)(26:35) = WTOT_el   ! Amplitude
+    ! Fill new paramas for heating_el in source_dummy.xml
+    code_parameters%parameters(19)(26:35) = WTOT_el   ! Amplitude ION
     code_parameters%parameters(20)(26:35) = RHEAT_el  ! Mean
     code_parameters%parameters(21)(26:35) = FWHEAT_el ! STD
     
