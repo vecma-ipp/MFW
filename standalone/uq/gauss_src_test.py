@@ -9,33 +9,36 @@ from tools import plots
 
 '''
 UQ test of ETS + CHEASE + BOHMGB (UQP1: non intrusive case)
-Unvertainties in SOURCES (current)
+Unvertainties in SOURCES (electrons)
 '''
 
 start_time = time.time()
 
+# OS env
+SYS = os.environ['SYS']
+
 # CPO files
-cpo_dir = os.path.abspath("../data/TESTS/")
+CPO_DIR = os.path.abspath("../data/TESTS/")
+
+# To store input/ouput files and Campaign directories
+TMP_DIR = "/ptmp/ljala/"
 
 # Uncertain parameters: Gaussian Sources
 # For electrons: S1=WTOT_el (amplitude), S2=RHEAT_el (mean), S3=FWHEAT_el (std)
 uncert_params =["S1", "S2", "S3"]
 
-# To store input/ouput files and Campaign directories
-tmp_dir = "/ptmp/ljala/"
-
 # To run F90 code
-src_exec = "../bin/DRACO/gauss_src_run "
+src_exec = "../bin/"+SYS+"/gauss_src_run "
 
 # Input/Output template
 input_json = "inputs/src_in.json"
-output_json = os.path.join(tmp_dir, "out_src.json")
+output_json = os.path.join(TMP_DIR, "out_src.json")
 
 # Initialize Campaign object
 src_campaign = uq.Campaign(
     name = 'src_campaign',
     state_filename=input_json,
-    workdir=tmp_dir,
+    workdir=TMP_DIR,
     default_campaign_dir_prefix='src_campaign_'
 )
 
@@ -54,7 +57,7 @@ os.system("cp ../../workflows/source_dummy.xsd "+ campaign_dir +"/workflows")
 
 # Copy CPO files in common directory
 common_dir = campaign_dir +"/common/"
-os.system("cp " + cpo_dir + "/*.cpo " + common_dir)
+os.system("cp " + CPO_DIR + "/*.cpo " + common_dir)
 
 # Get uncertain parameters distrubutions
 # Read WTOT_el, RHEAT_el, FWCURR_el from source_dummy.xml file
@@ -62,7 +65,7 @@ S1 = 1.5E6
 S2 = 0.0
 S3 = 0.2
 dist_1 = cp.Uniform(0.9*S1, 1.1*S1)
-dist_2 = cp.Uniform(0.0, 0.1)
+dist_2 = cp.Uniform(0.0, 0.2)
 dist_3 = cp.Uniform(0.9*S3, 1.1*S3)
 
 # Define the parameters dictionary
@@ -71,7 +74,7 @@ src_campaign.vary_param(uncert_params[1], dist=dist_2)
 src_campaign.vary_param(uncert_params[2], dist=dist_3)
 
 # Create the sampler
-src_sampler = uq.elements.sampling.PCESampler(src_campaign)
+src_sampler = uq.elements.sampling.PCESampler(src_campaign, polynomial_order=3)
 
 # Generate runs
 src_campaign.add_runs(src_sampler)
@@ -121,12 +124,12 @@ rho = corep.rho_tor
 plots.plot_stats(rho, stats_te,
                  xlabel=r'$\rho_{tor} ~ [m]$', ylabel=r'$T_e ~ [eV]$',
                  ftitle='UQ: Te profile',
-                 fname='plots/te_prof_src.png')
+                 fname='plots/te_stats_src.png')
 
 plots.plot_stats(rho, stats_ti,
                  xlabel=r'$\rho_{tor} ~ [m]$', ylabel=r'$T_i ~ [eV]$',
                  ftitle='UQ: Ti profile',
-                 fname='plots/ti_prof_src.png')
+                 fname='plots/ti_stats_src.png')
 
 plots.plot_sobols_3(rho, sobols_te, uncert_params,
               ftitle='First-Order Sobol indices - QoI: Te',

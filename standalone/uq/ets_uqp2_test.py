@@ -7,26 +7,36 @@ import matplotlib.pylab as plt
 from ascii_cpo import read
 from tools import plots, spl
 
+
 '''
-UQP2 test of ETS + CHEASE
+Test of ETS + CHEASE using  UQP2 (Semi_intrusive
 '''
 
-# ======================================================================
-def ets_test(cpo_dir, tmp_dir, uncert_params):
+# OS env
+SYS = os.environ['SYS']
+
+# CPO files
+CPO_DIR = os.path.abspath("../data/TESTS/")
+
+# To store input/ouput files and Campaign directories
+TMP_DIR = "/ptmp/ljala/"
+
+# The 1st box
+def ets_test(uncert_params):
 
     # The ets_run executable (to run the ets model)
-    bin_file = "../bin/DRACO/ets_run "
+    bin_file = "../bin/"+SYS+"/ets_run "
 
     # Input/Output template
     input_json  = "inputs/ets_in.json"
-    output_json = os.path.join(tmp_dir, "out_ets.json")
+    output_json = os.path.join(TMP_DIR, "out_ets.json")
 
     # Initialize Campaign object
     ets_campaign = uq.Campaign(
         name='ETS_Campaign',
         state_filename=input_json,
-        workdir=tmp_dir,
-        default_campaign_dir_prefix='ETS_Campaign_'
+        workdir=TMP_DIR,
+        default_campaign_dir_prefix='UQP2_ETS_'
     )
 
     campaign_dir = ets_campaign.campaign_dir
@@ -38,7 +48,7 @@ def ets_test(cpo_dir, tmp_dir, uncert_params):
 
     # Copy CPO files in common directory
     common_dir = campaign_dir +"/common/"
-    os.system("cp " + cpo_dir + "/*.cpo " + common_dir)
+    os.system("cp " + CPO_DIR + "/*.cpo " + common_dir)
 
     # Get uncertain parameters distrubutions
     coret_file = common_dir + "ets_coretransp_in.cpo"
@@ -84,27 +94,26 @@ def ets_test(cpo_dir, tmp_dir, uncert_params):
     cov_mnat= cov["c"]
 
     return dist["c"]
-# ======================================================================
 
-# ======================================================================
-def chease_test(cpo_dir, tmp_dir, list_dist):
+# The 2nd box
+def chease_test(list_dist):
 
     # Uncertain parameters
     uncert_params = ["C0", "C2", "C3", "C4"]
 
-    # The eq_run executable (to run the eq model)
-    bin_file = "../bin/DRACO/chease_run "
+    # The chease executable (to run the eq model)
+    bin_file = "../bin/"+SYS+"/chease_run "
 
     # Input/Output template
     input_json  = "inputs/eq_in.json"
-    output_json = os.path.join(tmp_dir, "out_eq.json")
+    output_json = os.path.join(TMP_DIR, "out_eq.json")
 
     # Initialize Campaign object
     eq_campaign = uq.Campaign(
         name='EQ_Campaign',
         state_filename=input_json,
-        workdir=tmp_dir,
-        default_campaign_dir_prefix='EQ_Campaign_'
+        workdir=TMP_DIR,
+        default_campaign_dir_prefix='UQP2_EQ_'
     )
 
     campaign_dir = eq_campaign.campaign_dir
@@ -116,7 +125,7 @@ def chease_test(cpo_dir, tmp_dir, list_dist):
 
     # Copy CPO files in common directory
     common_dir = campaign_dir +"/common/"
-    os.system("cp " + cpo_dir + "/*.cpo " + common_dir)
+    os.system("cp " + CPO_DIR + "/*.cpo " + common_dir)
 
     # Define the parameters dictionary
     for i in range(4):
@@ -158,25 +167,20 @@ def chease_test(cpo_dir, tmp_dir, list_dist):
 
     return stats, sobols
 
+# Main
 if __name__ == "__main__":
-
-    # CPO files
-    cpo_dir = os.path.abspath("../data/AUG_28906_5/BGB_GEM_SPREAD/4FT/")
-
-    # To store input/ouput files
-    tmp_dir = "/ptmp/ljala/"
 
     # Uncertain parameters
     uncert_params_in = ["D1", "D2", "D3", "D4"]
 
-    # ETS
-    dist = ets_test(cpo_dir, tmp_dir, uncert_params_in)
+    # The 1st box: ETS
+    dist = ets_test(uncert_params_in)
 
-    # EQ
-    stats, sobols =  chease_test(cpo_dir, tmp_dir, dist)
+    # The 2nd box: CHEASE
+    stats, sobols =  chease_test(dist)
 
     # PLOTS
-    eq_file = cpo_dir + "/ets_equilibrium_in.cpo"
+    eq_file = CPO_DIR + "/ets_equilibrium_in.cpo"
     eq = read(eq_file, "equilibrium")
 
     rho = eq.profiles_1d.rho_tor
