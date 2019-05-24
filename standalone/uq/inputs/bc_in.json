@@ -1,0 +1,14 @@
+{
+    "app": {
+      "input_encoder":  "generic_template",
+      "encoder_delimiter": "#",
+      "output_decoder": "csv",
+      "template":       "inputs/bc.template",
+      "input_filename": "bc_input.nml"
+    },
+    "params": {
+      "Te_boundary": {"type": "real", "min": "0.0", "max": "1000.0", "default": "100.0"},
+      "Ti_boundary": {"type": "real", "min": "0.0", "max": "1000.0", "default": "100.0"},
+      "out_file": {"type": "str", "default": "bc_output.csv"}
+    }
+}

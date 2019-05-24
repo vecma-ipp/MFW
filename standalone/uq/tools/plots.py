@@ -1,5 +1,7 @@
 import matplotlib.pylab as plt
 import numpy as np
+
+
 # Scaling coordianates
 def format_exponent(ax, axis='y'):
     # Change the ticklabel format to scientific format
@@ -19,8 +21,40 @@ def format_exponent(ax, axis='y'):
         horizontalalignment='right'
         verticalalignment='top'
 
-# Statistical Moments
-def plot_stats_bis(x, stat, pctl, xlabel, ylabel, ftitle, fname=None):
+
+# Statistical Moments (+- deviation)
+def plot_stats(x, stat, xlabel, ylabel, ftitle, fname):
+    mean = np.array(stat["mean"])
+    var  = stat["var"]
+    std = np.array(stat['std'])
+
+    plt.switch_backend('agg')
+    fig = plt.figure(figsize=(12,9))
+
+    ax1 = fig.add_subplot(111)
+    ax1.plot(x, mean, 'g-', alpha=0.75, label='Mean')
+    ax1.plot(x, mean-std, 'b-', alpha=0.25)
+    ax1.plot(x, mean+std, 'b-', alpha=0.25)
+    ax1.fill_between(x, mean-std, mean+std, alpha=0.25, label=r'Mean $\pm$ deviation')
+    ax1.set_xlabel(xlabel)
+    ax1.set_ylabel(ylabel, color='b')
+    ax1.tick_params('y', colors='b')
+    ax1.grid()
+    ax1.legend()
+
+    ax2 = ax1.twinx()
+    ax2.plot(x, var, 'r-', alpha=0.5)
+    ax2.set_ylabel('Variance', color='r')
+    ax2.tick_params('y', colors='r')
+    ax2 = format_exponent(ax2, axis='y')
+
+    plt.title(ftitle)
+    fig.savefig(fname)
+    plt.close(fig)
+
+
+# Statistical Moments (90% percentils)
+def plot_stats_pctl(x, stat, pctl, xlabel, ylabel, ftitle, fname):
     mean = stat["mean"]
     var  = stat["var"]
     p10 = pctl['p10']
@@ -47,113 +81,30 @@ def plot_stats_bis(x, stat, pctl, xlabel, ylabel, ftitle, fname=None):
     ax2 = format_exponent(ax2, axis='y')
 
     plt.title(ftitle)
+    fig.savefig(fname)
+    plt.close(fig)
 
-    if fig is None:
-        plt.show()
-    else:
-        fig.savefig(fname)
-        plt.close(fig)
 
-    #plt.close()
-
-# Statistical Moments (+- deviation)
-def plot_stats(x, stat, xlabel, ylabel, ftitle, fname=None):
-    mean = np.array(stat["mean"])
-    var  = stat["var"]
-    std = np.array(stat['std'])
+def plot_sobols(x, sobols, params, ftitle, fname):
+    plt.switch_backend('agg')
+    npar = len(params)
 
     plt.switch_backend('agg')
     fig = plt.figure(figsize=(12,9))
+    ax = fig.add_subplot(111)
 
-    ax1 = fig.add_subplot(111)
-    ax1.plot(x, mean, 'g-', alpha=0.75, label='Mean')
-    ax1.plot(x, mean-std, 'b-', alpha=0.25)
-    ax1.plot(x, mean+std, 'b-', alpha=0.25)
-    ax1.fill_between(x, mean-std, mean+std, alpha=0.25, label=r'Mean $\pm$ deviation')
-    ax1.set_xlabel(xlabel)
-    ax1.set_ylabel(ylabel, color='b')
-    ax1.tick_params('y', colors='b')
-    ax1.grid()
-    ax1.legend()
-
-    ax2 = ax1.twinx()
-    ax2.plot(x, var, 'r-', alpha=0.5)
-    ax2.set_ylabel('Variance', color='r')
-    ax2.tick_params('y', colors='r')
-    ax2 = format_exponent(ax2, axis='y')
-
-    plt.title(ftitle)
-
-    if fig is None:
-        plt.show()
-    else:
-        fig.savefig(fname)
-        plt.close(fig)
-
-    #plt.close()
-
-# TODO: generic plots (here for 4 params)
-def plot_sobols_4(x, sobols, params, typ):
-    plt.switch_backend('agg')
-
-    s1 = sobols[params[0]]
-    s2 = sobols[params[1]]
-    s3 = sobols[params[2]]
-    s4 = sobols[params[3]]
-
-    fig, axs = plt.subplots(nrows=2, ncols=2, sharex=True)
-
-    ax = axs[0,0]
-    ax.plot(x, s1)
-    ax.set_title('D1')
-
-    #ax.locator_params(nbins=4)
-
-    ax = axs[0,1]
-    ax.plot(x, s2)
-    ax.set_title('D2')
-
-    ax = axs[1,0]
-    ax.plot(x, s3)
-    ax.set_title('D3')
-
-    ax = axs[1,1]
-    ax.plot(x, s4)
-    ax.set_title('D4')
-
-    fig.suptitle(typ+' - First-Order Sobol indices')
-    fig.savefig(typ+'sobols.png')
-    plt.close(fig)
-
-def plot_sobols_2(x, sobols1, sobols2, params):
-    plt.switch_backend('agg')
-
-    s1 = sobols1[params[0]]
-    s2 = sobols1[params[1]]
-    s3 = sobols2[params[0]]
-    s4 = sobols2[params[1]]
-
-    fig, axs = plt.subplots(nrows=1, ncols=2, sharex=True)
-
-    ax = axs[0]
-    ax.plot(x, s1, label='Te Init cond.')
-    ax.plot(x, s2, label='Ti Init cond.')
-    ax.set_xlabel(r'$\rho_{tor} ~ [mR]$')
-
-    ax.set_ylabel(r'$1^{st} ~ Sobol$')
-    ax.set_title('Sobols for Te')
-
-    ax = axs[1]
-    ax.plot(x, s3, label='Te Init cond.')
-    ax.plot(x, s4, label='Ti Init cond.')
-    ax.set_title('Sobols for Ti')
+    for i in range(npar):
+        s = sobols[params[i]]
+        ax.plot(x, s, label=params[i])
 
     ax.set_xlabel(r'$\rho_{tor} ~ [m]$')
-    plt.legend()
+    ax.set_ylabel(r'$1^{st} ~ Sobol$')
 
-    fig.suptitle('First-Order Sobol indices')
-    fig.savefig('TiTe_sobols.png')
+    ax.set_title(ftitle)
+    plt.legend()
+    fig.savefig(fname)
     plt.close(fig)
+
 
 def plot_sobols_3(x, sobols, params, ftitle, fname):
     plt.switch_backend('agg')
@@ -179,36 +130,37 @@ def plot_sobols_3(x, sobols, params, ftitle, fname):
     plt.close(fig)
 
 
-def plot_sobols(x, sobols, params, ftitle, fname):
+def plot_sobols_4(x, sobols, params, typ):
     plt.switch_backend('agg')
 
     s1 = sobols[params[0]]
     s2 = sobols[params[1]]
+    s3 = sobols[params[2]]
+    s4 = sobols[params[3]]
 
-    plt.switch_backend('agg')
-    fig = plt.figure(figsize=(12,9))
+    fig, axs = plt.subplots(nrows=2, ncols=2, sharex=True)
 
-    ax = fig.add_subplot(111)
+    ax = axs[0,0]
+    ax.plot(x, s1)
+    ax.set_title('D1')
 
-    ax.plot(x, s1, label=r'WTOT')
-    ax.plot(x, s2, label=r'FWHEAT')
-    ax.set_xlabel(r'$\rho_{tor} ~ [m]$')
-    ax.set_ylabel(r'$1^{st} ~ Sobol$')
+    #ax.locator_params(nbins=4)
+    ax = axs[0,1]
+    ax.plot(x, s2)
+    ax.set_title('D2')
 
-    ax.set_title(ftitle)
-    plt.legend()
-    fig.savefig(fname)
+    ax = axs[1,0]
+    ax.plot(x, s3)
+    ax.set_title('D3')
+
+    ax = axs[1,1]
+    ax.plot(x, s4)
+    ax.set_title('D4')
+
+    fig.suptitle(typ+' - First-Order Sobol indices')
+    fig.savefig(typ+'sobols.png')
     plt.close(fig)
 
-    #plt.show()
-
-## Correlation matrix
-#if __corr:
-#    fig3 = plt.figure()
-#    ax3  = fig3.add_subplot(111)
-#    ax3.imshow(corr, cmap=plt.cm.jet)
-#    ax3.colorbar()
-#    ax3.title('Corrolation matrix)')
 
 # QoI distribution, in the index grid i
 def plot_dist(dist, stat):

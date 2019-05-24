@@ -1,0 +1,5 @@
+&bc_input_file
+Te_boundary=#Te_boundary
+Ti_boundary=#Ti_boundary
+out_file=#out_file
+/

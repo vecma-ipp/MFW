@@ -39,7 +39,7 @@ implicit none
 
   ! Uncertain parameters: 
   ! Initial conditions: Te in the Eadge and Center
-  real(kind=8) :: Te0, Ti0
+  real(kind=8) :: Te_boundary, Ti_boundary
   
   ! Output file contraining values of interset (te, ti, pressure ...)
   character(len=128) :: out_file
@@ -98,10 +98,10 @@ implicit none
   end if
  
   ! Read uncertain paramters (cf. inputs/ic.template) 
-  namelist /loop_input_file/  Te0, Ti0, out_file  
+  namelist /bc_input_file/ Te_boundary, Ti_boundary, out_file  
   
   open(unit=9, file=trim(in_fname))
-  read(9, loop_input_file)
+  read(9, bc_input_file)
   
   ! Read the Path to CPO dir from the consol 
   call get_command_argument(1, cpo_dir)
@@ -130,9 +130,9 @@ implicit none
      close (10)
      call open_read_file(10, corep_in_file)
      call read_cpo(corep_in(1), 'coreprof' )
-     ! Update the initial conditions (Te in rho_tor_norm=1)
-     corep_in(1)%te%boundary%value(1) = Te0
-     corep_in(1)%ti%boundary%value(1,1) = Ti0
+     ! Update the initial conditions (Te and Ti in the eadge)
+     corep_in(1)%te%boundary%value(1) = Te_boundary
+     corep_in(1)%ti%boundary%value(1,1) = Ti_boundary
      call close_read_file
   else
      print *,"ERROR. CPO file not found:",corep_in_file
