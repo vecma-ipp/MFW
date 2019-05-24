@@ -7,15 +7,20 @@ import matplotlib.pylab as plt
 from ascii_cpo import read
 from tools import plots, spl
 
+
 '''
-UQ test of ETS
+UQ test of ETS. Uncertainties in 4 flux tubes.
+Parameters: D1, D2, D3, D4.
+QoI: Control points of the Spline approximation of Te
 '''
 
-print('ETS_TEST: start')
 start_time = time.time()
 
+# Os env
+SYS = os.environ['SYS']
+
 # CPO files
-cpo_dir = os.path.abspath("../data/AUG_28906_5/BGB_GEM_SPREAD/4FT/")
+cpo_dir = os.path.abspath("../data/TESTS/")
 
 # Uncertain parameters
 uncert_params = ["D1", "D2", "D3", "D4"]
@@ -24,7 +29,7 @@ uncert_params = ["D1", "D2", "D3", "D4"]
 tmp_dir = "/ptmp/ljala/"
 
 # The ets_run executable (to run the ets model)
-bin_file = "../bin/DRACO/ets_run "
+bin_file = "../bin/"+SYS+"/ets_run "
 
 # Input/Output template
 input_json  = "inputs/ets_in.json"

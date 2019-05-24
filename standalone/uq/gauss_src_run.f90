@@ -47,7 +47,7 @@ implicit none
   type(csv_file)     :: csv_out_file
 
   ! LOOP paramaters
-  integer, parameter :: STEPS = 50
+  integer, parameter :: STEPS = 30 
   logical, parameter :: TIMETRACE = .FALSE.
   
   ! CPO file names
@@ -203,9 +203,6 @@ implicit none
   end if
   
   ! To update code_parameters
-  ! S1 = 1.5E6
-  ! S2 = 0.0
-  ! S3 = 0.2
   params_in(1) = S1 ! WTOT_el
   params_in(2) = S2 ! RHEAT_el
   params_in(3) = S3 ! FWHEAT_el
@@ -300,9 +297,7 @@ implicit none
   ! Add data
   do i=1, n_data
     call csv_out_file%add(corep_ets(1)%te%value(i))
-    !call csv_out_file%add(corep_ets(1)%te%source_term%value(i))
     call csv_out_file%add(corep_ets(1)%ti%value(i, 1))
-    !call csv_out_file%add(equil_chease(1)%profiles_1d%pressure(i))
     call csv_out_file%next_row()
   end do
 
