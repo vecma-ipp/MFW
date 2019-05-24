@@ -12,6 +12,7 @@ externals/*
 
 ual/fortran_interface/*.o
 ual/python_interface/*.pyc
+ual/python_interface/usr
 ual/python_interface/*cache*_
 ual/xml/*.o
 ual/constants/*.o
