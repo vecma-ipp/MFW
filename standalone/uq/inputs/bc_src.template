@@ -1,0 +1,8 @@
+&bc_src_input_file
+Te_boundary=#Te_boundary
+Ti_boundary=#Ti_boundary
+WTOT_el=#WTOT_el
+RHEAT_el=#RHEAT_el
+FWHEAT_el=#FWHEAT_el
+out_file=#out_file
+/
