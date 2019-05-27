@@ -173,7 +173,7 @@ print("Making the analysis")
 analysis = uq.elements.analysis.PCEAnalysis(
     ets_campaign, value_cols=output_columns)
 
-dist, cov = analysis.apply()
+analysis.apply()
 
 # Results
 stats  = analysis.statistical_moments('te')
