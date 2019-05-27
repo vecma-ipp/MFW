@@ -26,7 +26,7 @@ Quantity of Interest: electron temperature (Te).
 cwd = os.getcwd()
 
 # TODO to be adapted to other machines like sys in config
-tmp_dir = os.environ['CINECA_SCRATCH']
+tmp_dir = os.environ['SCRATCH']
 
 # Machine name (cf. MFW/config)
 SYS = os.environ['SYS']
