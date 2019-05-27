@@ -5,7 +5,7 @@ import chaospy as cp
 import easyvvuq as uq
 
 from ascii_cpo import read
-from plots import plot_stats, plot_sobols
+#from plots import plot_stats, plot_sobols
 
 from easyvvuq.execution.qcgpj.pj_utils.pj_configurator import PJConfigurator
 from qcg.appscheduler.api.manager import Manager
@@ -22,9 +22,11 @@ Quantity of Interest: electron temperature (Te).
 # Environment infos
 #===================
 
-# Working directories (TODO the same for PJ?)
+# Working directories 
 cwd = os.getcwd()
-tmp_dir = "/ptmp/ljala/"
+
+# TODO to be adapted to other machines like sys in config
+tmp_dir = os.environ['CINECA_SCRATCH']
 
 # Machine name (cf. MFW/config)
 SYS = os.environ['SYS']
@@ -32,8 +34,11 @@ SYS = os.environ['SYS']
 # Set location of log file
 client_conf = {'log_file': os.path.join(tmp_dir, "api.log")}
 
-print("Running in directory: " + cwd)
-print("Temporary directory: " + tmp_dir)
+# Create QCG Pilot Job Manager
+m = LocalManager([], client_conf)
+
+print("available resources:\n%s\n" % str(m.resources())) 
+
 
 # Application infos
 #===================
@@ -47,7 +52,7 @@ app = "../../bin/"+SYS+"/ets_pj_run "
 # Uncertain parameters (TODO check name from cpo files)
 uncert_params = ["D1", "D2", "D3", "D4"]
 
-coret_file = cpo_dir + "ets_coretransp_in.cpo"
+coret_file = cpo_dir + "/ets_coretransp_in.cpo"
 coret = read(coret_file, "coretransp")
 Ds = coret.values[0].te_transp.diff_eff
 
@@ -161,7 +166,7 @@ aggregate = uq.elements.collate.AggregateSamples(
 aggregate.apply()
 
 print("aggregated data:")
-print(open(my_campaign.data['files'][0], 'r').read())
+print(open(ets_campaign.data['files'][0], 'r').read())
 
 # Analysis
 print("Making the analysis")
@@ -178,16 +183,18 @@ sobols = analysis.sobol_indices('te', 'first_order')
 end_time = time.time()
 
 # For plots
-corep_file = common_dir + '/ets_coreprof_in.cpo'
+corep_file = cpo_dir + '/ets_coreprof_in.cpo'
 corep = read(corep_file, 'coreprof')
 rho = corep.rho_tor
 
+print(stats)
+print(rho)
 #  Graphics for descriptive satatistics
-plots.plot_stats(rho, stats,
-                 xlabel=r'$\rho_{tor} app ~ [m]$', ylabel=r'$T_e [eV]$',
-                 ftitle='Te profile',
-                 fname='../figs/te_stats_pj.png')
+#plots.plot_stats(rho, stats,
+#                 xlabel=r'$\rho_{tor} app ~ [m]$', ylabel=r'$T_e [eV]$',
+#                 ftitle='Te profile',
+#                 fname='../figs/te_stats_pj.png')
 
-plots.plot_sobols(rho, sobols, uncert_params,
-                  ftitle=' First-Order Sobol indices - QoI: Te.',
-                  fname='../figs/ti_sobols_pj.png')
+#plots.plot_sobols(rho, sobols, uncert_params,
+#                  ftitle=' First-Order Sobol indices - QoI: Te.',
+#                  fname='../figs/ti_sobols_pj.png')
