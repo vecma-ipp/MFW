@@ -188,6 +188,6 @@ if __name__ == "__main__":
     plots.plot_stats(rho, stats,
                  xlabel=r'$\rho_{tor} ~ [m]$', ylabel=r'<B>',
                  ftitle='B_av profile',
-                 fname='b_prof.png')
+                 fname='figs/b_prof.png')
 
     plot.plot_sobols_4(rho, sobols, uncert_params_in, 'b_av')
