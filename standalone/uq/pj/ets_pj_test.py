@@ -22,7 +22,7 @@ Quantity of Interest: electron temperature (Te).
 # Environment infos
 #===================
 
-# Working directories 
+# Working directories
 cwd = os.getcwd()
 
 # TODO to be adapted to other machines like sys in config
@@ -37,7 +37,7 @@ client_conf = {'log_file': os.path.join(tmp_dir, "api.log")}
 # Create QCG Pilot Job Manager
 m = LocalManager([], client_conf)
 
-print("available resources:\n%s\n" % str(m.resources())) 
+print("available resources:\n%s\n" % str(m.resources()))
 
 
 # Application infos
@@ -73,8 +73,8 @@ campaign_dir = ets_campaign.campaign_dir
 
 # Copy xml files needed in the ETS code
 os.system("mkdir " + campaign_dir +"/workflows")
-os.system("cp ../../workflows/ets.xml "+ campaign_dir +"/workflows")
-os.system("cp ../../workflows/ets.xsd "+ campaign_dir +"/workflows")
+os.system("cp ../../../workflows/ets.xml "+ campaign_dir +"/workflows")
+os.system("cp ../../../workflows/ets.xsd "+ campaign_dir +"/workflows")
 
 # Copy CPO files in common directory
 common_dir = campaign_dir +"/common/"
@@ -187,8 +187,8 @@ corep_file = cpo_dir + '/ets_coreprof_in.cpo'
 corep = read(corep_file, 'coreprof')
 rho = corep.rho_tor
 
-print(stats)
-print(rho)
+print('stats : ', stats)
+print('rho : ', rho)
 #  Graphics for descriptive satatistics
 #plots.plot_stats(rho, stats,
 #                 xlabel=r'$\rho_{tor} app ~ [m]$', ylabel=r'$T_e [eV]$',
