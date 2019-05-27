@@ -38,8 +38,9 @@ RUN_CHEASE_EXE = ${BINDIR}/chease_run
 RUN_BC_EXE   	 = ${BINDIR}/bc_run
 RUN_SRC_EXE    = ${BINDIR}/gauss_src_run
 RUN_BC_SRC_EXE = ${BINDIR}/bc_src_run
+RUN_ETS_PJ_EXE = ${BINDIR}/ets_pj_run
 
-RUNS = ETS_RUN CHEASE_RUN BC_RUN GAUSS_SRC_RUN BC_SRC_RUN
+RUNS = ETS_RUN CHEASE_RUN BC_RUN GAUSS_SRC_RUN BC_SRC_RUN ETS_PJ_RUN
 
 # Rules
 all: ${RUNS}
@@ -80,6 +81,14 @@ ${OBJDIR}/bc_src_run.o: bc_src_run.f90
 	${MPIF90} -o $@ -c $< $(FC90FLAGS) -I${INC_STD} -I${ETS} -I${CHEASE} -I${BOHMGB} -I${INC_BDS} -I${INC_XML} -I/usr/include/libxml2 -I${INC_UAL} -I${INC_TYPES} -I${INC_CONSTANTS} 
 
 
+# ETS_PJ
+ETS_PJ_RUN: ${OBJDIR}/ets_pj_run.o
+	$(MPIF90) -o ${RUN_ETS_PJ_EXE} $^ -I${ETS_STD} -I${TOOLS_STD} -L${ETS} -L${LIB_UAL} -L${LIB_TYPES} -L${LIB_XML} -L${LIB_CONSTANTS} -lets -lual -litmtypes -lxmllib -litmconstants ${LDFLAGS} ${LIBLAPACK}
+
+${OBJDIR}/ets_pj_run.o: pj/ets_pj_run.f90
+	${MPIF90} -o $@ -c $< $(FC90FLAGS) -traceback -check all -fp-stack-check  -I${INC_STD} -I${ETS} -I${INC_UAL} -I${INC_TYPES} -I${INC_XML} -I${INC_CONSTANTS} 
+
+
 # 
 clean:
 	rm -rf ${OBJDIR}/ets_run.o ${INCDIR}/ets_run.mod ${BINDIR}/ets_run 
@@ -87,3 +96,4 @@ clean:
 	rm -rf ${OBJDIR}/bc_run.o ${INCDIR}/bc_run.mod ${BINDIR}/bc_run 
 	rm -rf ${OBJDIR}/gauss_src_run.o ${INCDIR}/gauss_src_run.mod ${BINDIR}/gauss_src_run 
 	rm -rf ${OBJDIR}/bc_src_run.o ${INCDIR}/bc_src_run.mod ${BINDIR}/bc_src_run 
+	rm -rf ${OBJDIR}/ets_pj_run.o ${INCDIR}/ets_pj_run.mod ${BINDIR}/ets_pj_run 

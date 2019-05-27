@@ -17,4 +17,4 @@
 module load python/3.6.4
 . ~/.virtualenvs/easyvvuq-qcgpj/bin/activate
 
-python3 test_pce_pj.py
+python3 test_ets_pj.py

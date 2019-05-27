@@ -5,6 +5,8 @@ import chaospy as cp
 import easyvvuq as uq
 
 from ascii_cpo import read
+from plots import plot_stats, plot_sobols
+
 from easyvvuq.execution.qcgpj.pj_utils.pj_configurator import PJConfigurator
 from qcg.appscheduler.api.manager import Manager
 from qcg.appscheduler.api.job import Jobs
@@ -12,43 +14,47 @@ from qcg.appscheduler.api.manager import LocalManager
 
 
 '''
-UQ test of ETS using QCG Pilot Job.
+UQ test of ETS code using QCG Pilot Job.
 Uncertainties in 4 flux tubes. Parameters: D1, D2, D3, D4.
 Quantity of Interest: electron temperature (Te).
 '''
 
-# Environment info
-# -----------------
+# Environment infos
+#===================
 
+# Working directories (TODO the same for PJ?)
 cwd = os.getcwd()
 tmp_dir = "/ptmp/ljala/"
 
-# Machine name
+# Machine name (cf. MFW/config)
 SYS = os.environ['SYS']
 
 # Set location of log file
-client_conf = {'log_file': os.path.join(tmpdir, "api.log")}
+client_conf = {'log_file': os.path.join(tmp_dir, "api.log")}
 
 print("Running in directory: " + cwd)
-print("Temporary directory: " + tmpdir)
+print("Temporary directory: " + tmp_dir)
 
-# Application info
-# -----------------
+# Application infos
+#===================
 
 # CPO files location
 cpo_dir = os.path.abspath("../../data/TESTS/")
 
-# The application executable
-bin_file = "../../bin/"+SYS+"/ets_pj_run "
+# The executable application
+app = "../../bin/"+SYS+"/ets_pj_run "
 
-# Uncertain parameters
+# Uncertain parameters (TODO check name from cpo files)
 uncert_params = ["D1", "D2", "D3", "D4"]
+
+coret_file = cpo_dir + "ets_coretransp_in.cpo"
+coret = read(coret_file, "coretransp")
+Ds = coret.values[0].te_transp.diff_eff
 
 # Input/Output template
 input_json  = "inputs/ets_pj_in.json"
 output_json = os.path.join(tmp_dir, "out_ets_pj.json")
 
-assert(os.path.exists(input_json))
 
 # Initialize Campaign object
 ets_campaign = uq.Campaign(
@@ -69,11 +75,8 @@ os.system("cp ../../workflows/ets.xsd "+ campaign_dir +"/workflows")
 common_dir = campaign_dir +"/common/"
 os.system("cp " + cpo_dir + "/*.cpo " + common_dir)
 
-# Get uncertain parameters distrubutions
-coret_file = common_dir + "ets_coretransp_in.cpo"
-coret = read(coret_file, "coretransp")
-diff_eff = coret.values[0].te_transp.diff_eff
-list_dist = [cp.Normal(diff_eff[i], 0.2*diff_eff[i]) for i in range(4)]
+# Uncertain parameters distrubutions
+list_dist = [cp.Normal(Ds[i], 0.2*Ds[i]) for i in range(4)]
 
 # Define the parameters dictionary
 for i in range(4):
@@ -119,7 +122,7 @@ for key, data in ets_campaign.runs.items():
             "args": [ets_campaign.campaign_dir,
                      key,
                      cwd + "/pj_scripts/easyvvuq_app",
-                     app, "pce_in.json"],
+                     app, common_dir + " ets_pj_input.nml"],
             "wd": cwd,
             "stdout": ets_campaign.campaign_dir + '/execute_' + key + '.stdout',
             "stderr": ets_campaign.campaign_dir + '/execute_' + key + '.stderr'
@@ -136,9 +139,6 @@ for key, data in ets_campaign.runs.items():
 
     m.submit(Jobs().addStd(encode_job))
     m.submit(Jobs().addStd(execute_job))
-
-# Execute runs TODO add argument
-# cmd = bin_file + common_dir + " ets_pj_input.nml"
 
 # wait for completion of all PJ tasks and terminate the PJ manager
 m.wait4all()
@@ -186,8 +186,8 @@ rho = corep.rho_tor
 plots.plot_stats(rho, stats,
                  xlabel=r'$\rho_{tor} app ~ [m]$', ylabel=r'$T_e [eV]$',
                  ftitle='Te profile',
-                 fname='../plots/te_stats_pj.png')
+                 fname='../figs/te_stats_pj.png')
 
 plots.plot_sobols(rho, sobols, uncert_params,
                   ftitle=' First-Order Sobol indices - QoI: Te.',
-                  fname='../plots/ti_sobols_pj.png')
+                  fname='../figs/ti_sobols_pj.png')
