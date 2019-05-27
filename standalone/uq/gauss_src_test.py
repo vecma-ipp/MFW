@@ -124,18 +124,18 @@ rho = corep.rho_tor
 plots.plot_stats(rho, stats_te,
                  xlabel=r'$\rho_{tor} ~ [m]$', ylabel=r'$T_e ~ [eV]$',
                  ftitle='UQ: Te profile',
-                 fname='plots/te_stats_src.png')
+                 fname='figs/te_stats_src.png')
 
 plots.plot_stats(rho, stats_ti,
                  xlabel=r'$\rho_{tor} ~ [m]$', ylabel=r'$T_i ~ [eV]$',
                  ftitle='UQ: Ti profile',
-                 fname='plots/ti_stats_src.png')
+                 fname='figs/ti_stats_src.png')
 
 plots.plot_sobols_3(rho, sobols_te, uncert_params,
               ftitle='First-Order Sobol indices - QoI: Te',
-              fname='plots/te_sobol_src.png')
+              fname='figs/te_sobol_src.png')
 
 plots.plot_sobols_3(rho, sobols_ti, uncert_params,
               ftitle='First-Order Sobol indices - QoI: Ti',
-              fname='plots/ti_sobol_src.png')
+              fname='figs/ti_sobol_src.png')
 

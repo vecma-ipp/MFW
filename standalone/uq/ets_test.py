@@ -115,6 +115,6 @@ knot, crho = spl.spl_fit(rho, n, p)
 plots.plot_stats(crho, stat,
                  xlabel=r'$\rho_{tor} app ~ [m]$', ylabel=r'$CP$',
                  ftitle='Approximation of Te profile',
-                 fname='cp_te_prof.png')
+                 fname='figs/cp_te_prof.png')
 
 plots.plot_dist(dist["c"], stat)
