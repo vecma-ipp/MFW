@@ -17,30 +17,38 @@ Uncertainties in 4 flux tubes. Parameters: D1, D2, D3, D4.
 Quantity of Interest: electron temperature (Te).
 '''
 
+# Environment info
+# -----------------
+
 cwd = os.getcwd()
 tmp_dir = "/ptmp/ljala/"
-cpo_dir = os.path.abspath("../../data/TESTS/")
 
-# Uncertain parameters
-uncert_params = ["D1", "D2", "D3", "D4"]
+# Machine name
+SYS = os.environ['SYS']
+
+# Set location of log file
+client_conf = {'log_file': os.path.join(tmpdir, "api.log")}
 
 print("Running in directory: " + cwd)
 print("Temporary directory: " + tmpdir)
 
-# Os env
-SYS = os.environ['SYS']
+# Application info
+# -----------------
 
-# set location of log file
-client_conf = {'log_file': os.path.join(tmpdir, "api.log")}
+# CPO files location
+cpo_dir = os.path.abspath("../../data/TESTS/")
 
-
-
-# The ets_run executable (to run the ets model)
+# The application executable
 bin_file = "../../bin/"+SYS+"/ets_pj_run "
+
+# Uncertain parameters
+uncert_params = ["D1", "D2", "D3", "D4"]
 
 # Input/Output template
 input_json  = "inputs/ets_pj_in.json"
 output_json = os.path.join(tmp_dir, "out_ets_pj.json")
+
+assert(os.path.exists(input_json))
 
 # Initialize Campaign object
 ets_campaign = uq.Campaign(
@@ -76,13 +84,70 @@ ets_sampler  = uq.elements.sampling.PCESampler(ets_campaign)
 
 # Generate runs
 ets_campaign.add_runs(ets_sampler)
-ets_campaign.populate_runs_dir()
 
-# Execute runs
-cmd = bin_file + common_dir + " ets_pj_input.nml"
-ets_campaign.apply_for_each_run_dir(uq.actions.ExecuteLocal(cmd))
+# Create PJ configurator
+pjc = PJConfigurator(ets_campaign)
+pjc.init_runs_dir()
+
+# Save PJ configuration
+pjc.save()
+
+# Execute encode -> execute for each run using QCG-PJ
+for key, data in ets_campaign.runs.items():
+
+    encode_job = {
+        "name": 'encode_' + key,
+        "execution": {
+            "exec": "./pj_scripts/easyvvuq_encode",
+            "args": [ets_campaign.campaign_dir,
+                     key],
+            "wd": cwd,
+            "stdout": ets_campaign.campaign_dir + '/encode_' + key + '.stdout',
+            "stderr": ets_campaign.campaign_dir + '/encode_' + key + '.stderr'
+        },
+        "resources": {
+            "numCores": {
+                "exact": 1
+            }
+        }
+    }
+
+    execute_job = {
+        "name": 'execute_' + key,
+        "execution": {
+            "exec": "./pj_scripts/easyvvuq_execute",
+            "args": [ets_campaign.campaign_dir,
+                     key,
+                     cwd + "/pj_scripts/easyvvuq_app",
+                     app, "pce_in.json"],
+            "wd": cwd,
+            "stdout": ets_campaign.campaign_dir + '/execute_' + key + '.stdout',
+            "stderr": ets_campaign.campaign_dir + '/execute_' + key + '.stderr'
+        },
+        "resources": {
+            "numCores": {
+                "exact": 1
+            }
+        },
+        "dependencies": {
+            "after": ["encode_" + key]
+        }
+    }
+
+    m.submit(Jobs().addStd(encode_job))
+    m.submit(Jobs().addStd(execute_job))
+
+# Execute runs TODO add argument
+# cmd = bin_file + common_dir + " ets_pj_input.nml"
+
+# wait for completion of all PJ tasks and terminate the PJ manager
+m.wait4all()
+m.finish()
+m.stopManager()
+m.cleanup()
 
 # Aggregate the results from all runs.
+print("Aggregating the results")
 output_filename = ets_campaign.params_info['out_file']['default']
 output_columns = ['te']
 
@@ -95,7 +160,11 @@ aggregate = uq.elements.collate.AggregateSamples(
 
 aggregate.apply()
 
+print("aggregated data:")
+print(open(my_campaign.data['files'][0], 'r').read())
+
 # Analysis
+print("Making the analysis")
 analysis = uq.elements.analysis.PCEAnalysis(
     ets_campaign, value_cols=output_columns)
 
