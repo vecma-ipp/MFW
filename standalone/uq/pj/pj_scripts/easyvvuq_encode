@@ -3,9 +3,9 @@
 
 # In this section configure deployment specific settings
 # BEGIN
-module load python/3.7.3
+module load python/3.6.4
 . ~/.virtualenvs/easyvvuq-qcgpj/bin/activate
 # END
 
 # Do not change everything below
-python3.7 -m easyvvuq.execution.qcgpj.pj_utils.easyvvuq_encode $@
+python3 -m easyvvuq.execution.qcgpj.pj_utils.easyvvuq_encode $@
