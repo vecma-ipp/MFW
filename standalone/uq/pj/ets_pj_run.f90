@@ -78,7 +78,7 @@ implicit none
   end if
  
   ! Read uncertain paramters (cf. inputs/ets.template) 
-  namelist /ets_input_file/  D1, D2, D3, D4, &
+  namelist /ets_pj_input_file/  D1, D2, D3, D4, &
                            & out_file  
  
   open(unit=20, file=trim(in_fname))
