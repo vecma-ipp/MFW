@@ -47,9 +47,9 @@ print("available resources:\n%s\n" % str(m.resources()))
 cpo_dir = os.path.abspath("../../data/TESTS/")
 
 # The executable application
-app = "../../bin/"+SYS+"/ets_pj_run "
+app = os.path.abspath("../../bin/"+SYS+"/ets_pj_run ")
 
-# Uncertain parameters (TODO check name from cpo files)
+# Uncertain parameters
 uncert_params = ["D1", "D2", "D3", "D4"]
 
 coret_file = cpo_dir + "/ets_coretransp_in.cpo"
@@ -66,7 +66,7 @@ ets_campaign = uq.Campaign(
     name='ETS_PJ_Campaign',
     state_filename=input_json,
     workdir=tmp_dir,
-    default_campaign_dir_prefix='ETS_PJ_Campaign_'
+    default_campaign_dir_prefix='ETS_PJ_'
 )
 
 campaign_dir = ets_campaign.campaign_dir
@@ -101,6 +101,7 @@ pjc.init_runs_dir()
 pjc.save()
 
 # Execute encode -> execute for each run using QCG-PJ
+os.system("mkdir " + campaign_dir +"/logs")
 for key, data in ets_campaign.runs.items():
 
     encode_job = {
@@ -110,8 +111,8 @@ for key, data in ets_campaign.runs.items():
             "args": [ets_campaign.campaign_dir,
                      key],
             "wd": cwd,
-            "stdout": ets_campaign.campaign_dir + '/encode_' + key + '.stdout',
-            "stderr": ets_campaign.campaign_dir + '/encode_' + key + '.stderr'
+            "stdout": ets_campaign.campaign_dir + '/logs/encode_' + key + '.stdout',
+            "stderr": ets_campaign.campaign_dir + '/logs/encode_' + key + '.stderr'
         },
         "resources": {
             "numCores": {
@@ -129,8 +130,8 @@ for key, data in ets_campaign.runs.items():
                      cwd + "/pj_scripts/easyvvuq_app",
                      app, common_dir + " ets_pj_input.nml"],
             "wd": cwd,
-            "stdout": ets_campaign.campaign_dir + '/execute_' + key + '.stdout',
-            "stderr": ets_campaign.campaign_dir + '/execute_' + key + '.stderr'
+            "stdout": ets_campaign.campaign_dir + '/logs/execute_' + key + '.stdout',
+            "stderr": ets_campaign.campaign_dir + '/logs/execute_' + key + '.stderr'
         },
         "resources": {
             "numCores": {
@@ -173,11 +174,11 @@ print("Making the analysis")
 analysis = uq.elements.analysis.PCEAnalysis(
     ets_campaign, value_cols=output_columns)
 
-analysis.apply()
+stats, corr, sobols = analysis.apply()
 
-# Results
-stats  = analysis.statistical_moments('te')
-sobols = analysis.sobol_indices('te', 'first_order')
+# Results uncomment after merging easyVVUQ
+#stats  = analysis.statistical_moments('te')
+#sobols = analysis.sobol_indices('te', 'first_order')
 
 # Elapsed time
 end_time = time.time()
@@ -187,14 +188,12 @@ corep_file = cpo_dir + '/ets_coreprof_in.cpo'
 corep = read(corep_file, 'coreprof')
 rho = corep.rho_tor
 
-print('stats : ', stats)
-print('rho : ', rho)
-#  Graphics for descriptive satatistics
-#plots.plot_stats(rho, stats,
-#                 xlabel=r'$\rho_{tor} app ~ [m]$', ylabel=r'$T_e [eV]$',
-#                 ftitle='Te profile',
-#                 fname='../figs/te_stats_pj.png')
+# Graphics for descriptive satatistics
+plots.plot_stats(rho, stats["te"],
+                 xlabel=r'$\rho_{tor} app ~ [m]$', ylabel=r'$T_e [eV]$',
+                 ftitle='Te profile',
+                 fname='te_stats_pj.png')
 
-#plots.plot_sobols(rho, sobols, uncert_params,
-#                  ftitle=' First-Order Sobol indices - QoI: Te.',
-#                  fname='../figs/ti_sobols_pj.png')
+plots.plot_sobols(rho, sobols["te"], uncert_params,
+                  ftitle=' First-Order Sobol indices - QoI: Te.',
+                  fname='ti_sobols_pj.png')
