@@ -34,10 +34,11 @@ standalone/uq/tools/*.pyc
 standalone/uq/tools/*cache*
 standalone/uq/figs/*.png
 standalone/uq/logs/test*
-standalone/uq/pj/.execute_*
 standalone/uq/pj/*.so
 standalone/uq/pj/*.pyc
 standalone/uq/pj/*cache*
 standalone/uq/pj/logs/test*
+standalone/uq/pj/.execute_*
+standalone/uq/pj/.encode_*
 
 
