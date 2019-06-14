@@ -159,7 +159,7 @@ bohmgb: ual libbds get-bohmgb
 get-bohmgb:
 	@if [ ! -d "externals/bohmgb" ]; then \
 	  echo "Checking out bohmgb..."; \
-		svn co $(SVNURL_GFORGE)/modtransp/trunk/bohmgb externals/bohmgb; \
+		svn co $(SVNURL_GFORGE)/modtransp/tags/4.10b/bohmgb externals/bohmgb; \
 	else  \
 		echo "Updating bohmgb..."; \
 		svn up externals/bohmgb; \
