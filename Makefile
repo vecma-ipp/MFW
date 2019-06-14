@@ -159,7 +159,7 @@ bohmgb: ual libbds get-bohmgb
 get-bohmgb:
 	@if [ ! -d "externals/bohmgb" ]; then \
 	  echo "Checking out bohmgb..."; \
-		svn co $(SVNURL_GFORGE)/modtransp/tags/4.10b/bohmgb externals/bohmgb; \
+		svn co $(SVNURL_GFORGE)/modtransp/trunk/bohmgb externals/bohmgb; \
 	else  \
 		echo "Updating bohmgb..."; \
 		svn up externals/bohmgb; \
@@ -182,7 +182,7 @@ gem0: ual libbds get-gem0
 get-gem0:
 	@if [ ! -d "externals/gem0" ]; then \
 	  echo "Checking out gem0..."; \
-		svn co $(SVNURL_GFORGE)/modtransp/tags/4.10b/gem0 externals/gem0; \
+		svn co $(SVNURL_GFORGE)/modtransp/trunk/gem0 externals/gem0; \
 	else  \
 		echo "Updating gem0..."; \
 		svn up externals/gem0; \
@@ -289,7 +289,7 @@ imp4dv: ual libbds get-imp4dv
 get-imp4dv:
 	@if [ ! -d "externals/imp4dv" ]; then \
 	  echo "Checking out imp4dv..."; \
-		svn co $(SVNURL_GFORGE)/modtransp/tags/4.10b/imp4dv externals/imp4dv; \
+		svn co $(SVNURL_GFORGE)/modtransp/trunk/imp4dv externals/imp4dv; \
 	else  \
 		echo "Updating imp4dv..."; \
 		svn up externals/imp4dv; \
