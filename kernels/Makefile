@@ -227,7 +227,7 @@ GEM_K: ${GEM_O}
 	$(LD) -o ${GEM_EXE} $^ -L${GEM} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_XML} -L${LIB_UAL} -lmuscle2 -lgem -lbds -lxmllib -litmconstants -litmtypes -lual ${LDFLAGS} ${FFTW_LIB}
 
 CHEASE_K: ${CHEASE_O}
-	$(LD) -o ${CHEASE_EXE} $^ -L${CHEASE} -L${LIB_UAL} -L/usr/lib64 -lmuscle2 -lchease_muscle -lual -lxml2  ${LDFLAGS} ${LIBLAPACK}
+	$(LD) -o ${CHEASE_EXE} $^ -L${CHEASE} -L${LIB_UAL} -L${LIB_XML} -L/usr/lib64 -lmuscle2 -lchease_muscle -lual -lxmllib -lxml2  ${LDFLAGS} ${LIBLAPACK}
 
 DFEFI_K: ${DFEFI_O}
 	$(LD) -o ${DFEFI_EXE} $^ -L${DFEFI} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_XML} -L${LIB_UAL} -lmuscle2 -ldfefi -lbds -lxmllib -litmconstants -litmtypes -lual ${LDFLAGS} ${FFTW_LIB}
@@ -292,7 +292,7 @@ ${OBJDIR}/ets_wrapper.o: src/ets_wrapper.f90
 	${FC90} -o $@ -c $< $(FC90FLAGS) -I${ETS} -I${INC_CONSTANTS} -I${INC_TYPES} -I${INC_XML} 
 
 ${OBJDIR}/chease_wrapper.o: src/chease_wrapper.f90
-	${FC90} -o $@ -c $< $(FC90FLAGS) -I${CHEASE} -I/usr/include/libxml2
+	${FC90} -o $@ -c $< $(FC90FLAGS) -I${CHEASE} -I${INC_XML} -I/usr/include/libxml2
 
 ${OBJDIR}/gem_wrapper.o: src/gem_wrapper.f90
 	${FC90} -o $@ -c $< $(FC90FLAGS) -I${INC_BDS} -I${INC_XML} 
