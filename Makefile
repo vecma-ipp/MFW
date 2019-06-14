@@ -266,7 +266,7 @@ dfefi: ual libbds get-dfefi
 get-dfefi:
 	@if [ ! -d "externals/dfefi" ]; then \
 	  echo "Checking out dfefi..."; \
-		svn co $(SVNURL_SOLPS)/dfefi externals/dfefi/trunk; \
+		svn co $(SVNURL_SOLPS)/dFEFI/trunk externals/dfefi; \
 	else  \
 		echo "Updating dfefi..."; \
 		svn up externals/dfefi; \
