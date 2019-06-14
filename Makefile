@@ -243,7 +243,7 @@ gem: ual libbds get-gem patch-gem
 get-gem:
 	@if [ ! -d "externals/gem" ]; then \
 	  echo "Checking out gem..."; \
-		svn co $(SVNURL_SOLPS)/gem externals/gem/trunk; \
+		svn co $(SVNURL_SOLPS)/GEM/trunk externals/gem; \
 	else  \
 		echo "Updating gem..."; \
 		svn up externals/gem; \
