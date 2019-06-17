@@ -1,6 +1,6 @@
 ! -*- coding: UTF-8 -*- 
 !> @brief  run UQ for the loop:  ETS + Update EQ + CHEASE + BOHMGB
-!> Uncertainty in Te and Ti boudaries (rho_tor_norm = 1)
+!> Uncertainty in Te and Ti boudaries (Eadge)
 
 program loop_bc_run
 
