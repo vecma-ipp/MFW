@@ -30,26 +30,29 @@ contains
 
     type (type_coreprof), pointer :: corep_in(:)
     type (type_equilibrium), pointer :: equil_in(:)
-    ! Temporary params:
+    
     real(8) :: params_in(3) 
     type (type_coresource), pointer :: cores_out(:)
     type (type_param) :: code_parameters
+    character(len=10) :: S1, S2, S3
 
-    ! Path to the workflows directory
-    character(len=10) :: WTOT_el, RHEAT_el, FWHEAT_el
-    
     ! Get code params
     call fill_param(code_parameters, '../../workflows/source_dummy.xml', '', '../../workflows/source_dummy.xsd')
     
-    ! Uncertrainties in Sources
-    write(WTOT_el,'(ES10.3)') params_in(1)
-    write(RHEAT_el,'(ES10.3)') params_in(2)
-    write(FWHEAT_el,'(ES10.3)') params_in(3)
+    ! Uncertrainties in Sources: S1: amplitude, S2i: position (mean) and width (std)
+    write(S1,'(ES10.3)') params_in(1)
+    write(S2,'(ES10.3)') params_in(2)
+    write(S3,'(ES10.3)') params_in(3)
     
-    ! Fill new paramas for heating_el in source_dummy.xml
-    code_parameters%parameters(19)(26:35) = WTOT_el   ! Amplitude ION
-    code_parameters%parameters(20)(26:35) = RHEAT_el  ! Mean
-    code_parameters%parameters(21)(26:35) = FWHEAT_el ! STD
+    ! Fill new paramas for heating in source_dummy.xml
+    ! Electrons
+!    code_parameters%parameters(19)(26:35) = S1 ! WTOT_el  
+!    code_parameters%parameters(20)(26:35) = S2 ! RHEAT_el  
+!    code_parameters%parameters(21)(26:35) = S3 ! FWHEAT_el 
+    ! Ions
+    code_parameters%parameters(43)(26:35) = S1 ! WTOT   
+    code_parameters%parameters(44)(26:35) = S2 ! RHEAT  
+    code_parameters%parameters(45)(26:35) = S3 ! FWHEAT 
     
     ! Run gausian_sources
     call gausian_sources(corep_in, equil_in, cores_out, code_parameters)
