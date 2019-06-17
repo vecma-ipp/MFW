@@ -62,7 +62,6 @@ implicit none
   integer :: ios, i, n_data, n_outputs 
   logical :: infile_status, outfile_status 
   
-  print*, '============= FORTRAN CODE: IN ================== '
   ! ...
   if (command_argument_count() /=2) then
     write(*,*) "ERROR: exactly 2 input arguments are required"
@@ -224,5 +223,4 @@ implicit none
   call deallocate_cpo(equil)
   call deallocate_cpo(corep)
  
-  print*, '============= FORTRAN CODE: OUT ================== '
 end program ets_pj_run

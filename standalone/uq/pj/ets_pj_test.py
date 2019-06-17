@@ -19,6 +19,9 @@ Uncertainties in 4 flux tubes. Parameters: D1, D2, D3, D4.
 Quantity of Interest: electron temperature (Te).
 '''
 
+
+start_time = time.time()
+
 # Environment infos
 #===================
 
@@ -35,7 +38,7 @@ SYS = os.environ['SYS']
 client_conf = {'log_file': os.path.join(tmp_dir, "api.log")}
 
 # Create QCG Pilot Job Manager
-m = LocalManager([], client_conf)
+m = LocalManager(['--log', 'warning'], client_conf)
 
 print("available resources:\n%s\n" % str(m.resources()))
 
@@ -174,26 +177,9 @@ print("Making the analysis")
 analysis = uq.elements.analysis.PCEAnalysis(
     ets_campaign, value_cols=output_columns)
 
-stats, corr, sobols = analysis.apply()
-
-# Results uncomment after merging easyVVUQ
-#stats  = analysis.statistical_moments('te')
-#sobols = analysis.sobol_indices('te', 'first_order')
+analysis.apply()
 
 # Elapsed time
 end_time = time.time()
-
-# For plots
-corep_file = cpo_dir + '/ets_coreprof_in.cpo'
-corep = read(corep_file, 'coreprof')
-rho = corep.rho_tor
-
-# Graphics for descriptive satatistics
-plots.plot_stats(rho, stats["te"],
-                 xlabel=r'$\rho_{tor} app ~ [m]$', ylabel=r'$T_e [eV]$',
-                 ftitle='Te profile',
-                 fname='te_stats_pj.png')
-
-plots.plot_sobols(rho, sobols["te"], uncert_params,
-                  ftitle=' First-Order Sobol indices - QoI: Te.',
-                  fname='ti_sobols_pj.png')
+print('>>>>> Elapsed time: ', end_time - start_time)
+              fname='ti_sobols_pj.png')
