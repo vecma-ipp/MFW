@@ -7,9 +7,9 @@
       "input_filename": "src_input.nml"
     },
     "params": {
-      "S1": {"type": "real", "min": "0.0", "max": "2.e6", "default": "1.e6"},
-      "S2": {"type": "real", "min": "0.0", "max": "2.0", "default": "1.0"},
-      "S3": {"type": "real", "min": "0.0", "max": "2.0", "default": "1.0"},
+      "AMP_ION": {"type": "real", "min": "0.0", "max": "2.0", "default": "1.0"},
+      "POS_ION": {"type": "real", "min": "0.0", "max": "2.0", "default": "1.0"},
+      "WIDTH_ION": {"type": "real", "min": "0.0", "max": "2.0", "default": "1.0"},
       "out_file": {"type": "str", "default": "src_output.csv"}
     }
 }

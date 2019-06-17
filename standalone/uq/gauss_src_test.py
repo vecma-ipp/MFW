@@ -21,11 +21,11 @@ SYS = os.environ['SYS']
 CPO_DIR = os.path.abspath("../data/TESTS/")
 
 # To store input/ouput files and Campaign directories
-TMP_DIR = "/ptmp/ljala/"
+TMP_DIR = os.environ['SCRATCH']
 
 # Uncertain parameters: Gaussian Sources
-# For electrons: S1=WTOT_el (amplitude), S2=RHEAT_el (mean), S3=FWHEAT_el (std)
-uncert_params =["S1", "S2", "S3"]
+#uncert_params =['AMP_EL', 'POS_EL', 'WIDTH_EL']
+uncert_params =['AMP_ION', 'POS_ION', 'WIDTH_ION']
 
 # To run F90 code
 src_exec = "../bin/"+SYS+"/gauss_src_run "
@@ -36,10 +36,10 @@ output_json = os.path.join(TMP_DIR, "out_src.json")
 
 # Initialize Campaign object
 src_campaign = uq.Campaign(
-    name = 'src_campaign',
+    name = 'src_ions',
     state_filename=input_json,
     workdir=TMP_DIR,
-    default_campaign_dir_prefix='src_campaign_'
+    default_campaign_dir_prefix='src_ions_'
 )
 
 campaign_dir = src_campaign.campaign_dir
@@ -62,11 +62,11 @@ os.system("cp " + CPO_DIR + "/*.cpo " + common_dir)
 # Get uncertain parameters distrubutions
 # Read WTOT_el, RHEAT_el, FWCURR_el from source_dummy.xml file
 S1 = 1.5E6
-S2 = 0.0
-S3 = 0.2
+#S2 = 0.0
+#S3 = 0.2
 dist_1 = cp.Uniform(0.9*S1, 1.1*S1)
-dist_2 = cp.Uniform(0.0, 0.2)
-dist_3 = cp.Uniform(0.9*S3, 1.1*S3)
+dist_2 = cp.Uniform(0.0,  0.2)
+dist_3 = cp.Uniform(0.15, 0.25)
 
 # Define the parameters dictionary
 src_campaign.vary_param(uncert_params[0], dist=dist_1)
@@ -101,7 +101,7 @@ aggregate.apply()
 
 # Analysis
 analysis = uq.elements.analysis.PCEAnalysis(src_campaign, value_cols=output_columns)
-dist_out, cov_out = analysis.apply()
+analysis.apply()
 
 # Results
 stats_te = analysis.statistical_moments('te')
@@ -123,19 +123,19 @@ rho = corep.rho_tor
 
 plots.plot_stats(rho, stats_te,
                  xlabel=r'$\rho_{tor} ~ [m]$', ylabel=r'$T_e ~ [eV]$',
-                 ftitle='UQ: Te profile',
-                 fname='figs/te_stats_src.png')
+                 ftitle='UQ: Te profile (Uncertenties in Ion sources)',
+                 fname='figs/te_sr_ions-stats.png')
 
 plots.plot_stats(rho, stats_ti,
                  xlabel=r'$\rho_{tor} ~ [m]$', ylabel=r'$T_i ~ [eV]$',
-                 ftitle='UQ: Ti profile',
-                 fname='figs/ti_stats_src.png')
+                 ftitle='UQ: Ti profile (Uncertenties in Ion sources)',
+                 fname='figs/ti_sr_ions-stats.png')
 
-plots.plot_sobols_3(rho, sobols_te, uncert_params,
-              ftitle='First-Order Sobol indices - QoI: Te',
-              fname='figs/te_sobol_src.png')
+plots.plot_sobols(rho, sobols_te, uncert_params,
+              ftitle='1st Sobol indices. QoI: Te, Uncertenties in ion sources',
+              fname='figs/te_sr_ions-sobols.png')
 
-plots.plot_sobols_3(rho, sobols_ti, uncert_params,
-              ftitle='First-Order Sobol indices - QoI: Ti',
-              fname='figs/ti_sobol_src.png')
+plots.plot_sobols(rho, sobols_ti, uncert_params,
+              ftitle='1st Sobol indices. QoI: Ti, Uncertenties in ion sources',
+              fname='figs/ti_sr_ions-sobols.png')
 

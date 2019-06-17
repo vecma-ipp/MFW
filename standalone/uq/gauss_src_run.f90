@@ -39,7 +39,7 @@ implicit none
   character(len=128) :: in_fname   
 
   ! Uncertain parameters: 
-  real(kind=8) :: S1, S2, S3
+  real(kind=8) :: AMP_ION, POS_ION, WIDTH_ION
   real(8) :: params_in(3)
   
   ! Output file contraining values of interset (te, ti, pressure ...)
@@ -99,7 +99,7 @@ implicit none
   end if
  
   ! Read uncertain paramters (cf. inputs/ic.template) 
-  namelist /src_input_file/ S1, S2, S3, out_file  
+  namelist /src_input_file/ AMP_ION, POS_ION, WIDTH_ION, out_file  
   
   open(unit=9, file=trim(in_fname))
   read(9, src_input_file)
@@ -202,10 +202,10 @@ implicit none
      STOP
   end if
   
-  ! To update code_parameters
-  params_in(1) = S1 ! WTOT_el
-  params_in(2) = S2 ! RHEAT_el
-  params_in(3) = S3 ! FWHEAT_el
+  ! To update code_parameters. The Gaussian source is Normal(mu, sigma)
+  params_in(1) = AMP_ION 
+  params_in(2) = POS_ION   ! mu
+  params_in(3) = WIDTH_ION ! sigma
 
   ! Run gausian_sources
   call gaussian_source_cpo(corep_in, equil_in, params_in, cores_in)
