@@ -105,6 +105,25 @@ def plot_sobols(x, sobols, params, ftitle, fname):
     fig.savefig(fname)
     plt.close(fig)
 
+def plot_sobols_6(x, sobols, params, ftitle, fname):
+    plt.switch_backend('agg')
+    npar = len(params)
+
+    plt.switch_backend('agg')
+    fig, axs = plt.subplots(nrows=2, ncols=3, sharex=True)
+
+    for i in range(npar):
+        ax = axs[i//3, i%3]
+        s = sobols[params[i]]
+        ax.plot(x, s, label=params[i])
+
+    ax.set_xlabel(r'$\rho_{tor} ~ [m]$')
+    ax.set_ylabel(r'$1^{st} ~ Sobol$')
+
+    ax.set_title(ftitle)
+    plt.legend()
+    fig.savefig(fname)
+    plt.close(fig)
 
 def plot_sobols_3(x, sobols, params, ftitle, fname):
     plt.switch_backend('agg')
