@@ -101,14 +101,15 @@ my_campaign.set_collater(collater)
 # Create the sampler
 vary = {
     uparams[0]: cp.Uniform(0.9*1.5e6, 1.1*1.5e6),
-    uparams[1]: cp.Uniform(0.0,  0.2)
-    uparams[2]: cp.Uniform(0.18, 0.22)
+    uparams[1]: cp.Uniform(0.0,  0.2),
+    uparams[2]: cp.Uniform(0.18, 0.22),
     uparams[3]: cp.Uniform(0.9*1.5e6, 1.1*1.5e6),
-    uparams[4]: cp.Uniform(0.0,  0.2)
+    uparams[4]: cp.Uniform(0.0,  0.2),
     uparams[5]: cp.Uniform(0.18, 0.22)
 }
 
-my_sampler = uq.sampling.PCESampler(vary=vary, polynomial_order=3)
+#my_sampler = uq.sampling.PCESampler(vary=vary, polynomial_order=3)
+my_sampler = uq.sampling.QMCSampler(vary=vary, number_of_samples=10000)
 
 # Associate the sampler with the campaign
 my_campaign.set_sampler(my_sampler)
@@ -126,7 +127,8 @@ exec_time = time.time() - exec_time
 my_campaign.collate()
 
 # Post-processing analysis
-analysis = uq.analysis.PCEAnalysis(sampler=my_sampler, qoi_cols=output_columns)
+#analysis = uq.analysis.PCEAnalysis(sampler=my_sampler, qoi_cols=output_columns)
+analysis = uq.analysis.QMCAnalysis(sampler=my_sampler, qoi_cols=output_columns)
 
 my_campaign.apply_analysis(analysis)
 
@@ -134,12 +136,14 @@ results = my_campaign.get_last_analysis()
 
 # Get Descriptive Statistics
 stats_te = results['statistical_moments']['te']
-s1_te = results['sobol_first_order']['te']
-st_te = results['sobol_total_order']['te']
+pctl_te = results['percentiles']['te']
+#s1_te = results['sobol_first_order']['te']
+#st_te = results['sobol_total_order']['te']
 
 stats_ti = results['statistical_moments']['ti']
-s1_ti = results['sobol_first_order']['ti']
-st_ti = results['sobol_total_order']['ti']
+pctl_ti = results['percentiles']['ti']
+#s1_ti = results['sobol_first_order']['ti']
+#st_ti = results['sobol_total_order']['ti']
 
 
 # Elapsed time
@@ -153,28 +157,28 @@ corep_file = common_dir + '/ets_coreprof_in.cpo'
 corep = read(corep_file, 'coreprof')
 rho = corep.rho_tor
 
-plots.plot_stats(rho, stats_te,
+plots.plot_stats_pctl(rho, stats_te, pctl_te,
                  xlabel=r'$\rho_{tor} ~ [m]$', ylabel=r'$T_e ~ [eV]$',
                  ftitle='UQ: Te profile (Uncertenties in Ion sources)',
                  fname='figs/te_sr_ions-stats.png')
 
-plots.plot_stats(rho, stats_ti,
+plots.plot_stats_pctl(rho, stats_ti, pctl_ti,
                  xlabel=r'$\rho_{tor} ~ [m]$', ylabel=r'$T_i ~ [eV]$',
                  ftitle='UQ: Ti profile (Uncertenties in Ion sources)',
                  fname='figs/ti_sr_ions-stats.png')
 
-plots.plot_sobols_6(rho, s1_te, uparams,
-              ftitle='1st Sobol indices. QoI: Te, Uncertenties in ion sources',
-              fname='figs/te_src-first_sobols.png')
-
-plots.plot_sobols_6(rho, s1_ti, uparams,
-              ftitle='1st Sobol indices. QoI: Ti, Uncertenties in ion sources',
-              fname='figs/ti_srs-first_sobols.png')
-
-plots.plot_sobols_6(rho, st_te, uparams,
-              ftitle='Total Sobol indices. QoI: Te, Uncertenties in ion sources',
-              fname='figs/te_src-total_sobols.png')
-
-plots.plot_sobols_6(rho, st_ti, uparams,
-              ftitle='Total Sobol indices. QoI: Ti, Uncertenties in ion sources',
-              fname='figs/ti_src-total_sobols.png')
+#plots.plot_sobols(rho, s1_te, uparams,
+#              ftitle='1st Sobol indices. QoI: Te, Uncertenties in ion sources',
+#              fname='figs/te_src-first_sobols.png')
+#
+#plots.plot_sobols(rho, s1_ti, uparams,
+#              ftitle='1st Sobol indices. QoI: Ti, Uncertenties in ion sources',
+#              fname='figs/ti_srs-first_sobols.png')
+#
+#plots.plot_sobols(rho, st_te, uparams,
+#              ftitle='Total Sobol indices. QoI: Te, Uncertenties in ion sources',
+#              fname='figs/te_src-total_sobols.png')
+#
+#plots.plot_sobols(rho, st_ti, uparams,
+#              ftitle='Total Sobol indices. QoI: Ti, Uncertenties in ion sources',
+#              fname='figs/ti_src-total_sobols.png')

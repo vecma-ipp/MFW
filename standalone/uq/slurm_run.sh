@@ -16,7 +16,7 @@
 #SBATCH --mail-user=ljala@rzg.mpg.de
 #
 # Wall clock limit:
-#SBATCH --time=24:00:00
+#SBATCH --time=14:00:00
 
 # Run the program:
-srun python test_uq_sources.py  > logs/test.log.${SLURM_JOBID}
+python test_uq_sources.py  > logs/test.log.${SLURM_JOBID}

@@ -33,7 +33,7 @@ implicit none
   character(len=128) :: in_fname ! NML file containing uncertain parameters values
   
   ! UQP method
-  character(*), parameter :: uqp = "uqp2"
+  character(*), parameter :: uqp = "uqp1"
   
   ! Spline degree and Control points number
   integer, parameter :: p = 3 
@@ -213,7 +213,7 @@ implicit none
     ! ====== UQP 1
     case('uqp1')
       ! To collect outputs data, the quantity of interest is Te
-      n_data    = 101
+      n_data    = 100
       n_outputs = 1 
       ! Open the CSV output file
       call csv_out_file%open(out_file, n_cols=n_outputs, status_ok=outfile_status)
