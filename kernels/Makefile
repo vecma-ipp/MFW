@@ -145,13 +145,14 @@ GEM0_O = ${SHARED_O} ${OBJDIR}/gem0_wrapper.o ${OBJDIR}/gem0_kernelB.o
 BYPASS_O = ${SHARED_O} ${OBJDIR}/bypass_kernelB.o
 DV2FLUX_O = ${SHARED_O} ${OBJDIR}/dv2flux_wrapper.o ${OBJDIR}/dv2flux_kernelB.o
 ORB5_O = ${SHARED_O} ${OBJDIR}/orb5_wrapper.o ${OBJDIR}/orb5_kernelB.o
+PARTIAL_INIT_O = ${SHARED_O} ${OBJDIR}/partial_init_wrapper.o ${OBJDIR}/partial_init_kernelB.o
 ifdef UAL
   INIT_UAL_O = ${SHARED_O} ${OBJDIR}/init_ual_wrapper.o ${OBJDIR}/init_ual_kernelB.o
   WRITE_UAL_O = ${SHARED_O} ${OBJDIR}/write_ual_wrapper.o ${OBJDIR}/write_ual_kernelB.o
 endif
 
 KERNELS = INIT_CPO_K CONTINUE_K BDSEQ_K BOHMGB_K ETS_K CHEASE_K GEM_K \
-	DFEFI_K IMP4DV_K GEM0_K DV2FLUX_K BYPASS_K 
+	DFEFI_K IMP4DV_K GEM0_K DV2FLUX_K BYPASS_K PARTIAL_INIT_K
 #ORB5_K
 #NOTRANSP_K 
 #ifeq (${TEST},yes)
@@ -178,6 +179,7 @@ DV2FLUX_EXE = ${BINDIR}/dv2flux_kernelB
 #NOTRANSP_EXE = ${BINDIR}/notransp_kernelB
 BYPASS_EXE = ${BINDIR}/bypass_kernelB
 ORB5_EXE = ${BINDIR}/orb5_kernelB
+PARTIAL_INIT_EXE = ${BINDIR}/partial_init_kernelB
 ifdef UAL
   INIT_UAL_EXE = ${BINDIR}/init_ual_kernelB
   WRITE_UAL_EXE = ${BINDIR}/write_ual_kernelB
@@ -258,6 +260,9 @@ ORB5_K: ${ORB5_O}
 ORB5_TEST: ${OBJDIR}/orb5_test.o
 	$(LD) -o ${BINDIR}/orb5_test.exe $^ -L${ORB5}/lib_compat -L${LIB_UAL} -L${LIB_BDS} -lmuscle2 -lorb5_compat -lual -lbds ${LDFLAGS} ${FFTW_LIB} ${ORB5_LDDIRS} ${ORB5_LDFLAGS}
 
+PARTIAL_INIT_K: ${PARTIAL_INIT_O}
+	$(LD) -o ${PARTIAL_INIT_EXE} $^ -L${LIB_UAL} -L${LIB_CONSTANTS} -L${LIB_TYPES} -lmuscle2 -litmconstants -litmtypes -lual ${LDFLAGS}
+
 ${SYS}: 
 	@mkdir -p ${OBJDIR}
 	@mkdir -p ${INCDIR}
@@ -267,7 +272,7 @@ clean:
 	rm -f src/*~ src/*_wrapper.f90 src/*_kernelB.f90 src/*_test.f90 *~ 
 	rm -f ${INIT_EXE} ${BDSEQ_EXE} ${ETS_EXE} ${BOHMGB_EXE} ${CONTINUE_EXE} ${INIT_UAL_EXE} \
 		${NOTRANSP_EXE} ${GEM_EXE} ${CHEASE_EXE} ${DFEFI_EXE} ${IMP4DV_EXE} ${GEM0_EXE} \
-		${DV2FLUX_EXE} ${BYPASS_EXE} ${ORB5_EXE}
+		${DV2FLUX_EXE} ${BYPASS_EXE} ${ORB5_EXE} ${PARTIAL_INIT_EXE}
 	rm -rf ${OBJDIR} ${INCDIR} ${BINDIR} 
 
 
