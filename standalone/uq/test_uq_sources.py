@@ -109,7 +109,7 @@ vary = {
 }
 
 #my_sampler = uq.sampling.PCESampler(vary=vary, polynomial_order=3)
-my_sampler = uq.sampling.QMCSampler(vary=vary, number_of_samples=10000)
+my_sampler = uq.sampling.QMCSampler(vary=vary, number_of_samples=1000)
 
 # Associate the sampler with the campaign
 my_campaign.set_sampler(my_sampler)
