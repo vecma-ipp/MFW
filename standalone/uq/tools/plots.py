@@ -56,7 +56,7 @@ def plot_stats(x, stat, xlabel, ylabel, ftitle, fname):
 # Statistical Moments (90% percentils)
 def plot_stats_pctl(x, stat, pctl, xlabel, ylabel, ftitle, fname):
     mean = stat["mean"]
-    var  = stat["var"]
+    std  = stat["std"]
     p10 = pctl['p10']
     p90 = pctl['p90']
 
@@ -75,8 +75,8 @@ def plot_stats_pctl(x, stat, pctl, xlabel, ylabel, ftitle, fname):
     ax1.legend()
 
     ax2 = ax1.twinx()
-    ax2.plot(x, var, 'r-', alpha=0.5)
-    ax2.set_ylabel('Variance', color='r')
+    ax2.plot(x, std, 'r-', alpha=0.5)
+    ax2.set_ylabel('Standard deviation', color='r')
     ax2.tick_params('y', colors='r')
     ax2 = format_exponent(ax2, axis='y')
 
@@ -85,7 +85,36 @@ def plot_stats_pctl(x, stat, pctl, xlabel, ylabel, ftitle, fname):
     plt.close(fig)
 
 
+# Plot Sobols indices
 def plot_sobols(x, sobols, params, ftitle, fname):
+    plt.switch_backend('agg')
+    npar = len(params)
+
+    if npar==4:
+        fig, axs = plt.subplots(nrows=2, ncols=2, sharex=True, sharey=True)
+        for i in range(npar):
+            ax = axs[i//2, i%2]
+            s = sobols[params[i]]
+            ax.plot(x, s)
+            ax.grid()
+            ax.set_title(params[i])
+
+    if npar==6:
+        fig, axs = plt.subplots(nrows=2, ncols=3, sharex=True, sharey=True)
+        for i in range(npar):
+            ax = axs[i//3, i%3]
+            s = sobols[params[i]]
+            ax.plot(x, s)
+            ax.grid()
+            ax.set_title(params[i])
+
+    fig.suptitle(ftitle)
+    fig.savefig(fname)
+    plt.close(fig)
+
+
+# Plot Sobols indices (all in the same figure)
+def plot_sobols_all(x, sobols, params, ftitle, fname):
     plt.switch_backend('agg')
     npar = len(params)
 
@@ -98,118 +127,9 @@ def plot_sobols(x, sobols, params, ftitle, fname):
         ax.plot(x, s, label=params[i])
 
     ax.set_xlabel(r'$\rho_{tor} ~ [m]$')
-    ax.set_ylabel(r'$1^{st} ~ Sobol$')
+    ax.set_ylabel('Sobol index')
 
     ax.set_title(ftitle)
     plt.legend()
     fig.savefig(fname)
     plt.close(fig)
-
-
-def plot_sobols_3(x, sobols, params, ftitle, fname):
-    plt.switch_backend('agg')
-
-    s1 = sobols[params[0]]
-    s2 = sobols[params[1]]
-    s3 = sobols[params[2]]
-
-    plt.switch_backend('agg')
-    fig = plt.figure(figsize=(12,9))
-
-    ax = fig.add_subplot(111)
-
-    ax.plot(x, s1, label='WTOT')
-    ax.plot(x, s2, label=r'RHEAT ($\mu$)')
-    ax.plot(x, s3, label=r'FWHEAT ($\sigma$)')
-    ax.set_xlabel(r'$\rho_{tor} ~ [m]$')
-    ax.set_ylabel(r'$1^{st} ~ Sobol$')
-
-    ax.set_title(ftitle)
-    plt.legend()
-    fig.savefig(fname)
-    plt.close(fig)
-
-
-def plot_sobols_4(x, sobols, params, typ):
-    plt.switch_backend('agg')
-
-    s1 = sobols[params[0]]
-    s2 = sobols[params[1]]
-    s3 = sobols[params[2]]
-    s4 = sobols[params[3]]
-
-    fig, axs = plt.subplots(nrows=2, ncols=2, sharex=True)
-
-    ax = axs[0,0]
-    ax.plot(x, s1)
-    ax.set_title('D1')
-
-    #ax.locator_params(nbins=4)
-    ax = axs[0,1]
-    ax.plot(x, s2)
-    ax.set_title('D2')
-
-    ax = axs[1,0]
-    ax.plot(x, s3)
-    ax.set_title('D3')
-
-    ax = axs[1,1]
-    ax.plot(x, s4)
-    ax.set_title('D4')
-
-    fig.suptitle(typ+' - First-Order Sobol indices')
-    fig.savefig(typ+'sobols.png')
-    plt.close(fig)
-
-
-# QoI distribution, in the index grid i
-def plot_dist(dist, stat):
-    plt.switch_backend('agg')
-    m = np.array(stat["mean"])
-    sd = np.array(stat['std'])
-
-    fig, axs = plt.subplots(nrows=2, ncols=2, sharex=True, figsize=(12,9))
-
-    #fig = plt.figure(figsize=(12,9))
-    #ax1 = fig.add_subplot(111)
-    j = 0
-    for i in range(4):
-        s = np.linspace(m[j]-3*sd[j], m[j]+3*sd[j], 100)
-        d = dist[j].pdf(s)
-
-        ax = axs[i//2, i%2]
-        ax.plot(s, d, 'b-')
-        ax.axvline(x=m[j], color= 'C1', linestyle='-')
-        ax.axvline(x=m[j]-sd[j], color= 'C1', linestyle='--')
-        ax.axvline(x=m[j]+sd[j], color= 'C1', linestyle='--')
-        ax.set_title(r'dist in: $C_'+str(j)+'$')
-        ax.grid()
-        j = i+2
-
-    fig.suptitle('Output distiburions')
-    fig.savefig('dist_out.png')
-    plt.close(fig)
-
-#def plot_dist01(dist, stat):
-#    plt.switch_backend('agg')
-#    m = np.array(stat["mean"])
-#    sd = np.array(stat['std'])
-#
-#    fig = plt.figure(figsize=(12,9))
-#    ax = fig.add_subplot(111)
-#
-#    s0 = np.linspace(m[0]-3*sd[0], m[0]+3*sd[0], 100)
-#    d0 = dist[0].pdf(s0)
-#    ax.plot(s0, d0, label=r'$C_0$')
-#
-#    s1 = np.linspace(m[1]-3*sd[1], m[1]+3*sd[1], 100)
-#    d1 = dist[1].pdf(s1)
-#    ax.plot(s1, d1, label=r'$C_1$')
-#
-#    ax.set_title(r'dist in: $C_0$ and $C_1$')
-#    ax.grid()
-#
-#    ax.legend()
-#
-#    fig.savefig('dist_out01.png')
-#    plt.close(fig)

@@ -114,7 +114,7 @@ SYS = os.environ['SYS']
 client_conf = {'log_file': os.path.join(tmp_dir, "api.log")}
 
 # Create QCG Pilot Job Manager
-m = LocalManager([], client_conf)
+m = LocalManager(['--log', 'warning'], client_conf)
 
 print("available resources:\n%s\n" % str(m.resources()))
 
@@ -258,11 +258,7 @@ print("Making the analysis")
 analysis = uq.analysis.PCEAnalysis(
     ets_campaign, value_cols=output_columns)
 
-stats, corr, sobols = analysis.apply()
-
-# Results uncomment after merging easyVVUQ
-#stats  = analysis.statistical_moments('te')
-#sobols = analysis.sobol_indices('te', 'first_order')
+analysis.apply()
 
 # Elapsed time
 end_time = time.time()
@@ -283,3 +279,4 @@ plot_stats(rho, stats["te"],
 plot_sobols(rho, sobols["te"], uncert_params,
                   ftitle=' First-Order Sobol indices - QoI: Te.',
                   fname='ti_sobols_pj.png')
+

@@ -1,4 +1,4 @@
-&bc_src_input_file
+&combined_input_file
 Te_boundary=#Te_boundary
 Ti_boundary=#Ti_boundary
 WTOT_el=#WTOT_el

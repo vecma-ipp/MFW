@@ -2,7 +2,7 @@
 !> @brief  run UQ for the loop:  ETS + Update EQ + CHEASE + BOHMGB
 !> Uncertainty in sources 
 
-program gauss_src_run
+program sources_run
 
 use allocate_deallocate
 
@@ -38,9 +38,9 @@ implicit none
   ! INPUT: nml file containing uncertain parameters values
   character(len=128) :: in_fname   
 
-  ! Uncertain parameters: 
-  real(kind=8) :: S1, S2, S3
-  real(8) :: params_in(3)
+  ! Uncertain parametes 
+  real(kind=8) :: amp_e, pos_e, width_e, amp_i, pos_i, width_i
+  real(8) :: params_in(6)
   
   ! Output file contraining values of interset (te, ti, pressure ...)
   character(len=128) :: out_file
@@ -98,11 +98,13 @@ implicit none
     stop
   end if
  
-  ! Read uncertain paramters (cf. inputs/ic.template) 
-  namelist /src_input_file/ S1, S2, S3, out_file  
+  ! Read uncertain paramters (cf. inputs/boudaries.template) 
+  namelist /sources_input_file/ amp_e, pos_e, width_e, &
+                              & amp_i, pos_i, width_i, &
+                              & out_file  
   
   open(unit=9, file=trim(in_fname))
-  read(9, src_input_file)
+  read(9, sources_input_file)
   
   ! Read the Path to CPO dir from the consol 
   call get_command_argument(1, cpo_dir)
@@ -202,10 +204,13 @@ implicit none
      STOP
   end if
   
-  ! To update code_parameters
-  params_in(1) = S1 ! WTOT_el
-  params_in(2) = S2 ! RHEAT_el
-  params_in(3) = S3 ! FWHEAT_el
+  ! To update code_parameters. The Gaussian source is Normal(mu, sigma)
+  params_in(1) = amp_e 
+  params_in(2) = pos_e  ! mu
+  params_in(3) = width_e ! sigma
+  params_in(4) = amp_i 
+  params_in(5) = pos_i   ! mu
+  params_in(6) = width_i ! sigma
 
   ! Run gausian_sources
   call gaussian_source_cpo(corep_in, equil_in, params_in, cores_in)
@@ -317,4 +322,4 @@ implicit none
   call deallocate_cpo(corei_in)
   call deallocate_cpo(toroidf_in)
  
-end program gauss_src_run
+end program sources_run

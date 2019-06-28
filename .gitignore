@@ -40,5 +40,8 @@ standalone/uq/pj/*cache*
 standalone/uq/pj/logs/test*
 standalone/uq/pj/.execute_*
 standalone/uq/pj/.encode_*
+standalone/uq/pj/jobs.report
+standalone/uq/pj/service.log
+
 
 

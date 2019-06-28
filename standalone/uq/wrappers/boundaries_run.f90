@@ -1,8 +1,10 @@
 ! -*- coding: UTF-8 -*- 
-!> @brief  run UQ for the loop:  ETS + Update EQ + CHEASE + BOHMGB
-!> Uncertainty in Te and Ti boudaries (rho_tor_norm = 1)
+!> @brief Models:  ETS + Update EQ + CHEASE + BOHMGB.
+!> Uncertainties in: Te and Ti boudaries (Edge).
+!> UQ aproach UQP1: One blackblox for whole models.
 
-program loop_bc_run
+
+program boundaries_run
 
 use allocate_deallocate
 
@@ -46,7 +48,7 @@ implicit none
   type(csv_file)     :: csv_out_file
 
   ! LOOP paramaters
-  integer, parameter :: STEPS = 50
+  integer, parameter :: STEPS = 30
   logical, parameter :: TIMETRACE = .FALSE.
   
   ! CPO file names
@@ -98,10 +100,10 @@ implicit none
   end if
  
   ! Read uncertain paramters (cf. inputs/ic.template) 
-  namelist /bc_input_file/ Te_boundary, Ti_boundary, out_file  
+  namelist /boundaries_input_file/ Te_boundary, Ti_boundary, out_file  
   
   open(unit=9, file=trim(in_fname))
-  read(9, bc_input_file)
+  read(9, boundaries_input_file)
   
   ! Read the Path to CPO dir from the consol 
   call get_command_argument(1, cpo_dir)
@@ -124,45 +126,45 @@ implicit none
 
   ! Read CPO files and write corresponding structures   
   open (unit = 10, file = corep_in_file, &
-       status = 'old', form = 'formatted', &
-       action = 'read', iostat = ios)
+    status = 'old', form = 'formatted', &
+    action = 'read', iostat = ios)
   if (ios == 0) then
-     close (10)
-     call open_read_file(10, corep_in_file)
-     call read_cpo(corep_in(1), 'coreprof' )
-     ! Update the initial conditions (Te and Ti in the eadge)
-     corep_in(1)%te%boundary%value(1) = Te_boundary
-     corep_in(1)%ti%boundary%value(1,1) = Ti_boundary
-     call close_read_file
+    close (10)
+    call open_read_file(10, corep_in_file)
+    call read_cpo(corep_in(1), 'coreprof' )
+    ! Update the initial conditions (Te and Ti in the edge)
+    corep_in(1)%te%boundary%value(1) = Te_boundary
+    corep_in(1)%ti%boundary%value(1,1) = Ti_boundary
+    call close_read_file
   else
-     print *,"ERROR. CPO file not found:",corep_in_file
-     STOP
+    print *,"ERROR. CPO file not found:",corep_in_file
+    STOP
   end if
   
   open (unit = 11, file = equil_in_file, &
-       status = 'old', form = 'formatted', &
-       action = 'read', iostat = ios)
+    status = 'old', form = 'formatted', &
+    action = 'read', iostat = ios)
   if (ios == 0) then
-     close (11)
-     call open_read_file(11, equil_in_file )
-     call read_cpo(equil_in(1), 'equilibrium' )
-     call close_read_file
+    close (11)
+    call open_read_file(11, equil_in_file )
+    call read_cpo(equil_in(1), 'equilibrium' )
+    call close_read_file
   else
-     print *,"CPO file not found:",equil_in_file
-     STOP
+    print *,"CPO file not found:",equil_in_file
+    STOP
   end if
   
   open (unit = 12, file = coret_in_file, &
-       status = 'old', form = 'formatted', &
-       action = 'read', iostat = ios)
+    status = 'old', form = 'formatted', &
+    action = 'read', iostat = ios)
   if (ios == 0) then
-     close (12)
-     call open_read_file(12, coret_in_file)
-     call read_cpo(coret_in(1), 'coretransp')
-     call close_read_file
+    close (12)
+    call open_read_file(12, coret_in_file)
+    call read_cpo(coret_in(1), 'coretransp')
+    call close_read_file
   else
-     print *,"CPO file not found:",coret_in_file
-     STOP
+    print *,"CPO file not found:",coret_in_file
+    STOP
   end if
   
   open (unit = 13, file = cores_in_file, &
@@ -300,4 +302,4 @@ implicit none
   call deallocate_cpo(corei_in)
   call deallocate_cpo(toroidf_in)
  
-end program loop_bc_run
+end program boundaries_run
