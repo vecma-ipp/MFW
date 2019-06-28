@@ -10,7 +10,7 @@ program sources_test
   type(type_coreprof), pointer :: corep(:)
   type(type_equilibrium), pointer :: equil(:)
   type(type_coresource), pointer :: cores(:)
-  real(8) :: params(3)
+  real(8) :: params(6)
 
   integer :: ios
 
@@ -49,6 +49,10 @@ program sources_test
   params(1) = 1.E6     ! WTOT_el   : Amplitude 
   params(2) = 0.5      ! RHEAT_el  : Mean
   params(3) = 0.2      ! FWHEAT_el : STD
+  params(4) = 1.E6     ! WTOT_el   : Amplitude 
+  params(5) = 0.5      ! RHEAT_el  : Mean
+  params(6) = 0.2      ! FWHEAT_el : STD
+
   
   call gaussian_source_cpo(corep, equil, params, cores)
 
