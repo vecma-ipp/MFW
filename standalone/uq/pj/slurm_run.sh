@@ -1,7 +1,7 @@
 #!/bin/bash -l
 # Standard output and error:
-#SBATCH -o logs/test.out.%j
-#SBATCH -e logs/test.err.%j
+#SBATCH -o test.out.%j
+#SBATCH -e test.err.%j
 # Initial working directory:
 #SBATCH -D ./
 # Job Name:
@@ -16,7 +16,8 @@
 #SBATCH --mail-user=ljala@rzg.mpg.de
 #
 # Wall clock limit:
-#SBATCH --time=5:00:00
+#SBATCH --time=1:00:00
 
-# Run the program:
-python ets_pj_test.py
+# Run the program:.
+./easypj_config.sh
+python3 ets_pj_test.py

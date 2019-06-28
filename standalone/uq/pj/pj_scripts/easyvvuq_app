@@ -1,9 +1,0 @@
-#!/bin/bash
-
-# In this section configure deployment specific settings
-# BEGIN
-# END
-
-# Do not change everything below
-$@
-
