@@ -44,10 +44,10 @@ def format_exponent(ax, axis='y'):
 
 
 # Statistical Moments (mean +- deviation and variance)
-def plot_stats(x, stat, xlabel, ylabel, ftitle, fname):
-    mean = np.array(stat["mean"])
-    var  = stat["var"]
-    std = np.array(stat['std'])
+def plot_stats(x, stats, xlabel, ylabel, ftitle, fname):
+    mean = stats["mean"]
+    var  = stats["var"]
+    std =  stats['std']
 
     plt.switch_backend('agg')
     fig = plt.figure(figsize=(12,9))
