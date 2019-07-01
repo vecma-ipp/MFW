@@ -86,7 +86,8 @@ start_time = time.time()
 SYS = os.environ['SYS']
 
 # Working directory
-tmp_dir = os.environ['SCRATCH']
+#tmp_dir = os.environ['SCRATCH']
+tmp_dir = os.getcwd()
 print("Running in directory: " + tmp_dir)
 
 # PJ Manager (switch on debugging, by default in api.log file)
@@ -95,7 +96,7 @@ client_conf = {'log_level': 'DEBUG'}
 m = LocalManager([], client_conf)
 print("Available resources:\n%s\n" % str(m.resources()))
 
-print("Initializing Camapign")
+print("Initializing Campaign")
 
 # CPO and XML files
 cpo_dir = os.path.abspath("../../data/TESTS/")
@@ -103,6 +104,7 @@ workflows_dir = os.path.abspath("../../../workflows/")
 
 # The exec code (ETS, CHEASE and BOHMGB wrappers)
 run_exec = os.path.abspath("../../bin/"+SYS+"/ets_run ")
+print("run_exec = ",run_exec)
 
 # Uncertain parameters: 4 flux tubes positions
 uparams = ["D1", "D2", "D3", "D4"]
@@ -129,7 +131,8 @@ output_filename = params["out_file"]["default"]
 output_columns = ["te"]
 
 # Initialize Campaign object
-my_campaign = uq.Campaign(name = 'uq_ets', work_dir=tmp_dir)
+my_campaign = uq.Campaign(name='uq_ets', work_dir=tmp_dir)
+print('uq_ets = ', my_campaign.campaign_name)
 
 # Copy xml and xsd files needed in the ETS wrappers
 campaign_dir = my_campaign.campaign_dir
@@ -137,7 +140,7 @@ os.system("mkdir " + campaign_dir +"/workflows")
 os.system("cp " + workflows_dir + "/ets.x* "+ campaign_dir +"/workflows")
 
 # Copy CPO files in common directory
-common_dir = campaign_dir +"/common/"
+common_dir = campaign_dir +"/common"
 os.system("mkdir " + common_dir)
 os.system("cp " + cpo_dir + "/*.cpo " + common_dir)
 
@@ -153,7 +156,7 @@ decoder = uq.decoders.SimpleCSV(target_filename=output_filename,
 collation = uq.collate.AggregateSamples(average=False)
 
 # Add the ETS app (automatically set as current app)
-my_campaign.add_app(name="ets",
+my_campaign.add_app(name="uq_ets",
                     params=params,
                     encoder=encoder,
                     decoder=decoder,
@@ -161,13 +164,13 @@ my_campaign.add_app(name="ets",
                     )
 
 # Get uncertain parameters values
-coret_file = common_dir + "ets_coretransp_in.cpo"
+coret_file = common_dir + "/ets_coretransp_in.cpo"
 coret = read(coret_file, "coretransp")
 diff_eff = coret.values[0].te_transp.diff_eff
 
 # Create the sampler
 vary = { uparams[k]: cp.Normal(diff_eff[k], 0.2*diff_eff[k]) for k in range(4)}
-my_sampler = uq.sampling.PCESampler(vary=vary)
+my_sampler = uq.sampling.PCESampler(vary=vary, polynomial_order=2)
 
 # Associate the sampler with the campaign
 my_campaign.set_sampler(my_sampler)
@@ -188,7 +191,7 @@ for key in my_campaign.list_runs():
             "exec": 'easyvvuq_encode',
             "args": [my_campaign.campaign_dir,
                      key],
-            "wd": cwd,
+            "wd": tmp_dir,
             "env": { "EASYPJ_CONF": easypj_conf },
         },
         "resources": {
@@ -206,7 +209,7 @@ for key in my_campaign.list_runs():
                      key,
                      'easyvvuq_app',
                      run_exec, common_dir + " input.nml"],
-            "wd": cwd,
+            "wd": tmp_dir,
             "env": { "EASYPJ_CONF": easypj_conf },
         },
         "resources": {
@@ -218,6 +221,8 @@ for key in my_campaign.list_runs():
             "after": ["encode_" + key]
         }
     }
+    print("execute job: ", key, ">>>>>>> ", execute_job)
+
 
     m.submit(Jobs().addStd(encode_job))
     m.submit(Jobs().addStd(execute_job))
@@ -244,7 +249,7 @@ stats = results['statistical_moments']['te']
 
 # Elapsed time
 end_time = time.time()
-print('Elapsed times: ', (end_time - start_time)/60. ' mins.')
+print('Elapsed times: ', (end_time - start_time)/60., ' mins.')
 
 #  Graphics for descriptive satatistics
 corep_file = common_dir + '/ets_coreprof_in.cpo'
