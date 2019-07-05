@@ -85,10 +85,11 @@ start_time = time.time()
 # OS env
 SYS = os.environ['SYS']
 
+tmp_dir = os.environ['SCRATCH']
+
 # Working directory
-#tmp_dir = os.environ['SCRATCH']
-tmp_dir = os.getcwd()
-print("Running in directory: " + tmp_dir)
+cwd = os.getcwd()
+print("Running in directory: " + cwd)
 
 # PJ Manager (switch on debugging, by default in api.log file)
 client_conf = {'log_level': 'DEBUG'}
@@ -171,7 +172,7 @@ diff_eff = coret.values[0].te_transp.diff_eff
 
 # Create the sampler
 vary = { uparams[k]: cp.Normal(diff_eff[k], 0.2*diff_eff[k]) for k in range(4)}
-my_sampler = uq.sampling.PCESampler(vary=vary, polynomial_order=2)
+my_sampler = uq.sampling.PCESampler(vary=vary, polynomial_order=3)
 
 # Associate the sampler with the campaign
 my_campaign.set_sampler(my_sampler)
@@ -189,6 +190,7 @@ os.system("mkdir " + logs_dir)
 
 # Execute encode -> execute for each run using QCG-PJ
 print("Starting submission of tasks to QCG Pilot Job Manager")
+pj_start_time = time.time()
 for run in my_campaign.list_runs():
     key = run[0]
     encode_job = {
@@ -244,6 +246,8 @@ m.cleanup()
 print("Syncing state of campaign after execution of PJ")
 pjc.finalize()
 
+pj_end_time = time.time()
+
 # Collating results
 my_campaign.collate()
 
@@ -259,7 +263,8 @@ stats = results['statistical_moments']['te']
 
 # Elapsed time
 end_time = time.time()
-print('Elapsed times: ', (end_time - start_time)/60., ' mins.')
+print('PJ elapsed times: ', (end_time - start_time)/60., ' mins.')
+print('Total elapsed times: ', (pj_end_time - pj_start_time)/60., ' mins.')
 
 #  Graphics for descriptive satatistics
 corep_file = common_dir + '/ets_coreprof_in.cpo'
@@ -270,4 +275,3 @@ plot_stats(rho, stats,
            xlabel=r'$\rho_{tor} ~ [m]$', ylabel=r'$T_e [eV]$',
            ftitle='Te profile',
            fname='te_ets_stats')
-
