@@ -91,7 +91,6 @@ tmp_dir = os.getcwd()
 print("Running in directory: " + tmp_dir)
 
 # PJ Manager (switch on debugging, by default in api.log file)
-easypj_conf = os.environ["EASYPJ_CONF"]
 client_conf = {'log_level': 'DEBUG'}
 m = LocalManager([], client_conf)
 print("Available resources:\n%s\n" % str(m.resources()))
@@ -132,7 +131,6 @@ output_columns = ["te"]
 
 # Initialize Campaign object
 my_campaign = uq.Campaign(name='uq_ets', work_dir=tmp_dir)
-print('uq_ets = ', my_campaign.campaign_name)
 
 # Copy xml and xsd files needed in the ETS wrappers
 campaign_dir = my_campaign.campaign_dir
@@ -146,7 +144,7 @@ os.system("cp " + cpo_dir + "/*.cpo " + common_dir)
 
 # Create an encoder, decoder and collation element
 encoder = uq.encoders.GenericEncoder(
-    template_fname='ets.template',
+    template_fname='ets_test.template',
     delimiter='#',
     target_filename='input.nml')
 
@@ -159,9 +157,12 @@ collation = uq.collate.AggregateSamples(average=False)
 my_campaign.add_app(name="uq_ets",
                     params=params,
                     encoder=encoder,
-                    decoder=decoder,
-                    collation=collation
+                    decoder=decoder
                     )
+
+# Create a collation element for this campaign
+collater = uq.collate.AggregateSamples(average=False)
+my_campaign.set_collater(collater)
 
 # Get uncertain parameters values
 coret_file = common_dir + "/ets_coretransp_in.cpo"
@@ -180,19 +181,25 @@ my_campaign.draw_samples()
 
 # Create & save PJ configurator
 print("Creating configuration for QCG Pilot Job Manager")
-PJConfigurator(my_campaign).save()
+pjc = PJConfigurator(my_campaign)
+pjc.save()
+
+logs_dir = campaign_dir +"/logs"
+os.system("mkdir " + logs_dir)
 
 # Execute encode -> execute for each run using QCG-PJ
 print("Starting submission of tasks to QCG Pilot Job Manager")
-for key in my_campaign.list_runs():
+for run in my_campaign.list_runs():
+    key = run[0]
     encode_job = {
         "name": 'encode_' + key,
         "execution": {
             "exec": 'easyvvuq_encode',
             "args": [my_campaign.campaign_dir,
                      key],
-            "wd": tmp_dir,
-            "env": { "EASYPJ_CONF": easypj_conf },
+            "wd": cwd,
+            "stdout": my_campaign.campaign_dir + '/logs/encode_' + key + '.stdout',
+            "stderr": my_campaign.campaign_dir + '/logs/encode_' + key + '.stderr'
         },
         "resources": {
             "numCores": {
@@ -209,8 +216,9 @@ for key in my_campaign.list_runs():
                      key,
                      'easyvvuq_app',
                      run_exec, common_dir + " input.nml"],
-            "wd": tmp_dir,
-            "env": { "EASYPJ_CONF": easypj_conf },
+            "wd": cwd,
+            "stdout": my_campaign.campaign_dir + '/logs/execute_' + key + '.stdout',
+            "stderr": my_campaign.campaign_dir + '/logs/execute_' + key + '.stderr'
         },
         "resources": {
             "numCores": {
@@ -221,8 +229,6 @@ for key in my_campaign.list_runs():
             "after": ["encode_" + key]
         }
     }
-    print("execute job: ", key, ">>>>>>> ", execute_job)
-
 
     m.submit(Jobs().addStd(encode_job))
     m.submit(Jobs().addStd(execute_job))
@@ -233,6 +239,10 @@ m.wait4all()
 m.finish()
 m.stopManager()
 m.cleanup()
+
+# Sync state of a campaign with PJConfigurator
+print("Syncing state of campaign after execution of PJ")
+pjc.finalize()
 
 # Collating results
 my_campaign.collate()
