@@ -28,9 +28,12 @@ use csv_module
 
 implicit none
   
-  ! INPUTS (given by command arguments)
-  character(len=128) :: cpo_dir  ! Path to the folder containing CPO files for ets
-  character(len=128) :: in_fname ! NML file containing uncertain parameters values
+  ! The input given by command argument: NML file containing uncertain values.
+  character(len=128) :: in_fname 
+
+  ! Path to the folder containing CPO files for ets. 
+  ! This folder should be created and populated by the python code (easyVVUQ compaign).
+  character(*), parameter :: cpo_dir = "../../common/"
   
   ! UQP method
   character(*), parameter :: uqp = "uqp1"
@@ -76,13 +79,13 @@ implicit none
   logical :: infile_status, outfile_status 
 
   ! ...
-  if (command_argument_count() /=2) then
-    write(*,*) "ERROR: exactly 2 input arguments are required"
+  if (command_argument_count() /=1) then
+    write(*,*) "ERROR: exactly 1 input arguments are required"
   STOP
   end if
   
   ! NML file
-  call get_command_argument(2, in_fname)
+  call get_command_argument(1, in_fname)
 
   inquire(file=trim(in_fname), exist=infile_status)
   if (.not. infile_status) then
@@ -98,14 +101,12 @@ implicit none
   read(20, ets_input_file)
   
   ! CPO files
-  call get_command_argument(1, cpo_dir)
-  
-  corep_in_file   = trim(cpo_dir) // "/ets_coreprof_in.cpo"
-  equil_in_file   = trim(cpo_dir) // "/ets_equilibrium_in.cpo"
-  cores_in_file   = trim(cpo_dir) // "/ets_coresource_in.cpo"
-  corei_in_file   = trim(cpo_dir) // "/ets_coreimpur_in.cpo"
-  coret_in_file   = trim(cpo_dir) // "/ets_coretransp_in.cpo"
-  toroidf_in_file = trim(cpo_dir) // "/ets_toroidfield_in.cpo"
+  corep_in_file   = trim(cpo_dir) // "ets_coreprof_in.cpo"
+  equil_in_file   = trim(cpo_dir) // "ets_equilibrium_in.cpo"
+  cores_in_file   = trim(cpo_dir) // "ets_coresource_in.cpo"
+  corei_in_file   = trim(cpo_dir) // "ets_coreimpur_in.cpo"
+  coret_in_file   = trim(cpo_dir) // "ets_coretransp_in.cpo"
+  toroidf_in_file = trim(cpo_dir) // "ets_toroidfield_in.cpo"
   
   corep_out_file  = "ets_coreprof_out.cpo"
   equil_out_file  = "ets_equilibrium_up.cpo"

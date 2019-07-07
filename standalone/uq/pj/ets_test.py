@@ -103,8 +103,7 @@ cpo_dir = os.path.abspath("../../data/TESTS/")
 workflows_dir = os.path.abspath("../../../workflows/")
 
 # The exec code (ETS, CHEASE and BOHMGB wrappers)
-run_exec = os.path.abspath("../../bin/"+SYS+"/ets_run ")
-print("run_exec = ",run_exec)
+exec_code = os.path.abspath("../../bin/"+SYS+"/ets_run")
 
 # Uncertain parameters: 4 flux tubes positions
 uparams = ["D1", "D2", "D3", "D4"]
@@ -217,7 +216,7 @@ for run in my_campaign.list_runs():
             "args": [my_campaign.campaign_dir,
                      key,
                      'easyvvuq_app',
-                     run_exec, common_dir + " input.nml"],
+                     run_exec, "input.nml"],
             "wd": cwd,
             "stdout": my_campaign.campaign_dir + '/logs/execute_' + key + '.stdout',
             "stderr": my_campaign.campaign_dir + '/logs/execute_' + key + '.stderr'
