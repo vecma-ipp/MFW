@@ -93,7 +93,13 @@ print("Running in directory: " + cwd)
 
 # PJ Manager (switch on debugging, by default in api.log file)
 client_conf = {'log_level': 'DEBUG'}
-m = LocalManager([], client_conf)
+# ======= SLURM =======
+m = LocalManager(['--log', 'warning'], client_conf)
+
+# ======= LOCAL =======
+#cores = 40
+#m = LocalManager(['--nodes', str(cores)], client_conf)
+
 print("Available resources:\n%s\n" % str(m.resources()))
 
 print("Initializing Campaign")
@@ -103,7 +109,7 @@ cpo_dir = os.path.abspath("../../data/TESTS/")
 workflows_dir = os.path.abspath("../../../workflows/")
 
 # The exec code (ETS, CHEASE and BOHMGB wrappers)
-exec_code = os.path.abspath("../../bin/"+SYS+"/ets_run")
+run_exec = os.path.abspath("../../bin/"+SYS+"/ets_run")
 
 # Uncertain parameters: 4 flux tubes positions
 uparams = ["D1", "D2", "D3", "D4"]
@@ -171,7 +177,7 @@ diff_eff = coret.values[0].te_transp.diff_eff
 
 # Create the sampler
 vary = { uparams[k]: cp.Normal(diff_eff[k], 0.2*diff_eff[k]) for k in range(4)}
-my_sampler = uq.sampling.PCESampler(vary=vary, polynomial_order=3)
+my_sampler = uq.sampling.PCESampler(vary=vary, polynomial_order=2)
 
 # Associate the sampler with the campaign
 my_campaign.set_sampler(my_sampler)

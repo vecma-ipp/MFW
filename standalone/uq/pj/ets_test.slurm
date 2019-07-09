@@ -8,7 +8,7 @@
 #SBATCH --error=test.err.%j
 
 ## wall time in format MINUTES:SECONDS
-#SBATCH --time=02:00:00
+#SBATCH --time=06:00:00
 
 ## number of nodes and tasks per node
 #SBATCH --nodes=1
