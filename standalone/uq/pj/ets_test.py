@@ -268,8 +268,8 @@ stats = results['statistical_moments']['te']
 
 # Elapsed time
 end_time = time.time()
-print('PJ elapsed times: ', (end_time - start_time)/60., ' mins.')
-print('Total elapsed times: ', (pj_end_time - pj_start_time)/60., ' mins.')
+print('Total elapsed times: ', (end_time - start_time)/60., ' mins.')
+print('PJ elapsed times: ', (pj_end_time - pj_start_time)/60., ' mins.')
 
 #  Graphics for descriptive satatistics
 corep_file = common_dir + '/ets_coreprof_in.cpo'
