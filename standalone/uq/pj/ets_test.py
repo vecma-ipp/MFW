@@ -174,21 +174,25 @@ my_campaign.set_collater(collater)
 coret_file = common_dir + "/ets_coretransp_in.cpo"
 coret = read(coret_file, "coretransp")
 diff_eff = coret.values[0].te_transp.diff_eff
+setup_end_time = time.time()	#OL
 
 # Create the sampler
 vary = { uparams[k]: cp.Normal(diff_eff[k], 0.2*diff_eff[k]) for k in range(4)}
-my_sampler = uq.sampling.PCESampler(vary=vary, polynomial_order=2)
+my_sampler = uq.sampling.PCESampler(vary=vary, polynomial_order=4)
+sampler_end_time = time.time()	#OL
 
 # Associate the sampler with the campaign
 my_campaign.set_sampler(my_sampler)
 
 # Will draw all (of the finite set of samples)
 my_campaign.draw_samples()
+campaign_end_time = time.time()	#OL
 
 # Create & save PJ configurator
 print("Creating configuration for QCG Pilot Job Manager")
 pjc = PJConfigurator(my_campaign)
 pjc.save()
+pj_config_end_time = time.time()	#OL
 
 logs_dir = campaign_dir +"/logs"
 os.system("mkdir " + logs_dir)
@@ -256,6 +260,8 @@ pj_end_time = time.time()
 # Collating results
 my_campaign.collate()
 
+collate_end_time = time.time()	#OL
+
 # Post-processing analysis
 analysis = uq.analysis.PCEAnalysis(sampler=my_sampler, qoi_cols=output_columns)
 
@@ -268,6 +274,14 @@ stats = results['statistical_moments']['te']
 
 # Elapsed time
 end_time = time.time()
+print('========== Time stamps ==========')							#OL
+print('Initial setupt time: ', (setup_end_time - start_time)/60., 'mins.')			#OL
+print('Sampler setupt time: ', (sampler_end_time - setup_end_time)/60., 'mins.')		#OL
+print('Campaign setupt time: ', (campaign_end_time - sampler_end_time)/60., 'mins.')		#OL
+print('Create + Save PJ config time: ', (pj_config_end_time - campaign_end_time)/60., 'mins.')	#OL
+print('Create logs dir time: ', (pj_start_time - pj_config_end_time)/60., 'mins.')		#OL
+print('Collate time: ', (collate_end_time - pj_end_time)/60., 'mins.')				#OL
+print('Analysis time: ', (end_time - collate_end_time)/60., 'mins.')				#OL
 print('Total elapsed times: ', (end_time - start_time)/60., ' mins.')
 print('PJ elapsed times: ', (pj_end_time - pj_start_time)/60., ' mins.')
 
