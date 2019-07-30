@@ -1,46 +1,36 @@
 ! -*- coding: UTF-8 -*- 
-!> @brief  The code to run UQ script ets_test. It concerns the transport model
+!> @brief  The code to run UQ for ETS+CHEASE
 
-program ets_run
+program ets_chease_run
 
 use allocate_deallocate
 
-use euitm_schemas,   only: type_coreprof,    & 
+use euitm_schemas,   only: type_coreprof,& 
                         &  type_equilibrium, &
-                        &  type_coretransp,  &
-                        &  type_coresource,  &
-                        &  type_coreimpur,   &
+                        &  type_coretransp, &
+                        &  type_coresource, &
+                        &  type_coreimpur, &
                         &  type_toroidfield
-use read_structures, only: open_read_file,  &
+use read_structures, only: open_read_file, &
                         &  close_read_file, &
                         &  read_cpo
-use write_structures, only: open_write_file,  &
+use write_structures, only: open_write_file, &
                          &  close_write_file, &
                          &  write_cpo
-
 use deallocate_structures, only: deallocate_cpo
 
-use ets_standalone,         only: ets_cpo
+use ets_standalone, only: ets_cpo
 use equilupdate_standalone, only: equilupdate2cpo
+use chease_standalone, only: chease_cpo
 
-use spl_module, only: splrep, splev
 use csv_module
 
 implicit none
   
-  ! The input given by command argument: NML file containing uncertain values.
-  character(len=128) :: in_fname 
-
-  ! Path to the folder containing CPO files for ets. 
-  ! This folder should be created and populated by the python code (easyVVUQ compaign).
-  character(*), parameter :: cpo_dir = "../../common/"
+  ! INPUTS (given by command arguments)
+  character(len=128) :: cpo_dir  ! Path to the folder containing CPO files for ets
+  character(len=128) :: in_fname ! NML file containing uncertain parameters values
   
-  ! UQP method
-  character(*), parameter :: uqp = "uqp1"
-  
-  ! Spline degree and Control points number
-  integer, parameter :: p = 3 
-  integer, parameter :: n = 6
 
   ! CPO file names
   character(len=128) :: corep_in_file 
@@ -60,6 +50,7 @@ implicit none
   type (type_coreimpur)  , pointer :: corei(:)     => NULL()
   type (type_toroidfield), pointer :: toroidf(:)   => NULL()
   type (type_coreprof)   , pointer :: corep_new(:) => NULL()
+  type (type_equilibrium), pointer :: equil_up(:) => NULL()
   type (type_equilibrium), pointer :: equil_new(:) => NULL()
   
   ! For UQP2: knots vector and conrol points
@@ -69,6 +60,7 @@ implicit none
   ! Uncertain parameters
   !real(kind=8), allocatable, dimension(:) :: params 
   real(kind=8) :: D1, D2, D3, D4 
+  real(kind=8) :: Te_boundary, Ti_boundary
   
   ! Output file contraining values of interset (te, ti, pressure ...)
   character(len=128) :: out_file 
@@ -79,13 +71,13 @@ implicit none
   logical :: infile_status, outfile_status 
 
   ! ...
-  if (command_argument_count() /=1) then
-    write(*,*) "ERROR: exactly 1 input arguments are required"
+  if (command_argument_count() /=2) then
+    write(*,*) "ERROR: exactly 2 input arguments are required"
   STOP
   end if
   
   ! NML file
-  call get_command_argument(1, in_fname)
+  call get_command_argument(2, in_fname)
 
   inquire(file=trim(in_fname), exist=infile_status)
   if (.not. infile_status) then
@@ -94,19 +86,21 @@ implicit none
   end if
  
   ! Read uncertain paramters (cf. inputs/ets.template) 
-  namelist /fluxes_input_file/  D1, D2, D3, D4, &
-                           & out_file  
+  namelist /fluxes_input_file/  D1, D2, D3, D4, out_file  
+  !namelist /boundaries_input_file/ Te_boundary, Ti_boundary, out_file  
  
   open(unit=20, file=trim(in_fname))
   read(20, fluxes_input_file)
   
   ! CPO files
-  corep_in_file   = trim(cpo_dir) // "ets_coreprof_in.cpo"
-  equil_in_file   = trim(cpo_dir) // "ets_equilibrium_in.cpo"
-  cores_in_file   = trim(cpo_dir) // "ets_coresource_in.cpo"
-  corei_in_file   = trim(cpo_dir) // "ets_coreimpur_in.cpo"
-  coret_in_file   = trim(cpo_dir) // "ets_coretransp_in.cpo"
-  toroidf_in_file = trim(cpo_dir) // "ets_toroidfield_in.cpo"
+  call get_command_argument(1, cpo_dir)
+  
+  corep_in_file   = trim(cpo_dir) // "/ets_coreprof_in.cpo"
+  equil_in_file   = trim(cpo_dir) // "/ets_equilibrium_in.cpo"
+  cores_in_file   = trim(cpo_dir) // "/ets_coresource_in.cpo"
+  corei_in_file   = trim(cpo_dir) // "/ets_coreimpur_in.cpo"
+  coret_in_file   = trim(cpo_dir) // "/ets_coretransp_in.cpo"
+  toroidf_in_file = trim(cpo_dir) // "/ets_toroidfield_in.cpo"
   
   corep_out_file  = "ets_coreprof_out.cpo"
   equil_out_file  = "ets_equilibrium_up.cpo"
@@ -120,6 +114,7 @@ implicit none
   allocate(toroidf(1))
   
   allocate(corep_new(1))
+  allocate(equil_up(1))
   allocate(equil_new(1))
   
   ! Read CPO file and write corresponding structures   
@@ -129,7 +124,9 @@ implicit none
   if (ios == 0) then
     close (10)
     call open_read_file(10, corep_in_file)
-    call read_cpo(corep(1), 'coreprof' )
+    call read_cpo(corep(1), 'coreprof')
+    !corep(1)%te%boundary%value(1) = Te_boundary
+    !corep(1)%ti%boundary%value(1,1) = Ti_boundary
     call close_read_file
   else
      print *,"ERROR. CPO file not found:",corep_in_file
@@ -208,65 +205,40 @@ implicit none
 
   ! Call ets_standalone and update the equibrium
   call ets_cpo(corep, equil, coret, cores, corei, corep_new)
-  call equilupdate2cpo(corep_new, toroidf, equil, equil_new)
+  !call equilupdate2cpo(corep_new, toroidf, equil, equil_up)
+  !call chease_cpo(equil_up, equil_new) 
+
+  ! To collect outputs data, the quantity of interest is Te
+  n_data    = 100
+  n_outputs = 3
+  ! Open the CSV output file
+  call csv_out_file%open(out_file, n_cols=n_outputs, status_ok=outfile_status)
+
+  ! Add headers
+  call csv_out_file%add('te')
+  call csv_out_file%add('ne')
+  call csv_out_file%add('q')
+  !call csv_out_file%add('r_outboard')
+  call csv_out_file%next_row()
   
-  select case(uqp)
-    ! ====== UQP 1
-    case('uqp1')
-      ! To collect outputs data, the quantity of interest is Te
-      n_data    = 100
-      n_outputs = 1 
-      ! Open the CSV output file
-      call csv_out_file%open(out_file, n_cols=n_outputs, status_ok=outfile_status)
-
-      ! Add headers
-      call csv_out_file%add('te')
-      call csv_out_file%next_row()
-      
-      ! Add data
-      do i=1, n_data
-        call csv_out_file%add(corep_new(1)%te%value(i))
-        call csv_out_file%next_row()
-      end do
+  ! Add data
+  do i=1, n_data
+    !call csv_out_file%add(equil_new(1)%profiles_1d%rho_tor(i))
+    !call csv_out_file%add(equil_new(1)%profiles_1d%r_outboard(i))
+   !call csv_out_file%add(equil_new(1)%global_param%mag_axis%bphi)
+    call csv_out_file%add(corep_new(1)%te%value(i))
+    call csv_out_file%add(corep_new(1)%ne%value(i))
+    call csv_out_file%add(corep_new(1)%profiles1d%q%value(i))
     
-    ! ====== UQP 2
-    case('uqp2')
-      ! knotd vector and control points
-      allocate(knots(n+p+1)) ! could be done inside splrep
-      allocate(c(n))
-      
-      ! Approximation of p
-      call splrep(equil_new(1)%profiles_1d%pressure, n, p, knots, c)
-      
-      ! the first derivative = 0 in rho=0
-      c(2) = c(1) 
-      
-      ! Open the CSV output file
-      call csv_out_file%open(out_file, n_cols=1, status_ok=outfile_status)
-      
-      ! Add headers
-      call csv_out_file%add('c')
-      call csv_out_file%next_row()
-      
-      ! Add data
-      do i=2, n-1
-        call csv_out_file%add(c(i))
-        call csv_out_file%next_row()
-      end do
-      
-      deallocate(knots)
-      deallocate(c) 
-
-    case default
-      write(*,*) 'Error: Invalid UQP type!'
-      STOP
-   end select
+    call csv_out_file%next_row()
+  end do
 
   ! Finished
   call csv_out_file%close(outfile_status)
 
   ! CPO deallocations
   call deallocate_cpo(equil_new)
+  call deallocate_cpo(equil_up)
   call deallocate_cpo(corep_new)  
   call deallocate_cpo(toroidf)
   call deallocate_cpo(corei)
@@ -275,4 +247,4 @@ implicit none
   call deallocate_cpo(equil)
   call deallocate_cpo(corep)
  
-end program ets_run
+end program ets_chease_run

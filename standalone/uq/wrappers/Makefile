@@ -34,6 +34,7 @@ INCDIR = ../../include/${SYS}
 BINDIR = ../../bin/${SYS}
 
 RUN_ETS_EXE		 = ${BINDIR}/ets_run
+RUN_EC_EXE		 = ${BINDIR}/ets_chease_run
 #RUN_CHEASE_EXE = ${BINDIR}/chease_run
 RUN_BC_EXE   	 = ${BINDIR}/boundaries_run
 RUN_SRC_EXE    = ${BINDIR}/sources_run
@@ -41,7 +42,7 @@ RUN_SRC_EXE    = ${BINDIR}/sources_run
 #RUN_ETS_PJ_EXE = ${BINDIR}/ets_pj_run
 
 #RUNS = ETS_RUN CHEASE_RUN BC_RUN GAUSS_SRC_RUN BC_SRC_RUN ETS_PJ_RUN
-RUNS = ETS_RUN BOUNDARIES_RUN SOURCES_RUN
+RUNS = ETS_RUN BOUNDARIES_RUN SOURCES_RUN ETS_CH_RUN
 
 # Rules
 all: ${RUNS}
@@ -53,6 +54,7 @@ ETS_RUN: ${OBJDIR}/ets_run.o
 ${OBJDIR}/ets_run.o: ets_run.f90
 	${MPIF90} -o $@ -c $< $(FC90FLAGS) -traceback -check all -fp-stack-check  -I${INC_STD} -I${ETS} -I${INC_UAL} -I${INC_TYPES} -I${INC_XML} -I${INC_CONSTANTS} 
 
+
 ## CHEASE
 #CHEASE_RUN: ${OBJDIR}/chease_run.o
 #	$(MPIF90) -o ${RUN_CHEASE_EXE} $^ -I${CHEASE_STD} -I${TOOLS_STD} -L${CHEASE} -L${LIB_XML} -L${LIB_UAL} -lchease_muscle -lual -lxmllib -lxml2 ${LDFLAGS} ${LIBLAPACK}
@@ -60,6 +62,16 @@ ${OBJDIR}/ets_run.o: ets_run.f90
 #${OBJDIR}/chease_run.o: chease_run.f90
 #	${MPIF90} -o $@ -c $< $(FC90FLAGS) -I${INC_STD} -I${CHEASE} -I${INC_XML} -I/usr/include/libxml2 -I${INC_UAL} -I${INC_TYPES}
 #
+
+
+# LOOP BC: ETS + CHEASE
+ETS_CH_RUN: ${OBJDIR}/ets_chease_run.o
+	$(MPIF90) -o ${RUN_EC_EXE} $^ -I${ETS_STD} -I${CHEASE_STD}  -I${TOOLS_STD} -L${ETS} -L${CHEASE} -L${LIB_BDS} -L${LIB_UAL} -L${LIB_TYPES} -L${LIB_XML} -L${LIB_CONSTANTS} -lets -lchease_muscle -lbds -lual -litmtypes -lxmllib -lxml2 -litmconstants ${LDFLAGS} ${LIBLAPACK}
+
+${OBJDIR}/ets_chease_run.o: ets_chease_run.f90
+	${MPIF90} -o $@ -c $< $(FC90FLAGS) -I${INC_STD} -I${ETS} -I${CHEASE} -I${INC_BDS} -I${INC_XML} -I/usr/include/libxml2 -I${INC_UAL} -I${INC_TYPES} -I${INC_CONSTANTS} 
+
+
 # LOOP BC: ETS + CHEASE + BOHMGB
 BOUNDARIES_RUN: ${OBJDIR}/boundaries_run.o
 	$(MPIF90) -o ${RUN_BC_EXE} $^ -I${ETS_STD} -I${CHEASE_STD} -I${BOHMGB_STD} -I${TOOLS_STD} -L${ETS} -L${CHEASE} -L${BOHMGB} -L${LIB_BDS} -L${LIB_UAL} -L${LIB_TYPES} -L${LIB_XML} -L${LIB_CONSTANTS} -lets -lchease_muscle -lbohmgb -lbds -lual -litmtypes -lxmllib -lxml2 -litmconstants ${LDFLAGS} ${LIBLAPACK}
