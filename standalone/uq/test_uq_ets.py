@@ -31,15 +31,15 @@ uncertain_params = ["Te_boundary", "Ti_boundary"]
 # Define parameter space
 params = {
     uncertain_params[0]: {
-        "type": "real",
+        "type": "float",
         "default": "113."
     },
     uncertain_params[1]: {
-        "type": "real",
+        "type": "float",
         "default": "180."
     },
     "out_file": {
-        "type": "str",
+        "type": "string",
         "default": "output.csv"
     }
 }
