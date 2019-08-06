@@ -9,7 +9,7 @@ from tools import plots
 
 '''
 UQ test of ETS + CHEASE + BOHMGB using UQP1 (non intrusive case).
-Uncertainties in initial conditions: Te and Ti boundaries (Eadge).
+Uncertainties in initial conditions: Te and Ti boundaries (Edge).
 '''
 
 
@@ -26,7 +26,7 @@ tmp_dir = os.environ['SCRATCH']
 cpo_dir = os.path.abspath("../data/TESTS/")
 
 # The exec code (ETS, CHEASE and BOHMGB wrappers)
-run_exec = os.path.abspath("../bin/"+SYS+"/boundaries_run ")
+run_exec = os.path.abspath("../bin/"+SYS+"/loop_run ")
 
 # Uncertain parameters: Initial conditions
 uparams = ["Te_boundary", "Ti_boundary"]

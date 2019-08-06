@@ -1,5 +1,6 @@
 ! -*- coding: UTF-8 -*- 
-!> @brief  The code to run UQ script ets_test. It concerns the transport model
+!> @brief  The code to run UQ script ets_test. 
+!> Uncertainties in: Te and Ti boudaries (Edge).
 
 program ets_run
 
@@ -67,8 +68,8 @@ implicit none
 
 
   ! Uncertain parameters
-  !real(kind=8), allocatable, dimension(:) :: params 
-  real(kind=8) :: D1, D2, D3, D4 
+  real(kind=8) :: Te_boundary, Ti_boundary
+  !real(kind=8) :: D1, D2, D3, D4 
   
   ! Output file contraining values of interset (te, ti, pressure ...)
   character(len=128) :: out_file 
@@ -93,9 +94,9 @@ implicit none
     stop
   end if
  
-  ! Read uncertain paramters (cf. inputs/ets.template) 
-  namelist /fluxes_input_file/  D1, D2, D3, D4, &
-                           & out_file  
+  ! Read uncertain paramters (cf. inputs/boundaries.template) 
+  namelist /boundaries_input_file/ Te_boundary, Ti_boundary, out_file  
+ 
  
   open(unit=20, file=trim(in_fname))
   read(20, fluxes_input_file)
@@ -130,6 +131,9 @@ implicit none
     close (10)
     call open_read_file(10, corep_in_file)
     call read_cpo(corep(1), 'coreprof' )
+    ! Update the initial conditions (Te and Ti in the edge)
+    corep(1)%te%boundary%value(1) = Te_boundary
+    corep(1)%ti%boundary%value(1,1) = Ti_boundary
     call close_read_file
   else
      print *,"ERROR. CPO file not found:",corep_in_file
@@ -157,10 +161,10 @@ implicit none
      call open_read_file(12, coret_in_file)
      call read_cpo(coret(1), 'coretransp')
      ! Update the transport coefficients
-     coret(1)%values(1)%te_transp%diff_eff(1)=D1
-     coret(1)%values(1)%te_transp%diff_eff(2)=D2
-     coret(1)%values(1)%te_transp%diff_eff(3)=D3
-     coret(1)%values(1)%te_transp%diff_eff(4)=D4
+!     coret(1)%values(1)%te_transp%diff_eff(1)=D1
+!     coret(1)%values(1)%te_transp%diff_eff(2)=D2
+!     coret(1)%values(1)%te_transp%diff_eff(3)=D3
+!     coret(1)%values(1)%te_transp%diff_eff(4)=D4
      call close_read_file
   else
      print *,"CPO file not found:",coret_in_file
@@ -215,17 +219,19 @@ implicit none
     case('uqp1')
       ! To collect outputs data, the quantity of interest is Te
       n_data    = 100
-      n_outputs = 1 
+      n_outputs = 2 
       ! Open the CSV output file
       call csv_out_file%open(out_file, n_cols=n_outputs, status_ok=outfile_status)
 
       ! Add headers
       call csv_out_file%add('te')
+      call csv_out_file%add('ti')
       call csv_out_file%next_row()
       
       ! Add data
       do i=1, n_data
         call csv_out_file%add(corep_new(1)%te%value(i))
+        call csv_out_file%add(corep_new(1)%ti%value(i, 1))
         call csv_out_file%next_row()
       end do
     

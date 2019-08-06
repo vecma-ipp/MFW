@@ -4,7 +4,7 @@
 !> UQ aproach UQP1: One blackblox for whole models.
 
 
-program boundaries_run
+program loop_run
 
 use allocate_deallocate
 
@@ -302,4 +302,4 @@ implicit none
   call deallocate_cpo(corei_in)
   call deallocate_cpo(toroidf_in)
  
-end program boundaries_run
+end program loop_run
