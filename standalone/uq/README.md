@@ -9,7 +9,7 @@
 Here we show an example where we describe Python implementations of UQ worflow of the ETS code. 
 The script can be found in [ets_uq_test.py](https://github.com/vecma-ipp/MFW/blob/devel/standalone/uq/test_uq_ets.py), where we examine the effect of uncertainties from initial conditions in ion and election temperature (Te and Ti).
 
-The input files for this example are the ETS application (wrappers/ets_run.f90) and an input template (inputs/bounadries.template). 
+The input files for this example are the ETS application *wrappers/ets_run.f90* and an input template *inputs/bounadries.template*. 
 
 
 The usage of the ETS application is:
@@ -52,8 +52,7 @@ output_columns = ["Te", "Ti"]
 ```
 
 ### Step 3
-We creat the Campaign object. It is the main EasyVVUQ component that coordinates the UQ workflow and acts as an interface to a database (CampaignDB) which will store information about the application etc. ...
-
+We creat the Campaign object. It is the main EasyVVUQ component that coordinates the UQ workflow and acts as an interface to a database (CampaignDB) 
 
 ```python
 my_campaign = uq.Campaign(name = 'uq_ets', work_dir=tmp_dir)
