@@ -1,14 +1,13 @@
 ## Installation
 
-1. Make sure that the standalone code is compiled. Cf. [README.rst] (https://github.com/vecma-ipp/MFW/blob/devel/README.rst) in the root directory of the project.
-2. Compile the wrapper codes by performing `make` commande in the wrappers folder.
-3. Install [EasyVVUQ] (https://easyvvuq.readthedocs.io/en/latest/installation.html) library.
-
+1. Install [EasyVVUQ](https://easyvvuq.readthedocs.io/en/latest/installation.html) library.
+2. Make sure that the standalone code is compiled. Cf. [README.rst](https://github.com/vecma-ipp/MFW/blob/devel/README.rst) in the root directory of the project.
+3. Compile the wrapper codes by performing `make` commande in the wrappers folder (uq/wrappers).
 
 ## Example Usage
 
 Here we show an example where we describe Python implementations of UQ worflow of the ETS code. 
-The script can be found in [ets_uq_test.py] (https://github.com/vecma-ipp/MFW/blob/devel/standalone/uq/test_uq_ets.py), where we examine the effect of uncertainties from initial conditions in ion and election temperature (te and ti).
+The script can be found in [ets_uq_test.py](https://github.com/vecma-ipp/MFW/blob/devel/standalone/uq/test_uq_ets.py), where we examine the effect of uncertainties from initial conditions in ion and election temperature (Te and Ti).
 
 The input files for this example are the ETS application (wrappers/ets_run.f90) and an input template (inputs/bounadries.template). 
 
@@ -17,18 +16,17 @@ The usage of the ETS application is:
 
     ets_run <input_file>
 
-It outputs a single file called output.csv, which has two columns ‘te’ and ‘ti’.
+It outputs a single file called output.csv, which has two columns ‘Te’ and ‘Ti’.
 The template will be used to generate files called input.nml that will be the input to each run of ets_run.
 
 ### Step 1: 
 We start by application setup
 
 ```python
-SYS = os.environ['SYS']                              # Machine name (cf. config file in the root folder).
-mp_dir = os.environ['SCRATCH']                       # Working directory: to be defined in the .bashrc file.
-cpo_dir = os.path.abspath("../data/TESTS/")          # Location of the CPO files.
-ets_run = os.path.abspath("../bin/"+SYS+"/ets_run ") # The path to the executable of ETS application.
-uncertain_params = ["Te_boundary", "Ti_boundary"]    # Uncertain paramters list.
+SYS = os.environ['SYS']                             # Machine name, cf. config file in the root folder.
+tmp_dir = os.environ['SCRATCH']                     # Working directory: to be defined in .bashrc file.
+cpo_dir = os.path.abspath("../data/TESTS/")         # Location of the CPO files.
+ets_run = os.path.abspath("../bin/"+SYS+"/ets_run") # The path to the executable of ETS application.
 ```
 
 ### Step 2: 
@@ -36,11 +34,11 @@ We define Parameter Space that refelects the provided options in the boudaries.t
 
 ```python
 params = {
-    uncertain_params[0]: {
+    "Te_boundary": {
         "type": "float",
         "default": "113."
     },
-    uncertain_params[1]: {
+    "Ti_boundary": {
         "type": "float",
         "default": "180."
     },
@@ -49,8 +47,8 @@ params = {
         "default": "output.csv"
     }
 }
-
-output_columns = ["te", "ti"] # List of quantities of interest.
+# List of quantities of interest.
+output_columns = ["Te", "Ti"] 
 ```
 
 ### Step 3
