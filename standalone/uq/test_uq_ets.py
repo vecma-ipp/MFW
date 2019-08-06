@@ -44,7 +44,7 @@ params = {
     }
 }
 output_filename = params["out_file"]["default"]
-output_columns = ["te", "ti"]
+output_columns = ["Te", "Ti"]
 
 # Initialize Campaign object
 my_campaign = uq.Campaign(name = 'uq_ets', work_dir=tmp_dir)
@@ -110,9 +110,9 @@ my_campaign.apply_analysis(analysis)
 results = my_campaign.get_last_analysis()
 
 # Get Descriptive Statistics
-stats_te = results['statistical_moments']['te']
-pctl_te = results['percentiles']['te']
-sobols_te = results['sobols_first']['te']
+stats_te = results['statistical_moments']['Te']
+pctl_te = results['percentiles']['Te']
+sobols_te = results['sobols_first']['Te']
 
 # To create new table for results and store them in the data base
 #engine = my_campaign.campaign_db.engine

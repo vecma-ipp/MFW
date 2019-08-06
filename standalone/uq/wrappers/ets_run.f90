@@ -224,8 +224,8 @@ implicit none
       call csv_out_file%open(out_file, n_cols=n_outputs, status_ok=outfile_status)
 
       ! Add headers
-      call csv_out_file%add('te')
-      call csv_out_file%add('ti')
+      call csv_out_file%add('Te')
+      call csv_out_file%add('Ti')
       call csv_out_file%next_row()
       
       ! Add data
