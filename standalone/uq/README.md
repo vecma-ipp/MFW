@@ -7,7 +7,7 @@
 ## Example Usage
 
 Here we show an example where we describe Python implementations of UQ worflow of the ETS code. 
-The script can be found in [ets_uq_test.py](https://github.com/vecma-ipp/MFW/blob/devel/standalone/uq/test_uq_ets.py), where we examine the effect of uncertainties from initial conditions in ion and election temperature (te and ti).
+The script can be found in [ets_uq_test.py](https://github.com/vecma-ipp/MFW/blob/devel/standalone/uq/test_uq_ets.py), where we examine the effect of uncertainties from initial conditions in ion and election temperature (Te and Ti).
 
 The input files for this example are the ETS application (wrappers/ets_run.f90) and an input template (inputs/bounadries.template). 
 
