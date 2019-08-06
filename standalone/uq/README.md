@@ -24,8 +24,8 @@ The template will be used to generate files called input.nml that will be the in
 We start by application setup
 
 ```python
-SYS = os.environ['SYS']                              # Machine name (cf. config file in the root folder).
-mp_dir = os.environ['SCRATCH']                       # Working directory: to be defined in the .bashrc file.
+SYS = os.environ['SYS']                              # Machine name, cf. config file in the root folder.
+tmp_dir = os.environ['SCRATCH']                      # Working directory: to be defined in .bashrc file.
 cpo_dir = os.path.abspath("../data/TESTS/")          # Location of the CPO files.
 ets_run = os.path.abspath("../bin/"+SYS+"/ets_run ") # The path to the executable of ETS application.
 uncertain_params = ["Te_boundary", "Ti_boundary"]    # Uncertain paramters list.
