@@ -99,7 +99,7 @@ implicit none
  
  
   open(unit=20, file=trim(in_fname))
-  read(20, fluxes_input_file)
+  read(20, boundaries_input_file)
   
   ! CPO files
   corep_in_file   = trim(cpo_dir) // "ets_coreprof_in.cpo"
