@@ -1,14 +1,14 @@
 ## Installation
 
-1. Make sure that the standalone code is compiled. Cf. [README.rst] (https://github.com/vecma-ipp/MFW/blob/devel/README.rst) in the root directory of the project.
+1. Make sure that the standalone code is compiled. Cf. [README.rst](https://github.com/vecma-ipp/MFW/blob/devel/README.rst) in the root directory of the project.
 2. Compile the wrapper codes by performing `make` commande in the wrappers folder.
-3. Install [EasyVVUQ] (https://easyvvuq.readthedocs.io/en/latest/installation.html) library.
+3. Install [EasyVVUQ](https://easyvvuq.readthedocs.io/en/latest/installation.html) library.
 
 
 ## Example Usage
 
 Here we show an example where we describe Python implementations of UQ worflow of the ETS code. 
-The script can be found in [ets_uq_test.py] (https://github.com/vecma-ipp/MFW/blob/devel/standalone/uq/test_uq_ets.py), where we examine the effect of uncertainties from initial conditions in ion and election temperature (te and ti).
+The script can be found in [ets_uq_test.py](https://github.com/vecma-ipp/MFW/blob/devel/standalone/uq/test_uq_ets.py), where we examine the effect of uncertainties from initial conditions in ion and election temperature (te and ti).
 
 The input files for this example are the ETS application (wrappers/ets_run.f90) and an input template (inputs/bounadries.template). 
 
