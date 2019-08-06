@@ -9,7 +9,7 @@
 Here we show an example where we describe Python implementations of UQ worflow of the ETS code. 
 The script can be found in [ets_uq_test.py](https://github.com/vecma-ipp/MFW/blob/devel/standalone/uq/test_uq_ets.py), where we examine the effect of uncertainties from initial conditions in ion and election temperature (Te and Ti).
 
-The input files for this example are the ETS application *wrappers/ets_run.f90* and an input template *inputs/bounadries.template*. 
+The input files for this example are the ETS application [wrappers/ets_run.f90](https://github.com/vecma-ipp/MFW/blob/devel/standalone/uq/wrappers/ets_run.f90) and an input template [inputs/bounadries.template](https://github.com/vecma-ipp/MFW/blob/devel/standalone/uq/inputs/boundaries.template). 
 
 
 The usage of the ETS application is:
@@ -52,14 +52,38 @@ output_columns = ["Te", "Ti"]
 ```
 
 ### Step 3
-We creat the Campaign object. It is the main EasyVVUQ component that coordinates the UQ workflow and acts as an interface to a database (CampaignDB) 
+We create the Campaign object. It is the main EasyVVUQ component that coordinates the UQ workflow and acts as an interface to a database. 
 
 ```python
 my_campaign = uq.Campaign(name = 'uq_ets', work_dir=tmp_dir)
 
 ```
 
-Specify: Encoder and Collater.
+We specify three necessary EasyVVUQ objects
+- The Encoder: to make the generated samples understandable by the application.
+- The Decoder: to convert the output into a form that can be analysed.
+- The Collater: to aggreate output data in a single data structure for analysis.
+
+```python
+encoder = uq.encoders.GenericEncoder(
+    template_fname='inputs/boundaries.template',
+    delimiter='#',
+    target_filename='input.nml')
+    
+decoder = uq.decoders.SimpleCSV(target_filename=output_filename,
+                                output_columns=output_columns,
+                                header=0)
+
+my_campaign.add_app(name="uq_ets",
+                    params=params,
+                    encoder=encoder,
+                    decoder=decoder
+                    )
+
+collater = uq.collate.AggregateSamples(average=False)
+my_campaign.set_collater(collater)
+```
+
 
 ### Step 4
 Create Sampler 
