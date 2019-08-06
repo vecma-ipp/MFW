@@ -2,7 +2,7 @@
 
 1. Install [EasyVVUQ](https://easyvvuq.readthedocs.io/en/latest/installation.html) library.
 2. Make sure that the standalone code is compiled. Cf. [README.rst](https://github.com/vecma-ipp/MFW/blob/devel/README.rst) in the root directory of the project.
-3. Compile the wrapper codes by performing `make` commande in the wrappers folder.
+3. Compile the wrapper codes by performing `make` commande in the wrappers folder (uq/wrappers).
 
 ## Example Usage
 
