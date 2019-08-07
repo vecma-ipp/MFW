@@ -16,7 +16,7 @@ The usage of the ETS application is:
     ets_run <input_file>
 
 It outputs a single file called `output.csv`, which has two columns ‘Te’ and ‘Ti’.
-The template will be used to generate files called input.nml that will be the input to each run of ets_run.
+The template will be used to generate files called input.nml that will be the input to each run of `ets_run`.
 
 ### Step 1: 
 We start by application setup
