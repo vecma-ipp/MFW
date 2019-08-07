@@ -86,11 +86,45 @@ my_campaign.set_collater(collater)
 
 
 ### Step 4
-Create Sampler 
+In order to generate samples, we specify the distributions of the uncertain parameters to vary. For the current example we read the initial parameters, 'Te_boundary' and 'Te_boundary', read from `ets_coreprof_in.cpo` file and we use Chaospy to create the distributions. Afterwards, we define a correspondant Sampler `PCESampler` based on the Polynomial Chaos Expansion and we asocsiate it with the campaign object created in the previous step.
+
+```python
+vary = {
+    uncertain_params[0]: cp.Normal(Te_boundary, 0.2*Te_boundary),
+    uncertain_params[1]: cp.Normal(Ti_boundary, 0.2*Ti_boundary)
+}
+my_sampler = uq.sampling.PCESampler(vary=vary, polynomial_order=4)
+
+my_campaign.set_sampler(my_sampler)
+```
 
 
 ### Step 5
-Run the application.
+To achieve the run of the ETS application for each sample, we draw samples to produce the appropriate input files
+ and create directory for each run. 
+```python
+my_campaign.draw_samples()
+my_campaign.populate_runs_dir()
+my_campaign.apply_for_each_run_dir(uq.actions.ExecuteLocal(ets_run + " input.nml"))
+```
 
 ### Step 6
-Collate outputs and run analysis.
+Finally, we collect the outputs and run analysis.
+
+
+```python
+my_campaign.collate()
+
+analysis = uq.analysis.PCEAnalysis(sampler=my_sampler, qoi_cols=output_columns)
+my_campaign.apply_analysis(analysis)
+```
+
+Now, we can get the results of the analysis and obtain descriptive statistics.
+
+```python
+results = my_campaign.get_last_analysis()
+
+stats_te = results['statistical_moments']['Te']
+pctl_te = results['percentiles']['Te']
+sobols_te = results['sobols_first']['Te']
+```
