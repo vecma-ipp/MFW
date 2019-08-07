@@ -24,6 +24,7 @@ use deallocate_structures, only: deallocate_cpo
 use ets_standalone,         only: ets_cpo
 use equilupdate_standalone, only: equilupdate2cpo
 
+use spl_module, only: splrep, splev
 use csv_module
 
 implicit none
@@ -35,7 +36,13 @@ implicit none
   ! This folder should be created and populated by the python code (easyVVUQ compaign).
   character(*), parameter :: cpo_dir = "../../common/"
   
+  ! UQP method
+  character(*), parameter :: uqp = "uqp1"
   
+  ! Spline degree and Control points number
+  integer, parameter :: p = 3 
+  integer, parameter :: n = 6
+
   ! CPO file names
   character(len=128) :: corep_in_file 
   character(len=128) :: cores_in_file 
@@ -56,11 +63,15 @@ implicit none
   type (type_coreprof)   , pointer :: corep_new(:) => NULL()
   type (type_equilibrium), pointer :: equil_new(:) => NULL()
   
+  ! For UQP2: knots vector and conrol points
+  real(8), dimension(:), allocatable :: knots, c
+
+
   ! Uncertain parameters
   real(kind=8) :: Te_boundary, Ti_boundary
   !real(kind=8) :: D1, D2, D3, D4 
   
-  ! Output file contraining values of interset (Te, Ti, pressure ...)
+  ! Output file contraining values of interset (te, ti, pressure ...)
   character(len=128) :: out_file 
   type(csv_file)     :: csv_out_file 
 
@@ -203,24 +214,60 @@ implicit none
   call ets_cpo(corep, equil, coret, cores, corei, corep_new)
   call equilupdate2cpo(corep_new, toroidf, equil, equil_new)
   
-  ! To collect outputs data, the quantity of interest are Te and Ti
-  n_data    = 100
-  n_outputs = 2 
-  ! Open the CSV output file
-  call csv_out_file%open(out_file, n_cols=n_outputs, status_ok=outfile_status)
+  select case(uqp)
+    ! ====== UQP 1
+    case('uqp1')
+      ! To collect outputs data, the quantity of interest is Te
+      n_data    = 100
+      n_outputs = 2 
+      ! Open the CSV output file
+      call csv_out_file%open(out_file, n_cols=n_outputs, status_ok=outfile_status)
 
-  ! Add headers
-  call csv_out_file%add('Te')
-  call csv_out_file%add('Ti')
-  call csv_out_file%next_row()
-  
-  ! Add data
-  do i=1, n_data
-    call csv_out_file%add(corep_new(1)%te%value(i))
-    call csv_out_file%add(corep_new(1)%ti%value(i, 1))
-    call csv_out_file%next_row()
-  end do
-  
+      ! Add headers
+      call csv_out_file%add('Te')
+      call csv_out_file%add('Ti')
+      call csv_out_file%next_row()
+      
+      ! Add data
+      do i=1, n_data
+        call csv_out_file%add(corep_new(1)%te%value(i))
+        call csv_out_file%add(corep_new(1)%ti%value(i, 1))
+        call csv_out_file%next_row()
+      end do
+    
+    ! ====== UQP 2
+    case('uqp2')
+      ! knotd vector and control points
+      allocate(knots(n+p+1)) ! could be done inside splrep
+      allocate(c(n))
+      
+      ! Approximation of p
+      call splrep(equil_new(1)%profiles_1d%pressure, n, p, knots, c)
+      
+      ! the first derivative = 0 in rho=0
+      c(2) = c(1) 
+      
+      ! Open the CSV output file
+      call csv_out_file%open(out_file, n_cols=1, status_ok=outfile_status)
+      
+      ! Add headers
+      call csv_out_file%add('c')
+      call csv_out_file%next_row()
+      
+      ! Add data
+      do i=2, n-1
+        call csv_out_file%add(c(i))
+        call csv_out_file%next_row()
+      end do
+      
+      deallocate(knots)
+      deallocate(c) 
+
+    case default
+      write(*,*) 'Error: Invalid UQP type!'
+      STOP
+   end select
+
   ! Finished
   call csv_out_file%close(outfile_status)
 

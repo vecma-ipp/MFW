@@ -114,6 +114,10 @@ stats_te = results['statistical_moments']['Te']
 pctl_te = results['percentiles']['Te']
 sobols_te = results['sobols_first']['Te']
 
+stats_ti = results['statistical_moments']['Ti']
+pctl_ti = results['percentiles']['Ti']
+sobols_ti = results['sobols_first']['Ti']
+
 # To create new table for results and store them in the data base
 #engine = my_campaign.campaign_db.engine
 #stat_df = pd.DataFrame.from_dict(stats)
@@ -131,3 +135,12 @@ plots.plot_stats_pctl(rho, stats_te, pctl_te,
 plots.plot_sobols_all(rho, sobols_te, uncertain_params,
                   ftitle=' First-Order Sobol indices - QoI: Te',
                   fname='figs/te_ets_sobols')
+
+plots.plot_stats_pctl(rho, stats_ti, pctl_ti,
+                 xlabel=r'$\rho_{tor} ~ [m]$', ylabel=r'$T_i [eV]$',
+                 ftitle='Ti profile',
+                 fname='figs/ti_ets_stats')
+
+plots.plot_sobols_all(rho, sobols_ti, uncertain_params,
+                  ftitle=' First-Order Sobol indices - QoI: Ti',
+                  fname='figs/ti_ets_sobols')

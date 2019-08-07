@@ -2,21 +2,20 @@
 
 1. Install [EasyVVUQ](https://easyvvuq.readthedocs.io/en/latest/installation.html) library.
 2. Make sure that the standalone code is compiled. Cf. [README.rst](https://github.com/vecma-ipp/MFW/blob/devel/README.rst) in the root directory of the project.
-3. Compile the wrapper codes by performing `make` commande in the wrappers folder (uq/wrappers).
+3. Compile the wrapper codes by performing `make` command in the wrappers folder (uq/wrappers).
 
 ## Example Usage
 
-Here we show an example where we describe Python implementations of UQ worflow of the ETS code. 
-The script can be found in [ets_uq_test.py](https://github.com/vecma-ipp/MFW/blob/devel/standalone/uq/test_uq_ets.py), where we examine the effect of uncertainties from initial conditions in ion and election temperature (Te and Ti).
-
-The input files for this example are the ETS application [wrappers/ets_run.f90](https://github.com/vecma-ipp/MFW/blob/devel/standalone/uq/wrappers/ets_run.f90) and an input template [inputs/bounadries.template](https://github.com/vecma-ipp/MFW/blob/devel/standalone/uq/inputs/boundaries.template). 
+Here we show an example where we describe Python implementations of UQ workflow of the ETS code. 
+The script can be found in [ets_uq_test.py](https://github.com/vecma-ipp/MFW/blob/devel/standalone/uq/test_uq_ets.py), where we examine the uncertainty effect of initial conditions in the electron and ion temperature ('Te' and 'Ti'). 
+The input files for this example are the ETS application [wrappers/ets_run.f90](https://github.com/vecma-ipp/MFW/blob/devel/standalone/uq/wrappers/ets_run.f90) and an input template [inputs/boundaries.template](https://github.com/vecma-ipp/MFW/blob/devel/standalone/uq/inputs/boundaries.template). 
 
 
 The usage of the ETS application is:
 
     ets_run <input_file>
 
-It outputs a single file called output.csv, which has two columns ‘Te’ and ‘Ti’.
+It outputs a single file called `output.csv`, which has two columns ‘Te’ and ‘Ti’.
 The template will be used to generate files called input.nml that will be the input to each run of ets_run.
 
 ### Step 1: 
@@ -30,7 +29,7 @@ ets_run = os.path.abspath("../bin/"+SYS+"/ets_run") # The path to the executable
 ```
 
 ### Step 2: 
-We define Parameter Space that refelects the provided options in the boudaries.template, i.e.: the list of uncertain parameters and the output file name. 
+We define Parameter Space that reflects the provided options in the boudaries.template, i.e.: the list of uncertain parameters and the output file name. 
 
 ```python
 params = {
@@ -86,7 +85,7 @@ my_campaign.set_collater(collater)
 
 
 ### Step 4
-In order to generate samples, we specify the distributions of the uncertain parameters to vary. For the current example we read the initial parameters, 'Te_boundary' and 'Te_boundary', read from `ets_coreprof_in.cpo` file and we use Chaospy to create the distributions. Afterwards, we define a correspondant Sampler `PCESampler` based on the Polynomial Chaos Expansion and we asocsiate it with the campaign object created in the previous step.
+In order to generate samples, we specify the distributions of the uncertain parameters to vary. For the current example we read the initial parameters, 'Te_boundary' and 'Ti_boundary', read from `ets_coreprof_in.cpo` file and we use [Chaospy](https://github.com/jonathf/chaospy) to create the distributions. Afterwards, we define a correspondant Sampler `PCESampler` based on the Polynomial Chaos Expansion and we associate it with the campaign object created in the previous step.
 
 ```python
 vary = {
