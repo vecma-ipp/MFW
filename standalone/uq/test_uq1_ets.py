@@ -109,10 +109,10 @@ Te_boundary = corep.te.boundary.value[0]
 Ti_boundary = corep.ti.boundary.value[0][0]
 
 # Create the sampler
-vary = {uparams[k]: cp.Normal(diff_eff[k], 0.2*diff_eff[k]) for k in range(4)}
+vary = {uncertain_params[k]: cp.Normal(diff_eff[k], 0.2*diff_eff[k]) for k in range(4)}
 vary.update({
-    uncertain_params[0]: cp.Normal(Te_boundary, 0.2*Te_boundary),
-    uncertain_params[1]: cp.Normal(Ti_boundary, 0.2*Ti_boundary)
+    uncertain_params[4]: cp.Normal(Te_boundary, 0.2*Te_boundary),
+    uncertain_params[5]: cp.Normal(Ti_boundary, 0.2*Ti_boundary)
 })
 
 my_sampler = uq.sampling.PCESampler(vary=vary, polynomial_order=3)
