@@ -58,7 +58,7 @@ implicit none
   
   ! Uncertain parameters
   real(kind=8) :: Te_boundary, Ti_boundary
-  !real(kind=8) :: D1, D2, D3, D4 
+  real(kind=8) :: D1, D2, D3, D4 
   
   ! Output file contraining values of interset (Te, Ti, pressure ...)
   character(len=128) :: out_file 
@@ -84,11 +84,11 @@ implicit none
   end if
  
   ! Read uncertain paramters (cf. inputs/boundaries.template) 
-  namelist /boundaries_input_file/ Te_boundary, Ti_boundary, out_file  
+  namelist /ets_input_file/ D1, D2, D3, D4, Te_boundary, Ti_boundary, out_file  
  
  
   open(unit=20, file=trim(in_fname))
-  read(20, boundaries_input_file)
+  read(20, ets_input_file)
   
   ! CPO files
   corep_in_file   = trim(cpo_dir) // "ets_coreprof_in.cpo"
@@ -150,10 +150,10 @@ implicit none
      call open_read_file(12, coret_in_file)
      call read_cpo(coret(1), 'coretransp')
      ! Update the transport coefficients
-!     coret(1)%values(1)%te_transp%diff_eff(1)=D1
-!     coret(1)%values(1)%te_transp%diff_eff(2)=D2
-!     coret(1)%values(1)%te_transp%diff_eff(3)=D3
-!     coret(1)%values(1)%te_transp%diff_eff(4)=D4
+     coret(1)%values(1)%te_transp%diff_eff(1)=D1
+     coret(1)%values(1)%te_transp%diff_eff(2)=D2
+     coret(1)%values(1)%te_transp%diff_eff(3)=D3
+     coret(1)%values(1)%te_transp%diff_eff(4)=D4
      call close_read_file
   else
      print *,"CPO file not found:",coret_in_file

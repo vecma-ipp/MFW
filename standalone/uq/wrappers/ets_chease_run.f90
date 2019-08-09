@@ -27,10 +27,12 @@ use csv_module
 
 implicit none
   
-  ! INPUTS (given by command arguments)
-  character(len=128) :: cpo_dir  ! Path to the folder containing CPO files for ets
-  character(len=128) :: in_fname ! NML file containing uncertain parameters values
-  
+  ! The input given by command argument: NML file containing uncertain values.
+  character(len=128) :: in_fname 
+
+  ! Path to the folder containing CPO files. 
+  ! Should be created and populated by the python code (easyVVUQ compaign).
+  character(*), parameter :: cpo_dir = "../../common/"
 
   ! CPO file names
   character(len=128) :: corep_in_file 
@@ -71,13 +73,13 @@ implicit none
   logical :: infile_status, outfile_status 
 
   ! ...
-  if (command_argument_count() /=2) then
-    write(*,*) "ERROR: exactly 2 input arguments are required"
+  if (command_argument_count() /=1) then
+    write(*,*) "ERROR: exactly 1 input arguments are required"
   STOP
   end if
   
   ! NML file
-  call get_command_argument(2, in_fname)
+  call get_command_argument(1, in_fname)
 
   inquire(file=trim(in_fname), exist=infile_status)
   if (.not. infile_status) then
@@ -85,16 +87,14 @@ implicit none
     stop
   end if
  
-  ! Read uncertain paramters (cf. inputs/ets.template) 
-  namelist /fluxes_input_file/  D1, D2, D3, D4, out_file  
-  !namelist /boundaries_input_file/ Te_boundary, Ti_boundary, out_file  
+  ! Read uncertain paramters (cf. inputs/.template) 
+  !namelist /fluxes_input_file/  D1, D2, D3, D4, out_file  
+  namelist /boundaries_input_file/ Te_boundary, Ti_boundary, out_file  
  
   open(unit=20, file=trim(in_fname))
-  read(20, fluxes_input_file)
+  read(20, boundaries_input_file)
   
   ! CPO files
-  call get_command_argument(1, cpo_dir)
-  
   corep_in_file   = trim(cpo_dir) // "/ets_coreprof_in.cpo"
   equil_in_file   = trim(cpo_dir) // "/ets_equilibrium_in.cpo"
   cores_in_file   = trim(cpo_dir) // "/ets_coresource_in.cpo"
@@ -125,8 +125,8 @@ implicit none
     close (10)
     call open_read_file(10, corep_in_file)
     call read_cpo(corep(1), 'coreprof')
-    !corep(1)%te%boundary%value(1) = Te_boundary
-    !corep(1)%ti%boundary%value(1,1) = Ti_boundary
+    corep(1)%te%boundary%value(1) = Te_boundary
+    corep(1)%ti%boundary%value(1,1) = Ti_boundary
     call close_read_file
   else
      print *,"ERROR. CPO file not found:",corep_in_file
@@ -154,10 +154,10 @@ implicit none
      call open_read_file(12, coret_in_file)
      call read_cpo(coret(1), 'coretransp')
      ! Update the transport coefficients
-     coret(1)%values(1)%te_transp%diff_eff(1)=D1
-     coret(1)%values(1)%te_transp%diff_eff(2)=D2
-     coret(1)%values(1)%te_transp%diff_eff(3)=D3
-     coret(1)%values(1)%te_transp%diff_eff(4)=D4
+!     coret(1)%values(1)%te_transp%diff_eff(1)=D1
+!     coret(1)%values(1)%te_transp%diff_eff(2)=D2
+!     coret(1)%values(1)%te_transp%diff_eff(3)=D3
+!     coret(1)%values(1)%te_transp%diff_eff(4)=D4
      call close_read_file
   else
      print *,"CPO file not found:",coret_in_file

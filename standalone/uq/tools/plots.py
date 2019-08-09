@@ -98,6 +98,10 @@ def plot_sobols(x, sobols, params, ftitle, fname):
             ax.plot(x, s)
             ax.grid()
             ax.set_title(params[i])
+        fig.suptitle(ftitle)
+        fig.savefig(fname)
+        plt.close(fig)
+
 
     if npar==6:
         fig, axs = plt.subplots(nrows=2, ncols=3, sharex=True, sharey=True)
@@ -108,9 +112,9 @@ def plot_sobols(x, sobols, params, ftitle, fname):
             ax.grid()
             ax.set_title(params[i])
 
-    fig.suptitle(ftitle)
-    fig.savefig(fname)
-    plt.close(fig)
+        fig.suptitle(ftitle)
+        fig.savefig(fname)
+        plt.close(fig)
 
 
 # Plot Sobols indices (all in the same figure)

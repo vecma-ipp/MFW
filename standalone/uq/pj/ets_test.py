@@ -115,6 +115,8 @@ run_exec = os.path.abspath("../../bin/"+SYS+"/ets_run")
 uparams = ["D1", "D2", "D3", "D4"]
 
 # Define parameter space
+#params = {k: {"type": "float", "default": "0."}, for k in  uncertain_params}
+#params.update({"out_file": {"type": "string", "default": "output.csv"}})
 params = {
     uparams[0]: {
         "type": "real",
