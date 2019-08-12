@@ -85,6 +85,7 @@ implicit none
  
   ! Read uncertain paramters (cf. inputs/boundaries.template) 
   namelist /ets_input_file/ D1, D2, D3, D4, Te_boundary, Ti_boundary, out_file  
+  !namelist /ets_input_file/ D1, D2, D3, D4, out_file  
  
  
   open(unit=20, file=trim(in_fname))
@@ -201,23 +202,25 @@ implicit none
 
   ! Call ets_standalone and update the equibrium
   call ets_cpo(corep, equil, coret, cores, corei, corep_new)
-  call equilupdate2cpo(corep_new, toroidf, equil, equil_new)
+  !call equilupdate2cpo(corep_new, toroidf, equil, equil_new)
   
   ! To collect outputs data, the quantity of interest are Te and Ti
   n_data    = 100
-  n_outputs = 2 
+  n_outputs = 3 
   ! Open the CSV output file
   call csv_out_file%open(out_file, n_cols=n_outputs, status_ok=outfile_status)
 
   ! Add headers
   call csv_out_file%add('Te')
   call csv_out_file%add('Ti')
+  call csv_out_file%add('Ne')
   call csv_out_file%next_row()
   
   ! Add data
   do i=1, n_data
     call csv_out_file%add(corep_new(1)%te%value(i))
     call csv_out_file%add(corep_new(1)%ti%value(i, 1))
+    call csv_out_file%add(corep_new(1)%ne%value(i))
     call csv_out_file%next_row()
   end do
   
@@ -225,7 +228,7 @@ implicit none
   call csv_out_file%close(outfile_status)
 
   ! CPO deallocations
-  call deallocate_cpo(equil_new)
+  !call deallocate_cpo(equil_new)
   call deallocate_cpo(corep_new)  
   call deallocate_cpo(toroidf)
   call deallocate_cpo(corei)

@@ -30,41 +30,15 @@ ets_run = os.path.abspath("../bin/"+SYS+"/ets_run ")
 uncertain_params = ["D1", "D2", "D3", "D4", "Te_boundary", "Ti_boundary"]
 
 # Define parameter space
-params = {
-    uncertain_params[0]: {
-        "type": "float",
-        "default": "0."
-    },
-    uncertain_params[1]: {
-        "type": "float",
-        "default": "0."
-    },
-    uncertain_params[2]: {
-        "type": "float",
-        "default": "0."
-    },
-    uncertain_params[3]: {
-        "type": "float",
-        "default": "0."
-    },
-    uncertain_params[4]: {
-        "type": "float",
-        "default": "0."
-    },
-    uncertain_params[5]: {
-        "type": "float",
-        "default": "0."
-    },
-    "out_file": {
-        "type": "string",
-        "default": "output.csv"
-    }
-}
+print('Define parameter space')
+params = {k: {"type": "float", "default": "0."} for k in uncertain_params}
+params.update({"out_file": {"type": "string", "default": "output.csv"}})
 
 output_filename = params["out_file"]["default"]
-output_columns = ["Te", "Ti"]
+output_columns = ["Te", "Ti", 'Ne']
 
 # Initialize Campaign object
+print('Initialize Campaign object')
 my_campaign = uq.Campaign(name = 'uq_ets', work_dir=tmp_dir)
 
 # Copy XML files needed in the ETS wrappers
@@ -109,24 +83,27 @@ Te_boundary = corep.te.boundary.value[0]
 Ti_boundary = corep.ti.boundary.value[0][0]
 
 # Create the sampler
+print('Create the sampler')
 vary = {uncertain_params[k]: cp.Normal(diff_eff[k], 0.2*diff_eff[k]) for k in range(4)}
 vary.update({
     uncertain_params[4]: cp.Normal(Te_boundary, 0.2*Te_boundary),
     uncertain_params[5]: cp.Normal(Ti_boundary, 0.2*Ti_boundary)
 })
 
-my_sampler = uq.sampling.PCESampler(vary=vary, polynomial_order=3)
+my_sampler = uq.sampling.PCESampler(vary=vary, polynomial_order=2)
 
 # Associate the sampler with the campaign
 my_campaign.set_sampler(my_sampler)
 
 # Will draw all (of the finite set of samples)
+print('Draw Samples and run the code')
 my_campaign.draw_samples()
 my_campaign.populate_runs_dir()
 my_campaign.apply_for_each_run_dir(uq.actions.ExecuteLocal(ets_run + " input.nml"))
 my_campaign.collate()
 
 # Post-processing analysis
+print('Post-processing analysis')
 analysis = uq.analysis.PCEAnalysis(sampler=my_sampler, qoi_cols=output_columns)
 
 my_campaign.apply_analysis(analysis)
@@ -137,45 +114,69 @@ results = my_campaign.get_last_analysis()
 print('Get Descriptive Statistics')
 stats_te = results['statistical_moments']['Te']
 pctl_te = results['percentiles']['Te']
-s1_te = results['sobols_first']['Te']
-st_te = results['sobols_total']['Te']
+s1st_te = results['sobols_first']['Te']
+stot_te = results['sobols_total']['Te']
 
 stats_ti = results['statistical_moments']['Ti']
 pctl_ti = results['percentiles']['Ti']
-s1_ti = results['sobols_first']['Ti']
-st_ti = results['sobols_total']['Ti']
+s1st_ti = results['sobols_first']['Ti']
+stot_ti = results['sobols_total']['Ti']
+
+stats_ne = results['statistical_moments']['Ne']
+pctl_ne = results['percentiles']['Ne']
+s1st_ne = results['sobols_first']['Ne']
+stot_ne = results['sobols_total']['Ne']
 
 # To create new table for results and store them in the data base
 #engine = my_campaign.campaign_db.engine
-#stat_df = pd.DataFrame.from_dict(stats)
-#stat_df.to_sql('STATS', engine, if_exists='append')
-#sob_df = pd.DataFrame.from_dict(sob1)
-#sob_df.to_sql('SOBOLS', engine, if_exists='append')
+#statte_df = pd.DataFrame.from_dict(stats)
+#statte_df.to_sql('STATS_TE', engine, if_exists='append')
+#sob1_df = pd.DataFrame.from_dict(s1st_te)
+#sob_df.to_sql('SOBOLS_TE', engine, if_exists='append')
 
 #  Graphics for descriptive satatistics
+print('PLOTS')
 rho = corep.rho_tor
+
+# Te
 plots.plot_stats_pctl(rho, stats_te, pctl_te,
                  xlabel=r'$\rho_{tor} ~ [m]$', ylabel=r'$T_e [eV]$',
                  ftitle='Te profile',
                  fname='figs/te_ets_stats')
 
-plots.plot_sobols(rho, s1_te, uncertain_params,
+plots.plot_sobols(rho, s1st_te, uncertain_params,
                   ftitle=' First-Order Sobol indices - QoI: Te',
                   fname='figs/te_ets_s1')
 
-plots.plot_sobols(rho, st_te, uncertain_params,
+plots.plot_sobols(rho, stot_te, uncertain_params,
                   ftitle=' Total-Order Sobol indices - QoI: Te',
                   fname='figs/te_ets_st')
 
+# Ne
+plots.plot_stats_pctl(rho, stats_ne, pctl_ne,
+                 xlabel=r'$\rho_{tor} ~ [m]$', ylabel=r'$Ne$',
+                 ftitle='Ne profile',
+                 fname='figs/ne_ets_stats')
+
+plots.plot_sobols(rho, s1st_ne, uncertain_params,
+                  ftitle=' First-Order Sobol indices - QoI: Ne',
+                  fname='figs/ne_ets_s1')
+
+plots.plot_sobols(rho, stot_ne, uncertain_params,
+                  ftitle=' Total-Order Sobol indices - QoI: Ne',
+                  fname='figs/ne_ets_st')
+
+# Ti
 plots.plot_stats_pctl(rho, stats_ti, pctl_ti,
                  xlabel=r'$\rho_{tor} ~ [m]$', ylabel=r'$T_i [eV]$',
-                 ftitle='Ti profile',
+                 ftitle='Te profile',
                  fname='figs/ti_ets_stats')
-
-plots.plot_sobols(rho, s1_ti, uncertain_params,
+plots.plot_sobols(rho, s1st_ti, uncertain_params,
                   ftitle=' First-Order Sobol indices - QoI: Ti',
                   fname='figs/ti_ets_s1')
 
-plots.plot_sobols(rho, st_ti, uncertain_params,
+plots.plot_sobols(rho, stot_ti, uncertain_params,
                   ftitle=' Total-Order Sobol indices - QoI: Ti',
                   fname='figs/ti_ets_st')
+
+print('=== End of test_uq1_ets ===')
