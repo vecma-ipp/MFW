@@ -191,6 +191,20 @@
   
   <exsl:document href="ualdef.py" method="text">
     <xsl:text>from . import ual_low_level_wrapper as ull&#xA;</xsl:text>
+    <xsl:text>from collections import OrderedDict&#xA;&#xA;</xsl:text>
+    <xsl:text>class KeepInOrder(object):&#xA;</xsl:text>
+    <xsl:text>&#009;def __new__(cls, *args, **kwargs):&#xA;</xsl:text>
+    <xsl:text>&#009;&#009;instance = object.__new__(cls)&#xA;</xsl:text>
+    <xsl:text>&#009;&#009;instance.__odict__ = OrderedDict()&#xA;</xsl:text>
+    <xsl:text>&#009;&#009;return instance&#xA;&#xA;</xsl:text>
+    <xsl:text>&#009;def __setattr__(self, key, value):&#xA;</xsl:text>
+    <xsl:text>&#009;&#009;if key != '__odict__':&#xA;</xsl:text>
+    <xsl:text>&#009;&#009;&#009;self.__odict__[key] = value&#xA;</xsl:text>
+    <xsl:text>&#009;&#009;object.__setattr__(self, key, value)&#xA;&#xA;</xsl:text>
+    <xsl:text>&#009;def keys(self):&#xA;</xsl:text>
+    <xsl:text>&#009;&#009;return self.__odict__.keys()&#xA;&#xA;</xsl:text>
+    <xsl:text>&#009;def iteritems(self):&#xA;</xsl:text>
+    <xsl:text>&#009;&#009;return self.__odict__.iteritems()&#xA;&#xA;</xsl:text>
     <xsl:text>&#xA;INTERPOLATION   = 3&#xA;</xsl:text>
     <xsl:text>CLOSEST_SAMPLE  = 1&#xA;</xsl:text>
     <xsl:text>PREVIOUS_SAMPLE = 2&#xA;</xsl:text>    
