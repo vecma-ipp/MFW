@@ -362,12 +362,29 @@ def read(filename,cponame,outcpo=None):
 def writefield(outfile,field):
 
     if type(field)==str:
-        if field=="":
+        if field=='': # no allocated but empty strings as in Fortran 
             outfile.write("\t {:> d} \n".format(-1))
         else:
             outfile.write("\t {:> d} \n".format(1)) # strings are always arrays of 132 char strings (because of Fortran)
-            outfile.write("\t {:> d} \n".format((len(field)/133)+1)) 
-            outfile.write("{:s}\n".format(field))
+            strlines = (len(field)/133)+1
+            outfile.write("\t {:> d} \n".format(strlines)) 
+            for i in range(strlines):
+                chunk = i*132
+                outfile.write("{:s}\n".format(field[chunk:chunk+132]))
+
+    elif type(field)==list: # special case of 1D array of strings, implemented through list of strings
+        if field==['']: # no allocated but empty strings as in Fortran 
+            outfile.write("\t {:> d} \n".format(-1))
+        else:
+            outfile.write("\t {:> d} \n".format(1)) # strings are always arrays of 132 char strings (because of Fortran)
+            lstlen = len(field)
+            outfile.write("\t {:> d} \n".format(lstlen)) 
+            for i in range(lstlen):
+                strlines = (len(field[i])/133)+1
+                for j in range(strlines):
+                    chunk = j*132
+                    outfile.write("{:s}\n".format(field[i][chunk:chunk+132]))
+            
 
     elif type(field)==int:
         if field==ual.EMPTY_INT:
@@ -381,7 +398,7 @@ def writefield(outfile,field):
             outfile.write("\t {:> d} \n".format(-1))
         else:
             outfile.write("\t {:> d} \n".format(0)) # scalar
-            outfile.write(" {:> 19.14E} \n".format(field))
+            outfile.write(" {:> 19.15E} \n".format(field))
 
     elif type(field)==numpy.ndarray:
         size = field.size
@@ -403,7 +420,7 @@ def printarrays(outfile,arr):
     if arr.dtype==numpy.dtype('int32'):
         formatstr = " {:> d} "
     elif arr.dtype==numpy.dtype('float64'):
-        formatstr = " {:> 19.14E} "
+        formatstr = " {:> 19.15E} "
     else: # complex?
         print("complex to be implemented")
         sys.exit()
@@ -424,12 +441,16 @@ def explore(outfile,path,field):
         writefield(outfile,field)
 
     elif (hasattr(field,'array')):
-        print("Exploring array of structure"+field.base_path)
+        print("Exploring array of structure "+field.base_path)
+        outfile.write(" "+path+"\n")
         size = len(field.array)
-        outfile.write("\t {:> d} \n".format(1))   # array of structure are always 1D
-        outfile.write("\t {:> d} \n".format(size))
-        for elt in field.array:
-            explore(outfile,path,elt)
+        if size>0:
+            outfile.write("\t {:> d} \n".format(1))   # array of structure are always 1D
+            outfile.write("\t {:> d} \n".format(size))
+            for elt in field.array:
+                explore(outfile,path,elt)
+        else:
+            outfile.write("\t {:> d} \n".format(-1))
 
     else:
         print("Exploring structure "+field.base_path)
