@@ -260,7 +260,8 @@ def parseVectorField(f, parentobj, name, fullpath):
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!#
 
 
-###########################
+##################################################################
+# READ ###########################################################
 def read(filename,cponame,outcpo=None):    
     if outcpo==None:
         itmobj = ual.itm()
@@ -348,7 +349,113 @@ def read(filename,cponame,outcpo=None):
                     print('End of the CPO')
                 end = True
     
-    return cpo
+    return cpo;
 
 
 
+
+
+
+
+
+
+def writefield(outfile,field):
+
+    if type(field)==str:
+        if field=="":
+            outfile.write("\t {:> d} \n".format(-1))
+        else:
+            outfile.write("\t {:> d} \n".format(1)) # strings are always arrays of 132 char strings (because of Fortran)
+            outfile.write("\t {:> d} \n".format((len(field)/133)+1)) 
+            outfile.write("{:s}\n".format(field))
+
+    elif type(field)==int:
+        if field==ual.EMPTY_INT:
+            outfile.write("\t {:> d} \n".format(-1))
+        else:
+            outfile.write("\t {:> d} \n".format(0)) # scalar
+            outfile.write(" {:> d} \n".format(field))
+
+    elif type(field)==float:
+        if field==ual.EMPTY_FLOAT:
+            outfile.write("\t {:> d} \n".format(-1))
+        else:
+            outfile.write("\t {:> d} \n".format(0)) # scalar
+            outfile.write(" {:> 19.14E} \n".format(field))
+
+    elif type(field)==numpy.ndarray:
+        size = field.size
+        if size==0:
+            outfile.write("\t {:> d} \n".format(-1))
+        else:
+            shape = field.shape
+            outfile.write("\t {:> d} \n".format(len(shape))) # dim
+            for s in shape:
+                outfile.write("\t {:< d} ".format(s)) # shape
+            printarrays(outfile,field)
+            outfile.write("\n")
+
+
+
+
+def printarrays(outfile,arr):
+    farr = arr.reshape(arr.size, order='F')
+    if arr.dtype==numpy.dtype('int32'):
+        formatstr = " {:> d} "
+    elif arr.dtype==numpy.dtype('float64'):
+        formatstr = " {:> 19.14E} "
+    else: # complex?
+        print("complex to be implemented")
+        sys.exit()
+
+    for i in range(arr.size):
+        if not i%3:
+            outfile.write("\n")
+        outfile.write(formatstr.format(farr[i]))
+        
+
+
+
+def explore(outfile,path,field):
+    
+    if (not hasattr(field,'base_path')):
+        print("Writing "+path+" field to file")
+        outfile.write(" "+path+"\n")
+        writefield(outfile,field)
+
+    elif (hasattr(field,'array')):
+        print("Exploring array of structure"+field.base_path)
+        size = len(field.array)
+        outfile.write("\t {:> d} \n".format(1))   # array of structure are always 1D
+        outfile.write("\t {:> d} \n".format(size))
+        for elt in field.array:
+            explore(outfile,path,elt)
+
+    else:
+        print("Exploring structure "+field.base_path)
+        iterator = field.iteritems()
+        try:
+            while True:
+                name,obj = iterator.next()
+                if name not in ['base_path','cpoTime','idx','maxOccurrences']:
+                    explore(outfile,path+'%'+name,obj)
+        except StopIteration as stopit:
+            print("End of "+field.base_path)
+
+
+
+
+##################################################################
+# WRITE ##########################################################
+def write(incpo,filename,cponame=None):
+    
+    outfile = open(filename,'w')
+
+    outfile.write(" used schema version 4.10b.10\n") #hard-coded as version is not supposed to evolve 
+
+    if cponame==None:
+        cponame = incpo.base_path
+
+    explore(outfile,cponame,incpo)
+
+    return 0;
