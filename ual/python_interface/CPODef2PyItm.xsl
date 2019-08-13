@@ -203,8 +203,8 @@
     <xsl:text>&#009;&#009;object.__setattr__(self, key, value)&#xA;&#xA;</xsl:text>
     <xsl:text>&#009;def keys(self):&#xA;</xsl:text>
     <xsl:text>&#009;&#009;return self.__odict__.keys()&#xA;&#xA;</xsl:text>
-    <xsl:text>&#009;def iteritems(self):&#xA;</xsl:text>
-    <xsl:text>&#009;&#009;return self.__odict__.iteritems()&#xA;&#xA;</xsl:text>
+    <xsl:text>&#009;def items(self):&#xA;</xsl:text>
+    <xsl:text>&#009;&#009;return self.__odict__.items()&#xA;&#xA;</xsl:text>
     <xsl:text>&#xA;INTERPOLATION   = 3&#xA;</xsl:text>
     <xsl:text>CLOSEST_SAMPLE  = 1&#xA;</xsl:text>
     <xsl:text>PREVIOUS_SAMPLE = 2&#xA;</xsl:text>    
