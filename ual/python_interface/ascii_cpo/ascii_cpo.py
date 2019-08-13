@@ -278,7 +278,7 @@ def read(filename,cponame,outcpo=None):
 
     if (ASCII_CPO_VERB):
         print(('Read file '+filename))
-    f = open(filename,'r')
+    f = open(filename,'r',errors='replace')
     
     pattern = re.compile(cponame+"%.+")
     end = False
@@ -366,11 +366,15 @@ def writefield(outfile,field):
             outfile.write("\t {:> d} \n".format(-1))
         else:
             outfile.write("\t {:> d} \n".format(1)) # strings are always arrays of 132 char strings (because of Fortran)
-            strlines = (len(field)/133)+1
+            #strlines = (len(field)//133)+1
+            splitted = field.split('\n')
+            strlines = len(splitted)
             outfile.write("\t {:> d} \n".format(strlines)) 
-            for i in range(strlines):
-                chunk = i*132
-                outfile.write("{:s}\n".format(field[chunk:chunk+132]))
+            for l in splitted:
+                outfile.write("{:s}\n".format(l))
+            #for i in range(strlines):
+            #    chunk = i*132
+            #    outfile.write("{:s}\n".format(field[chunk:chunk+132]))
 
     elif type(field)==list: # special case of 1D array of strings, implemented through list of strings
         if field==['']: # no allocated but empty strings as in Fortran 
@@ -380,7 +384,7 @@ def writefield(outfile,field):
             lstlen = len(field)
             outfile.write("\t {:> d} \n".format(lstlen)) 
             for i in range(lstlen):
-                strlines = (len(field[i])/133)+1
+                strlines = (len(field[i])//133)+1
                 for j in range(strlines):
                     chunk = j*132
                     outfile.write("{:s}\n".format(field[i][chunk:chunk+132]))
@@ -454,14 +458,9 @@ def explore(outfile,path,field):
 
     else:
         print("Exploring structure "+field.base_path)
-        iterator = field.iteritems()
-        try:
-            while True:
-                name,obj = iterator.next()
-                if name not in ['base_path','cpoTime','idx','maxOccurrences']:
-                    explore(outfile,path+'%'+name,obj)
-        except StopIteration as stopit:
-            print("End of "+field.base_path)
+        for (name,obj) in field.items():
+            if name not in ['base_path','cpoTime','idx','maxOccurrences']:
+                explore(outfile,path+'%'+name,obj)
 
 
 
