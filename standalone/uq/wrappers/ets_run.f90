@@ -84,12 +84,13 @@ implicit none
   end if
  
   ! Read uncertain paramters (cf. inputs/boundaries.template) 
-  namelist /ets_input_file/ D1, D2, D3, D4, Te_boundary, Ti_boundary, out_file  
+  namelist /boundaries_input_file/ Te_boundary, Ti_boundary, out_file  
+  !namelist /ets_input_file/ D1, D2, D3, D4, Te_boundary, Ti_boundary, out_file  
   !namelist /ets_input_file/ D1, D2, D3, D4, out_file  
  
  
   open(unit=20, file=trim(in_fname))
-  read(20, ets_input_file)
+  read(20, boundaries_input_file)
   
   ! CPO files
   corep_in_file   = trim(cpo_dir) // "ets_coreprof_in.cpo"
@@ -151,10 +152,10 @@ implicit none
      call open_read_file(12, coret_in_file)
      call read_cpo(coret(1), 'coretransp')
      ! Update the transport coefficients
-     coret(1)%values(1)%te_transp%diff_eff(1)=D1
-     coret(1)%values(1)%te_transp%diff_eff(2)=D2
-     coret(1)%values(1)%te_transp%diff_eff(3)=D3
-     coret(1)%values(1)%te_transp%diff_eff(4)=D4
+     !coret(1)%values(1)%te_transp%diff_eff(1)=D1
+     !coret(1)%values(1)%te_transp%diff_eff(2)=D2
+     !coret(1)%values(1)%te_transp%diff_eff(3)=D3
+     !coret(1)%values(1)%te_transp%diff_eff(4)=D4
      call close_read_file
   else
      print *,"CPO file not found:",coret_in_file
@@ -206,21 +207,21 @@ implicit none
   
   ! To collect outputs data, the quantity of interest are Te and Ti
   n_data    = 100
-  n_outputs = 3 
+  n_outputs = 2 
   ! Open the CSV output file
   call csv_out_file%open(out_file, n_cols=n_outputs, status_ok=outfile_status)
 
   ! Add headers
   call csv_out_file%add('Te')
   call csv_out_file%add('Ti')
-  call csv_out_file%add('Ne')
+  !call csv_out_file%add('Ne')
   call csv_out_file%next_row()
   
   ! Add data
   do i=1, n_data
     call csv_out_file%add(corep_new(1)%te%value(i))
     call csv_out_file%add(corep_new(1)%ti%value(i, 1))
-    call csv_out_file%add(corep_new(1)%ne%value(i))
+    !call csv_out_file%add(corep_new(1)%ne%value(i))
     call csv_out_file%next_row()
   end do
   
