@@ -23,9 +23,7 @@ SOURCE:
     
 WORKFLOW:
   TYPE         : muscle2
-  VERSION      : 
   CONFIGURATION: /where/the/file/is/new.cxa.rb
-  SUBMISSION   : /where/the/file/is/slurm_script.sh
   COMMENT      : |
     This is a long comment which span over several
     lines with preserved line breaks as long as initial
