@@ -114,11 +114,11 @@ results = my_campaign.get_last_analysis()
 # Get Descriptive Statistics
 stats_te = results['statistical_moments']['Te']
 pctl_te = results['percentiles']['Te']
-sobols_te = results['sobols_first']['Te']
+sobols_te = results['sobol_indices']['Te'][1]
 
 stats_ti = results['statistical_moments']['Ti']
 pctl_ti = results['percentiles']['Ti']
-sobols_ti = results['sobols_first']['Ti']
+sobols_ti = results['sobol_indices']['Ti'][1]
 
 # To create new table for results and store them in the data base
 #engine = my_campaign.campaign_db.engine
