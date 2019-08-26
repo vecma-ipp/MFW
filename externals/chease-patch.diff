@@ -248,14 +248,14 @@ Index: externals/chease/src-f90/Makefile.define_MACHINE
 ===================================================================
 --- externals/chease/src-f90/Makefile.define_MACHINE	(revision 1281)
 +++ externals/chease/src-f90/Makefile.define_MACHINE	(working copy)
-@@ -60,4 +60,31 @@
+@@ -60,4 +60,34 @@
   ifneq (,$(findstring yes,$(ITM_ENVIRONMENT_LOADED)))
      # overwrites the CHEASE_MACHINE set in Makefile.define_MACHINE by using hostname
      CHEASE_MACHINE = gateway_with_itm
-+    ifeq ($(SYS),GW)
-+       CHEASE_MACHINE = GW
-+    endif
   endif
++ ifeq ($(SYS),GW)
++   CHEASE_MACHINE = GW
++ endif
 + ifeq ($(SYS),HELIOS)
 +   CHEASE_MACHINE = helios
 + endif

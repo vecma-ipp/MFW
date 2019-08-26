@@ -84,9 +84,8 @@ implicit none
   end if
  
   ! Read uncertain paramters (cf. inputs/boundaries.template) 
-  !namelist /ets_input_file/ D1, D2, D3, D4, Te_boundary, Ti_boundary, out_file  
-  namelist /ets_input_file/ D1, D2, D3, D4, out_file  
-  !namelist /boundaries_input_file/ Te_boundary, Ti_boundary, out_file  
+  namelist /ets_input_file/ D1, D2, D3, D4, Te_boundary, Ti_boundary, out_file  
+  !namelist /ets_input_file/ D1, D2, D3, D4, out_file  
  
  
   open(unit=20, file=trim(in_fname))
@@ -123,8 +122,8 @@ implicit none
     call open_read_file(10, corep_in_file)
     call read_cpo(corep(1), 'coreprof' )
     ! Update the initial conditions (Te and Ti in the edge)
-!    corep(1)%te%boundary%value(1) = Te_boundary
-!    corep(1)%ti%boundary%value(1,1) = Ti_boundary
+    corep(1)%te%boundary%value(1) = Te_boundary
+    corep(1)%ti%boundary%value(1,1) = Ti_boundary
     call close_read_file
   else
      print *,"ERROR. CPO file not found:",corep_in_file
@@ -203,25 +202,27 @@ implicit none
 
   ! Call ets_standalone and update the equibrium
   call ets_cpo(corep, equil, coret, cores, corei, corep_new)
-  !call equilupdate2cpo(corep_new, toroidf, equil, equil_new)
+  call equilupdate2cpo(corep_new, toroidf, equil, equil_new)
   
   ! To collect outputs data, the quantity of interest are Te and Ti
-  n_data    = 100
-  n_outputs = 2 
+  n_data    = 101
+  n_outputs = 1 
   ! Open the CSV output file
   call csv_out_file%open(out_file, n_cols=n_outputs, status_ok=outfile_status)
 
   ! Add headers
-  call csv_out_file%add('Te')
-  call csv_out_file%add('Ti')
-  !call csv_out_file%add('Ne')
+!  call csv_out_file%add('Te')
+!  call csv_out_file%add('Ti')
+!  call csv_out_file%add('Ne')
+  call csv_out_file%add('P')
   call csv_out_file%next_row()
   
   ! Add data
   do i=1, n_data
-    call csv_out_file%add(corep_new(1)%te%value(i))
-    call csv_out_file%add(corep_new(1)%ti%value(i, 1))
-    !call csv_out_file%add(corep_new(1)%ne%value(i))
+!    call csv_out_file%add(corep_new(1)%te%value(i))
+!    call csv_out_file%add(corep_new(1)%ti%value(i, 1))
+!    call csv_out_file%add(corep_new(1)%ne%value(i))
+    call csv_out_file%add(equil_new(1)%profiles_1d%pressure(i))
     call csv_out_file%next_row()
   end do
   

@@ -260,7 +260,8 @@ def parseVectorField(f, parentobj, name, fullpath):
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!#
 
 
-###########################
+##################################################################
+# READ ###########################################################
 def read(filename,cponame,outcpo=None):    
     if outcpo==None:
         itmobj = ual.itm()
@@ -277,7 +278,7 @@ def read(filename,cponame,outcpo=None):
 
     if (ASCII_CPO_VERB):
         print(('Read file '+filename))
-    f = open(filename,'r')
+    f = open(filename,'r',errors='replace')
     
     pattern = re.compile(cponame+"%.+")
     end = False
@@ -348,7 +349,133 @@ def read(filename,cponame,outcpo=None):
                     print('End of the CPO')
                 end = True
     
-    return cpo
+    return cpo;
 
 
 
+
+
+
+
+
+
+def writefield(outfile,field):
+
+    if type(field)==str:
+        if field=='': # no allocated but empty strings as in Fortran 
+            outfile.write("\t {:> d} \n".format(-1))
+        else:
+            outfile.write("\t {:> d} \n".format(1)) # strings are always arrays of 132 char strings (because of Fortran)
+            #strlines = (len(field)//133)+1
+            splitted = field.split('\n')
+            strlines = len(splitted)
+            outfile.write("\t {:> d} \n".format(strlines)) 
+            for l in splitted:
+                outfile.write("{:s}\n".format(l))
+            #for i in range(strlines):
+            #    chunk = i*132
+            #    outfile.write("{:s}\n".format(field[chunk:chunk+132]))
+
+    elif type(field)==list: # special case of 1D array of strings, implemented through list of strings
+        if field==['']: # no allocated but empty strings as in Fortran 
+            outfile.write("\t {:> d} \n".format(-1))
+        else:
+            outfile.write("\t {:> d} \n".format(1)) # strings are always arrays of 132 char strings (because of Fortran)
+            lstlen = len(field)
+            outfile.write("\t {:> d} \n".format(lstlen)) 
+            for i in range(lstlen):
+                strlines = (len(field[i])//133)+1
+                for j in range(strlines):
+                    chunk = j*132
+                    outfile.write("{:s}\n".format(field[i][chunk:chunk+132]))
+            
+
+    elif type(field)==int:
+        if field==ual.EMPTY_INT:
+            outfile.write("\t {:> d} \n".format(-1))
+        else:
+            outfile.write("\t {:> d} \n".format(0)) # scalar
+            outfile.write(" {:> d} \n".format(field))
+
+    elif type(field)==float:
+        if field==ual.EMPTY_FLOAT:
+            outfile.write("\t {:> d} \n".format(-1))
+        else:
+            outfile.write("\t {:> d} \n".format(0)) # scalar
+            outfile.write(" {:> 19.15E} \n".format(field))
+
+    elif type(field)==numpy.ndarray:
+        size = field.size
+        if size==0:
+            outfile.write("\t {:> d} \n".format(-1))
+        else:
+            shape = field.shape
+            outfile.write("\t {:> d} \n".format(len(shape))) # dim
+            for s in shape:
+                outfile.write("\t {:< d} ".format(s)) # shape
+            printarrays(outfile,field)
+            outfile.write("\n")
+
+
+
+
+def printarrays(outfile,arr):
+    farr = arr.reshape(arr.size, order='F')
+    if arr.dtype==numpy.dtype('int32'):
+        formatstr = " {:> d} "
+    elif arr.dtype==numpy.dtype('float64'):
+        formatstr = " {:> 19.15E} "
+    else: # complex?
+        print("complex to be implemented")
+        sys.exit()
+
+    for i in range(arr.size):
+        if not i%3:
+            outfile.write("\n")
+        outfile.write(formatstr.format(farr[i]))
+        
+
+
+
+def explore(outfile,path,field):
+    
+    if (not hasattr(field,'base_path')):
+        print("Writing "+path+" field to file")
+        outfile.write(" "+path+"\n")
+        writefield(outfile,field)
+
+    elif (hasattr(field,'array')):
+        print("Exploring array of structure "+field.base_path)
+        outfile.write(" "+path+"\n")
+        size = len(field.array)
+        if size>0:
+            outfile.write("\t {:> d} \n".format(1))   # array of structure are always 1D
+            outfile.write("\t {:> d} \n".format(size))
+            for elt in field.array:
+                explore(outfile,path,elt)
+        else:
+            outfile.write("\t {:> d} \n".format(-1))
+
+    else:
+        print("Exploring structure "+field.base_path)
+        for (name,obj) in field.items():
+            if name not in ['base_path','cpoTime','idx','maxOccurrences']:
+                explore(outfile,path+'%'+name,obj)
+
+
+
+
+##################################################################
+# WRITE ##########################################################
+def write(incpo,filename,cponame=None):
+    
+    outfile = open(filename,'w')
+
+    outfile.write(" used schema version 4.10b.10\n") #hard-coded as version is not supposed to evolve 
+
+    if cponame==None:
+        cponame = incpo.base_path
+
+    explore(outfile,cponame,incpo)
+
+    return 0;

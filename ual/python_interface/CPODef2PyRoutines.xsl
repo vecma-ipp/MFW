@@ -42,7 +42,7 @@ nested class -->
             <xsl:text>from . import ual_low_level_wrapper as ull&#xA;</xsl:text>
             <xsl:text>import numpy&#xA;&#xA;</xsl:text>
 
-            <xsl:text>class </xsl:text><xsl:value-of select="@type"/><xsl:text>:&#xA;</xsl:text>
+            <xsl:text>class </xsl:text><xsl:value-of select="@type"/><xsl:text>(KeepInOrder):&#xA;</xsl:text>
             <xsl:text>&#009;'''&#xA;</xsl:text>
             <xsl:text>&#009;class </xsl:text><xsl:value-of select="@type"/><xsl:text>&#xA;</xsl:text>
             <xsl:text>&#009;</xsl:text><xsl:value-of select="@documentation"/><xsl:text>&#xA;&#xA;</xsl:text>
@@ -622,7 +622,7 @@ nested class -->
         <xsl:text>&#009;&#009;&#009;self.array[j].getNonTimedElt(path, self.base_path, j, obj2)&#xA;</xsl:text>
 
         <!-- class for elements of a struct_array: same name + 'Obj' -->
-        <xsl:text>&#xA;&#xA;class </xsl:text><xsl:value-of select="@name"/><xsl:value-of select="@type"/><xsl:value-of select="@type-name"/><xsl:text>Obj:&#xA;</xsl:text>
+        <xsl:text>&#xA;&#xA;class </xsl:text><xsl:value-of select="@name"/><xsl:value-of select="@type"/><xsl:value-of select="@type-name"/><xsl:text>Obj(KeepInOrder):&#xA;</xsl:text>
         <xsl:text>&#009;'''&#xA;</xsl:text>
         <xsl:text>&#009;class </xsl:text><xsl:value-of select="@name"/><xsl:value-of select="@type"/><xsl:value-of select="@type-name"/><xsl:text>Obj&#xA;</xsl:text>
         <xsl:text>&#009;</xsl:text><xsl:value-of select="@documentation"/><xsl:text>&#xA;&#xA;</xsl:text>
@@ -686,7 +686,7 @@ nested class -->
     defined class, and nested parameter is set to 'yes' if the structue is defined 
     inside a struct_array field -->
     <xsl:template match="field[@type='structure']" mode="CLASS">
-        <xsl:text>&#xA;&#xA;class </xsl:text><xsl:value-of select="@name"/><xsl:value-of select="@type"/><xsl:value-of select="@type-name"/><xsl:text>:&#xA;</xsl:text>
+        <xsl:text>&#xA;&#xA;class </xsl:text><xsl:value-of select="@name"/><xsl:value-of select="@type"/><xsl:value-of select="@type-name"/><xsl:text>(KeepInOrder):&#xA;</xsl:text>
         <xsl:text>&#009;'''&#xA;</xsl:text>
         <xsl:text>&#009;class </xsl:text><xsl:value-of select="@name"/><xsl:value-of select="@type"/><xsl:value-of select="@type-name"/><xsl:text>&#xA;</xsl:text>
         <xsl:text>&#009;</xsl:text><xsl:value-of select="@documentation"/><xsl:text>&#xA;&#xA;</xsl:text>

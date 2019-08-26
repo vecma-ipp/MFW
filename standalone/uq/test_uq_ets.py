@@ -91,8 +91,8 @@ vary = {
     uncertain_params[0]: cp.Normal(Te_boundary, 0.2*Te_boundary),
     uncertain_params[1]: cp.Normal(Ti_boundary, 0.2*Ti_boundary)
 }
-#my_sampler = uq.sampling.PCESampler(vary=vary, polynomial_order=4)
-my_sampler = uq.sampling.QMCSampler(vary=vary, n_samples=10000)
+my_sampler = uq.sampling.PCESampler(vary=vary, polynomial_order=4)
+#my_sampler = uq.sampling.QMCSampler(vary=vary, n_samples=10000)
 
 # Associate the sampler with the campaign
 my_campaign.set_sampler(my_sampler)
@@ -104,8 +104,8 @@ my_campaign.apply_for_each_run_dir(uq.actions.ExecuteLocal(ets_run + " input.nml
 my_campaign.collate()
 
 # Post-processing analysis
-#analysis = uq.analysis.PCEAnalysis(sampler=my_sampler, qoi_cols=output_columns)
-analysis = uq.analysis.QMCAnalysis(sampler=my_sampler, qoi_cols=output_columns)
+analysis = uq.analysis.PCEAnalysis(sampler=my_sampler, qoi_cols=output_columns)
+#analysis = uq.analysis.QMCAnalysis(sampler=my_sampler, qoi_cols=output_columns)
 
 my_campaign.apply_analysis(analysis)
 
@@ -114,11 +114,11 @@ results = my_campaign.get_last_analysis()
 # Get Descriptive Statistics
 stats_te = results['statistical_moments']['Te']
 pctl_te = results['percentiles']['Te']
-sobols_te = results['sobols_first']['Te']
+sobols_te = results['sobol_indices']['Te'][1]
 
 stats_ti = results['statistical_moments']['Ti']
 pctl_ti = results['percentiles']['Ti']
-sobols_ti = results['sobols_first']['Ti']
+sobols_ti = results['sobol_indices']['Ti'][1]
 
 # To create new table for results and store them in the data base
 #engine = my_campaign.campaign_db.engine
@@ -132,17 +132,17 @@ rho = corep.rho_tor
 plots.plot_stats_pctl(rho, stats_te, pctl_te,
                  xlabel=r'$\rho_{tor} ~ [m]$', ylabel=r'$T_e [eV]$',
                  ftitle='Te profile',
-                 fname='figs/te_qmc_stats')
+                 fname='figs/te_stats_pce')
 
 plots.plot_sobols_all(rho, sobols_te, uncertain_params,
                   ftitle=' First-Order Sobol indices - QoI: Te',
-                  fname='figs/te_qmc_sobols')
+                  fname='figs/te_sobols_pce')
 
 plots.plot_stats_pctl(rho, stats_ti, pctl_ti,
                  xlabel=r'$\rho_{tor} ~ [m]$', ylabel=r'$T_i [eV]$',
                  ftitle='Ti profile',
-                 fname='figs/ti_qmc_stats')
+                 fname='figs/ti_stats_pce')
 
 plots.plot_sobols_all(rho, sobols_ti, uncertain_params,
                   ftitle=' First-Order Sobol indices - QoI: Ti',
-                  fname='figs/ti_qmc_sobols')
+                  fname='figs/ti_sobols_pce')
