@@ -42,6 +42,7 @@ standalone/uq/pj/.execute_*
 standalone/uq/pj/.encode_*
 standalone/uq/pj/jobs.report
 standalone/uq/pj/service.log
+standalone/uq/slurm*
 
 
 
