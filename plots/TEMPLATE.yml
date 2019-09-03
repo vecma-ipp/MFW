@@ -1,0 +1,34 @@
+# template for describing a simulation to be saved into the ITMDB
+---
+ENTRY:
+  SHOT       : 28906
+  RUN        : 4
+  TOKAMAK    : aug
+  DATAVERSION: 4.10b
+  DESCRIPTION: |
+    This is a long comment which span over several
+    lines with preserved line breaks as long as initial
+    indent is preserved.
+    Put there the "executive summary of the simulation".
+    
+SOURCE:
+  DIR: /where/the/data/lies
+  CODE: 
+    - NAME   : ets
+      CPO    : coreprof
+    - NAME   : chease
+      CPO    : equilibrium
+    - NAME   : imp4dv
+      CPO    : coretransp
+    
+WORKFLOW:
+  TYPE         : muscle2
+  CONFIGURATION: /where/the/file/is/new.cxa.rb
+  COMMENT      : |
+    This is a long comment which span over several
+    lines with preserved line breaks as long as initial
+    indent is preserved.
+    Put there all meaningful details for describing the 
+    simulation/workflow. Possibly with required env 
+    variables when value is not stored within the config file. 
+...

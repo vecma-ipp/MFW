@@ -182,7 +182,7 @@ gem0: ual libbds get-gem0
 get-gem0:
 	@if [ ! -d "externals/gem0" ]; then \
 	  echo "Checking out gem0..."; \
-		svn co $(SVNURL_GFORGE)/modtransp/tags/4.10b/gem0 externals/gem0; \
+		svn co $(SVNURL_GFORGE)/modtransp/trunk/gem0 externals/gem0; \
 	else  \
 		echo "Updating gem0..."; \
 		svn up externals/gem0; \
@@ -243,7 +243,7 @@ gem: ual libbds get-gem patch-gem
 get-gem:
 	@if [ ! -d "externals/gem" ]; then \
 	  echo "Checking out gem..."; \
-		svn co $(SVNURL_SOLPS)/gem externals/gem/trunk; \
+		svn co $(SVNURL_SOLPS)/GEM/trunk externals/gem; \
 	else  \
 		echo "Updating gem..."; \
 		svn up externals/gem; \
@@ -266,7 +266,7 @@ dfefi: ual libbds get-dfefi
 get-dfefi:
 	@if [ ! -d "externals/dfefi" ]; then \
 	  echo "Checking out dfefi..."; \
-		svn co $(SVNURL_SOLPS)/dfefi externals/dfefi/trunk; \
+		svn co $(SVNURL_SOLPS)/dFEFI/trunk externals/dfefi; \
 	else  \
 		echo "Updating dfefi..."; \
 		svn up externals/dfefi; \
@@ -289,7 +289,7 @@ imp4dv: ual libbds get-imp4dv
 get-imp4dv:
 	@if [ ! -d "externals/imp4dv" ]; then \
 	  echo "Checking out imp4dv..."; \
-		svn co $(SVNURL_GFORGE)/modtransp/tags/4.10b/imp4dv externals/imp4dv; \
+		svn co $(SVNURL_GFORGE)/modtransp/trunk/imp4dv externals/imp4dv; \
 	else  \
 		echo "Updating imp4dv..."; \
 		svn up externals/imp4dv; \
