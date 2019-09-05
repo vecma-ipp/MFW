@@ -29,7 +29,7 @@ INCDIR = include/${SYS}
 BINDIR = bin/${SYS}
 
 
-# paths ########################################################################
+# Paths ########################################################################
 
 BDSEQ = ../externals/bdseq/${SYS}
 BOHMGB = ../externals/bohmgb/${SYS}
@@ -96,71 +96,71 @@ FC90FLAGS += ${INCLUDES} ${MODSPEC}${INCDIR}
 MPIF90FLAGS += ${INCLUDES} ${MODSPEC}${INCDIR} 
 
 
-# objects files ################################################################
-SHARED_O = ${OBJDIR}/linterp.o ${OBJDIR}/string_binding.o  ${OBJDIR}/uq_modules.o ${OBJDIR}/csv_io.o ${OBJDIR}/spl.o
+# Objects files ################################################################
 
-ETS_O = ${SHARED_O} ${OBJDIR}/ets_standalone.o ${OBJDIR}/ets_test.o 
-CHEASE_O = ${SHARED_O} ${OBJDIR}/chease_standalone.o ${OBJDIR}/chease_test.o 
-IMP4DV_O = ${SHARED_O} ${OBJDIR}/imp4dv_standalone.o ${OBJDIR}/imp4dv_test.o 
-EQUILUPDATE_O = ${SHARED_O} ${OBJDIR}/equilupdate_standalone.o ${OBJDIR}/equilupdate_test.o 
-SOURCES_O = ${SHARED_O} ${OBJDIR}/sources_standalone.o ${OBJDIR}/sources_test.o
-BOHMGB_O = ${SHARED_O} ${OBJDIR}/bohmgb_standalone.o ${OBJDIR}/bohmgb_test.o
+SHARED_O = ${OBJDIR}/linterp.o ${OBJDIR}/string_binding.o ${OBJDIR}/csv_io.o ${OBJDIR}/spl.o
 
-#TESTS = ETS_TEST CHEASE_TEST 
-TESTS =  ETS_TEST IMP4DV_TEST CHEASE_TEST COMBINED_TEST EQUILUPDATE_TEST SOURCES_TEST BOHMGB_TEST LOOP_TEST
+ETS_O = ${OBJDIR}/ets_standalone.o 
+EQUILUPDATE_O = ${OBJDIR}/equilupdate_standalone.o  
+CHEASE_O = ${SHARED_O} ${OBJDIR}/chease_standalone.o 
+IMP4DV_O = ${SHARED_O} ${OBJDIR}/imp4dv_standalone.o
+SOURCES_O = ${SHARED_O} ${OBJDIR}/sources_standalone.o
+BOHMGB_O = ${SHARED_O} ${OBJDIR}/bohmgb_standalone.o
+
+TESTS =  ETS_TEST EQUILUPDATE_TEST CHEASE_TEST IMP4DV_TEST COMBINED_TEST SOURCES_TEST BOHMGB_TEST LOOP_TEST
 
 ETS_EXE = ${BINDIR}/ets_test
+EQUILUPDATE_EXE = ${BINDIR}/equilupdate_test
 CHEASE_EXE = ${BINDIR}/chease_test
 IMP4DV_EXE = ${BINDIR}/imp4dv_test
 COMBINED_EXE = ${BINDIR}/combined_test
-EQUILUPDATE_EXE = ${BINDIR}/equilupdate_test
 SOURCES_EXE = ${BINDIR}/sources_test
 BOHMGB_EXE = ${BINDIR}/bohmgb_test
 LOOP_EXE = ${BINDIR}/loop_test
 
-#.PHONY: all clean
-# rules ########################################################################
 
-all: ${SYS} ${TESTS}
+### Rules ######################################################################
+
+all: ${SYS} ${TESTS} ${RUNS}
 
 
 ${OBJDIR}/%.o: %.f90
 	${FC90} -o $@ -c $< $(FC90FLAGS)
 
-
 ${OBJDIR}/%.o: %.c
 	${CC} -o $@ -c $< ${CCFLAGS}
-
 
 %.f90: %.F90
 	$(FPP) $(FPPFLAGS) $< $@ 
 
+###  EXECUTABLES #################################################################
 
-ETS_TEST: ${ETS_O}
-	$(MPIF90) -o ${ETS_EXE} $^ -L${ETS} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_XML} -L${LIB_UAL} -lets -lbds -lxmllib -litmconstants -litmtypes -lual ${LDFLAGS} ${LIBLAPACK}
+ETS_TEST: ${SHARED_O} ${ETS_O} ${EQUILUPDATE_O} ${OBJDIR}/ets_test.o
+	$(MPIF90) -o  ${ETS_EXE} $^ -L${ETS} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_XML} -L${LIB_UAL} -lets -lbds -lxmllib -litmconstants -litmtypes -lual ${LDFLAGS} ${LIBLAPACK}
 
-IMP4DV_TEST: ${IMP4DV_O}
-	$(LD) -o ${IMP4DV_EXE} $^ -L${IMP4DV} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_UAL} -limp4dv -lbds -litmconstants -litmtypes -lual ${LDFLAGS} ${LIBLAPACK}
-
-CHEASE_TEST: ${CHEASE_O}
-	$(MPIF90) -o ${CHEASE_EXE} $^ -L${CHEASE} -L${LIB_XML} -L${LIB_UAL} -lchease_muscle -lual -lxmllib -lxml2 ${LDFLAGS} ${LIBLAPACK}
-
-COMBINED_TEST: ${SHARED_O} ${OBJDIR}/ets_standalone.o ${OBJDIR}/imp4dv_standalone.o ${OBJDIR}/combined_test.o
-	$(LD) -o ${COMBINED_EXE} $^ -L${IMP4DV} -L${ETS} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_XML} -L${LIB_UAL} -limp4dv -lets -lbds -litmconstants -litmtypes -lxmllib -lual ${LDFLAGS} ${LIBLAPACK}
-
-EQUILUPDATE_TEST: ${EQUILUPDATE_O}
+EQUILUPDATE_TEST:${SHARED_O} ${EQUILUPDATE_O} ${OBJDIR}/equilupdate_test.o
 	$(LD) -o ${EQUILUPDATE_EXE} $^ -L${ETS} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_UAL} -lets -lbds -litmconstants -litmtypes -lual ${LDFLAGS} ${LIBLAPACK}
 
-SOURCES_TEST: ${SOURCES_O}
+CHEASE_TEST: ${SHARED_O}  ${CHEASE_O} ${OBJDIR}/chease_test.o 
+	$(MPIF90) -o ${CHEASE_EXE} $^ -L${CHEASE} -L${LIB_XML} -L${LIB_UAL} -lchease_muscle -lual -lxmllib -lxml2 ${LDFLAGS} ${LIBLAPACK}
+
+IMP4DV_TEST:  ${SHARED_O} ${IMP4DV_O} ${OBJDIR}/imp4dv_test.o 
+	$(LD) -o ${IMP4DV_EXE} $^ -L${IMP4DV} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_UAL} -limp4dv -lbds -litmconstants -litmtypes -lual ${LDFLAGS} ${LIBLAPACK}
+
+COMBINED_TEST: ${SHARED_O} ${ETS_O} ${IMP4DV_O} ${OBJDIR}/combined_test.o
+	$(LD) -o ${COMBINED_EXE} $^ -L${IMP4DV} -L${ETS} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_XML} -L${LIB_UAL} -limp4dv -lets -lbds -litmconstants -litmtypes -lxmllib -lual ${LDFLAGS} ${LIBLAPACK}
+
+SOURCES_TEST:  ${SHARED_O} ${SOURCES_O} ${OBJDIR}/sources_test.o
 	$(LD) -o ${SOURCES_EXE} $^ -L${ETS} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_UAL} -L${LIB_XML} -lets -lbds -litmconstants -litmtypes -lual -lxmllib ${LDFLAGS} ${LIBLAPACK}
 
-BOHMGB_TEST: ${BOHMGB_O}
+BOHMGB_TEST:  ${SHARED_O} ${BOHMGB_O} ${OBJDIR}/bohmgb_test.o
 	$(LD) -o ${BOHMGB_EXE} $^ -L${BOHMGB} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_XML} -L${LIB_UAL} -lbohmgb -lbds -litmconstants -litmtypes -lxmllib -lual ${LDFLAGS} ${LIBLAPACK}
 
-LOOP_TEST: ${SHARED_O} ${OBJDIR}/ets_standalone.o ${OBJDIR}/equilupdate_standalone.o ${OBJDIR}/chease_standalone.o ${OBJDIR}/bohmgb_standalone.o ${OBJDIR}/loop_test.o
+LOOP_TEST: ${SHARED_O} ${ETS_O} ${EQUILUPDATE_O} ${CHEASE_O} ${BOHMGB_O} ${OBJDIR}/loop_test.o
 	$(LD) -o ${LOOP_EXE} $^ -L${ETS} -L${CHEASE} -L${BOHMGB} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_XML} -L${LIB_UAL} -lets -lchease_muscle -lbohmgb -lbds -litmconstants -litmtypes -lual -lxmllib -lxml2 ${LDFLAGS} ${LIBLAPACK}
 
 
+##################################################################################
 
 ${SYS}: 
 	@mkdir -p ${OBJDIR}
@@ -173,7 +173,6 @@ clean:
 	rm -rf ${OBJDIR} ${INCDIR} ${BINDIR} 
 
 
-
 ####### special rules (due to clash of versions with chease) #######
 ${OBJDIR}/linterp.o: src/tools/linterp.f90
 	${FC90} -o $@ -c $< $(FC90FLAGS) -I${INC_TYPES}
@@ -184,8 +183,8 @@ ${OBJDIR}/csv_io.o: src/tools/csv_io.f90
 ${OBJDIR}/spl.o: src/tools/spl.f90
 	${MPIF90} -o $@ -c $< $(FC90FLAGS) -traceback -check all -fp-stack-check -I${MKL_LIB} 
 
-${OBJDIR}/uq_modules.o: src/uq_modules.f90
-	${MPIF90} -o $@ -c $< $(FC90FLAGS) -I${ETS} -I${INC_CONSTANTS} -I${INC_TYPES} -I${INC_XML} 
+#${OBJDIR}/uq_modules.o: src/rop/uq_modules.f90
+#	${MPIF90} -o $@ -c $< $(FC90FLAGS) -I${ETS} -I${INC_CONSTANTS} -I${INC_TYPES} -I${INC_XML} 
 
 ${OBJDIR}/ets_standalone.o: src/ets_standalone.f90
 	${MPIF90} -o $@ -c $< $(FC90FLAGS) -I${ETS} -I${INC_CONSTANTS} -I${INC_TYPES} -I${INC_XML} 
@@ -193,8 +192,11 @@ ${OBJDIR}/ets_standalone.o: src/ets_standalone.f90
 ${OBJDIR}/ets_test.o: src/ets_test.f90
 	${MPIF90} -o $@ -c $< $(MPIF90FLAGS) -I${INC_TYPES}  
 
-${OBJDIR}/imp4dv_standalone.o: src/imp4dv_standalone.f90
-	${FC90} -o $@ -c $< $(FC90FLAGS) -I${INC_BDS}  
+${OBJDIR}/equilupdate_standalone.o: src/equilupdate_standalone.f90
+	${FC90} -o $@ -c $< $(FC90FLAGS) -I${ETS} -I${INC_CONSTANTS} -I${INC_TYPES} 
+
+${OBJDIR}/equilupdate_test.o: src/equilupdate_test.f90
+	${MPIF90} -o $@ -c $< $(MPIF90FLAGS) -I${INC_TYPES}  
 
 ${OBJDIR}/chease_standalone.o: src/chease_standalone.f90
 	${MPIF90} -o $@ -c $< $(MPIF90FLAGS) -I${CHEASE} -I${INC_UAL} -I${INC_XML} -I/usr/include/libxml2
@@ -202,11 +204,11 @@ ${OBJDIR}/chease_standalone.o: src/chease_standalone.f90
 ${OBJDIR}/chease_test.o: src/chease_test.f90
 	${MPIF90} -o $@ -c $< $(MPIF90FLAGS) -I${CHEASE} -I${INC_UAL} -I${INC_TYPES} 
 
+${OBJDIR}/imp4dv_standalone.o: src/imp4dv_standalone.f90
+	${FC90} -o $@ -c $< $(FC90FLAGS) -I${INC_BDS}  
+
 ${OBJDIR}/combined_test.o: src/combined_test.f90
 	${FC90} -o $@ -c $< $(FC90FLAGS) -I${INC_TYPES}  
-
-${OBJDIR}/equilupdate_standalone.o: src/equilupdate_standalone.f90
-	${FC90} -o $@ -c $< $(FC90FLAGS) -I${ETS} -I${INC_CONSTANTS} -I${INC_TYPES} 
 
 ${OBJDIR}/sources_standalone.o: src/sources_standalone.f90
 	${FC90} -o $@ -c $< $(FC90FLAGS) -traceback -check all -fp-stack-check -I${ETS} -I${INC_XML} -I${INC_CONSTANTS} -I${INC_TYPES} 
