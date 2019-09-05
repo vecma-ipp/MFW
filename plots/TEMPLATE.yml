@@ -12,18 +12,30 @@ ENTRY:
     Put there the "executive summary of the simulation".
     
 SOURCE:
-  DIR: /where/the/data/lies
+  DIR: '/where/the/simluation/time/trace/data/is'
   CODE: 
     - NAME   : ets
       CPO    : coreprof
+      PATTERN: ....
     - NAME   : chease
       CPO    : equilibrium
+      PATTERN: ....
     - NAME   : imp4dv
       CPO    : coretransp
+      PATTERN: ....
+    - NAME   : ets
+      CPO    : coresource
+      PATTERN: in
+    - NAME   : ets
+      CPO    : coreimpur
+      PATTERN: in
+    - NAME   : ets
+      CPO    : toroidfield
+      PATTERN: in
     
 WORKFLOW:
   TYPE         : muscle2
-  CONFIGURATION: /where/the/file/is/new.cxa.rb
+  CONFIGURATION: '/where/the/file/is/new.cxa.rb'
   COMMENT      : |
     This is a long comment which span over several
     lines with preserved line breaks as long as initial

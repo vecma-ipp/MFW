@@ -84,7 +84,10 @@ for yml in args.yml:
         for code in codes:
             codename = code.get('NAME')
             cponame = code.get('CPO')
-            pattern = re.compile(codename+'_'+cponame+'_....\.cpo')
+            range_pattern = code.get('PATTERN')
+            if range_pattern==None:
+                range_pattern = '....'
+            pattern = re.compile(codename+'_'+cponame+'_'+range_pattern+'\.cpo')
 
             lcpo = pattern.findall(ll.__str__())
             lcpolen = len(lcpo)
@@ -104,21 +107,23 @@ for yml in args.yml:
 
 
         ########################## STORE PROVENANCE DATA ############################
-        logger.critical("Aggregating CPO slices and saving them into the database")
-        workflow = simulation.get('WORKFLOW')
-        configfile = open(workflow.get('CONFIGURATION'),'r')
-
+        logger.critical("Saving provenance data into topinfo CPO")
         # todo: get real name instead of username
         db.topinfo.dataprovider = usr
         db.topinfo.description = entry.get("DESCRIPTION")
         db.topinfo.firstputdate = datetime.now().strftime('%Y-%m-%d (%Hh%Mm%Ss)')
         db.topinfo.dataversion = ver
-        db.topinfo.comment = workflow.get("COMMENT")
-        db.topinfo.workflow = configfile.read()
+
+        workflow = simulation.get('WORKFLOW')
+        if workflow!=None:
+            configfile = open(workflow.get('CONFIGURATION'),'r')
+            db.topinfo.comment = workflow.get("COMMENT")
+            db.topinfo.workflow = configfile.read()
+
 
         logger.info("Writing 'topinfo' into database")
         db.topinfo.put()
-
+            
         db.close()
 
 
