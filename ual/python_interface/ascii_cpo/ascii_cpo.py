@@ -52,7 +52,7 @@ def getfieldtype(obj,name):
 
 
 
-# 
+#
 def parseScalarField(f, parentobj, name):
     next_field = None
     val = (f.readline()).strip()
@@ -80,7 +80,7 @@ def parseScalarField(f, parentobj, name):
         else:
             print('Scalar type error')
             sys.exit()
-            
+
 #
 def parseVectorField(f, parentobj, name, fullpath):
     next_field = None
@@ -95,11 +95,11 @@ def parseVectorField(f, parentobj, name, fullpath):
 
     if (ASCII_CPO_VERB):
         print(('   size = '+str(size)))
-                
+
     obj = getattr(parentobj,name)
     objtype = obj.__class__
 
-    if objtype == str: 
+    if objtype == str:
         val = []
         for s in range(size):
             val.append((f.readline()).strip())
@@ -138,16 +138,16 @@ def parseVectorField(f, parentobj, name, fullpath):
             val = val.reshape(shape,order='F')
         except ValueError:
             sys.exit('Error: during reshape of field '+field.string+
-                     ' of value '+ val + 
+                     ' of value '+ val +
                      ' with shape '+ str(shape))
-                        
+
         if (ASCII_CPO_VERB):
             print(('   ndarray val = '+str(val)))
         setattr(parentobj,name,val)
 
 
     #here should lies the struct_arrays cases
-    else: 
+    else:
         if (str(objtype).find('ual')==-1):
             print('ERROR: though it should be a struct_array here...')
             print(('objtype = '+str(objtype)))
@@ -160,7 +160,7 @@ def parseVectorField(f, parentobj, name, fullpath):
         if (ASCII_CPO_VERB):
             print(("   sa_pattern based on name="+fullpath))
         sa_pattern = re.compile(fullpath+"%.+")
-        
+
         sa_cpt = 0
         sa_first = None
         sa_end = False
@@ -180,7 +180,7 @@ def parseVectorField(f, parentobj, name, fullpath):
         while not sa_end:
             next_field = None
 
-            #do the dimension parsing 
+            #do the dimension parsing
             line = (f.readline()).strip()
             dim = int(line)
 
@@ -188,7 +188,7 @@ def parseVectorField(f, parentobj, name, fullpath):
             if dim == -1:
                 if (ASCII_CPO_VERB):
                     print('     | empty')
-                
+
             ### EXISTING FIELD ###
             else:
                 relpath = field.string.replace(fullpath+'%','')
@@ -212,7 +212,7 @@ def parseVectorField(f, parentobj, name, fullpath):
                 ### VECTOR FIELD ###
                 else:
                     if (ASCII_CPO_VERB):
-                        print('     | vector')                    
+                        print('     | vector')
                     relpath = field.string.replace(fullpath+'%','')
                     parentobj = obj2field(sa_elt,path)
                     if (ASCII_CPO_VERB):
@@ -220,22 +220,22 @@ def parseVectorField(f, parentobj, name, fullpath):
                             if (parentobj != sa_elt):
                                 sys.exit(str(parentobj)+" != "+str(sa_elt))
                     next_field = parseVectorField(f,parentobj,name,field.string)
-                    
+
 
             # prepare next field...
             if (next_field==None):
                 line = (f.readline()).strip()
             else:
                 line = next_field
-            
+
             field = sa_pattern.match(line)
 
             if field == None:
                 if (ASCII_CPO_VERB):
                     print(('     |> Field (='+line+') does not match current struct_array pattern (='+fullpath+'%'+'): end of struct_array + save field for next parsing'))
                 next_field = line
-                sa_end = True 
-                    
+                sa_end = True
+
             else:
                 if sa_first == field.string:
                     sa_cpt += 1
@@ -248,7 +248,7 @@ def parseVectorField(f, parentobj, name, fullpath):
                         if (ASCII_CPO_VERB):
                             print('     |> end of struct_array')
                         next_field = None
-                        
+
 
         if (ASCII_CPO_VERB):
             print('     |> end of struct_array loop')
@@ -262,7 +262,7 @@ def parseVectorField(f, parentobj, name, fullpath):
 
 ##################################################################
 # READ ###########################################################
-def read(filename,cponame,outcpo=None):    
+def read(filename,cponame,outcpo=None):
     if outcpo==None:
         itmobj = ual.itm()
         try:
@@ -279,18 +279,18 @@ def read(filename,cponame,outcpo=None):
     if (ASCII_CPO_VERB):
         print(('Read file '+filename))
     f = open(filename,'r',errors='replace')
-    
+
     pattern = re.compile(cponame+"%.+")
     end = False
 
     next_field = None
-    
+
     version = f.readline()
     if (ASCII_CPO_VERB):
         print(('Read file ' + filename + ', ' + version))
-    
+
     while not end:
-        if next_field == None: 
+        if next_field == None:
             if (ASCII_CPO_VERB):
                 print('Normal process of next field')
             line = (f.readline()).strip()
@@ -314,7 +314,7 @@ def read(filename,cponame,outcpo=None):
             if dim == -1:
                 if (ASCII_CPO_VERB):
                     print('   empty')
-                
+
             ### EXISTING FIELD ###
             else:
 
@@ -330,10 +330,10 @@ def read(filename,cponame,outcpo=None):
                 ### VECTOR FIELD ###
                 else:
                     if (ASCII_CPO_VERB):
-                        print('   vector')                    
+                        print('   vector')
                     next_field = parseVectorField(f,parentobj,name,field.string)
 
-                
+
         ### NOT A VALID CPO FIELD ###
         else:
             if line == cponame:
@@ -348,7 +348,7 @@ def read(filename,cponame,outcpo=None):
                 if (ASCII_CPO_VERB):
                     print('End of the CPO')
                 end = True
-    
+
     return cpo;
 
 
@@ -362,14 +362,14 @@ def read(filename,cponame,outcpo=None):
 def writefield(outfile,field):
 
     if type(field)==str:
-        if field=='': # no allocated but empty strings as in Fortran 
+        if field=='': # no allocated but empty strings as in Fortran
             outfile.write("\t {:> d} \n".format(-1))
         else:
             outfile.write("\t {:> d} \n".format(1)) # strings are always arrays of 132 char strings (because of Fortran)
             #strlines = (len(field)//133)+1
             splitted = field.split('\n')
             strlines = len(splitted)
-            outfile.write("\t {:> d} \n".format(strlines)) 
+            outfile.write("\t {:> d} \n".format(strlines))
             for l in splitted:
                 outfile.write("{:s}\n".format(l))
             #for i in range(strlines):
@@ -377,18 +377,18 @@ def writefield(outfile,field):
             #    outfile.write("{:s}\n".format(field[chunk:chunk+132]))
 
     elif type(field)==list: # special case of 1D array of strings, implemented through list of strings
-        if field==['']: # no allocated but empty strings as in Fortran 
+        if field==['']: # no allocated but empty strings as in Fortran
             outfile.write("\t {:> d} \n".format(-1))
         else:
             outfile.write("\t {:> d} \n".format(1)) # strings are always arrays of 132 char strings (because of Fortran)
             lstlen = len(field)
-            outfile.write("\t {:> d} \n".format(lstlen)) 
+            outfile.write("\t {:> d} \n".format(lstlen))
             for i in range(lstlen):
                 strlines = (len(field[i])//133)+1
                 for j in range(strlines):
                     chunk = j*132
                     outfile.write("{:s}\n".format(field[i][chunk:chunk+132]))
-            
+
 
     elif type(field)==int:
         if field==ual.EMPTY_INT:
@@ -433,19 +433,19 @@ def printarrays(outfile,arr):
         if not i%3:
             outfile.write("\n")
         outfile.write(formatstr.format(farr[i]))
-        
+
 
 
 
 def explore(outfile,path,field):
-    
+
     if (not hasattr(field,'base_path')):
-        print("Writing "+path+" field to file")
+        #print("Writing "+path+" field to file")
         outfile.write(" "+path+"\n")
         writefield(outfile,field)
 
     elif (hasattr(field,'array')):
-        print("Exploring array of structure "+field.base_path)
+        #print("Exploring array of structure "+field.base_path)
         outfile.write(" "+path+"\n")
         size = len(field.array)
         if size>0:
@@ -457,7 +457,7 @@ def explore(outfile,path,field):
             outfile.write("\t {:> d} \n".format(-1))
 
     else:
-        print("Exploring structure "+field.base_path)
+        #print("Exploring structure "+field.base_path)
         for (name,obj) in field.items():
             if name not in ['base_path','cpoTime','idx','maxOccurrences']:
                 explore(outfile,path+'%'+name,obj)
@@ -468,10 +468,10 @@ def explore(outfile,path,field):
 ##################################################################
 # WRITE ##########################################################
 def write(incpo,filename,cponame=None):
-    
+
     outfile = open(filename,'w')
 
-    outfile.write(" used schema version 4.10b.10\n") #hard-coded as version is not supposed to evolve 
+    outfile.write(" used schema version 4.10b.10\n") #hard-coded as version is not supposed to evolve
 
     if cponame==None:
         cponame = incpo.base_path

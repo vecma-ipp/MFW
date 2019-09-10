@@ -1,7 +1,7 @@
-{"transport":
-  { 
-    Te_boundary=$Te_boundary,
-    Ti_boundary=$Ti_boundary
+{
+"initial_conditions": {
+  "Te_boundary": $Te_boundary,
+  "Ti_boundary": $Ti_boundary
   },
 "out_file": "$out_file"
 }
