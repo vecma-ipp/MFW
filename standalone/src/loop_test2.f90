@@ -25,7 +25,8 @@ program loop_test2
   use ets_standalone,         only: ets_cpo
   use equilupdate_standalone, only: equilupdate2cpo
   use chease_standalone,      only: chease_cpo
-  use bohmgb_standalone,      only: bohmgb_cpo
+  use gem0_standalone,        only: gem0_cpo
+  use imp4dv_standalone,      only: imp4dv_cpo
 
 implicit none
 
@@ -41,7 +42,7 @@ implicit none
   logical, parameter :: TIMETRACE = .FALSE.
 
   type(type_coreprof), pointer :: corep_in(:), corep_old(:) => null(), corep_ets(:) => null()
-  type(type_coretransp), pointer :: coret_in(:), coret_bohmgb(:) => null()
+  type(type_coretransp), pointer :: coret_in(:), coret_gem0(:) => null(), coret_imp4dv(:) => null()
   type(type_coresource), pointer :: cores_in(:)
   type(type_coreimpur), pointer :: corei_in(:)
   type(type_equilibrium), pointer :: equil_in(:), equil_update(:) => null(), equil_chease(:) => null()
@@ -117,10 +118,11 @@ implicit none
   allocate(corep_old(1))
   allocate(corep_ets(1))
   allocate(equil_chease(1))
-  allocate(coret_bohmgb(1))
+  allocate(coret_gem0(1))
+  allocate(coret_imp4dv(1))
   call copy_cpo(corep_in(1),corep_ets(1))
   call copy_cpo(equil_in(1),equil_chease(1))
-  call copy_cpo(coret_in(1),coret_bohmgb(1))
+  call copy_cpo(coret_in(1),coret_gem0(1))
 
   do it=1,STEPS
 
@@ -131,7 +133,7 @@ implicit none
      call copy_cpo(corep_ets(1),corep_old(1))
      call deallocate_cpo(corep_ets)
      nullify(corep_ets)
-     call ets_cpo(corep_old, equil_chease, coret_bohmgb, cores_in, corei_in, corep_ets)
+     call ets_cpo(corep_old, equil_chease, coret_gem0, cores_in, corei_in, corep_ets)
      if (TIMETRACE) then
         call open_write_file(20,'ets_coreprof_'//itstr//'.cpo')
         call write_cpo(corep_ets(1),'coreprof')
@@ -158,13 +160,23 @@ implicit none
         call close_write_file
      end if
 
-     ! BOHMGB
-     call deallocate_cpo(coret_bohmgb)
-     nullify(coret_bohmgb)
-     call bohmgb_cpo(equil_chease, corep_ets, coret_bohmgb)
+     ! GEM0
+     call deallocate_cpo(coret_gem0)
+     nullify(coret_gem0)
+     call gem0_cpo(equil_chease, corep_ets, coret_gem0)
      if (TIMETRACE) then
-        call open_write_file(23, 'bohmgb_coretransp_'//itstr//'.cpo')
-        call write_cpo(coret_bohmgb(1),'coretransp')
+        call open_write_file(23, 'gem0_coretransp_'//itstr//'.cpo')
+        call write_cpo(coret_gem0(1),'coretransp')
+        call close_write_file
+     end if
+
+     ! IMP4DV
+     call deallocate_cpo(coret_imp4dv)
+     nullify(coret_imp4dv)
+     call imp4dv_cpo(equil_chease, corep_ets, coret_gem0, coret_imp4dv)
+     if (TIMETRACE) then
+        call open_write_file(24, 'imp4dv_coretransp_'//itstr//'.cpo')
+        call write_cpo(coret_imp4dv(1),'coretransp')
         call close_write_file
      end if
 
@@ -180,7 +192,8 @@ implicit none
   call deallocate_cpo(corep_old)
   call deallocate_cpo(corep_ets)
   call deallocate_cpo(coret_in)
-  call deallocate_cpo(coret_bohmgb)
+  call deallocate_cpo(coret_gem0)
+  call deallocate_cpo(coret_imp4dv)
   call deallocate_cpo(equil_in)
   call deallocate_cpo(equil_update)
   call deallocate_cpo(equil_chease)
