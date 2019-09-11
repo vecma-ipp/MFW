@@ -1,16 +1,39 @@
-program loop
-  use ets_standalone
-  use chease_standalone
-  use equilupdate_standalone
-  use bohmgb_standalone
-  use read_structures
-  use write_structures
-  use deallocate_structures
-  use copy_structures
-  implicit none
+! -*- coding: UTF-8 -*-
+!> Box for:  ETS + Update EQ + CHEASE + BOHMGB.
 
-  !character(len=*), parameter :: data_path = './'
-  character(len=128) :: data_path
+program loop_test1
+
+  use euitm_schemas,   only: type_coreprof,    & 
+                          &  type_equilibrium, &
+                          &  type_coretransp,  &
+                          &  type_coresource,  &
+                          &  type_coreimpur,   &
+                          &  type_toroidfield
+  use read_structures, only: open_read_file,  &
+                          &  close_read_file, &
+                          &  read_cpo
+  use write_structures, only: open_write_file,  &
+                           &  close_write_file, &
+                           &  write_cpo
+
+  use deallocate_structures, only: deallocate_cpo
+
+  use copy_structures, only: copy_cpo
+
+  use ets_standalone,         only: ets_cpo
+  use equilupdate_standalone, only: equilupdate2cpo
+  use chease_standalone,      only: chease_cpo
+  use bohmgb_standalone,      only: bohmgb_cpo
+
+implicit none
+
+  ! CPO files
+  character(len=*), parameter :: corep_file_in   = "ets_coreprof_in.cpo"
+  character(len=*), parameter :: equil_file_in   = "ets_equilibrium_in.cpo"
+  character(len=*), parameter :: cores_file_in   = "ets_coresource_in.cpo"
+  character(len=*), parameter :: corei_file_in   = "ets_coreimpur_in.cpo"
+  character(len=*), parameter :: coret_file_in   = "ets_coretransp_in.cpo"
+  character(len=*), parameter :: toroidf_file_in = "ets_toroidfield_in.cpo"
 
   integer, parameter :: STEPS = 50
   logical, parameter :: TIMETRACE = .FALSE.
@@ -25,7 +48,6 @@ program loop
   character(4)  :: itstr
 
   !... Read initial CPOs
-
   allocate(corep_in(1))
   allocate(coret_in(1))
   allocate(cores_in(1))
@@ -33,66 +55,63 @@ program loop
   allocate(equil_in(1))
   allocate(toroidf_in(1))
 
-  ! ... Read data path from consol
-  call get_command_argument(1, data_path)
-
-  open (unit = 10, file = trim(data_path) // "/ets_coreprof_in.cpo", &
+  open (unit = 10, file = corep_file_in, &
        status = 'old', form = 'formatted', &
        action = 'read', iostat = ios)
   if (ios == 0) then
      close (10)
-     call open_read_file(10, trim(data_path) // "/ets_coreprof_in.cpo")
+     call open_read_file(10, corep_file_in)
      call read_cpo(corep_in(1), 'coreprof' )
      call close_read_file
   end if
-  open (unit = 11, file = trim(data_path) // "/ets_coretransp_in.cpo", &
+  open (unit = 11, file = coret_file_in, &
        status = 'old', form = 'formatted', &
        action = 'read', iostat = ios)
   if (ios == 0) then
      close (11)
-     call open_read_file(10, trim(data_path) // "/ets_coretransp_in.cpo")
+     call open_read_file(10, coret_file_in)
      call read_cpo(coret_in(1), 'coretransp' )
      call close_read_file
   end if
-  open (unit = 12, file = trim(data_path) // "/ets_coresource_in.cpo", &
+  open (unit = 12, file = cores_file_in, &
        status = 'old', form = 'formatted', &
        action = 'read', iostat = ios)
   if (ios == 0) then
      close (12)
-     call open_read_file(12, trim(data_path) // "/ets_coresource_in.cpo")
+     call open_read_file(12, cores_file_in)
      call read_cpo(cores_in(1), 'coresource' )
      call close_read_file
   end if
-  open (unit = 13, file = trim(data_path) // "/ets_coreimpur_in.cpo", &
+  open (unit = 13, file = corei_file_in, &
        status = 'old', form = 'formatted', &
        action = 'read', iostat = ios)
   if (ios == 0) then
      close (13)
-     call open_read_file(13, trim(data_path) // "/ets_coreimpur_in.cpo")
+     call open_read_file(13, corei_file_in)
      call read_cpo(corei_in(1), 'coreimpur' )
      call close_read_file
   end if
-  open (unit = 14, file = trim(data_path) // "/ets_equilibrium_in.cpo", &
+  open (unit = 14, file = equil_file_in, &
        status = 'old', form = 'formatted', &
        action = 'read', iostat = ios)
   if (ios == 0) then
      close (14)
-     call open_read_file(14, trim(data_path) // "/ets_equilibrium_in.cpo")
+     call open_read_file(14, equil_file_in)
      call read_cpo(equil_in(1), 'equilibrium' )
      call close_read_file
   end if
-  open (unit = 15, file = trim(data_path) // "/ets_toroidfield_in.cpo", &
+  open (unit = 15, file = toroidf_file_in, &
        status = 'old', form = 'formatted', &
        action = 'read', iostat = ios)
   if (ios == 0) then
      close (15)
-     call open_read_file(15, trim(data_path) // "/ets_toroidfield_in.cpo")
+     call open_read_file(15, toroidf_file_in)
      call read_cpo(toroidf_in(1), 'toroidfield' )
      call close_read_file
   end if
 
 
-  ! loop
+  ! Loop
   allocate(corep_old(1))
   allocate(corep_ets(1))
   allocate(equil_chease(1))
@@ -112,7 +131,7 @@ program loop
      nullify(corep_ets)
      call ets_cpo(corep_old, equil_chease, coret_bohmgb, cores_in, corei_in, corep_ets)
      if (TIMETRACE) then
-        call open_write_file(20,'cpos/ets_coreprof_'//itstr//'.cpo')
+        call open_write_file(20,'ets_coreprof_'//itstr//'.cpo')
         call write_cpo(corep_ets(1),'coreprof')
         call close_write_file
      end if
@@ -122,7 +141,7 @@ program loop
      nullify(equil_update)
      call equilupdate2cpo(corep_ets, toroidf_in, equil_chease, equil_update)
      if (TIMETRACE) then
-        call open_write_file(21,'cpos/equilupdate_equilibrium_'//itstr//'.cpo')
+        call open_write_file(21, 'equilupdate_equilibrium_'//itstr//'.cpo')
         call write_cpo(equil_update(1),'equilibrium')
         call close_write_file
      end if
@@ -132,7 +151,7 @@ program loop
      nullify(equil_chease)
      call chease_cpo(equil_update, equil_chease)
      if (TIMETRACE) then
-        call open_write_file(22,'cpos/chease_equilibrium_'//itstr//'.cpo')
+        call open_write_file(22, 'chease_equilibrium_'//itstr//'.cpo')
         call write_cpo(equil_chease(1),'equilibrium')
         call close_write_file
      end if
@@ -142,7 +161,7 @@ program loop
      nullify(coret_bohmgb)
      call bohmgb_cpo(equil_chease, corep_ets, coret_bohmgb)
      if (TIMETRACE) then
-        call open_write_file(23,'cpos/bohmgb_coretransp_'//itstr//'.cpo')
+        call open_write_file(23, 'bohmgb_coretransp_'//itstr//'.cpo')
         call write_cpo(coret_bohmgb(1),'coretransp')
         call close_write_file
      end if
@@ -150,7 +169,7 @@ program loop
   end do
 
   if (.not.TIMETRACE) then
-     call open_write_file(20,'cpos/ets_coreprof_'//itstr//'.cpo')
+     call open_write_file(20, 'ets_coreprof_'//itstr//'.cpo')
      call write_cpo(corep_ets(1),'coreprof')
      call close_write_file
   end if
@@ -167,4 +186,4 @@ program loop
   call deallocate_cpo(corei_in)
   call deallocate_cpo(toroidf_in)
 
-end program loop
+end program loop_test1
