@@ -7,7 +7,7 @@ import matplotlib.pylab as plt
 from ascii_cpo import read
 from tools import plots, cpo_template
 
-#
+# to compute CPU time
 time0 = time.time()
 
 # OS env
@@ -24,7 +24,6 @@ ets_run = os.path.abspath("../bin/"+SYS+"/ets_test ")
 
 # Define a specific parameter space
 uncertain_params = {
-    "structure": "coreprof",
     "Te_boundary": {
         "type": "float",
         "distribution": "Normal",
@@ -38,19 +37,7 @@ uncertain_params = {
 }
 
 # For the output: quantities of intersts
-output_columns = ["Te", 'Ti']
-#qoi_params = {
-#    "Te": {
-#        "type": "list",
-#        "maxlength": 100,
-#        "structure": "coreprof"
-#    },
-#    "Ti": {
-#        "type": "list",
-#        "maxlength": 100,
-#        "structure": "coreprof"
-#    }
-#}
+output_columns = ["Te", "Ti"]
 
 # Initialize Campaign object
 print('Initialize Campaign object')
@@ -69,10 +56,10 @@ os.system("cp " + cpo_dir + "/*.cpo " + common_dir)
 
 # Create the encoder and get the app parameters
 print('Create the encoder')
-corep_filename = "ets_coreprof_in.cpo"
-encoder = cpo_template.CPOEncoder(template_filename=corep_filename,
+input_filename = "ets_coreprof_in.cpo"
+encoder = cpo_template.CPOEncoder(template_filename=input_filename,
                                   template_directory=common_dir,
-                                  target_filename=corep_filename,
+                                  target_filename=input_filename,
                                   uncertain_params=uncertain_params
                                  )
 
@@ -80,10 +67,10 @@ params, vary = encoder.draw_app_params()
 
 # Create the encoder
 print('Create the encoder')
-decoder = uq.decoders.SimpleCSV(target_filename='out.csv',
-                                output_columns=output_columns,
-                                header=0
-                               )
+output_filename = "ets_coreprof.cpo"
+decoder = cpo_template.CPODecoder(target_filename=output_filename,
+                                  target_cponame="coreprof",
+                                  output_columns=output_columns)
 
 # Add the ETS app (automatically set as current app)
 print('Add app to campagn object')
@@ -110,10 +97,14 @@ my_campaign.set_sampler(my_sampler)
 # Will draw all (of the finite set of samples)
 print('Draw Samples')
 my_campaign.draw_samples()
-print('populate_runs_dir ')
+
+print('Populate runs_dir')
 my_campaign.populate_runs_dir()
-sys.exit()
+
+print('Executes ETS')
 my_campaign.apply_for_each_run_dir(uq.actions.ExecuteLocal(ets_run))
+
+print('Collate')
 my_campaign.collate()
 
 # Post-processing analysis

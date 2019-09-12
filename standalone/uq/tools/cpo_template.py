@@ -2,6 +2,7 @@ import os
 import logging
 import chaospy as cp
 from string import Template
+from easyvvuq import OutputType
 from easyvvuq.encoders.base import BaseEncoder
 from easyvvuq.decoders.base import BaseDecoder
 from ascii_cpo import read, write
@@ -10,29 +11,23 @@ from ascii_cpo import read, write
 # Specific Encoder
 class CPOEncoder(BaseEncoder, encoder_name="cpo_encoder"):
 
-    #
-    def __init__(self, template_filename, template_directory, target_filename, uncertain_params):
+    def __init__(self, template_filename, template_cponame, cpos_directory, target_filename, uncertain_params):
 
         self.template_filename = template_filename
-        self.template_directory = template_directory
+        self.template_cponame = template_cponame
+        self.cpos_directory = cpos_directory
         self.target_filename = target_filename
         self.uncertain_params = uncertain_params
         self.fixture_support = True
 
-        # Check that user has specified the object to use as template
+        # Check that user has specified the objests to use as template
         if template_filename is None:
             msg = ("CPOEncoder must be given 'template_filename': a CPO file.")
             logging.error(msg)
             raise RuntimeError(msg)
 
-        # Get the corresponding CPO object
-        cponame = uncertain_params["structure"]
-        if cponame in template_filename:
-            self.core_cpo = read(template_directory + template_filename, cponame)
-        else:
-            msg = ("The structure filed of 'uncertain_params' must much with 'template_filename'")
-            logging.error(msg)
-            raise RuntimeError(msg)
+        # The CPO object
+        self.core_cpo = read(cpos_directory + template_filename, template_cponame)
 
     # Return param dict for Campagn and list of distribitions for Sampler
     def draw_app_params(self):
@@ -40,7 +35,7 @@ class CPOEncoder(BaseEncoder, encoder_name="cpo_encoder"):
         params = {}
         vary = {}
 
-        for key in self.uncertain_params.keys() - {"structure"}:
+        for key in self.uncertain_params.keys():
             # Get initial values
             if(key=='Te_boundary'):
                 val = self.core_cpo.te.boundary.value[0]
@@ -66,8 +61,7 @@ class CPOEncoder(BaseEncoder, encoder_name="cpo_encoder"):
     def encode(self, params={}, target_dir='', fixtures=None):
 
         if fixtures is not None:
-            local_params = self.substitute_fixtures_params(params, fixtures,
-                                                           target_dir)
+            local_params = self.substitute_fixtures_params(params, fixtures, target_dir)
         else:
             local_params = params
 
@@ -81,7 +75,7 @@ class CPOEncoder(BaseEncoder, encoder_name="cpo_encoder"):
                 self.core_cpo.ti.boundary.value[0][0] = value
 
         # Do a symbolic link to other CPO files
-        os.system("ln -s " + self.template_directory + "*.cpo " + target_dir)
+        os.system("ln -s " + self.cpo_directory + "*.cpo " + target_dir)
 
         # Write target input CPO file
         target_file_path = os.path.join(target_dir, self.target_filename)
@@ -91,9 +85,10 @@ class CPOEncoder(BaseEncoder, encoder_name="cpo_encoder"):
         write(self.core_cpo, target_file_path)
 
     def get_restart_dict(self):
-        return {"target_filename": self.target_filename,
-                "template_filename": self.template_filename,
-                "template_directory": self.template_directory,
+        return {"template_filename": self.template_filename,
+                "template_cponame": self.template_cponame,
+                "cpos_directory": self.cpos_directory,
+                "target_filename": self.target_filename,
                 "uncertain_params": self.uncertain_params}
 
     def element_version(self):
@@ -102,14 +97,21 @@ class CPOEncoder(BaseEncoder, encoder_name="cpo_encoder"):
 # Specific Decoder
 class CPODecoder(BaseDecoder, decoder_name="cpo_decoder"):
 
-    def __init__(self, output_columns=None):
+    def __init__(self, target_filename, target_cponame, output_columns):
+
+        if target_filename is None:
+            msg = (f"target_filename must be set for CPODecoder. This should be"
+                   f"the name of the output file this decoder acts on.")
+            logging.error(msg)
+            raise Exception(msg)
 
         if output_columns is None:
-            msg = (
-                f"output_columns must be specified for CPODecoder. This should"
-                f"be the names of the output columns this decoder extracts"
-                f"from the target csv file."
-            )
+            msg = (f"output_columns must be specified for CPODecoder.")
+            logging.error(msg)
+            raise Exception(msg)
+
+        if target_cponame is None:
+            msg = (f"target_cponame must be specified for CPODecoder.")
             logging.error(msg)
             raise Exception(msg)
 
@@ -118,6 +120,8 @@ class CPODecoder(BaseDecoder, decoder_name="cpo_decoder"):
             logger.error(msg)
             raise Exception(msg)
 
+        self.target_filename = target_filename
+        self.target_cponame = target_cponame
         self.output_columns = output_columns
 
         self.output_type = OutputType('sample')
@@ -145,17 +149,26 @@ class CPODecoder(BaseDecoder, decoder_name="cpo_decoder"):
 
         out_path = self._get_output_path(run_info, self.target_filename)
 
-        data = pd.read_csv(
-            out_path,
-            names=self.output_columns,
-            header=self.header)
+        # The CPO object
+        core_cpo = read(out_path, target_filename)
+
+        # TODO check and add all possibilities
+        quoi_dict = {}
+        if target_filename == "coreprof":
+            for quoi in self.output_columns:
+                if qoi == "Te":
+                    quoi_dict.update({qoi: core_cpo.te.value})
+                if qoi == "Ti"
+                    quoi_dict.update({qoi: core_cpo.ti.value[:,0]})
+
+        data = pd.DataFrame(quoi_dict)
 
         return data
 
     def get_restart_dict(self):
         return {"target_filename": self.target_filename,
                 "output_columns": self.output_columns,
-                "header": self.header}
+                "target_cponame": self.target_cponame}
 
     def element_version(self):
         return "0.1"
