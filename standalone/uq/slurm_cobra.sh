@@ -8,7 +8,7 @@
 #SBATCH --error=logs/test.err.%j
 
 ## wall time in format MINUTES:SECONDS
-#SBATCH --time=10:00:00
+#SBATCH --time=02:00:00
 
 ## number of nodes and tasks per node
 #SBATCH --nodes=1
@@ -21,4 +21,4 @@
 #SBATCH --mail-user=ljala@rzg.mpg.de
 
 # Run the program:.
-python test_uq1_ets.py > logs/test.log.${SLURM_JOBID}
+python test_initial_cond.py > logs/test.log.${SLURM_JOBID}

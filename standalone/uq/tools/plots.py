@@ -90,6 +90,18 @@ def plot_sobols(x, sobols, params, ftitle, fname):
     plt.switch_backend('agg')
     npar = len(params)
 
+    if npar==2:
+        fig, axs = plt.subplots(nrows=2, ncols=1, sharex=True, sharey=True)
+        for i in range(npar):
+            ax = axs[i]
+            s = sobols[params[i]]
+            ax.plot(x, s)
+            ax.grid()
+            ax.set_title(params[i])
+        fig.suptitle(ftitle)
+        fig.savefig(fname)
+        plt.close(fig)
+
     if npar==4:
         fig, axs = plt.subplots(nrows=2, ncols=2, sharex=True, sharey=True)
         for i in range(npar):

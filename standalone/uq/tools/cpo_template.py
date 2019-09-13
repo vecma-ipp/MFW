@@ -1,6 +1,7 @@
 import os
 import logging
 import chaospy as cp
+import pandas as pd
 from string import Template
 from easyvvuq import OutputType
 from easyvvuq.encoders.base import BaseEncoder
@@ -150,12 +151,12 @@ class CPODecoder(BaseDecoder, decoder_name="cpo_decoder"):
         out_path = self._get_output_path(run_info, self.target_filename)
 
         # The CPO object
-        core_cpo = read(out_path, target_filename)
+        core_cpo = read(out_path, self.target_cponame)
 
         # TODO check and add all possibilities
         quoi_dict = {}
-        if target_filename == "coreprof":
-            for quoi in self.output_columns:
+        if self.target_cponame == "coreprof":
+            for qoi in self.output_columns:
                 if qoi == "Te":
                     quoi_dict.update({qoi: core_cpo.te.value})
                 if qoi == "Ti":
