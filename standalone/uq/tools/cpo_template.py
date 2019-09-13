@@ -75,7 +75,7 @@ class CPOEncoder(BaseEncoder, encoder_name="cpo_encoder"):
                 self.core_cpo.ti.boundary.value[0][0] = value
 
         # Do a symbolic link to other CPO files
-        os.system("ln -s " + self.cpo_directory + "*.cpo " + target_dir)
+        os.system("ln -s " + self.cpos_directory + "*.cpo " + target_dir)
 
         # Write target input CPO file
         target_file_path = os.path.join(target_dir, self.target_filename)
@@ -158,7 +158,7 @@ class CPODecoder(BaseDecoder, decoder_name="cpo_decoder"):
             for quoi in self.output_columns:
                 if qoi == "Te":
                     quoi_dict.update({qoi: core_cpo.te.value})
-                if qoi == "Ti"
+                if qoi == "Ti":
                     quoi_dict.update({qoi: core_cpo.ti.value[:,0]})
 
         data = pd.DataFrame(quoi_dict)
