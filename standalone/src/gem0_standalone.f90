@@ -8,13 +8,13 @@ module gem0_standalone
 
 
   interface
-     subroutine gem0(equil, corep, coret, code_parameters)
+     subroutine gem(equil, corep, coret, code_parameters)
        use euitm_schemas
        type (type_equilibrium), pointer ::  equil(:)
        type (type_coreprof), pointer :: corep(:)
        type (type_coretransp), pointer :: coret(:)
        type (type_param) :: code_parameters
-     end subroutine gem0
+     end subroutine gem
   end interface
 
 contains
@@ -42,7 +42,7 @@ contains
     call fill_param(code_parameters, '../../workflows/gem0.xml', '', '../../workflows/gem0.xsd')
 
     print *,"run gem0 routine"
-    call gem0(equil, corep, coret, code_parameters)
+    call gem(equil, corep, coret, code_parameters)
 
 
 !**********   customisation on flux tube locations   **********
