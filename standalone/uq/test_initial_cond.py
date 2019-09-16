@@ -21,7 +21,7 @@ SYS = os.environ['SYS']
 tmp_dir = os.environ['SCRATCH']
 
 # CPO files
-cpo_dir = os.path.abspath("../data/TESTS/")
+cpo_dir = os.path.abspath("../data/AUG6/")
 
 # The path to the executable code to run
 bbox_exe = os.path.abspath("../bin/"+SYS+"/loop_test1 ")
@@ -72,7 +72,7 @@ params, vary = encoder.draw_app_params()
 
 # Create the encoder
 print('Create the encoder')
-output_filename = "ets_coreprof_0050.cpo"
+output_filename = "ets_coreprof_0020.cpo"
 decoder = cpo_template.CPODecoder(target_filename=output_filename,
                                   target_cponame="coreprof",
                                   output_columns=output_columns)

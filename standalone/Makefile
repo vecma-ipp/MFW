@@ -108,7 +108,7 @@ SOURCES_O = ${SHARED_O} ${OBJDIR}/sources_standalone.o
 BOHMGB_O = ${SHARED_O} ${OBJDIR}/bohmgb_standalone.o
 GEM0_O = ${SHARED_O} ${OBJDIR}/gem0_standalone.o
 
-TESTS =  ETS_TEST EQUILUPDATE_TEST CHEASE_TEST IMP4DV_TEST COMBINED_TEST SOURCES_TEST BOHMGB_TEST GEM0_TEST LOOP_TEST1 LOOP_TEST2
+TESTS =  ETS_TEST EQUILUPDATE_TEST CHEASE_TEST IMP4DV_TEST COMBINED_TEST SOURCES_TEST BOHMGB_TEST GEM0_TEST LOOP_TEST1 LOOP_TEST2 ROP_TEST
 
 ETS_EXE = ${BINDIR}/ets_test
 EQUILUPDATE_EXE = ${BINDIR}/equilupdate_test
@@ -121,10 +121,13 @@ GEM0_EXE = ${BINDIR}/gem0_test
 LOOP1_EXE = ${BINDIR}/loop_test1
 LOOP2_EXE = ${BINDIR}/loop_test2
 
+# ROLAND CODE
+ROP_EXE = ${BINDIR}/rop_test
+
 
 ### Rules ######################################################################
 
-all: ${SYS} ${TESTS} ${RUNS}
+all: ${SYS} ${TESTS}
 
 
 ${OBJDIR}/%.o: %.f90
@@ -169,6 +172,9 @@ LOOP_TEST2: ${SHARED_O} ${ETS_O} ${EQUILUPDATE_O} ${CHEASE_O} ${GEM0_O} ${IMP4DV
 	$(LD) -o ${LOOP2_EXE} $^ -L${ETS} -L${CHEASE} -L${GEM0} -L${IMP4DV} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_XML} -L${LIB_UAL} -lets -lchease_muscle -lgem0 -limp4dv -lbds -litmconstants -litmtypes -lual -lxmllib -lxml2 ${LDFLAGS} ${LIBLAPACK}
 
 
+ROP_TEST: ${OBJDIR}/uq_modules.o ${OBJDIR}/rop_test.o
+	$(MPIF90) -o  ${ROP_EXE} $^  -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_XML} -L${LIB_UAL} -lbds -lxmllib -litmconstants -litmtypes -lual ${LDFLAGS} ${LIBLAPACK}
+
 ##################################################################################
 
 ${SYS}: 
@@ -192,8 +198,6 @@ ${OBJDIR}/csv_io.o: src/tools/csv_io.f90
 ${OBJDIR}/spl.o: src/tools/spl.f90
 	${MPIF90} -o $@ -c $< $(FC90FLAGS) -traceback -check all -fp-stack-check -I${MKL_LIB} 
 
-#${OBJDIR}/uq_modules.o: src/rop/uq_modules.f90
-#	${MPIF90} -o $@ -c $< $(FC90FLAGS) -I${ETS} -I${INC_CONSTANTS} -I${INC_TYPES} -I${INC_XML} 
 
 ${OBJDIR}/ets_standalone.o: src/ets_standalone.f90
 	${MPIF90} -o $@ -c $< $(FC90FLAGS) -I${ETS} -I${INC_CONSTANTS} -I${INC_TYPES} -I${INC_XML} 
@@ -236,3 +240,10 @@ ${OBJDIR}/loop_test1.o: src/loop_test1.f90
 
 ${OBJDIR}/loop_test2.o: src/loop_test2.f90 
 	${FC90} -o $@ -c $< $(FC90FLAGS) -I${INC_TYPES} 
+
+#########
+${OBJDIR}/uq_modules.o: src/rop/uq_modules.f90
+	${MPIF90} -o $@ -c $< $(FC90FLAGS) -I${INC_CONSTANTS} -I${INC_TYPES} -I${INC_XML} 
+
+${OBJDIR}/rop_test.o: src/rop/rop_test.f90
+	${MPIF90} -o $@ -c $< $(FC90FLAGS) -I${INC_CONSTANTS} -I${INC_TYPES} -I${INC_XML} 

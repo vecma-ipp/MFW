@@ -91,14 +91,15 @@ def plot_sobols(x, sobols, params, ftitle, fname):
     npar = len(params)
 
     if npar==2:
-        fig, axs = plt.subplots(nrows=2, ncols=1, sharex=True, sharey=True)
-        for i in range(npar):
-            ax = axs[i]
-            s = sobols[params[i]]
-            ax.plot(x, s)
-            ax.grid()
-            ax.set_title(params[i])
-        fig.suptitle(ftitle)
+        fig = plt.figure(figsize=(12,9))
+        ax = fig.add_subplot(111)
+        s = sobols[params[0]]
+        ax.plot(x, s, label=params[0])
+        s = sobols[params[1]]
+        ax.plot(x, s, label=params[1])
+        ax.legend()
+        ax.grid()
+        ax.set_title(ftitle)
         fig.savefig(fname)
         plt.close(fig)
 
