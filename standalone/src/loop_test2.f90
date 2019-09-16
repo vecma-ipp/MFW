@@ -38,7 +38,7 @@ implicit none
   character(len=*), parameter :: coret_file_in   = "ets_coretransp_in.cpo"
   character(len=*), parameter :: toroidf_file_in = "ets_toroidfield_in.cpo"
 
-  integer, parameter :: STEPS = 50
+  integer, parameter :: STEPS = 20
   logical, parameter :: TIMETRACE = .FALSE.
 
   type(type_coreprof), pointer :: corep_in(:), corep_old(:) => null(), corep_ets(:) => null()
@@ -118,11 +118,11 @@ implicit none
   allocate(corep_old(1))
   allocate(corep_ets(1))
   allocate(equil_chease(1))
-  allocate(coret_gem0(1))
+  !allocate(coret_gem0(1))
   allocate(coret_imp4dv(1))
   call copy_cpo(corep_in(1),corep_ets(1))
   call copy_cpo(equil_in(1),equil_chease(1))
-  call copy_cpo(coret_in(1),coret_gem0(1))
+  call copy_cpo(coret_in(1),coret_imp4dv(1))
 
   do it=1,STEPS
 
@@ -130,10 +130,11 @@ implicit none
      print *,"**** iteration = "//itstr//" ****"
 
      ! ETS
+     print*, '>>call ETS ',it
      call copy_cpo(corep_ets(1),corep_old(1))
      call deallocate_cpo(corep_ets)
      nullify(corep_ets)
-     call ets_cpo(corep_old, equil_chease, coret_gem0, cores_in, corei_in, corep_ets)
+     call ets_cpo(corep_old, equil_chease, coret_imp4dv, cores_in, corei_in, corep_ets)
      if (TIMETRACE) then
         call open_write_file(20,'ets_coreprof_'//itstr//'.cpo')
         call write_cpo(corep_ets(1),'coreprof')
@@ -141,6 +142,7 @@ implicit none
      end if
 
      ! EQUILUPDATE
+     print*, '>>call UPDATEEQ ',it
      call deallocate_cpo(equil_update)
      nullify(equil_update)
      call equilupdate2cpo(corep_ets, toroidf_in, equil_chease, equil_update)
@@ -153,6 +155,7 @@ implicit none
      ! CHEASE
      call deallocate_cpo(equil_chease)
      nullify(equil_chease)
+     print*, '>>call CHEASE ',it
      call chease_cpo(equil_update, equil_chease)
      if (TIMETRACE) then
         call open_write_file(22, 'chease_equilibrium_'//itstr//'.cpo')
@@ -163,6 +166,7 @@ implicit none
      ! GEM0
      call deallocate_cpo(coret_gem0)
      nullify(coret_gem0)
+     print*, '>>call GEM0 ',it
      call gem0_cpo(equil_chease, corep_ets, coret_gem0)
      if (TIMETRACE) then
         call open_write_file(23, 'gem0_coretransp_'//itstr//'.cpo')
@@ -173,6 +177,7 @@ implicit none
      ! IMP4DV
      call deallocate_cpo(coret_imp4dv)
      nullify(coret_imp4dv)
+     print*, '>>call IMP4DV ',it
      call imp4dv_cpo(equil_chease, corep_ets, coret_gem0, coret_imp4dv)
      if (TIMETRACE) then
         call open_write_file(24, 'imp4dv_coretransp_'//itstr//'.cpo')
