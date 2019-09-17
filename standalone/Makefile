@@ -98,7 +98,7 @@ MPIF90FLAGS += ${INCLUDES} ${MODSPEC}${INCDIR}
 
 # Objects files ################################################################
 
-SHARED_O = ${OBJDIR}/linterp.o ${OBJDIR}/string_binding.o ${OBJDIR}/csv_io.o ${OBJDIR}/spl.o
+SHARED_O = ${OBJDIR}/linterp.o ${OBJDIR}/string_binding.o
 
 ETS_O = ${OBJDIR}/ets_standalone.o 
 EQUILUPDATE_O = ${OBJDIR}/equilupdate_standalone.o  
@@ -192,11 +192,11 @@ clean:
 ${OBJDIR}/linterp.o: src/tools/linterp.f90
 	${FC90} -o $@ -c $< $(FC90FLAGS) -I${INC_TYPES}
 
-${OBJDIR}/csv_io.o: src/tools/csv_io.f90
-	${FC90} -o $@ -c $< $(FC90FLAGS) 
+#${OBJDIR}/csv_io.o: src/tools/csv_io.f90
+#	${FC90} -o $@ -c $< $(FC90FLAGS) 
 
-${OBJDIR}/spl.o: src/tools/spl.f90
-	${MPIF90} -o $@ -c $< $(FC90FLAGS) -traceback -check all -fp-stack-check -I${MKL_LIB} 
+#${OBJDIR}/spl.o: src/tools/spl.f90
+#	${MPIF90} -o $@ -c $< $(FC90FLAGS) -traceback -check all -fp-stack-check -I${MKL_LIB} 
 
 
 ${OBJDIR}/ets_standalone.o: src/ets_standalone.f90

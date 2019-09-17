@@ -39,7 +39,7 @@ implicit none
   character(len=*), parameter :: toroidf_file_in = "ets_toroidfield_in.cpo"
 
   integer, parameter :: STEPS = 20
-  logical, parameter :: TIMETRACE = .FALSE.
+  logical, parameter :: TIMETRACE = .TRUE.
 
   type(type_coreprof), pointer :: corep_in(:), corep_old(:) => null(), corep_ets(:) => null()
   type(type_coretransp), pointer :: coret_in(:), coret_gem0(:) => null(), coret_imp4dv(:) => null()
