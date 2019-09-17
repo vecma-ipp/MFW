@@ -185,7 +185,7 @@ get-gem0:
 		svn co $(SVNURL_GFORGE)/modtransp/trunk/gem0 externals/gem0; \
 	else  \
 		echo "Updating gem0..."; \
-		svn up externals/gem0; \
+		svn up externals/gem0 -r 119; \
 	fi
 
 clean-gem0:
