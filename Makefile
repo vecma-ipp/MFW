@@ -182,7 +182,7 @@ gem0: ual libbds get-gem0
 get-gem0:
 	@if [ ! -d "externals/gem0" ]; then \
 	  echo "Checking out gem0..."; \
-		svn co $(SVNURL_GFORGE)/modtransp/trunk/gem0 externals/gem0; \
+		svn co $(SVNURL_GFORGE)/modtransp/trunk/gem0 externals/gem0 -r 119; \
 	else  \
 		echo "Updating gem0..."; \
 		svn up externals/gem0 -r 119; \
