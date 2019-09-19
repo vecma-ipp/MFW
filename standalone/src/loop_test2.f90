@@ -188,7 +188,7 @@ implicit none
   end do
 
   if (.not.TIMETRACE) then
-     call open_write_file(20, 'ets_coreprof_'//itstr//'.cpo')
+     call open_write_file(20, 'ets_coreprof_out.cpo')
      call write_cpo(corep_ets(1),'coreprof')
      call close_write_file
   end if
