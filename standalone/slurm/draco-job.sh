@@ -1,11 +1,11 @@
 #!/bin/bash -l
 # Standard output and error:
-#SBATCH -o logs/test.out.%j
-#SBATCH -e logs/test.err.%j
+#SBATCH -o ouputs/logs/test.out.%j
+#SBATCH -e ouputs/logs/test.err.%j
 # Initial working directory:
 #SBATCH -D ./
 # Job Name:
-#SBATCH -J fus_test
+#SBATCH -J uq_test
 # Queue (Partition):
 #SBATCH --partition=general
 # Number of nodes and MPI tasks per node:
@@ -19,4 +19,4 @@
 #SBATCH --time=6:00:00
 
 # Run the program in uq folder
-python boundary_conditions.py > logs/test.log.${SLURM_JOBID}
+python boundary_conditions.py > ouputs/logs/test.log.${SLURM_JOBID}
