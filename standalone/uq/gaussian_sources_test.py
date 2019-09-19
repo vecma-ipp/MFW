@@ -68,13 +68,16 @@ output_columns = ["Te", "Ti"]
 
 # Initialize Campaign object
 print('>>> Initialize Campaign object')
-my_campaign = uq.Campaign(name = 'gs_uq', work_dir=tmp_dir)
+my_campaign = uq.Campaign(name = 'uq_test', work_dir=tmp_dir)
 
 # Copy XML files needed in the ETS wrappers
 campaign_dir = my_campaign.campaign_dir
 os.system("mkdir " + campaign_dir +"/workflows")
-os.system("cp ../../workflows/*.xml "+ campaign_dir +"/workflows")
-os.system("cp ../../workflows/*.xsd "+ campaign_dir +"/workflows")
+os.system("cp ../../workflows/ets.x* "+ campaign_dir +"/workflows")
+os.system("cp ../../workflows/chease.x* "+ campaign_dir +"/workflows")
+os.system("cp ../../workflows/bohmgb.x* "+ campaign_dir +"/workflows")
+os.system("cp ../../workflows/gem0.x* "+ campaign_dir +"/workflows")
+os.system("cp ../../workflows/sources_dummy.xsd "+ campaign_dir +"/workflows")
 
 # Copy input CPO files in common directory
 common_dir = campaign_dir +"/common/"
@@ -83,7 +86,7 @@ os.system("cp " + cpo_dir + "/*.cpo " + common_dir)
 
 # Create the encoder and get the app parameters
 print('>>> Create the encoder')
-input_filename = "ets_coreprof_in.cpo"
+input_filename = "source_dummy.xml"
 encoder = cpo_template.CPOEncoder(template_filename=input_filename,
                                   template_cponame="coreprof",
                                   cpos_directory=common_dir,
@@ -94,15 +97,15 @@ encoder = cpo_template.CPOEncoder(template_filename=input_filename,
 params, vary = encoder.draw_app_params()
 
 # Create the encoder
-print('Create the encoder')
-input_filename = "source_dummy.xml"
+print('Create the decoder')
+output_filename = "ets_coreprof_out.cpo"
 decoder = cpo_template.CPODecoder(target_filename=output_filename,
                                   target_cponame="coreprof",
                                   output_columns=output_columns)
 
 # Add the ETS app (automatically set as current app)
 print('>>> Add app to campagn object')
-my_campaign.add_app(name="uq_ets",
+my_campaign.add_app(name="uq_test",
                     params=params,
                     encoder=encoder,
                     decoder=decoder
@@ -155,7 +158,7 @@ stot_ti = results['sobols_total']['Ti']
 
 print('>>> Ellapsed time: ', time.time() - time0)
 
-#  Graphics for descriptive satatistics
+#  Graphics for Sescriptive satatistics
 print('>>> Statictics and SA plots')
 corep = read(os.path.join(cpo_dir,  "ets_coreprof_in.cpo"), "coreprof")
 rho = corep.rho_tor
@@ -163,20 +166,19 @@ uncertain_params = ["Te_boundary", "Ti_boundary"]
 plots.plot_stats_pctl(rho, stats_te, pctl_te,
                  xlabel=r'$\rho_{tor} ~ [m]$', ylabel=r'$Te$',
                  ftitle='Te profile',
-                 fname='figs/te_ets_stats1')
+                 fname='outputs/figs/te_ets_stats1')
 
 plots.plot_sobols(rho, stot_te, uncertain_params,
                   ftitle=' Total-Order Sobol indices - QoI: Te',
-                  fname='figs/te_ets_stot1')
+                  fname='outputs/figs/te_ets_stot1')
 
 plots.plot_stats_pctl(rho, stats_ti, pctl_ti,
                  xlabel=r'$\rho_{tor} ~ [m]$', ylabel=r'$T_i [eV]$',
                  ftitle='Te profile',
-                 fname='figs/ti_ets_stats1')
-
+                 fname='outputs/figs/ti_ets_stats1')
 
 plots.plot_sobols(rho, stot_ti, uncertain_params,
                   ftitle=' Total-Order Sobol indices - QoI: Ti',
-                  fname='figs/ti_ets_stot1')
+                  fname='outputs/figs/ti_ets_stot1')
 
 print('>>> End of boundary_conditions_test.')
