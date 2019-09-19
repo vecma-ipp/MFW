@@ -18,5 +18,5 @@
 # Wall clock limit:
 #SBATCH --time=6:00:00
 
-# Run the program:
-srun python test_uq1_ets.py  > logs/test.log.${SLURM_JOBID}
+# Run the program in uq folder
+python boundary_conditions.py > logs/test.log.${SLURM_JOBID}

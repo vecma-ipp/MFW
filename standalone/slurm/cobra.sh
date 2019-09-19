@@ -20,5 +20,5 @@
 ## grant
 #SBATCH --mail-user=ljala@rzg.mpg.de
 
-# Run the program:.
-python test_initial_cond.py > logs/test.log.${SLURM_JOBID}
+# Run the program in uq folder
+python boundary_conditions.py > logs/test.log.${SLURM_JOBID}
