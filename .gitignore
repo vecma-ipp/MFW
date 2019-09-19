@@ -34,17 +34,9 @@ standalone/uq/*.log
 standalone/uq/tools/*.so
 standalone/uq/tools/*.pyc
 standalone/uq/tools/*cache*
-standalone/uq/figs/*.png
-standalone/uq/logs/test*
-standalone/uq/pj/*.so
-standalone/uq/pj/*.pyc
-standalone/uq/pj/*cache*
-standalone/uq/pj/logs/test*
-standalone/uq/pj/.execute_*
-standalone/uq/pj/.encode_*
-standalone/uq/pj/jobs.report
-standalone/uq/pj/service.log
-standalone/uq/slurm*
+standalone/uq/outputs/figs/*.png
+standalone/uq/outputs/logs/test*
+standalone/uq/*-job.sh
 
 
 
