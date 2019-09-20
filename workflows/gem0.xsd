@@ -16,6 +16,7 @@
       <xs:all>
         <xs:element ref="write_diags" minOccurs="0" maxOccurs="1"/>
         <xs:element ref="write_cpos" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="hmode" minOccurs="0" maxOccurs="1"/>
         <xs:element ref="q_choice" minOccurs="0" maxOccurs="1"/>
       </xs:all>
     </xs:complexType>
@@ -23,6 +24,7 @@
 
 <xs:element name="write_diags" type="xs:boolean"/>
 <xs:element name="write_cpos" type="xs:boolean"/>
+<xs:element name="hmode" type="xs:boolean"/>
 
 <xs:element name="q_choice">
   <xs:simpleType>
