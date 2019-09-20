@@ -13,7 +13,7 @@
 !     ets_coreprof_out 
 
 
-program loop_test1
+program loop_bgb
 
   use euitm_schemas,   only: type_coreprof,    & 
                           &  type_equilibrium, &
@@ -215,4 +215,4 @@ implicit none
   call deallocate_cpo(corei_in)
   call deallocate_cpo(toroidf_in)
 
-end program loop_test1
+end program loop_bgb

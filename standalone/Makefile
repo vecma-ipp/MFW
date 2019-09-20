@@ -109,7 +109,7 @@ BOHMGB_O = ${SHARED_O} ${OBJDIR}/bohmgb_standalone.o
 GEM0_O = ${SHARED_O} ${OBJDIR}/gem0_standalone.o
 
 TESTS =  ETS_TEST EQUILUPDATE_TEST CHEASE_TEST IMP4DV_TEST COMBINED_TEST SOURCES_TEST BOHMGB_TEST GEM0_TEST ROP_TEST
-LOOP_TEST = LOOP_TEST1 LOOP_TEST2
+LOOP_TEST = LOOP_BGB LOOP_GEM0
 
 ETS_EXE = ${BINDIR}/ets_test
 EQUILUPDATE_EXE = ${BINDIR}/equilupdate_test
@@ -119,8 +119,8 @@ COMBINED_EXE = ${BINDIR}/combined_test
 SOURCES_EXE = ${BINDIR}/sources_test
 BOHMGB_EXE = ${BINDIR}/bohmgb_test
 GEM0_EXE = ${BINDIR}/gem0_test
-LOOP1_EXE = ${BINDIR}/loop_test1
-LOOP2_EXE = ${BINDIR}/loop_test2
+LOOP_BGB_EXE = ${BINDIR}/loop_bgb
+LOOP_GEM0_EXE = ${BINDIR}/loop_gem0
 
 # ROLAND CODE
 ROP_EXE = ${BINDIR}/rop_test
@@ -166,11 +166,11 @@ BOHMGB_TEST:  ${SHARED_O} ${BOHMGB_O} ${OBJDIR}/bohmgb_test.o
 GEM0_TEST:  ${SHARED_O} ${GEM0_O} ${OBJDIR}/gem0_test.o
 	$(LD) -o ${GEM0_EXE} $^ -L${GEM0} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_XML} -L${LIB_UAL} -lgem0 -lbds -litmconstants -litmtypes -lxmllib -lual ${LDFLAGS} ${LIBLAPACK}
 
-LOOP_TEST1: ${SHARED_O} ${ETS_O} ${EQUILUPDATE_O} ${CHEASE_O} ${BOHMGB_O} ${SOURCES_O} ${OBJDIR}/loop_test1.o
-	$(LD) -o ${LOOP1_EXE} $^ -L${ETS} -L${CHEASE} -L${BOHMGB} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_XML} -L${LIB_UAL} -lets -lchease_muscle -lbohmgb -lbds -litmconstants -litmtypes -lual -lxmllib -lxml2 ${LDFLAGS} ${LIBLAPACK}
+LOOP_BGB: ${SHARED_O} ${ETS_O} ${EQUILUPDATE_O} ${CHEASE_O} ${BOHMGB_O} ${SOURCES_O} ${OBJDIR}/loop_bgb.o
+	$(LD) -o ${LOOP_BGB_EXE} $^ -L${ETS} -L${CHEASE} -L${BOHMGB} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_XML} -L${LIB_UAL} -lets -lchease_muscle -lbohmgb -lbds -litmconstants -litmtypes -lual -lxmllib -lxml2 ${LDFLAGS} ${LIBLAPACK}
 
-LOOP_TEST2: ${SHARED_O} ${ETS_O} ${EQUILUPDATE_O} ${CHEASE_O} ${GEM0_O} ${IMP4DV_O} ${SOURCES_O} ${OBJDIR}/loop_test2.o
-	$(LD) -o ${LOOP2_EXE} $^ -L${ETS} -L${CHEASE} -L${GEM0} -L${IMP4DV} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_XML} -L${LIB_UAL} -lets -lchease_muscle -lgem0 -limp4dv -lbds -litmconstants -litmtypes -lual -lxmllib -lxml2 ${LDFLAGS} ${LIBLAPACK}
+LOOP_GEM0: ${SHARED_O} ${ETS_O} ${EQUILUPDATE_O} ${CHEASE_O} ${GEM0_O} ${IMP4DV_O} ${SOURCES_O} ${OBJDIR}/loop_gem0.o
+	$(LD) -o ${LOOP_GEM0_EXE} $^ -L${ETS} -L${CHEASE} -L${GEM0} -L${IMP4DV} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_XML} -L${LIB_UAL} -lets -lchease_muscle -lgem0 -limp4dv -lbds -litmconstants -litmtypes -lual -lxmllib -lxml2 ${LDFLAGS} ${LIBLAPACK}
 
 
 ROP_TEST: ${OBJDIR}/uq_modules.o ${OBJDIR}/rop_test.o
@@ -236,10 +236,10 @@ ${OBJDIR}/bohmgb_standalone.o: src/bohmgb_standalone.f90
 ${OBJDIR}/gem0_standalone.o: src/gem0_standalone.f90
 	${FC90} -o $@ -c $< $(FC90FLAGS) -I${INC_BDS} -I${INC_XML} 
 
-${OBJDIR}/loop_test1.o: src/loop_test1.f90 
+${OBJDIR}/loop_bgb.o: src/loop_bgb.f90 
 	${FC90} -o $@ -c $< $(FC90FLAGS) -I${INC_TYPES} 
 
-${OBJDIR}/loop_test2.o: src/loop_test2.f90 
+${OBJDIR}/loop_gem0.o: src/loop_gem0.f90 
 	${FC90} -o $@ -c $< $(FC90FLAGS) -I${INC_TYPES} 
 
 #########

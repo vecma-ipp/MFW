@@ -23,7 +23,7 @@ tmp_dir = os.environ['SCRATCH']
 cpo_dir = os.path.abspath("../data/AUG_28906_6/")
 
 # The path to the executable code to run
-bbox_exe = os.path.abspath("../bin/"+SYS+"/loop_test2 ")
+bbox_exe = os.path.abspath("../bin/"+SYS+"/loop_bgb ")
 
 # Define a specific parameter space
 uncertain_params = {

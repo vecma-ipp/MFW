@@ -13,7 +13,7 @@
 !     ets_coreprof_out 
 
 
-program loop_test2
+program loop_gem0
 
   use euitm_schemas,   only: type_coreprof,    & 
                           &  type_equilibrium, &
@@ -157,7 +157,6 @@ implicit none
      print *,"**** iteration = "//itstr//" ****"
 
      ! ETS
-     print*, '>>call ETS ',it
      call copy_cpo(corep_ets(1),corep_old(1))
      call deallocate_cpo(corep_ets)
      nullify(corep_ets)
@@ -169,7 +168,6 @@ implicit none
      end if
 
      ! EQUILUPDATE
-     print*, '>>call UPDATEEQ ',it
      call deallocate_cpo(equil_update)
      nullify(equil_update)
      call equilupdate2cpo(corep_ets, toroidf_in, equil_chease, equil_update)
@@ -182,7 +180,6 @@ implicit none
      ! CHEASE
      call deallocate_cpo(equil_chease)
      nullify(equil_chease)
-     print*, '>>call CHEASE ',it
      call chease_cpo(equil_update, equil_chease)
      if (TIMETRACE) then
         call open_write_file(22, 'chease_equilibrium_'//itstr//'.cpo')
@@ -193,7 +190,6 @@ implicit none
      ! GEM0
      call deallocate_cpo(coret_gem0)
      nullify(coret_gem0)
-     print*, '>>call GEM0 ',it
      call gem0_cpo(equil_chease, corep_ets, coret_gem0)
      if (TIMETRACE) then
         call open_write_file(23, 'gem0_coretransp_'//itstr//'.cpo')
@@ -204,7 +200,6 @@ implicit none
      ! IMP4DV
      call deallocate_cpo(coret_imp4dv)
      nullify(coret_imp4dv)
-     print*, '>>call IMP4DV ',it
      call imp4dv_cpo(equil_chease, corep_ets, coret_gem0, coret_imp4dv)
      if (TIMETRACE) then
         call open_write_file(24, 'imp4dv_coretransp_'//itstr//'.cpo')
@@ -233,4 +228,4 @@ implicit none
   call deallocate_cpo(corei_in)
   call deallocate_cpo(toroidf_in)
 
-end program loop_test2
+end program loop_gem0
