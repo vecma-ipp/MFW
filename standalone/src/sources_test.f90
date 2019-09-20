@@ -3,6 +3,10 @@ program sources_test
 
   use sources_standalone, only: gaussian_source_cpo
 
+  use euitm_schemas, only: type_coreprof,    & 
+                        &  type_equilibrium, &
+                        &  type_coresource
+
   use read_structures, only: open_read_file,  &
                           &  close_read_file, &
                           &  read_cpo
