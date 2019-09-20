@@ -6,9 +6,9 @@
 
   <currents>
 
-     <JNITOT>            1.E5      </JNITOT>      <!-- Total noninductive current [A] -->
-     <RCURR>             0.5       </RCURR>       <!-- Position of the current profile maximum [m] -->
-     <FWCURR>            0.2       </FWCURR>      <!-- Full width at the halth maximum of current profile [m] -->
+     <JNITOT>            0.0E6     </JNITOT>      <!-- Total noninductive current [A] -->
+     <RCURR>             0.0       </RCURR>       <!-- Position of the current profile maximum [m] -->
+     <FWCURR>            2.0       </FWCURR>      <!-- Full width at the halth maximum of current profile [m] -->
 
   </currents>
 
@@ -16,14 +16,14 @@
    <electrons>
 
      <heating_el>
-        <WTOT_el>        1.E6      </WTOT_el>     <!-- Total heating power [W] -->
-        <RHEAT_el>       0.5       </RHEAT_el>    <!-- Position of the heating profile maximum [m] -->
+        <WTOT_el>        1.5E6     </WTOT_el>     <!-- Total heating power [W] -->
+        <RHEAT_el>       0.0       </RHEAT_el>    <!-- Position of the heating profile maximum [m] -->
         <FWHEAT_el>      0.2       </FWHEAT_el>   <!-- Full width at the halth maximum of heating profile [m] -->
      </heating_el>
 
  
       <particles_el>
-         <STOT_el>       1.E21     </STOT_el>     <!-- Injection rate [s^-1] -->
+         <STOT_el>       2.E22     </STOT_el>     <!-- Injection rate [s^-1] -->
          <RPART_el>      0.0       </RPART_el>    <!-- Position of the source profile maximum [m] -->
          <FWPART_el>     1.0       </FWPART_el>   <!-- Full width at the halth maximum of source profile [m] -->
       </particles_el>
@@ -40,9 +40,9 @@
 
  
       <heating>
-         <WTOT>          1.E6      </WTOT>        <!-- Total heating power [W] -->
+         <WTOT>          1.5E6     </WTOT>        <!-- Total heating power [W] -->
          <RHEAT>         0.0       </RHEAT>       <!-- Position of the heating profile maximum [m] -->
-         <FWHEAT>        0.5       </FWHEAT>      <!-- Full width at the halth maximum of heating profile [m] -->
+         <FWHEAT>        0.2       </FWHEAT>      <!-- Full width at the halth maximum of heating profile [m] -->
       </heating>
 
  

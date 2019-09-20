@@ -108,7 +108,8 @@ SOURCES_O = ${SHARED_O} ${OBJDIR}/sources_standalone.o
 BOHMGB_O = ${SHARED_O} ${OBJDIR}/bohmgb_standalone.o
 GEM0_O = ${SHARED_O} ${OBJDIR}/gem0_standalone.o
 
-TESTS =  ETS_TEST EQUILUPDATE_TEST CHEASE_TEST IMP4DV_TEST COMBINED_TEST SOURCES_TEST BOHMGB_TEST GEM0_TEST LOOP_TEST1 LOOP_TEST2 ROP_TEST
+TESTS =  ETS_TEST EQUILUPDATE_TEST CHEASE_TEST IMP4DV_TEST COMBINED_TEST SOURCES_TEST BOHMGB_TEST GEM0_TEST ROP_TEST
+LOOP_TEST = LOOP_TEST1 LOOP_TEST2
 
 ETS_EXE = ${BINDIR}/ets_test
 EQUILUPDATE_EXE = ${BINDIR}/equilupdate_test
@@ -127,7 +128,7 @@ ROP_EXE = ${BINDIR}/rop_test
 
 ### Rules ######################################################################
 
-all: ${SYS} ${TESTS}
+all: ${SYS} ${TESTS} ${LOOP_TEST}
 
 
 ${OBJDIR}/%.o: %.f90
@@ -165,10 +166,10 @@ BOHMGB_TEST:  ${SHARED_O} ${BOHMGB_O} ${OBJDIR}/bohmgb_test.o
 GEM0_TEST:  ${SHARED_O} ${GEM0_O} ${OBJDIR}/gem0_test.o
 	$(LD) -o ${GEM0_EXE} $^ -L${GEM0} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_XML} -L${LIB_UAL} -lgem0 -lbds -litmconstants -litmtypes -lxmllib -lual ${LDFLAGS} ${LIBLAPACK}
 
-LOOP_TEST1: ${SHARED_O} ${ETS_O} ${EQUILUPDATE_O} ${CHEASE_O} ${BOHMGB_O} ${OBJDIR}/loop_test1.o
+LOOP_TEST1: ${SHARED_O} ${ETS_O} ${EQUILUPDATE_O} ${CHEASE_O} ${BOHMGB_O} ${SOURCES_O} ${OBJDIR}/loop_test1.o
 	$(LD) -o ${LOOP1_EXE} $^ -L${ETS} -L${CHEASE} -L${BOHMGB} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_XML} -L${LIB_UAL} -lets -lchease_muscle -lbohmgb -lbds -litmconstants -litmtypes -lual -lxmllib -lxml2 ${LDFLAGS} ${LIBLAPACK}
 
-LOOP_TEST2: ${SHARED_O} ${ETS_O} ${EQUILUPDATE_O} ${CHEASE_O} ${GEM0_O} ${IMP4DV_O} ${OBJDIR}/loop_test2.o
+LOOP_TEST2: ${SHARED_O} ${ETS_O} ${EQUILUPDATE_O} ${CHEASE_O} ${GEM0_O} ${IMP4DV_O} ${SOURCES_O} ${OBJDIR}/loop_test2.o
 	$(LD) -o ${LOOP2_EXE} $^ -L${ETS} -L${CHEASE} -L${GEM0} -L${IMP4DV} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_XML} -L${LIB_UAL} -lets -lchease_muscle -lgem0 -limp4dv -lbds -litmconstants -litmtypes -lual -lxmllib -lxml2 ${LDFLAGS} ${LIBLAPACK}
 
 
