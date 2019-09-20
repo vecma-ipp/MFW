@@ -1,25 +1,32 @@
+! -*- coding: UTF-8 -*-
 program sources_test
-  use sources_standalone
-  use read_structures
-  use write_structures
-  use deallocate_structures
-  implicit none
 
-  character(255) :: corep_file_in, equil_file_in, cores_file_in
+  use sources_standalone, only: gaussian_source_cpo
 
-  type(type_coreprof), pointer :: corep(:)
-  type(type_equilibrium), pointer :: equil(:)
-  type(type_coresource), pointer :: cores(:)
-  real(8) :: params(6)
+  use read_structures, only: open_read_file,  &
+                          &  close_read_file, &
+                          &  read_cpo
+  use write_structures, only: open_write_file,  &
+                           &  close_write_file, &
+                          &  write_cpo
+  use deallocate_structures, only: deallocate_cpo
+
+implicit none
+
+  ! CPO files and structures
+  character(len=*), parameter :: corep_file_in   = "ets_coreprof_in.cpo"
+  character(len=*), parameter :: equil_file_in   = "ets_equilibrium_in.cpo"
+  character(len=*), parameter :: cores_file_out   = "ets_coresource_out.cpo"
+
+  type(type_coreprof)   , pointer :: corep(:) => NULL()
+  type(type_equilibrium), pointer :: equil(:) => NULL()
+  type(type_coresource) , pointer :: cores(:) => NULL()
 
   integer :: ios
 
   allocate(corep(1))
   allocate(equil(1))
   
-  corep_file_in = '../data/TESTS/ets_coreprof_in.cpo'
-  equil_file_in = '../data/TESTS/ets_equilibrium_in.cpo'
-
   open (unit = 10, file = corep_file_in, &
        status = 'old', form = 'formatted', &
        action = 'read', iostat = ios)
@@ -45,19 +52,10 @@ program sources_test
      STOP
   end if
 
-  !  source_dummy.xml: heating_el
-  params(1) = 1.E6     ! WTOT_el   : Amplitude 
-  params(2) = 0.5      ! RHEAT_el  : Mean
-  params(3) = 0.2      ! FWHEAT_el : STD
-  params(4) = 1.E6     ! WTOT_el   : Amplitude 
-  params(5) = 0.5      ! RHEAT_el  : Mean
-  params(6) = 0.2      ! FWHEAT_el : STD
-
-  
-  call gaussian_source_cpo(corep, equil, params, cores)
+  call gaussian_source_cpo(corep, equil, cores)
 
   ! transfer CPO to buf
-  call open_write_file(12,'gaussian_coresource_02.cpo')
+  call open_write_file(12, cores_file_out)
   call write_cpo(cores(1),'coresource')
   call close_write_file
 

@@ -1,9 +1,9 @@
 ! -*- coding: UTF-8 -*-
 !> Box for:  ETS + Update EQ + CHEASE + GEM0 + IMP4DV.
-!
+!> In this test gaussian_source_cpo generate coresource.
+
 !> Inputs:  ets_coreprof_in.cpo
 !           ets_equilibrium_in.cpo
-!           ets_coresource_in.cpo:W
 !           ets_coreimpur_in.cpo
 !           ets_coretransp_in.cpo
 !           ets_toroidfield_in.cpo
@@ -35,6 +35,7 @@ program loop_test2
   use chease_standalone,      only: chease_cpo
   use gem0_standalone,        only: gem0_cpo
   use imp4dv_standalone,      only: imp4dv_cpo
+  use sources_standalone,     only: gaussian_source_cpo
 
 implicit none
 
@@ -49,10 +50,10 @@ implicit none
   integer, parameter :: STEPS = 20
   logical, parameter :: TIMETRACE = .TRUE.
 
-  type(type_coreprof), pointer :: corep_in(:), corep_old(:) => null(), corep_ets(:) => null()
-  type(type_coretransp), pointer :: coret_in(:), coret_gem0(:) => null(), coret_imp4dv(:) => null()
-  type(type_coresource), pointer :: cores_in(:)
-  type(type_coreimpur), pointer :: corei_in(:)
+  type(type_coreprof),    pointer :: corep_in(:), corep_old(:) => null(), corep_ets(:) => null()
+  type(type_coretransp),  pointer :: coret_in(:), coret_gem0(:) => null(), coret_imp4dv(:) => null()
+  type(type_coresource),  pointer :: cores_in(:) => null()
+  type(type_coreimpur),   pointer :: corei_in(:)
   type(type_equilibrium), pointer :: equil_in(:), equil_update(:) => null(), equil_chease(:) => null()
   type(type_toroidfield), pointer :: toroidf_in(:)
   integer :: ios, it
@@ -84,15 +85,7 @@ implicit none
      call read_cpo(coret_in(1), 'coretransp' )
      call close_read_file
   end if
-  open (unit = 12, file = cores_file_in, &
-       status = 'old', form = 'formatted', &
-       action = 'read', iostat = ios)
-  if (ios == 0) then
-     close (12)
-     call open_read_file(12, cores_file_in)
-     call read_cpo(cores_in(1), 'coresource' )
-     call close_read_file
-  end if
+
   open (unit = 13, file = corei_file_in, &
        status = 'old', form = 'formatted', &
        action = 'read', iostat = ios)
@@ -121,12 +114,13 @@ implicit none
      call close_read_file
   end if
 
-
+  ! Run gausian_sources to generate cores_in
+  call gaussian_source_cpo(corep_in, equil_in, cores_in)
+  
   ! Loop
   allocate(corep_old(1))
   allocate(corep_ets(1))
   allocate(equil_chease(1))
-  !allocate(coret_gem0(1))
   allocate(coret_imp4dv(1))
   call copy_cpo(corep_in(1),corep_ets(1))
   call copy_cpo(equil_in(1),equil_chease(1))

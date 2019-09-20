@@ -1,5 +1,15 @@
 ! -*- coding: UTF-8 -*-
 !> Box for:  ETS + Update EQ + CHEASE + BOHMGB.
+!
+!> Inputs:  ets_coreprof_in.cpo
+!           ets_equilibrium_in.cpo
+!           ets_coresource_in.cpo:W
+!           ets_coreimpur_in.cpo
+!           ets_coretransp_in.cpo
+!           ets_toroidfield_in.cpo
+!
+!> Output: ets_coreprof_out 
+
 
 program loop_test1
 
