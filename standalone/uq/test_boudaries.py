@@ -1,12 +1,15 @@
-import os, sys
-import time
+# -*- coding: UTF-8 -*-
+import os, sys, time
 import chaospy as cp
 import easyvvuq as uq
 import matplotlib.pylab as plt
 from ascii_cpo import read
-from tools import plots, cpo_template
+from utils import plots
+from templates.cpo_encoder import CPOEncoder
+from templates.cpo_decoder import CPODecoder
 
-# Boundary conditions test:
+
+# Boundary Conditions test:
 # UQ for a given model(s) using Non intrisive method.
 # Uncertainties in Te and Ti boudaries (Edge)
 
@@ -46,13 +49,16 @@ output_columns = ["Te", "Ti"]
 print('>>> Initialize Campaign object')
 my_campaign = uq.Campaign(name = 'uq_test', work_dir=tmp_dir)
 
-# Copy XML files needed in the wrappers
+# Create new directory for commons inputs (to be ended with /)
 campaign_dir = my_campaign.campaign_dir
-os.system("mkdir " + campaign_dir +"/workflows")
-os.system("cp ../../workflows/ets.x* "+ campaign_dir +"/workflows")
-os.system("cp ../../workflows/chease.x* "+ campaign_dir +"/workflows")
-os.system("cp ../../workflows/bohmgb.x* "+ campaign_dir +"/workflows")
-os.system("cp ../../workflows/gem0.x* "+ campaign_dir +"/workflows")
+common_dir = campaign_dir +"/common/"
+os.system("mkdir " + common_dir)
+
+# Copy XML files needed in the wrappers
+os.system("cp " + xml_dir + "/ets.x* "    + common_dir)
+os.system("cp " + xml_dir + "/chease.x* " + common_dir)
+os.system("cp " + xml_dir + "/bohmgb.x* " + common_dir)
+os.system("cp " + xml_dir + "/gem0.x* "   + common_dir)
 
 # Copy input CPO files in common directory
 common_dir = campaign_dir +"/common/"
@@ -62,21 +68,20 @@ os.system("cp " + cpo_dir + "/*.cpo " + common_dir)
 # Create the encoder and get the app parameters
 print('>>> Create the encoder')
 input_filename = "ets_coreprof_in.cpo"
-encoder = cpo_template.CPOEncoder(template_filename=input_filename,
-                                  template_cponame="coreprof",
-                                  cpos_directory=common_dir,
-                                  target_filename=input_filename,
-                                  uncertain_params=uncertain_params
-                                 )
+encoder = CPOEncoder(template_filename=input_filename,
+                     target_filename="ets_coreprof_in.cpo",
+                     cpo_name="coreprof",
+                     common_dir=common_dir,
+                     uncertain_params=uncertain_params)
 
 params, vary = encoder.draw_app_params()
 
 # Create the encoder
-print('Create the decoder')
+print('>>> Create the decoder')
 output_filename = "ets_coreprof_out.cpo"
-decoder = cpo_template.CPODecoder(target_filename=output_filename,
-                                  target_cponame="coreprof",
-                                  output_columns=output_columns)
+decoder = CPODecoder(target_filename=output_filename,
+                     cpo_name="coreprof",
+                     output_columns=output_columns)
 
 # Add the ETS app (automatically set as current app)
 print('>>> Add app to campagn object')
@@ -96,8 +101,7 @@ print('>>> Create the sampler')
 my_sampler = uq.sampling.PCESampler(vary=vary,
                                     polynomial_order=4,
                                     quadrature_rule='G',
-                                    sparse=False
-                                    )
+                                    sparse=False)
 my_campaign.set_sampler(my_sampler)
 
 # Will draw all (of the finite set of samples)

@@ -1,14 +1,17 @@
-import os, sys
-import time
+# -*- coding: UTF-8 -*-
+import os, sys, time
 import chaospy as cp
 import easyvvuq as uq
 import matplotlib.pylab as plt
 from ascii_cpo import read
-from tools import plots, cpo_template
+from utils import plots
+from templates.xml_encoder import XMLEncoder
+from templates.cpo_decoder import CPODecoder
 
-# Boundary conditions test:
+
+# Gaussian Sources test:
 # UQ for a given model(s) using Non intrisive method.
-# Uncertainties in Sources
+# Uncertainties in Sources of Electons and Ions.
 
 # For Ellapsed time
 time0 = time.time()
@@ -22,44 +25,49 @@ tmp_dir = os.environ['SCRATCH']
 # CPO files
 cpo_dir = os.path.abspath("../data/AUG_28906_6/")
 
-# The path to the executable code to run
-bbox_exe = os.path.abspath("../bin/"+SYS+"/loop_test1 ")
+# XML and XSD files
+xml_dir = os.path.abspath("../../workflows")
+
+# execuatbles
+obj_dir = os.path.abspath("../bin/"+SYS)
+
+# the executable code to run
+exec_code = "loop_gem0"
+bbox = os.path.join(obj_dir, exec_code)
 
 # Define a specific parameter space
 uncertain_params = {
-    "electrons_heating": {
-        "amplitude":{
-            "type": "float",
-            "distribution": "Uniform",
-            "margin_error": 0.2,
-        }
-        "position":{
-            "type": "float",
-            "distribution": "Uniform",
-            "margin_error": 0.25,
-        }
-        "width":{
-            "type": "float",
-            "distribution": "Uniform",
-            "margin_error": 0.2,
-        }
+    # Electons heating Gaussian
+    "amplitude_el":{
+        "type": "float",
+        "distribution": "Uniform",
+        "margin_error": 0.2,
     },
-    "ions_heating": {
-        "amplitude":{
-            "type": "float",
-            "distribution": "Uniform",
-            "margin_error": 0.25,
-        }
-        "position":{
-            "type": "float",
-            "distribution": "Uniform",
-            "margin_error": 0.25,
-        }
-        "width":{
-            "type": "float",
-            "distribution": "Uniform",
-            "margin_error": 0.2,
-        }
+    "position_el":{
+        "type": "float",
+        "distribution": "Uniform",
+        "margin_error": 0.25,
+    },
+    "width_el":{
+        "type": "float",
+        "distribution": "Uniform",
+        "margin_error": 0.2,
+    },
+    # Ions heatings Gaussian
+    "amplitude_ion":{
+        "type": "float",
+        "distribution": "Uniform",
+        "margin_error": 0.25
+    },
+    "position_ion":{
+        "type": "float",
+        "distribution": "Uniform",
+        "margin_error": 0.25
+    },
+    "width_ion":{
+        "type": "float",
+        "distribution": "Uniform",
+        "margin_error": 0.2
     }
 }
 
@@ -68,48 +76,49 @@ output_columns = ["Te", "Ti"]
 
 # Initialize Campaign object
 print('>>> Initialize Campaign object')
-my_campaign = uq.Campaign(name = 'uq_test', work_dir=tmp_dir)
+my_campaign = uq.Campaign(name='uq_src', work_dir=tmp_dir)
 
-# Copy XML files needed in the ETS wrappers
+# Create new directory for commons inputs
 campaign_dir = my_campaign.campaign_dir
-os.system("mkdir " + campaign_dir +"/workflows")
-os.system("cp ../../workflows/ets.x* "+ campaign_dir +"/workflows")
-os.system("cp ../../workflows/chease.x* "+ campaign_dir +"/workflows")
-os.system("cp ../../workflows/bohmgb.x* "+ campaign_dir +"/workflows")
-os.system("cp ../../workflows/gem0.x* "+ campaign_dir +"/workflows")
-os.system("cp ../../workflows/sources_dummy.xsd "+ campaign_dir +"/workflows")
-
-# Copy input CPO files in common directory
 common_dir = campaign_dir +"/common/"
 os.system("mkdir " + common_dir)
-os.system("cp " + cpo_dir + "/*.cpo " + common_dir)
+
+# Copy XML and XSD files
+os.system("cp " + xml_dir + "/ets.x* "    + common_dir)
+os.system("cp " + xml_dir + "/chease.x* " + common_dir)
+os.system("cp " + xml_dir + "/gem0.x* "   + common_dir)
+os.system("cp " + xml_dir + "/source_dummy.x* " + common_dir)
+
+# Copy input CPO files in common directory
+os.system("cp " + cpo_dir + "/ets_coreprof_in.cpo "    + common_dir)
+os.system("cp " + cpo_dir + "/ets_equilibrium_in.cpo " + common_dir)
+os.system("cp " + cpo_dir + "/ets_coreimpur_in.cpo "   + common_dir)
+os.system("cp " + cpo_dir + "/ets_coretransp_in.cpo "  + common_dir)
+os.system("cp " + cpo_dir + "/ets_toroidfield_in.cpo " + common_dir)
 
 # Create the encoder and get the app parameters
 print('>>> Create the encoder')
 input_filename = "source_dummy.xml"
-encoder = cpo_template.CPOEncoder(template_filename=input_filename,
-                                  template_cponame="coreprof",
-                                  cpos_directory=common_dir,
-                                  target_filename=input_filename,
-                                  uncertain_params=uncertain_params
-                                 )
+encoder = XMLEncoder(template_filename=input_filename,
+                     target_filename="source_dummy.xml",
+                     common_dir=common_dir,
+                     uncertain_params=uncertain_params)
 
 params, vary = encoder.draw_app_params()
 
 # Create the encoder
-print('Create the decoder')
+print('>>> Create the decoder')
 output_filename = "ets_coreprof_out.cpo"
-decoder = cpo_template.CPODecoder(target_filename=output_filename,
-                                  target_cponame="coreprof",
-                                  output_columns=output_columns)
+decoder = CPODecoder(target_filename=output_filename,
+                     cpo_name="coreprof",
+                     output_columns=output_columns)
 
 # Add the ETS app (automatically set as current app)
 print('>>> Add app to campagn object')
-my_campaign.add_app(name="uq_test",
+my_campaign.add_app(name="uq_src",
                     params=params,
                     encoder=encoder,
-                    decoder=decoder
-                    )
+                    decoder=decoder)
 
 # Create a collation element for this campaign
 print('>>> Create Collater')
@@ -119,10 +128,9 @@ my_campaign.set_collater(collater)
 # Create the sampler
 print('>>> Create the sampler')
 my_sampler = uq.sampling.PCESampler(vary=vary,
-                                    polynomial_order=4,
+                                    polynomial_order=1,
                                     quadrature_rule='G',
-                                    sparse=False
-                                    )
+                                    sparse=False)
 my_campaign.set_sampler(my_sampler)
 
 # Will draw all (of the finite set of samples)
@@ -133,7 +141,7 @@ print('>>> Populate runs_dir')
 my_campaign.populate_runs_dir()
 
 print('>>> Execute BlackBox code')
-my_campaign.apply_for_each_run_dir(uq.actions.ExecuteLocal(bbox_exe))
+my_campaign.apply_for_each_run_dir(uq.actions.ExecuteLocal(bbox))
 
 print('>>> Collate')
 my_campaign.collate()
