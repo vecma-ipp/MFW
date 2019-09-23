@@ -31,9 +31,8 @@ standalone/uq/*.so
 standalone/uq/*.pyc
 standalone/uq/*cache*
 standalone/uq/*.log
-standalone/uq/tools/*.so
-standalone/uq/tools/*.pyc
-standalone/uq/tools/*cache*
+standalone/uq/utils/*cache*
+standalone/uq/templates/*cache*
 standalone/uq/outputs/figs/*.png
 standalone/uq/outputs/logs/test*
 standalone/uq/*-job.sh
