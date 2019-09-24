@@ -40,7 +40,7 @@ class XMLEncoder(BaseEncoder, encoder_name="xml_encoder"):
             "position_el" : "./electrons/heating_el/RHEAT_el",
             "width_el"    : "./electrons/heating_el/FWHEAT_el",
             "amplitude_ion" : "./ions/heating/WTOT",
-            "position_ion" : "./ions/heating/RHEAT",
+            "position_ion"  : "./ions/heating/RHEAT",
             "width_ion"     : "./ions/heating/FWHEAT"
         }
 

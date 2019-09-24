@@ -30,8 +30,6 @@ xml_dir = os.path.abspath("../../workflows")
 
 # execuatbles
 obj_dir = os.path.abspath("../bin/"+SYS)
-
-# the executable code to run
 exec_code = "loop_gem0"
 bbox = os.path.join(obj_dir, exec_code)
 

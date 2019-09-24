@@ -29,7 +29,8 @@ cpo_dir = os.path.abspath("../data/AUG_28906_6/")
 xml_dir = os.path.abspath("../../workflows")
 
 # The executable code to run
-exec_code = "loop_gem0"
+obj_dir = os.path.abspath("../bin/"+SYS)
+exec_code = "loop_bgb"
 bbox = os.path.join(obj_dir, exec_code)
 
 # Define a specific parameter space
@@ -51,7 +52,7 @@ output_columns = ["Te", "Ti"]
 
 # Initialize Campaign object
 print('>>> Initialize Campaign object')
-my_campaign = uq.Campaign(name = 'uq_test', work_dir=tmp_dir)
+my_campaign = uq.Campaign(name='uq_bc', work_dir=tmp_dir)
 
 # Create new directory for commons inputs (to be ended with /)
 campaign_dir = my_campaign.campaign_dir
@@ -87,23 +88,22 @@ decoder = CPODecoder(target_filename=output_filename,
                      cpo_name="coreprof",
                      output_columns=output_columns)
 
-# Add the ETS app (automatically set as current app)
-print('>>> Add app to campagn object')
-my_campaign.add_app(name="uq_test",
-                    params=params,
-                    encoder=encoder,
-                    decoder=decoder
-                    )
-
 # Create a collation element for this campaign
 print('>>> Create Collater')
 collater = uq.collate.AggregateSamples(average=False)
-my_campaign.set_collater(collater)
+
+# Add the ETS app (automatically set as current app)
+print('>>> Add app to campagn object')
+my_campaign.add_app(name="uq_bc",
+                    params=params,
+                    encoder=encoder,
+                    decoder=decoder,
+                    collater=collater)
 
 # Create the sampler
 print('>>> Create the sampler')
 my_sampler = uq.sampling.PCESampler(vary=vary,
-                                    polynomial_order=4,
+                                    polynomial_order=1,
                                     quadrature_rule='G',
                                     sparse=False)
 my_campaign.set_sampler(my_sampler)
