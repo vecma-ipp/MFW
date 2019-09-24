@@ -7,5 +7,4 @@ then
   . $EASYPJ_CONFIG
 fi
 
-#python3 -m easypj.easyvvuq_encode $@
-python3 $HOME/workspace/vecma/mfw/standalone/uq/easypj/external_encoder.py $@
+python3 $(pwd)/easypj/external_encoder.py $@

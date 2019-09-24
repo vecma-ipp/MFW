@@ -7,4 +7,4 @@ then
   . $EASYPJ_CONFIG
 fi
 
-python3 $HOME/workspace/vecma/mfw/standalone/uq/easypj/external_execute.py $@
+python3 $(pwd)/easypj/easyvvuq_execute.py $@
