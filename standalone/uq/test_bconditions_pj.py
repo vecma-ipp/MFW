@@ -20,7 +20,7 @@ from qcg.appscheduler.api.manager import LocalManager
 time0 = time.time()
 
 # establish available resources
-cores = 4
+cores = 1
 
 # set location of log file
 # client_conf = {'log_file': tmpdir.join('api.log'), 'log_level': 'DEBUG'}
@@ -29,7 +29,7 @@ cores = 4
 client_conf = {'log_level': 'DEBUG'}
 
 # switch on debugging (by default in api.log file)
-#m = LocalManager(['--nodes', str(cores)], client_conf)
+m = LocalManager(['--nodes', str(cores)], client_conf)
 
 # This can be used for execution of the test using a separate (non-local) instance of PJManager
 #
@@ -39,7 +39,7 @@ client_conf = {'log_level': 'DEBUG'}
 # (required when executed using the same QCG-Pilot Job Manager)
 # m.remove(m.list().keys())
 
-#print(">>> PJ: Available resources:\n%s\n" % str(m.resources()))
+print(">>> PJ: Available resources:\n%s\n" % str(m.resources()))
 
 # OS env
 SYS = os.environ['SYS']
@@ -138,81 +138,81 @@ my_campaign.set_sampler(my_sampler)
 print('>>> Draw Samples')
 my_campaign.draw_samples()
 
-my_campaign.populate_runs_dir()
-my_campaign.apply_for_each_run_dir(uq.actions.ExecuteLocal(bbox))
+#my_campaign.populate_runs_dir()
+#my_campaign.apply_for_each_run_dir(uq.actions.ExecuteLocal(bbox))
 
 # Execute encode -> execute for each run using QCG-PJ
-#print(">>> PJ: Starting submission of tasks to QCG Pilot Job Manager")
-#for run in my_campaign.list_runs():
-#
-#    key = run[0]
-#    run_dir = run[1]['run_dir']
-#
-#    enc_args = [
-#        my_campaign.db_type,
-#        my_campaign.db_location,
-#        'FALSE',
-#        "uq_bc",
-#        "uq_bc",
-#        key
-#    ]
-#
-#    exec_args = [
-#        run_dir,
-#        'easyvvuq_app',
-#        bbox
-#    ]
-#
-#    encode_task = {
-#        "name": 'encode_' + key,
-#        "execution": {
-#            "exec": 'easyvvuq_encode',
-#            "args": enc_args,
-#            "wd": cwd,
-#            "stdout": my_campaign.campaign_dir + '/encode_' + key + '.stdout',
-#            "stderr": my_campaign.campaign_dir + '/encode_' + key + '.stderr'
-#        },
-#        "resources": {
-#            "numCores": {
-#                "exact": 1
-#            }
-#        }
-#    }
-#
-#    execute_task = {
-#        "name": 'execute_' + key,
-#        "execution": {
-#            "exec": 'easyvvuq_execute',
-#            "args": exec_args,
-#            "wd": cwd,
-#            "stdout": my_campaign.campaign_dir + '/execute_' + key + '.stdout',
-#            "stderr": my_campaign.campaign_dir + '/execute_' + key + '.stderr'
-#        },
-#        "resources": {
-#            "numCores": {
-#                "exact": 1
-#            }
-#        },
-#        "dependencies": {
-#            "after": ["encode_" + key]
-#        }
-#    }
-#
-#    m.submit(Jobs().addStd(encode_task))
-#    m.submit(Jobs().addStd(execute_task))
-#
-## wait for completion of all PJ tasks and terminate the PJ manager
-#m.wait4all()
-#m.finish()
-#m.stopManager()
-#m.cleanup()
-#
-#print(">>> Syncing state of campaign after execution of PJ")
-#
-#def update_status(run_id, run_data):
-#    my_campaign.campaign_db.set_run_statuses([run_id], uq.constants.Status.ENCODED)
-#
-#my_campaign.call_for_each_run(update_status, status=uq.constants.Status.NEW)
+encoder_path = os.path.realpath(os.path.expanduser("easypj/easyvvuq_encode"))
+execute_path = os.path.realpath(os.path.expanduser("easypj/easyvvuq_execute"))
+for run in my_campaign.list_runs():
+
+    key = run[0]
+    run_dir = run[1]['run_dir']
+
+    enc_args = [
+        my_campaign.db_type,
+        my_campaign.db_location,
+        'FALSE',
+        "uq_bc",
+        "uq_bc",
+        key
+    ]
+
+    exec_args = [
+        run_dir,
+        'easyvvuq_app',
+        bbox
+    ]
+
+    encode_task = {
+        "name": 'encode_' + key,
+        "execution": {
+            "exec":   encoder_path,
+            "args": enc_args,
+            "wd": cwd,
+            "stdout": my_campaign.campaign_dir + '/encode_' + key + '.stdout',
+            "stderr": my_campaign.campaign_dir + '/encode_' + key + '.stderr'
+        },
+        "resources": {
+            "numCores": {
+                "exact": 1
+            }
+        }
+    }
+
+    execute_task = {
+        "name": 'execute_' + key,
+        "execution": {
+            "exec": execute_path,
+            "args": exec_args,
+            "wd": cwd,
+            "stdout": my_campaign.campaign_dir + '/execute_' + key + '.stdout',
+            "stderr": my_campaign.campaign_dir + '/execute_' + key + '.stderr'
+        },
+        "resources": {
+            "numCores": {
+                "exact": 1
+            }
+        },
+        "dependencies": {
+            "after": ["encode_" + key]
+        }
+    }
+    m.submit(Jobs().addStd(encode_task))
+    m.submit(Jobs().addStd(execute_task))
+
+# wait for completion of all PJ tasks and terminate the PJ manager
+m.wait4all()
+m.finish()
+m.stopManager()
+m.cleanup()
+
+print(">>> Syncing state of campaign after execution of PJ")
+
+def update_status(run_id, run_data):
+    my_campaign.campaign_db.set_run_statuses([run_id], uq.constants.Status.ENCODED)
+
+my_campaign.call_for_each_run(update_status, status=uq.constants.Status.NEW)
 
 print('>>> Collate')
 my_campaign.collate()

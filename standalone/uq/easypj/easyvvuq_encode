@@ -1,0 +1,11 @@
+#!/bin/bash
+
+# Source the site-specific configuration file
+if [[ -f $EASYPJ_CONFIG ]] 
+then
+  echo "Sourcing configuration file: $EASYPJ_CONFIG"
+  . $EASYPJ_CONFIG
+fi
+
+#python3 -m easypj.easyvvuq_encode $@
+python3 $HOME/workspace/vecma/mfw/standalone/uq/easypj/external_encoder.py $@
