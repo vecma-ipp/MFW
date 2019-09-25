@@ -83,7 +83,14 @@ class XMLEncoder(BaseEncoder, encoder_name="xml_encoder"):
 
         for k, v in local_params.items():
             v_size = self.uncertain_params[k]["size"]
-            v_text = str(v).center(v_size, " ")
+            # TODO check the call of gaussian_cpo without sizing
+            v_text = str(v)
+            if len(v_text) < v_size:
+                v_text = v_text.center(v_size, " ")
+            if len(v_text) > v_size:
+                e = "{:."+str(v_size-6)+"E}"
+                v_text = e.format(v)
+
             elem = root.find(self.mapper[k])
             elem.text = v_text
 
