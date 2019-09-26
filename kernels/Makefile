@@ -69,7 +69,7 @@ endif
 # compile kernels dedicated to UAL library (default=if $UAL is set)  #
 ifdef UAL
  FPPFLAGS += -DHAS_UAL
- INCLUDES += $(shell pkg-config --cflags ual-${LIBARCH})
+ INCUAL = $(shell pkg-config --cflags ual-${LIBARCH})
  LDUAL = $(shell pkg-config --libs ual-${LIBARCH})
 endif
 
@@ -238,7 +238,7 @@ IMP4DV_K: ${IMP4DV_O}
 	$(LD) -o ${IMP4DV_EXE} $^ -L${IMP4DV} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_UAL} -lmuscle2 -limp4dv -lbds -litmconstants -litmtypes -lual ${LDFLAGS} 
 
 INIT_UAL_K: ${INIT_UAL_O}
-	$(LD) -o ${INIT_UAL_EXE} $^ -L${LIB_CONSTANTS} -L${LIB_TYPES} -lmuscle2 -litmconstants -litmtypes ${LDFLAGS} ${LDUAL}
+	$(LD) -o ${INIT_UAL_EXE} $^ -lmuscle2 ${LDFLAGS} ${LDUAL}
 
 WRITE_UAL_K: ${WRITE_UAL_O}
 	$(LD) -o ${WRITE_UAL_EXE} $^ -L${LIB_CONSTANTS} -L${LIB_TYPES} -lmuscle2 -litmconstants -litmtypes ${LDFLAGS} ${LDUAL}
@@ -316,3 +316,9 @@ ${OBJDIR}/orb5_kernelB.o: src/orb5_kernelB.f90
 
 ${OBJDIR}/orb5_test.o: src/orb5_test.f90
 	${FC90} -o $@ -c $< $(FC90FLAGS) -I${ORB5}/obj_compat 
+
+${OBJDIR}/init_ual_wrapper.o: src/init_ual_wrapper.f90
+	${FC90} -o $@ -c $< ${MODSPEC}${INCDIR} -I${INCDIR} ${INCUAL} 
+
+${OBJDIR}/write_ual_wrapper.o: src/write_ual_wrapper.f90
+	${FC90} -o $@ -c $< ${MODSPEC}${INCDIR} -I${INCDIR} ${INCUAL} 
