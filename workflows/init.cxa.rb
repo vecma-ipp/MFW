@@ -116,12 +116,12 @@ init['solve_psi'] = 0
 init['n_add_coef'] = "0.0"
 init['n_mult_coef'] = "1.0"
 #=====only for init_ual kernel====================
-init['user'] = "g2denka" #"public" #"olivh"
-init['machine'] = "aug"
+init['user'] = "g2diy" #"public" #"olivh"
+init['machine'] = "jet"
 init['version'] = "4.10b"
-init['shot'] = 28906 #87412
-init['run'] = 5 #890 #1 #850
-init['time'] = 0.01 #49.108 #50.4 #49.1
+init['shot'] = 92436 #87412
+init['run'] = 2306 #890 #1 #850
+init['time'] = 49.5 #49.108 #50.4 #49.1
 #=====only for continue kernel====================
 init['continue_path'] = "AUG_28906_4/"
 #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
