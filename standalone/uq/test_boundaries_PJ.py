@@ -3,8 +3,8 @@ import os, sys, time
 import chaospy as cp
 import easyvvuq as uq
 import matplotlib.pylab as plt
-from ascii_cpo import read
 from utils import plots
+from ascii_cpo import read
 from templates.cpo_encoder import CPOEncoder
 from templates.cpo_decoder import CPODecoder
 from qcg.appscheduler.api.job import Jobs
@@ -80,7 +80,8 @@ output_columns = ["Te", "Ti"]
 
 # Initialize Campaign object
 print('>>> Initialize Campaign object')
-my_campaign = uq.Campaign(name="uq_bc", work_dir=tmp_dir)
+campaign_name = "uq_boundary_cond"
+my_campaign = uq.Campaign(name=campaign_name, work_dir=tmp_dir)
 
 # Create new directory for commons inputs (to be ended with /)
 campaign_dir = my_campaign.campaign_dir
@@ -120,7 +121,7 @@ collater = uq.collate.AggregateSamples(average=False)
 
 # Add the ETS app (automatically set as current app)
 print('>>> Add app to campagn object')
-my_campaign.add_app(name="uq_bc",
+my_campaign.add_app(name=campaign_name,
                     params=params,
                     encoder=encoder,
                     decoder=decoder,
@@ -142,6 +143,7 @@ my_campaign.draw_samples()
 #my_campaign.apply_for_each_run_dir(uq.actions.ExecuteLocal(bbox))
 
 # Execute encode -> execute for each run using QCG-PJ
+print(">>> Starting submission of tasks to QCG Pilot Job Manager")
 encoder_path = os.path.realpath(os.path.expanduser("easypj/easyvvuq_encode"))
 execute_path = os.path.realpath(os.path.expanduser("easypj/easyvvuq_execute"))
 for run in my_campaign.list_runs():
@@ -153,8 +155,8 @@ for run in my_campaign.list_runs():
         my_campaign.db_type,
         my_campaign.db_location,
         'FALSE',
-        "uq_bc",
-        "uq_bc",
+        campaign_name,
+        campaign_name,
         key
     ]
 
@@ -201,14 +203,14 @@ for run in my_campaign.list_runs():
     m.submit(Jobs().addStd(encode_task))
     m.submit(Jobs().addStd(execute_task))
 
-# wait for completion of all PJ tasks and terminate the PJ manager
+# Wait for completion of all PJ tasks and terminate the PJ manager
+print(">>> Wait for completion of all PJ tasks")
 m.wait4all()
 m.finish()
 m.stopManager()
 m.cleanup()
 
 print(">>> Syncing state of campaign after execution of PJ")
-
 def update_status(run_id, run_data):
     my_campaign.campaign_db.set_run_statuses([run_id], uq.constants.Status.ENCODED)
 
@@ -241,13 +243,13 @@ print('>>> Ellapsed time: ', time.time() - time0)
 print('>>> Statictics and SA plots')
 corep = read(os.path.join(cpo_dir,  "ets_coreprof_in.cpo"), "coreprof")
 rho = corep.rho_tor
-uncertain_params = ["Te_boundary", "Ti_boundary"]
+uparams_names = list(uncertain_params.keys())
 plots.plot_stats_pctl(rho, stats_te, pctl_te,
                  xlabel=r'$\rho_{tor} ~ [m]$', ylabel=r'$Te$',
                  ftitle='Te profile',
                  fname='outputs/figs/te_ets_stats2')
 
-plots.plot_sobols(rho, stot_te, uncertain_params,
+plots.plot_sobols(rho, stot_te, uparams_names,
                   ftitle=' Total-Order Sobol indices - QoI: Te',
                   fname='outputs/figs/te_ets_stot2')
 
@@ -256,8 +258,8 @@ plots.plot_stats_pctl(rho, stats_ti, pctl_ti,
                  ftitle='Te profile',
                  fname='outputs/figs/ti_ets_stats2')
 
-plots.plot_sobols(rho, stot_ti, uncertain_params,
+plots.plot_sobols(rho, stot_ti, uparams_names,
                   ftitle=' Total-Order Sobol indices - QoI: Ti',
                   fname='outputs/figs/ti_ets_stot2')
 
-print('>>> End of boundary_conditions_test.')
+print('>>> End of test_boundaries_PJ')

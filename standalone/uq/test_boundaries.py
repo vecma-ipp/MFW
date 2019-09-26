@@ -52,7 +52,8 @@ output_columns = ["Te", "Ti"]
 
 # Initialize Campaign object
 print('>>> Initialize Campaign object')
-my_campaign = uq.Campaign(name='uq_bc', work_dir=tmp_dir)
+campaign_name = "uq_boundary_cond"
+my_campaign = uq.Campaign(name=campaign_name, work_dir=tmp_dir)
 
 # Create new directory for commons inputs (to be ended with /)
 campaign_dir = my_campaign.campaign_dir
@@ -94,7 +95,7 @@ collater = uq.collate.AggregateSamples(average=False)
 
 # Add the ETS app (automatically set as current app)
 print('>>> Add app to campagn object')
-my_campaign.add_app(name="uq_bc",
+my_campaign.add_app(name=campaign_name,
                     params=params,
                     encoder=encoder,
                     decoder=decoder,
@@ -145,23 +146,23 @@ print('>>> Ellapsed time: ', time.time() - time0)
 print('>>> Statictics and SA plots')
 corep = read(os.path.join(cpo_dir,  "ets_coreprof_in.cpo"), "coreprof")
 rho = corep.rho_tor
-uncertain_params = ["Te_boundary", "Ti_boundary"]
+uparams_names = list(uncertain_params.keys())
 plots.plot_stats_pctl(rho, stats_te, pctl_te,
                  xlabel=r'$\rho_{tor} ~ [m]$', ylabel=r'$Te$',
                  ftitle='Te profile',
-                 fname='outputs/figs/te_ets_stats2')
+                 fname='outputs/figs/te_bnd_stats')
 
-plots.plot_sobols(rho, stot_te, uncertain_params,
+plots.plot_sobols(rho, stot_te, uparams_names,
                   ftitle=' Total-Order Sobol indices - QoI: Te',
-                  fname='outputs/figs/te_ets_stot2')
+                  fname='outputs/figs/te_bnd_stot')
 
 plots.plot_stats_pctl(rho, stats_ti, pctl_ti,
                  xlabel=r'$\rho_{tor} ~ [m]$', ylabel=r'$T_i [eV]$',
                  ftitle='Te profile',
-                 fname='outputs/figs/ti_ets_stats2')
+                 fname='outputs/figs/ti_bnd_stats')
 
-plots.plot_sobols(rho, stot_ti, uncertain_params,
+plots.plot_sobols(rho, stot_ti, uparams_names,
                   ftitle=' Total-Order Sobol indices - QoI: Ti',
-                  fname='outputs/figs/ti_ets_stot2')
+                  fname='outputs/figs/ti_bnd_stot')
 
-print('>>> End of boundary_conditions_test.')
+print('>>> End of test_boundaries')

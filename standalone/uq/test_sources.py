@@ -28,7 +28,7 @@ cpo_dir = os.path.abspath("../data/AUG_28906_6/")
 # XML and XSD files
 xml_dir = os.path.abspath("../../workflows")
 
-# execuatbles
+# The execuatble model code
 obj_dir = os.path.abspath("../bin/"+SYS)
 exec_code = "loop_gem0"
 bbox = os.path.join(obj_dir, exec_code)
@@ -69,12 +69,13 @@ uncertain_params = {
     }
 }
 
-# For the output: quantities of intersts
+# The Quantities of intersts
 output_columns = ["Te", "Ti"]
 
 # Initialize Campaign object
 print('>>> Initialize Campaign object')
-my_campaign = uq.Campaign(name='uq_src', work_dir=tmp_dir)
+campaign_name = "uq_src"
+my_campaign = uq.Campaign(name=campaign_name, work_dir=tmp_dir)
 
 # Create new directory for commons inputs
 campaign_dir = my_campaign.campaign_dir
@@ -111,17 +112,17 @@ decoder = CPODecoder(target_filename=output_filename,
                      cpo_name="coreprof",
                      output_columns=output_columns)
 
-# Add the ETS app (automatically set as current app)
-print('>>> Add app to campagn object')
-my_campaign.add_app(name="uq_src",
-                    params=params,
-                    encoder=encoder,
-                    decoder=decoder)
-
 # Create a collation element for this campaign
 print('>>> Create Collater')
 collater = uq.collate.AggregateSamples(average=False)
-my_campaign.set_collater(collater)
+
+# Add the ETS app (automatically set as current app)
+print('>>> Add app to campagn object')
+my_campaign.add_app(name=campaign_name,
+                    params=params,
+                    encoder=encoder,
+                    decoder=decoder,
+                    collater=collater)
 
 # Create the sampler
 print('>>> Create the sampler')
@@ -137,7 +138,7 @@ my_campaign.draw_samples()
 
 print('>>> Populate runs_dir')
 my_campaign.populate_runs_dir()
-
+sys.exit()
 print('>>> Execute BlackBox code')
 my_campaign.apply_for_each_run_dir(uq.actions.ExecuteLocal(bbox))
 
@@ -168,23 +169,23 @@ print('>>> Ellapsed time: ', time.time() - time0)
 print('>>> Statictics and SA plots')
 corep = read(os.path.join(cpo_dir,  "ets_coreprof_in.cpo"), "coreprof")
 rho = corep.rho_tor
-uncertain_params = ["Te_boundary", "Ti_boundary"]
+uparams_names = list(uncertain_params.keys())
 plots.plot_stats_pctl(rho, stats_te, pctl_te,
                  xlabel=r'$\rho_{tor} ~ [m]$', ylabel=r'$Te$',
                  ftitle='Te profile',
-                 fname='outputs/figs/te_ets_stats1')
+                 fname='outputs/figs/te_src_stats')
 
-plots.plot_sobols(rho, stot_te, uncertain_params,
+plots.plot_sobols(rho, stot_te, uparams_names,
                   ftitle=' Total-Order Sobol indices - QoI: Te',
-                  fname='outputs/figs/te_ets_stot1')
+                  fname='outputs/figs/te_src_stot')
 
 plots.plot_stats_pctl(rho, stats_ti, pctl_ti,
                  xlabel=r'$\rho_{tor} ~ [m]$', ylabel=r'$T_i [eV]$',
                  ftitle='Te profile',
-                 fname='outputs/figs/ti_ets_stats1')
+                 fname='outputs/figs/ti_src_stats')
 
-plots.plot_sobols(rho, stot_ti, uncertain_params,
+plots.plot_sobols(rho, stot_ti, uparams_names,
                   ftitle=' Total-Order Sobol indices - QoI: Ti',
-                  fname='outputs/figs/ti_ets_stot1')
+                  fname='outputs/figs/ti_src_stot')
 
-print('>>> End of boundary_conditions_test.')
+print('>>> End of test_boundaries')
