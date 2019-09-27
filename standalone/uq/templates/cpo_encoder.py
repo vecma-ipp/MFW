@@ -34,6 +34,14 @@ class CPOEncoder(BaseEncoder, encoder_name="cpo_encoder"):
         cpo_filename = os.path.join(common_dir, template_filename)
         self.cpo_core = read(cpo_filename, cpo_name)
 
+        # Mapping with cpo file
+        # TODO verify that uncertain_params key included in switcher keys
+        # TODO move to switcher  tools routine
+        self.mapper = {
+            "Te_boundary" : self.cpo_core.te.boundary.value[0],
+            "Ti_boundary" : self.cpo_core.ti.boundary.value[0][0]
+        }
+
     # Returns dict (params) for Campaign and a list (vary) of distribitions for Sampler
     def draw_app_params(self):
 
@@ -42,18 +50,12 @@ class CPOEncoder(BaseEncoder, encoder_name="cpo_encoder"):
 
         for k, d in self.uncertain_params.items():
             # Get initial values
-            if(k=='Te_boundary'):
-                val = self.cpo_core.te.boundary.value[0]
-            if(k=='Ti_boundary'):
-                val = self.cpo_core.ti.boundary.value[0][0]
-
-            # TODO verify val type
+            val = self.mapper[k]
             typ = d["type"]
 
+            # Build the probability distribution
             dist_name = d["distribution"]
             margin_error = d["margin_error"]
-
-            # get the probability distribution
             dist = statistics.get_dist(dist_name, val, margin_error)
 
             # Update output dict
@@ -74,10 +76,7 @@ class CPOEncoder(BaseEncoder, encoder_name="cpo_encoder"):
             raise RuntimeError('No target directory specified to encoder')
 
         for k, v in local_params.items():
-            if(k=='Te_boundary'):
-                self.cpo_core.te.boundary.value[0] = v
-            if(k=='Ti_boundary'):
-                self.cpo_core.ti.boundary.value[0][0] = v
+            self.mapper[k] = v
 
         # Do a symbolic link to other CPO and XML files
         os.system("ln -s " + self.common_dir + "* " + target_dir)
