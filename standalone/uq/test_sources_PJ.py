@@ -19,7 +19,7 @@ from qcg.appscheduler.api.manager import LocalManager
 time0 = time.time()
 
 # establish available resources
-cores = 4
+cores = 32
 
 # set location of log file
 # client_conf = {'log_file': tmpdir.join('api.log'), 'log_level': 'DEBUG'}

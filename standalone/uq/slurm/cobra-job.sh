@@ -4,8 +4,8 @@
 #SBATCH --job-name=ets_uq
 
 ## stdout and stderr files
-#SBATCH --output=outputs/logs/test.out.%j
-#SBATCH --error=outputs/logs/test.err.%j
+#SBATCH --output=logs/test.out.%j
+#SBATCH --error=logs/test.err.%j
 
 ## wall time in format MINUTES:SECONDS
 #SBATCH --time=02:00:00
@@ -21,4 +21,5 @@
 #SBATCH --mail-user=ljala@rzg.mpg.de
 
 # Run the program in uq folder
-python boundary_conditions.py > outputs/logs/test.log.${SLURM_JOBID}
+#python boundaries_PJ.py > logs/test.log.${SLURM_JOBID}
+python sources_PJ.py > logs/test.log.${SLURM_JOBID}

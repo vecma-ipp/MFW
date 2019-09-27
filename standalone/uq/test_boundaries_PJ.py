@@ -20,24 +20,29 @@ from qcg.appscheduler.api.manager import LocalManager
 time0 = time.time()
 
 # establish available resources
-cores = 4
+#cores = 4
 
 # set location of log file
-# client_conf = {'log_file': tmpdir.join('api.log'), 'log_level': 'DEBUG'}
+#client_conf = {'log_file': tmpdir.join('api.log'), 'log_level': 'DEBUG'}
 
 # switch on debugging (by default in api.log file)
 client_conf = {'log_level': 'DEBUG'}
 
-# switch on debugging (by default in api.log file)
-m = LocalManager(['--nodes', str(cores)], client_conf)
+# switch on debugging (by default in api.log file) LOCAL
+#m = LocalManager(['--nodes', str(cores)], client_conf)
 
+
+# ...
 # This can be used for execution of the test using a separate (non-local) instance of PJManager
-#
+m = LocalManager(['--log', 'warning'], client_conf)
+
 # get available resources
-# res = m.resources()
+res = m.resources()
+
 # remove all jobs if they are already in PJM
 # (required when executed using the same QCG-Pilot Job Manager)
 # m.remove(m.list().keys())
+# ...
 
 print(">>> PJ: Available resources:\n%s\n" % str(m.resources()))
 
@@ -130,7 +135,7 @@ my_campaign.add_app(name=campaign_name,
 # Create the sampler
 print('>>> Create the sampler')
 my_sampler = uq.sampling.PCESampler(vary=vary,
-                                    polynomial_order=1,
+                                    polynomial_order=4,
                                     quadrature_rule='G',
                                     sparse=False)
 my_campaign.set_sampler(my_sampler)
@@ -247,19 +252,19 @@ uparams_names = list(uncertain_params.keys())
 plots.plot_stats_pctl(rho, stats_te, pctl_te,
                  xlabel=r'$\rho_{tor} ~ [m]$', ylabel=r'$Te$',
                  ftitle='Te profile',
-                 fname='outputs/figs/te_ets_stats2')
+                 fname='outputs/figs/te_bnd_stat')
 
 plots.plot_sobols(rho, stot_te, uparams_names,
                   ftitle=' Total-Order Sobol indices - QoI: Te',
-                  fname='outputs/figs/te_ets_stot2')
+                  fname='outputs/figs/te_bnd_sob')
 
 plots.plot_stats_pctl(rho, stats_ti, pctl_ti,
                  xlabel=r'$\rho_{tor} ~ [m]$', ylabel=r'$T_i [eV]$',
                  ftitle='Te profile',
-                 fname='outputs/figs/ti_ets_stats2')
+                 fname='outputs/figs/ti_ets_stat')
 
 plots.plot_sobols(rho, stot_ti, uparams_names,
                   ftitle=' Total-Order Sobol indices - QoI: Ti',
-                  fname='outputs/figs/ti_ets_stot2')
+                  fname='outputs/figs/ti_ets_sob')
 
 print('>>> End of test_boundaries_PJ')

@@ -1,7 +1,7 @@
 #!/bin/bash -l
 # Standard output and error:
-#SBATCH -o ouputs/logs/test.out.%j
-#SBATCH -e ouputs/logs/test.err.%j
+#SBATCH -o logs/test.out.%j
+#SBATCH -e logs/test.err.%j
 # Initial working directory:
 #SBATCH -D ./
 # Job Name:
@@ -19,4 +19,4 @@
 #SBATCH --time=6:00:00
 
 # Run the program in uq folder
-python boundary_conditions.py > ouputs/logs/test.log.${SLURM_JOBID}
+python sources_PJ.py > logs/test.log.${SLURM_JOBID}
