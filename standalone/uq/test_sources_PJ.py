@@ -175,8 +175,11 @@ my_campaign.draw_samples()
 
 # Execute encode -> execute for each run using QCG-PJ
 print(">>> Starting submission of tasks to QCG Pilot Job Manager")
+
 encoder_path = os.path.realpath(os.path.expanduser("easypj/easyvvuq_encode"))
 execute_path = os.path.realpath(os.path.expanduser("easypj/easyvvuq_execute"))
+app_path = os.path.realpath(os.path.expanduser("easypj/easyvvuq_app"))
+
 for run in my_campaign.list_runs():
 
     key = run[0]
@@ -193,7 +196,7 @@ for run in my_campaign.list_runs():
 
     exec_args = [
         run_dir,
-        'easyvvuq_app',
+        app_path,
         bbox
     ]
 
