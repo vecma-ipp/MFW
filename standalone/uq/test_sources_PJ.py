@@ -43,6 +43,9 @@ print(">>> PJ: Available resources:\n%s\n" % str(m.resources()))
 # OS env
 SYS = os.environ['SYS']
 
+# Current directory
+cwd = os.getcwd()
+
 # Working directory
 tmp_dir = os.environ['SCRATCH']
 
@@ -272,19 +275,19 @@ uparams_names = list(uncertain_params.keys())
 plots.plot_stats_pctl(rho, stats_te, pctl_te,
                  xlabel=r'$\rho_{tor} ~ [m]$', ylabel=r'$Te$',
                  ftitle='Te profile',
-                 fname='outputs/figs/te_src_stats')
+                 fname='outputs/figs/te_src_stat')
 
 plots.plot_sobols(rho, stot_te, uparams_names,
                   ftitle=' Total-Order Sobol indices - QoI: Te',
-                  fname='outputs/figs/te_src_stot')
+                  fname='outputs/figs/te_src_sob')
 
 plots.plot_stats_pctl(rho, stats_ti, pctl_ti,
                  xlabel=r'$\rho_{tor} ~ [m]$', ylabel=r'$T_i [eV]$',
                  ftitle='Te profile',
-                 fname='outputs/figs/ti_src_stats')
+                 fname='outputs/figs/ti_src_stat')
 
 plots.plot_sobols(rho, stot_ti, uparams_names,
                   ftitle=' Total-Order Sobol indices - QoI: Ti',
-                  fname='outputs/figs/ti_src_stot')
+                  fname='outputs/figs/ti_src_sob')
 
 print('>>> End of test_sources_PJ')

@@ -30,7 +30,7 @@ xml_dir = os.path.abspath("../../workflows")
 
 # The executable code to run
 obj_dir = os.path.abspath("../bin/"+SYS)
-exec_code = "loop_bgb"
+exec_code = "ets_test"
 bbox = os.path.join(obj_dir, exec_code)
 
 # Define a specific parameter space
@@ -38,12 +38,12 @@ uncertain_params = {
     "Te_boundary": {
         "type": "float",
         "distribution": "Normal",
-        "margin_error": 0.25,
+        "margin_error": 0.2,
     },
     "Ti_boundary": {
         "type": "float",
         "distribution": "Normal",
-        "margin_error": 0.25,
+        "margin_error": 0.2,
     }
 }
 
@@ -104,7 +104,7 @@ my_campaign.add_app(name=campaign_name,
 # Create the sampler
 print('>>> Create the sampler')
 my_sampler = uq.sampling.PCESampler(vary=vary,
-                                    polynomial_order=1,
+                                    polynomial_order=4,
                                     quadrature_rule='G',
                                     sparse=False)
 my_campaign.set_sampler(my_sampler)

@@ -76,7 +76,11 @@ class CPOEncoder(BaseEncoder, encoder_name="cpo_encoder"):
             raise RuntimeError('No target directory specified to encoder')
 
         for k, v in local_params.items():
-            self.mapper[k] = v
+            if k=="Te_boundary" :
+                self.cpo_core.te.boundary.value[0] = v
+            else:
+                self.cpo_core.ti.boundary.value[0][0] = v
+            #self.mapper[k] = v
 
         # Do a symbolic link to other CPO and XML files
         os.system("ln -s " + self.common_dir + "* " + target_dir)

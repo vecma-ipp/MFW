@@ -30,7 +30,7 @@ xml_dir = os.path.abspath("../../workflows")
 
 # The execuatble model code
 obj_dir = os.path.abspath("../bin/"+SYS)
-exec_code = "loop_gem0"
+exec_code = "ets_test"
 bbox = os.path.join(obj_dir, exec_code)
 
 # Define a specific parameter space
@@ -138,7 +138,7 @@ my_campaign.draw_samples()
 
 print('>>> Populate runs_dir')
 my_campaign.populate_runs_dir()
-sys.exit()
+
 print('>>> Execute BlackBox code')
 my_campaign.apply_for_each_run_dir(uq.actions.ExecuteLocal(bbox))
 

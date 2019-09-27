@@ -20,7 +20,7 @@ from qcg.appscheduler.api.manager import LocalManager
 time0 = time.time()
 
 # establish available resources
-#cores = 4
+cores = 16
 
 # set location of log file
 #client_conf = {'log_file': tmpdir.join('api.log'), 'log_level': 'DEBUG'}
@@ -29,15 +29,15 @@ time0 = time.time()
 client_conf = {'log_level': 'DEBUG'}
 
 # switch on debugging (by default in api.log file) LOCAL
-#m = LocalManager(['--nodes', str(cores)], client_conf)
+m = LocalManager(['--nodes', str(cores)], client_conf)
 
 
 # ...
 # This can be used for execution of the test using a separate (non-local) instance of PJManager
-m = LocalManager(['--log', 'warning'], client_conf)
+#m = LocalManager(['--log', 'warning'], client_conf)
 
 # get available resources
-res = m.resources()
+#res = m.resources()
 
 # remove all jobs if they are already in PJM
 # (required when executed using the same QCG-Pilot Job Manager)
@@ -63,7 +63,7 @@ xml_dir = os.path.abspath("../../workflows")
 
 # The executable code to run
 obj_dir = os.path.abspath("../bin/"+SYS)
-exec_code = "loop_bgb"
+exec_code = "ets_test"
 bbox = os.path.join(obj_dir, exec_code)
 
 # Define a specific parameter space
