@@ -19,7 +19,7 @@ from qcg.appscheduler.api.manager import LocalManager
 time0 = time.time()
 
 # establish available resources
-cores = 32
+#cores = 32
 
 # set location of log file
 # client_conf = {'log_file': tmpdir.join('api.log'), 'log_level': 'DEBUG'}
@@ -28,12 +28,12 @@ cores = 32
 client_conf = {'log_level': 'DEBUG'}
 
 # switch on debugging (by default in api.log file)
-m = LocalManager(['--nodes', str(cores)], client_conf)
+#m = LocalManager(['--nodes', str(cores)], client_conf)
 
 # This can be used for execution of the test using a separate (non-local) instance of PJManager
 #
 # get available resources
-# res = m.resources()
+res = m.resources()
 # remove all jobs if they are already in PJM
 # (required when executed using the same QCG-Pilot Job Manager)
 # m.remove(m.list().keys())
@@ -157,7 +157,7 @@ my_campaign.add_app(name=campaign_name,
 # Create the sampler
 print('>>> Create the sampler')
 my_sampler = uq.sampling.PCESampler(vary=vary,
-                                    polynomial_order=1,
+                                    polynomial_order=3,
                                     quadrature_rule='G',
                                     sparse=False)
 my_campaign.set_sampler(my_sampler)
