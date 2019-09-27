@@ -1,0 +1,328 @@
+ used schema version 4.10b.10        
+ coreimpur%datainfo%dataprovider
+           1
+           1
+ J Ferreira and R Coelho                                                                                                            
+ coreimpur%datainfo%putdate
+           1
+           1
+12/09/2019                                                                                                                          
+ coreimpur%datainfo%source
+           1
+           1
+exp2ITM routine                                                                                                                     
+ coreimpur%datainfo%comment
+          -1
+ coreimpur%datainfo%cocos
+          -1
+ coreimpur%datainfo%id
+          -1
+ coreimpur%datainfo%isref
+          -1
+ coreimpur%datainfo%whatref%user
+          -1
+ coreimpur%datainfo%whatref%machine
+          -1
+ coreimpur%datainfo%whatref%shot
+          -1
+ coreimpur%datainfo%whatref%run
+          -1
+ coreimpur%datainfo%whatref%occurrence
+          -1
+ coreimpur%datainfo%putinfo%putmethod
+          -1
+ coreimpur%datainfo%putinfo%putaccess
+          -1
+ coreimpur%datainfo%putinfo%putlocation
+          -1
+ coreimpur%datainfo%putinfo%rights
+          -1
+ coreimpur%rho_tor_norm
+          -1
+ coreimpur%rho_tor
+           1
+          50
+  2.446169675693153E-002  4.892339351386307E-002  7.338509209228157E-002  9.784678702772613E-002  0.122308488374805     
+  0.146770166698287       0.171231889320334       0.195693556569176       0.220155268505167       0.244616976749610     
+  0.269078656874709       0.293540380026643       0.318002050189864       0.342463818609293       0.366925535069506     
+  0.391387148110905       0.415848824102884       0.440310537010334       0.464772281004493       0.489233953499219     
+  0.513695657968847       0.538157390053161       0.562619048835331       0.587080760053285       0.611542383120139     
+  0.636004143422867       0.660465839192771       0.684927477344081       0.709389237494144       0.733850920922816     
+  0.758312643356837       0.782774296221809       0.807235987580515       0.831697714036451       0.856159440606378     
+  0.880621136194089       0.905082833558183       0.929544503107852       0.954006175678091       0.978467906998439     
+   1.00292952899621        1.02739126264619        1.05185299605434        1.07631447489133        1.10077621351597     
+   1.12523780572587        1.14969978471086        1.17416161336669        1.19862330089724        1.22308485577001     
+ coreimpur%psi
+          -1
+ coreimpur%volume
+          -1
+ coreimpur%area
+          -1
+ coreimpur%source
+          -1
+ coreimpur%flag
+          -1
+ coreimpur%desc_impur%amn
+          -1
+ coreimpur%desc_impur%zn
+          -1
+ coreimpur%desc_impur%i_ion
+          -1
+ coreimpur%desc_impur%nzimp
+          -1
+ coreimpur%desc_impur%zmin
+          -1
+ coreimpur%desc_impur%zmax
+          -1
+ coreimpur%desc_impur%label
+          -1
+ coreimpur%compositions%nuclei
+           1
+           3
+ coreimpur%compositions%nuclei%zn
+           0
+   1.00000000000000     
+ coreimpur%compositions%nuclei%amn
+           0
+   2.01400000000000     
+ coreimpur%compositions%nuclei%label
+          -1
+ coreimpur%compositions%nuclei%zn
+           0
+   4.39344310760498     
+ coreimpur%compositions%nuclei%amn
+           0
+   9.75576686859131     
+ coreimpur%compositions%nuclei%label
+          -1
+ coreimpur%compositions%nuclei%zn
+           0
+   1.00000000000000     
+ coreimpur%compositions%nuclei%amn
+           0
+   1.00800000000000     
+ coreimpur%compositions%nuclei%label
+          -1
+ coreimpur%compositions%ions
+           1
+           2
+ coreimpur%compositions%ions%nucindex
+           0
+           1
+ coreimpur%compositions%ions%zion
+           0
+   1.00000000000000     
+ coreimpur%compositions%ions%imp_flag
+           0
+           0
+ coreimpur%compositions%ions%label
+          -1
+ coreimpur%compositions%ions%nucindex
+           0
+           3
+ coreimpur%compositions%ions%zion
+           0
+   1.00000000000000     
+ coreimpur%compositions%ions%imp_flag
+           0
+           0
+ coreimpur%compositions%ions%label
+          -1
+ coreimpur%compositions%impurities
+           1
+           1
+ coreimpur%compositions%impurities%nucindex
+           0
+           2
+ coreimpur%compositions%impurities%i_ion
+          -1
+ coreimpur%compositions%impurities%nzimp
+           0
+           1
+ coreimpur%compositions%impurities%zmin
+           1
+           1
+   4.39344310760498     
+ coreimpur%compositions%impurities%zmax
+           1
+           1
+   4.39344310760498     
+ coreimpur%compositions%impurities%label
+          -1
+ coreimpur%compositions%neutralscomp
+          -1
+ coreimpur%compositions%edgespecies
+          -1
+ coreimpur%compositions%signature%id
+          -1
+ coreimpur%compositions%signature%flag
+          -1
+ coreimpur%compositions%signature%description
+          -1
+ coreimpur%atomic_data
+          -1
+ coreimpur%impurity
+           1
+           1
+ coreimpur%impurity%z
+           2
+          50           1
+   4.39344310760498        4.39344310760498        4.39344310760498        4.39344310760498        4.39344310760498     
+   4.39344310760498        4.39344310760498        4.39344310760498        4.39344310760498        4.39344310760498     
+   4.39344310760498        4.39344310760498        4.39344310760498        4.39344310760498        4.39344310760498     
+   4.39344310760498        4.39344310760498        4.39344310760498        4.39344310760498        4.39344310760498     
+   4.39344310760498        4.39344310760498        4.39344310760498        4.39344310760498        4.39344310760498     
+   4.39344310760498        4.39344310760498        4.39344310760498        4.39344310760498        4.39344310760498     
+   4.39344310760498        4.39344310760498        4.39344310760498        4.39344310760498        4.39344310760498     
+   4.39344310760498        4.39344310760498        4.39344310760498        4.39344310760498        4.39344310760498     
+   4.39344310760498        4.39344310760498        4.39344310760498        4.39344310760498        4.39344310760498     
+   4.39344310760498        4.39344310760498        4.39344310760498        4.39344310760498        4.39344310760498     
+ coreimpur%impurity%zsq
+          -1
+ coreimpur%impurity%nz
+           2
+          50           1
+  2.178336948224000E+018  2.178436956160000E+018  2.178512060416000E+018  2.178414936064000E+018  2.178004025344000E+018
+  2.177133051904000E+018  2.175662948352000E+018  2.173460938752000E+018  2.170411024384000E+018  2.166407954432000E+018
+  2.161369022464000E+018  2.155233935360000E+018  2.147951050752000E+018  2.139500969984000E+018  2.129865998336000E+018
+  2.119052034048000E+018  2.107071004672000E+018  2.093940998144000E+018  2.079679971328000E+018  2.064296050688000E+018
+  2.047793954816000E+018  2.030162935808000E+018  2.011375992832000E+018  1.991390003200000E+018  1.970145984512000E+018
+  1.947578007552000E+018  1.923623944192000E+018  1.898224943104000E+018  1.871363964928000E+018  1.843061063680000E+018
+  1.813409955840000E+018  1.782586015744000E+018  1.750855057408000E+018  1.718583033856000E+018  1.686241935360000E+018
+  1.654394978304000E+018  1.623698046976000E+018  1.594848968704000E+018  1.568521060352000E+018  1.545113042944000E+018
+  1.524269973504000E+018  1.504002048000000E+018  1.479329972224000E+018  1.440905953280000E+018  1.374632017920000E+018
+  1.264210018304000E+018  1.097940008960000E+018  8.781384908800000E+017  6.272061931520000E+017  3.834674872320000E+017
+ coreimpur%impurity%tz
+           2
+          50           1
+   9764.64843750000        9751.66992187500        9724.02734375000        9680.82714843750        9623.11328125000     
+   9555.82031250000        9469.35937500000        9367.87011718750        9251.07421875000        9118.87890625000     
+   8972.01367187500        8811.67187500000        8637.69335937500        8449.85156250000        8248.06152343750     
+   8033.43408203125        7807.72412109375        7571.59423828125        7325.38818359375        7069.69580078125     
+   6805.33398437500        6533.60595703125        6255.68310546875        5973.02294921875        5687.21679687500     
+   5399.63623046875        5111.29589843750        4823.64501953125        4537.67480468750        4254.44824218750     
+   3975.58105468750        3702.59008789062        3436.89892578125        3179.94897460938        2933.09008789062     
+   2697.47094726562        2474.06591796875        2263.85888671875        2067.78710937500        1886.62695312500     
+   1720.92395019531        1570.62402343750        1434.66503906250        1308.95898437500        1182.81799316406     
+   1036.41198730469        845.353210449219        599.440979003906        330.832885742188        120.089698791504     
+ coreimpur%impurity%source_term%value
+          -1
+ coreimpur%impurity%source_term%integral
+          -1
+ coreimpur%impurity%source_term%source
+          -1
+ coreimpur%impurity%boundary%value
+          -1
+ coreimpur%impurity%boundary%source
+          -1
+ coreimpur%impurity%boundary%type
+          -1
+ coreimpur%impurity%boundary%rho
+          -1
+ coreimpur%impurity%boundary%codeparam%codename
+          -1
+ coreimpur%impurity%boundary%codeparam%codeversion
+          -1
+ coreimpur%impurity%boundary%codeparam%parameters
+          -1
+ coreimpur%impurity%boundary%codeparam%output_diag
+          -1
+ coreimpur%impurity%boundary%codeparam%output_flag
+          -1
+ coreimpur%impurity%transp_coef%diff
+          -1
+ coreimpur%impurity%transp_coef%vconv
+          -1
+ coreimpur%impurity%transp_coef%source
+          -1
+ coreimpur%impurity%flux%flux_dv
+          -1
+ coreimpur%impurity%flux%flux_interp
+          -1
+ coreimpur%impurity%time_deriv
+          -1
+ coreimpur%impurity%diagnostic%radiation%line_rad%profile
+          -1
+ coreimpur%impurity%diagnostic%radiation%line_rad%integral
+          -1
+ coreimpur%impurity%diagnostic%radiation%brem_radrec%profile
+          -1
+ coreimpur%impurity%diagnostic%radiation%brem_radrec%integral
+          -1
+ coreimpur%impurity%diagnostic%radiation%sum%profile
+          -1
+ coreimpur%impurity%diagnostic%radiation%sum%integral
+          -1
+ coreimpur%impurity%diagnostic%energy%ionization%profile
+          -1
+ coreimpur%impurity%diagnostic%energy%ionization%integral
+          -1
+ coreimpur%impurity%diagnostic%energy%recombin%profile
+          -1
+ coreimpur%impurity%diagnostic%energy%recombin%integral
+          -1
+ coreimpur%impurity%diagnostic%energy%sum%profile
+          -1
+ coreimpur%impurity%diagnostic%energy%sum%integral
+          -1
+ coreimpur%diagnostic%radiation%line_rad%profile
+          -1
+ coreimpur%diagnostic%radiation%line_rad%integral
+          -1
+ coreimpur%diagnostic%radiation%brem_radrec%profile
+          -1
+ coreimpur%diagnostic%radiation%brem_radrec%integral
+          -1
+ coreimpur%diagnostic%radiation%sum%profile
+          -1
+ coreimpur%diagnostic%radiation%sum%integral
+          -1
+ coreimpur%diagnostic%energy%ionization%profile
+          -1
+ coreimpur%diagnostic%energy%ionization%integral
+          -1
+ coreimpur%diagnostic%energy%recombin%profile
+          -1
+ coreimpur%diagnostic%energy%recombin%integral
+          -1
+ coreimpur%diagnostic%energy%sum%profile
+          -1
+ coreimpur%diagnostic%energy%sum%integral
+          -1
+ coreimpur%diagnosticsum%radiation%line_rad%profile
+          -1
+ coreimpur%diagnosticsum%radiation%line_rad%integral
+          -1
+ coreimpur%diagnosticsum%radiation%brem_radrec%profile
+          -1
+ coreimpur%diagnosticsum%radiation%brem_radrec%integral
+          -1
+ coreimpur%diagnosticsum%radiation%sum%profile
+          -1
+ coreimpur%diagnosticsum%radiation%sum%integral
+          -1
+ coreimpur%diagnosticsum%energy%ionization%profile
+          -1
+ coreimpur%diagnosticsum%energy%ionization%integral
+          -1
+ coreimpur%diagnosticsum%energy%recombin%profile
+          -1
+ coreimpur%diagnosticsum%energy%recombin%integral
+          -1
+ coreimpur%diagnosticsum%energy%sum%profile
+          -1
+ coreimpur%diagnosticsum%energy%sum%integral
+          -1
+ coreimpur%codeparam%codename
+          -1
+ coreimpur%codeparam%codeversion
+          -1
+ coreimpur%codeparam%parameters
+          -1
+ coreimpur%codeparam%output_diag
+          -1
+ coreimpur%codeparam%output_flag
+          -1
+ coreimpur%time
+           0
+   49.4850006103516     

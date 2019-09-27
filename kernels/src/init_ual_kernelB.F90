@@ -16,7 +16,6 @@ program init_ual_kernelB
   integer(kind=c_signed_char), pointer :: coret_out(:)
   integer(kind=c_signed_char), pointer :: cores_out(:)
   integer(kind=c_signed_char), pointer :: corei_out(:)
-  integer(kind=c_signed_char), pointer :: coren_out(:)
   integer(kind=c_signed_char), pointer :: equil_out(:)
   integer(kind=c_signed_char), pointer :: toroidf_out(:)
 
@@ -72,8 +71,7 @@ program init_ual_kernelB
   print *,'INIT_FROM_UAL kernel: call native routine'
   call init_ual2buf(user,machine,version,shot,run,time, &
        corep_out, coret_out, cores_out, &
-       corei_out, coren_out, equil_out, &
-       toroidf_out)
+       corei_out, equil_out, toroidf_out)
 
   print *,'INIT_FROM_UAL kernel: send data'
 
@@ -113,7 +111,6 @@ program init_ual_kernelB
   deallocate(coret_out)
   deallocate(cores_out)
   deallocate(corei_out)
-  deallocate(coren_out)
   deallocate(equil_out)
   deallocate(toroidf_out)
 
