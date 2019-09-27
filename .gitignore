@@ -35,7 +35,7 @@ standalone/uq/utils/__pycache__/*.pyc
 standalone/uq/templates/__pycache__/*.pyc
 standalone/uq/easypj/__pycache__/*.pyc
 standalone/uq/outputs/figs/*.png
-standalone/uq/outputs/logs/test*
+standalone/uq/logs/test*
 standalone/uq/*-job.sh
 
 
