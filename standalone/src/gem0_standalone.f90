@@ -30,7 +30,7 @@ contains
     print *,"fortran GEM0 wrapper"
 
     print *,"get code params"
-    call fill_param(code_parameters, 'gem0.xml', '', 'gem0.xsd')
+    call fill_param(code_parameters, '../../workflows/gem0.xml', '', '../../workflows/gem0.xsd')
 
     print *,"run gem0 routine"
     call gem(equil, corep, coret, code_parameters)

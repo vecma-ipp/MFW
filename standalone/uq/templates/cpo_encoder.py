@@ -43,10 +43,10 @@ class CPOEncoder(BaseEncoder, encoder_name="cpo_encoder"):
         }
 
     # Returns dict (params) for Campaign and a list (vary) of distribitions for Sampler
-    def draw_app_params(self):
+    def draw_app_params(self, params={}, vary={}):
 
-        params = {}
-        vary = {}
+        #params = {}
+        #vary = {}
 
         for k, d in self.uncertain_params.items():
             # Get initial values
@@ -62,7 +62,7 @@ class CPOEncoder(BaseEncoder, encoder_name="cpo_encoder"):
             params.update({k: {"type": typ, "default": val}})
             vary.update({k: dist})
 
-        return params, vary
+        #return params, vary
 
     # Create simulation input files
     def encode(self, params={}, target_dir='', fixtures=None):
@@ -75,7 +75,8 @@ class CPOEncoder(BaseEncoder, encoder_name="cpo_encoder"):
         if not target_dir:
             raise RuntimeError('No target directory specified to encoder')
 
-        for k, v in local_params.items():
+        for k in self.uncertain_params.keys():
+            v = local_params[k]
             if k=="Te_boundary" :
                 self.cpo_core.te.boundary.value[0] = v
             else:

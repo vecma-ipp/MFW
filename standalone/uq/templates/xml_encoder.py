@@ -45,10 +45,10 @@ class XMLEncoder(BaseEncoder, encoder_name="xml_encoder"):
         }
 
     # Return param dict for Campagn and list of distribitions for Sampler
-    def draw_app_params(self):
+    def draw_app_params(self, params={}, vary={}):
 
-        params = {}
-        vary = {}
+        #params = {}
+        #vary = {}
         root = self.tree.getroot()
 
         for k, d in self.uncertain_params.items():
@@ -67,7 +67,7 @@ class XMLEncoder(BaseEncoder, encoder_name="xml_encoder"):
             params.update({k: {"type": typ, "default": val}})
             vary.update({k: dist})
 
-        return params, vary
+        #return params, vary
 
     # Creates simulation input files
     def encode(self, params={}, target_dir='', fixtures=None):
@@ -81,10 +81,11 @@ class XMLEncoder(BaseEncoder, encoder_name="xml_encoder"):
         if not target_dir:
             raise RuntimeError('No target directory specified to encoder')
 
-        for k, v in local_params.items():
-            v_size = self.uncertain_params[k]["size"]
-            # TODO check the call of gaussian_cpo without sizing
+        for k in self.uncertain_params.keys():
+            v = local_params[k]
             v_text = str(v)
+            # TODO check the call of gaussian_cpo without sizing
+            v_size = self.uncertain_params[k]["size"]
             if len(v_text) < v_size:
                 v_text = v_text.center(v_size, " ")
             if len(v_text) > v_size:

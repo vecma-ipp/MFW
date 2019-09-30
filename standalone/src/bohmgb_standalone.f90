@@ -39,7 +39,7 @@ contains
     print *,"fortran BOHMGB wrapper"
 
     print *,"get code params"
-    call fill_param(code_parameters, 'bohmgb.xml', '', 'bohmgb.xsd')
+    call fill_param(code_parameters, '../../workflows/bohmgb.xml', '', '../../workflows/bohmgb.xsd')
 
     print *,"run bohmgb routine"
     call bohmgb(equil, corep, coret, code_parameters)

@@ -35,7 +35,7 @@ contains
     integer :: len
     
     ! Get code params
-    call fill_param(code_parameters, 'chease.xml', '', 'chease.xsd')
+    call fill_param(code_parameters, '../../workflows/chease.xml', '', '../../workflows/chease.xsd')
 
     ! FULLPATHQQ is just available with intel compiler
 !    len = FULLPATHQQ('../../workflows/', workflows_dir)
