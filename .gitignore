@@ -27,16 +27,12 @@ standalone/lib
 standalone/obj
 standalone/include
 
-standalone/uq/*.so
-standalone/uq/*.pyc
 standalone/uq/*cache*
 standalone/uq/*.log
 standalone/uq/utils/__pycache__/*.pyc
 standalone/uq/templates/__pycache__/*.pyc
 standalone/uq/easypj/__pycache__/*.pyc
-standalone/uq/outputs/figs/*.png
+standalone/uq/plots/*.png
 standalone/uq/logs/test*
 standalone/uq/*-job.sh
-
-
-
+standalone/uq/.qcgpjm/*.*
