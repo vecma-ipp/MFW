@@ -13,7 +13,7 @@ from utils import statistics
 class XMLEncoder(BaseEncoder, encoder_name="xml_encoder"):
 
     def __init__(self, template_filename, target_filename,
-                 common_dir, uncertain_params):
+                 common_dir, uncertain_params, link_cpofiles=False):
 
         # Check that user has specified the objests to use as template
         if template_filename is None:
@@ -25,6 +25,7 @@ class XMLEncoder(BaseEncoder, encoder_name="xml_encoder"):
         self.target_filename = template_filename
         self.common_dir = common_dir
         self.uncertain_params = uncertain_params
+        self.link_cpofiles = link_cpofiles
 
         self.fixture_support = True
 
@@ -96,21 +97,24 @@ class XMLEncoder(BaseEncoder, encoder_name="xml_encoder"):
             elem.text = v_text
 
         # Do a symbolic link to other CPO and XML files
-        os.system("ln -s " + self.common_dir + "* " + target_dir)
+        os.system("ln -s " + self.common_dir + "*.xml " + target_dir)
+        os.system("ln -s " + self.common_dir + "*.xsd " + target_dir)
+        if self.link_cpofiles:
+            os.system("ln -s " + self.common_dir + "*.cpo " + target_dir)
 
-        # Write target input CPO file
+        # Write target input (XML file)
         target_file_path = os.path.join(target_dir, self.target_filename)
         if(os.path.isfile(target_file_path)):
             os.system("rm -rf " + target_file_path)
 
-        # Write target input (XML file)
         self.tree.write(target_file_path)
 
     def get_restart_dict(self):
         return {"template_filename": self.template_filename,
                 "target_filename": self.target_filename,
                 "common_dir": self.common_dir,
-                "uncertain_params": self.uncertain_params}
+                "uncertain_params": self.uncertain_params,
+                "link_cpofiles": self.link_cpofiles}
 
     def element_version(self):
         return "0.1"

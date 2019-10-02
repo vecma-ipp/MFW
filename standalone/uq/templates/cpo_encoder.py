@@ -14,7 +14,7 @@ class CPOEncoder(BaseEncoder, encoder_name="cpo_encoder"):
 
     def __init__(self,
                  template_filename, target_filename,
-                 cpo_name, common_dir, uncertain_params):
+                 common_dir, uncertain_params, cpo_name, link_xmlfiles=False):
 
         # Check that user has specified the objests to use as template
         if template_filename is None:
@@ -24,9 +24,10 @@ class CPOEncoder(BaseEncoder, encoder_name="cpo_encoder"):
 
         self.template_filename = template_filename
         self.target_filename = target_filename
-        self.cpo_name = cpo_name
         self.common_dir = common_dir
         self.uncertain_params = uncertain_params
+        self.cpo_name = cpo_name
+        self.link_xmlfiles = link_xmlfiles
 
         self.fixture_support = True
 
@@ -43,10 +44,10 @@ class CPOEncoder(BaseEncoder, encoder_name="cpo_encoder"):
         }
 
     # Returns dict (params) for Campaign and a list (vary) of distribitions for Sampler
-    def draw_app_params(self, params={}, vary={}):
+    def draw_app_params(self):
 
-        #params = {}
-        #vary = {}
+        params = {}
+        vary = {}
 
         for k, d in self.uncertain_params.items():
             # Get initial values
@@ -62,7 +63,7 @@ class CPOEncoder(BaseEncoder, encoder_name="cpo_encoder"):
             params.update({k: {"type": typ, "default": val}})
             vary.update({k: dist})
 
-        #return params, vary
+        return params, vary
 
     # Create simulation input files
     def encode(self, params={}, target_dir='', fixtures=None):
@@ -82,9 +83,12 @@ class CPOEncoder(BaseEncoder, encoder_name="cpo_encoder"):
             else:
                 self.cpo_core.ti.boundary.value[0][0] = v
             #self.mapper[k] = v
-
+        print('in encode :', self.link_xmlfiles)
         # Do a symbolic link to other CPO and XML files
-        os.system("ln -s " + self.common_dir + "* " + target_dir)
+        os.system("ln -s " + self.common_dir + "*.cpo " + target_dir)
+        if self.link_xmlfiles:
+            os.system("ln -s " + self.common_dir + "*.xml " + target_dir)
+            os.system("ln -s " + self.common_dir + "*.xsd " + target_dir)
 
         # Write target input CPO file
         target_file_path = os.path.join(target_dir, self.target_filename)
@@ -96,9 +100,10 @@ class CPOEncoder(BaseEncoder, encoder_name="cpo_encoder"):
     def get_restart_dict(self):
         return {"template_filename": self.template_filename,
                 "target_filename": self.target_filename,
-                "cpo_name": self.cpo_name,
                 "common_dir": self.common_dir,
-                "uncertain_params": self.uncertain_params}
+                "uncertain_params": self.uncertain_params,
+                "cpo_name": self.cpo_name,
+                "link_xmlfiles": self.link_xmlfiles}
 
     def element_version(self):
         return "0.1"
