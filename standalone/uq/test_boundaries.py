@@ -60,7 +60,7 @@ campaign_dir = my_campaign.campaign_dir
 common_dir = campaign_dir +"/common/"
 os.system("mkdir " + common_dir)
 
-# Copy input CPO files in common directory
+# Copy input CPO files
 os.system("cp " + cpo_dir + "/*.cpo " + common_dir)
 
 # Copy XML and XSD files
