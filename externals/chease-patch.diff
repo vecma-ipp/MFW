@@ -95,7 +95,7 @@ Index: externals/chease/src-f90/Makefile.define_FLAGS
 ===================================================================
 --- externals/chease/src-f90/Makefile.define_FLAGS	(revision 1281)
 +++ externals/chease/src-f90/Makefile.define_FLAGS	(working copy)
-@@ -427,3 +427,133 @@
+@@ -427,3 +427,148 @@
      OBJS_euitm =
    endif
  endif
@@ -113,7 +113,7 @@ Index: externals/chease/src-f90/Makefile.define_FLAGS
 +    INCL_HDF5 = -I$(HDF5)/include
 +    LIBS =  -L$(LIB_UAL) -lual -L$(LIB_XML) -lxmllib -lz -L/afs/ipp/itm/switm/lib/lapack/3.4.2/lib/amd64_intel_12 -llapack -lrefblas
 +    LIBS_HDF5 =  -L$(FUTILS) -lfutils -L$(HDF5)/lib -lhdf5_fortran -lhdf5 -lz $(LIBS)
-+    LIBSlibxml = -lxml2 
++    LIBSlibxml = -lxml2
 +    OBJS_euitm =
 +  endif
 +endif
