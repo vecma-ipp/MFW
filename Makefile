@@ -136,7 +136,7 @@ ets: ual libbds get-ets
 get-ets:
 	@if [ ! -d "externals/ets" ]; then \
 	  echo "Checking out ets..."; \
-		svn co $(SVNURL_GFORGE)/ets/tags/4.10b.10_8 externals/ets; \
+		svn co $(SVNURL_GFORGE)/ets/tags/ETS_4.10b-10_v5.2.1 externals/ets; \
 	else  \
 		echo "Updating ets..."; \
 		svn up externals/ets; \

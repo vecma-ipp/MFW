@@ -51,7 +51,7 @@ module ets_standalone
        type (type_coretransp), pointer :: coret(:)
        type (type_coresource), pointer :: cores(:)
        type (type_coreimpur), pointer :: corei(:)
-       integer   :: control_integer(2)
+       integer   :: control_integer(4)
        real(R8)  :: control_double(6)  
        type (type_param) :: code_parameters
      end subroutine ITM_ETS
@@ -84,7 +84,7 @@ contains
     use spitzer
     implicit none
 
-    integer :: control_integer(3)  !integer control parameters
+    integer :: control_integer(4)  !integer control parameters
     real(R8) :: control_double(6)   !real control parameters
 
     integer :: ios
@@ -133,7 +133,7 @@ contains
     ! hard-coded, usually input of ets_wrapper and set by muscle cxa config file
 
     tau = 0.01_8!control_double(1)
-    control_integer = (/ 4, 0, 0 /)
+    control_integer = (/ 4, 0, 0, 0 /)
     control_double = (/ tau, 1.0_8, 1.0_8, 1.e0_8, 1.e-4_8, 1.0_8 /) 
 
     allocate(coret_ext(1))
@@ -386,7 +386,7 @@ contains
 
     implicit none
 
-    integer :: control_integer(3)  !integer control parameters
+    integer :: control_integer(4)  !integer control parameters
     real(R8) :: control_double(6)   !real control parameters
     real(R8), intent(in) :: tau_in
     real(R8) :: ainput(:),aoutput(:)
@@ -446,7 +446,7 @@ contains
     integer, allocatable :: nzimp(:), ntype(:), ncomp(:)
 
 ! hard-coded, usually input of ets_wrapper and set by muscle cxa config file
-    control_integer = (/ 4, 0, 0 /)
+    control_integer = (/ 4, 0, 0, 0 /)
     control_double = (/ tau_in, 1.0_8, 1.0_8, 1.e0_8, 1.e-4_8, 1.0_8 /) 
 
     tau = control_double(1)
