@@ -93,7 +93,7 @@ endif
 
 
 FC90FLAGS += ${INCLUDES} ${MODSPEC}${INCDIR} 
-MPIF90FLAGS += ${INCLUDES} ${MODSPEC}${INCDIR} 
+MPIFLAGS += ${INCLUDES} ${MODSPEC}${INCDIR} 
 
 
 # Objects files ################################################################
@@ -204,19 +204,19 @@ ${OBJDIR}/ets_standalone.o: src/ets_standalone.f90
 	${MPIF90} -o $@ -c $< $(FC90FLAGS) -I${ETS} -I${INC_CONSTANTS} -I${INC_TYPES} -I${INC_XML} 
 
 ${OBJDIR}/ets_test.o: src/ets_test.f90
-	${MPIF90} -o $@ -c $< $(MPIF90FLAGS) -I${INC_TYPES}  
+	${MPIF90} -o $@ -c $< $(MPIFLAGS) -I${INC_TYPES}  
 
 ${OBJDIR}/equilupdate_standalone.o: src/equilupdate_standalone.f90
 	${FC90} -o $@ -c $< $(FC90FLAGS) -I${ETS} -I${INC_CONSTANTS} -I${INC_TYPES} 
 
 ${OBJDIR}/equilupdate_test.o: src/equilupdate_test.f90
-	${MPIF90} -o $@ -c $< $(MPIF90FLAGS) -I${INC_TYPES}  
+	${MPIF90} -o $@ -c $< $(MPIFLAGS) -I${INC_TYPES}  
 
 ${OBJDIR}/chease_standalone.o: src/chease_standalone.f90
-	${MPIF90} -o $@ -c $< $(MPIF90FLAGS) -I${CHEASE} -I${INC_UAL} -I${INC_XML} -I/usr/include/libxml2
+	${MPIF90} -o $@ -c $< $(MPIFLAGS) -I${CHEASE} -I${INC_UAL} -I${INC_XML} -I/usr/include/libxml2
 
 ${OBJDIR}/chease_test.o: src/chease_test.f90
-	${MPIF90} -o $@ -c $< $(MPIF90FLAGS) -I${CHEASE} -I${INC_UAL} -I${INC_TYPES} 
+	${MPIF90} -o $@ -c $< $(MPIFLAGS) -I${CHEASE} -I${INC_UAL} -I${INC_TYPES} 
 
 ${OBJDIR}/imp4dv_standalone.o: src/imp4dv_standalone.f90
 	${FC90} -o $@ -c $< $(FC90FLAGS) -I${INC_BDS}  
@@ -228,7 +228,7 @@ ${OBJDIR}/sources_standalone.o: src/sources_standalone.f90
 	${FC90} -o $@ -c $< $(FC90FLAGS) -traceback -check all -fp-stack-check -I${ETS} -I${INC_XML} -I${INC_CONSTANTS} -I${INC_TYPES} 
 
 ${OBJDIR}/sources_test.o: src/sources_test.f90
-	${MPIF90} -o $@ -c $< $(MPIF90FLAGS) -traceback -check all -fp-stack-check -I${ETS} -I${INC_TYPES} 
+	${MPIF90} -o $@ -c $< $(MPIFLAGS) -traceback -check all -fp-stack-check -I${ETS} -I${INC_TYPES} 
 
 ${OBJDIR}/bohmgb_standalone.o: src/bohmgb_standalone.f90
 	${FC90} -o $@ -c $< $(FC90FLAGS) -I${INC_BDS} -I${INC_XML} 
