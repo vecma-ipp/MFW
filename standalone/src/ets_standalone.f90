@@ -164,7 +164,7 @@ contains
     time_in = corep_in(1)%time
 
     print *,"run ets"
-    call fill_param(code_parameters, '../../workflows/ets.xml', '', '../../workflows/ets.xsd')
+    call fill_param(code_parameters, 'ets.xml', '', 'ets.xsd')
 
     write(cptstr,'(I4.4)') init_step+cpt
 

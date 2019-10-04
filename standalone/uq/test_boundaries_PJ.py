@@ -20,7 +20,7 @@ from qcg.appscheduler.api.manager import LocalManager
 time0 = time.time()
 
 # establish available resources
-cores = 36
+#cores = 1
 
 # set location of log file
 #client_conf = {'log_file': tmpdir.join('api.log'), 'log_level': 'DEBUG'}
@@ -29,15 +29,14 @@ cores = 36
 client_conf = {'log_level': 'DEBUG'}
 
 # switch on debugging (by default in api.log file) LOCAL
-m = LocalManager(['--nodes', str(cores)], client_conf)
-
+#m = LocalManager(['--nodes', str(cores)], client_conf)
 
 # ...
 # This can be used for execution of the test using a separate (non-local) instance of PJManager
-#m = LocalManager(['--log', 'warning'], client_conf)
+m = LocalManager(['--log', 'warning'], client_conf)
 
 # get available resources
-#res = m.resources()
+res = m.resources()
 
 # remove all jobs if they are already in PJM
 # (required when executed using the same QCG-Pilot Job Manager)
@@ -56,7 +55,7 @@ cwd = os.getcwd()
 tmp_dir = os.environ['SCRATCH']
 
 # CPO files
-cpo_dir = os.path.abspath("../data/AUG_28906_6/")
+cpo_dir = os.path.abspath("../../workflows/AUG_28906_6/")
 
 # XML and XSD files
 xml_dir = os.path.abspath("../../workflows")
@@ -85,31 +84,32 @@ output_columns = ["Te", "Ti"]
 
 # Initialize Campaign object
 print('>>> Initialize Campaign object')
-campaign_name = "uq_boundary_cond"
+campaign_name = "uq_boundaries_PJ"
 my_campaign = uq.Campaign(name=campaign_name, work_dir=tmp_dir)
 
-# Create new directory for commons inputs (to be ended with /)
+# Create new directory for inputs (to be ended with /)
 campaign_dir = my_campaign.campaign_dir
 common_dir = campaign_dir +"/common/"
 os.system("mkdir " + common_dir)
 
-# Copy XML files needed in the wrappers
+# Copy input CPO files
+os.system("cp " + cpo_dir + "/*.cpo " + common_dir)
+
+# Copy XML and XSD files
 os.system("cp " + xml_dir + "/ets.x* "    + common_dir)
 os.system("cp " + xml_dir + "/chease.x* " + common_dir)
 os.system("cp " + xml_dir + "/bohmgb.x* " + common_dir)
 os.system("cp " + xml_dir + "/gem0.x* "   + common_dir)
-
-# Copy input CPO files in common directory
-os.system("cp " + cpo_dir + "/*.cpo " + common_dir)
 
 # Create the encoder and get the app parameters
 print('>>> Create the encoder')
 input_filename = "ets_coreprof_in.cpo"
 encoder = CPOEncoder(template_filename=input_filename,
                      target_filename="ets_coreprof_in.cpo",
-                     cpo_name="coreprof",
                      common_dir=common_dir,
-                     uncertain_params=uncertain_params)
+                     uncertain_params=uncertain_params,
+                     cpo_name="coreprof",
+                     link_xmlfiles=True)
 
 params, vary = encoder.draw_app_params()
 
@@ -135,7 +135,7 @@ my_campaign.add_app(name=campaign_name,
 # Create the sampler
 print('>>> Create the sampler')
 my_sampler = uq.sampling.PCESampler(vary=vary,
-                                    polynomial_order=4,
+                                    polynomial_order=1,
                                     quadrature_rule='G',
                                     sparse=False)
 my_campaign.set_sampler(my_sampler)
@@ -255,19 +255,19 @@ uparams_names = list(uncertain_params.keys())
 plots.plot_stats_pctl(rho, stats_te, pctl_te,
                  xlabel=r'$\rho_{tor} ~ [m]$', ylabel=r'$Te$',
                  ftitle='Te profile',
-                 fname='outputs/figs/te_bnd_stat')
+                 fname='plots/te_bnd_stats')
 
 plots.plot_sobols(rho, stot_te, uparams_names,
                   ftitle=' Total-Order Sobol indices - QoI: Te',
-                  fname='outputs/figs/te_bnd_sob')
+                  fname='plots/te_bnd_stot')
 
 plots.plot_stats_pctl(rho, stats_ti, pctl_ti,
                  xlabel=r'$\rho_{tor} ~ [m]$', ylabel=r'$T_i [eV]$',
                  ftitle='Te profile',
-                 fname='outputs/figs/ti_ets_stat')
+                 fname='plots/ti_bnd_stats')
 
 plots.plot_sobols(rho, stot_ti, uparams_names,
                   ftitle=' Total-Order Sobol indices - QoI: Ti',
-                  fname='outputs/figs/ti_ets_sob')
+                  fname='plots/ti_bnd_stot')
 
 print('>>> End of test_boundaries_PJ')
