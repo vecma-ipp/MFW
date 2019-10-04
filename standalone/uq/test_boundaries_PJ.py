@@ -33,10 +33,10 @@ client_conf = {'log_level': 'DEBUG'}
 
 # ...
 # This can be used for execution of the test using a separate (non-local) instance of PJManager
-m = LocalManager(['--log', 'warning'], client_conf)
+m = LocalManager(['--log', 'debug'], client_conf)
 
 # get available resources
-res = m.resources()
+#res = m.resources()
 
 # remove all jobs if they are already in PJM
 # (required when executed using the same QCG-Pilot Job Manager)

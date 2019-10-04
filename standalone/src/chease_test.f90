@@ -17,7 +17,7 @@ use chease_standalone, only: chease_cpo
 implicit none
   
   ! CPO files 
-  character(len=*), parameter :: equil_in_file   = "updated_equilibrium.cpo" ! from ets + update_eq code
+  character(len=*), parameter :: equil_in_file   = "ets_equilibrium_in.cpo" 
   character(len=*), parameter :: equil_out_file  = "chease_equilibrium.cpo"
   
   ! CPO structures 
