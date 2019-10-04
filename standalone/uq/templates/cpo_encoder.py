@@ -83,7 +83,7 @@ class CPOEncoder(BaseEncoder, encoder_name="cpo_encoder"):
             else:
                 self.cpo_core.ti.boundary.value[0][0] = v
             #self.mapper[k] = v
-        print('in encode :', self.link_xmlfiles)
+
         # Do a symbolic link to other CPO and XML files
         os.system("ln -s " + self.common_dir + "*.cpo " + target_dir)
         if self.link_xmlfiles:

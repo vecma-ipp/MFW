@@ -40,22 +40,21 @@ class XMLEncoder(BaseEncoder, encoder_name="xml_encoder"):
             "amplitude_el": "./electrons/heating_el/WTOT_el",
             "position_el" : "./electrons/heating_el/RHEAT_el",
             "width_el"    : "./electrons/heating_el/FWHEAT_el",
-            "amplitude_ion" : "./ions/heating/WTOT",
-            "position_ion"  : "./ions/heating/RHEAT",
-            "width_ion"     : "./ions/heating/FWHEAT"
+#            "amplitude_ion" : "./ions/heating/WTOT",
+#            "position_ion"  : "./ions/heating/RHEAT",
+#            "width_ion"     : "./ions/heating/FWHEAT"
         }
 
     # Return param dict for Campagn and list of distribitions for Sampler
-    def draw_app_params(self, params={}, vary={}):
+    def draw_app_params(self):
 
-        #params = {}
-        #vary = {}
+        params = {}
+        vary = {}
         root = self.tree.getroot()
 
         for k, d in self.uncertain_params.items():
             # Get initial values
             elem = root.find(self.mapper[k])
-            d["size"] = len(elem.text)
             val = float(elem.text)
             typ = d["type"]
             dist_name = d["distribution"]
@@ -68,7 +67,7 @@ class XMLEncoder(BaseEncoder, encoder_name="xml_encoder"):
             params.update({k: {"type": typ, "default": val}})
             vary.update({k: dist})
 
-        #return params, vary
+        return params, vary
 
     # Creates simulation input files
     def encode(self, params={}, target_dir='', fixtures=None):
@@ -84,17 +83,8 @@ class XMLEncoder(BaseEncoder, encoder_name="xml_encoder"):
 
         for k in self.uncertain_params.keys():
             v = local_params[k]
-            v_text = str(v)
-            # TODO check the call of gaussian_cpo without sizing
-            v_size = self.uncertain_params[k]["size"]
-            if len(v_text) < v_size:
-                v_text = v_text.center(v_size, " ")
-            if len(v_text) > v_size:
-                e = "{:."+str(v_size-6)+"E}"
-                v_text = e.format(v)
-
             elem = root.find(self.mapper[k])
-            elem.text = v_text
+            elem.text = str(v)
 
         # Do a symbolic link to other CPO and XML files
         os.system("ln -s " + self.common_dir + "*.xml " + target_dir)

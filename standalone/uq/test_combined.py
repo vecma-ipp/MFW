@@ -11,10 +11,10 @@ from templates.cpo_decoder import CPODecoder
 
 
 # Combined test:
-# UQ for a given model(s) using Non intrisive method.
-# Uncertainties in:
-# - Sources of Electons and Ions.
-# - Boundary conditions of Temperature of Electrons and Ions in the edge.
+# UQ for a given model(s) using Non intrusive method.
+# External Uncertainties in:
+# - Sources of Electons.
+# - Boundary conditions of Electrons Temperature in the edge.
 
 # For Ellapsed time
 time0 = time.time()
@@ -26,25 +26,20 @@ SYS = os.environ['SYS']
 tmp_dir = os.environ['SCRATCH']
 
 # CPO files
-cpo_dir = os.path.abspath("../data/AUG_28906_6/")
+cpo_dir = os.path.abspath("../../workflows/JET_92436_23066/")
 
 # XML and XSD files
 xml_dir = os.path.abspath("../../workflows")
 
 # The execuatble model code
 obj_dir = os.path.abspath("../bin/"+SYS)
-exec_code = "ets_test"
+exec_code = "loop_gem0"
 bbox = os.path.join(obj_dir, exec_code)
 
 # Define a specific parameter space
 uncertain_params_bc = {
-    # Electron and ion tempearture in the Edge
+    # Electron tempearture in the Edge
     "Te_boundary": {
-        "type": "float",
-        "distribution": "Normal",
-        "margin_error": 0.2,
-    },
-    "Ti_boundary": {
         "type": "float",
         "distribution": "Normal",
         "margin_error": 0.2,
@@ -60,37 +55,21 @@ uncertain_params_src = {
     "position_el":{
         "type": "float",
         "distribution": "Uniform",
-        "margin_error": 0.25,
+        "margin_error": 0.2,
     },
     "width_el":{
         "type": "float",
         "distribution": "Uniform",
         "margin_error": 0.2,
-    },
-    # Gaussian Sources: Ions heating
-    "amplitude_ion":{
-        "type": "float",
-        "distribution": "Uniform",
-        "margin_error": 0.25
-    },
-    "position_ion":{
-        "type": "float",
-        "distribution": "Uniform",
-        "margin_error": 0.25
-    },
-    "width_ion":{
-        "type": "float",
-        "distribution": "Uniform",
-        "margin_error": 0.2
     }
 }
 
-# The Quantities of intersts
-output_columns = ["Te", "Ti"]
+# The Quantitie of intersts
+output_columns = ["Te"]
 
 # Initialize Campaign object
 print('>>> Initialize Campaign object')
-campaign_name = "uq_src"
+campaign_name = "uq_combined"
 my_campaign = uq.Campaign(name=campaign_name, work_dir=tmp_dir)
 
 # Create new directory for commons inputs
@@ -120,6 +99,7 @@ encoder_cpo = CPOEncoder(template_filename=input_cpo_filename,
                      common_dir=common_dir,
                      uncertain_params=uncertain_params_bc)
 
+params_cpo, vary_cpo = encoder_cpo.draw_app_params()
 
 input_xml_filename = "source_dummy.xml"
 encoder_xml = XMLEncoder(template_filename=input_xml_filename,
@@ -127,13 +107,12 @@ encoder_xml = XMLEncoder(template_filename=input_xml_filename,
                      common_dir=common_dir,
                      uncertain_params=uncertain_params_src)
 
-params = {}
-vary   = {}
-encoder_cpo.draw_app_params(params, vary)
-encoder_xml.draw_app_params(params, vary)
+params, vary = encoder_xml.draw_app_params()
 
 # Combine both encoders into a single encoder
 encoder = uq.encoders.MultiEncoder(encoder_cpo, encoder_xml)
+params.update(params_cpo)
+vary.update(vary_cpo)
 
 # Create the encoder
 print('>>> Create the decoder')
@@ -157,7 +136,7 @@ my_campaign.add_app(name=campaign_name,
 # Create the sampler
 print('>>> Create the sampler')
 my_sampler = uq.sampling.PCESampler(vary=vary,
-                                    polynomial_order=1,
+                                    polynomial_order=2,
                                     quadrature_rule='G',
                                     sparse=False)
 my_campaign.set_sampler(my_sampler)
@@ -168,7 +147,7 @@ my_campaign.draw_samples()
 
 print('>>> Populate runs_dir')
 my_campaign.populate_runs_dir()
-sys.exit()
+
 print('>>> Execute BlackBox code')
 my_campaign.apply_for_each_run_dir(uq.actions.ExecuteLocal(bbox))
 
@@ -185,13 +164,9 @@ results = my_campaign.get_last_analysis()
 
 # Get Descriptive Statistics
 print('>>> Get Descriptive Statistics')
-stats_te = results['statistical_moments']['Te']
-pctl_te = results['percentiles']['Te']
-stot_te = results['sobols_total']['Te']
-
-stats_ti = results['statistical_moments']['Ti']
-pctl_ti = results['percentiles']['Ti']
-stot_ti = results['sobols_total']['Ti']
+stats = results['statistical_moments']['Te']
+pctl = results['percentiles']['Te']
+stot = results['sobols_total']['Te']
 
 print('>>> Ellapsed time: ', time.time() - time0)
 
@@ -199,23 +174,15 @@ print('>>> Ellapsed time: ', time.time() - time0)
 print('>>> Statictics and SA plots')
 corep = read(os.path.join(cpo_dir,  "ets_coreprof_in.cpo"), "coreprof")
 rho = corep.rho_tor
-uparams_names = list(uncertain_params.keys())
-plots.plot_stats_pctl(rho, stats_te, pctl_te,
+params_names = list(params.keys())
+plots.plot_stats_pctl(rho, stats, pctl,
                  xlabel=r'$\rho_{tor} ~ [m]$', ylabel=r'$Te$',
                  ftitle='Te profile',
-                 fname='outputs/figs/te_src_stats')
+                 fname='plots/te_src_STAT')
 
-plots.plot_sobols(rho, stot_te, uparams_names,
+plots.plot_sobols(rho, stot, params_names,
                   ftitle=' Total-Order Sobol indices - QoI: Te',
-                  fname='outputs/figs/te_src_stot')
+                  fname='plots/te_src_SA')
 
-plots.plot_stats_pctl(rho, stats_ti, pctl_ti,
-                 xlabel=r'$\rho_{tor} ~ [m]$', ylabel=r'$T_i [eV]$',
-                 ftitle='Te profile',
-                 fname='outputs/figs/ti_src_stats')
-
-plots.plot_sobols(rho, stot_ti, uparams_names,
-                  ftitle=' Total-Order Sobol indices - QoI: Ti',
-                  fname='outputs/figs/ti_src_stot')
 
 print('>>> End of test_boundaries')

@@ -23,14 +23,14 @@ SYS = os.environ['SYS']
 tmp_dir = os.environ['SCRATCH']
 
 # CPO files
-cpo_dir = os.path.abspath("../../workflows/AUG_28906_6")
+cpo_dir = os.path.abspath("../../workflows/AUG_28906_6/")
 
 # XML and XSD files
 xml_dir = os.path.abspath("../../workflows")
 
 # The execuatble model code
 obj_dir = os.path.abspath("../bin/"+SYS)
-exec_code = "ets_test"
+exec_code = "gem0_test"
 exec_path = os.path.join(obj_dir, exec_code)
 
 # Define a specific parameter space
@@ -44,7 +44,7 @@ uncertain_params = {
     "position_el":{
         "type": "float",
         "distribution": "Uniform",
-        "margin_error": 0.25,
+        "margin_error": 0.2,
     },
     "width_el":{
         "type": "float",
@@ -55,12 +55,12 @@ uncertain_params = {
     "amplitude_ion":{
         "type": "float",
         "distribution": "Uniform",
-        "margin_error": 0.25
+        "margin_error": 0.2
     },
     "position_ion":{
         "type": "float",
         "distribution": "Uniform",
-        "margin_error": 0.25
+        "margin_error": 0.2
     },
     "width_ion":{
         "type": "float",
@@ -129,7 +129,7 @@ my_campaign.add_app(name=campaign_name,
 # Create the sampler
 print('>>> Create the sampler')
 my_sampler = uq.sampling.PCESampler(vary=vary,
-                                    polynomial_order=1,
+                                    polynomial_order=3,
                                     quadrature_rule='G',
                                     sparse=False)
 my_campaign.set_sampler(my_sampler)
@@ -175,19 +175,19 @@ uparams_names = list(uncertain_params.keys())
 plots.plot_stats_pctl(rho, stats_te, pctl_te,
                  xlabel=r'$\rho_{tor} ~ [m]$', ylabel=r'$Te$',
                  ftitle='Te profile',
-                 fname='outputs/figs/te_src_stats')
+                 fname='plots/te_src_stats')
 
 plots.plot_sobols(rho, stot_te, uparams_names,
                   ftitle=' Total-Order Sobol indices - QoI: Te',
-                  fname='outputs/figs/te_src_stot')
+                  fname='plots/te_src_stot')
 
 plots.plot_stats_pctl(rho, stats_ti, pctl_ti,
                  xlabel=r'$\rho_{tor} ~ [m]$', ylabel=r'$T_i [eV]$',
                  ftitle='Te profile',
-                 fname='outputs/figs/ti_src_stats')
+                 fname='plots/ti_src_stats')
 
 plots.plot_sobols(rho, stot_ti, uparams_names,
                   ftitle=' Total-Order Sobol indices - QoI: Ti',
-                  fname='outputs/figs/ti_src_stot')
+                  fname='plots/ti_src_stot')
 
 print('>>> End of test_boundaries')
