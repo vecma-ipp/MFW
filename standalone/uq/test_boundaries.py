@@ -24,6 +24,7 @@ tmp_dir = os.environ['SCRATCH']
 
 # CPO files
 cpo_dir = os.path.abspath("../../workflows/AUG_28906_6")
+#cpo_dir = os.path.abspath("../../workflows/JET_92436_23066/")
 
 # XML and XSD files
 xml_dir = os.path.abspath("../../workflows")
@@ -43,8 +44,8 @@ uncertain_params = {
     "Ti_boundary": {
         "type": "float",
         "distribution": "Normal",
-        "margin_error": 0.2,
-    }
+           "margin_error": 0.2,
+      }
 }
 
 # For the output: quantities of intersts
@@ -103,7 +104,7 @@ my_campaign.add_app(name=campaign_name,
 # Create the sampler
 print('>>> Create the sampler')
 my_sampler = uq.sampling.PCESampler(vary=vary,
-                                    polynomial_order=2,
+                                    polynomial_order=4,
                                     quadrature_rule='G',
                                     sparse=False)
 my_campaign.set_sampler(my_sampler)
@@ -149,19 +150,19 @@ uparams_names = list(uncertain_params.keys())
 plots.plot_stats_pctl(rho, stats_te, pctl_te,
                  xlabel=r'$\rho_{tor} ~ [m]$', ylabel=r'$Te$',
                  ftitle='Te profile',
-                 fname='plots/te_bnd_stats')
+                 fname='plots/Ate_bnd_stats')
 
 plots.plot_sobols(rho, stot_te, uparams_names,
                   ftitle=' Total-Order Sobol indices - QoI: Te',
-                  fname='plots/te_bnd_stot')
+                  fname='plots/Ate_bnd_stot')
 
 plots.plot_stats_pctl(rho, stats_ti, pctl_ti,
                  xlabel=r'$\rho_{tor} ~ [m]$', ylabel=r'$T_i [eV]$',
                  ftitle='Te profile',
-                 fname='plots/ti_bnd_stats')
+                 fname='plots/Ati_bnd_stats')
 
 plots.plot_sobols(rho, stot_ti, uparams_names,
                   ftitle=' Total-Order Sobol indices - QoI: Ti',
-                  fname='plots/ti_bnd_stot')
+                  fname='plots/Ati_bnd_stot')
 
 print('>>> End of test_boundaries')

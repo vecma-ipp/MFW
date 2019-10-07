@@ -26,7 +26,8 @@ SYS = os.environ['SYS']
 tmp_dir = os.environ['SCRATCH']
 
 # CPO files
-cpo_dir = os.path.abspath("../../workflows/JET_92436_23066/")
+#cpo_dir = os.path.abspath("../../workflows/JET_92436_23066/")
+cpo_dir = os.path.abspath("../../workflows/AUG_28906_6/")
 
 # XML and XSD files
 xml_dir = os.path.abspath("../../workflows")
@@ -39,25 +40,25 @@ bbox = os.path.join(obj_dir, exec_code)
 # Define a specific parameter space
 uncertain_params_bc = {
     # Electron tempearture in the Edge
-    "Te_boundary": {
+    "Ti_boundary": {
         "type": "float",
         "distribution": "Normal",
         "margin_error": 0.2,
     }
 }
 uncertain_params_src = {
-    # Gaussian Sources: Electons heating
-    "amplitude_el":{
+    # Gaussian Sources: Ions heating
+    "amplitude_ion":{
         "type": "float",
         "distribution": "Uniform",
         "margin_error": 0.2,
     },
-    "position_el":{
+    "position_ion":{
         "type": "float",
         "distribution": "Uniform",
         "margin_error": 0.2,
     },
-    "width_el":{
+    "width_ion":{
         "type": "float",
         "distribution": "Uniform",
         "margin_error": 0.2,
@@ -65,7 +66,7 @@ uncertain_params_src = {
 }
 
 # The Quantitie of intersts
-output_columns = ["Te"]
+output_columns = ["Ti"]
 
 # Initialize Campaign object
 print('>>> Initialize Campaign object')
@@ -136,7 +137,7 @@ my_campaign.add_app(name=campaign_name,
 # Create the sampler
 print('>>> Create the sampler')
 my_sampler = uq.sampling.PCESampler(vary=vary,
-                                    polynomial_order=2,
+                                    polynomial_order=4,
                                     quadrature_rule='G',
                                     sparse=False)
 my_campaign.set_sampler(my_sampler)
@@ -164,9 +165,9 @@ results = my_campaign.get_last_analysis()
 
 # Get Descriptive Statistics
 print('>>> Get Descriptive Statistics')
-stats = results['statistical_moments']['Te']
-pctl = results['percentiles']['Te']
-stot = results['sobols_total']['Te']
+stats = results['statistical_moments']['Ti']
+pctl = results['percentiles']['Ti']
+stot = results['sobols_total']['Ti']
 
 print('>>> Ellapsed time: ', time.time() - time0)
 
@@ -177,12 +178,12 @@ rho = corep.rho_tor
 params_names = list(params.keys())
 plots.plot_stats_pctl(rho, stats, pctl,
                  xlabel=r'$\rho_{tor} ~ [m]$', ylabel=r'$Te$',
-                 ftitle='Te profile',
-                 fname='plots/te_src_STAT')
+                 ftitle='Ti profile (AUG_28906)',
+                 fname='plots/Ti_AUG_STAT')
 
 plots.plot_sobols(rho, stot, params_names,
-                  ftitle=' Total-Order Sobol indices - QoI: Te',
-                  fname='plots/te_src_SA')
+                  ftitle=' Total-Order Sobol indices - QoI: Ti',
+                  fname='plots/Ti_AUG_SA')
 
 
-print('>>> End of test_boundaries')
+print('>>> End of test_combined')
