@@ -11,7 +11,7 @@ from templates.cpo_decoder import CPODecoder
 
 # Boundary Conditions test:
 # UQ for a given model(s) using Non intrisive method.
-# Uncertainties in Te and Ti boudaries (Edge)
+# Uncertainties in Te and Ti boudaries (Edge).
 
 # For Ellapsed time
 time0 = time.time()
@@ -39,12 +39,12 @@ uncertain_params = {
     "Te_boundary": {
         "type": "float",
         "distribution": "Normal",
-        "margin_error": 0.2,
+        "margin_error": 0.5,
     },
     "Ti_boundary": {
         "type": "float",
         "distribution": "Normal",
-           "margin_error": 0.2,
+           "margin_error": 0.5,
       }
 }
 
@@ -150,19 +150,19 @@ uparams_names = list(uncertain_params.keys())
 plots.plot_stats_pctl(rho, stats_te, pctl_te,
                  xlabel=r'$\rho_{tor} ~ [m]$', ylabel=r'$Te$',
                  ftitle='Te profile',
-                 fname='plots/Ate_bnd_stats')
+                 fname='plots/Te_AUG_STAT')
 
 plots.plot_sobols(rho, stot_te, uparams_names,
                   ftitle=' Total-Order Sobol indices - QoI: Te',
-                  fname='plots/Ate_bnd_stot')
+                  fname='plots/Te_AUG_SA')
 
 plots.plot_stats_pctl(rho, stats_ti, pctl_ti,
                  xlabel=r'$\rho_{tor} ~ [m]$', ylabel=r'$T_i [eV]$',
                  ftitle='Te profile',
-                 fname='plots/Ati_bnd_stats')
+                 fname='plots/Ti_AUG_STAT')
 
 plots.plot_sobols(rho, stot_ti, uparams_names,
                   ftitle=' Total-Order Sobol indices - QoI: Ti',
-                  fname='plots/Ati_bnd_stot')
+                  fname='plots/Ti_AUG_SA')
 
 print('>>> End of test_boundaries')

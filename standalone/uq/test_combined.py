@@ -13,7 +13,7 @@ from templates.cpo_decoder import CPODecoder
 # Combined test:
 # UQ for a given model(s) using Non intrusive method.
 # External Uncertainties in:
-# - Sources of Electons.
+# - Electons heating sources.
 # - Boundary conditions of Electrons Temperature in the edge.
 
 # For Ellapsed time
@@ -26,8 +26,8 @@ SYS = os.environ['SYS']
 tmp_dir = os.environ['SCRATCH']
 
 # CPO files
-#cpo_dir = os.path.abspath("../../workflows/JET_92436_23066/")
 cpo_dir = os.path.abspath("../../workflows/AUG_28906_6/")
+#cpo_dir = os.path.abspath("../../workflows/JET_92436_23066/")
 
 # XML and XSD files
 xml_dir = os.path.abspath("../../workflows")
@@ -40,7 +40,7 @@ bbox = os.path.join(obj_dir, exec_code)
 # Define a specific parameter space
 uncertain_params_bc = {
     # Electron tempearture in the Edge
-    "Ti_boundary": {
+    "Te_boundary": {
         "type": "float",
         "distribution": "Normal",
         "margin_error": 0.2,
@@ -48,17 +48,17 @@ uncertain_params_bc = {
 }
 uncertain_params_src = {
     # Gaussian Sources: Ions heating
-    "amplitude_ion":{
+    "amplitude_el":{
         "type": "float",
         "distribution": "Uniform",
         "margin_error": 0.2,
     },
-    "position_ion":{
+    "position_el":{
         "type": "float",
         "distribution": "Uniform",
         "margin_error": 0.2,
     },
-    "width_ion":{
+    "width_el":{
         "type": "float",
         "distribution": "Uniform",
         "margin_error": 0.2,
@@ -66,7 +66,7 @@ uncertain_params_src = {
 }
 
 # The Quantitie of intersts
-output_columns = ["Ti"]
+output_columns = ["Te"]
 
 # Initialize Campaign object
 print('>>> Initialize Campaign object')
@@ -137,7 +137,7 @@ my_campaign.add_app(name=campaign_name,
 # Create the sampler
 print('>>> Create the sampler')
 my_sampler = uq.sampling.PCESampler(vary=vary,
-                                    polynomial_order=4,
+                                    polynomial_order=3,
                                     quadrature_rule='G',
                                     sparse=False)
 my_campaign.set_sampler(my_sampler)
@@ -179,11 +179,11 @@ params_names = list(params.keys())
 plots.plot_stats_pctl(rho, stats, pctl,
                  xlabel=r'$\rho_{tor} ~ [m]$', ylabel=r'$Te$',
                  ftitle='Ti profile (AUG_28906)',
-                 fname='plots/Ti_AUG_STAT')
+                 fname='plots/Te_AUG_STAT')
 
 plots.plot_sobols(rho, stot, params_names,
                   ftitle=' Total-Order Sobol indices - QoI: Ti',
-                  fname='plots/Ti_AUG_SA')
+                  fname='plots/Te_AUG_SA')
 
 
 print('>>> End of test_combined')

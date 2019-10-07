@@ -30,7 +30,7 @@ xml_dir = os.path.abspath("../../workflows")
 
 # The execuatble model code
 obj_dir = os.path.abspath("../bin/"+SYS)
-exec_code = "gem0_test"
+exec_code = "ets_test"
 exec_path = os.path.join(obj_dir, exec_code)
 
 # Define a specific parameter space
@@ -129,7 +129,7 @@ my_campaign.add_app(name=campaign_name,
 # Create the sampler
 print('>>> Create the sampler')
 my_sampler = uq.sampling.PCESampler(vary=vary,
-                                    polynomial_order=3,
+                                    polynomial_order=2,
                                     quadrature_rule='G',
                                     sparse=False)
 my_campaign.set_sampler(my_sampler)
@@ -174,20 +174,20 @@ rho = corep.rho_tor
 uparams_names = list(uncertain_params.keys())
 plots.plot_stats_pctl(rho, stats_te, pctl_te,
                  xlabel=r'$\rho_{tor} ~ [m]$', ylabel=r'$Te$',
-                 ftitle='Te profile',
-                 fname='plots/te_src_stats')
+                 ftitle='Te profile (AUG_28906)',
+                 fname='plots/Te_AUG_STAT')
 
 plots.plot_sobols(rho, stot_te, uparams_names,
                   ftitle=' Total-Order Sobol indices - QoI: Te',
-                  fname='plots/te_src_stot')
+                  fname='plots/Te_AUG_SA')
 
 plots.plot_stats_pctl(rho, stats_ti, pctl_ti,
                  xlabel=r'$\rho_{tor} ~ [m]$', ylabel=r'$T_i [eV]$',
                  ftitle='Te profile',
-                 fname='plots/ti_src_stats')
+                 fname='plots/Ti_AUG_STAT')
 
 plots.plot_sobols(rho, stot_ti, uparams_names,
                   ftitle=' Total-Order Sobol indices - QoI: Ti',
-                  fname='plots/ti_src_stot')
+                  fname='plots/Ti_AUG_SA')
 
-print('>>> End of test_boundaries')
+print('>>> End of test_sources')

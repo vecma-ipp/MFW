@@ -37,9 +37,9 @@ class XMLEncoder(BaseEncoder, encoder_name="xml_encoder"):
         # TODO verify that uncertain_params key included in switcher keys
         # TODO move to switcher in tools routine
         self.mapper = {
-#            "amplitude_el": "./electrons/heating_el/WTOT_el",
-#            "position_el" : "./electrons/heating_el/RHEAT_el",
-#            "width_el"    : "./electrons/heating_el/FWHEAT_el",
+            "amplitude_el": "./electrons/heating_el/WTOT_el",
+            "position_el" : "./electrons/heating_el/RHEAT_el",
+            "width_el"    : "./electrons/heating_el/FWHEAT_el",
             "amplitude_ion" : "./ions/heating/WTOT",
             "position_ion"  : "./ions/heating/RHEAT",
             "width_ion"     : "./ions/heating/FWHEAT"

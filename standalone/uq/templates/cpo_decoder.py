@@ -42,6 +42,14 @@ class CPODecoder(BaseDecoder, decoder_name="cpo_decoder"):
         self.output_type = OutputType('sample')
 
     @staticmethod
+    def _get_qoi_values(cpo_core):
+        switcher_dict = {
+            "Te": cpo_core.te.value,
+            "Ti": cpo_core.ti.value[:,0]
+        }
+        return switcher_dict
+
+    @staticmethod
     def _get_output_path(run_info=None, outfile=None):
 
         run_path = run_info['run_dir']
@@ -67,15 +75,13 @@ class CPODecoder(BaseDecoder, decoder_name="cpo_decoder"):
         # The CPO object
         cpo_core = read(out_path, self.cpo_name)
 
-        # TODO check and add all possibilitieus => user switcher
+        # Get Quantity of Intersets
+        qoi_values = self._get_qoi_values(cpo_core)
         quoi_dict = {}
-        if self.cpo_name == "coreprof":
-            for qoi in self.output_columns:
-                if qoi == "Te":
-                    quoi_dict.update({qoi: cpo_core.te.value})
-                if qoi == "Ti":
-                    quoi_dict.update({qoi: cpo_core.ti.value[:,0]})
+        for qoi in self.output_columns:
+            quoi_dict.update({qoi: qoi_values[qoi]})
 
+        # Output data frame
         data = pd.DataFrame(quoi_dict)
 
         return data

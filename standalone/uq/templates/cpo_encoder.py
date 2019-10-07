@@ -36,16 +36,23 @@ class CPOEncoder(BaseEncoder, encoder_name="cpo_encoder"):
         self.cpo_core = read(cpo_filename, cpo_name)
 
         # Mapping with cpo file
-        # TODO verify that uncertain_params key included in switcher keys
         # TODO move to switcher  tools routine
         self.mapper = {
             "Te_boundary" : self.cpo_core.te.boundary.value[0],
             "Ti_boundary" : self.cpo_core.ti.boundary.value[0][0]
         }
 
+    @staticmethod
+    def _set_params_value(cpo_core, param, value):
+        # TODO find a way to use one unified switcher
+        # Verify consistance betwwen cpo_core and param
+        if param=="Te_boundary":
+            cpo_core.te.boundary.value[0] = value
+        if param=="Ti_boundary":
+            cpo_core.ti.boundary.value[0][0] = value
+
     # Returns dict (params) for Campaign and a list (vary) of distribitions for Sampler
     def draw_app_params(self):
-
         params = {}
         vary = {}
 
@@ -78,11 +85,7 @@ class CPOEncoder(BaseEncoder, encoder_name="cpo_encoder"):
 
         for k in self.uncertain_params.keys():
             v = local_params[k]
-            if k=="Te_boundary" :
-                self.cpo_core.te.boundary.value[0] = v
-            else:
-                self.cpo_core.ti.boundary.value[0][0] = v
-            #self.mapper[k] = v
+            self._set_params_value(self.cpo_core, k, v)
 
         # Do a symbolic link to other CPO and XML files
         os.system("ln -s " + self.common_dir + "*.cpo " + target_dir)
