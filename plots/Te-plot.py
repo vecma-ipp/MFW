@@ -1,7 +1,20 @@
+import gathercpos as gc
+
 # load data #
 equil_code = "chease"
 do_equil = False
-execfile("/pfs/home/g2oluk/Garching/compat/trunk/plots/slice-bind.py")
+
+paths = ["/pfs/scratch/g2oluk/Garching/git-c3f14881_25062019/GEM0r117-IMP4DVr119/ndg50_spread_t21-12000_GEM0_20steps_AUG6_Te0.1_dTe0.05_tau1e-2",
+         "/pfs/scratch/g2oluk/Garching/git-c3f14881_25062019/GEM0r117-IMP4DVr119/ndg50_spread_t21-12000_GEM0_20steps_AUG6_Te0.1_dTe0.05_tau1e-2/t1e4"]
+
+cpo_producer = [('ets','coreprof'),('imp4dv','coretransp')]
+cpo = gc.build_time_trace(paths,cpo_producer)
+print("Done gathering all CPO data, continuing...")
+
+coret_len = len(cpo.coretranspArray)
+corep_len = len(cpo.coreprofArray)
+
+#execfile("/pfs/home/g2oluk/Garching/compat/trunk/plots/slice-bind.py")
 #execfile("./slice-bind.py")
 
 import numpy as np
