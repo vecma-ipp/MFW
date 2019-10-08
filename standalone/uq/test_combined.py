@@ -137,9 +137,9 @@ my_campaign.add_app(name=campaign_name,
 # Create the sampler
 print('>>> Create the sampler')
 my_sampler = uq.sampling.PCESampler(vary=vary,
-                                    polynomial_order=3,
-                                    quadrature_rule='G',
-                                    sparse=False)
+                                    polynomial_order=4,
+                                    quadrature_rule='P',
+                                    sparse=True)
 my_campaign.set_sampler(my_sampler)
 
 # Will draw all (of the finite set of samples)
@@ -165,9 +165,9 @@ results = my_campaign.get_last_analysis()
 
 # Get Descriptive Statistics
 print('>>> Get Descriptive Statistics')
-stats = results['statistical_moments']['Ti']
-pctl = results['percentiles']['Ti']
-stot = results['sobols_total']['Ti']
+stats = results['statistical_moments']['Te']
+pctl = results['percentiles']['Te']
+stot = results['sobols_total']['Te']
 
 print('>>> Ellapsed time: ', time.time() - time0)
 
@@ -176,14 +176,15 @@ print('>>> Statictics and SA plots')
 corep = read(os.path.join(cpo_dir,  "ets_coreprof_in.cpo"), "coreprof")
 rho = corep.rho_tor
 params_names = list(params.keys())
+test_case=cpo_dir.split('/')[-1]
+
 plots.plot_stats_pctl(rho, stats, pctl,
                  xlabel=r'$\rho_{tor} ~ [m]$', ylabel=r'$Te$',
-                 ftitle='Ti profile (AUG_28906)',
-                 fname='plots/Te_AUG_STAT')
+                 ftitle='Te profile ('+test_case+')',
+                 fname='plots/Te_STAT_'+test_case)
 
 plots.plot_sobols(rho, stot, params_names,
-                  ftitle=' Total-Order Sobol indices - QoI: Ti',
-                  fname='plots/Te_AUG_SA')
-
+                  ftitle=' Total-Order Sobol indices - QoI: Te',
+                  fname='plots/Te_SA_'+test_case)
 
 print('>>> End of test_combined')
