@@ -26,14 +26,14 @@ SYS = os.environ['SYS']
 tmp_dir = os.environ['SCRATCH']
 
 # CPO files
-cpo_dir = os.path.abspath("../../workflows/AUG_28906_6/")
+cpo_dir = os.path.abspath("../workflows/AUG_28906_6/")
 #cpo_dir = os.path.abspath("../../workflows/JET_92436_23066/")
 
 # XML and XSD files
-xml_dir = os.path.abspath("../../workflows")
+xml_dir = os.path.abspath("../workflows")
 
 # The execuatble model code
-obj_dir = os.path.abspath("../bin/"+SYS)
+obj_dir = os.path.abspath("../workflow/bin/"+SYS)
 exec_code = "loop_gem0"
 bbox = os.path.join(obj_dir, exec_code)
 

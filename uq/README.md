@@ -2,51 +2,45 @@
 
 1. Install [EasyVVUQ](https://easyvvuq.readthedocs.io/en/latest/installation.html) library.
 2. Make sure that the standalone code is compiled. Cf. [README.rst](https://github.com/vecma-ipp/MFW/blob/devel/README.rst) in the root directory of the project.
-3. Compile the wrapper codes by performing `make` command in the wrappers folder (uq/wrappers).
 
 ## Example Usage
 
 Here we show an example where we describe Python implementations of UQ workflow of the ETS code. 
-The script can be found in [ets_uq_test.py](https://github.com/vecma-ipp/MFW/blob/devel/standalone/uq/test_uq_ets.py), where we examine the uncertainty effect of initial conditions in the electron and ion temperature ('Te' and 'Ti'). 
-The input files for this example are the ETS application [wrappers/ets_run.f90](https://github.com/vecma-ipp/MFW/blob/devel/standalone/uq/wrappers/ets_run.f90) and an input template [inputs/boundaries.template](https://github.com/vecma-ipp/MFW/blob/devel/standalone/uq/inputs/boundaries.template). 
-
-
-The usage of the ETS application is:
-
-    ets_run <input_file>
-
-It outputs a single file called `output.csv`, which has two columns ‘Te’ and ‘Ti’.
-The template will be used to generate files called input.nml that will be the input to each run of `ets_run`.
+The script can be found in [ets_uq_test.py](https://github.com/vecma-ipp/MFW/blob/devel/standalone/uq/test_uq_ets.py), where we examine the uncertainty effect of boundary conditions in the electron and ion temperature ('Te' and 'Ti'). 
+The model code for this example is the ETS application [../src/ets_run.f90](https://github.com/vecma-ipp/MFW/blob/devel/standalone/src/ets_test.f90) and it outputs a single file called `ets_coreprof_out.cpo`.
 
 ### Step 1: 
 We start by application setup
 
 ```python
-SYS = os.environ['SYS']                             # Machine name, cf. config file in the root folder.
-tmp_dir = os.environ['SCRATCH']                     # Working directory: to be defined in .bashrc file.
-cpo_dir = os.path.abspath("../data/TESTS/")         # Location of the CPO files.
-ets_run = os.path.abspath("../bin/"+SYS+"/ets_run") # The path to the executable of ETS application.
+SYS = os.environ['SYS']                                   # Machine name, cf. config file in the root folder.
+tmp_dir = os.environ['SCRATCH']                           # Working directory: to be defined in .bashrc file.
+cpo_dir = os.path.abspath("../../workflows/AUG_28906_6")  # Location of the CPO files.
+xml_dir = os.path.abspath("../../workflows")              # Location of the XML and XSD files.
+obj_dir = os.path.abspath("../bin/"+SYS)                  # The path to the executables.
+exec_code = "ets_test"                                    # The name of ETS application.
 ```
 
 ### Step 2: 
-We define Parameter Space that reflects the provided options in the boudaries.template, i.e.: the list of uncertain parameters and the output file name. 
+We define Parameter Space 
+ . 
 
 ```python
-params = {
+# The uncertain parameters 
+uncertain_params = {
     "Te_boundary": {
         "type": "float",
-        "default": "113."
+        "distribution": "Normal",
+        "margin_error": 0.2,
     },
     "Ti_boundary": {
         "type": "float",
-        "default": "180."
-    },
-    "out_file": {
-        "type": "string",
-        "default": "output.csv"
-    }
+        "distribution": "Normal",
+           "margin_error": 0.2,
+      }
 }
-# List of quantities of interest.
+
+# A list of quantities of intersts
 output_columns = ["Te", "Ti"] 
 ```
 
@@ -54,7 +48,8 @@ output_columns = ["Te", "Ti"]
 We create the Campaign object. It is the main EasyVVUQ component that coordinates the UQ workflow and acts as an interface to a database. 
 
 ```python
-my_campaign = uq.Campaign(name = 'uq_ets', work_dir=tmp_dir)
+campaign_name = "uq_ets"
+my_campaign = uq.Campaign(name=campaign_name, work_dir=tmp_dir)
 
 ```
 
@@ -64,23 +59,28 @@ We specify three necessary EasyVVUQ objects
 - The Collater: to aggreate output data in a single data structure for analysis.
 
 ```python
-encoder = uq.encoders.GenericEncoder(
-    template_fname='inputs/boundaries.template',
-    delimiter='#',
-    target_filename='input.nml')
-    
-decoder = uq.decoders.SimpleCSV(target_filename=output_filename,
-                                output_columns=output_columns,
-                                header=0)
+input_filename = "ets_coreprof_in.cpo"
+encoder = CPOEncoder(template_filename=input_filename,
+                     target_filename="ets_coreprof_in.cpo",
+                     common_dir=common_dir,
+                     uncertain_params=uncertain_params,
+                     cpo_name="coreprof",
+                     link_xmlfiles=True)
 
-my_campaign.add_app(name="uq_ets",
-                    params=params,
-                    encoder=encoder,
-                    decoder=decoder
-                    )
+params, vary = encoder.draw_app_params()
+
+output_filename = "ets_coreprof_out.cpo"
+decoder = CPODecoder(target_filename=output_filename,
+                     cpo_name="coreprof",
+                     output_columns=output_columns)
 
 collater = uq.collate.AggregateSamples(average=False)
-my_campaign.set_collater(collater)
+
+my_campaign.add_app(name=campaign_name,
+                    params=params,
+                    encoder=encoder,
+                    decoder=decoder,
+                    collater=collater)
 ```
 
 
