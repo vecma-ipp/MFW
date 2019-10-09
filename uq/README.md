@@ -3,14 +3,16 @@
 1. Install [EasyVVUQ](https://easyvvuq.readthedocs.io/en/latest/installation.html) library.
 2. Make sure that the standalone code is compiled. Cf. [README.rst](https://github.com/vecma-ipp/MFW/blob/devel/README.rst) in the root directory of the project.
 
+
 ## Example Usage
 
-Here we show an example where we describe Python implementations of UQ workflow of the ETS code. 
-The script can be found in [ets_uq_test.py](https://github.com/vecma-ipp/MFW/blob/devel/standalone/uq/test_uq_ets.py), where we examine the uncertainty effect driven by boundary conditions in the electron and ion temperature ('Te' and 'Ti'). 
-The model code for this example is the ETS application [../src/ets_test.f90](https://github.com/vecma-ipp/MFW/blob/master/standalone/src/ets_test.f90) and it outputs a single CPO file called `ets_coreprof_out.cpo`.
+Here we show an example where we describe Python implementation of UQ workflow of the ETS code. 
+The script can be found in [ets_uq.py](https://github.com/vecma-ipp/MFW/blob/master/standalone/uq/ets_uq.py), where we examine the uncertainty effects driven by the boundary conditions in the electron and ion temperature ('Te' and 'Ti'). 
+The model code for this example is the ETS application [ets_test.f90](https://github.com/vecma-ipp/MFW/blob/master/standalone/src/ets_test.f90) and it outputs a single CPO file called `ets_coreprof_out.cpo`.
+
 
 ### Step 1: 
-We start by application setup
+We start by application setup:
 
 ```python
 SYS = os.environ['SYS']                               # Machine name, cf. config file in the root folder.
@@ -43,6 +45,7 @@ uncertain_params = {
 output_columns = ["Te", "Ti"] 
 ```
 
+
 ### Step 3
 We create the Campaign object. It is the main EasyVVUQ component that coordinates the UQ workflow and acts as an interface to a database. 
 
@@ -58,7 +61,7 @@ We specify three necessary EasyVVUQ objects
 - The Collater: to aggreate output data in a single data structure for analysis.
 
 ```python
-input_filename = "ets_coreprof_in.cpo" # To read the initial parameters and 
+input_filename = "ets_coreprof_in.cpo" # to read the initial parameters and 
 encoder = CPOEncoder(template_filename=input_filename,
                      target_filename="ets_coreprof_in.cpo",
                      common_dir=common_dir,
@@ -69,8 +72,7 @@ encoder = CPOEncoder(template_filename=input_filename,
 # To specify the distributions of the uncertain parameters to vary
 params, vary = encoder.draw_app_params()
 
-# Application output: it contains the quantities of interest (Te, Ti) values
-output_filename = "ets_coreprof_out.cpo" 
+output_filename = "ets_coreprof_out.cpo" # contains the quantities of interest values
 decoder = CPODecoder(target_filename=output_filename,
                      cpo_name="coreprof",
                      output_columns=output_columns)
@@ -83,6 +85,7 @@ my_campaign.add_app(name=campaign_name,
                     decoder=decoder,
                     collater=collater)
 ```
+
 
 ### Step 4
 In order to generate samples, we define a correspondant Sampler `PCESampler` based on the Polynomial Chaos Expansion and we associate it with the campaign object created in the previous step.
@@ -98,13 +101,13 @@ To achieve the run of the ETS application for each sample, we draw samples to pr
 ```python
 my_campaign.draw_samples()
 my_campaign.populate_runs_dir()
-exec_path = os.path.join(obj_dir, exec_code) # to run the application
+exec_path = os.path.join(obj_dir, exec_code) # the application path
 my_campaign.apply_for_each_run_dir(uq.actions.ExecuteLocal(exec_path))
 ```
 
+
 ### Step 6
 Finally, we collect the outputs and run analysis.
-
 
 ```python
 my_campaign.collate()

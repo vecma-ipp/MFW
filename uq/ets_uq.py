@@ -9,11 +9,11 @@ from templates.cpo_encoder import CPOEncoder
 from templates.cpo_decoder import CPODecoder
 
 
-# test_uq_ets.py:
+# ets_uq.py:
 # Perform UQ for ETS using Non intrusive method.
 # Uncertainties are driven by electrons and ions boudary condition (Edge).
 
-print('>>> test_uq_ets: START')
+print('>>> ets_uq : START')
 
 # For Ellapsed time
 time0 = time.time()
@@ -39,12 +39,12 @@ uncertain_params = {
     "Te_boundary": {
         "type": "float",
         "distribution": "Normal",
-        "margin_error": 0.5,
+        "margin_error": 0.25,
     },
     "Ti_boundary": {
         "type": "float",
         "distribution": "Normal",
-           "margin_error": 0.5,
+           "margin_error": 0.25,
       }
 }
 
@@ -167,4 +167,4 @@ plots.plot_sobols(rho, stot_ti, uparams_names,
                   ftitle=' Total-Order Sobol indices - QoI: Ti',
                   fname='plots/Ti_SA_'+test_case)
 
-print('>>> test_uq_ets: END')
+print('>>> ets_uq : END')
