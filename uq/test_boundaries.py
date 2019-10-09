@@ -9,9 +9,11 @@ from templates.cpo_encoder import CPOEncoder
 from templates.cpo_decoder import CPODecoder
 
 
-# Boundary Conditions test:
-# UQ for a given model(s) using Non intrisive method.
-# Uncertainties in Te and Ti boudaries (Edge).
+# test_boundaries.py:
+# Perform UQ for a given model using Non intrusive method.
+# Uncertainties are driven by electrons and ions boudary condition (Edge).
+
+print('>>> Strat of test_boundaries')
 
 # For Ellapsed time
 time0 = time.time()
@@ -24,7 +26,7 @@ tmp_dir = os.environ['SCRATCH']
 
 # CPO files
 cpo_dir = os.path.abspath("../workflows/AUG_28906_6")
-#cpo_dir = os.path.abspath("../../workflows/JET_92436_23066/")
+#cpo_dir = os.path.abspath("../workflows/JET_92436_23066")
 
 # XML and XSD files
 xml_dir = os.path.abspath("../workflows")
@@ -32,19 +34,18 @@ xml_dir = os.path.abspath("../workflows")
 # The executable code to run
 obj_dir = os.path.abspath("../standalone/bin/"+SYS)
 exec_code = "ets_test"
-exec_path = os.path.join(obj_dir, exec_code)
 
 # Define a specific parameter space
 uncertain_params = {
     "Te_boundary": {
         "type": "float",
         "distribution": "Normal",
-        "margin_error": 0.5,
+        "margin_error": 0.2,
     },
     "Ti_boundary": {
         "type": "float",
         "distribution": "Normal",
-           "margin_error": 0.5,
+           "margin_error": 0.2,
       }
 }
 
@@ -117,6 +118,7 @@ print('>>> Populate runs_dir')
 my_campaign.populate_runs_dir()
 
 print('>>> Execute BlackBox code')
+exec_path = os.path.join(obj_dir, exec_code)
 my_campaign.apply_for_each_run_dir(uq.actions.ExecuteLocal(exec_path))
 
 print('>>> Collate')
@@ -146,23 +148,26 @@ print('>>> Ellapsed time: ', time.time() - time0)
 print('>>> Statictics and SA plots')
 corep = read(os.path.join(cpo_dir,  "ets_coreprof_in.cpo"), "coreprof")
 rho = corep.rho_tor
+
 uparams_names = list(uncertain_params.keys())
+test_case = cpo_dir.split('/')[-1]
+
 plots.plot_stats_pctl(rho, stats_te, pctl_te,
                  xlabel=r'$\rho_{tor} ~ [m]$', ylabel=r'$Te$',
-                 ftitle='Te profile',
-                 fname='plots/Te_AUG_STAT')
+                 ftitle='Te profile ('+test_case+')',
+                 fname='plots/Te_STAT_'+test_case)
 
 plots.plot_sobols(rho, stot_te, uparams_names,
                   ftitle=' Total-Order Sobol indices - QoI: Te',
-                  fname='plots/Te_AUG_SA')
+                  fname='plots/Te_SA_'+test_case)
 
 plots.plot_stats_pctl(rho, stats_ti, pctl_ti,
                  xlabel=r'$\rho_{tor} ~ [m]$', ylabel=r'$T_i [eV]$',
-                 ftitle='Te profile',
-                 fname='plots/Ti_AUG_STAT')
+                 ftitle='Te profile ('+test_case+')',
+                 fname='plots/Ti_STAT_'+test_case)
 
 plots.plot_sobols(rho, stot_ti, uparams_names,
                   ftitle=' Total-Order Sobol indices - QoI: Ti',
-                  fname='plots/Ti_AUG_SA')
+                  fname='plots/Ti_SA_'+test_case)
 
 print('>>> End of test_boundaries')

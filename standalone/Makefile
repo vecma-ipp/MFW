@@ -142,7 +142,7 @@ ${OBJDIR}/%.o: %.c
 
 ###  EXECUTABLES #################################################################
 
-ETS_TEST: ${SHARED_O} ${ETS_O} ${EQUILUPDATE_O} ${SOURCES_O} ${OBJDIR}/ets_test.o
+ETS_TEST: ${SHARED_O} ${ETS_O} ${OBJDIR}/ets_test.o
 	$(MPIF90) -o  ${ETS_EXE} $^ -L${ETS} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_XML} -L${LIB_UAL} -lets -lbds -lxmllib -litmconstants -litmtypes -lual ${LDFLAGS} ${LIBLAPACK}
 
 EQUILUPDATE_TEST:${SHARED_O} ${EQUILUPDATE_O} ${OBJDIR}/equilupdate_test.o

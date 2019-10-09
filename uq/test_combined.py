@@ -10,11 +10,13 @@ from templates.cpo_encoder import CPOEncoder
 from templates.cpo_decoder import CPODecoder
 
 
-# Combined test:
-# UQ for a given model(s) using Non intrusive method.
-# External Uncertainties in:
-# - Electons heating sources.
-# - Boundary conditions of Electrons Temperature in the edge.
+# test_combined.py:
+# Perform UQ for a given model using Non intrusive method.
+# Uncertainties are driven by:
+# - External sources of Electons heating.
+# - Electrons boudary condition (Edge).
+
+print('>>> test_combined: START')
 
 # For Ellapsed time
 time0 = time.time()
@@ -26,20 +28,19 @@ SYS = os.environ['SYS']
 tmp_dir = os.environ['SCRATCH']
 
 # CPO files
-cpo_dir = os.path.abspath("../workflows/AUG_28906_6/")
-#cpo_dir = os.path.abspath("../../workflows/JET_92436_23066/")
+cpo_dir = os.path.abspath("../workflows/AUG_28906_6")
+#cpo_dir = os.path.abspath("../workflows/JET_92436_23066")
 
 # XML and XSD files
 xml_dir = os.path.abspath("../workflows")
 
 # The execuatble model code
-obj_dir = os.path.abspath("../workflow/bin/"+SYS)
+obj_dir = os.path.abspath("../standalone/bin/"+SYS)
 exec_code = "loop_gem0"
-bbox = os.path.join(obj_dir, exec_code)
 
 # Define a specific parameter space
 uncertain_params_bc = {
-    # Electron tempearture in the Edge
+    # Electrons boudary condition
     "Te_boundary": {
         "type": "float",
         "distribution": "Normal",
@@ -47,7 +48,7 @@ uncertain_params_bc = {
     }
 }
 uncertain_params_src = {
-    # Gaussian Sources: Ions heating
+    # Gaussian Sources: Electrons heating
     "amplitude_el":{
         "type": "float",
         "distribution": "Uniform",
@@ -150,6 +151,7 @@ print('>>> Populate runs_dir')
 my_campaign.populate_runs_dir()
 
 print('>>> Execute BlackBox code')
+bbox = os.path.join(obj_dir, exec_code)
 my_campaign.apply_for_each_run_dir(uq.actions.ExecuteLocal(bbox))
 
 print('>>> Collate')
@@ -175,6 +177,7 @@ print('>>> Ellapsed time: ', time.time() - time0)
 print('>>> Statictics and SA plots')
 corep = read(os.path.join(cpo_dir,  "ets_coreprof_in.cpo"), "coreprof")
 rho = corep.rho_tor
+
 params_names = list(params.keys())
 test_case=cpo_dir.split('/')[-1]
 
@@ -187,4 +190,4 @@ plots.plot_sobols(rho, stot, params_names,
                   ftitle=' Total-Order Sobol indices - QoI: Te',
                   fname='plots/Te_SA_'+test_case)
 
-print('>>> End of test_combined')
+print('>>> test_combined: END')
