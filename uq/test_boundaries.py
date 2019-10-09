@@ -1,6 +1,8 @@
 # -*- coding: UTF-8 -*-
 import os, sys, time
+import numpy as np
 import chaospy as cp
+import pandas as pd
 import easyvvuq as uq
 import matplotlib.pylab as plt
 from ascii_cpo import read
@@ -54,7 +56,7 @@ output_columns = ["Te", "Ti"]
 
 # Initialize Campaign object
 print('>>> Initialize Campaign object')
-campaign_name = "uq_boundaries"
+campaign_name = "uq_boundaries_"
 my_campaign = uq.Campaign(name=campaign_name, work_dir=tmp_dir)
 
 # Create new directory for inputs (to be ended with /)
@@ -132,42 +134,76 @@ my_campaign.apply_analysis(analysis)
 print('>>> Get results')
 results = my_campaign.get_last_analysis()
 
+print('>>> Ellapsed time: ', time.time() - time0)
+
 # Get Descriptive Statistics
 print('>>> Get Descriptive Statistics')
-stats_te = results['statistical_moments']['Te']
+stat_te = results['statistical_moments']['Te']
 pctl_te = results['percentiles']['Te']
-stot_te = results['sobols_total']['Te']
+sob1_te = results['sobols_first']['Te']
+sobt_te = results['sobols_total']['Te']
 
-stats_ti = results['statistical_moments']['Ti']
+stat_ti = results['statistical_moments']['Ti']
 pctl_ti = results['percentiles']['Ti']
-stot_ti = results['sobols_total']['Ti']
-
-print('>>> Ellapsed time: ', time.time() - time0)
+sob1_ti = results['sobols_first']['Ti']
+sobt_ti = results['sobols_total']['Ti']
 
 #  Graphics for Descriptive satatistics
 print('>>> Statictics and SA plots')
 corep = read(os.path.join(cpo_dir,  "ets_coreprof_in.cpo"), "coreprof")
-rho = corep.rho_tor
+rho = corep.rho_tor_norm
 
-uparams_names = list(uncertain_params.keys())
 test_case = cpo_dir.split('/')[-1]
 
-plots.plot_stats_pctl(rho, stats_te, pctl_te,
+# Save statistics
+mean_te = list(stat_te['mean'])
+std_te  = list(stat_te['std'])
+mean_ti = list(stat_ti['mean'])
+std_ti  = list(stat_ti['std'])
+
+header = 'RHO_TOR_NORM \t MEAN_TE \t STD_TE \t MEAN_TI \t STD_TI'
+np.savetxt('outputs/'+test_case+'_UQ_STATS.dat',
+           np.c_[rho, mean_te, std_te, mean_ti, std_ti], delimiter='\t', header=header)
+
+# Save into database
+engine = my_campaign.campaign_db.engine
+
+# Create new tables for results and store them in the data base
+stat_te_df = pd.DataFrame.from_dict(stat_te)
+stat_te_df.to_sql('STAT_TE', engine, if_exists='append')
+sob1_te_df = pd.DataFrame.from_dict(sobt_te)
+sob1_te_df.to_sql('SOB1_TE', engine, if_exists='append')
+sobt_te_df = pd.DataFrame.from_dict(sobt_te)
+sobt_te_df.to_sql('SOBT_TE', engine, if_exists='append')
+
+stat_ti_df = pd.DataFrame.from_dict(stat_ti)
+stat_ti_df.to_sql('STAT_TI', engine, if_exists='append')
+sob1_ti_df = pd.DataFrame.from_dict(sobt_ti)
+sob1_ti_df.to_sql('SOB1_TI', engine, if_exists='append')
+sobt_ti_df = pd.DataFrame.from_dict(sobt_ti)
+sobt_ti_df.to_sql('SOBT_TI', engine, if_exists='append')
+
+os.system('cp '+ engine.url.database +' outputs')
+
+# PLOTS
+uparams_names = list(uncertain_params.keys())
+
+plots.plot_stats_pctl(rho, stat_te, pctl_te,
                  xlabel=r'$\rho_{tor} ~ [m]$', ylabel=r'$Te$',
                  ftitle='Te profile ('+test_case+')',
-                 fname='plots/Te_STAT_'+test_case)
+                 fname='outputs/plots/Te_STAT_'+test_case)
 
-plots.plot_sobols(rho, stot_te, uparams_names,
-                  ftitle=' Total-Order Sobol indices - QoI: Te',
-                  fname='plots/Te_SA_'+test_case)
+plots.plot_sobols(rho, sobt_te, uparams_names,
+                  ftitle='Total-Order Sobol indices - QoI: Te',
+                  fname='outputs/plots/Te_SA_'+test_case)
 
-plots.plot_stats_pctl(rho, stats_ti, pctl_ti,
+plots.plot_stats_pctl(rho, stat_ti, pctl_ti,
                  xlabel=r'$\rho_{tor} ~ [m]$', ylabel=r'$T_i [eV]$',
                  ftitle='Te profile ('+test_case+')',
-                 fname='plots/Ti_STAT_'+test_case)
+                 fname='outputs/plots/Ti_STAT_'+test_case)
 
-plots.plot_sobols(rho, stot_ti, uparams_names,
-                  ftitle=' Total-Order Sobol indices - QoI: Ti',
-                  fname='plots/Ti_SA_'+test_case)
+plots.plot_sobols(rho, sobt_ti, uparams_names,
+                  ftitle='Total-Order Sobol indices - QoI: Ti',
+                  fname='outputs/plots/Ti_SA_'+test_case)
 
 print('>>> End of test_boundaries')
