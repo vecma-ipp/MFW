@@ -50,6 +50,7 @@ class CPOEncoder(BaseEncoder, encoder_name="cpo_encoder"):
             cpo_core.te.boundary.value[0] = value
         if param=="Ti_boundary":
             cpo_core.ti.boundary.value[0][0] = value
+            # In case of two ions species
             if len(cpo_core.ti.boundary.value[0]) == 2:
                 cpo_core.ti.boundary.value[0][1] = value
 
@@ -112,4 +113,3 @@ class CPOEncoder(BaseEncoder, encoder_name="cpo_encoder"):
 
     def element_version(self):
         return "0.1"
-

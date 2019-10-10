@@ -2,16 +2,15 @@
 import os, sys, time
 import chaospy as cp
 import easyvvuq as uq
-import matplotlib.pylab as plt
 from ascii_cpo import read
-from utils import plots
 from templates.cpo_encoder import CPOEncoder
 from templates.cpo_decoder import CPODecoder
 
 
 # ets_uq.py:
 # Perform UQ for ETS using Non intrusive method.
-# Uncertainties are driven by electrons and ions boudary condition (Edge).
+# Uncertainties are driven by:
+# - Boudary conditions (Edge) of electrons and ions tempurature.
 
 print('>>> ets_uq : START')
 
@@ -142,29 +141,33 @@ stot_ti = results['sobols_total']['Ti']
 print('>>> Ellapsed time: ', time.time() - time0)
 
 #  Graphics for Descriptive satatistics
-print('>>> Statictics and SA plots')
-corep = read(os.path.join(cpo_dir,  "ets_coreprof_in.cpo"), "coreprof")
-rho = corep.rho_tor
+__PLOTS = False # If True create plots subfolder under outputs folder
 
-uparams_names = list(uncertain_params.keys())
-test_case = cpo_dir.split('/')[-1]
+if __PLOTS:
+    from utils import plots
+    uparams_names = list(params.keys())
+    corep = read(os.path.join(cpo_dir,  "ets_coreprof_in.cpo"), "coreprof")
+    rho = corep.rho_tor
 
-plots.plot_stats_pctl(rho, stats_te, pctl_te,
-                 xlabel=r'$\rho_{tor} ~ [m]$', ylabel=r'$Te$',
-                 ftitle='Te profile ('+test_case+')',
-                 fname='plots/Te_STAT_'+test_case)
+    uparams_names = list(params.keys())
+    test_case = cpo_dir.split('/')[-1]
 
-plots.plot_sobols(rho, stot_te, uparams_names,
-                  ftitle=' Total-Order Sobol indices - QoI: Te',
-                  fname='plots/Te_SA_'+test_case)
+    plots.plot_stats_pctl(rho, stats_te, pctl_te,
+                     xlabel=r'$\rho_{tor} ~ [m]$', ylabel=r'$Te$',
+                     ftitle='Te profile ('+test_case+')',
+                     fname='plots/Te_STAT_'+test_case)
 
-plots.plot_stats_pctl(rho, stats_ti, pctl_ti,
-                 xlabel=r'$\rho_{tor} ~ [m]$', ylabel=r'$T_i [eV]$',
-                 ftitle='Te profile ('+test_case+')',
-                 fname='plots/Ti_STAT_'+test_case)
+    plots.plot_sobols(rho, stot_te, uparams_names,
+                      ftitle=' Total-Order Sobol indices - QoI: Te',
+                      fname='plots/Te_SA_'+test_case)
 
-plots.plot_sobols(rho, stot_ti, uparams_names,
-                  ftitle=' Total-Order Sobol indices - QoI: Ti',
-                  fname='plots/Ti_SA_'+test_case)
+    plots.plot_stats_pctl(rho, stats_ti, pctl_ti,
+                     xlabel=r'$\rho_{tor} ~ [m]$', ylabel=r'$T_i [eV]$',
+                     ftitle='Te profile ('+test_case+')',
+                     fname='plots/Ti_STAT_'+test_case)
+
+    plots.plot_sobols(rho, stot_ti, uparams_names,
+                      ftitle=' Total-Order Sobol indices - QoI: Ti',
+                      fname='plots/Ti_SA_'+test_case)
 
 print('>>> ets_uq : END')

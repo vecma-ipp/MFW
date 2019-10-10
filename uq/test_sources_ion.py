@@ -1,21 +1,21 @@
 # -*- coding: UTF-8 -*-
 import os, sys, time
 import numpy as np
-import chaospy as cp
 import pandas as pd
+import chaospy as cp
 import easyvvuq as uq
 import matplotlib.pylab as plt
 from ascii_cpo import read
-from templates.cpo_encoder import CPOEncoder
+from templates.xml_encoder import XMLEncoder
 from templates.cpo_decoder import CPODecoder
 
 
-# test_boundaries.py:
+# test_sources.py:
 # Perform UQ for a given model using Non intrusive method.
 # Uncertainties are driven by:
-# - Boudary conditions (Edge) of electrons and ions tempurature.
+# - External sources of Ions heating.
 
-print('>>> Strat of test_boundaries')
+print('>>> test_sources_ion: START')
 
 # For Ellapsed time
 time0 = time.time()
@@ -28,35 +28,40 @@ tmp_dir = os.environ['SCRATCH']
 
 # CPO files
 cpo_dir = os.path.abspath("../workflows/AUG_28906_6")
-#cpo_dir = os.path.abspath("../workflows/JET_92436_23066")
 
 # XML and XSD files
 xml_dir = os.path.abspath("../workflows")
 
-# The executable code to run
+# The execuatble model code
 obj_dir = os.path.abspath("../standalone/bin/"+SYS)
-exec_code = "ets_test"
+exec_code = "loop_gem0"
 
 # Define a specific parameter space
 uncertain_params = {
-    "Te_boundary": {
+    # Ions heatings Gaussian
+    "amplitude_ion":{
         "type": "float",
-        "distribution": "Normal",
-        "margin_error": 0.2,
+        "distribution": "Uniform",
+        "margin_error": 0.2
     },
-    "Ti_boundary": {
+    "position_ion":{
         "type": "float",
-        "distribution": "Normal",
-           "margin_error": 0.2,
-      }
+        "distribution": "Uniform",
+        "margin_error": 0.2
+    },
+    "width_ion":{
+        "type": "float",
+        "distribution": "Uniform",
+        "margin_error": 0.2
+    }
 }
 
-# For the output: quantities of intersts
+# The Quantities of intersts
 output_columns = ["Te", "Ti"]
 
 # Initialize Campaign object
 print('>>> Initialize Campaign object')
-campaign_name = "uq_boundaries_"
+campaign_name = "UQSrc_ION_"
 my_campaign = uq.Campaign(name=campaign_name, work_dir=tmp_dir)
 
 # Create new directory for inputs (to be ended with /)
@@ -65,23 +70,27 @@ common_dir = campaign_dir +"/common/"
 os.system("mkdir " + common_dir)
 
 # Copy input CPO files
-os.system("cp " + cpo_dir + "/*.cpo " + common_dir)
+os.system("cp " + cpo_dir + "/ets_coreprof_in.cpo "    + common_dir)
+os.system("cp " + cpo_dir + "/ets_equilibrium_in.cpo " + common_dir)
+os.system("cp " + cpo_dir + "/ets_coreimpur_in.cpo "   + common_dir)
+os.system("cp " + cpo_dir + "/ets_coretransp_in.cpo "  + common_dir)
+os.system("cp " + cpo_dir + "/ets_toroidfield_in.cpo " + common_dir)
 
 # Copy XML and XSD files
 os.system("cp " + xml_dir + "/ets.x* "    + common_dir)
 os.system("cp " + xml_dir + "/chease.x* " + common_dir)
 os.system("cp " + xml_dir + "/bohmgb.x* " + common_dir)
 os.system("cp " + xml_dir + "/gem0.x* "   + common_dir)
+os.system("cp " + xml_dir + "/source_dummy.x* " + common_dir)
 
 # Create the encoder and get the app parameters
 print('>>> Create the encoder')
-input_filename = "ets_coreprof_in.cpo"
-encoder = CPOEncoder(template_filename=input_filename,
-                     target_filename="ets_coreprof_in.cpo",
+input_filename = "source_dummy.xml"
+encoder = XMLEncoder(template_filename=input_filename,
+                     target_filename="source_dummy.xml",
                      common_dir=common_dir,
                      uncertain_params=uncertain_params,
-                     cpo_name="coreprof",
-                     link_xmlfiles=True)
+                     link_cpofiles=True)
 
 params, vary = encoder.draw_app_params()
 
@@ -134,8 +143,6 @@ my_campaign.apply_analysis(analysis)
 print('>>> Get results')
 results = my_campaign.get_last_analysis()
 
-print('>>> Ellapsed time: ', time.time() - time0)
-
 # Get Descriptive Statistics
 print('>>> Get Descriptive Statistics')
 stat_te = results['statistical_moments']['Te']
@@ -148,34 +155,32 @@ pctl_ti = results['percentiles']['Ti']
 sob1_ti = results['sobols_first']['Ti']
 sobt_ti = results['sobols_total']['Ti']
 
-#  Save Descriptive satatistics
+#  Graphics for Descriptive satatistics
 print('>>> Save Statictics and SA')
 corep = read(os.path.join(cpo_dir,  "ets_coreprof_in.cpo"), "coreprof")
 rho = corep.rho_tor_norm
 
 test_case = cpo_dir.split('/')[-1]
 
-# Save statistics into scv file
+# Save statistics
 mean_te = list(stat_te['mean'])
 std_te  = list(stat_te['std'])
 mean_ti = list(stat_ti['mean'])
 std_ti  = list(stat_ti['std'])
 
 header = 'RHO_TOR_NORM\tMEAN_TE\tSTD_TE\tMEAN_TI\tSTD_TI'
-np.savetxt('outputs/'+test_case+'_UQ_STATS.csv',
-           np.c_[rho, mean_te, std_te, mean_ti, std_ti],
-           delimiter='\t', comments='', header=header)
+np.savetxt('outputs/'+campaign_name+'_UQ_STATS.dat',
+           np.c_[rho, mean_te, std_te, mean_ti, std_ti], delimiter='\t', header=header)
 
-
-# Save statistics and Sobol indices into the database
+# Save into database
 engine = my_campaign.campaign_db.engine
 
 # Create new tables for results and store them in the data base
 stat_te_df = pd.DataFrame.from_dict(stat_te)
 stat_te_df.to_sql('STAT_TE', engine, if_exists='append')
-sob1_te_df = pd.DataFrame.from_dict(sobt_te)
+sob1_te_df = pd.dataframe.from_dict(sobt_te)
 sob1_te_df.to_sql('SOB1_TE', engine, if_exists='append')
-sobt_te_df = pd.DataFrame.from_dict(sobt_te)
+sobt_te_df = pd.dataFrame.from_dict(sobt_te)
 sobt_te_df.to_sql('SOBT_TE', engine, if_exists='append')
 
 stat_ti_df = pd.DataFrame.from_dict(stat_ti)
@@ -195,20 +200,20 @@ if __PLOTS:
 
     plots.plot_stats_pctl(rho, stat_te, pctl_te,
                      xlabel=r'$\rho_{tor} ~ [m]$', ylabel=r'$Te$',
-                     ftitle='Te profile ('+test_case+')',
-                     fname='outputs/plots/Te_STAT_'+test_case)
+                     ftitle='Te profile (Ions S) - '+test_case,
+                     fname='outputs/plots/Te_STAT_Ion_'+test_case)
 
     plots.plot_sobols(rho, sobt_te, uparams_names,
-                      ftitle='Total-Order Sobol indices - QoI: Te',
-                      fname='outputs/plots/Te_SA_'+test_case)
+                      ftitle=' Total-Order Sobol indices (Ion S)- QoI: Te',
+                      fname='outputs/plots/Te_SA_Ion_'+test_case)
 
     plots.plot_stats_pctl(rho, stat_ti, pctl_ti,
                      xlabel=r'$\rho_{tor} ~ [m]$', ylabel=r'$T_i [eV]$',
-                     ftitle='Te profile ('+test_case+')',
-                     fname='outputs/plots/Ti_STAT_'+test_case)
+                     ftitle='Ti profile - (Ions S) - '+test_case,
+                     fname='outputs/plots/Ti_STAT_Ion_'+test_case)
 
     plots.plot_sobols(rho, sobt_ti, uparams_names,
-                      ftitle='Total-Order Sobol indices - QoI: Ti',
-                      fname='outputs/plots/Ti_SA_'+test_case)
+                      ftitle=' Total-Order Sobol indices - QoI: Ti',
+                      fname='outputs/plots/Ti_SA_Ion_'+test_case)
 
-print('>>> End of test_boundaries')
+print('>>> test_sources: END')
