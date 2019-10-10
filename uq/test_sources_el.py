@@ -169,7 +169,7 @@ mean_ti = list(stat_ti['mean'])
 std_ti  = list(stat_ti['std'])
 
 header = 'RHO_TOR_NORM\tMEAN_TE\tSTD_TE\tMEAN_TI\tSTD_TI'
-np.savetxt('outputs/'+campaign_name+'_UQ_STATS.dat',
+np.savetxt('outputs/'+campaign_name+'_UQ_STATS.csv',
            np.c_[rho, mean_te, std_te, mean_ti, std_ti], delimiter='\t', header=header)
 
 # Save into database
