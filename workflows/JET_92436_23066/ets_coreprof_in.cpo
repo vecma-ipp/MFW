@@ -409,7 +409,7 @@
           -1
  coreprof%te%boundary%type
            0
-           0
+           1
  coreprof%te%boundary%rho_tor
            0
   0.000000000000000E+000
@@ -654,7 +654,7 @@
  coreprof%ti%boundary%type
            1
            2
-           0           0
+           1           1
  coreprof%ti%boundary%rho_tor
            1
            2
