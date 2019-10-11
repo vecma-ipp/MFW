@@ -7,8 +7,8 @@
 ## Example Usage
 
 Here we show an example where we describe Python implementation of UQ workflow of the ETS code. 
-The script can be found in [ets_uq.py](https://github.com/vecma-ipp/MFW/blob/master/standalone/uq/ets_uq.py), where we examine the uncertainty effects driven by the boundary conditions in the electron and ion temperature ('Te' and 'Ti'). 
-The model code for this example is the ETS application [ets_test.f90](https://github.com/vecma-ipp/MFW/blob/master/standalone/src/ets_test.f90) and it outputs a single CPO file called `ets_coreprof_out.cpo`.
+The script can be found in [ets_uq.py](https://github.com/vecma-ipp/MFW/blob/devel/uq/ets_uq.py), where we examine the uncertainty effects driven by the boundary conditions in the electron and ion temperature ('Te' and 'Ti'). 
+The model code for this example is the ETS application [ets_test.f90](https://github.com/vecma-ipp/MFW/blob/devel/standalone/src/ets_test.f90) and it outputs a single CPO file called `ets_coreprof_out.cpo`.
 
 
 ### Step 1: 

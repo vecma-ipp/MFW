@@ -37,7 +37,7 @@ uq/templates/*.pyc
 uq/easypj/*cache*
 uq/outputs/plots/*.png
 uq/outputs/logs/test.*
-uq/outputs/*.dat
+uq/outputs/*.csv
 uq/outputs/*.db
 uq/*-job.sh
 uq/.qcgpjm/*.*

@@ -178,9 +178,9 @@ engine = my_campaign.campaign_db.engine
 # Create new tables for results and store them in the data base
 stat_te_df = pd.DataFrame.from_dict(stat_te)
 stat_te_df.to_sql('STAT_TE', engine, if_exists='append')
-sob1_te_df = pd.dataframe.from_dict(sobt_te)
+sob1_te_df = pd.DataFrame.from_dict(sobt_te)
 sob1_te_df.to_sql('SOB1_TE', engine, if_exists='append')
-sobt_te_df = pd.dataFrame.from_dict(sobt_te)
+sobt_te_df = pd.DataFrame.from_dict(sobt_te)
 sobt_te_df.to_sql('SOBT_TE', engine, if_exists='append')
 
 stat_ti_df = pd.DataFrame.from_dict(stat_ti)
