@@ -5,7 +5,7 @@
 pip3 install -e git://github.com/UCL-CCS/EasyVVUQ.git@v0.4-review#egg=easyvvuq --user
 ``` 
     
-2. Make sure that the standalone code is compiled. Cf. [README.rst](https://github.com/vecma-ipp/MFW/blob/devel/README.rst) in the root directory of the project.
+2. Make sure that the standalone code is compiled. Cf. [README](https://github.com/vecma-ipp/MFW/blob/master/README.md) in the root directory of the project.
 
 
 ## Example Usage
