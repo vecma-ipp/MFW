@@ -1,5 +1,5 @@
 ## Standalone module
-- List of standalone programmes, wrraped with external codes, and their tests:
+- List of standalone programs, wrapped with external codes, and their tests:
 
     ets, equilupdate, gaussian_sources, chease, bohmgb, gem0 and imp4dv.
 
