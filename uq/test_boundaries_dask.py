@@ -8,7 +8,8 @@ import matplotlib.pylab as plt
 from ascii_cpo import read
 from templates.cpo_encoder import CPOEncoder
 from templates.cpo_decoder import CPODecoder
-
+from dask.distributed import Client
+from dask_jobqueue import SLURMCluster
 
 # test_boundaries_dask.py:
 # Perform UQ for a given model using Non intrusive method.
@@ -56,8 +57,8 @@ output_columns = ["Te", "Ti"]
 
 # Initialize Campaign object
 print('>>> Initialize Campaign object')
-campaign_name = "uq_boundaries_"
-my_campaign = uq.Campaign(name=campaign_name, work_dir=tmp_dir)
+campaign_name = "UQ_Dask_"
+my_campaign = uq.CampaignDask(name=campaign_name, work_dir=tmp_dir)
 
 # Create new directory for inputs (to be ended with /)
 campaign_dir = my_campaign.campaign_dir
@@ -116,12 +117,28 @@ my_campaign.set_sampler(my_sampler)
 print('>>> Draw Samples')
 my_campaign.draw_samples()
 
-print('>>> Populate runs_dir')
+# Initialize Cluster
+print('>>> Initialize Cluster')
+cluster = SLURMCluster(job_extra=['--cluster=MARCONI', '--account=FUA33_UQMWA '],
+                       queue='skl_fua_dbg',
+                       cores=28, memory='118 GB')
+
+print('>>> SCale')
+cluster.scale(1)
+
+print(cluster.job_script())
+
+# Create a Dask client associated with the cluster
+print('>>> Create Dask Client')
+client = Client(cluster)
+
+# Execute runs
+print('>>> Populate rundir')
 my_campaign.populate_runs_dir()
 
-print('>>> Execute BlackBox code')
+print('>>> execute runs')
 exec_path = os.path.join(obj_dir, exec_code)
-my_campaign.apply_for_each_run_dir(uq.actions.ExecuteLocal(exec_path))
+my_campaign.apply_for_each_run_dir(uq.actions.ExecuteLocal(exec_path), client)
 
 print('>>> Collate')
 my_campaign.collate()
@@ -185,7 +202,7 @@ sob1_ti_df.to_sql('SOB1_TI', engine, if_exists='append')
 sobt_ti_df = pd.DataFrame.from_dict(sobt_ti)
 sobt_ti_df.to_sql('SOBT_TI', engine, if_exists='append')
 
-os.system('cp '+ engine.url.database +' outputs')
+#os.system('cp '+ engine.url.database +' outputs')
 
 # Plots STAT and SA
 __PLOTS = True # If True create plots subfolder under outputs folder
