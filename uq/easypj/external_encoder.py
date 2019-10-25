@@ -2,6 +2,7 @@
 import sys
 import easyvvuq as uq
 from templates.cpo_encoder import CPOEncoder
+from templates.xml_encoder import XMLEncoder
 
 
 # From easyvvuq/tools
