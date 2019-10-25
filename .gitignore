@@ -29,7 +29,7 @@ standalone/include
 
 uq/*cache_*
 uq/*.pyc
-uq/*.log
+uq/logs/*
 uq/utils/*cache*_
 uq/utils/*.pyc
 uq/templates/*cache*_
@@ -40,4 +40,3 @@ uq/outputs/logs/test.*
 uq/outputs/*.csv
 uq/outputs/*.db
 uq/*-job.sh
-uq/.qcgpjm/*.*
