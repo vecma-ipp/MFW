@@ -21,7 +21,7 @@ implicit none
   character(len=*), parameter :: equil_file_in  = "ets_equilibrium_in.cpo"
   character(len=*), parameter :: corep_file_in  = "ets_coreprof_in.cpo"
 
-  character(len=*), parameter :: coret_file_out = "gem0_coretransp.cpo"
+  character(len=*), parameter :: coret_file_out = "gem0_coretransp_out.cpo"
   
   ! CPO structures 
   type(type_equilibrium), pointer :: equil(:)
