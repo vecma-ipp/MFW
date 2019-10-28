@@ -1,5 +1,7 @@
 # -*- coding: UTF-8 -*-
-import os, sys, time
+import os
+import sys
+import time
 import numpy as np
 import pandas as pd
 import chaospy as cp
@@ -164,8 +166,6 @@ print('>>> Save Statictics and SA')
 corep = read(os.path.join(cpo_dir,  "ets_coreprof_in.cpo"), "coreprof")
 rho = corep.rho_tor_norm
 
-test_case = cpo_dir.split('/')[-1]
-
 # Save statistics
 mean_te = list(stat_te['mean'])
 std_te  = list(stat_te['std'])
@@ -200,6 +200,8 @@ sobt_ti_df.to_sql('SOBT_TI', engine, if_exists='append')
 __PLOTS = True # If True create plots subfolder under outputs folder
 if __PLOTS:
     from utils import plots
+
+    test_case = cpo_dir.split('/')[-1]
     uparams_names = list(params.keys())
 
     plots.plot_stats_pctl(rho, stat_te, pctl_te,

@@ -1,5 +1,9 @@
 # -*- coding: UTF-8 -*-
-import os, sys, time
+import os
+import sys
+import time
+import numpy as np
+import pandas as pd
 import chaospy as cp
 import easyvvuq as uq
 from ascii_cpo import read
@@ -52,7 +56,7 @@ output_columns = ["Te", "Ti"]
 
 # Initialize Campaign object
 print('>>> Initialize Campaign object')
-campaign_name = "uq_ets"
+campaign_name = "UQ_AUG_ETS_"
 my_campaign = uq.Campaign(name=campaign_name, work_dir=tmp_dir)
 
 # Create new directory for inputs (to be ended with /)
@@ -128,46 +132,53 @@ my_campaign.apply_analysis(analysis)
 print('>>> Get results')
 results = my_campaign.get_last_analysis()
 
-# Get Descriptive Statistics
-print('>>> Get Descriptive Statistics')
-stats_te = results['statistical_moments']['Te']
-pctl_te = results['percentiles']['Te']
-stot_te = results['sobols_total']['Te']
-
-stats_ti = results['statistical_moments']['Ti']
-pctl_ti = results['percentiles']['Ti']
-stot_ti = results['sobols_total']['Ti']
-
 print('>>> Ellapsed time: ', time.time() - time0)
 
+# Get Descriptive Statistics
+print('>>> Get Descriptive Statistics')
+stat_te = results['statistical_moments']['Te']
+sob1_te = results['sobols_first']['Te']
+stat_ti = results['statistical_moments']['Ti']
+sob1_ti = results['sobols_first']['Ti']
+
+corep = read(os.path.join(cpo_dir,  "ets_coreprof_in.cpo"), "coreprof")
+rho = corep.rho_tor_norm
+
+# Save results in CSV file
+mean_te = list(stat_te['mean'])
+std_te  = list(stat_te['std'])
+mean_ti = list(stat_ti['mean'])
+std_ti  = list(stat_ti['std'])
+header = 'RHO_TOR_NORM\tMEAN_TE\tSTD_TE\tMEAN_TI\tSTD_TI'
+np.savetxt('outputs/'+campaign_name+'STATS.csv',
+           np.c_[rho, mean_te, std_te, mean_ti, std_ti], delimiter='\t', header=header)
+
+
 #  Graphics for Descriptive satatistics
-__PLOTS = False # If True create plots subfolder under outputs folder
+__PLOTS = True # If True create plots subfolder under outputs folder
 
 if __PLOTS:
     from utils import plots
-    uparams_names = list(params.keys())
-    corep = read(os.path.join(cpo_dir,  "ets_coreprof_in.cpo"), "coreprof")
-    rho = corep.rho_tor
+    from utils import plots
 
     uparams_names = list(params.keys())
-    test_case = cpo_dir.split('/')[-1]
 
-    plots.plot_stats_pctl(rho, stats_te, pctl_te,
+    plots.plot_stats(rho, stat_te,
                      xlabel=r'$\rho_{tor} ~ [m]$', ylabel=r'$Te$',
-                     ftitle='Te profile ('+test_case+')',
-                     fname='plots/Te_STAT_'+test_case)
+                     ftitle='Te profile',
+                     fname='outputs/plots/'+campaign_name+'Te_STAT')
 
-    plots.plot_sobols(rho, stot_te, uparams_names,
-                      ftitle=' Total-Order Sobol indices - QoI: Te',
-                      fname='plots/Te_SA_'+test_case)
+    plots.plot_sobols_all(rho, sob1_te, uparams_names,
+                      ftitle=' First-Order Sobol indices - QoI: Te',
+                      fname='outputs/plots/'+campaign_name+'Te_SA')
 
-    plots.plot_stats_pctl(rho, stats_ti, pctl_ti,
+    plots.plot_stats(rho, stat_ti,
                      xlabel=r'$\rho_{tor} ~ [m]$', ylabel=r'$T_i [eV]$',
-                     ftitle='Te profile ('+test_case+')',
-                     fname='plots/Ti_STAT_'+test_case)
+                     ftitle='Ti profile',
+                     fname='outputs/plots/'+campaign_name+'Ti_STAT')
 
-    plots.plot_sobols(rho, stot_ti, uparams_names,
-                      ftitle=' Total-Order Sobol indices - QoI: Ti',
-                      fname='plots/Ti_SA_'+test_case)
+    plots.plot_sobols_all(rho, sob1_ti, uparams_names,
+                      ftitle=' First-Order Sobol indices - QoI: Ti',
+                      fname='outputs/plots/'+campaign_name+'Ti_SA')
 
 print('>>> ets_uq : END')
