@@ -37,26 +37,35 @@ xml_dir = os.path.abspath("../workflows")
 obj_dir = os.path.abspath("../standalone/bin/"+SYS)
 exec_code = "gem0_test"
 
+# TODO Get flux tube closest index
+# rho_tor_norm_transp_flux : 0.615572214126587
+r0 = coret.values[0].rho_tor_norm[0]
+# rho_tor_norm in coreprof
+r = = corep.rho_tor_norm
+r1 = r.flat[np.abs(r - r0).argmin()]
+# 0.61734693877551
+idx = list(r).index(r1) # 61
+
 # Define a specific parameter space
 uncertain_params = {
-    "Te_boundary": {
+    "Te_grad": {
         "type": "float",
         "distribution": "Normal",
-        "margin_error": 0.25,
+        "margin_error": 0.1,
     },
-    "Ti_boundary": {
+    "Ti_grad": {
         "type": "float",
         "distribution": "Normal",
-           "margin_error": 0.25,
+           "margin_error": 0.1,
       }
 }
 
 # For the output: quantities of intersts
-output_columns = ["Te_trans_Ds", "Te_trans_Flux"]
+output_columns = ["Te_trans_flux", "Ti_trans_flux"]
 
 # Initialize Campaign object
 print('>>> Initialize Campaign object')
-campaign_name = "UQ_AUG_ETS_"
+campaign_name = "UQ_AUG_GEM0_"
 my_campaign = uq.Campaign(name=campaign_name, work_dir=tmp_dir)
 
 # Create new directory for inputs (to be ended with /)

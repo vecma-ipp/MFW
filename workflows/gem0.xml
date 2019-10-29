@@ -19,7 +19,7 @@
    </physical>
  
    <grid>
-     <nrho_transp> 8 </nrho_transp>
+     <nrho_transp> 1 </nrho_transp>
      <nion> 0 </nion>
    </grid>
 

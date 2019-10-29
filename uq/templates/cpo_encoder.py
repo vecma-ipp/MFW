@@ -39,7 +39,9 @@ class CPOEncoder(BaseEncoder, encoder_name="cpo_encoder"):
         # TODO move to switcher  tools routine
         self.mapper = {
             "Te_boundary" : self.cpo_core.te.boundary.value[0],
-            "Ti_boundary" : self.cpo_core.ti.boundary.value[0][0]
+            "Ti_boundary" : self.cpo_core.ti.boundary.value[0][0],
+            "Te_grad" : self.cpo_core.te.ddrho,
+            "Ti_grad" : self.cpo_core.ti.ddrho
         }
 
     @staticmethod
