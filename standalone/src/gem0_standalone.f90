@@ -27,12 +27,12 @@ contains
     type (type_coretransp), pointer :: coret(:)
     type (type_param) :: code_parameters
 
-    print *,"fortran GEM0 wrapper"
+    !print *,"fortran GEM0 wrapper"
 
-    print *,"get code params"
+    !print *,"get code params"
     call fill_param(code_parameters, 'gem0.xml', '', 'gem0.xsd')
 
-    print *,"run gem0 routine"
+    !print *,"run gem0 routine"
     call gem(equil, corep, coret, code_parameters)
 
   end subroutine gem0_cpo

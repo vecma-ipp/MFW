@@ -14,7 +14,8 @@ class CPOEncoder(BaseEncoder, encoder_name="cpo_encoder"):
 
     def __init__(self,
                  template_filename, target_filename,
-                 common_dir, uncertain_params, cpo_name, link_xmlfiles=False):
+                 common_dir, uncertain_params, cpo_name,
+                 flux_index=None, link_xmlfiles=False):
 
         # Check that user has specified the objests to use as template
         if template_filename is None:
@@ -28,6 +29,9 @@ class CPOEncoder(BaseEncoder, encoder_name="cpo_encoder"):
         self.uncertain_params = uncertain_params
         self.cpo_name = cpo_name
         self.link_xmlfiles = link_xmlfiles
+        self.flux_index = flux_index
+        if flux_index is None:
+            self.flux_index = [0]
 
         self.fixture_support = True
 
@@ -40,12 +44,15 @@ class CPOEncoder(BaseEncoder, encoder_name="cpo_encoder"):
         self.mapper = {
             "Te_boundary" : self.cpo_core.te.boundary.value[0],
             "Ti_boundary" : self.cpo_core.ti.boundary.value[0][0],
-            "Te_grad" : self.cpo_core.te.ddrho,
-            "Ti_grad" : self.cpo_core.ti.ddrho
+            # TODO first draft
+            "Te" : self.cpo_core.te.value[self.flux_index],
+            "Ti" : self.cpo_core.ti.value[self.flux_index, 0],
+            "Te_grad" : self.cpo_core.te.ddrho[self.flux_index],
+            "Ti_grad" : self.cpo_core.ti.ddrho[self.flux_index, 0]
         }
 
     @staticmethod
-    def _set_params_value(cpo_core, param, value):
+    def _set_params_value(cpo_core, param, value, flux_index):
         # TODO find a way to use one unified switcher
         # Verify consistance betwwen cpo_core and param
         if param=="Te_boundary":
@@ -55,6 +62,15 @@ class CPOEncoder(BaseEncoder, encoder_name="cpo_encoder"):
             # In case of two ions species
             if len(cpo_core.ti.boundary.value[0]) == 2:
                 cpo_core.ti.boundary.value[0][1] = value
+        # TODO 1rt draft
+        if param=="Te":
+            cpo_core.te.value[flux_index] = value
+        if param=="Ti":
+            cpo_core.ti.value[flux_index, 0] = value
+        if param=="Te_grad":
+            cpo_core.ti.ddrho[flux_index] = value
+        if param=="Ti_grad":
+            cpo_core.ti.ddrho[flux_index, 0] = value
 
     # Returns dict (params) for Campaign and a list (vary) of distribitions for Sampler
     def draw_app_params(self):
@@ -90,7 +106,7 @@ class CPOEncoder(BaseEncoder, encoder_name="cpo_encoder"):
 
         for k in self.uncertain_params.keys():
             v = local_params[k]
-            self._set_params_value(self.cpo_core, k, v)
+            self._set_params_value(self.cpo_core, k, v, self.flux_index)
 
         # Do a symbolic link to other CPO and XML files
         os.system("ln -s " + self.common_dir + "*.cpo " + target_dir)
@@ -111,7 +127,8 @@ class CPOEncoder(BaseEncoder, encoder_name="cpo_encoder"):
                 "common_dir": self.common_dir,
                 "uncertain_params": self.uncertain_params,
                 "cpo_name": self.cpo_name,
-                "link_xmlfiles": self.link_xmlfiles}
+                "link_xmlfiles": self.link_xmlfiles,
+                "flux_index": self.flux_index}
 
     def element_version(self):
         return "0.1"

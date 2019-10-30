@@ -43,17 +43,20 @@ class CPODecoder(BaseDecoder, decoder_name="cpo_decoder"):
 
     @staticmethod
     def _get_qoi_values(cpo_core):
-        # Map Quantities of Interert values and
-        switcher_dict = {
-            # cpo = coreprof
-            "Te": cpo_core.te.value,
-            "Ti": cpo_core.ti.value[:,0],
-            # cpo = coretransp
-            "Te_trans_Ds": cpo_core.te_transp.diff_eff,
-            "Ti_trans_Ds": cpo_core.ti_transp.diff_eff,
-            "Te_trans_flux": cpo_core.te_transp.flux,
-            "Ti_trans_flux": cpo_core.ti_transp.flux
-        }
+        # Map Quantities of Interert values
+        if cpo_core.base_path == 'coreprof':
+            switcher_dict = {
+                "Te": cpo_core.te.value,
+                "Ti": cpo_core.ti.value[:,0],
+            }
+
+        if cpo_core.base_path == 'coretransp':
+            switcher_dict = {
+                "Te_transp_Ds": cpo_core.values[0].te_transp.diff_eff,
+                "Ti_transp_Ds": cpo_core.values[0].ti_transp.diff_eff[0],
+                "Te_transp_flux": cpo_core.values[0].te_transp.flux,
+                "Ti_transp_flux": cpo_core.values[0].ti_transp.flux[0]
+            }
 
         return switcher_dict
 
