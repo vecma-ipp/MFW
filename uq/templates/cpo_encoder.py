@@ -31,7 +31,7 @@ class CPOEncoder(BaseEncoder, encoder_name="cpo_encoder"):
         self.link_xmlfiles = link_xmlfiles
         self.flux_index = flux_index
         if flux_index is None:
-            self.flux_index = [0]
+            self.flux_index = 0
 
         self.fixture_support = True
 
@@ -46,9 +46,9 @@ class CPOEncoder(BaseEncoder, encoder_name="cpo_encoder"):
             "Ti_boundary" : self.cpo_core.ti.boundary.value[0][0],
             # TODO first draft
             "Te" : self.cpo_core.te.value[self.flux_index],
-            "Ti" : self.cpo_core.ti.value[self.flux_index, 0],
+            "Ti" : self.cpo_core.ti.value[self.flux_index][0],
             "Te_grad" : self.cpo_core.te.ddrho[self.flux_index],
-            "Ti_grad" : self.cpo_core.ti.ddrho[self.flux_index, 0]
+            "Ti_grad" : self.cpo_core.ti.ddrho[self.flux_index][0]
         }
 
     @staticmethod
@@ -62,15 +62,15 @@ class CPOEncoder(BaseEncoder, encoder_name="cpo_encoder"):
             # In case of two ions species
             if len(cpo_core.ti.boundary.value[0]) == 2:
                 cpo_core.ti.boundary.value[0][1] = value
-        # TODO 1rt draft
+        # TODO 1st draft
         if param=="Te":
             cpo_core.te.value[flux_index] = value
         if param=="Ti":
-            cpo_core.ti.value[flux_index, 0] = value
+            cpo_core.ti.value[flux_index][0] = value
         if param=="Te_grad":
-            cpo_core.ti.ddrho[flux_index] = value
+            cpo_core.te.ddrho[flux_index] = value
         if param=="Ti_grad":
-            cpo_core.ti.ddrho[flux_index, 0] = value
+            cpo_core.ti.ddrho[flux_index][0] = value
 
     # Returns dict (params) for Campaign and a list (vary) of distribitions for Sampler
     def draw_app_params(self):

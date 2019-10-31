@@ -40,28 +40,30 @@ exec_code = "gem0_test"
 exec_path = os.path.join(obj_dir, exec_code)
 
 # Define a specific parameter space
-uncertain_params = {
-    "Te_grad": {
-        "type": "float",
-        "distribution": "Uniform",
-        "margin_error": 0.25,
-    },
-    "Ti_grad": {
-        "type": "float",
-        "distribution": "Uniform",
-           "margin_error": 0.25,
-    }
-#    ,
-#    "Te": {
+#uncertain_params = {
+#    "Te_grad": {
 #        "type": "float",
 #        "distribution": "Normal",
-#        "margin_error": 0.2,
+#        "margin_error": 0.1,
 #    },
-#    "Ti": {
+#    "Ti_grad": {
 #        "type": "float",
 #        "distribution": "Normal",
-#           "margin_error": 0.2,
-#      }
+#       "margin_error": 0.1,
+#    }
+#}
+
+uncertain_params = {
+    "Te": {
+        "type": "float",
+        "distribution": "Normal",
+        "margin_error": 0.2,
+    },
+    "Ti": {
+        "type": "float",
+        "distribution": "Normal",
+        "margin_error": 0.2,
+    }
 }
 
 # For the output: quantities of intersts
@@ -174,6 +176,6 @@ for qoi in output_columns:
     print(qoi)
     print('STAT = ', results['statistical_moments'][qoi])
     print('Sobol 1st = ', results['sobols_first'][qoi])
-    print('Sobol tot = ', results['sobols_total'][qoi])
+    #print('Sobol tot = ', results['sobols_total'][qoi])
 
 print('>>> gem0_uq : END')
