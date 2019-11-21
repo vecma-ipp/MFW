@@ -40,31 +40,41 @@ exec_code = "gem0_test"
 exec_path = os.path.join(obj_dir, exec_code)
 
 # Define a specific parameter space
-#uncertain_params = {
-#    "Te_grad": {
-#        "type": "float",
-#        "distribution": "Normal",
-#        "margin_error": 0.1,
-#    },
-#    "Ti_grad": {
-#        "type": "float",
-#        "distribution": "Normal",
-#       "margin_error": 0.1,
-#    }
-#}
-
 uncertain_params = {
-    "Te": {
+    "Te_grad": {
         "type": "float",
         "distribution": "Normal",
         "margin_error": 0.2,
     },
-    "Ti": {
+    "Ti_grad": {
+        "type": "float",
+        "distribution": "Normal",
+       "margin_error": 0.2,
+    },
+    "Te_grad1": {
         "type": "float",
         "distribution": "Normal",
         "margin_error": 0.2,
+    },
+    "Ti_grad1": {
+        "type": "float",
+        "distribution": "Normal",
+       "margin_error": 0.2,
     }
-}
+}	#OL: add Te_grad1 and Ti_grad1
+
+#uncertain_params = {
+#    "Te": {
+#        "type": "float",
+#        "distribution": "Normal",
+#        "margin_error": 0.2,
+#    },
+#    "Ti": {
+#        "type": "float",
+#        "distribution": "Normal",
+#        "margin_error": 0.2,
+#    }
+#}
 
 # For the output: quantities of intersts
 output_columns = ["Te_transp_flux", "Ti_transp_flux"]
@@ -94,7 +104,11 @@ corep_file= os.path.join(common_dir, "ets_coreprof_in.cpo")
 coret_file= os.path.join(common_dir, "gem0_coretransp_out.cpo")
 # TODO We test just one flux tube. Verify in gem0.xml: nrho_transp = 1
 flux_index = cpo_tools.get_flux_index(corep_file, coret_file)[0]
-print('>>>> flux_index = ', flux_index)
+flux_index1 = cpo_tools.get_flux_index(corep_file, coret_file)[1]       #OL: add 1 more index to the list
+#print('>>>> flux_index = ', flux_index)
+print('>>>> flux_index = ', flux_index, flux_index1)	#OL
+
+os.system("rm " + common_dir + "/gem0_coretransp_out.cpo")	#OL:  delete output CPO before encoder
 
 # Create the encoder and get the app parameters
 print('>>> Create the encoder')
@@ -105,11 +119,16 @@ encoder = CPOEncoder(template_filename=input_filename,
                      uncertain_params=uncertain_params,
                      cpo_name="coreprof",
                      flux_index = flux_index,
-                     link_xmlfiles=True)
+                     flux_index1 = flux_index1,
+                     link_xmlfiles=True)	#OL:  add flux_index1
 
 params, vary = encoder.draw_app_params()
 
-# Create the encoder
+#-------OL
+print('params='+str(params))
+print('vary='+str(vary))
+#-------
+# Create the decoder
 print('>>> Create the decoder')
 output_filename = "gem0_coretransp_out.cpo"
 decoder = CPODecoder(target_filename=output_filename,
@@ -141,7 +160,7 @@ print('>>> Draw Samples')
 my_campaign.draw_samples()
 
 print('>>> Populate runs_dir')
-my_campaign.populate_runs_dir()
+my_campaign.populate_runs_dir()	#OL:  This is where Te and Ti values are modified in order to be consistent with T_grad samples
 
 print('>>> Execute BlackBox code')
 my_campaign.apply_for_each_run_dir(uq.actions.ExecuteLocal(exec_path))
@@ -176,6 +195,6 @@ for qoi in output_columns:
     print(qoi)
     print('STAT = ', results['statistical_moments'][qoi])
     print('Sobol 1st = ', results['sobols_first'][qoi])
-    #print('Sobol tot = ', results['sobols_total'][qoi])
+    print('Sobol tot = ', results['sobols_total'][qoi])
 
 print('>>> gem0_uq : END')

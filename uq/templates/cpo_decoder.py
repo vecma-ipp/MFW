@@ -55,8 +55,8 @@ class CPODecoder(BaseDecoder, decoder_name="cpo_decoder"):
                 "Te_transp_D": cpo_core.values[0].te_transp.diff_eff,
                 "Ti_transp_D": cpo_core.values[0].ti_transp.diff_eff[0],
                 "Te_transp_flux": cpo_core.values[0].te_transp.flux,
-                "Ti_transp_flux": cpo_core.values[0].ti_transp.flux[0]
-            }
+                "Ti_transp_flux": cpo_core.values[0].ti_transp.flux[:,0]
+            }	#OL: change Ti_transp_flux to include another index
 
         return switcher_dict
 

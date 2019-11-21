@@ -15,7 +15,7 @@ class CPOEncoder(BaseEncoder, encoder_name="cpo_encoder"):
     def __init__(self,
                  template_filename, target_filename,
                  common_dir, uncertain_params, cpo_name,
-                 flux_index=None, link_xmlfiles=False):
+                 flux_index=None, flux_index1=None, link_xmlfiles=False):	#OL: add flux_index1 
 
         # Check that user has specified the objests to use as template
         if template_filename is None:
@@ -30,8 +30,11 @@ class CPOEncoder(BaseEncoder, encoder_name="cpo_encoder"):
         self.cpo_name = cpo_name
         self.link_xmlfiles = link_xmlfiles
         self.flux_index = flux_index
+        self.flux_index1 = flux_index1	#OL: add flux_index1
         if flux_index is None:
             self.flux_index = 0
+        if flux_index1 is None:		#OL: add flux_index1
+            self.flux_index1 = 0	#OL: add flux_index1
 
         self.fixture_support = True
 
@@ -48,13 +51,15 @@ class CPOEncoder(BaseEncoder, encoder_name="cpo_encoder"):
             "Te" : self.cpo_core.te.value[self.flux_index],
             "Ti" : self.cpo_core.ti.value[self.flux_index][0],
             "Te_grad" : self.cpo_core.te.ddrho[self.flux_index],
-            "Ti_grad" : self.cpo_core.ti.ddrho[self.flux_index][0]
-        }
+            "Ti_grad" : self.cpo_core.ti.ddrho[self.flux_index][0],
+            "Te_grad1" : self.cpo_core.te.ddrho[self.flux_index1],
+            "Ti_grad1" : self.cpo_core.ti.ddrho[self.flux_index1][0]
+        }	#OL:: add Te_grad1 and Ti_grad1
 
     @staticmethod
-    def _set_params_value(cpo_core, param, value, flux_index):
+    def _set_params_value(cpo_core, param, value, flux_index, flux_index1):	#OL: add flux_index1        
         # TODO find a way to use one unified switcher
-        # Verify consistance betwwen cpo_core and param
+        # Verify consistance between cpo_core and param
         if param=="Te_boundary":
             cpo_core.te.boundary.value[0] = value
         if param=="Ti_boundary":
@@ -71,6 +76,10 @@ class CPOEncoder(BaseEncoder, encoder_name="cpo_encoder"):
             cpo_core.te.ddrho[flux_index] = value
         if param=="Ti_grad":
             cpo_core.ti.ddrho[flux_index][0] = value
+        if param=="Te_grad1":
+            cpo_core.te.ddrho[flux_index1] = value	#OL: add Te_grad1
+        if param=="Ti_grad1":
+            cpo_core.ti.ddrho[flux_index1][0] = value      #OL: add Ti_grad1
 
     # Returns dict (params) for Campaign and a list (vary) of distribitions for Sampler
     def draw_app_params(self):
@@ -106,14 +115,50 @@ class CPOEncoder(BaseEncoder, encoder_name="cpo_encoder"):
 
         for k in self.uncertain_params.keys():
             v = local_params[k]
-            self._set_params_value(self.cpo_core, k, v, self.flux_index)
+            self._set_params_value(self.cpo_core, k, v, self.flux_index, self.flux_index1)	#OL: add flux_index1
+
+#OL------calculate Te and Ti at neighboring +/-2 rho_tor grid points based on sample value of dTdrho at flux-tube
+            if k == "Te_grad":
+                b = self.cpo_core.te.value[self.flux_index] - v * self.cpo_core.rho_tor[self.flux_index]
+                for i in range(100):
+                    if i != self.flux_index and i != self.flux_index1:
+                       self.cpo_core.te.value[i] = 0.0
+                self.cpo_core.te.value[self.flux_index-2] = v * self.cpo_core.rho_tor[self.flux_index-2] + b
+                self.cpo_core.te.value[self.flux_index-1] = v * self.cpo_core.rho_tor[self.flux_index-1] + b
+                self.cpo_core.te.value[self.flux_index+1] = v * self.cpo_core.rho_tor[self.flux_index+1] + b
+                self.cpo_core.te.value[self.flux_index+2] = v * self.cpo_core.rho_tor[self.flux_index+2] + b
+            elif k == "Ti_grad":
+                b = self.cpo_core.ti.value[self.flux_index][0] - v * self.cpo_core.rho_tor[self.flux_index]
+                for i in range(100):
+                    if i != self.flux_index and i != self.flux_index1:
+                       self.cpo_core.ti.value[i][0] = 0.0
+                self.cpo_core.ti.value[self.flux_index-2][0] = v * self.cpo_core.rho_tor[self.flux_index-2] + b
+                self.cpo_core.ti.value[self.flux_index-1][0] = v * self.cpo_core.rho_tor[self.flux_index-1] + b
+                self.cpo_core.ti.value[self.flux_index+1][0] = v * self.cpo_core.rho_tor[self.flux_index+1] + b
+                self.cpo_core.ti.value[self.flux_index+2][0] = v * self.cpo_core.rho_tor[self.flux_index+2] + b
+
+            elif k == "Te_grad1":
+                b = self.cpo_core.te.value[self.flux_index1] - v * self.cpo_core.rho_tor[self.flux_index1]
+                self.cpo_core.te.value[self.flux_index1-2] = v * self.cpo_core.rho_tor[self.flux_index1-2] + b
+                self.cpo_core.te.value[self.flux_index1-1] = v * self.cpo_core.rho_tor[self.flux_index1-1] + b
+                self.cpo_core.te.value[self.flux_index1+1] = v * self.cpo_core.rho_tor[self.flux_index1+1] + b
+                self.cpo_core.te.value[self.flux_index1+2] = v * self.cpo_core.rho_tor[self.flux_index1+2] + b
+            elif k == "Ti_grad1":
+                b = self.cpo_core.ti.value[self.flux_index1][0] - v * self.cpo_core.rho_tor[self.flux_index1]
+                self.cpo_core.ti.value[self.flux_index1-2][0] = v * self.cpo_core.rho_tor[self.flux_index1-2] + b
+                self.cpo_core.ti.value[self.flux_index1-1][0] = v * self.cpo_core.rho_tor[self.flux_index1-1] + b
+                self.cpo_core.ti.value[self.flux_index1+1][0] = v * self.cpo_core.rho_tor[self.flux_index1+1] + b
+                self.cpo_core.ti.value[self.flux_index1+2][0] = v * self.cpo_core.rho_tor[self.flux_index1+2] + b
+            else:
+                print("other uncertained parameters are not included in this if-loop")
+
+#OL------
 
         # Do a symbolic link to other CPO and XML files
         os.system("ln -s " + self.common_dir + "*.cpo " + target_dir)
         if self.link_xmlfiles:
             os.system("ln -s " + self.common_dir + "*.xml " + target_dir)
             os.system("ln -s " + self.common_dir + "*.xsd " + target_dir)
-
         # Write target input CPO file
         target_file_path = os.path.join(target_dir, self.target_filename)
         if(os.path.isfile(target_file_path)):
@@ -128,7 +173,9 @@ class CPOEncoder(BaseEncoder, encoder_name="cpo_encoder"):
                 "uncertain_params": self.uncertain_params,
                 "cpo_name": self.cpo_name,
                 "link_xmlfiles": self.link_xmlfiles,
-                "flux_index": self.flux_index}
+                "flux_index": self.flux_index,
+                "flux_index1": self.flux_index1}
+	#OL: add flux_index1
 
     def element_version(self):
         return "0.1"
