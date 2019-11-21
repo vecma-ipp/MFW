@@ -52,22 +52,23 @@ uncertain_params = {
         "distribution": "Uniform",
         "margin_error": 0.2,
     },
-#    "width_el":{
+    "width_el":{
+        "type": "float",
+        "distribution": "Uniform",
+        "margin_error": 0.2,
+    }
+#    ,
+#    # Ions heatings Gaussian
+#    "amplitude_ion":{
 #        "type": "float",
 #        "distribution": "Uniform",
-#        "margin_error": 0.2,
+#        "margin_error": 0.2
 #    },
-    # Ions heatings Gaussian
-    "amplitude_ion":{
-        "type": "float",
-        "distribution": "Uniform",
-        "margin_error": 0.2
-    },
-    "position_ion":{
-        "type": "float",
-        "distribution": "Uniform",
-        "margin_error": 0.2
-    }#,
+#    "position_ion":{
+#        "type": "float",
+#        "distribution": "Uniform",
+#        "margin_error": 0.2
+#    }#,
 #    "width_ion":{
 #        "type": "float",
 #        "distribution": "Uniform",
@@ -80,7 +81,7 @@ output_columns = ["Te", "Ti"]
 
 # Initialize Campaign object
 print('>>> Initialize Campaign object')
-campaign_name = "UQ_SPJ_"
+campaign_name = "UQ_SEl_3PAR_GEM0_"
 my_campaign = uq.Campaign(name=campaign_name, work_dir=tmp_dir)
 
 # Create new directory for commons inputs
@@ -176,13 +177,10 @@ print('>>> Get Descriptive Statistics')
 stat_te = results['statistical_moments']['Te']
 pctl_te = results['percentiles']['Te']
 sob1_te = results['sobols_first']['Te']
-sobt_te = results['sobols_total']['Te']
 
 stat_ti = results['statistical_moments']['Ti']
 pctl_ti = results['percentiles']['Ti']
 sob1_ti = results['sobols_first']['Ti']
-sobt_ti = results['sobols_total']['Ti']
-
 
 #  Graphics for Descriptive satatistics
 print('>>> Save Statictics and SA')
@@ -209,15 +207,11 @@ stat_te_df = pd.DataFrame.from_dict(stat_te)
 stat_te_df.to_sql('STAT_TE', engine, if_exists='append')
 sob1_te_df = pd.DataFrame.from_dict(sobt_te)
 sob1_te_df.to_sql('SOB1_TE', engine, if_exists='append')
-sobt_te_df = pd.DataFrame.from_dict(sobt_te)
-sobt_te_df.to_sql('SOBT_TE', engine, if_exists='append')
 
 stat_ti_df = pd.DataFrame.from_dict(stat_ti)
 stat_ti_df.to_sql('STAT_TI', engine, if_exists='append')
 sob1_ti_df = pd.DataFrame.from_dict(sobt_ti)
 sob1_ti_df.to_sql('SOB1_TI', engine, if_exists='append')
-sobt_ti_df = pd.DataFrame.from_dict(sobt_ti)
-sobt_ti_df.to_sql('SOBT_TI', engine, if_exists='append')
 
 #os.system('cp '+ engine.url.database +' outputs')
 
@@ -229,20 +223,22 @@ if __PLOTS:
 
     plots.plot_stats_pctl(rho, stat_te, pctl_te,
                      xlabel=r'$\rho_{tor} ~ [m]$', ylabel=r'$Te$',
-                     ftitle='Te profile (Ions S) - '+test_case,
+                     ftitle='Te profile',
                      fname='outputs/plots/'+campaign_name+'Te_STAT')
 
-    plots.plot_sobols_all(rho, sobt_te, uparams_names,
-                      ftitle=' Total-Order Sobol indices (Ion S)- QoI: Te',
+    plots.plot_sobols_all(rho, sob1_te, uparams_names,
+                      ftitle=' First-Order Sobol indices - QoI: Te',
                       fname='outputs/plots/'+campaign_name+'Te_SA')
 
     plots.plot_stats_pctl(rho, stat_ti, pctl_ti,
                      xlabel=r'$\rho_{tor} ~ [m]$', ylabel=r'$T_i [eV]$',
-                     ftitle='Ti profile - (Ions S) - '+test_case,
+                     ftitle='Ti profile',
                      fname='outputs/plots/'+campaign_name+'Ti_STAT')
 
-    plots.plot_sobols_all(rho, sobt_ti, uparams_names,
-                      ftitle=' Total-Order Sobol indices - QoI: Ti',
+    plots.plot_sobols_all(rho, sob1_ti, uparams_names,
+                      ftitle=' First-Order Sobol indices - QoI: Ti',
                       fname='outputs/plots/'+campaign_name+'Ti_SA')
+
+
 
 print('>>> test_sources_PJ: END')
