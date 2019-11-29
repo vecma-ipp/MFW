@@ -7,20 +7,21 @@ import pandas as pd
 import chaospy as cp
 import easyvvuq as uq
 import matplotlib.pylab as plt
+from utils import plots
+from easypj import qcgpj_wrapper
 from ascii_cpo import read
 from templates.xml_encoder import XMLEncoder
 from templates.cpo_decoder import CPODecoder
 
 
-# test_sources.py:
-# Perform UQ for a given model using Non intrusive method.
-# Uncertainties are driven by:
-# - External sources of Electrons heating.
-
-print('>>> test_sources_el: START')
+# Gaussian Sources test Using QCG - Pilot Job:
+# UQ for a given model(s) using Non intrisive method.
+# Uncertainties in Sources of Electons and Ions.
 
 # For Ellapsed time
 time0 = time.time()
+
+print('>>> Preparing the parameter space')
 
 # OS env
 SYS = os.environ['SYS']
@@ -50,24 +51,40 @@ uncertain_params = {
         "type": "float",
         "distribution": "Uniform",
         "margin_error": 0.2,
-    }
-    ,
-    "width_el":{
-        "type": "float",
-        "distribution": "Uniform",
-        "margin_error": 0.2,
-    }
+    }#,
+#    "width_el":{
+#        "type": "float",
+#        "distribution": "Uniform",
+#        "margin_error": 0.2,
+#    }
+#    ,
+#    # Ions heatings Gaussian
+#    "amplitude_ion":{
+#        "type": "float",
+#        "distribution": "Uniform",
+#        "margin_error": 0.2
+#    },
+#    "position_ion":{
+#        "type": "float",
+#        "distribution": "Uniform",
+#        "margin_error": 0.2
+#    }#,
+#    "width_ion":{
+#        "type": "float",
+#        "distribution": "Uniform",
+#        "margin_error": 0.2
+#    }
 }
 
-# The Quantities of intersts
+# For the output: quantities of intersts
 output_columns = ["Te", "Ti"]
 
 # Initialize Campaign object
 print('>>> Initialize Campaign object')
-campaign_name = "UQ_SEl_3PARs_GEM0_"
+campaign_name = "UQ_SEl_3PAR_GEM0_"
 my_campaign = uq.Campaign(name=campaign_name, work_dir=tmp_dir)
 
-# Create new directory for inputs (to be ended with /)
+# Create new directory for commons inputs
 campaign_dir = my_campaign.campaign_dir
 common_dir = campaign_dir +"/common/"
 os.system("mkdir " + common_dir)
@@ -78,6 +95,7 @@ os.system("cp " + cpo_dir + "/ets_equilibrium_in.cpo " + common_dir)
 os.system("cp " + cpo_dir + "/ets_coreimpur_in.cpo "   + common_dir)
 os.system("cp " + cpo_dir + "/ets_coretransp_in.cpo "  + common_dir)
 os.system("cp " + cpo_dir + "/ets_toroidfield_in.cpo " + common_dir)
+os.system("cp " + cpo_dir + "/ets_coresource_in.cpo " + common_dir)
 
 # Copy XML and XSD files
 os.system("cp " + xml_dir + "/ets.x* "    + common_dir)
@@ -104,6 +122,7 @@ decoder = CPODecoder(target_filename=output_filename,
                      cpo_name="coreprof",
                      output_columns=output_columns)
 
+
 # Create a collation element for this campaign
 print('>>> Create Collater')
 collater = uq.collate.AggregateSamples(average=False)
@@ -119,7 +138,7 @@ my_campaign.add_app(name=campaign_name,
 # Create the sampler
 print('>>> Create the sampler')
 my_sampler = uq.sampling.PCESampler(vary=vary,
-                                    polynomial_order=3,
+                                    polynomial_order=4,
                                     quadrature_rule='G',
                                     sparse=False)
 my_campaign.set_sampler(my_sampler)
@@ -128,12 +147,16 @@ my_campaign.set_sampler(my_sampler)
 print('>>> Draw Samples')
 my_campaign.draw_samples()
 
-print('>>> Populate runs_dir')
-my_campaign.populate_runs_dir()
-
-print('>>> Execute BlackBox code')
+# The executable path
 exec_path = os.path.join(obj_dir, exec_code)
-my_campaign.apply_for_each_run_dir(uq.actions.ExecuteLocal(exec_path))
+
+#my_campaign.populate_runs_dir()
+#my_campaign.apply_for_each_run_dir(uq.actions.ExecuteLocal(exec_code))
+
+print('>>> Call QCG-Pilot Job')
+t1 = time.time()
+qcgpj_wrapper.run(my_campaign, exec_path)
+t2 = time.time()
 
 print('>>> Collate')
 my_campaign.collate()
@@ -146,27 +169,23 @@ my_campaign.apply_analysis(analysis)
 print('>>> Get results')
 results = my_campaign.get_last_analysis()
 
-time1 = time.time()
-print('>>> Ellapsed time : ', time1-time0)
+print('>>> Ellapsed time PJ : ', t2 - t1)
+print('>>> Ellapsed time TOT : ', time.time() - time0)
 
 # Get Descriptive Statistics
 print('>>> Get Descriptive Statistics')
 stat_te = results['statistical_moments']['Te']
 pctl_te = results['percentiles']['Te']
 sob1_te = results['sobols_first']['Te']
-sobt_te = results['sobols_total']['Te']
 
 stat_ti = results['statistical_moments']['Ti']
 pctl_ti = results['percentiles']['Ti']
 sob1_ti = results['sobols_first']['Ti']
-sobt_ti = results['sobols_total']['Ti']
 
 #  Graphics for Descriptive satatistics
 print('>>> Save Statictics and SA')
 corep = read(os.path.join(cpo_dir,  "ets_coreprof_in.cpo"), "coreprof")
 rho = corep.rho_tor_norm
-
-test_case = cpo_dir.split('/')[-1]
 
 # Save statistics
 mean_te = list(stat_te['mean'])
@@ -184,17 +203,13 @@ engine = my_campaign.campaign_db.engine
 # Create new tables for results and store them in the data base
 stat_te_df = pd.DataFrame.from_dict(stat_te)
 stat_te_df.to_sql('STAT_TE', engine, if_exists='append')
-sob1_te_df = pd.DataFrame.from_dict(sobt_te)
+sob1_te_df = pd.DataFrame.from_dict(sob1_te)
 sob1_te_df.to_sql('SOB1_TE', engine, if_exists='append')
-sobt_te_df = pd.DataFrame.from_dict(sobt_te)
-sobt_te_df.to_sql('SOBT_TE', engine, if_exists='append')
 
 stat_ti_df = pd.DataFrame.from_dict(stat_ti)
 stat_ti_df.to_sql('STAT_TI', engine, if_exists='append')
-sob1_ti_df = pd.DataFrame.from_dict(sobt_ti)
+sob1_ti_df = pd.DataFrame.from_dict(sob1_ti)
 sob1_ti_df.to_sql('SOB1_TI', engine, if_exists='append')
-sobt_ti_df = pd.DataFrame.from_dict(sobt_ti)
-sobt_ti_df.to_sql('SOBT_TI', engine, if_exists='append')
 
 #os.system('cp '+ engine.url.database +' outputs')
 
@@ -206,20 +221,21 @@ if __PLOTS:
 
     plots.plot_stats_pctl(rho, stat_te, pctl_te,
                      xlabel=r'$\rho_{tor} ~ [m]$', ylabel=r'$Te$',
-                     ftitle='Te profile (Electrons S)',
+                     ftitle='Te profile',
                      fname='outputs/plots/'+campaign_name+'Te_STAT')
 
-    plots.plot_sobols_all(rho, sobt_te, uparams_names,
-                      ftitle=' Total-Order Sobol indices (El S) - QoI: Te',
+    plots.plot_sobols_all(rho, sob1_te, uparams_names,
+                      ftitle=' First-Order Sobol indices - QoI: Te',
                       fname='outputs/plots/'+campaign_name+'Te_SA')
 
     plots.plot_stats_pctl(rho, stat_ti, pctl_ti,
                      xlabel=r'$\rho_{tor} ~ [m]$', ylabel=r'$T_i [eV]$',
-                     ftitle='Ti profile - (Electrons S)',
+                     ftitle='Ti profile',
                      fname='outputs/plots/'+campaign_name+'Ti_STAT')
 
-    plots.plot_sobols_all(rho, sobt_ti, uparams_names,
-                      ftitle=' Total-Order Sobol indices (El S) - QoI: Ti',
+    plots.plot_sobols_all(rho, sob1_ti, uparams_names,
+                      ftitle=' First-Order Sobol indices - QoI: Ti',
                       fname='outputs/plots/'+campaign_name+'Ti_SA')
 
-print('>>> test_sources_el: END')
+
+print('>>> test_sources_PJ1: END')

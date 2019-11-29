@@ -51,7 +51,7 @@
        <npess> 16 </npess>
      </domain_decomposition>
      <parallel_cases>
-       <nftubes> 8 </nftubes>
+       <nftubes> 1 </nftubes>
        <grid_type> spread </grid_type>	
      </parallel_cases>
    </cpu_parameters>

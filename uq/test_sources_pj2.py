@@ -37,7 +37,7 @@ xml_dir = os.path.abspath("../workflows")
 
 # The execuatble model code
 obj_dir = os.path.abspath("../standalone/bin/"+SYS)
-exec_code = "loop_gem0"
+exec_code = "loop_bgb"
 
 # Define a specific parameter space
 uncertain_params = {
@@ -81,7 +81,7 @@ output_columns = ["Te", "Ti"]
 
 # Initialize Campaign object
 print('>>> Initialize Campaign object')
-campaign_name = "UQ_SEl_3PAR_GEM0_"
+campaign_name = "UQ_SEl_3PAR_BGB_"
 my_campaign = uq.Campaign(name=campaign_name, work_dir=tmp_dir)
 
 # Create new directory for commons inputs
@@ -187,8 +187,6 @@ print('>>> Save Statictics and SA')
 corep = read(os.path.join(cpo_dir,  "ets_coreprof_in.cpo"), "coreprof")
 rho = corep.rho_tor_norm
 
-test_case = cpo_dir.split('/')[-1]
-
 # Save statistics
 mean_te = list(stat_te['mean'])
 std_te  = list(stat_te['std'])
@@ -205,12 +203,12 @@ engine = my_campaign.campaign_db.engine
 # Create new tables for results and store them in the data base
 stat_te_df = pd.DataFrame.from_dict(stat_te)
 stat_te_df.to_sql('STAT_TE', engine, if_exists='append')
-sob1_te_df = pd.DataFrame.from_dict(sobt_te)
+sob1_te_df = pd.DataFrame.from_dict(sob1_te)
 sob1_te_df.to_sql('SOB1_TE', engine, if_exists='append')
 
 stat_ti_df = pd.DataFrame.from_dict(stat_ti)
 stat_ti_df.to_sql('STAT_TI', engine, if_exists='append')
-sob1_ti_df = pd.DataFrame.from_dict(sobt_ti)
+sob1_ti_df = pd.DataFrame.from_dict(sob1_ti)
 sob1_ti_df.to_sql('SOB1_TI', engine, if_exists='append')
 
 #os.system('cp '+ engine.url.database +' outputs')
@@ -239,6 +237,4 @@ if __PLOTS:
                       ftitle=' First-Order Sobol indices - QoI: Ti',
                       fname='outputs/plots/'+campaign_name+'Ti_SA')
 
-
-
-print('>>> test_sources_PJ: END')
+print('>>> test_sources_PJ2: END')
