@@ -61,7 +61,7 @@ clean-kernels:
 	|| echo -e "\033[31m\033[1m -- FAIL -- \033[0m"
 
 
-standalone: ual ets imp4dv bohmgb chease gem0
+standalone: ual ets imp4dv bohmgb chease gem0 gem
 	@echo -e "\033[36m\033[1m ++++ Build standalone wrapper/program ++++ \033[0m"; \
 	($(MAKE) --no-print-directory -C standalone \
 	&& echo -e "\033[32m\033[1m -- OK -- \033[0m") \

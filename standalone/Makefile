@@ -107,8 +107,9 @@ IMP4DV_O = ${SHARED_O} ${OBJDIR}/imp4dv_standalone.o
 SOURCES_O = ${SHARED_O} ${OBJDIR}/sources_standalone.o
 BOHMGB_O = ${SHARED_O} ${OBJDIR}/bohmgb_standalone.o
 GEM0_O = ${SHARED_O} ${OBJDIR}/gem0_standalone.o
+GEM_O = ${SHARED_O} ${OBJDIR}/gem_standalone.o
 
-TESTS =  ETS_TEST EQUILUPDATE_TEST CHEASE_TEST IMP4DV_TEST COMBINED_TEST SOURCES_TEST BOHMGB_TEST GEM0_TEST ROP_TEST
+TESTS =  ETS_TEST EQUILUPDATE_TEST CHEASE_TEST IMP4DV_TEST COMBINED_TEST SOURCES_TEST BOHMGB_TEST GEM0_TEST ROP_TEST GEM_TEST
 LOOP_TEST = LOOP_BGB LOOP_GEM0
 
 ETS_EXE = ${BINDIR}/ets_test
@@ -119,6 +120,7 @@ COMBINED_EXE = ${BINDIR}/combined_test
 SOURCES_EXE = ${BINDIR}/sources_test
 BOHMGB_EXE = ${BINDIR}/bohmgb_test
 GEM0_EXE = ${BINDIR}/gem0_test
+GEM_EXE = ${BINDIR}/gem_test
 LOOP_BGB_EXE = ${BINDIR}/loop_bgb
 LOOP_GEM0_EXE = ${BINDIR}/loop_gem0
 
@@ -164,7 +166,10 @@ BOHMGB_TEST:  ${SHARED_O} ${BOHMGB_O} ${OBJDIR}/bohmgb_test.o
 	$(LD) -o ${BOHMGB_EXE} $^ -L${BOHMGB} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_XML} -L${LIB_UAL} -lbohmgb -lbds -litmconstants -litmtypes -lxmllib -lual ${LDFLAGS} ${LIBLAPACK}
 
 GEM0_TEST:  ${SHARED_O} ${GEM0_O} ${OBJDIR}/gem0_test.o
-	$(LD) -o ${GEM0_EXE} $^ -L${GEM0} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_XML} -L${LIB_UAL} -lgem0 -lbds -litmconstants -litmtypes -lxmllib -lual ${LDFLAGS} ${LIBLAPACK}
+	$(LD) -o ${GEM0_EXE} $^ -L${GEM0} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_XML} -L${LIB_UAL} -lgem0 -lbds -litmconstants -litmtypes -lxmllib -lual ${LDFLAGS} 
+
+GEM_TEST:  ${SHARED_O} ${GEM_O} ${OBJDIR}/gem_test.o
+	$(MPIF90) -o ${GEM_EXE} $^ -L${GEM} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_XML} -L${LIB_UAL} -lgem -lbds -litmconstants -litmtypes -lxmllib -lual ${LDFLAGS} ${FFTW_LIB}
 
 LOOP_BGB: ${SHARED_O} ${ETS_O} ${EQUILUPDATE_O} ${CHEASE_O} ${BOHMGB_O} ${SOURCES_O} ${OBJDIR}/loop_bgb.o
 	$(LD) -o ${LOOP_BGB_EXE} $^ -L${ETS} -L${CHEASE} -L${BOHMGB} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_XML} -L${LIB_UAL} -lets -lchease_muscle -lbohmgb -lbds -litmconstants -litmtypes -lual -lxmllib -lxml2 ${LDFLAGS} ${LIBLAPACK}
@@ -235,6 +240,12 @@ ${OBJDIR}/bohmgb_standalone.o: src/bohmgb_standalone.f90
 
 ${OBJDIR}/gem0_standalone.o: src/gem0_standalone.f90
 	${FC90} -o $@ -c $< $(FC90FLAGS) -I${INC_BDS} -I${INC_XML} 
+
+${OBJDIR}/gem_standalone.o: src/gem_standalone.f90
+	${MPIF90} -o $@ -c $< $(MPIFLAGS) -I${INC_BDS} -I${INC_XML}
+
+${OBJDIR}/gem_test.o: src/gem_test.f90
+	${MPIF90} -o $@ -c $< $(MPIFLAGS)
 
 ${OBJDIR}/loop_bgb.o: src/loop_bgb.f90 
 	${FC90} -o $@ -c $< $(FC90FLAGS) -I${INC_TYPES} 
