@@ -13,12 +13,12 @@ from templates.cpo_decoder import CPODecoder
 
 
 # gem0_uq.py:
-# Perform UQ for GEM0.
+# Perform UQ for GEM
 # Uncertainties are driven by: 1 Flux tubes.
-# IMPORTANT CHECK: in gem0.xml, nrho_transp = 1
+# IMPORTANT CHECK: in gem.xml, nrho_transp = 1
 
 
-print('>>> gem0_uq : START')
+print('>>> gem_uq : START')
 
 # For Ellapsed time
 time0 = time.time()
@@ -37,8 +37,8 @@ xml_dir = os.path.abspath("../workflows")
 
 # The executable code to run
 obj_dir = os.path.abspath("../standalone/bin/"+SYS)
-exec_code = "gem0_test"
-mpi_instance = "mpirun -n 1"
+exec_code = "gem_test"
+mpi_instance = "mpirun -n 16"
 exec_path = os.path.join(obj_dir, exec_code)
 
 # Define a specific parameter space
@@ -71,7 +71,7 @@ output_columns = ["Te_transp_flux", "Ti_transp_flux"]
 
 # Initialize Campaign object
 print('>>> Initialize Campaign object')
-campaign_name = "UQ_GEM0_"
+campaign_name = "UQ_GEM_"
 my_campaign = uq.Campaign(name=campaign_name, work_dir=tmp_dir)
 
 # Create new directory for inputs (to be ended with /)
@@ -82,31 +82,31 @@ print('>>> common_dir = ', common_dir)
 
 # Copy input CPO files (cf test_gem0.f90)
 os.system("cp " + cpo_dir + "/ets_equilibrium_in.cpo "
-                + common_dir + "gem0_equilibrium_in.cpo")
+                + common_dir + "gem_equilibrium_in.cpo")
 os.system("cp " + cpo_dir + "/ets_coreprof_in.cpo "
-                + common_dir + "/gem0_coreprof_in.cpo")
+                + common_dir + "/gem_coreprof_in.cpo")
 
 # Copy XML and XSD files
-os.system("cp " + xml_dir + "/gem0.xml " + common_dir)
-os.system("cp " + xml_dir + "/gem0.xsd " + common_dir)
+os.system("cp " + xml_dir + "/gem.xml " + common_dir)
+os.system("cp " + xml_dir + "/gem.xsd " + common_dir)
 
-# Run test_gem0 to get flux tube indices
+# Run test_gem to get flux tube indices
 full_cmd = f'cd {common_dir}\n{mpi_instance} {exec_path}\n'
 os.system(full_cmd)
-corep_file= os.path.join(common_dir, "gem0_coreprof_in.cpo")
-coret_file= os.path.join(common_dir, "gem0_coretransp_out.cpo")
+corep_file= os.path.join(common_dir, "gem_coreprof_in.cpo")
+coret_file= os.path.join(common_dir, "gem_coretransp_out.cpo")
 
 # We test 2 flux tubes. VERIFY in gem0.xml: nrho_transp = 2
 flux_indices = cpo_tools.get_flux_index(corep_file, coret_file)
 
 # Delete output CPO before encoder
-os.system("rm " + common_dir + "/gem0_coretransp_out.cpo")
+os.system("rm " + common_dir + "/gem_coretransp_out.cpo")
 
 # Create the encoder and get the app parameters
 print('>>> Create the encoder')
-input_filename = "gem0_coreprof_in.cpo"
+input_filename = "gem_coreprof_in.cpo"
 encoder = CPOEncoder(template_filename=input_filename,
-                     target_filename="gem0_coreprof_in.cpo",
+                     target_filename=input_filename,
                      common_dir=common_dir,
                      uncertain_params=uncertain_params,
                      cpo_name="coreprof",
@@ -117,7 +117,7 @@ params, vary = encoder.draw_app_params()
 
 # Create the decoder
 print('>>> Create the decoder')
-output_filename = "gem0_coretransp_out.cpo"
+output_filename = "gem_coretransp_out.cpo"
 decoder = CPODecoder(target_filename=output_filename,
                      cpo_name="coretransp",
                      output_columns=output_columns)
@@ -165,12 +165,6 @@ print('>>> Ellapsed time: ', time.time() - time0)
 
 # Get Descriptive Statistics
 print('>>> Get Descriptive Statistics: \n')
-#stat_te = results['statistical_moments']['Te_transp_flux']
-#sob1_te = results['sobols_first']['Te_transp_flux']
-#sob2_te = results['sobols_second']['Te_transp_flux']
-#stat_ti = results['statistical_moments']['Ti_transp_flux']
-#sob1_ti = results['sobols_first']['Ti_transp_flux']
-#sob2_ti = results['sobols_second']['Ti_transp_flux']
 
 for qoi in output_columns:
     print('===========================================')
@@ -179,4 +173,4 @@ for qoi in output_columns:
     print('Sobol 1st = \n', results['sobols_first'][qoi])
     print('Sobol 2nd = \n', results['sobols_second'][qoi])
 
-print('>>> gem0_uq : END')
+print('>>> gem_uq : END')

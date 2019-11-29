@@ -26,3 +26,26 @@ def get_flux_index(corep_file, coret_file):
     # the correponding index
     idx = [list(r).index(rp[i]) for i in range(n_flux)]
     return idx
+
+# Calculate Te at neighboring +/-2 rho_tor grid points based on sample value of dTdrho at flux-tube
+def update_te_grad(cpo_core, v, flux_index):
+    # TODO verify that cpo_core has corprof base_type
+    # v = Grad_Te at flux_index point
+    b = cpo_core.te.value[flux_index] - v * cpo_core.rho_tor[flux_index]
+
+    cpo_core.te.value[flux_index-2] = v * cpo_core.rho_tor[flux_index-2] + b
+    cpo_core.te.value[flux_index-1] = v * cpo_core.rho_tor[flux_index-1] + b
+    cpo_core.te.value[flux_index+1] = v * cpo_core.rho_tor[flux_index+1] + b
+    cpo_core.te.value[flux_index+2] = v * cpo_core.rho_tor[flux_index+2] + b
+
+# Calculate Ti at neighboring +/-2 rho_tor grid points based on sample value of dTdrho at flux-tube
+def update_ti_grad(cpo_core, v, flux_index):
+    # TODO verify that cpo_core has corprof base_type
+    # v = Grad_Ti at flux_index point
+    b = cpo_core.ti.value[flux_index][0] - v * cpo_core.rho_tor[flux_index]
+
+    cpo_core.ti.value[flux_index-2][0] = v * cpo_core.rho_tor[flux_index-2] + b
+    cpo_core.ti.value[flux_index-1][0] = v * cpo_core.rho_tor[flux_index-1] + b
+    cpo_core.ti.value[flux_index+1][0] = v * cpo_core.rho_tor[flux_index+1] + b
+    cpo_core.ti.value[flux_index+2][0] = v * cpo_core.rho_tor[flux_index+2] + b
+
