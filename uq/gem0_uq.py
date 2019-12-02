@@ -91,11 +91,11 @@ os.system("cp " + xml_dir + "/gem0.xml " + common_dir)
 os.system("cp " + xml_dir + "/gem0.xsd " + common_dir)
 
 # Run test_gem0 to get flux tube indices
-if is None:
+if mpi_instance is None:
     full_cmd = f'cd {common_dir}\n{exec_path}\n'
 else:
     full_cmd = f'cd {common_dir}\n{mpi_instance} {exec_path}\n'
-    
+
 os.system(full_cmd)
 corep_file= os.path.join(common_dir, "gem0_coreprof_in.cpo")
 coret_file= os.path.join(common_dir, "gem0_coretransp_out.cpo")
