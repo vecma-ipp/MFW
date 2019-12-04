@@ -31,7 +31,7 @@ class CPOEncoder(BaseEncoder, encoder_name="cpo_encoder"):
         self.link_xmlfiles = link_xmlfiles
         self.flux_indices = flux_indices
         if flux_indices is None:
-            flux_indices = [0]
+            self.flux_indices = [0]
 
         self.fixture_support = True
 
