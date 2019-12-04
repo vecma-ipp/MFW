@@ -18,7 +18,7 @@ from templates.cpo_decoder import CPODecoder
 # IMPORTANT CHECK: in gem.xml, nrho_transp = 1
 
 
-print('>>> gem_uq : START')
+print('>>> gem_jet_uq : START')
 
 # For Ellapsed time
 time0 = time.time()
@@ -30,7 +30,8 @@ SYS = os.environ['SYS']
 tmp_dir = os.environ['SCRATCH']
 
 # CPO files
-cpo_dir = os.path.abspath("../workflows/AUG_28906_6")
+#cpo_dir = os.path.abspath("../workflows/AUG_28906_6")
+cpo_dir = os.path.abspath("../workflows/JET_92436_23066")
 
 # XML and XSD files
 xml_dir = os.path.abspath("../workflows")
@@ -71,7 +72,7 @@ output_columns = ["Te_transp_flux", "Ti_transp_flux"]
 
 # Initialize Campaign object
 print('>>> Initialize Campaign object')
-campaign_name = "UQ_GEM_"
+campaign_name = "UQ_GEM_JET_"
 my_campaign = uq.Campaign(name=campaign_name, work_dir=tmp_dir)
 
 # Create new directory for inputs (to be ended with /)
@@ -92,6 +93,8 @@ os.system("cp " + xml_dir + "/gem.xsd " + common_dir)
 
 # Run test_gem to get flux tube indices
 full_cmd = f'cd {common_dir}\n{mpi_instance} {exec_path}\n'
+print(">>> full_cmd: ", full_cmd)
+
 os.system(full_cmd)
 corep_file= os.path.join(common_dir, "gem_coreprof_in.cpo")
 coret_file= os.path.join(common_dir, "gem_coretransp_out.cpo")
@@ -173,4 +176,4 @@ for qoi in output_columns:
     print('Sobol 1st = \n', results['sobols_first'][qoi])
     print('Sobol 2nd = \n', results['sobols_second'][qoi])
 
-print('>>> gem_uq : END')
+print('>>> gem_jet_uq : END')
