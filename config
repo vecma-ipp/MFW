@@ -325,9 +325,9 @@ endif
 # COBRA (RZG) ############################################################################
 ifeq ($(SYS),COBRA)
 export CC = icc
-export CCFLAGS = -g -fPIC
+export CCFLAGS = -g -O3 -fPIC
 export FC90= ifort
-export FC90FLAGS = -g -fPIC 
+export FC90FLAGS = -g -O3 -fPIC 
 export FC77 = ifort
 export FC77FLAGS = ${FC90FLAGS}
 export MPIF90 = mpiifort
