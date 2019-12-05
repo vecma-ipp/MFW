@@ -38,11 +38,21 @@ xml_dir = os.path.abspath("../workflows")
 # The executable code to run
 obj_dir = os.path.abspath("../standalone/bin/"+SYS)
 exec_code = "gem0_test"
-mpi_instance = None #"mpirun -n 1"
+mpi_instance = None#"mpirun -n 4"
 exec_path = os.path.join(obj_dir, exec_code)
 
 # Define a specific parameter space
 uncertain_params = {
+    "Te_1": {
+        "type": "float",
+        "distribution": "Normal",
+        "margin_error": 0.2,
+    },
+    "Ti_1": {
+        "type": "float",
+        "distribution": "Normal",
+        "margin_error": 0.2,
+    },
     "Te_grad_1": {
         "type": "float",
         "distribution": "Normal",
@@ -131,7 +141,7 @@ print('>>> Create Collater')
 collater = uq.collate.AggregateSamples(average=False)
 
 # Add the ETS app (automatically set as current app)
-print('>>> Add app to campagn object')
+print('>>> Add app to campaign object')
 my_campaign.add_app(name=campaign_name,
                     params=params,
                     encoder=encoder,
@@ -140,7 +150,7 @@ my_campaign.add_app(name=campaign_name,
 
 # Create the sampler
 print('>>> Create the sampler')
-my_sampler = uq.sampling.PCESampler(vary=vary, polynomial_order=3)
+my_sampler = uq.sampling.PCESampler(vary=vary, polynomial_order=4)
 my_campaign.set_sampler(my_sampler)
 
 # Will draw all (of the finite set of samples)
@@ -165,7 +175,7 @@ my_campaign.apply_analysis(analysis)
 print('>>> Get results')
 results = my_campaign.get_last_analysis()
 
-print('>>> Ellapsed time: ', time.time() - time0)
+print('>>> Elapsed time: ', time.time() - time0)
 
 # Get Descriptive Statistics
 print('>>> Get Descriptive Statistics: \n')

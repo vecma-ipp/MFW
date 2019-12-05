@@ -45,6 +45,8 @@ class CPOEncoder(BaseEncoder, encoder_name="cpo_encoder"):
             "Te_boundary" : self.cpo_core.te.boundary.value[0],
             "Ti_boundary" : self.cpo_core.ti.boundary.value[0][0],
             # TODO Use list for uncertain params Te/Te grad => Issue to EasyVVUQ
+            "Te_1" : self.cpo_core.te.value[self.flux_indices[0]],
+            "Ti_1" : self.cpo_core.ti.value[self.flux_indices[0]][0],
             "Te_grad_1" : self.cpo_core.te.ddrho[self.flux_indices[0]],
             "Ti_grad_1" : self.cpo_core.ti.ddrho[self.flux_indices[0]][0]#,
 #            "Te_grad_2" : self.cpo_core.te.ddrho[self.flux_indices[1]],
@@ -68,6 +70,10 @@ class CPOEncoder(BaseEncoder, encoder_name="cpo_encoder"):
 
         # Temperature Gradients
         # 1st Flux tube
+        if param=="Te_1":
+            cpo_core.te.value[flux_indices[0]] = value
+        if param=="Ti_1":
+            cpo_core.ti.value[flux_indices[0]][0] = value
         if param=="Te_grad_1":
             cpo_core.te.ddrho[flux_indices[0]] = value
         if param=="Ti_grad_1":
@@ -115,6 +121,10 @@ class CPOEncoder(BaseEncoder, encoder_name="cpo_encoder"):
             self._set_params_value(self.cpo_core, k, v, self.flux_indices)
 
             # Udpate Electron and Ion Temperature around flux tube according to the sample Gradient
+            if k == "Te_1":
+                cpo_tools.update_te(self.cpo_core, v, self.flux_indices[0])
+            if k == "Ti_1":
+                cpo_tools.update_ti(self.cpo_core, v, self.flux_indices[0])
             if k == "Te_grad_1":
                 cpo_tools.update_te_grad(self.cpo_core, v, self.flux_indices[0])
             if k == "Ti_grad_1":
