@@ -39,7 +39,7 @@ xml_dir = os.path.abspath("../workflows")
 # The executable code to run
 obj_dir = os.path.abspath("../standalone/bin/"+SYS)
 exec_code = "gem_test"
-mpi_instance = "mpirun -n 16"
+mpi_instance = os.environ['MPICMD']
 exec_path = os.path.join(obj_dir, exec_code)
 
 # Define a specific parameter space
@@ -72,7 +72,7 @@ output_columns = ["Te_transp_flux", "Ti_transp_flux"]
 
 # Initialize Campaign object
 print('>>> Initialize Campaign object')
-campaign_name = "UQ_GEM_JET_"
+campaign_name = "UQ_GEM_"+cpo_dir.split('/')[-1]+"_"
 my_campaign = uq.Campaign(name=campaign_name, work_dir=tmp_dir)
 
 # Create new directory for inputs (to be ended with /)
