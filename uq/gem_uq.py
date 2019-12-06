@@ -54,17 +54,6 @@ uncertain_params = {
         "distribution": "Normal",
         "margin_error": 0.2,
     }
-    #,
-#    "Te_grad_2": {
-#        "type": "float",
-#        "distribution": "Normal",
-#        "margin_error": 0.2,
-#    },
-#    "Ti_grad_2": {
-#        "type": "float",
-#        "distribution": "Normal",
-#        "margin_error": 0.2,
-#    }
 }
 
 # For the output: quantities of intersts
