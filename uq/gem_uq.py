@@ -99,7 +99,7 @@ os.system(full_cmd)
 corep_file= os.path.join(common_dir, "gem_coreprof_in.cpo")
 coret_file= os.path.join(common_dir, "gem_coretransp_out.cpo")
 
-# We test 2 flux tubes. VERIFY in gem0.xml: nrho_transp = 2
+# We test 1 flux tube. VERIFY in gem0.xml: nrho_transp = 1
 flux_indices = cpo_tools.get_flux_index(corep_file, coret_file)
 
 # Delete output CPO before encoder
