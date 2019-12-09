@@ -39,7 +39,7 @@ xml_dir = os.path.abspath("../workflows")
 # The executable code to run
 obj_dir = os.path.abspath("../standalone/bin/"+SYS)
 exec_code = "gem_test"
-mpi_instance = "mpirun -n 16"
+mpi_instance = os.environ['MPICMD']
 exec_path = os.path.join(obj_dir, exec_code)
 
 # Define a specific parameter space
@@ -54,17 +54,6 @@ uncertain_params = {
         "distribution": "Normal",
         "margin_error": 0.2,
     }
-    #,
-#    "Te_grad_2": {
-#        "type": "float",
-#        "distribution": "Normal",
-#        "margin_error": 0.2,
-#    },
-#    "Ti_grad_2": {
-#        "type": "float",
-#        "distribution": "Normal",
-#        "margin_error": 0.2,
-#    }
 }
 
 # For the output: quantities of intersts
@@ -72,7 +61,7 @@ output_columns = ["Te_transp_flux", "Ti_transp_flux"]
 
 # Initialize Campaign object
 print('>>> Initialize Campaign object')
-campaign_name = "UQ_GEM_JET_"
+campaign_name = "UQ_GEM_"+cpo_dir.split('/')[-1]+"_"
 my_campaign = uq.Campaign(name=campaign_name, work_dir=tmp_dir)
 
 # Create new directory for inputs (to be ended with /)
@@ -99,7 +88,7 @@ os.system(full_cmd)
 corep_file= os.path.join(common_dir, "gem_coreprof_in.cpo")
 coret_file= os.path.join(common_dir, "gem_coretransp_out.cpo")
 
-# We test 2 flux tubes. VERIFY in gem0.xml: nrho_transp = 2
+# We test 1 flux tube. VERIFY in gem0.xml: nrho_transp = 1
 flux_indices = cpo_tools.get_flux_index(corep_file, coret_file)
 
 # Delete output CPO before encoder

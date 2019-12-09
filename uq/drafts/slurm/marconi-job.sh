@@ -13,6 +13,7 @@
 #SBATCH --mail-type=END				            # specify email notification
 #SBATCH --mail-user=jalal.lakhlili@ipp.mpg.de	# e-mail address
 
-export CPO_INPUT_DIR=AUG_28906_4/
+export SYS=MARCONI
+export MPICMD="mpirun -n 1"
 
 python3 test_combined.py > outputs/logs/test.log.${SLURM_JOBID}
