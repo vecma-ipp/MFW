@@ -31,7 +31,7 @@ class CPOEncoder(BaseEncoder, encoder_name="cpo_encoder"):
         self.link_xmlfiles = link_xmlfiles
         self.flux_indices = flux_indices
         if flux_indices is None:
-            flux_indices = [0]
+            self.flux_indices = [0]
 
         self.fixture_support = True
 
@@ -45,8 +45,8 @@ class CPOEncoder(BaseEncoder, encoder_name="cpo_encoder"):
             "Te_boundary" : self.cpo_core.te.boundary.value[0],
             "Ti_boundary" : self.cpo_core.ti.boundary.value[0][0],
             # TODO Use list for uncertain params Te/Te grad => Issue to EasyVVUQ
-            "Te_1" : self.cpo_core.te.value[self.flux_indices[0]],
-            "Ti_1" : self.cpo_core.ti.value[self.flux_indices[0]][0],
+            #"Te_1" : self.cpo_core.te.value[self.flux_indices[0]],
+            #"Ti_1" : self.cpo_core.ti.value[self.flux_indices[0]][0],
             "Te_grad_1" : self.cpo_core.te.ddrho[self.flux_indices[0]],
             "Ti_grad_1" : self.cpo_core.ti.ddrho[self.flux_indices[0]][0]#,
 #            "Te_grad_2" : self.cpo_core.te.ddrho[self.flux_indices[1]],
