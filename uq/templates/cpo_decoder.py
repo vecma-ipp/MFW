@@ -50,6 +50,19 @@ class CPODecoder(BaseDecoder, decoder_name="cpo_decoder"):
                 "Ti": cpo_core.ti.value[:,0],
             }
 
+        if cpo_core.base_path == 'equilibrium':
+            switcher_dict = {
+                "gm1": cpo_core.profiles_1d.gm1,
+                "gm2": cpo_core.profiles_1d.gm2,
+                "gm3": cpo_core.profiles_1d.gm3,
+                "gm4": cpo_core.profiles_1d.gm4,
+                "gm5": cpo_core.profiles_1d.gm5,
+                "gm6": cpo_core.profiles_1d.gm6,
+                "gm7": cpo_core.profiles_1d.gm7,
+                "gm8": cpo_core.profiles_1d.gm8,
+                "gm9": cpo_core.profiles_1d.gm9,
+            }
+
         if cpo_core.base_path == 'coretransp':
             switcher_dict = {
                 "Te_transp_D": cpo_core.values[0].te_transp.diff_eff,
