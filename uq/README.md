@@ -2,9 +2,9 @@
 
 1. Install [EasyVVUQ](https://easyvvuq.readthedocs.io/en/latest/installation.html) library.
 2. Make sure that the standalone code is compiled. Cf. [README.rst](https://github.com/vecma-ipp/MFW/blob/devel/README.rst) in the root directory of the project.
-3. Build the Python interface for the UAL (`ascii_cpo` module): Cf. [README](https://github.com/vecma-ipp/MFW/tree/devel/ual/python_interface)
+3. Make sure that the that ython interface for the UAL is built (mandatory to use `ascii_cpo` module). Cf.: [README](https://github.com/vecma-ipp/MFW/tree/devel/ual/python_interface).
 
-### To use the PilotJob
+#### To use the PilotJob
 4. Install QCG PilotJob Manager directly from github by typing:
 ```
 pip install --upgrade git+https://github.com/vecma-project/QCG-PilotJob.git@issue_37_monitoring#egg=qcgPilotManager --user
