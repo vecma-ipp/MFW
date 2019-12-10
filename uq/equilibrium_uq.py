@@ -53,13 +53,13 @@ uncertain_params = {
         "type": "float",
         "distribution": "Uniform",
         "margin_error": 0.2,
-    }
-    "Te": {
+    },
+    "Te_1": {
         "type": "float",
         "distribution": "Uniform",
         "margin_error": 0.2,
     },
-    "Ti": {
+    "Ti_1": {
         "type": "float",
         "distribution": "Uniform",
         "margin_error": 0.2,
@@ -180,7 +180,7 @@ if __PLOTS:
     for i in range(10):
 
         plots.plot_stats(rho, stat[i],
-                         xlabel=r'$\rho_{tor} ~ [m]$', ylabel=r'GM'+str{i+1},
+                         xlabel=r'$\rho_{tor} ~ [m]$', ylabel='GM'+str(i+1),
                          ftitle='GM'+str(i+1)+' profile',
                          fname='outputs/plots/GM'+str(i+1)+'_STAT')
 
