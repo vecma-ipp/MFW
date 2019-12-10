@@ -13,7 +13,7 @@ if __name__ == "__main__":
 
     print(f"Executing {command} in directory {run_dir}")
     full_cmd = 'cd ' + run_dir + '\n' + command + '\n'
-
+    print(">>> FULLCMD: ", full_cmd)
     result = os.system(full_cmd)
     if result != 0:
         sys.exit("Non-zero exit code from command '" + full_cmd + "'\n")

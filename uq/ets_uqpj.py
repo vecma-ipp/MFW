@@ -107,7 +107,7 @@ my_campaign.add_app(name=campaign_name,
 
 # Create the sampler (500*2 = 1000 total samples using qMC)
 print('>>> Create the sampler')
-my_sampler = uq.sampling.QMCSampler(vary=vary, n_samples=250)
+my_sampler = uq.sampling.QMCSampler(vary=vary, n_samples=20)
 my_campaign.set_sampler(my_sampler)
 
 # Will draw all (of the finite set of samples)
