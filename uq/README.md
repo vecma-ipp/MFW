@@ -6,9 +6,9 @@
 
 ### To use the PilotJob
 4. Install QCG PilotJob Manager directly from github by typing:
-
-`pip install --upgrade git+https://github.com/vecma-project/QCG-PilotJob.git@issue_37_monitoring#egg=qcgPilotManager --user`
-
+```
+pip install --upgrade git+https://github.com/vecma-project/QCG-PilotJob.git@issue_37_monitoring#egg=qcgPilotManager --user
+```
 
 ## Example Usage
 
