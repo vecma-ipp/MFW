@@ -46,12 +46,22 @@ exec_path = os.path.join(obj_dir, exec_code)
 uncertain_params = {
     "Te_grad_1": {
         "type": "float",
-        "distribution": "Normal",
+        "distribution": "Uniform",
         "margin_error": 0.2,
     },
     "Ti_grad_1": {
         "type": "float",
-        "distribution": "Normal",
+        "distribution": "Uniform",
+        "margin_error": 0.2,
+    }
+    "Te": {
+        "type": "float",
+        "distribution": "Uniform",
+        "margin_error": 0.2,
+    },
+    "Ti": {
+        "type": "float",
+        "distribution": "Uniform",
         "margin_error": 0.2,
     }
 }
@@ -119,7 +129,7 @@ my_campaign.add_app(name=campaign_name,
 
 # Create the sampler
 print('>>> Create the sampler')
-my_sampler = uq.sampling.PCESampler(vary=vary, polynomial_order=4)
+my_sampler = uq.sampling.PCESampler(vary=vary, polynomial_order=3)
 my_campaign.set_sampler(my_sampler)
 
 # Will draw all (of the finite set of samples)
@@ -153,12 +163,10 @@ print('>>> Get Descriptive Statistics: \n')
 print('>>> Get Descriptive Statistics')
 
 stat = []
-perc = []
 sob1 = []
 
 for qoi in  output_columns:
     stat.append(results['statistical_moments'][qoi])
-    perc.append(results['percentiles'][qoi])
     sob1.append(results['sobols_first'][qoi])
 
 # Plots STAT and SA
@@ -170,8 +178,9 @@ if __PLOTS:
     uparams_names = list(params.keys())
 
     for i in range(10):
-        plots.plot_stats_pctl(rho, stat[i], perc[i],
-                         xlabel=r'$\rho_{tor} ~ [m]$', ylabel=r'$Te$',
+
+        plots.plot_stats(rho, stat[i],
+                         xlabel=r'$\rho_{tor} ~ [m]$', ylabel=r'GM'+str{i+1},
                          ftitle='GM'+str(i+1)+' profile',
                          fname='outputs/plots/GM'+str(i+1)+'_STAT')
 
