@@ -1,0 +1,16 @@
+This directory contains in/output files 
+
+input files:
+
+1) *.xml and *.xsd of ETS, CHEASE, and GEM
+
+These files were obtained from running AUG_28906_6 in the MFW (ETS-CHEASE-GEM-IMP4DV):
+
+100 ETS time steps (TAU=1e-2) 
+coreprof%ti%boundary%type = 0
+coreprof%te%boundary%type = 0
+
+output files:
+
+1) t*.dat
+2) *in.cpo
