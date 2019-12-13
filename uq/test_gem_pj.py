@@ -10,17 +10,17 @@ from ascii_cpo import read
 from utils import cpo_tools
 from templates.cpo_encoder import CPOEncoder
 from templates.cpo_decoder import CPODecoder
-
+from easypj import qcgpj_wrapper
 
 # gem0_uq.py:
 # Perform UQ for GEM
 # Uncertainties are driven by: 1 Flux tubes.
-# IMPORTANT CHECK: in gem.xml, nrho_transp = 1
+# IMPORTANT CHECK: in gem.xml, nftubes = 1
 
 
-print('>>> gem_jet_uq : START')
+print('>>> gem_uq_pj : START')
 
-# For Elapsed time
+# For Ellapsed time
 time0 = time.time()
 
 # OS env
@@ -30,13 +30,11 @@ SYS = os.environ['SYS']
 tmp_dir = os.environ['SCRATCH']
 
 # CPO files
-cpo_dir = os.path.abspath("../workflows/JET_92436_23066_1ft_restart") #OL
 #cpo_dir = os.path.abspath("../workflows/AUG_28906_6")
-#cpo_dir = os.path.abspath("../workflows/JET_92436_23066")
+cpo_dir = os.path.abspath("../workflows/JET_92436_23066")
 
 # XML and XSD files
-xml_dir = os.path.abspath("../workflows/JET_92436_23066_1ft_restart") #OL
-#xml_dir = os.path.abspath("../workflows")
+xml_dir = os.path.abspath("../workflows")
 
 # The executable code to run
 obj_dir = os.path.abspath("../standalone/bin/"+SYS)
@@ -52,16 +50,6 @@ uncertain_params = {
         "margin_error": 0.2,
     },
     "Ti_grad_1": {
-        "type": "float",
-        "distribution": "Normal",
-        "margin_error": 0.2,
-    },
-    "Te_grad_2": {
-        "type": "float",
-        "distribution": "Normal",
-        "margin_error": 0.2,
-    },
-    "Ti_grad_2": {
         "type": "float",
         "distribution": "Normal",
         "margin_error": 0.2,
@@ -82,7 +70,7 @@ common_dir = campaign_dir +"/common/"
 os.system("mkdir " + common_dir)
 print('>>> common_dir = ', common_dir)
 
-# Copy input CPO files (cf test_gem0.f90)
+# Copy input CPO files (cf test_gem.f90)
 os.system("cp " + cpo_dir + "/ets_equilibrium_in.cpo "
                 + common_dir + "gem_equilibrium_in.cpo")
 os.system("cp " + cpo_dir + "/ets_coreprof_in.cpo "
@@ -91,21 +79,9 @@ os.system("cp " + cpo_dir + "/ets_coreprof_in.cpo "
 # Copy XML and XSD files
 os.system("cp " + xml_dir + "/gem.xml " + common_dir)
 os.system("cp " + xml_dir + "/gem.xsd " + common_dir)
-os.system("cp " + xml_dir + "/t*.dat " + common_dir) #OL
 
-# Run test_gem to get flux tube indices
-full_cmd = f'cd {common_dir}\n{mpi_instance} {exec_path}\n'
-print(">>> full_cmd: ", full_cmd)
-
-os.system(full_cmd)
-corep_file= os.path.join(common_dir, "gem_coreprof_in.cpo")
-coret_file= os.path.join(common_dir, "gem_coretransp_out.cpo")
-
-# We test 1 flux tube. VERIFY in gem0.xml: nrho_transp = 1
-flux_indices = cpo_tools.get_flux_index(corep_file, coret_file)
-
-# Delete output CPO before encoder
-os.system("rm " + common_dir + "/gem_coretransp_out.cpo")
+# We test 1 flux tube.
+flux_indices = [69]
 
 # Create the encoder and get the app parameters
 print('>>> Create the encoder')
@@ -132,7 +108,7 @@ print('>>> Create Collater')
 collater = uq.collate.AggregateSamples(average=False)
 
 # Add the ETS app (automatically set as current app)
-print('>>> Add app to campaign object')
+print('>>> Add app to campagn object')
 my_campaign.add_app(name=campaign_name,
                     params=params,
                     encoder=encoder,
@@ -148,12 +124,17 @@ my_campaign.set_sampler(my_sampler)
 print('>>> Draw Samples')
 my_campaign.draw_samples()
 
-print('>>> Populate runs_dir')
-my_campaign.populate_runs_dir()
+#print('>>> Populate runs_dir')
+#my_campaign.populate_runs_dir()
 
-print('>>> Execute The code runs')
-my_campaign.apply_for_each_run_dir(uq.actions.ExecuteLocal(run_cmd=exec_path,
-                                                           interpret=mpi_instance))
+#print('>>> Execute The code runs')
+#my_campaign.apply_for_each_run_dir(uq.actions.ExecuteLocal(run_cmd=exec_path,
+#                                                           interpret=mpi_instance))
+
+print('>>> Call QCG-Pilot Job')
+t1 = time.time()
+qcgpj_wrapper.run(my_campaign, exec_path)
+t2 = time.time()
 
 print('>>> Collate')
 my_campaign.collate()
@@ -166,7 +147,9 @@ my_campaign.apply_analysis(analysis)
 print('>>> Get results')
 results = my_campaign.get_last_analysis()
 
-print('>>> Elapsed time: ', time.time() - time0)
+# Ellapsed times
+print('>>> PJ time: ', t2 - t1)
+print('>>> Total time: ', time.time() - time0)
 
 # Get Descriptive Statistics
 print('>>> Get Descriptive Statistics: \n')

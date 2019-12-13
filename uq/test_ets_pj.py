@@ -78,7 +78,7 @@ os.system("cp " + xml_dir + "/ets.xsd " + common_dir)
 print('>>> Create the encoder')
 input_filename = "ets_coreprof_in.cpo"
 encoder = CPOEncoder(template_filename=input_filename,
-                     target_filename="ets_coreprof_in.cpo",
+                     target_filename=input_filename,
                      common_dir=common_dir,
                      uncertain_params=uncertain_params,
                      cpo_name="coreprof",
@@ -107,7 +107,7 @@ my_campaign.add_app(name=campaign_name,
 
 # Create the sampler (500*2 = 1000 total samples using qMC)
 print('>>> Create the sampler')
-my_sampler = uq.sampling.QMCSampler(vary=vary, n_samples=500)
+my_sampler = uq.sampling.QMCSampler(vary=vary, n_samples=20)
 my_campaign.set_sampler(my_sampler)
 
 # Will draw all (of the finite set of samples)
@@ -115,10 +115,10 @@ print('>>> Draw Samples')
 my_campaign.draw_samples()
 
 print('>>> Populate runs_dir')
-my_campaign.populate_runs_dir()
+#my_campaign.populate_runs_dir()
 
 print('>>> Run samples')
-#exec_path = os.path.join(obj_dir, exec_code)
+exec_path = os.path.join(obj_dir, exec_code)
 #my_campaign.apply_for_each_run_dir(uq.actions.ExecuteLocal(exec_path))
 
 print('>>> Call QCG-Pilot Job')
@@ -139,7 +139,7 @@ results = my_campaign.get_last_analysis()
 t3 = time.time()
 
 # print Ellapsed time
-print('>>> PJ time = ', t2 - t1)
+#print('>>> PJ time = ', t2 - t1)
 print('>>> Total time = ', t3 - t0)
 
 # Get Descriptive Statistics
@@ -152,7 +152,7 @@ sob1_ti = results['sobols_first']['Ti']
 corep = read(os.path.join(cpo_dir,  "ets_coreprof_in.cpo"), "coreprof")
 rho = corep.rho_tor_norm
 
-tatistics
+#print statistics
 __PLOTS = True # If True create plots subfolder under outputs folder
 
 if __PLOTS:
