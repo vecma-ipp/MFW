@@ -18,10 +18,10 @@ use deallocate_structures, only: deallocate_cpo
 implicit none
 
   ! CPO files 
-  character(len=*), parameter :: equil_file_in  = "ets_equilibrium_in.cpo"
-  character(len=*), parameter :: corep_file_in  = "ets_coreprof_in.cpo"
+  character(len=*), parameter :: equil_file_in  = "bohmgb_equilibrium_in.cpo"
+  character(len=*), parameter :: corep_file_in  = "bohmgb_coreprof_in.cpo"
 
-  character(len=*), parameter :: coret_file_out = "bohmgb_coretransp.cpo"
+  character(len=*), parameter :: coret_file_out = "bohmgb_coretransp_out.cpo"
   
   ! CPO structures 
   type(type_equilibrium), pointer :: equil(:)

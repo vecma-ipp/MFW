@@ -18,9 +18,9 @@ program sources_test
 implicit none
 
   ! CPO files and structures
-  character(len=*), parameter :: corep_file_in   = "ets_coreprof_in.cpo"
-  character(len=*), parameter :: equil_file_in   = "ets_equilibrium_in.cpo"
-  character(len=*), parameter :: cores_file_out   = "ets_coresource_out.cpo"
+  character(len=*), parameter :: corep_file_in   = "sources_coreprof_in.cpo"
+  character(len=*), parameter :: equil_file_in   = "sources_equilibrium_in.cpo"
+  character(len=*), parameter :: cores_file_out   = "sources_coresource_out.cpo"
 
   type(type_coreprof)   , pointer :: corep(:) => NULL()
   type(type_equilibrium), pointer :: equil(:) => NULL()

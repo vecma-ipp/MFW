@@ -17,9 +17,9 @@ program equilupdate_test
   allocate(corep(1))
   allocate(toroidf(1))
   
-  equil_file_in = 'ets_equilibrium_in.cpo'
-  corep_file_in = 'ets_coreprof_in.cpo'
-  toroidf_file_in = 'ets_toroidfield_in.cpo'
+  equil_file_in = 'equilupdate_equilibrium_in.cpo'
+  corep_file_in = 'equilupdate_coreprof_in.cpo'
+  toroidf_file_in = 'equilupdate_toroidfield_in.cpo'
 
   open (unit = 11, file = equil_file_in, &
        status = 'old', form = 'formatted', &

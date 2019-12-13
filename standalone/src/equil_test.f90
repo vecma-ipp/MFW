@@ -1,37 +1,36 @@
 ! -*- coding: UTF-8 -*- 
-program equilibrium_test
-
+program equil_test
   use euitm_schemas,   only: type_coreprof,    & 
-                          &  type_equilibrium, &
-                          &  type_toroidfield
+       &  type_equilibrium, &
+       &  type_toroidfield
 
-use read_structures, only: open_read_file,  &
-                        &  close_read_file, &
-                        &  read_cpo
-use write_structures, only: open_write_file,  &
-                         &  close_write_file, &
-                         &  write_cpo
+  use read_structures, only: open_read_file,  &
+       &  close_read_file, &
+       &  read_cpo
+  use write_structures, only: open_write_file,  &
+       &  close_write_file, &
+       &  write_cpo
 
-use deallocate_structures, only: deallocate_cpo
+  use deallocate_structures, only: deallocate_cpo
 
-use chease_standalone, only: chease_cpo
-use equilupdate_standalone, only: equilupdate2cpo
+  use chease_standalone, only: chease_cpo
+  use equilupdate_standalone, only: equilupdate2cpo
 
-implicit none
-  
+  implicit none
+
   ! CPO files 
-  character(len=*), parameter :: corep_in_file   = "eq_coreprof_in.cpo" 
-  character(len=*), parameter :: toroidf_in_file = "eq_toroidfield_in.cpo" 
-  character(len=*), parameter :: equil_in_file   = "eq_equilibrium_in.cpo" 
-  character(len=*), parameter :: equil_out_file  = "eq_equilibrium_out.cpo"
-  
+  character(len=*), parameter :: corep_in_file   = "equil_coreprof_in.cpo" 
+  character(len=*), parameter :: toroidf_in_file = "equil_toroidfield_in.cpo" 
+  character(len=*), parameter :: equil_in_file   = "equil_equilibrium_in.cpo" 
+  character(len=*), parameter :: equil_out_file  = "equil_equilibrium_out.cpo"
+
   ! CPO structures 
   type (type_coreprof),    pointer :: corep(:)     => NULL()
   type (type_toroidfield), pointer :: toroidf(:)   => NULL()
   type (type_equilibrium), pointer :: equil(:)     => NULL()
   type (type_equilibrium), pointer :: equil_up(:)  => NULL()
   type (type_equilibrium), pointer :: equil_new(:) => NULL()
-  
+
   ! Other variables  
   integer :: ios
 
@@ -79,21 +78,21 @@ implicit none
      print *,"CPO file not found:",equil_in_file
      STOP
   end if
-  
+
   ! Update Equilibrium and call CHEASE 
   call equilupdate2cpo(corep, toroidf, equil, equil_up)
   call chease_cpo(equil_up, equil_new) 
-  
+
   ! Save the output file 
   call open_write_file(20, equil_out_file)
   call write_cpo(equil_new(1),'equilibrium')
   call close_write_file
-  
+
   ! deallocations
   call deallocate_cpo(corep)
   call deallocate_cpo(toroidf)
   call deallocate_cpo(equil)
   call deallocate_cpo(equil_up)
   call deallocate_cpo(equil_new)
- 
-end program equilibrium_test
+
+end program equil_test
