@@ -139,6 +139,7 @@ class CPOEncoder(BaseEncoder, encoder_name="cpo_encoder"):
         if self.link_xmlfiles:
             os.system("ln -s " + self.common_dir + "*.xml " + target_dir)
             os.system("ln -s " + self.common_dir + "*.xsd " + target_dir)
+            os.system("ln -s " + self.common_dir + "t*.dat " + target_dir) #OL
         # Write target input CPO file
         target_file_path = os.path.join(target_dir, self.target_filename)
         if(os.path.isfile(target_file_path)):
