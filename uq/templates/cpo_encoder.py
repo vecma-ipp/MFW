@@ -48,9 +48,7 @@ class CPOEncoder(BaseEncoder, encoder_name="cpo_encoder"):
             "Te_1" : self.cpo_core.te.value[self.flux_indices[0]],
             "Ti_1" : self.cpo_core.ti.value[self.flux_indices[0]][0],
             "Te_grad_1" : self.cpo_core.te.ddrho[self.flux_indices[0]],
-            "Ti_grad_1" : self.cpo_core.ti.ddrho[self.flux_indices[0]][0]#,
-#            "Te_grad_2" : self.cpo_core.te.ddrho[self.flux_indices[1]],
-#            "Ti_grad_2" : self.cpo_core.ti.ddrho[self.flux_indices[1]][0]
+            "Ti_grad_1" : self.cpo_core.ti.ddrho[self.flux_indices[0]][0]
         }
 
     @staticmethod
@@ -78,11 +76,6 @@ class CPOEncoder(BaseEncoder, encoder_name="cpo_encoder"):
             cpo_core.te.ddrho[flux_indices[0]] = value
         if param=="Ti_grad_1":
             cpo_core.ti.ddrho[flux_indices[0]][0] = value
-        # 2nd Flux tube
-        if param=="Te_grad_2":
-            cpo_core.te.ddrho[flux_indices[1]] = value
-        if param=="Ti_grad_2":
-            cpo_core.ti.ddrho[flux_indices[1]][0] = value
 
     # Returns dict (params) for Campaign and a list (vary) of distribitions for Sampler
     def draw_app_params(self):
@@ -140,7 +133,7 @@ class CPOEncoder(BaseEncoder, encoder_name="cpo_encoder"):
         if self.link_xmlfiles:
             os.system("ln -s " + self.common_dir + "*.xml " + target_dir)
             os.system("ln -s " + self.common_dir + "*.xsd " + target_dir)
-            os.system("ln -s " + self.common_dir + "t*.dat " + target_dir) #OL
+
         # Write target input CPO file
         target_file_path = os.path.join(target_dir, self.target_filename)
         if(os.path.isfile(target_file_path)):

@@ -1,5 +1,0 @@
-#!/bin/bash
-
-#export MPICMD="mpirun -n 1"
-echo ">>>> MPICMD: $MPICMD"
-${MPICMD} $@

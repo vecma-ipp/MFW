@@ -10,15 +10,18 @@ from ascii_cpo import read
 from utils import cpo_tools
 from templates.cpo_encoder import CPOEncoder
 from templates.cpo_decoder import CPODecoder
-from easypj import qcgpj_wrapper
+#from my_easypj import qcgpj_wrapper
+
+import easypj
+from easypj import TaskRequirements, Resources
+from easypj import Task, TaskType, SubmitOrder
 
 # gem0_uq.py:
 # Perform UQ for GEM
 # Uncertainties are driven by: 1 Flux tubes.
 # IMPORTANT CHECK: in gem.xml, nftubes = 1
 
-
-print('>>> gem_uq_pj : START')
+print('>>> gem_uq_pj_api : START')
 
 # For Ellapsed time
 time0 = time.time()
@@ -124,17 +127,36 @@ my_campaign.set_sampler(my_sampler)
 print('>>> Draw Samples')
 my_campaign.draw_samples()
 
-#print('>>> Populate runs_dir')
-#my_campaign.populate_runs_dir()
-
-#print('>>> Execute The code runs')
-#my_campaign.apply_for_each_run_dir(uq.actions.ExecuteLocal(run_cmd=exec_path,
-#                                                           interpret=mpi_instance))
+#print('>>> ENCODING: Populate runs_dir')
+my_campaign.populate_runs_dir()
 
 print('>>> Call QCG-Pilot Job')
-t1 = time.time()
-qcgpj_wrapper.run(my_campaign, exec_path)
-t2 = time.time()
+#qcgpj_wrapper.run(my_campaign, exec_path)
+# use integrator between EasyVVUQ and QCG PilotJob
+qcgpjexec = easypj.Executor()
+
+# allocate nodes:cores each TODO get infos from env
+qcgpjexec.create_manager(dir=my_campaign.campaign_dir, resources='1:48')
+
+qcgpjexec.add_task(Task(
+    TaskType.ENCODING,
+    TaskRequirements(cores=Resources(exact=1))
+))
+
+# run the MPI application using 1 nodes, 16 cores each
+# Two ensembles should be run in parallel
+qcgpjexec.add_task(Task(
+    TaskType.EXECUTION,
+    TaskRequirements(nodes=Resources(exact=1),cores=Resources(exact=16)),
+    application="mpirun " + exec_path
+))
+
+# first generate samples, then run ensembles
+qcgpjexec.run(
+    campaign=my_campaign,
+    submit_order=SubmitOrder.PHASE_ORIENTED)
+
+qcgpjexec.terminate_manager()
 
 print('>>> Collate')
 my_campaign.collate()
@@ -148,7 +170,6 @@ print('>>> Get results')
 results = my_campaign.get_last_analysis()
 
 # Ellapsed times
-print('>>> PJ time: ', t2 - t1)
 print('>>> Total time: ', time.time() - time0)
 
 # Get Descriptive Statistics
@@ -161,4 +182,4 @@ for qoi in output_columns:
     print('Sobol 1st = \n', results['sobols_first'][qoi])
     print('Sobol 2nd = \n', results['sobols_second'][qoi])
 
-print('>>> gem_jet_uq : END')
+print('>>> gem_uq_pj_api : END')
