@@ -18,9 +18,9 @@ from templates.cpo_decoder import CPODecoder
 # IMPORTANT CHECK: in gem.xml, nrho_transp = 1
 
 
-print('>>> gem_jet_uq : START')
+print('>>> GEM_JET_UQ : START')
 
-# For Ellapsed time
+# For Elapsed time
 time0 = time.time()
 
 # OS env
@@ -33,7 +33,7 @@ data = os.path.abspath("../workflows/JET_92436_23066_1ft_restart")
 
 # CPO files
 #cpo_dir = os.path.abspath("../workflows/AUG_28906_6")
-#cpo_dir = os.path.abspath("../workflows/jet_92436_23066")
+#cpo_dir = os.path.abspath("../workflows/JET_92436_23066")
 cpo_dir = data
 
 # XML and XSD files
@@ -95,20 +95,8 @@ os.system("cp " + xml_dir + "/gem.xml " + common_dir)
 os.system("cp " + xml_dir + "/gem.xsd " + common_dir)
 os.system("cp " + data + "/t00.dat " + common_dir)
 
-## Run test_gem to get flux tube indices
-#full_cmd = f'cd {common_dir}\n{mpi_instance} {exec_path}\n'
-#print(">>> full_cmd: ", full_cmd)
-#
-#os.system(full_cmd)
-#corep_file= os.path.join(common_dir, "gem_coreprof_in.cpo")
-#coret_file= os.path.join(common_dir, "gem_coretransp_out.cpo")
-#flux_indices = cpo_tools.get_flux_index(corep_file, coret_file)
-
 # We test 1 flux tube.
 flux_indices = [69]
-
-# Delete output CPO before encoder
-#os.system("rm " + common_dir + "/gem_coretransp_out.cpo")
 
 # Create the encoder and get the app parameters
 print('>>> Create the encoder')
@@ -135,7 +123,7 @@ print('>>> Create Collater')
 collater = uq.collate.AggregateSamples(average=False)
 
 # Add the ETS app (automatically set as current app)
-print('>>> Add app to campagn object')
+print('>>> Add app to campaign object')
 my_campaign.add_app(name=campaign_name,
                     params=params,
                     encoder=encoder,
@@ -169,7 +157,7 @@ my_campaign.apply_analysis(analysis)
 print('>>> Get results')
 results = my_campaign.get_last_analysis()
 
-print('>>> Ellapsed time: ', time.time() - time0)
+print('>>> Elapsed time: ', time.time() - time0)
 
 # Get Descriptive Statistics
 print('>>> Get Descriptive Statistics: \n')
@@ -180,4 +168,4 @@ for qoi in output_columns:
     print('STAT = ', results['statistical_moments'][qoi])
     print('Sobol 1st = \n', results['sobols_first'][qoi])
 
-print('>>> gem_jet_uq : END')
+print('>>> GEM_JET_UQ : END')

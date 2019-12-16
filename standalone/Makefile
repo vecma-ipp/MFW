@@ -42,7 +42,7 @@ GEM0 = ../externals/gem0/${SYS}
 ORB5 = ../externals/orb5.git/${SYS}
 
 # set up the VPATH for searching for source files ##############################
-VPATH = ${SRCDIR} ${SRCDIR}/tools ${SRCDIR}/tests
+Vpath = ${SRCDIR} ${SRCDIR}/tools ${SRCDIR}/tests
 
 
 # additional flags #############################################################
@@ -117,7 +117,6 @@ EQUILUPDATE_EXE = ${BINDIR}/equilupdate_test
 CHEASE_EXE = ${BINDIR}/chease_test
 EQ_EXE = ${BINDIR}/equilibrium_test
 IMP4DV_EXE = ${BINDIR}/imp4dv_test
-COMBINED_EXE = ${BINDIR}/combined_test
 SOURCES_EXE = ${BINDIR}/sources_test
 BOHMGB_EXE = ${BINDIR}/bohmgb_test
 GEM0_EXE = ${BINDIR}/gem0_test
@@ -159,9 +158,6 @@ EQ_TEST: ${SHARED_O} ${CHEASE_O} ${EQUILUPDATE_O} ${OBJDIR}/equilibrium_test.o
 
 IMP4DV_TEST: ${SHARED_O} ${IMP4DV_O} ${OBJDIR}/imp4dv_test.o 
 	$(LD) -o ${IMP4DV_EXE} $^ -L${IMP4DV} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_UAL} -limp4dv -lbds -litmconstants -litmtypes -lual ${LDFLAGS} ${LIBLAPACK}
-
-COMBINED_TEST: ${SHARED_O} ${ETS_O} ${IMP4DV_O} ${OBJDIR}/combined_test.o
-	$(LD) -o ${COMBINED_EXE} $^ -L${IMP4DV} -L${ETS} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_XML} -L${LIB_UAL} -limp4dv -lets -lbds -litmconstants -litmtypes -lxmllib -lual ${LDFLAGS} ${LIBLAPACK}
 
 SOURCES_TEST:  ${SHARED_O} ${SOURCES_O} ${OBJDIR}/sources_test.o
 	$(LD) -o ${SOURCES_EXE} $^ -L${ETS} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_UAL} -L${LIB_XML} -lets -lbds -litmconstants -litmtypes -lual -lxmllib ${LDFLAGS} ${LIBLAPACK}
@@ -226,15 +222,12 @@ ${OBJDIR}/chease_standalone.o: src/chease_standalone.f90
 
 ${OBJDIR}/chease_test.o: src/chease_test.f90
 	${MPIF90} -o $@ -c $< $(MPIFLAGS) -I${CHEASE} -I${INC_UAL} -I${INC_TYPES} 
-	
+
 ${OBJDIR}/equilibrium_test.o: src/equilibrium_test.f90
 	${MPIF90} -o $@ -c $< $(MPIFLAGS) -I${CHEASE} -I${INC_UAL}-I${INC_TYPES} 
 
 ${OBJDIR}/imp4dv_standalone.o: src/imp4dv_standalone.f90
 	${FC90} -o $@ -c $< $(FC90FLAGS) -I${INC_BDS}  
-
-${OBJDIR}/combined_test.o: src/combined_test.f90
-	${FC90} -o $@ -c $< $(FC90FLAGS) -I${INC_TYPES}  
 
 ${OBJDIR}/sources_standalone.o: src/sources_standalone.f90
 	${FC90} -o $@ -c $< $(FC90FLAGS) -traceback -check all -fp-stack-check -I${ETS} -I${INC_XML} -I${INC_CONSTANTS} -I${INC_TYPES} 

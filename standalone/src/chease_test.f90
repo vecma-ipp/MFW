@@ -17,8 +17,8 @@ use chease_standalone, only: chease_cpo
 implicit none
   
   ! CPO files 
-  character(len=*), parameter :: equil_in_file   = "ets_equilibrium_in.cpo" 
-  character(len=*), parameter :: equil_out_file  = "chease_equilibrium.cpo"
+  character(len=*), parameter :: equil_in_file   = "chease_equilibrium_in.cpo" 
+  character(len=*), parameter :: equil_out_file  = "chease_equilibrium_out.cpo"
   
   ! CPO structures 
   type (type_equilibrium), pointer :: equil(:)     => NULL()
