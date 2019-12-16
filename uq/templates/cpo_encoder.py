@@ -136,6 +136,7 @@ class CPOEncoder(BaseEncoder, encoder_name="cpo_encoder"):
 
         # Do a symbolic link to other CPO and XML files
         os.system("ln -s " + self.common_dir + "*.cpo " + target_dir)
+        os.system("ln -s " + self.common_dir + "t00.dat " + target_dir)
         if self.link_xmlfiles:
             os.system("ln -s " + self.common_dir + "*.xml " + target_dir)
             os.system("ln -s " + self.common_dir + "*.xsd " + target_dir)
