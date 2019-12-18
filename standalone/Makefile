@@ -109,13 +109,13 @@ BOHMGB_O = ${SHARED_O} ${OBJDIR}/bohmgb_standalone.o
 GEM0_O = ${SHARED_O} ${OBJDIR}/gem0_standalone.o
 GEM_O = ${SHARED_O} ${OBJDIR}/gem_standalone.o
 
-TESTS =  ETS_TEST EQUILUPDATE_TEST CHEASE_TEST EQ_TEST IMP4DV_TEST COMBINED_TEST SOURCES_TEST BOHMGB_TEST GEM0_TEST ROP_TEST GEM_TEST
+TESTS =  ETS_TEST EQUILUPDATE_TEST CHEASE_TEST EQ_TEST IMP4DV_TEST SOURCES_TEST BOHMGB_TEST GEM0_TEST ROP_TEST GEM_TEST
 LOOP_TEST = LOOP_BGB LOOP_GEM0
 
 ETS_EXE = ${BINDIR}/ets_test
 EQUILUPDATE_EXE = ${BINDIR}/equilupdate_test
 CHEASE_EXE = ${BINDIR}/chease_test
-EQ_EXE = ${BINDIR}/equilibrium_test
+EQ_EXE = ${BINDIR}/equil_test
 IMP4DV_EXE = ${BINDIR}/imp4dv_test
 SOURCES_EXE = ${BINDIR}/sources_test
 BOHMGB_EXE = ${BINDIR}/bohmgb_test
@@ -153,7 +153,7 @@ EQUILUPDATE_TEST:${SHARED_O} ${EQUILUPDATE_O} ${OBJDIR}/equilupdate_test.o
 CHEASE_TEST: ${SHARED_O} ${CHEASE_O} ${OBJDIR}/chease_test.o 
 	$(MPIF90) -o ${CHEASE_EXE} $^ -L${CHEASE} -L${LIB_XML} -L${LIB_UAL} -lchease_muscle -lual -lxmllib -lxml2 ${LDFLAGS} ${LIBLAPACK}
 
-EQ_TEST: ${SHARED_O} ${CHEASE_O} ${EQUILUPDATE_O} ${OBJDIR}/equilibrium_test.o 
+EQ_TEST: ${SHARED_O} ${CHEASE_O} ${EQUILUPDATE_O} ${OBJDIR}/equil_test.o 
 	$(MPIF90) -o ${EQ_EXE} $^ -L${ETS} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${CHEASE} -L${LIB_XML} -L${LIB_UAL} -lets -lbds -litmconstants -litmtypes -lchease_muscle -lual -lxmllib -lxml2 ${LDFLAGS} ${LIBLAPACK}
 
 IMP4DV_TEST: ${SHARED_O} ${IMP4DV_O} ${OBJDIR}/imp4dv_test.o 
@@ -223,7 +223,7 @@ ${OBJDIR}/chease_standalone.o: src/chease_standalone.f90
 ${OBJDIR}/chease_test.o: src/chease_test.f90
 	${MPIF90} -o $@ -c $< $(MPIFLAGS) -I${CHEASE} -I${INC_UAL} -I${INC_TYPES} 
 
-${OBJDIR}/equilibrium_test.o: src/equilibrium_test.f90
+${OBJDIR}/equil_test.o: src/equil_test.f90
 	${MPIF90} -o $@ -c $< $(MPIFLAGS) -I${CHEASE} -I${INC_UAL}-I${INC_TYPES} 
 
 ${OBJDIR}/imp4dv_standalone.o: src/imp4dv_standalone.f90
