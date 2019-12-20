@@ -2,14 +2,19 @@
 import os
 import sys
 import time
+
 import numpy as np
 import pandas as pd
 import chaospy as cp
 import easyvvuq as uq
+
 from ascii_cpo import read
-from easypj import qcgpj_wrapper
+
 from templates.cpo_encoder import CPOEncoder
 from templates.cpo_decoder import CPODecoder
+
+from easypj import TaskRequirements, Resources
+from easypj import Task, TaskType, SubmitOrder
 
 
 # ets_uqpj.py:
@@ -18,6 +23,7 @@ from templates.cpo_decoder import CPODecoder
 # Uncertainties are driven by:
 # - Boudary conditions (Edge) of electrons and ions tempurature.
 # QoI: ion and electon temperatures
+
 
 print('>>> ets_uqpj : START')
 
@@ -114,17 +120,23 @@ my_campaign.set_sampler(my_sampler)
 print('>>> Draw Samples')
 my_campaign.draw_samples()
 
-print('>>> Populate runs_dir')
-#my_campaign.populate_runs_dir()
-
-print('>>> Run samples')
+print(">>> PJ: Starting execution")
 exec_path = os.path.join(obj_dir, exec_code)
-#my_campaign.apply_for_each_run_dir(uq.actions.ExecuteLocal(exec_path))
 
-print('>>> Call QCG-Pilot Job')
-t1 = time.time()
-qcgpj_wrapper.run(my_campaign, exec_path)
-t2 = time.time()
+qcgpjexec = easypj.Executor()
+qcgpjexec.create_manager(dir=my_campaign.campaign_dir, resources='4')
+
+qcgpjexec.add_task(Task(TaskType.ENCODING,
+                        TaskRequirements(cores=Resources(exact=1))))
+
+qcgpjexec.add_task(Task(TaskType.EXECUTION,
+                        TaskRequirements(cores=Resources(exact=1)),
+                        application=exec_path))
+
+qcgpjexec.run(campaign=my_campaign,
+              submit_order=SubmitOrder.RUN_ORIENTED)
+
+qcgpjexec.terminate_manager()
 
 print('>>> Collate')
 my_campaign.collate()
