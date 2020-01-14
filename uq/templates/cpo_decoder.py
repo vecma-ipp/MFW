@@ -1,12 +1,10 @@
-# -*- coding: UTF-8 -*-
 import os
 import logging
-import chaospy as cp
 import pandas as pd
 from easyvvuq import OutputType
 from easyvvuq.decoders.base import BaseDecoder
-from ascii_cpo import read, write
-from utils import statistics
+from ascii_cpo import read
+from utils.cpo_io import get_qoi_values
 
 
 # Specific Decoder for CPO files
@@ -41,37 +39,6 @@ class CPODecoder(BaseDecoder, decoder_name="cpo_decoder"):
 
         self.output_type = OutputType('sample')
 
-    @staticmethod
-    def _get_qoi_values(cpo_core):
-        # Map Quantities of Interert values
-        if cpo_core.base_path == 'coreprof':
-            switcher_dict = {
-                "Te": cpo_core.te.value,
-                "Ti": cpo_core.ti.value[:,0],
-            }
-
-        if cpo_core.base_path == 'equilibrium':
-            switcher_dict = {
-                "gm1": cpo_core.profiles_1d.gm1,
-                "gm2": cpo_core.profiles_1d.gm2,
-                "gm3": cpo_core.profiles_1d.gm3,
-                "gm4": cpo_core.profiles_1d.gm4,
-                "gm5": cpo_core.profiles_1d.gm5,
-                "gm6": cpo_core.profiles_1d.gm6,
-                "gm7": cpo_core.profiles_1d.gm7,
-                "gm8": cpo_core.profiles_1d.gm8,
-                "gm9": cpo_core.profiles_1d.gm9,
-            }
-
-        if cpo_core.base_path == 'coretransp':
-            switcher_dict = {
-                "Te_transp_D": cpo_core.values[0].te_transp.diff_eff,
-                "Ti_transp_D": cpo_core.values[0].ti_transp.diff_eff[0],
-                "Te_transp_flux": cpo_core.values[0].te_transp.flux,
-                "Ti_transp_flux": cpo_core.values[0].ti_transp.flux[:,0]
-            }	#OL: change Ti_transp_flux to include another index
-
-        return switcher_dict
 
     @staticmethod
     def _get_output_path(run_info=None, outfile=None):
@@ -100,7 +67,7 @@ class CPODecoder(BaseDecoder, decoder_name="cpo_decoder"):
         cpo_core = read(out_path, self.cpo_name)
 
         # Get Quantity of Intersets
-        qoi_values = self._get_qoi_values(cpo_core)
+        qoi_values = get_qoi_values(cpo_core)
         quoi_dict = {}
         for qoi in self.output_columns:
             quoi_dict.update({qoi: qoi_values[qoi]})
@@ -116,4 +83,4 @@ class CPODecoder(BaseDecoder, decoder_name="cpo_decoder"):
                 "output_columns": self.output_columns}
 
     def element_version(self):
-        return "0.1"
+        return "0.2"

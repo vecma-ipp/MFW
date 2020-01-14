@@ -1,0 +1,6 @@
+#!/bin/bash
+
+# to get from slurm script
+export MPICMD="mpirun -n 16"
+
+${MPICMD} $@

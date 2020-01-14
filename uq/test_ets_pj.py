@@ -13,6 +13,7 @@ from ascii_cpo import read
 from templates.cpo_encoder import CPOEncoder
 from templates.cpo_decoder import CPODecoder
 
+import easypj
 from easypj import TaskRequirements, Resources
 from easypj import Task, TaskType, SubmitOrder
 
@@ -113,7 +114,7 @@ my_campaign.add_app(name=campaign_name,
 
 # Create the sampler (500*2 = 1000 total samples using qMC)
 print('>>> Create the sampler')
-my_sampler = uq.sampling.QMCSampler(vary=vary, n_samples=5)
+my_sampler = uq.sampling.QMCSampler(vary=vary, n_samples=10)
 my_campaign.set_sampler(my_sampler)
 
 # Will draw all (of the finite set of samples)

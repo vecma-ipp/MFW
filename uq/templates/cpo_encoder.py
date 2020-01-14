@@ -1,12 +1,9 @@
-# -*- coding: UTF-8 -*-
 import os
 import logging
-import chaospy as cp
-import pandas as pd
 from easyvvuq import OutputType
 from easyvvuq.encoders.base import BaseEncoder
 from ascii_cpo import read, write
-from utils import statistics, cpo_tools
+from utils import cpo_io, cpo_tools
 
 
 # Specific Encoder for CPO files
@@ -14,8 +11,8 @@ class CPOEncoder(BaseEncoder, encoder_name="cpo_encoder"):
 
     def __init__(self,
                  template_filename, target_filename,
-                 common_dir, uncertain_params, cpo_name,
-                 flux_indices=None, link_xmlfiles=False):
+                 common_dir, cpo_name,
+                 link_xmlfiles=False, link_data=False):
 
         # Check that user has specified the objests to use as template
         if template_filename is None:
@@ -26,113 +23,31 @@ class CPOEncoder(BaseEncoder, encoder_name="cpo_encoder"):
         self.template_filename = template_filename
         self.target_filename = target_filename
         self.common_dir = common_dir
-        self.uncertain_params = uncertain_params
         self.cpo_name = cpo_name
         self.link_xmlfiles = link_xmlfiles
-        self.flux_indices = flux_indices
-        if flux_indices is None:
-            self.flux_indices = [0]
+        self.link_data = link_data
 
-        self.fixture_support = True
-
-        # The CPO object
+        # The CPO object (use cpo_io?)
         cpo_filename = os.path.join(common_dir, template_filename)
         self.cpo_core = read(cpo_filename, cpo_name)
 
-        # Mapping with cpo file
-        # TODO move to switcher  tools routine
-        self.mapper = {
-            "Te_boundary" : self.cpo_core.te.boundary.value[0],
-            "Ti_boundary" : self.cpo_core.ti.boundary.value[0][0],
-            # TODO Use list for uncertain params Te/Te grad => Issue to EasyVVUQ
-            "Te_1" : self.cpo_core.te.value[self.flux_indices[0]],
-            "Ti_1" : self.cpo_core.ti.value[self.flux_indices[0]][0],
-            "Te_grad_1" : self.cpo_core.te.ddrho[self.flux_indices[0]],
-            "Ti_grad_1" : self.cpo_core.ti.ddrho[self.flux_indices[0]][0]
-        }
-
-    @staticmethod
-    def _set_params_value(cpo_core, param, value, flux_indices):
-        # TODO
-        # - Find a way to use one unified switcher
-        # - Verify consistance between cpo_core and param
-
-        # Boundary conditions
-        if param=="Te_boundary":
-            cpo_core.te.boundary.value[0] = value
-        if param=="Ti_boundary":
-            cpo_core.ti.boundary.value[0][0] = value
-            # In case of two ions species
-            if len(cpo_core.ti.boundary.value[0]) == 2:
-                cpo_core.ti.boundary.value[0][1] = value
-
-        # Temperature Gradients
-        # 1st Flux tube
-        if param=="Te_1":
-            cpo_core.te.value[flux_indices[0]] = value
-        if param=="Ti_1":
-            cpo_core.ti.value[flux_indices[0]][0] = value
-        if param=="Te_grad_1":
-            cpo_core.te.ddrho[flux_indices[0]] = value
-        if param=="Ti_grad_1":
-            cpo_core.ti.ddrho[flux_indices[0]][0] = value
-
-    # Returns dict (params) for Campaign and a list (vary) of distribitions for Sampler
-    def draw_app_params(self):
-        params = {}
-        vary = {}
-
-        for k, d in self.uncertain_params.items():
-            # Get initial values
-            val = self.mapper[k]
-            typ = d["type"]
-
-            # Build the probability distribution
-            dist_name = d["distribution"]
-            margin_error = d["margin_error"]
-            dist = statistics.get_dist(dist_name, val, margin_error)
-
-            # Update output dict
-            params.update({k: {"type": typ, "default": val}})
-            vary.update({k: dist})
-
-        return params, vary
-
     # Create simulation input files
-    def encode(self, params={}, target_dir='', fixtures=None):
-
-        if fixtures is not None:
-            local_params = self.substitute_fixtures_params(params, fixtures, target_dir)
-        else:
-            local_params = params
+    def encode(self, params={}, target_dir=''):
 
         if not target_dir:
             raise RuntimeError('No target directory specified to encoder')
 
-        for k in self.uncertain_params.keys():
-            v = local_params[k]
-            self._set_params_value(self.cpo_core, k, v, self.flux_indices)
+        for key, value in params.keys():
+            cpo_io.set_parameters(self.cpo_core, key, value)
+            # Todo Update Te and Ti
 
-            # Udpate Electron and Ion Temperature around flux tube according to the sample Gradient
-            if k == "Te_1":
-                cpo_tools.update_te(self.cpo_core, v, self.flux_indices[0])
-            if k == "Ti_1":
-                cpo_tools.update_ti(self.cpo_core, v, self.flux_indices[0])
-            if k == "Te_grad_1":
-                cpo_tools.update_te_grad(self.cpo_core, v, self.flux_indices[0])
-            if k == "Ti_grad_1":
-                cpo_tools.update_ti_grad(self.cpo_core, v, self.flux_indices[0])
-            if k == "Te_grad_2":
-                cpo_tools.update_te_grad(self.cpo_core, v, self.flux_indices[1])
-            if k == "Ti_grad_2":
-                cpo_tools.update_ti_grad(self.cpo_core, v, self.flux_indices[1])
-
-        # Do a symbolic link to other CPO and XML files
+        # Do a symbolic link to other CPO, XML files and restart data
         os.system("ln -s " + self.common_dir + "*.cpo " + target_dir)
-        os.system("ln -s " + self.common_dir + "t00.dat " + target_dir)
         if self.link_xmlfiles:
             os.system("ln -s " + self.common_dir + "*.xml " + target_dir)
             os.system("ln -s " + self.common_dir + "*.xsd " + target_dir)
+        if self.link_data:
+            os.system("ln -s " + self.common_dir + "*.dat " + target_dir)
 
         # Write target input CPO file
         target_file_path = os.path.join(target_dir, self.target_filename)
@@ -145,10 +60,9 @@ class CPOEncoder(BaseEncoder, encoder_name="cpo_encoder"):
         return {"template_filename": self.template_filename,
                 "target_filename": self.target_filename,
                 "common_dir": self.common_dir,
-                "uncertain_params": self.uncertain_params,
                 "cpo_name": self.cpo_name,
                 "link_xmlfiles": self.link_xmlfiles,
-                "flux_indices": self.flux_indices}
+                "link_data": self.link_data}
 
     def element_version(self):
-        return "0.1"
+        return "0.2"

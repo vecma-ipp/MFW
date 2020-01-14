@@ -18,7 +18,7 @@ from templates.cpo_decoder import CPODecoder
 # IMPORTANT CHECK: in gem.xml, nrho_transp = 1
 
 
-print('>>> GEM_JET_UQ : START')
+print('>>> GEM_AUG_UQ : START')
 
 # For Elapsed time
 time0 = time.time()
@@ -29,7 +29,7 @@ SYS = os.environ['SYS']
 # Working directory
 tmp_dir = os.environ['SCRATCH']
 
-data = os.path.abspath("../workflows/JET_92436_23066_1ft_restart")
+data = os.path.abspath("../workflows/AUG_28906_6_1ft_restart")
 
 # CPO files
 #cpo_dir = os.path.abspath("../workflows/AUG_28906_6")
@@ -43,7 +43,7 @@ xml_dir = data
 # The executable code to run
 obj_dir = os.path.abspath("../standalone/bin/"+SYS)
 exec_code = "gem_test"
-mpi_instance = os.environ['MPICMD']
+mpi_instance = None# os.environ['MPICMD']
 exec_path = os.path.join(obj_dir, exec_code)
 
 # Define a specific parameter space
@@ -57,17 +57,17 @@ uncertain_params = {
         "type": "float",
         "distribution": "Normal",
         "margin_error": 0.2,
-    },
-    "Te_1": {
-        "type": "float",
-        "distribution": "Normal",
-        "margin_error": 0.2,
-    },
-    "Ti_1": {
-        "type": "float",
-        "distribution": "Normal",
-        "margin_error": 0.2,
-    }
+    }#,
+#    "Te_1": {
+#        "type": "float",
+#        "distribution": "Normal",
+#        "margin_error": 0.2,
+#    },
+#    "Ti_1": {
+#        "type": "float",
+#        "distribution": "Normal",
+#        "margin_error": 0.2,
+#    }
 }
 
 # For the output: quantities of intersts
@@ -141,7 +141,7 @@ my_campaign.draw_samples()
 
 print('>>> Populate runs_dir')
 my_campaign.populate_runs_dir()
-
+sys.exit()
 print('>>> Execute The code runs')
 my_campaign.apply_for_each_run_dir(uq.actions.ExecuteLocal(run_cmd=exec_path,
                                                            interpret=mpi_instance))
@@ -168,4 +168,4 @@ for qoi in output_columns:
     print('STAT = ', results['statistical_moments'][qoi])
     print('Sobol 1st = \n', results['sobols_first'][qoi])
 
-print('>>> GEM_JET_UQ : END')
+print('>>> GEM_AUG_UQ : END')
