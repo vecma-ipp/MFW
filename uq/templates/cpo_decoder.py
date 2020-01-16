@@ -4,14 +4,13 @@ import pandas as pd
 from easyvvuq import OutputType
 from easyvvuq.decoders.base import BaseDecoder
 from ascii_cpo import read
-from utils.cpo_io import get_qoi_values
+from utils import cpo_io
 
 
 # Specific Decoder for CPO files
 class CPODecoder(BaseDecoder, decoder_name="cpo_decoder"):
 
     def __init__(self, target_filename, cpo_name, output_columns):
-
         if target_filename is None:
             msg = (f"target_filename must be set for CPODecoder. This should be"
                    f"the name of the output file this decoder acts on.")
@@ -42,7 +41,6 @@ class CPODecoder(BaseDecoder, decoder_name="cpo_decoder"):
 
     @staticmethod
     def _get_output_path(run_info=None, outfile=None):
-
         run_path = run_info['run_dir']
 
         if not os.path.isdir(run_path):
@@ -60,14 +58,13 @@ class CPODecoder(BaseDecoder, decoder_name="cpo_decoder"):
             return True
 
     def parse_sim_output(self, run_info={}):
-
         out_path = self._get_output_path(run_info, self.target_filename)
 
         # The CPO object
         cpo_core = read(out_path, self.cpo_name)
 
         # Get Quantity of Intersets
-        qoi_values = get_qoi_values(cpo_core)
+        qoi_values = cpo_io.qoi_values(cpo_core)
         quoi_dict = {}
         for qoi in self.output_columns:
             quoi_dict.update({qoi: qoi_values[qoi]})

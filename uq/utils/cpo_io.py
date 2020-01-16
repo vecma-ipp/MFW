@@ -1,9 +1,7 @@
-from logging import Logger
-from os.path import splitext
+from os.path import join
 from ascii_cpo import read
 from .statistics import get_dist
 
-logger = Logger(__name__)
 
 # TODO to be improved: cf. UAL module
 def get_parameters(cpo_core):
@@ -16,13 +14,12 @@ def get_parameters(cpo_core):
             "Te" : cpo_core.te.value[:],
             "Ti" : cpo_core.ti.value[:][0],
             "Te_grad" : cpo_core.te.ddrho[:],
-            "Ti_grad" : cpo_core.ti.ddrho[:]0]
+            "Ti_grad" : cpo_core.ti.ddrho[:][0]
         }
 
     return params_mapper
 
 def set_parameters(cpo_core, param, value):
-
         # Boundary conditions
         if param=="Te_boundary":
             cpo_core.te.boundary.value[0] = value
@@ -32,7 +29,8 @@ def set_parameters(cpo_core, param, value):
             if len(cpo_core.ti.boundary.value[0]) == 2:
                 cpo_core.ti.boundary.value[0][1] = value
 
-def get_qoi_values(cpo_core):
+# Get the values of the correponding quqntities of interest
+def qoi_values(cpo_core):
     qoi_mapper = {}
 
     if cpo_core.base_path == 'coreprof':
@@ -65,15 +63,15 @@ def get_qoi_values(cpo_core):
     return qoi_mapper
 
 # Returns dict for Campaign object and distribitions list for the Sampler
-def get_cpo_inputs(cpo_filename, cpo_name, config_dict):
+def get_inputs(dirname, filename, cpo_name, config_dict,
+               params={}, vary={}):
+    # dirname: location of xml file
+    # filename: cpo file name
+    # cpo_name: cpo type ('corepof', 'coresource', ..)
     # config_dict: containg uncertrain params
 
-    ext = os.path.splitext(cpo_filename)[-1].lower()
-    if ext == ".cpo":
-        cpo_core = read(cpo_filename, cpo_name)
-    else:
-        logger.error("Not CPO file.")
-        raise Exception(msg)
+    cpo_file = join(dirname, filename)
+    cpo_core = read(cpo_file, cpo_name)
 
     mapper = get_parameters(cpo_core)
     params = {}

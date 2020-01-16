@@ -8,6 +8,7 @@ import chaospy as cp
 import easyvvuq as uq
 import matplotlib.pylab as plt
 from ascii_cpo import read
+from utils import xml_io
 from templates.xml_encoder import XMLEncoder
 from templates.cpo_decoder import CPODecoder
 
@@ -36,9 +37,9 @@ xml_dir = os.path.abspath("../workflows")
 
 # The execuatble model code
 obj_dir = os.path.abspath("../standalone/bin/"+SYS)
-exec_code = "loop_gem0"
+exec_code = "loop_bgb"
 
-# Define a specific parameter space
+# Define the uncertain parameters
 uncertain_params = {
     # Electons heating Gaussian
     "amplitude_el":{
@@ -58,13 +59,20 @@ uncertain_params = {
         "margin_error": 0.2,
     }
 }
+# XML file containg initiail values of uncertain params
+input_filename = "source_dummy.xml"
 
-# The Quantities of intersts
+# The quantities of intersts and the cpo file to set them
 output_columns = ["Te", "Ti"]
+output_filename = "ets_coreprof_out.cpo"
+
+# Parameter space for campaign and the distributions list for the Sampler
+params, vary = xml_io.get_inputs(dirname=xml_dir, filename=input_filename,
+                                 config_dict=uncertain_params)
 
 # Initialize Campaign object
 print('>>> Initialize Campaign object')
-campaign_name = "UQ_SEl_3PARs_GEM0_"
+campaign_name = "UQSRC_EL_"
 my_campaign = uq.Campaign(name=campaign_name, work_dir=tmp_dir)
 
 # Create new directory for inputs (to be ended with /)
@@ -88,18 +96,14 @@ os.system("cp " + xml_dir + "/source_dummy.x* " + common_dir)
 
 # Create the encoder and get the app parameters
 print('>>> Create the encoder')
-input_filename = "source_dummy.xml"
 encoder = XMLEncoder(template_filename=input_filename,
-                     target_filename="source_dummy.xml",
+                     target_filename=input_filename,
                      common_dir=common_dir,
-                     uncertain_params=uncertain_params,
                      link_cpofiles=True)
 
-params, vary = encoder.draw_app_params()
 
 # Create the encoder
 print('>>> Create the decoder')
-output_filename = "ets_coreprof_out.cpo"
 decoder = CPODecoder(target_filename=output_filename,
                      cpo_name="coreprof",
                      output_columns=output_columns)
@@ -119,7 +123,7 @@ my_campaign.add_app(name=campaign_name,
 # Create the sampler
 print('>>> Create the sampler')
 my_sampler = uq.sampling.PCESampler(vary=vary,
-                                    polynomial_order=3,
+                                    polynomial_order=2,
                                     quadrature_rule='G',
                                     sparse=False)
 my_campaign.set_sampler(my_sampler)

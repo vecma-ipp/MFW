@@ -7,6 +7,7 @@ import pandas as pd
 import chaospy as cp
 import easyvvuq as uq
 from ascii_cpo import read
+from utils import cpo_io
 from templates.cpo_encoder import CPOEncoder
 from templates.cpo_decoder import CPODecoder
 
@@ -37,7 +38,7 @@ xml_dir = os.path.abspath("../workflows")
 obj_dir = os.path.abspath("../standalone/bin/"+SYS)
 exec_code = "ets_test"
 
-# Define a specific parameter space
+# Define the uncertain parameters
 uncertain_params = {
     "Te_boundary": {
         "type": "float",
@@ -50,13 +51,20 @@ uncertain_params = {
            "margin_error": 0.25,
       }
 }
+# CPO file containg initiail values of uncertain params
+input_filename = "ets_coreprof_in.cpo"
 
-# For the output: quantities of intersts
+# The quantities of intersts and the cpo file to set them
 output_columns = ["Te", "Ti"]
+output_filename = "ets_coreprof_out.cpo"
+
+# Parameter space for campaign and the distributions list for the Sampler
+params, vary = cpo_io.get_inputs(dirname=cpo_dir, filename=input_filename,
+                                cpo_name='coreprof', config_dict=uncertain_params)
 
 # Initialize Campaign object
 print('>>> Initialize Campaign object')
-campaign_name = "UQ_AUG_ETS_"
+campaign_name = "UQETS_BC_"
 my_campaign = uq.Campaign(name=campaign_name, work_dir=tmp_dir)
 
 # Create new directory for inputs (to be ended with /)
@@ -73,19 +81,13 @@ os.system("cp " + xml_dir + "/ets.xsd " + common_dir)
 
 # Create the encoder and get the app parameters
 print('>>> Create the encoder')
-input_filename = "ets_coreprof_in.cpo"
 encoder = CPOEncoder(template_filename=input_filename,
-                     target_filename="ets_coreprof_in.cpo",
+                     target_filename=input_filename,
                      common_dir=common_dir,
-                     uncertain_params=uncertain_params,
-                     cpo_name="coreprof",
-                     link_xmlfiles=True)
-
-params, vary = encoder.draw_app_params()
+                     cpo_name="coreprof")
 
 # Create the encoder
 print('>>> Create the decoder')
-output_filename = "ets_coreprof_out.cpo"
 decoder = CPODecoder(target_filename=output_filename,
                      cpo_name="coreprof",
                      output_columns=output_columns)
@@ -105,7 +107,7 @@ my_campaign.add_app(name=campaign_name,
 # Create the sampler
 print('>>> Create the sampler')
 my_sampler = uq.sampling.PCESampler(vary=vary,
-                                    polynomial_order=4,
+                                    polynomial_order=2,
                                     quadrature_rule='G',
                                     sparse=False)
 my_campaign.set_sampler(my_sampler)
@@ -158,7 +160,6 @@ np.savetxt('outputs/'+campaign_name+'STATS.csv',
 __PLOTS = True # If True create plots subfolder under outputs folder
 
 if __PLOTS:
-    from utils import plots
     from utils import plots
 
     uparams_names = list(params.keys())
