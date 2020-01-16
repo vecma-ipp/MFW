@@ -9,9 +9,7 @@ from utils import cpo_io
 # Specific Encoder for CPO files
 class CPOEncoder(BaseEncoder, encoder_name="cpo_encoder"):
 
-    def __init__(self,
-                 template_filename, target_filename,
-                 common_dir, cpo_name):
+    def __init__(self, template_filename, target_filename, common_dir):
         # Check that user has specified the object to use as template
         if template_filename is None:
             msg = ("CPOEncoder must be given 'template_filename': a CPO file.")
@@ -21,10 +19,10 @@ class CPOEncoder(BaseEncoder, encoder_name="cpo_encoder"):
         self.template_filename = template_filename
         self.target_filename = target_filename
         self.common_dir = common_dir
-        self.cpo_name = cpo_name
 
         # The cpo object
         cpo_filename = os.path.join(common_dir, template_filename)
+        cpo_name = cpo_io.get_cponame(template_filename)
         self.cpo_core = read(cpo_filename, cpo_name)
 
     # Create simulation input files
@@ -49,8 +47,7 @@ class CPOEncoder(BaseEncoder, encoder_name="cpo_encoder"):
     def get_restart_dict(self):
         return {"template_filename": self.template_filename,
                 "target_filename": self.target_filename,
-                "common_dir": self.common_dir,
-                "cpo_name": self.cpo_name}
+                "common_dir": self.common_dir}
 
     def element_version(self):
         return "0.2"

@@ -60,7 +60,7 @@ output_filename = "ets_coreprof_out.cpo"
 
 # Parameter space for campaign and the distributions list for the Sampler
 params, vary = cpo_io.get_inputs(dirname=cpo_dir, filename=input_filename,
-                                cpo_name='coreprof', config_dict=uncertain_params)
+                                 config_dict=uncertain_params)
 
 # Initialize Campaign object
 print('>>> Initialize Campaign object')
@@ -83,13 +83,11 @@ os.system("cp " + xml_dir + "/ets.xsd " + common_dir)
 print('>>> Create the encoder')
 encoder = CPOEncoder(template_filename=input_filename,
                      target_filename=input_filename,
-                     common_dir=common_dir,
-                     cpo_name="coreprof")
+                     common_dir=common_dir)
 
 # Create the encoder
 print('>>> Create the decoder')
 decoder = CPODecoder(target_filename=output_filename,
-                     cpo_name="coreprof",
                      output_columns=output_columns)
 
 # Create a collation element for this campaign
@@ -107,7 +105,7 @@ my_campaign.add_app(name=campaign_name,
 # Create the sampler
 print('>>> Create the sampler')
 my_sampler = uq.sampling.PCESampler(vary=vary,
-                                    polynomial_order=2,
+                                    polynomial_order=3,
                                     quadrature_rule='G',
                                     sparse=False)
 my_campaign.set_sampler(my_sampler)

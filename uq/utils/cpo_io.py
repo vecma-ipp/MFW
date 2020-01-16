@@ -1,3 +1,4 @@
+import logging
 from os.path import join
 from ascii_cpo import read
 from .statistics import get_dist
@@ -62,12 +63,29 @@ def qoi_values(cpo_core):
 
     return qoi_mapper
 
+def get_cponame(filename):
+    # List of cpo names used in ITM
+    l = ['coreprof', 'coresource', 'coretransp', 'equilibrium',
+         'coretransp', 'coreimpur', 'toroidfield', 'coreneutrals']
+
+    cponame = None
+    for name in l:
+        if name in filename:
+            cponame = name
+            break
+
+    if cponame is None:
+        msg = ("CPO filename " +filename+ " must contain cponame.")
+        logging.error(msg)
+        raise RuntimeError(msg)
+    else:
+        return cponame
+
 # Returns dict for Campaign object and distribitions list for the Sampler
-def get_inputs(dirname, filename, cpo_name, config_dict,
+def get_inputs(dirname, filename, config_dict,
                params={}, vary={}):
     # dirname: location of xml file
     # filename: cpo file name
-    # cpo_name: cpo type ('corepof', 'coresource', ..)
     # config_dict: containg uncertrain params
 
     cpo_file = join(dirname, filename)

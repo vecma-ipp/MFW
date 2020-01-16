@@ -10,7 +10,7 @@ from utils import cpo_io
 # Specific Decoder for CPO files
 class CPODecoder(BaseDecoder, decoder_name="cpo_decoder"):
 
-    def __init__(self, target_filename, cpo_name, output_columns):
+    def __init__(self, target_filename, output_columns):
         if target_filename is None:
             msg = (f"target_filename must be set for CPODecoder. This should be"
                    f"the name of the output file this decoder acts on.")
@@ -22,22 +22,15 @@ class CPODecoder(BaseDecoder, decoder_name="cpo_decoder"):
             logging.error(msg)
             raise Exception(msg)
 
-        if cpo_name is None:
-            msg = (f"cpo_name must be specified for CPODecoder.")
-            logging.error(msg)
-            raise Exception(msg)
-
         if len(output_columns) == 0:
             msg = "output_columns cannot be empty."
             logger.error(msg)
             raise Exception(msg)
 
         self.target_filename = target_filename
-        self.cpo_name = cpo_name
         self.output_columns = output_columns
 
         self.output_type = OutputType('sample')
-
 
     @staticmethod
     def _get_output_path(run_info=None, outfile=None):
@@ -61,6 +54,7 @@ class CPODecoder(BaseDecoder, decoder_name="cpo_decoder"):
         out_path = self._get_output_path(run_info, self.target_filename)
 
         # The CPO object
+        cpo_name = cpo_io.get_cponame(self.target_filename)
         cpo_core = read(out_path, self.cpo_name)
 
         # Get Quantity of Intersets
@@ -76,7 +70,6 @@ class CPODecoder(BaseDecoder, decoder_name="cpo_decoder"):
 
     def get_restart_dict(self):
         return {"target_filename": self.target_filename,
-                "cpo_name": self.cpo_name,
                 "output_columns": self.output_columns}
 
     def element_version(self):
