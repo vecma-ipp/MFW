@@ -7,7 +7,7 @@ import pandas as pd
 import chaospy as cp
 import easyvvuq as uq
 from ascii_cpo import read
-from utils import cpo_tools
+from utils import cpo_io
 from templates.cpo_encoder import CPOEncoder
 from templates.cpo_decoder import CPODecoder
 
@@ -65,9 +65,16 @@ uncertain_params = {
         "margin_error": 0.2,
     }
 }
+# CPO file containg initiail values of uncertain params
+input_filename = "eq_coreprof_in.cpo"
 
-# For the output: quantities of intersts
+# The quantities of intersts and the cpo file to set them
+output_filename = "eq_equilibrium_out.cpo"
 output_columns = ["gm1", "gm2", "gm3", "gm4", "gm5", "gm6", "gm7", "gm8", "gm9"]
+
+# Parameter space for campaign and the distributions list for the Sampler
+params, vary = cpo_io.get_inputs(dirname=cpo_dir, filename=input_filename,
+                                 config_dict=uncertain_params)
 
 # Initialize Campaign object
 print('>>> Initialize Campaign object')
@@ -81,38 +88,27 @@ os.system("mkdir " + common_dir)
 print('>>> common_dir = ', common_dir)
 
 # Copy input CPO files (cf test_gem0.f90)
-os.system("cp " + cpo_dir + "/ets_equilibrium_in.cpo "
-                + common_dir + "eq_equilibrium_in.cpo")
-os.system("cp " + cpo_dir + "/ets_coreprof_in.cpo "
-                + common_dir + "/eq_coreprof_in.cpo")
-os.system("cp " + cpo_dir + "/ets_toroidfield_in.cpo "
-                + common_dir + "/eq_toroidfield_in.cpo")
+os.system("cp " +cpo_dir+ "/ets_equilibrium_in.cpo " +common_dir+ "eq_equilibrium_in.cpo")
+os.system("cp " +cpo_dir+ "/ets_coreprof_in.cpo " +common_dir+ "/eq_coreprof_in.cpo")
+os.system("cp " +cpo_dir+ "/ets_toroidfield_in.cpo " +common_dir+ "/eq_toroidfield_in.cpo")
 
 # Copy XML and XSD files
-os.system("cp " + xml_dir + "/chease.xml " + common_dir)
-os.system("cp " + xml_dir + "/chease.xsd " + common_dir)
+os.system("cp " +xml_dir+ "/chease.xml " +common_dir)
+os.system("cp " +xml_dir+ "/chease.xsd " +common_dir)
 
 # We test 1 flux tube. VERIFY in gem0.xml: nrho_transp = 1
 flux_indices = [61]
 
 # Create the encoder and get the app parameters
 print('>>> Create the encoder')
-input_filename = "eq_coreprof_in.cpo"
 encoder = CPOEncoder(template_filename=input_filename,
                      target_filename=input_filename,
                      common_dir=common_dir,
-                     uncertain_params=uncertain_params,
-                     cpo_name="coreprof",
-                     flux_indices = flux_indices,
-                     link_xmlfiles=True)
-
-params, vary = encoder.draw_app_params()
+                     flux_indices = flux_indices)
 
 # Create the decoder
 print('>>> Create the decoder')
-output_filename = "eq_equilibrium_out.cpo"
 decoder = CPODecoder(target_filename=output_filename,
-                     cpo_name="equilibrium",
                      output_columns=output_columns)
 
 # Create a collation element for this campaign

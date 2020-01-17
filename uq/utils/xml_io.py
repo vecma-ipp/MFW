@@ -15,8 +15,8 @@ mapper = {
 }
 
 # Returns dict for Campaign object and distribitions list for the Sampler
-def get_inputs(dirname, filename, config_dict,
-                  params={}, vary={}):
+# TODO add new get_inputs from list values
+def get_inputs(dirname, filename, config_dict, params={}, vary={}):
     # dirname: location of xml file
     # filename: xml file name
     # config_dict: uncertain params
@@ -34,7 +34,7 @@ def get_inputs(dirname, filename, config_dict,
         margin_error = d["margin_error"]
 
         # get the probability distribution
-        dist = get_dist(dist_name, val, margin_error=margin_error)
+        dist = get_dist(dist_name, val, margin_error)
 
         # Update output dict
         params.update({k: {"type": typ, "default": val}})

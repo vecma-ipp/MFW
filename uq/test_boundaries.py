@@ -1,4 +1,3 @@
-# -*- coding: UTF-8 -*-
 import os
 import sys
 import time
@@ -8,6 +7,7 @@ import pandas as pd
 import easyvvuq as uq
 import matplotlib.pylab as plt
 from ascii_cpo import read
+from utils import cpo_io
 from templates.cpo_encoder import CPOEncoder
 from templates.cpo_decoder import CPODecoder
 
@@ -37,9 +37,9 @@ xml_dir = os.path.abspath("../workflows")
 
 # The executable code to run
 obj_dir = os.path.abspath("../standalone/bin/"+SYS)
-exec_code = "ets_test"
+exec_code = "loop_gem0"
 
-# Define a specific parameter space
+# Define the uncertain parameters
 uncertain_params = {
     "Te_boundary": {
         "type": "float",
@@ -52,13 +52,20 @@ uncertain_params = {
            "margin_error": 0.2,
       }
 }
+# CPO file containg initiail values of uncertain params
+input_filename = "ets_coreprof_in.cpo"
 
-# For the output: quantities of intersts
+# The quantities of intersts and the cpo file to set them
 output_columns = ["Te", "Ti"]
+output_filename = "ets_coreprof_out.cpo"
+
+# Parameter space for campaign and the distributions list for the Sampler
+params, vary = cpo_io.get_inputs(dirname=cpo_dir, filename=input_filename,
+                                 config_dict=uncertain_params)
 
 # Initialize Campaign object
 print('>>> Initialize Campaign object')
-campaign_name = "uq_boundaries_"
+campaign_name = "UQBC_"
 my_campaign = uq.Campaign(name=campaign_name, work_dir=tmp_dir)
 
 # Create new directory for inputs (to be ended with /)
@@ -72,26 +79,17 @@ os.system("cp " + cpo_dir + "/*.cpo " + common_dir)
 # Copy XML and XSD files
 os.system("cp " + xml_dir + "/ets.x* "    + common_dir)
 os.system("cp " + xml_dir + "/chease.x* " + common_dir)
-os.system("cp " + xml_dir + "/bohmgb.x* " + common_dir)
 os.system("cp " + xml_dir + "/gem0.x* "   + common_dir)
 
 # Create the encoder and get the app parameters
 print('>>> Create the encoder')
-input_filename = "ets_coreprof_in.cpo"
 encoder = CPOEncoder(template_filename=input_filename,
-                     target_filename="ets_coreprof_in.cpo",
-                     common_dir=common_dir,
-                     uncertain_params=uncertain_params,
-                     cpo_name="coreprof",
-                     link_xmlfiles=True)
-
-params, vary = encoder.draw_app_params()
+                     target_filename=input_filename,
+                     common_dir=common_dir)
 
 # Create the encoder
 print('>>> Create the decoder')
-output_filename = "ets_coreprof_out.cpo"
 decoder = CPODecoder(target_filename=output_filename,
-                     cpo_name="coreprof",
                      output_columns=output_columns)
 
 # Create a collation element for this campaign

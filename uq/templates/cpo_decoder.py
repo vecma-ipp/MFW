@@ -55,10 +55,10 @@ class CPODecoder(BaseDecoder, decoder_name="cpo_decoder"):
 
         # The CPO object
         cpo_name = cpo_io.get_cponame(self.target_filename)
-        cpo_core = read(out_path, self.cpo_name)
+        cpo_core = read(out_path, cpo_name)
 
         # Get Quantity of Intersets
-        qoi_values = cpo_io.qoi_values(cpo_core)
+        qoi_values = cpo_io.get_qoi(cpo_core)
         quoi_dict = {}
         for qoi in self.output_columns:
             quoi_dict.update({qoi: qoi_values[qoi]})

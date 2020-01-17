@@ -41,8 +41,7 @@ class CPOEncoder(BaseEncoder, encoder_name="cpo_encoder"):
         write(self.cpo_core, target_file_path)
 
         # Do a symbolic link to other files (cpo, xml and restart data)
-        os.system("ln -s " + self.common_dir + "!(" + self.target_filename + ") "
-                  + target_dir + " >/dev/null 2>&1")
+        os.system("ln -s " + self.common_dir + "* " + target_dir + " >/dev/null 2>&1")
 
     def get_restart_dict(self):
         return {"template_filename": self.template_filename,
