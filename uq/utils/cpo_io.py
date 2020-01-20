@@ -8,17 +8,20 @@ from .statistics import get_dist
 '''
 
 # Get the initial value of the given params
-def get_parameters(cpo_core):
+def get_parameters(cpo_core, flux_tubes):
     params_mapper={}
+
+    if flux_tubes = None:
+        :w
 
     if cpo_core.base_path == "coreprof":
         coreprof_params = {
             "Te_boundary" : cpo_core.te.boundary.value[0],
             "Ti_boundary" : cpo_core.ti.boundary.value[0][0],
-            "Te" : cpo_core.te.value[:],
-            "Ti" : cpo_core.ti.value[:][0],
-            "Te_grad" : cpo_core.te.ddrho[:],
-            "Ti_grad" : cpo_core.ti.ddrho[:][0]
+            "Te" : cpo_core.te.value[flux_tubes],
+            "Ti" : cpo_core.ti.value[flux_tubes][0],
+            "Te_grad" : cpo_core.te.ddrho[flux_tubes],
+            "Ti_grad" : cpo_core.ti.ddrho[flux_tubes][0]
         }
         params_mapper.update(coreprof_params)
 

@@ -111,12 +111,12 @@ print('>>> Create the encoders')
 encoder_cpo = CPOEncoder(template_filename=input_cpo_filename,
                          target_filename=input_cpo_filename,
                          common_dir=common_dir,
-                         params_names=vary_cpo.keys())
+                         params_names=list(vary_cpo))
 
 encoder_xml = XMLEncoder(template_filename=input_xml_filename,
                          target_filename=input_xml_filename,
                          common_dir=common_dir,
-                         params_names=vary_xml.keys())
+                         params_names=list(vary_xml))
 
 # Combine both encoders into a single encoder
 encoder = uq.encoders.MultiEncoder(encoder_cpo, encoder_xml)

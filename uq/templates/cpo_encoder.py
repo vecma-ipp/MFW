@@ -33,7 +33,7 @@ class CPOEncoder(BaseEncoder, encoder_name="cpo_encoder"):
             raise RuntimeError('No target directory specified to encoder')
 
         if self.params_names is None:
-            self.params_names = params.keys()
+            self.params_names = list(params)
 
         for key in self.params_names:
             value = params[key]

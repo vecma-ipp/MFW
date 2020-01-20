@@ -32,7 +32,7 @@ class XMLEncoder(BaseEncoder, encoder_name="xml_encoder"):
             raise RuntimeError('No target directory specified to encoder')
 
         if self.params_names is None:
-            self.params_names = params.keys()
+            self.params_names = list(params)
 
         root = self.tree.getroot()
         for key in self.params_names:
