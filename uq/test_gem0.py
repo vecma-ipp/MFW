@@ -32,7 +32,6 @@ xml_dir = os.path.abspath("../workflows")
 # The executable code to run
 obj_dir = os.path.abspath("../standalone/bin/"+SYS)
 exec_code = "gem0_test"
-exec_path = os.path.join(obj_dir, exec_code)
 
 # Define the uncertain parameters
 uncertain_params = {
@@ -85,17 +84,10 @@ os.system("cp " + xml_dir + "/gem0.xml " + common_dir)
 os.system("cp " + xml_dir + "/gem0.xsd " + common_dir)
 
 # Run test_gem0 to get flux tube indices
-if mpi_instance is None:
-    full_cmd = f'cd {common_dir}\n{exec_path}\n'
-else:
-    full_cmd = f'cd {common_dir}\n{mpi_instance} {exec_path}\n'
+exec_path = os.path.join(obj_dir, exec_code)
 
-os.system(full_cmd)
-corep_file= os.path.join(common_dir, "gem0_coreprof_in.cpo")
-coret_file= os.path.join(common_dir, "gem0_coretransp_out.cpo")
-
-# We test 2 flux tubes. VERIFY in gem0.xml: nrho_transp = 2
-flux_indices = cpo_tools.get_flux_index(corep_file, coret_file)
+# We test 1 flux tube.
+flux_indices = [69]
 
 # Delete output CPO before encoder
 os.system("rm " + common_dir + "/gem0_coretransp_out.cpo")
@@ -141,8 +133,8 @@ print('>>> Populate runs_dir')
 my_campaign.populate_runs_dir()
 
 print('>>> Execute The code runs')
-my_campaign.apply_for_each_run_dir(uq.actions.ExecuteLocal(run_cmd=exec_path,
-                                                           interpret=mpi_instance))
+exec_path = os.path.join(obj_dir, exec_code)
+my_campaign.apply_for_each_run_dir(uq.actions.ExecuteLocal(run_cmd=exec_path))
 
 print('>>> Collate')
 my_campaign.collate()

@@ -43,7 +43,7 @@ uncertain_params = {
     "Ti_boundary": {
         "type": "float",
         "distribution": "Normal",
-           "margin_error": 0.2,
+        "margin_error": 0.2,
       }
 }
 # CPO file containg initial values of uncertain params

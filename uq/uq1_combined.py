@@ -107,6 +107,7 @@ os.system("cp " + cpo_dir + "/ets_toroidfield_in.cpo " + common_dir)
 
 # Create the encoder and get the app parameters
 print('>>> Create the encoders')
+# params_names dict is given here because we will use MultiEncoder
 encoder_cpo = CPOEncoder(template_filename=input_cpo_filename,
                          target_filename=input_cpo_filename,
                          common_dir=common_dir,
@@ -116,7 +117,6 @@ encoder_xml = XMLEncoder(template_filename=input_xml_filename,
                          target_filename=input_xml_filename,
                          common_dir=common_dir,
                          params_names=vary_xml.keys())
-
 
 # Combine both encoders into a single encoder
 encoder = uq.encoders.MultiEncoder(encoder_cpo, encoder_xml)
