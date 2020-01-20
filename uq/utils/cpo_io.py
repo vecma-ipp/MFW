@@ -8,7 +8,9 @@ from .statistics import get_dist
 '''
 
 # Get the initial value of the given params
-def get_parameters(cpo_core, params_mapper={}):
+def get_parameters(cpo_core):
+    params_mapper={}
+
     if cpo_core.base_path == "coreprof":
         coreprof_params = {
             "Te_boundary" : cpo_core.te.boundary.value[0],

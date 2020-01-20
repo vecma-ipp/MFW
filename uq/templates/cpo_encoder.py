@@ -9,7 +9,7 @@ from utils import cpo_io
 # Specific Encoder for CPO files
 class CPOEncoder(BaseEncoder, encoder_name="cpo_encoder"):
 
-    def __init__(self, template_filename, target_filename
+    def __init__(self, template_filename, target_filename,
                  common_dir, params_names=None):
         # Check that user has specified the object to use as template
         if template_filename is None:

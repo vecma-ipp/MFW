@@ -79,8 +79,8 @@ params_xml, vary_xml = xml_io.get_inputs(dirname=xml_dir, filename=input_xml_fil
                                  config_dict=uncertain_params_src)
 
 # Merge the dicts
-params = {**params_cpo, **parmas_xml)
-vary = {**vary_cpo, **vary_xml)
+params = {**params_cpo, **params_xml}
+vary = {**vary_cpo, **vary_xml}
 
 # Initialize Campaign object
 print('>>> Initialize Campaign object')

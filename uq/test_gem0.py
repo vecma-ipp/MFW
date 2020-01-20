@@ -61,6 +61,7 @@ input_filename = "gem0_coreprof_in.cpo"
 
 # The quantities of intersts and the cpo file to set them
 output_columns = ["Te_transp_flux", "Ti_transp_flux"]
+output_filename = "gem0_coretransp_out.cpo"
 
 # Initialize Campaign object
 print('>>> Initialize Campaign object')
@@ -89,23 +90,18 @@ exec_path = os.path.join(obj_dir, exec_code)
 # We test 1 flux tube.
 flux_indices = [69]
 
-# Delete output CPO before encoder
-os.system("rm " + common_dir + "/gem0_coretransp_out.cpo")
-
 # Create the encoder and get the app parameters
 print('>>> Create the encoder')
 encoder = CPOEncoder(template_filename=input_filename,
                      target_filename=input_filename,
                      common_dir=common_dir,
-                     flux_indices = flux_indices)
+                     flux_indices=flux_indices)
 
 params, vary = encoder.draw_app_params()
 
 # Create the decoder
 print('>>> Create the decoder')
-output_filename = "gem0_coretransp_out.cpo"
 decoder = CPODecoder(target_filename=output_filename,
-                     cpo_name="coretransp",
                      output_columns=output_columns)
 
 # Create a collation element for this campaign
@@ -122,7 +118,7 @@ my_campaign.add_app(name=campaign_name,
 
 # Create the sampler
 print('>>> Create the sampler')
-my_sampler = uq.sampling.PCESampler(vary=vary, polynomial_order=4)
+my_sampler = uq.sampling.PCESampler(vary=vary, polynomial_order=3)
 my_campaign.set_sampler(my_sampler)
 
 # Will draw all (of the finite set of samples)
@@ -151,12 +147,6 @@ print('>>> Elapsed time: ', time.time() - time0)
 
 # Get Descriptive Statistics
 print('>>> Get Descriptive Statistics: \n')
-#stat_te = results['statistical_moments']['Te_transp_flux']
-#sob1_te = results['sobols_first']['Te_transp_flux']
-#sob2_te = results['sobols_second']['Te_transp_flux']
-#stat_ti = results['statistical_moments']['Ti_transp_flux']
-#sob1_ti = results['sobols_first']['Ti_transp_flux']
-#sob2_ti = results['sobols_second']['Ti_transp_flux']
 
 for qoi in output_columns:
     print('===========================================')
