@@ -9,7 +9,8 @@ from utils import cpo_io
 # Specific Encoder for CPO files
 class CPOEncoder(BaseEncoder, encoder_name="cpo_encoder"):
 
-    def __init__(self, template_filename, target_filename, common_dir):
+    def __init__(self, template_filename, target_filename
+                 common_dir, params_names=None):
         # Check that user has specified the object to use as template
         if template_filename is None:
             msg = ("CPOEncoder must be given 'template_filename': a CPO file.")
@@ -19,6 +20,7 @@ class CPOEncoder(BaseEncoder, encoder_name="cpo_encoder"):
         self.template_filename = template_filename
         self.target_filename = target_filename
         self.common_dir = common_dir
+        self.params_names = params_names
 
         # The cpo object
         cpo_filename = os.path.join(common_dir, template_filename)
@@ -30,7 +32,11 @@ class CPOEncoder(BaseEncoder, encoder_name="cpo_encoder"):
         if not target_dir:
             raise RuntimeError('No target directory specified to encoder')
 
-        for key, value in params.items():
+        if self.params_names is None:
+            self.params_names = params.keys()
+
+        for key in self.params_names:
+            value = params[key]
             cpo_io.set_parameters(self.cpo_core, key, value)
             # Todo Update Te and Ti
 
@@ -46,7 +52,8 @@ class CPOEncoder(BaseEncoder, encoder_name="cpo_encoder"):
     def get_restart_dict(self):
         return {"template_filename": self.template_filename,
                 "target_filename": self.target_filename,
-                "common_dir": self.common_dir}
+                "common_dir": self.common_dir,
+                "params_names": self.params_names}
 
     def element_version(self):
         return "0.2"

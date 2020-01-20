@@ -1,28 +1,23 @@
-# -*- coding: UTF-8 -*-
 import os
 import sys
-import time
-import numpy as np
-import pandas as pd
-import chaospy as cp
 import easyvvuq as uq
-import matplotlib.pylab as plt
 from ascii_cpo import read
+from utils import xml_io, cpo_io
 from templates.xml_encoder import XMLEncoder
 from templates.cpo_encoder import CPOEncoder
 from templates.cpo_decoder import CPODecoder
 
 
-# test_combined_ion.py:
-# Perform UQ for a given model using Non intrusive method.
-# Uncertainties are driven by:
-# - External sources of Ions heating.
-# - Boundary condition (Edge) of Ion temperature.
+'''
+Perform UQ for the workflow Transport-Equilibrium-Turblence.
+Uncertainties are driven by:
+    External sources of Electrons heating.
+    Boundary conditions (Plasma Edge) of electrons tempurature.
+(The same thing can be done for ions)
+Method: Non intrusive (UQP1) with PCE.
+'''
 
-print('>>> test_combined_ion: START')
-
-# For Ellapsed time
-time0 = time.time()
+print('>>> UQ-Workflow Combined: START')
 
 # OS env
 SYS = os.environ['SYS']
@@ -41,40 +36,55 @@ xml_dir = os.path.abspath("../workflows")
 obj_dir = os.path.abspath("../standalone/bin/"+SYS)
 exec_code = "loop_gem0"
 
-# Define a specific parameter space
+# Define the uncertain parameters
 uncertain_params_bc = {
-    # ions boudary condition
-    "Ti_boundary": {
+    # Electrons boudary condition
+    "Te_boundary": {
         "type": "float",
         "distribution": "Normal",
         "margin_error": 0.2,
     }
 }
 uncertain_params_src = {
-    # Gaussian Sources: Ions heating
-    "amplitude_ion":{
+    # Gaussian Sources: Electrons heating
+    "amplitude_el":{
         "type": "float",
         "distribution": "Uniform",
         "margin_error": 0.2,
     },
-    "position_ion":{
+    "position_el":{
         "type": "float",
         "distribution": "Uniform",
         "margin_error": 0.2,
     },
-    "width_ion":{
+    "width_el":{
         "type": "float",
         "distribution": "Uniform",
         "margin_error": 0.2,
     }
 }
 
-# The Quantitie of intersts
+# CPO and XML file containg initial values of uncertain params
+input_cpo_filename = "ets_coreprof_in.cpo"
+input_xml_filename = "source_dummy.xml"
+
+# The quantities of intersts and the cpo file to set them
 output_columns = ["Te", "Ti"]
+output_filename = "ets_coreprof_out.cpo"
+
+# Parameter space for campaign and the distributions list for the Sampler
+params_cpo, vary_cpo = cpo_io.get_inputs(dirname=cpo_dir, filename=input_cpo_filename,
+                                 config_dict=uncertain_params_bc)
+params_xml, vary_xml = xml_io.get_inputs(dirname=xml_dir, filename=input_xml_filename,
+                                 config_dict=uncertain_params_src)
+
+# Merge the dicts
+params = {**params_cpo, **parmas_xml)
+vary = {**vary_cpo, **vary_xml)
 
 # Initialize Campaign object
 print('>>> Initialize Campaign object')
-campaign_name = "uq_combined_ion_"
+campaign_name = "UQ_COMBINED_"
 my_campaign = uq.Campaign(name=campaign_name, work_dir=tmp_dir)
 
 # Create new directory for commons inputs
@@ -97,33 +107,23 @@ os.system("cp " + cpo_dir + "/ets_toroidfield_in.cpo " + common_dir)
 
 # Create the encoder and get the app parameters
 print('>>> Create the encoders')
-input_cpo_filename = "ets_coreprof_in.cpo"
 encoder_cpo = CPOEncoder(template_filename=input_cpo_filename,
-                     target_filename="ets_coreprof_in.cpo",
-                     cpo_name="coreprof",
-                     common_dir=common_dir,
-                     uncertain_params=uncertain_params_bc)
+                         target_filename=input_cpo_filename,
+                         common_dir=common_dir,
+                         params_names=vary_cpo.keys())
 
-params_cpo, vary_cpo = encoder_cpo.draw_app_params()
-
-input_xml_filename = "source_dummy.xml"
 encoder_xml = XMLEncoder(template_filename=input_xml_filename,
-                     target_filename="source_dummy.xml",
-                     common_dir=common_dir,
-                     uncertain_params=uncertain_params_src)
+                         target_filename=input_xml_filename,
+                         common_dir=common_dir,
+                         params_names=vary_xml.keys())
 
-params, vary = encoder_xml.draw_app_params()
 
 # Combine both encoders into a single encoder
 encoder = uq.encoders.MultiEncoder(encoder_cpo, encoder_xml)
-params.update(params_cpo)
-vary.update(vary_cpo)
 
 # Create the encoder
 print('>>> Create the decoder')
-output_filename = "ets_coreprof_out.cpo"
 decoder = CPODecoder(target_filename=output_filename,
-                     cpo_name="coreprof",
                      output_columns=output_columns)
 
 # Create a collation element for this campaign
@@ -141,7 +141,7 @@ my_campaign.add_app(name=campaign_name,
 # Create the sampler
 print('>>> Create the sampler')
 my_sampler = uq.sampling.PCESampler(vary=vary,
-                                    polynomial_order=4,
+                                    polynomial_order=3,
                                     quadrature_rule='G',
                                     sparse=False)
 my_campaign.set_sampler(my_sampler)
@@ -153,9 +153,9 @@ my_campaign.draw_samples()
 print('>>> Populate runs_dir')
 my_campaign.populate_runs_dir()
 
-print('>>> Execute BlackBox code')
-bbox = os.path.join(obj_dir, exec_code)
-my_campaign.apply_for_each_run_dir(uq.actions.ExecuteLocal(bbox))
+print('>>> Execute workflow code')
+exec_path = os.path.join(obj_dir, exec_code)
+my_campaign.apply_for_each_run_dir(uq.actions.ExecuteLocal(exec_path))
 
 print('>>> Collate')
 my_campaign.collate()
@@ -187,58 +187,28 @@ rho = corep.rho_tor_norm
 
 test_case = cpo_dir.split('/')[-1]
 
-# Save statistics
-mean_te = list(stat_te['mean'])
-std_te  = list(stat_te['std'])
-mean_ti = list(stat_ti['mean'])
-std_ti  = list(stat_ti['std'])
-
-header = 'RHO_TOR_NORM \t MEAN_TE \t STD_TE \t MEAN_TI \t STD_TI'
-np.savetxt('outputs/'+test_case+'_UQ_STATS_I.csv',
-           np.c_[rho, mean_te, std_te, mean_ti, std_ti], delimiter='\t', header=header)
-
-# Save into database
-engine = my_campaign.campaign_db.engine
-
-# Create new tables for results and store them in the data base
-stat_te_df = pd.DataFrame.from_dict(stat_te)
-stat_te_df.to_sql('STAT_TE', engine, if_exists='append')
-sob1_te_df = pd.DataFrame.from_dict(sobt_te)
-sob1_te_df.to_sql('SOB1_TE', engine, if_exists='append')
-sobt_te_df = pd.DataFrame.from_dict(sobt_te)
-sobt_te_df.to_sql('SOBT_TE', engine, if_exists='append')
-
-stat_ti_df = pd.DataFrame.from_dict(stat_ti)
-stat_ti_df.to_sql('STAT_TI', engine, if_exists='append')
-sob1_ti_df = pd.DataFrame.from_dict(sobt_ti)
-sob1_ti_df.to_sql('SOB1_TI', engine, if_exists='append')
-sobt_ti_df = pd.DataFrame.from_dict(sobt_ti)
-sobt_ti_df.to_sql('SOBT_TI', engine, if_exists='append')
-
-os.system('cp '+ engine.url.database +' outputs/')
-
 # Plots STAT and SA
-__PLOTS = False # If True create plots subfolder under outputs folder
+__PLOTS = True # If True create plots subfolder under outputs folder
 if __PLOTS:
     from utils import plots
     uparams_names = list(params.keys())
 
     plots.plot_stats_pctl(rho, stat_te, pctl_te,
                      xlabel=r'$\rho_{tor} ~ [m]$', ylabel=r'$Te$',
-                     ftitle='Te profile ('+test_case+')',
-                     fname='outputs/plots/Te_STATI_'+test_case)
+                     ftitle='Te profile',
+                     fname='outputs/plots/Te_STAT_'+test_case+test_case)
 
     plots.plot_sobols(rho, sobt_te, uparams_names,
                       ftitle=' Total-Order Sobol indices - QoI: Te',
-                      fname='outputs/plots/Te_SAI_'+test_case)
+                      fname='outputs/plots/Te_SA_'+test_case+test_case)
 
     plots.plot_stats_pctl(rho, stat_ti, pctl_ti,
                      xlabel=r'$\rho_{tor} ~ [m]$', ylabel=r'$T_i [eV]$',
-                     ftitle='Te profile ('+test_case+')',
-                     fname='outputs/plots/Ti_STATI_'+test_case)
+                     ftitle='Te profile',
+                     fname='outputs/plots/Ti_STAT_'+test_case+test_case)
 
     plots.plot_sobols(rho, sobt_ti, uparams_names,
                       ftitle=' Total-Order Sobol indices - QoI: Ti',
-                      fname='outputs/plots/Ti_SAI_'+test_case)
+                      fname='outputs/plots/Ti_SA_'+test_case+test_case)
 
-print('>>> test_combined: END')
+print('>>> UQ-Workflow Combined: END')

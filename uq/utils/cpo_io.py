@@ -88,7 +88,7 @@ def get_cponame(filename):
 
 # Returns dict for Campaign object and distribitions list for the Sampler
 # TODO add new get_inputs from list values
-def get_inputs(dirname, filename, config_dict, params={}, vary={}):
+def get_inputs(dirname, filename, config_dict):
     # dirname: location of cpo file
     # filename: cpo file name
     # config_dict: containg uncertrain params
@@ -98,6 +98,8 @@ def get_inputs(dirname, filename, config_dict, params={}, vary={}):
     cpo_core = read(cpo_file, cpo_name)
 
     mapper = get_parameters(cpo_core)
+    params = {}
+    vary = {}
 
     for k, d in config_dict.items():
         # Get initial values, the mean and the type
