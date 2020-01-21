@@ -117,7 +117,7 @@ my_campaign.add_app(name=campaign_name,
 
 # Create the sampler
 print('>>> Create the sampler')
-my_sampler = uq.sampling.PCESampler(vary=vary, polynomial_order=3)
+my_sampler = uq.sampling.PCESampler(vary=vary, polynomial_order=2)
 my_campaign.set_sampler(my_sampler)
 
 # Will draw all (of the finite set of samples)
