@@ -2,33 +2,31 @@ import logging
 from os.path import join
 from ascii_cpo import read
 from .statistics import get_dist
+from .cpo_tools import update_te, update_ti, update_te_grad, update_ti_grad
 
 
 ''' To be improved: cf. UAL module and do it generic
 '''
 
 # Get the initial value of the given params
-def get_parameters(cpo_core, flux_tubes):
+def get_parameters(cpo_core, flux_index):
     params_mapper={}
-
-    if flux_tubes = None:
-        :w
 
     if cpo_core.base_path == "coreprof":
         coreprof_params = {
             "Te_boundary" : cpo_core.te.boundary.value[0],
             "Ti_boundary" : cpo_core.ti.boundary.value[0][0],
-            "Te" : cpo_core.te.value[flux_tubes],
-            "Ti" : cpo_core.ti.value[flux_tubes][0],
-            "Te_grad" : cpo_core.te.ddrho[flux_tubes],
-            "Ti_grad" : cpo_core.ti.ddrho[flux_tubes][0]
+            "Te" : cpo_core.te.value[flux_index],
+            "Ti" : cpo_core.ti.value[flux_index][0],
+            "Te_grad" : cpo_core.te.ddrho[flux_index],
+            "Ti_grad" : cpo_core.ti.ddrho[flux_index][0]
         }
         params_mapper.update(coreprof_params)
 
     return params_mapper
 
 # Set the given value of the input params
-def set_parameters(cpo_core, param, value):
+def set_parameters(cpo_core, param, value, flux_index=0):
         # Boundary conditions
         if param=="Te_boundary":
             cpo_core.te.boundary.value[0] = value
@@ -37,9 +35,24 @@ def set_parameters(cpo_core, param, value):
             # In case of two ions species
             if len(cpo_core.ti.boundary.value[0]) == 2:
                 cpo_core.ti.boundary.value[0][1] = value
+        # Temperature at given flux index
+        if param=="Te":
+            cpo_core.te.value[flux_index] = value
+            update_te(cpo_core, value, flux_index)
+        if param=="Ti":
+            cpo_core.ti.value[flux_index][0] = value
+            update_ti(cpo_core, value, flux_index)
+        if param=="Te_grad":
+            cpo_core.te.ddrho[flux_index] = value
+            update_te_grad(cpo_core, value, flux_index)
+        if param=="Ti_grad":
+            cpo_core.ti.ddrho[flux_index][0] = value
+            update_ti_grad(cpo_core, value, flux_index)
 
 # Get the values of the correponding quantities of interest
-def get_qoi(cpo_core, qoi_mapper={}):
+def get_qoi(cpo_core):
+    qoi_mapper = {}
+
     if cpo_core.base_path == 'coreprof':
         coreprof_qoi = {
             "Te": cpo_core.te.value,
@@ -93,7 +106,7 @@ def get_cponame(filename):
 
 # Returns dict for Campaign object and distribitions list for the Sampler
 # TODO add new get_inputs from list values
-def get_inputs(dirname, filename, config_dict):
+def get_inputs(dirname, filename, config_dict, flux_index=0):
     # dirname: location of cpo file
     # filename: cpo file name
     # config_dict: containg uncertrain params
@@ -102,7 +115,7 @@ def get_inputs(dirname, filename, config_dict):
     cpo_name = get_cponame(filename)
     cpo_core = read(cpo_file, cpo_name)
 
-    mapper = get_parameters(cpo_core)
+    mapper = get_parameters(cpo_core, flux_index)
     params = {}
     vary = {}
 

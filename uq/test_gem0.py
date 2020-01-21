@@ -1,9 +1,8 @@
 import os
 import sys
-import time
 import easyvvuq as uq
 from ascii_cpo import read
-from utils import cpo_tools
+from utils import cpo_io
 from templates.cpo_encoder import CPOEncoder
 from templates.cpo_decoder import CPODecoder
 
@@ -63,6 +62,9 @@ input_filename = "gem0_coreprof_in.cpo"
 output_columns = ["Te_transp_flux", "Ti_transp_flux"]
 output_filename = "gem0_coretransp_out.cpo"
 
+# We test 1 flux tube.
+flux_index = 69
+
 # Initialize Campaign object
 print('>>> Initialize Campaign object')
 campaign_name = "UQ_GEM0_"
@@ -84,20 +86,17 @@ os.system("cp " + cpo_dir + "/ets_coreprof_in.cpo "
 os.system("cp " + xml_dir + "/gem0.xml " + common_dir)
 os.system("cp " + xml_dir + "/gem0.xsd " + common_dir)
 
-# Run test_gem0 to get flux tube indices
-exec_path = os.path.join(obj_dir, exec_code)
-
-# We test 1 flux tube.
-flux_indices = [69]
+# Parameter space for campaign and the distributions list for the Sampler
+params, vary = cpo_io.get_inputs(dirname=common_dir, filename=input_filename,
+                                 config_dict=uncertain_params,
+                                 flux_index=flux_index)
 
 # Create the encoder and get the app parameters
 print('>>> Create the encoder')
 encoder = CPOEncoder(template_filename=input_filename,
                      target_filename=input_filename,
                      common_dir=common_dir,
-                     flux_indices=flux_indices)
-
-params, vary = encoder.draw_app_params()
+                     flux_index=flux_index)
 
 # Create the decoder
 print('>>> Create the decoder')
@@ -142,8 +141,6 @@ my_campaign.apply_analysis(analysis)
 
 print('>>> Get results')
 results = my_campaign.get_last_analysis()
-
-print('>>> Elapsed time: ', time.time() - time0)
 
 # Get Descriptive Statistics
 print('>>> Get Descriptive Statistics: \n')

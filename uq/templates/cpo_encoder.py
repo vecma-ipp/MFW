@@ -10,7 +10,7 @@ from utils import cpo_io
 class CPOEncoder(BaseEncoder, encoder_name="cpo_encoder"):
 
     def __init__(self, template_filename, target_filename,
-                 common_dir, params_names=None):
+                 common_dir, params_names=None, flux_index=0):
         # Check that user has specified the object to use as template
         if template_filename is None:
             msg = ("CPOEncoder must be given 'template_filename': a CPO file.")
@@ -21,6 +21,7 @@ class CPOEncoder(BaseEncoder, encoder_name="cpo_encoder"):
         self.target_filename = target_filename
         self.common_dir = common_dir
         self.params_names = params_names
+        self.flux_index = flux_index
 
         # The cpo object
         cpo_filename = os.path.join(common_dir, template_filename)
@@ -37,7 +38,7 @@ class CPOEncoder(BaseEncoder, encoder_name="cpo_encoder"):
 
         for key in self.params_names:
             value = params[key]
-            cpo_io.set_parameters(self.cpo_core, key, value)
+            cpo_io.set_parameters(self.cpo_core, key, value, self.flux_index )
             # Todo Update Te and Ti
 
         # Write target input CPO file
@@ -53,7 +54,8 @@ class CPOEncoder(BaseEncoder, encoder_name="cpo_encoder"):
         return {"template_filename": self.template_filename,
                 "target_filename": self.target_filename,
                 "common_dir": self.common_dir,
-                "params_names": self.params_names}
+                "params_names": self.params_names,
+                "flux_index": self.flux_index}
 
     def element_version(self):
         return "0.2"
