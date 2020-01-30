@@ -198,12 +198,14 @@ clean:
 ${OBJDIR}/linterp.o: src/tools/linterp.f90
 	${FC90} -o $@ -c $< $(FC90FLAGS) -I${INC_TYPES}
 
+${OBJDIR}/string_binding.o: src/tools/string_binding.f90
+	${FC90} -o $@ -c $< $(FC90FLAGS) 
+
 #${OBJDIR}/csv_io.o: src/tools/csv_io.f90
 #	${FC90} -o $@ -c $< $(FC90FLAGS) 
 
 #${OBJDIR}/spl.o: src/tools/spl.f90
 #	${MPIF90} -o $@ -c $< $(FC90FLAGS) -traceback -check all -fp-stack-check -I${MKL_LIB} 
-
 
 ${OBJDIR}/ets_standalone.o: src/ets_standalone.f90
 	${MPIF90} -o $@ -c $< $(FC90FLAGS) -I${ETS} -I${INC_CONSTANTS} -I${INC_TYPES} -I${INC_XML} 
@@ -228,6 +230,9 @@ ${OBJDIR}/equil_test.o: src/equil_test.f90
 
 ${OBJDIR}/imp4dv_standalone.o: src/imp4dv_standalone.f90
 	${FC90} -o $@ -c $< $(FC90FLAGS) -I${INC_BDS}  
+	
+${OBJDIR}/imp4dv_test.o: src/imp4dv_test.f90
+	${FC90} -o $@ -c $< $(FC90FLAGS) -I${INC_BDS}  
 
 ${OBJDIR}/sources_standalone.o: src/sources_standalone.f90
 	${FC90} -o $@ -c $< $(FC90FLAGS) -traceback -check all -fp-stack-check -I${ETS} -I${INC_XML} -I${INC_CONSTANTS} -I${INC_TYPES} 
@@ -238,8 +243,14 @@ ${OBJDIR}/sources_test.o: src/sources_test.f90
 ${OBJDIR}/bohmgb_standalone.o: src/bohmgb_standalone.f90
 	${FC90} -o $@ -c $< $(FC90FLAGS) -I${INC_BDS} -I${INC_XML} 
 
+${OBJDIR}/bohmgb_test.o: src/bohmgb_test.f90
+	${FC90} -o $@ -c $< $(FC90FLAGS) -I${INC_BDS}
+
 ${OBJDIR}/gem0_standalone.o: src/gem0_standalone.f90
 	${FC90} -o $@ -c $< $(FC90FLAGS) -I${INC_BDS} -I${INC_XML} 
+
+${OBJDIR}/gem0_test.o: src/gem0_test.f90
+	${FC90} -o $@ -c $< $(FC90FLAGS) -I${INC_BDS}
 
 ${OBJDIR}/gem_standalone.o: src/gem_standalone.f90
 	${MPIF90} -o $@ -c $< $(MPIFLAGS) -I${INC_BDS} -I${INC_XML}
