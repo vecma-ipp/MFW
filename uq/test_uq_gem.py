@@ -1,77 +1,72 @@
-# -*- coding: UTF-8 -*-
 import os
 import sys
-import time
-import numpy as np
-import pandas as pd
-import chaospy as cp
 import easyvvuq as uq
 from ascii_cpo import read
-#from utils import cpo_tools
+from utils import cpo_io
 from templates.cpo_encoder import CPOEncoder
 from templates.cpo_decoder import CPODecoder
 
 
-# gem0_uq.py:
-# Perform UQ for GEM
-# Uncertainties are driven by: 1 Flux tubes.
-# IMPORTANT CHECK: in gem.xml, nrho_transp = 1
+'''
+Perform UQ for the Turblence code GEM
+Uncertainties are driven by:
+    The electon and ion temperatur and their gradient localisd by a Flux tube position
+IMPORTANT CHECK: in gem.xml, nrho_transp = 1
+'''
 
 
-print('>>> GEM_AUG_UQ : START')
-
-# For Elapsed time
-time0 = time.time()
+print('>>> TEST UQ GEM: START')
 
 # OS env
 SYS = os.environ['SYS']
+mpi_instance =  os.environ['MPICMD']
 
 # Working directory
 tmp_dir = os.environ['SCRATCH']
 
-data = os.path.abspath("../workflows/AUG_28906_6_1ft_restart")
 
 # CPO files
-#cpo_dir = os.path.abspath("../workflows/AUG_28906_6")
-#cpo_dir = os.path.abspath("../workflows/JET_92436_23066")
-cpo_dir = data
+cpo_dir = os.path.abspath("../workflows/AUG_28906_6")
 
 # XML and XSD files
-#xml_dir = os.path.abspath("../workflows")
-xml_dir = data
+xml_dir = os.path.abspath("../workflows")
 
 # The executable code to run
 obj_dir = os.path.abspath("../standalone/bin/"+SYS)
 exec_code = "gem_test"
-mpi_instance = None# os.environ['MPICMD']
-exec_path = os.path.join(obj_dir, exec_code)
 
-# Define a specific parameter space
+# Define the uncertain parameters
 uncertain_params = {
-    "Te_grad_1": {
+    "Te": {
         "type": "float",
         "distribution": "Normal",
         "margin_error": 0.2,
     },
-    "Ti_grad_1": {
+    "Ti": {
         "type": "float",
         "distribution": "Normal",
         "margin_error": 0.2,
-    }#,
-#    "Te_1": {
-#        "type": "float",
-#        "distribution": "Normal",
-#        "margin_error": 0.2,
-#    },
-#    "Ti_1": {
-#        "type": "float",
-#        "distribution": "Normal",
-#        "margin_error": 0.2,
-#    }
+    },
+    "Te_grad": {
+        "type": "float",
+        "distribution": "Normal",
+        "margin_error": 0.2,
+    },
+    "Ti_grad": {
+        "type": "float",
+        "distribution": "Normal",
+        "margin_error": 0.2,
+    }
 }
+# CPO file containg initial values of uncertain params
+input_filename = "gem_coreprof_in.cpo"
 
-# For the output: quantities of intersts
+# We test 1 flux tube.
+flux_index = 69
+
+# The quantities of intersts and the cpo file to set them
 output_columns = ["Te_transp_flux", "Ti_transp_flux"]
+output_filename = "gem_coretransp_out.cpo"
 
 # Initialize Campaign object
 print('>>> Initialize Campaign object')
@@ -93,29 +88,23 @@ os.system("cp " + cpo_dir + "/ets_coreprof_in.cpo "
 # Copy XML and XSD files
 os.system("cp " + xml_dir + "/gem.xml " + common_dir)
 os.system("cp " + xml_dir + "/gem.xsd " + common_dir)
-os.system("cp " + data + "/t00.dat " + common_dir)
+#os.system("cp " + data + "/t00.dat " + common_dir)
 
-# We test 1 flux tube.
-flux_indices = [69]
+# Parameter space for campaign and the distributions list for the Sampler
+params, vary = cpo_io.get_inputs(dirname=common_dir, filename=input_filename,
+                                 config_dict=uncertain_params,
+                                 flux_index=flux_index)
 
 # Create the encoder and get the app parameters
 print('>>> Create the encoder')
-input_filename = "gem_coreprof_in.cpo"
 encoder = CPOEncoder(template_filename=input_filename,
                      target_filename=input_filename,
                      common_dir=common_dir,
-                     uncertain_params=uncertain_params,
-                     cpo_name="coreprof",
-                     flux_indices = flux_indices,
-                     link_xmlfiles=True)
-
-params, vary = encoder.draw_app_params()
+                     flux_index=flux_index)
 
 # Create the decoder
 print('>>> Create the decoder')
-output_filename = "gem_coretransp_out.cpo"
 decoder = CPODecoder(target_filename=output_filename,
-                     cpo_name="coretransp",
                      output_columns=output_columns)
 
 # Create a collation element for this campaign
@@ -132,7 +121,7 @@ my_campaign.add_app(name=campaign_name,
 
 # Create the sampler
 print('>>> Create the sampler')
-my_sampler = uq.sampling.PCESampler(vary=vary, polynomial_order=3)
+my_sampler = uq.sampling.PCESampler(vary=vary, polynomial_order=2)
 my_campaign.set_sampler(my_sampler)
 
 # Will draw all (of the finite set of samples)
@@ -141,8 +130,9 @@ my_campaign.draw_samples()
 
 print('>>> Populate runs_dir')
 my_campaign.populate_runs_dir()
-sys.exit()
+
 print('>>> Execute The code runs')
+exec_path = os.path.join(obj_dir, exec_code)
 my_campaign.apply_for_each_run_dir(uq.actions.ExecuteLocal(run_cmd=exec_path,
                                                            interpret=mpi_instance))
 
@@ -157,15 +147,13 @@ my_campaign.apply_analysis(analysis)
 print('>>> Get results')
 results = my_campaign.get_last_analysis()
 
-print('>>> Elapsed time: ', time.time() - time0)
-
 # Get Descriptive Statistics
 print('>>> Get Descriptive Statistics: \n')
 
 for qoi in output_columns:
     print('===========================================')
     print(qoi)
-    print('STAT = ', results['statistical_moments'][qoi])
+    print('STAT = \n', results['statistical_moments'][qoi])
     print('Sobol 1st = \n', results['sobols_first'][qoi])
 
-print('>>> GEM_AUG_UQ : END')
+print('>>> TEST UQ GEM: START')
