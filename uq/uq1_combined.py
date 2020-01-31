@@ -141,9 +141,8 @@ my_campaign.add_app(name=campaign_name,
 # Create the sampler
 print('>>> Create the sampler')
 my_sampler = uq.sampling.PCESampler(vary=vary,
-                                    polynomial_order=3,
-                                    quadrature_rule='G',
-                                    sparse=False)
+                                    polynomial_order=4,
+                                    regression=False)
 my_campaign.set_sampler(my_sampler)
 
 # Will draw all (of the finite set of samples)
@@ -196,19 +195,19 @@ if __PLOTS:
     plots.plot_stats_pctl(rho, stat_te, pctl_te,
                      xlabel=r'$\rho_{tor} ~ [m]$', ylabel=r'$Te$',
                      ftitle='Te profile',
-                     fname='outputs/plots/Te_STAT_'+test_case+test_case)
+                     fname='outputs/Te_STAT_'+test_case+test_case)
 
     plots.plot_sobols(rho, sobt_te, uparams_names,
                       ftitle=' Total-Order Sobol indices - QoI: Te',
-                      fname='outputs/plots/Te_SA_'+test_case+test_case)
+                      fname='outputs/Te_SA_'+test_case+test_case)
 
     plots.plot_stats_pctl(rho, stat_ti, pctl_ti,
                      xlabel=r'$\rho_{tor} ~ [m]$', ylabel=r'$T_i [eV]$',
                      ftitle='Te profile',
-                     fname='outputs/plots/Ti_STAT_'+test_case+test_case)
+                     fname='outputs/Ti_STAT_'+test_case+test_case)
 
     plots.plot_sobols(rho, sobt_ti, uparams_names,
                       ftitle=' Total-Order Sobol indices - QoI: Ti',
-                      fname='outputs/plots/Ti_SA_'+test_case+test_case)
+                      fname='outputs/Ti_SA_'+test_case+test_case)
 
 print('>>> UQ-Workflow Combined: END')
