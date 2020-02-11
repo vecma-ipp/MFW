@@ -73,8 +73,10 @@ ions_params = {
 }
 
 # Choose one of the uncertain params dict (for electons or ions sources),
-# or merge them using: uncertain_params = elec_params.update(ions_params).
-uncertain_params = elec_params
+# or merge them using:
+uncertain_params = {}
+uncertain_params.update(elec_params)
+uncertain_params.update(ions_params)
 
 # XML file containg initiail values of uncertain params
 input_filename = "source_dummy.xml"
@@ -89,7 +91,7 @@ params, vary = xml_io.get_inputs(dirname=xml_dir, filename=input_filename,
 
 # Initialize Campaign object
 print('>>> Initialize Campaign object')
-campaign_name = "UQ_SOURCES_"
+campaign_name = "UQ_COM_SOURCES_"
 my_campaign = uq.Campaign(name=campaign_name, work_dir=tmp_dir)
 
 # Create new directory for inputs (to be ended with /)
@@ -140,9 +142,7 @@ my_campaign.add_app(name=campaign_name,
 # Create the sampler
 print('>>> Create the sampler')
 my_sampler = uq.sampling.PCESampler(vary=vary,
-                                    polynomial_order=2,
-                                    quadrature_rule='G',
-                                    sparse=False)
+                                    regression=True)
 my_campaign.set_sampler(my_sampler)
 
 # Will draw all (of the finite set of samples)
