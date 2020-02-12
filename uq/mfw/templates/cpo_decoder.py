@@ -4,7 +4,7 @@ import pandas as pd
 from easyvvuq import OutputType
 from easyvvuq.decoders.base import BaseDecoder
 from ascii_cpo import read
-from utils import cpo_io
+from ..utils import cpo_io
 
 
 # Specific Decoder for CPO files
