@@ -38,7 +38,7 @@ class CPOEncoder(BaseEncoder, encoder_name="cpo_encoder"):
 
         for key in self.params_names:
             value = params[key]
-            cpo_io.set_parameters(self.cpo_core, key, value, self.flux_index )
+            cpo_io.set_parameters(self.cpo_core, key, value, self.flux_index)
             # Todo Update Te and Ti
 
         # Write target input CPO file

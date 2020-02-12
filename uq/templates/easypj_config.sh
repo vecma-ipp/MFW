@@ -5,7 +5,7 @@ this_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 this_file=$(basename "${BASH_SOURCE[0]}")
 
 PYTHONPATH="${PYTHONPATH}:${this_dir}"
-ENCODER_MODULES="custom_encoder"
+ENCODER_MODULES="cpo_encoder;xml_encoder"
 export PYTHONPATH
 export ENCODER_MODULES
 
