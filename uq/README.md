@@ -1,14 +1,21 @@
 ## Installation
 
-1. Install [EasyVVUQ](https://easyvvuq.readthedocs.io/en/latest/installation.html) library.
-2. Make sure that the standalone code is compiled. Cf. [README.rst](https://github.com/vecma-ipp/MFW/blob/devel/README.rst) in the root directory of the project.
-3. Make sure that the python interface for the UAL is built (mandatory to use `ascii_cpo` module). Cf.: [README](https://github.com/vecma-ipp/MFW/tree/devel/ual/python_interface).
+1. Install EasyVVUQ-QCGPJ, a lightweight wrapper over [EasyVVUQ](https://easyvvuq.readthedocs.io/en/latest/installation.html) library and [QCG Pilot Job Manager](https://github.com/vecma-project/QCG-PilotJob), by typing:
+```
+pip3 install git+https://github.com/vecma-project/EasyVVUQ-QCGPJ.git@master --user
+```
 
-#### To use the PilotJob
-4. Install QCG PilotJob Manager directly from github by typing:
+2. Install the MFW python package by typing:
 ```
-pip install --upgrade git+https://github.com/vecma-project/QCG-PilotJob.git@issue_37_monitoring#egg=qcgPilotManager --user
+python3 setup.py install --user
 ```
+
+3. Make sure that:
+
+3.1. The standalone code is compiled. Cf. [README.rst](https://github.com/vecma-ipp/MFW/blob/devel/README.rst) in the root directory of the project.
+
+3.2 The python interface for the UAL is built (mandatory to use `ascii_cpo` module). Cf.: [README](https://github.com/vecma-ipp/MFW/tree/devel/ual/python_interface).
+
 
 ## Example Usage
 

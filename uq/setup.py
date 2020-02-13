@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(
-name='MFW-UQ',
+name='mfw-uq',
 
 version='0.1',
 

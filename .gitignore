@@ -40,7 +40,10 @@ uq/mfw/utils/*.pyc
 uq/mfw/templates/*cache*_
 uq/mfw/templates/*.pyc
 uq/outputs/plots/*.png
-uq/outputs/logs/test.*
+uq/outputs/*.png
+uq/outputs/*.csv
+uq/outputs/*.db
+
 uq/outputs/*.csv
 uq/outputs/*.db
 uq/*-job.sh
