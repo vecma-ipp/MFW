@@ -102,6 +102,7 @@ def plot_fluxes(nslices=None, fluxlog=False, output=None):
         
     #plt.ylim(nf.min()*0.9999,nf.max()*1.0001)
     plt.ylim(nf.min()*0.9999,420000.0)
+    plt.grid(linestyle='dotted')
 
     do_vmark=False
     do_limit=False
@@ -142,7 +143,7 @@ def plot_fluxes(nslices=None, fluxlog=False, output=None):
         tstep.append(t[i+1]-t[i])
     plt.semilogy(t[:],tstep[:],'+')
     #plt.plot(t[:],tstep[:],'*')
-    plt.ylim(0.000001,0.0999)
+    plt.ylim(0.00001,0.0999)
     plt.xlim(start_time,end_time)
     
     if do_vmark:
@@ -166,6 +167,7 @@ def plot_fluxes(nslices=None, fluxlog=False, output=None):
         top='off',         # ticks along the top edge are off
         labelbottom='off') # labels along the bottom edge are off
     plt.ylabel("time step")
+    plt.grid(linestyle='dotted')
 
 
     #plt.subplot(312)
@@ -214,6 +216,7 @@ def plot_fluxes(nslices=None, fluxlog=False, output=None):
     ylab = ax.get_yticklabels()
     ylab[-1].set_visible(False)
     plt.xlim(start_time,end_time)
+    plt.grid(linestyle='dotted')
 
     #xpoints = np.arange(0,times,1)
     #xlabels = []
@@ -229,11 +232,14 @@ def plot_fluxes(nslices=None, fluxlog=False, output=None):
     #plt.xlabel("time")
     #plt.ylabel("Ne")
 
+    fig = plt.gcf()
+    fig.set_size_inches(10,6.25,forward=True)
+
     if output==None:
-        plt.show(block=True)
+        fig.show()
     else:
-        plt.savefig(output, dpi=300)
-        plt.clf()
+        fig.savefig(output, dpi=300, bbox_inches='tight')
+        fig.clf()
 
     ## plot time history of time step size
     #plt.figure(2)
@@ -271,7 +277,7 @@ if __name__ == "__main__":
     turb_code = "imp4dv"
     do_equil = False
     do_avg   = False
-    do_Ti    = True	# plot Ti
+    do_Ti    = False	# plot Ti
     do_vmark = True		# plot vertical markers every time simulation run ends
     do_limit = False		# plot vertical markers every time acceptance limits change
 
@@ -287,13 +293,12 @@ if __name__ == "__main__":
     pool = multiprocessing.Pool(processes=args.parallelProcesses)
 
 
-    plt.figure(figsize=(16,9))
-    plt.suptitle("AUG#28906/6")
+    #plt.figure(figsize=(16,9))
+    #plt.suptitle("AUG#28906/6")
 
     if args.testPlot:
-        plot_fluxes(1,False,"test-1.png")
-        plot_fluxes(50,False,"test-2.png")
-        plot_fluxes(100,False,"test-3.png")
+        plot_fluxes(50,False,None)
+        plot_fluxes(100,False,"test-100.png")
     else:
         print("Rendering frames")
         for i in range(len(cpo.coretranspArray.array)):
@@ -311,8 +316,10 @@ if __name__ == "__main__":
                    'test-%04d.png',
                    '-c:v',
                    'libx264',
+                   '-framerate',
+                   '15',
                    '-vf',
-                   'fps=10',
+                   'scale=1920:-2',
                    '-pix_fmt',
                    'yuv420p',
                    'output.mp4')
