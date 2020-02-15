@@ -1,10 +1,11 @@
 import os
 import sys
+import time
 import easyvvuq as uq
 from ascii_cpo import read
-from utils import cpo_io
-from templates.cpo_encoder import CPOEncoder
-from templates.cpo_decoder import CPODecoder
+from mfw.utils import cpo_io
+from mfw.templates.cpo_encoder import CPOEncoder
+from mfw.templates.cpo_decoder import CPODecoder
 
 
 '''
@@ -16,6 +17,7 @@ Method: Non intrusive with PCE.
 
 print('>>> test ETS: START')
 
+time0 =  time.time()
 # OS env
 SYS = os.environ['SYS']
 
@@ -98,10 +100,7 @@ my_campaign.add_app(name=campaign_name,
 
 # Create the sampler
 print('>>> Create the sampler')
-my_sampler = uq.sampling.PCESampler(vary=vary,
-                                    polynomial_order=3,
-                                    quadrature_rule='G',
-                                    sparse=False)
+my_sampler = uq.sampling.PCESampler(vary=vary, polynomial_order=4)
 my_campaign.set_sampler(my_sampler)
 
 # Will draw all (of the finite set of samples)
@@ -138,11 +137,13 @@ sob1_ti = results['sobols_first']['Ti']
 corep = read(os.path.join(cpo_dir,  "ets_coreprof_in.cpo"), "coreprof")
 rho = corep.rho_tor_norm
 
+test_case = cpo_dir.split('/')[-1]
+
 #  Graphics for Descriptive satatistics
 __PLOTS = True # If True create plots subfolder under outputs folder
 
 if __PLOTS:
-    from utils import plots
+    from mfw.utils import plots
 
     uparams_names = list(params.keys())
 

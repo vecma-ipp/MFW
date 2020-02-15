@@ -3,9 +3,9 @@ import os
 import sys
 import easyvvuq as uq
 from ascii_cpo import read
-from utils import cpo_io
-from templates.cpo_encoder import CPOEncoder
-from templates.cpo_decoder import CPODecoder
+from mfw.utils import cpo_io
+from mfw.templates.cpo_encoder import CPOEncoder
+from mfw.templates.cpo_decoder import CPODecoder
 
 '''
 Perform SA for the workflow Equilibrium (EquilUpdate + CHEASE).
@@ -14,9 +14,6 @@ Uncertainties are driven by:
 '''
 
 print('>>> test_equil: START')
-
-# For Ellapsed time
-time0 = time.time()
 
 # OS env
 SYS = os.environ['SYS']
@@ -142,8 +139,6 @@ my_campaign.apply_analysis(analysis)
 print('>>> Get results')
 results = my_campaign.get_last_analysis()
 
-print('>>> Ellapsed time: ', time.time() - time0)
-
 # Get Descriptive Statistics
 print('>>> Get Descriptive Statistics: \n')
 
@@ -160,7 +155,7 @@ for qoi in  output_columns:
 # Plots STAT and SA
 __PLOTS = True
 if __PLOTS:
-    from utils import plots
+    from mfw.utils import plots
     equil = read(os.path.join(cpo_dir,  "ets_equilibrium_in.cpo"), "equilibrium")
     rho = equil.profiles_1d.rho_tor
     uparams_names = list(params.keys())

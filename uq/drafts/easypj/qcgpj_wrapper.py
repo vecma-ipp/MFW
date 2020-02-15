@@ -10,7 +10,7 @@ from qcg.appscheduler.api.manager import LocalManager
 
 
 # TODO add args for interctive mode, or use class
-def run(campaign, exec_path):
+def run(campaign, exec_path, ):
     # Current directory
     cwd = os.getcwd()
 

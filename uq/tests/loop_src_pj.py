@@ -1,20 +1,26 @@
 import os
-import sys
-import easyvvuq as uq
-from ascii_cpo import read
-from utils import xml_io
-from templates.xml_encoder import XMLEncoder
-from templates.cpo_decoder import CPODecoder
+import time
 
+import easyvvuq as uq
+
+from ascii_cpo import read
+from mfw.utils import xml_io
+from mfwtemplates.xml_encoder import XMLEncoder
+from mfw.templates.cpo_decoder import CPODecoder
+
+import easypj
+from easypj import TaskRequirements, Resources
+from easypj import Task, TaskType, SubmitOrder
 
 '''
 Perform UQ for the workflow Transport-Equilibrium-Turblence.
 Uncertainties are driven by:
     External sources of Electrons or/and Ions heating.
 Method: Non intrusive (UQP1) with PCE.
+Sampling and execution with QCG-Pilot Job
 '''
 
-print('>>> UQ-Workflow Sources: START')
+print('>>> UQ Workflow Sources: START')
 
 # OS env
 SYS = os.environ['SYS']
@@ -32,6 +38,7 @@ xml_dir = os.path.abspath("../workflows")
 # The execuatble model code
 obj_dir = os.path.abspath("../standalone/bin/"+SYS)
 exec_code = "loop_bgb"
+exec_path = os.path.join(obj_dir, exec_code)
 
 # Define the uncertain parameters
 elec_params = {
@@ -73,8 +80,10 @@ ions_params = {
 }
 
 # Choose one of the uncertain params dict (for electons or ions sources),
-# or merge them using: uncertain_params = elec_params.update(ions_params).
-uncertain_params = elec_params
+# or merge them using:
+uncertain_params = {}
+uncertain_params.update(elec_params)
+uncertain_params.update(ions_params)
 
 # XML file containg initiail values of uncertain params
 input_filename = "source_dummy.xml"
@@ -89,7 +98,7 @@ params, vary = xml_io.get_inputs(dirname=xml_dir, filename=input_filename,
 
 # Initialize Campaign object
 print('>>> Initialize Campaign object')
-campaign_name = "UQ_SOURCES_"
+campaign_name = "UQ_COM_SOURCES_"
 my_campaign = uq.Campaign(name=campaign_name, work_dir=tmp_dir)
 
 # Create new directory for inputs (to be ended with /)
@@ -140,21 +149,39 @@ my_campaign.add_app(name=campaign_name,
 # Create the sampler
 print('>>> Create the sampler')
 my_sampler = uq.sampling.PCESampler(vary=vary,
-                                    polynomial_order=2,
-                                    quadrature_rule='G',
-                                    sparse=False)
+                                    regression=True)
 my_campaign.set_sampler(my_sampler)
 
 # Will draw all (of the finite set of samples)
 print('>>> Draw Samples')
 my_campaign.draw_samples()
 
-print('>>> Populate runs_dir')
-my_campaign.populate_runs_dir()
+print(">>> Starting PJ execution")
+time0 = time.time()
 
-print('>>> Execute workflow code')
-exec_path = os.path.join(obj_dir, exec_code)
-my_campaign.apply_for_each_run_dir(uq.actions.ExecuteLocal(exec_path))
+qcgpjexec = easypj.Executor()
+qcgpjexec.create_manager(dir=my_campaign.campaign_dir)
+
+qcgpjexec.add_task(Task(
+    TaskType.ENCODING,
+    TaskRequirements(cores=Resources(exact=1))
+))
+
+qcgpjexec.add_task(Task(
+    TaskType.EXECUTION,
+    TaskRequirements(cores=Resources(exact=1)),
+    application=exec_path
+))
+
+qcgpjexec.run(
+    campaign=my_campaign,
+    submit_order=SubmitOrder.RUN_ORIENTED
+)
+
+qcgpjexec.terminate_manager()
+
+time1 = time.time()
+print('>>> PJ Ellapsed time: ', time1 - time0)
 
 print('>>> Collate')
 my_campaign.collate()
@@ -227,7 +254,7 @@ if __SAVE_DB:
 # Plots STAT and SA
 __PLOTS = True
 if __PLOTS:
-    from utils import plots
+    from mfw.utils import plots
     uparams_names = list(params.keys())
 
     plots.plot_stats_pctl(rho, stat_te, pctl_te,
@@ -248,4 +275,4 @@ if __PLOTS:
                       ftitle=' Total-Order Sobol indices - QoI: Ti',
                      fname='outputs/plots/Ti_SA_'+test_case+test_case)
 
-print('>>> UQ-Workflow Sources: END')
+print('>>> UQ Workflow Sources: END')

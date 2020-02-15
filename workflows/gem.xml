@@ -37,7 +37,7 @@
    <step_parameters>
      <step_counts>
        <nstep> 100 </nstep>
-       <ndg> 25 </ndg>
+       <ndg> 50 </ndg>
        <nplot> 1 </nplot>
      </step_counts>
      <time_step>
