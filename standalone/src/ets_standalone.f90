@@ -291,7 +291,7 @@ contains
                   write(*,"('Inner dt=',F15.12,' max deviation Te=',F6.2,'% and dTe=',F6.2,'%')") tau/REAL(inner_steps_cur),Te_dev*100,dTe_dev*100
                   write(*,"('Te_frac = ',100(F6.2))") Te_frac
                   write(*,"('dTe_frac = ',100(F6.2))") dTe_frac
-  # 444
+  !# 444
 
                   STOP
                endif
@@ -596,7 +596,7 @@ contains
              endif
              call copy_cpo(coret_ext(1),coret_old(1))
           endif
-# 325
+!# 325
 
           CALL INTERPOLATE_TRANSP(NRHO, NION, corep_old(1)%rho_tor, &
                coret_ext(1), coret_work(1))
@@ -647,7 +647,7 @@ contains
     coret_work(1)%values(1)%sigma = coret_sigma(1)%values(1)%sigma
 
 
-# 379
+!# 379
 !    call open_write_file(30,"ets_coretransp-work_in_"//cptstr//".cpo")
 !    call write_cpo(coret_work(1),'coretransp')
 !    call close_write_file
@@ -710,7 +710,7 @@ contains
                 write(*,"('Inner dt=',F15.12,' max deviation Te=',F6.2,'% and dTe=',F6.2,'%')") tau/REAL(inner_steps_cur),Te_dev*100,dTe_dev*100
                 write(*,"('Te_frac = ',100(F6.2))") Te_frac
                 write(*,"('dTe_frac = ',100(F6.2))") dTe_frac
-# 444
+!# 444
 
                 STOP
              endif

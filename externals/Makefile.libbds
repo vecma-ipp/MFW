@@ -16,7 +16,11 @@ INCLUDES = -I${INCDIR} -I${INC_UAL} -I${INC_TYPES} -I${INC_CONSTANTS} \
 	${FFTW_INC}
 
 ifeq (,$(findstring -r8,$(FC90FLAGS)))
-  FC90FLAGS += -r8
+ifeq ($(SYS),DEFAULT) 
+  FC90FLAGS += -k8
+else  
+	FC90FLAGS += -r8
+endif
 endif
 
 FC90FLAGS += ${INCLUDES} ${MODSPEC}${INCDIR} 

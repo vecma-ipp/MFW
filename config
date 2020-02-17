@@ -9,8 +9,9 @@ export CC = gcc
 export CCFLAGS = -g -fPIC 
 export CXX = g++
 export CXXFLAGS = -g -fPIC 
-export FC90= gfortran
-export FC90FLAGS = -g -fPIC -fdefault-real-8 -fdefault-double-8 -ffree-line-length-none
+export FC90 = gfortran
+#export FC90FLAGS = -g -cpp -fPIC -ffree-line-length-none #-fdefault-real-8 -fdefault-double-8
+export FC90FLAGS = -g -cpp -Wall -fbacktrace -ffree-line-length-none -fcheck=all
 export FC77 = gfortran
 export FC77FLAGS = ${FC90FLAGS}
 export MPIF90 = mpif90
@@ -25,15 +26,23 @@ export FPPGEM = -DMPI -DMPI_REAL=MPI_DOUBLE_PRECISION \
 
 export MODSPEC = -J
 
-export LIBLAPACK = /usr/local/lib/liblapack.a /usr/local/lib/blas_LINUX.a
+#export LIBLAPACK = /usr/local/lib/liblapack.a /usr/local/lib/blas_LINUX.a
+export LIBLAPACK = /usr/lib/x86_64-linux-gnu/liblapack.a /usr/lib/x86_64-linux-gnu/blas/libblas.a
 
-export FFTW_INC = -I/usr/local/include
-export FFTW_LIB = -L/usr/local/lib -lfftw3
+#export FFTW_INC = -I/usr/local/include
+export FFTW_INC = -I/usr/include
+
+#export FFTW_LIB = -L/usr/local/lib -lfftw3
+export FFTW_LIB = -L/usr/lib -lfftw3
+
 #export FFTW_LD = /usr/local/lib/libfftw3.a
 
 export MUSCLE_HOME = /opt/muscle
-endif
 
+# Chease
+export CHEASE_F90 = gfortran
+
+endif
 
 
 ##########################################################################################

@@ -19,6 +19,14 @@ ifneq (${MAINMAKE},yes)
  include ../config
 endif
 
+# Additional Flags for sources_standalone and test
+ifeq (${SYS},DEFAULT)
+	# GCC: gfortran and mpif90
+export FC90FLAGS_SOURCES = -fbacktrace -fcheck=all -fstack-check
+else
+	# Intel: ifort and mpifort
+export FC90FLAGS_SOURCES = -traceback -check all -fp-stack-check
+endif
 
 #.SUFFIXES:
 #.SUFFIXES: obj/.o .f90 .F90
@@ -109,7 +117,7 @@ BOHMGB_O = ${SHARED_O} ${OBJDIR}/bohmgb_standalone.o
 GEM0_O = ${SHARED_O} ${OBJDIR}/gem0_standalone.o
 GEM_O = ${SHARED_O} ${OBJDIR}/gem_standalone.o
 
-TESTS =  ETS_TEST EQUILUPDATE_TEST CHEASE_TEST EQ_TEST IMP4DV_TEST SOURCES_TEST BOHMGB_TEST GEM0_TEST ROP_TEST GEM_TEST
+TESTS =  ETS_TEST EQUILUPDATE_TEST CHEASE_TEST EQ_TEST IMP4DV_TEST SOURCES_TEST BOHMGB_TEST GEM0_TEST ROP_TEST 
 LOOP_TEST = LOOP_BGB LOOP_GEM0
 
 ETS_EXE = ${BINDIR}/ets_test
@@ -129,8 +137,11 @@ ROP_EXE = ${BINDIR}/rop_test
 
 
 ### Rules ######################################################################
-
+ifeq (${SYS},DEFAULT)
 all: ${SYS} ${TESTS} ${LOOP_TEST}
+else
+all: ${SYS} ${TESTS} ${LOOP_TEST} ${GEM_TEST}
+endif
 
 
 ${OBJDIR}/%.o: %.f90
@@ -145,7 +156,7 @@ ${OBJDIR}/%.o: %.c
 ###  EXECUTABLES #################################################################
 
 ETS_TEST: ${SHARED_O} ${ETS_O} ${OBJDIR}/ets_test.o
-	$(MPIF90) -o  ${ETS_EXE} $^ -L${ETS} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_XML} -L${LIB_UAL} -lets -lbds -lxmllib -litmconstants -litmtypes -lual ${LDFLAGS} ${LIBLAPACK}
+	$(FC90) -o  ${ETS_EXE} $^ -L${ETS} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_XML} -L${LIB_UAL} -lets -lbds -lxmllib -litmconstants -litmtypes -lual ${LDFLAGS} ${LIBLAPACK}
 
 EQUILUPDATE_TEST:${SHARED_O} ${EQUILUPDATE_O} ${OBJDIR}/equilupdate_test.o
 	$(LD) -o ${EQUILUPDATE_EXE} $^ -L${ETS} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_UAL} -lets -lbds -litmconstants -litmtypes -lual ${LDFLAGS} ${LIBLAPACK}
@@ -190,7 +201,6 @@ ${SYS}:
 
 clean:
 	rm -f src/*~  *~ 
-	rm -f ${ETS_EXE} 
 	rm -rf ${OBJDIR} ${INCDIR} ${BINDIR} 
 
 
@@ -208,13 +218,13 @@ ${OBJDIR}/string_binding.o: src/tools/string_binding.f90
 #	${MPIF90} -o $@ -c $< $(FC90FLAGS) -traceback -check all -fp-stack-check -I${MKL_LIB} 
 
 ${OBJDIR}/ets_standalone.o: src/ets_standalone.f90
-	${MPIF90} -o $@ -c $< $(FC90FLAGS) -I${ETS} -I${INC_CONSTANTS} -I${INC_TYPES} -I${INC_XML} 
+	${FC90} -o $@ -c $< $(FC90FLAGS) -I${ETS} -I${INC_CONSTANTS} -I${INC_TYPES} -I${INC_XML} 
 
 ${OBJDIR}/ets_test.o: src/ets_test.f90
-	${MPIF90} -o $@ -c $< $(MPIFLAGS) -I${INC_TYPES}  
+	${FC90} -o $@ -c $< $(FC90FLAGS) -I${INC_TYPES}  
 
 ${OBJDIR}/equilupdate_standalone.o: src/equilupdate_standalone.f90
-	${FC90} -o $@ -c $< $(FC90FLAGS) -I${ETS} -I${INC_CONSTANTS} -I${INC_TYPES} 
+	${MPIF90} -o $@ -c $< $(MPIFLAGS) -I${ETS} -I${INC_CONSTANTS} -I${INC_TYPES} 
 
 ${OBJDIR}/equilupdate_test.o: src/equilupdate_test.f90
 	${MPIF90} -o $@ -c $< $(MPIFLAGS) -I${INC_TYPES}  
@@ -235,10 +245,10 @@ ${OBJDIR}/imp4dv_test.o: src/imp4dv_test.f90
 	${FC90} -o $@ -c $< $(FC90FLAGS) -I${INC_BDS}  
 
 ${OBJDIR}/sources_standalone.o: src/sources_standalone.f90
-	${FC90} -o $@ -c $< $(FC90FLAGS) -traceback -check all -fp-stack-check -I${ETS} -I${INC_XML} -I${INC_CONSTANTS} -I${INC_TYPES} 
+	${FC90} -o $@ -c $< $(FC90FLAGS) $(FC90FLAGS_SOURCES) -I${ETS} -I${INC_XML} -I${INC_CONSTANTS} -I${INC_TYPES} 
 
 ${OBJDIR}/sources_test.o: src/sources_test.f90
-	${MPIF90} -o $@ -c $< $(MPIFLAGS) -traceback -check all -fp-stack-check -I${ETS} -I${INC_TYPES} 
+	${FC90} -o $@ -c $< $(FC90FLAGS) $(FC90FLAGS_SOURCES) -I${ETS} -I${INC_TYPES} 
 
 ${OBJDIR}/bohmgb_standalone.o: src/bohmgb_standalone.f90
 	${FC90} -o $@ -c $< $(FC90FLAGS) -I${INC_BDS} -I${INC_XML} 

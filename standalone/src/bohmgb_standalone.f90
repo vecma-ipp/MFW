@@ -48,7 +48,7 @@ contains
 !**********   customisation on flux tube locations   **********
 !**********    and CPO field values interpolation    **********
 
-    if (cus_ftubes == .true.) then
+    if (cus_ftubes .eqv. .true.) then
        print *,"customise the placement of the flux tubes"
 
        nrhotor = size(coret(1)%values(1)%rho_tor)
