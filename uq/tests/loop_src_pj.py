@@ -3,22 +3,23 @@ import time
 import easyvvuq as uq
 from ascii_cpo import read
 from mfw.utils import xml_io
-from mfwtemplates.xml_encoder import XMLEncoder
+from mfw.templates.xml_encoder import XMLEncoder
 from mfw.templates.cpo_decoder import CPODecoder
 # GCG-PJ wrapper
 import easypj
 from easypj import TaskRequirements, Resources
 from easypj import Task, TaskType, SubmitOrder
 
+
 '''
 Perform UQ for the workflow Transport-Equilibrium-Turblence.
 Uncertainties are driven by:
     External sources of Electrons or/and Ions heating.
-Method: Non intrusive (UQP1) with PCE.
+Method: Non intrusive with PCE.
 Sampling and execution with QCG-Pilot Job
 '''
 
-print('>>> UQ Workflow Sources: START')
+print('>>> UQ Workflow Sources w/ PJ: START')
 
 # OS env
 SYS = os.environ['SYS']
@@ -27,15 +28,15 @@ SYS = os.environ['SYS']
 tmp_dir = os.environ['SCRATCH']
 
 # CPO files (and restart data)
-#cpo_dir = os.path.abspath("../workflows/AUG_28906_6")
-cpo_dir = os.path.abspath("../workflows/JET_92436_23066")
+cpo_dir = os.path.abspath("../workflows/AUG_28906_6")
+#cpo_dir = os.path.abspath("../workflows/JET_92436_23066")
 
 # XML and XSD files
 xml_dir = os.path.abspath("../workflows")
 
 # The execuatble model code
 obj_dir = os.path.abspath("../standalone/bin/"+SYS)
-exec_code = "loop_bgb"
+exec_code = "loop_gem0"
 exec_path = os.path.join(obj_dir, exec_code)
 
 # Define the uncertain parameters
@@ -50,12 +51,13 @@ elec_params = {
         "type": "float",
         "distribution": "Uniform",
         "margin_error": 0.2,
-    },
-    "width_el":{
-        "type": "float",
-        "distribution": "Uniform",
-        "margin_error": 0.2,
     }
+#    ,
+#    "width_el":{
+#        "type": "float",
+#        "distribution": "Uniform",
+#        "margin_error": 0.2,
+#    }
 }
 
 ions_params = {
@@ -81,7 +83,7 @@ ions_params = {
 # or merge them using:
 uncertain_params = {}
 uncertain_params.update(elec_params)
-uncertain_params.update(ions_params)
+#uncertain_params.update(ions_params)
 
 # XML file containg initiail values of uncertain params
 input_filename = "source_dummy.xml"
@@ -96,7 +98,7 @@ params, vary = xml_io.get_inputs(dirname=xml_dir, filename=input_filename,
 
 # Initialize Campaign object
 print('>>> Initialize Campaign object')
-campaign_name = "UQ_COM_SOURCES_"
+campaign_name = "UQ_ELS_"
 my_campaign = uq.Campaign(name=campaign_name, work_dir=tmp_dir)
 
 # Create new directory for inputs (to be ended with /)
@@ -116,8 +118,8 @@ os.system("cp " + xml_dir + "/ets.xml "    + common_dir)
 os.system("cp " + xml_dir + "/ets.xsd "    + common_dir)
 os.system("cp " + xml_dir + "/chease.xml " + common_dir)
 os.system("cp " + xml_dir + "/chease.xsd " + common_dir)
-os.system("cp " + xml_dir + "/bohmgb.xml " + common_dir)
-os.system("cp " + xml_dir + "/bohmgb.xsd " + common_dir)
+os.system("cp " + xml_dir + "/gem0.xml " + common_dir)
+os.system("cp " + xml_dir + "/gem0.xsd " + common_dir)
 os.system("cp " + xml_dir + "/source_dummy.xml " + common_dir)
 os.system("cp " + xml_dir + "/source_dummy.xsd " + common_dir)
 
@@ -158,7 +160,7 @@ print(">>> Starting PJ execution")
 time0 = time.time()
 
 qcgpjexec = easypj.Executor()
-qcgpjexec.create_manager(dir=my_campaign.campaign_dir)
+qcgpjexec.create_manager(dir=my_campaign.campaign_dir, log_level='debug')
 
 qcgpjexec.add_task(Task(
     TaskType.ENCODING,
@@ -212,7 +214,7 @@ rho = corep.rho_tor_norm
 test_case = cpo_dir.split('/')[-1]
 
 # Save STAST into the csv file
-__SAVE_CSV = True
+__SAVE_CSV = False
 if __SAVE_CSV:
     import numpy as np
 
@@ -258,19 +260,19 @@ if __PLOTS:
     plots.plot_stats_pctl(rho, stat_te, pctl_te,
                      xlabel=r'$\rho_{tor} ~ [m]$', ylabel=r'$Te$',
                      ftitle='Te profile',
-                     fname='outputs/plots/Te_STAT_'+test_case+test_case)
+                     fname='outputs/Te_STAT_'+test_case+test_case)
 
     plots.plot_sobols_all(rho, sobt_te, uparams_names,
                       ftitle=' Total-Order Sobol indices - QoI: Te',
-                      fname='outputs/plots/Te_SA_'+test_case+test_case)
+                      fname='outputs/Te_SA_'+test_case+test_case)
 
     plots.plot_stats_pctl(rho, stat_ti, pctl_ti,
                      xlabel=r'$\rho_{tor} ~ [m]$', ylabel=r'$T_i [eV]$',
                      ftitle='Ti profile',
-                     fname='outputs/plots/Ti_STAT_'+test_case+test_case)
+                     fname='outputs/Ti_STAT_'+test_case+test_case)
 
     plots.plot_sobols_all(rho, sobt_ti, uparams_names,
                       ftitle=' Total-Order Sobol indices - QoI: Ti',
-                     fname='outputs/plots/Ti_SA_'+test_case+test_case)
+                     fname='outputs/Ti_SA_'+test_case+test_case)
 
-print('>>> UQ Workflow Sources: END')
+print('>>> UQ Workflow Sources w/PJ: END')

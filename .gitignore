@@ -21,6 +21,7 @@ ual/constants/*.o
 ual/types/*.o
 ual/include
 ual/lib
+ual/usr
 
 standalone/bin
 standalone/lib
@@ -45,3 +46,4 @@ uq/outputs/*.csv
 uq/outputs/*.db
 uq/outputs/*.db
 uq/run-*.sh
+uq/log-*
