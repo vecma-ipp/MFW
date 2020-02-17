@@ -1,10 +1,9 @@
 import os
-import sys
 import easyvvuq as uq
 from ascii_cpo import read
-from utils import cpo_io
-from templates.cpo_encoder import CPOEncoder
-from templates.cpo_decoder import CPODecoder
+from mfw.utils import cpo_io
+from mfw.templates.cpo_encoder import CPOEncoder
+from mfw.templates.cpo_decoder import CPODecoder
 
 
 '''
@@ -100,10 +99,7 @@ my_campaign.add_app(name=campaign_name,
 
 # Create the sampler
 print('>>> Create the sampler')
-my_sampler = uq.sampling.PCESampler(vary=vary,
-                                    polynomial_order=4,
-                                    quadrature_rule='G',
-                                    sparse=False)
+my_sampler = uq.sampling.PCESampler(vary=vary, polynomial_order=3)
 my_campaign.set_sampler(my_sampler)
 
 # Will draw all (of the finite set of samples)

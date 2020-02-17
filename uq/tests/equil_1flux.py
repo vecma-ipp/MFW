@@ -1,6 +1,4 @@
-# -*- coding: UTF-8 -*-
 import os
-import sys
 import easyvvuq as uq
 from ascii_cpo import read
 from mfw.utils import cpo_io

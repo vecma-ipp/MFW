@@ -1,5 +1,4 @@
 import os
-import sys
 import time
 import easyvvuq as uq
 from ascii_cpo import read

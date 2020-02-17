@@ -1,7 +1,7 @@
 #!/bin/bash -l
 
 ## job name
-#SBATCH --job-name=ets_uq
+#SBATCH --job-name=mfw_uq
 
 ## stdout and stderr files
 #SBATCH --output=logs/test.out.%j
@@ -25,5 +25,4 @@ export LD_LIBRARY_PATH=${FFTW_HOME}/lib:${LD_LIBRARY_PATH}
 export MPICMD=srun
 
 # Run the program in uq folder
-#python boundaries_PJ.py > logs/test.log.${SLURM_JOBID}
 python sources_PJ.py > logs/test.log.${SLURM_JOBID}

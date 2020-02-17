@@ -1,14 +1,12 @@
 import os
 import time
-
 import easyvvuq as uq
-
 from ascii_cpo import read
 from mfw.utils import xml_io, cpo_io
 from mfw.templates.xml_encoder import XMLEncoder
 from mfw.templates.cpo_encoder import CPOEncoder
 from mfw.templates.cpo_decoder import CPODecoder
-
+# GCG-PJ wrapper
 import easypj
 from easypj import TaskRequirements, Resources
 from easypj import Task, TaskType, SubmitOrder

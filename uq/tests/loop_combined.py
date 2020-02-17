@@ -1,5 +1,5 @@
 import os
-import sys
+import time
 import easyvvuq as uq
 from ascii_cpo import read
 from utils import xml_io, cpo_io
