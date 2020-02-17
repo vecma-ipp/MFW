@@ -11,6 +11,7 @@ import easypj
 from easypj import TaskRequirements, Resources
 from easypj import Task, TaskType, SubmitOrder
 
+
 '''
 Perform UQ for the workflow Transport-Equilibrium-Turblence.
 Uncertainties are driven by:
@@ -21,7 +22,7 @@ Method: Non intrusive (UQP1) with PCE.
 Sampling and execution with QCG-Pilot Job
 '''
 
-print('>>> UQ-Workflow Combined: START')
+print('>>> UQ-Workflow Combined (w/ PJ): START')
 
 # OS env
 SYS = os.environ['SYS']
@@ -146,7 +147,7 @@ my_campaign.add_app(name=campaign_name,
 # Create the sampler
 print('>>> Create the sampler')
 my_sampler = uq.sampling.PCESampler(vary=vary,
-                                    polynomial_order=3,
+                                    polynomial_order=4,
                                     regression=True)
 my_campaign.set_sampler(my_sampler)
 
@@ -235,4 +236,4 @@ if __PLOTS:
                       ftitle=' Total-Order Sobol indices - QoI: Ti',
                       fname='outputs/Ti_SA_'+test_case+test_case)
 
-print('>>> UQ-Workflow Combined: END')
+print('>>> UQ-Workflow Combined (w/ PJ): END')

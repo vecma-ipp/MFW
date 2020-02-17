@@ -43,7 +43,5 @@ uq/outputs/plots/*.png
 uq/outputs/*.png
 uq/outputs/*.csv
 uq/outputs/*.db
-
-uq/outputs/*.csv
 uq/outputs/*.db
-uq/*-job.sh
+uq/run-*.sh

@@ -19,4 +19,4 @@
 #SBATCH --time=6:00:00
 
 # Run the program in uq folder
-python tests/sources_PJ.py > logs/test.log.${SLURM_JOBID}
+python3 tests/loop_combined.py > test-log.${SLURM_JOBID}

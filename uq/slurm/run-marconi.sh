@@ -7,13 +7,19 @@
 #SBATCH --partition=skl_fua_prod          # partition to be used
 ###SBATCH --qos=                          # quality of service
 #SBATCH --job-name=MFW                    # job name
-#SBATCH --err=test-%j.err                 # std-error file
-#SBATCH --out=test-%j.out                 # std-output file
+#SBATCH --err=test-err.%j                 # std-error file
+#SBATCH --out=test-out.%j                 # std-output file
 #SBATCH --account=FUA33_UQMWA 			      # account number
 #SBATCH --mail-type=END				            # specify email notification
 #SBATCH --mail-user=ljala@ipp.mpg.de	    # e-mail address
 
 export SYS=MARCONI
-export MPICMD="mpirun -n 1"
+export MPICMD=mpirun
+export SCRATCH=$CINECA_SCRATCH 
 
-python3 test_combined.py > outputs/logs/test.log.${SLURM_JOBID}
+# For QCG-PilotJob usage
+ENCODER_MODULES="mfw.templates.cpo_encoder;mfw.templates.xml_encoder"
+export ENCODER_MODULES
+export EASYPJ_CONFIG=conf.sh
+
+python3 tests/loop_combined_pj.py > test-log.${SLURM_JOBID}
