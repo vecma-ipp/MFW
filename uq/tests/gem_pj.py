@@ -51,17 +51,18 @@ uncertain_params = {
         "type": "float",
         "distribution": "Normal",
         "margin_error": 0.2,
-    },
-    "Te_grad": {
-        "type": "float",
-        "distribution": "Normal",
-        "margin_error": 0.2,
-    },
-    "Ti_grad": {
-        "type": "float",
-        "distribution": "Normal",
-        "margin_error": 0.2,
     }
+#    ,
+#    "Te_grad": {
+#        "type": "float",
+#        "distribution": "Normal",
+#        "margin_error": 0.2,
+#    },
+#    "Ti_grad": {
+#        "type": "float",
+#        "distribution": "Normal",
+#        "margin_error": 0.2,
+#    }
 }
 # CPO file containg initial values of uncertain params
 input_filename = "gem_coreprof_in.cpo"
@@ -146,7 +147,7 @@ qcgpjexec.add_task(Task(
 
 qcgpjexec.add_task(Task(
     TaskType.EXECUTION,
-    TaskRequirements(cores=Resources(exact=16)),
+    TaskRequirements(cores=Resources(exact=8)),
     application=mpi_instance + " " + exec_path
 ))
 
