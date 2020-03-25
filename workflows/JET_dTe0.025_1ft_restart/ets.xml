@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+
+<?xml-stylesheet type="text/xsl" href="./ets.xsl" charset="ISO-8859-1"?>
+
+<parameters>
+  <dims>
+  </dims>
+
+  <solver>
+    <ohmic_heating_multiplier> 0.0 </ohmic_heating_multiplier> <!-- switch off ohmic heating -->
+  </solver>
+
+  <boundary>
+  </boundary>
+
+</parameters>
