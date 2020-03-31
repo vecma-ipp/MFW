@@ -1,0 +1,21 @@
+This directory contains in/output files 
+
+input files:
+
+1) *.xml and *.xsd of ETS, CHEASE, and GEM
+
+These files were obtained from running JET_92436_23066 in the MFW (ETS-CHEASE-GEM-IMP4DV):
+
+first 300 ETS time steps (TAU=1e-2) 
+coreprof%ti%boundary%type = 0
+coreprof%te%boundary%type = 0
+
+time step 301-3000 (TAU varies)
+limit_te_deviation = 0.1, limit_dte_deviation = 0.025
+coreprof%ti%boundary%type = 1
+coreprof%te%boundary%type = 1
+
+output files:
+
+1) t*.dat
+2) *in.cpo

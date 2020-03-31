@@ -1,0 +1,188 @@
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <!-- document element -->
+  <xs:element name="parameters">				
+    <xs:annotation>
+      <xs:documentation>
+        GLOBAL: parameters for ets
+      </xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:all>
+        <xs:element ref="dims" maxOccurs="1"/>
+        <xs:element ref="solver" maxOccurs="1"/>
+        <xs:element ref="boundary" maxOccurs="1"/>
+      </xs:all>
+    </xs:complexType>
+  </xs:element>
+
+  <!-- dims parameters -->
+  <xs:element name="dims">					
+    <xs:annotation>
+      <xs:documentation>
+        BLOCK: specify the dimensions
+      </xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:all>
+         <xs:element ref="nrho" maxOccurs="1"/>
+         <xs:element ref="nion" maxOccurs="1"/>
+         <xs:element ref="nimp" maxOccurs="1"/>
+         <xs:element ref="max_nzimp" maxOccurs="1"/>
+      </xs:all>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="nrho" type="xs:integer">			
+    <xs:annotation>
+      <xs:documentation>
+        NRHO,  number of radial points
+      </xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:element name="nion" type="xs:integer">			
+    <xs:annotation>
+      <xs:documentation>
+        NION,  number of ions
+      </xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:element name="nimp" type="xs:integer">			
+    <xs:annotation>
+      <xs:documentation>
+        NIMP,  number of impurity types
+      </xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:element name="max_nzimp" type="xs:integer">		
+    <xs:annotation>
+      <xs:documentation>
+        MAX_NZIMP, number of impurity ionisation states
+      </xs:documentation>
+    </xs:annotation>
+  </xs:element>
+
+  <!-- solver parameters -->
+  <xs:element name="solver">					
+    <xs:annotation>
+      <xs:documentation>
+        BLOCK: specify parameters for the solver
+      </xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:all>
+        <xs:element ref="rhon" maxOccurs="1"/>
+        <xs:element ref="solver_type" maxOccurs="1"/>
+        <xs:element ref="sigma_source" maxOccurs="1"/>
+        <xs:element ref="amix" maxOccurs="1"/>
+        <xs:element ref="amixtr" maxOccurs="1"/>
+        <xs:element ref="debug_level" maxOccurs="1"/>
+        <xs:element ref="ohmic_heating_multiplier" maxOccurs="1"/>
+      </xs:all>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="rhon" type="xs:float">
+    <xs:annotation>
+      <xs:documentation>
+        boundary value of rho
+      </xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:element name="solver_type" type="xs:integer">		
+    <xs:annotation>
+      <xs:documentation>
+        choice of numerical solver
+      </xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:element name="sigma_source" type="xs:integer">		
+    <xs:annotation>
+      <xs:documentation>
+        option for origin of Plasma electrical conductivity: 0: plasma collisions; 1: transport module; 2: source module
+      </xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:element name="amix" type="xs:float">			
+    <xs:annotation>
+      <xs:documentation>
+        AMIX, mixing factor
+      </xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:element name="amixtr" type="xs:float">			
+    <xs:annotation>
+      <xs:documentation>
+        AMIXTR, mixing factor for profiles
+      </xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:element name="debug_level" type="xs:integer">		
+    <xs:annotation>
+      <xs:documentation>
+        debug level
+      </xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:element name="ohmic_heating_multiplier" type="xs:float">			
+    <xs:annotation>
+      <xs:documentation>
+        multiplier for ohmic heating
+      </xs:documentation>
+    </xs:annotation>
+  </xs:element>
+
+  <!-- boundary parameters -->
+  <xs:element name="boundary">					
+    <xs:annotation>
+      <xs:documentation>
+        BLOCK: specify parameters for the boundary condition
+      </xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:all>
+        <xs:element ref="psi_bnd_type" maxOccurs="1"/>
+        <xs:element ref="ni_bnd_type" maxOccurs="1"/>
+        <xs:element ref="ti_bnd_type" maxOccurs="1"/>
+        <xs:element ref="te_bnd_type" maxOccurs="1"/>
+        <xs:element ref="vtor_bnd_type" maxOccurs="1"/>
+      </xs:all>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="psi_bnd_type" type="xs:integer">		
+    <xs:annotation>
+      <xs:documentation>
+        Type of boundary conditions CURRENT
+      </xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:element name="ni_bnd_type" type="xs:integer">		
+    <xs:annotation>
+      <xs:documentation>
+        Type of boundary conditions ION DENSITY
+      </xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:element name="ti_bnd_type" type="xs:integer">		
+    <xs:annotation>
+      <xs:documentation>
+        Type of boundary conditions ION TEMPERATURE
+      </xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:element name="te_bnd_type" type="xs:integer">		
+    <xs:annotation>
+      <xs:documentation>
+        Type of boundary conditions ELECTRON TEMPERATURE
+      </xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:element name="vtor_bnd_type" type="xs:integer">		
+    <xs:annotation>
+      <xs:documentation>
+        Type of boundary conditions ROTATION
+      </xs:documentation>
+    </xs:annotation>
+  </xs:element>
+
+</xs:schema>
