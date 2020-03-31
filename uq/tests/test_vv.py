@@ -9,7 +9,7 @@ from mfw.utils.statistics import Split_Normal, Assymetric_Normal
 
 # Experimental data in csv format containing:
 # rho_toroidal,Data,Lower,Upper
-exp_filename = os.path.abspath("exp_data/36297_4000_Te.csv")
+exp_filename = os.path.abspath("exp_data/36266_4000_Te.csv")
 scale = 1000.
 
 # Read and extract experimental data
@@ -34,12 +34,24 @@ up = interp1d(rho_exp, up_exp, kind="cubic")
 # Create probability distribution
 dist_exp_1 = []
 dist_exp_2 = []
-
+s1 = []
+s2 = []
+mall = []
+uall = []
+loll = []
+xe = []
 for i in range(ngrid):
     m = mid(rho[i])
     l = lo(rho[i])
     u = up(rho[i])
-    # using asymetric Gaussian
-    dist_exp_1.append(Assymetric_Normal(mu=m, sig1=l, sig2=u))
-    # using two-piece Gaussian
-    dist_exp_2.append(Split_Normal(mode=m, sig1=l, sig2=u))
+    mall.append(m)
+    loll.append(l)
+    uall.append(u)
+    x = np.linspace(m-4.*l, m+4.*u, 1e4)
+    xe.append(x)
+    p1 = Assymetric_Normal(mu=m, sig1=l, sig2=u)
+    p2 = Split_Normal(mode=m, sig1=l, sig2=u)
+    s1.append(p1.pdf(x))
+    s2.append(p2.pdf(x))
+    dist_exp_1.append(p1)
+    dist_exp_2.append(p2)
