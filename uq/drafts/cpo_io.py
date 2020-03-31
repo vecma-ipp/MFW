@@ -5,7 +5,7 @@ from .statistics import get_dist
 from .cpo_tools import update_te, update_ti, update_te_grad, update_ti_grad
 
 
-''' To be improved: cf. UAL module and do it generic
+''' To be improved: cf. UAL module and do it in generic way
 '''
 
 # Get the initial value of the given params
@@ -13,39 +13,46 @@ def get_parameters(cpo_core, flux_index):
     params_mapper={}
 
     if cpo_core.base_path == "coreprof":
-        coreprof_params = {
-            "Te_boundary" : cpo_core.te.boundary.value[0],
-            "Ti_boundary" : cpo_core.ti.boundary.value[0][0],
-            "Te" : cpo_core.te.value[flux_index],
-            "Ti" : cpo_core.ti.value[flux_index][0],
-            "Te_grad" : cpo_core.te.ddrho[flux_index],
-            "Ti_grad" : cpo_core.ti.ddrho[flux_index][0]
+        corep_params = {
+            "te_boundary" : cpo_core.te.boundary.value[0],
+            "ti_boundary" : cpo_core.ti.boundary.value[0][0],
+            "te" : cpo_core.te.value[flux_index],
+            "ti" : cpo_core.ti.value[flux_index][0],
+            "te_grad" : cpo_core.te.ddrho[flux_index],
+            "ti_grad" : cpo_core.ti.ddrho[flux_index][0]
         }
-        params_mapper.update(coreprof_params)
+        params_mapper.update(corep_params)
+
+    if cpo_core.base_path == "coretransp":
+        coret_params = {
+            "te_transp_diff_eff": cpo_core.values[0].te_transp.diff_eff,
+            "ti_transp_diff_eff": cpo_core.values[0].ti_transp.diff_eff[0]
+        }
+        params_mapper.update(coret_params)
 
     return params_mapper
 
 # Set the given value of the input params
 def set_parameters(cpo_core, param, value, flux_index=0):
         # Boundary conditions
-        if param=="Te_boundary":
+        if param=="te_boundary":
             cpo_core.te.boundary.value[0] = value
-        if param=="Ti_boundary":
+        if param=="ti_boundary":
             cpo_core.ti.boundary.value[0][0] = value
             # In case of two ions species
             if len(cpo_core.ti.boundary.value[0]) == 2:
                 cpo_core.ti.boundary.value[0][1] = value
         # Temperature at given flux index
-        if param=="Te":
+        if param=="te":
             cpo_core.te.value[flux_index] = value
             update_te(cpo_core, value, flux_index)
-        if param=="Ti":
+        if param=="ti":
             cpo_core.ti.value[flux_index][0] = value
             update_ti(cpo_core, value, flux_index)
-        if param=="Te_grad":
+        if param=="te_grad":
             cpo_core.te.ddrho[flux_index] = value
             update_te_grad(cpo_core, value, flux_index)
-        if param=="Ti_grad":
+        if param=="ti_grad":
             cpo_core.ti.ddrho[flux_index][0] = value
             update_ti_grad(cpo_core, value, flux_index)
 
@@ -55,8 +62,12 @@ def get_qoi(cpo_core):
 
     if cpo_core.base_path == 'coreprof':
         coreprof_qoi = {
-            "Te": cpo_core.te.value,
-            "Ti": cpo_core.ti.value[:,0],
+            "te": cpo_core.te.value,
+            "ti": cpo_core.ti.value[:,0],
+            "ne": cpo_core.ne.value,
+            "ni": cpo_core.ni.value[:,0],
+            "psi": cpo_core.ne.value,
+            "q":  cpo_core.profiles1d.q
         }
         qoi_mapper.update(coreprof_qoi)
 
@@ -76,10 +87,10 @@ def get_qoi(cpo_core):
 
     if cpo_core.base_path == 'coretransp':
         coretransp_qoi = {
-            "Te_transp_D": cpo_core.values[0].te_transp.diff_eff,
-            "Ti_transp_D": cpo_core.values[0].ti_transp.diff_eff[0],
-            "Te_transp_flux": cpo_core.values[0].te_transp.flux,
-            "Ti_transp_flux": cpo_core.values[0].ti_transp.flux[:,0]
+            "te_transp_diff_eff": cpo_core.values[0].te_transp.diff_eff,
+            "ti_transp_diff_eff": cpo_core.values[0].ti_transp.diff_eff[0],
+            "te_transp_flux": cpo_core.values[0].te_transp.flux,
+            "ti_transp_flux": cpo_core.values[0].ti_transp.flux[:,0]
         }
         qoi_mapper.update(coretransp_qoi)
 
@@ -104,33 +115,45 @@ def get_cponame(filename):
     else:
         return cponame
 
+#
+def param2field(cpo, param):
+    stack = param.split(".")
+    field = cpo
+    for attr in stack:
+        field = getattr(field, attr)
+    return field
+
 # Returns dict for Campaign object and distribitions list for the Sampler
-# TODO add new get_inputs from list values
-def get_inputs(dirname, filename, config_dict, flux_index=0):
+def get_inputs(cpo_file, config_dict):
     # dirname: location of cpo file
     # filename: cpo file name
     # config_dict: containg uncertrain params
 
-    cpo_file = join(dirname, filename)
-    cpo_name = get_cponame(filename)
+    cpo_name = get_cponame(cpo_file)
     cpo_core = read(cpo_file, cpo_name)
 
-    mapper = get_parameters(cpo_core, flux_index)
     params = {}
     vary = {}
 
-    for k, d in config_dict.items():
-        # Get initial values, the mean and the type
-        val = mapper[k]
-        typ = d["type"]
+    for name, sub_dict in config_dict.items():
+        field = param2field(cpo_core, name)
+        typ = sub_dict["type"]
+        if typ == "scalar":
+            val = field.value[0]
+        elif typ == "vector":
+            val = field.value
+        else:
+            msg = "Wrong parameter type: " + typ
+            logging.error(msg)
+            raise RuntimeError(msg)
 
         # Build the probability distribution
-        dist_name = d["distribution"]
-        margin_error = d["margin_error"]
+        dist_name = sub_dict["dist"]
+        margin_error = sub_dict["moe"]
         dist = get_dist(dist_name, val, margin_error)
 
         # Update output dict
-        params.update({k: {"type": typ, "default": val}})
-        vary.update({k: dist})
+        params.update({field: {"type": typ, "default": val}})
+        vary.update({field: dist})
 
     return params, vary
