@@ -24,69 +24,77 @@ class CPOElement():
             raise RuntimeError(msg)
 
         self.filename = filename
+        self.cponame = cponame
         self.core = read(filename, cponame)
 
-    def get_value(self, param, index=0):
-        # param: the parameter name
-        # index: if return value is element of an array
+    def get_value(self, param, index=None):
+        # param: str the parameter name
+        # index: integer
 
         stack = param.split(".")
         field = self.core
+        if self.cponame == "coretransp":
+            field = self.core.values[0]
+
         for attr in stack:
             field = getattr(field, attr)
 
         if type(field).__base__ == ual.ualdef.KeepInOrder:
-            value = field.value
+            if hasattr(field, "value"):
+                value = field.value
+            else:
+                msg = "CPOElement.get_value check 'param' name"
+                logging.error(msg)
+                raise RuntimeError(msg)
         else:
             value = field
 
         if type(value) == np.ndarray:
-            value = value.flatten()
+            value = value.T
+            if index is not None:
+                value = value[index]
 
         return value
 
-    def set_value(self, param, value, index=0):
+    def set_value(self, param, value, index=None):
         # param: uncertain parameter or QoI name
+        #        example: "te.boundary"
         # value: the corresponding value to set
         # index: if value is element of an array
 
         stack = param.split(".")
         field = self.core
+        if self.cponame == "coretransp":
+            field = self.core.values[0]
+
         for attr in stack:
             field_base = field
             field = getattr(field, attr)
 
         if type(field).__base__ == ual.ualdef.KeepInOrder:
-            old_value = getattr(field, "value")
-            if type(old_value) == np.ndarray:
-                new_value = old_value
-                if len(np.shape(new_value)) == 1:
-                    if type(value) == np.ndarray:
-                        new_value[:] = value
+            if hasattr(field, "value"):
+                old_value = getattr(field, "value")
+                if type(old_value) == np.ndarray:
+                    if index is None:
+                        new_value = value
                     else:
+                        new_value = old_value
                         new_value[index] = value
+                    setattr(field, "value", new_value.T)
                 else:
-                    if type(value) == np.ndarray:
-                        new_value[:][0] = value
-                    else:
-                        new_value[index][0] = value
-            setattr(field, "value", new_value)
+                    setattr(field, "value", value)
+            else:
+                msg = "CPOElement.set_value check 'param' name"
+                logging.error(msg)
+                raise RuntimeError(msg)
 
         else:
             old_value = getattr(field_base, stack[-1])
             if type(old_value) == np.ndarray:
-                new_value = old_value
-                if len(np.shape(new_value)) == 1:
-                    if type(value) == np.ndarray:
-                        new_value[:] = value
-                    else:
-                        new_value[index] = value
-                else:
-                    if type(value) == np.ndarray:
-                        new_value[:][0] = value
-                    else:
-                        new_value[index][0] = value
-            setattr(field_base, stack[-1], new_value)
+                new_value = value.T
+                setattr(field_base, stack[-1], new_value)
+            else:
+                setattr(field_base, stack[-1], value)
 
     def save(self, filename):
         write(self.core, filename)
@@ -110,12 +118,6 @@ def get_inputs(cpo_file, cpo_name, input_params):
 
         # Build the probability distribution
         attr_type = attr["type"]
-        if attr_type == "float":
-            if type(value) == np.ndarray:
-               value = float(value[index])
-        else:
-            print("not yet implemented")
-
         dist_name = attr["dist"]
         margin_error = attr["err"]
         dist = get_dist(dist_name, value, margin_error)
