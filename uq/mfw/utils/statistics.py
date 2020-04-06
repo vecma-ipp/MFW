@@ -4,18 +4,37 @@ import chaospy as cp
 
 
 # Return cp.distribution
-def get_dist(dist_name, mean, margin_error):
+def get_dist(dist_name, value, margin_error):
 
     # list cp distrubutions here
     if dist_name.lower() == "normal":
-            dist = cp.Normal(mean, margin_error*mean)
+            if type(value) == list:
+                d = []
+                for v in value:
+                    d.append(cp.Normal(v, margin_error*v))
+                dist = cp.J(*d)
+            else:
+                dist = cp.Normal(value, margin_error*value)
 
     elif dist_name.lower() == "uniform":
-        lo = (1. - 0.5*margin_error)*mean
-        up = (1. + 0.5*margin_error)*mean
-        if mean == 0.:
-            up = margin_error
-        dist = cp.Uniform(lo, up)
+
+        if type(value) == list:
+            d = []
+            for v in value:
+                lo = (1. - 0.5*margin_error)*v
+                up = (1. + 0.5*margin_error)*v
+                if mean == 0.:
+                    up = margin_error
+
+                d.append(cp.Uniform(lo, up))
+            dist = cp.J(*d)
+        else:
+            lo = (1. - 0.5*margin_error)*value
+            up = (1. + 0.5*margin_error)*value
+            if mean == 0.:
+                up = margin_error
+
+            dist = cp.Uniform(lo, up)
 
     # TODO add all cp distributions
     else:

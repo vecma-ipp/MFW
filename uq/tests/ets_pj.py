@@ -1,10 +1,10 @@
 import os
-import time
 import easyvvuq as uq
 from ascii_cpo import read
 from mfw.templates.cpo_element import get_inputs
 from mfw.templates.cpo_encoder import CPOEncoder
 from mfw.templates.cpo_decoder import CPODecoder
+from mfw.utils import plots
 # GCG-PJ wrapper
 import easypj
 from easypj import TaskRequirements, Resources
@@ -20,7 +20,6 @@ Method: Non intrusive with PCE.
 
 print('>>> test ETS PJ: START')
 
-time0 =  time.time()
 # OS env
 SYS = os.environ['SYS']
 
@@ -28,7 +27,8 @@ SYS = os.environ['SYS']
 tmp_dir = os.environ['SCRATCH']
 
 # CPO files
-cpo_dir = os.path.abspath("../workflows/AUG_28906_6")
+#cpo_dir = os.path.abspath("../workflows/AUG_28906_6")
+cpo_dir = os.path.abspath("../workflows/JET_92436_23066")
 
 # XML and XSD files
 xml_dir = os.path.abspath("../workflows")
@@ -41,12 +41,10 @@ exec_path = os.path.join(obj_dir, exec_code)
 # Define the uncertain parameters
 uncertain_params = {
     "te.boundary": {
-        "type": "float",
         "dist": "Normal",
         "err":  0.25,
     },
     "ti.boundary": {
-        "type": "float",
         "dist": "Normal",
         "err": 0.25,
     }
@@ -56,7 +54,7 @@ input_filename = "ets_coreprof_in.cpo"
 input_cponame = "coreprof"
 
 # The quantities of intersts and the cpo file to set them
-output_columns = ["ti"]
+output_columns = ["te", "ti"]
 output_filename = "ets_coreprof_out.cpo"
 output_cponame = "coreprof"
 
@@ -110,22 +108,24 @@ my_campaign.add_app(name=campaign_name,
 
 # Create the sampler
 print('>>> Create the sampler')
-my_sampler = uq.sampling.PCESampler(vary=vary, polynomial_order=3)
+my_sampler = uq.sampling.PCESampler(vary=vary, polynomial_order=3,
+                                    regression=True)
 my_campaign.set_sampler(my_sampler)
 
 # Will draw all (of the finite set of samples)
 my_campaign.draw_samples()
 
-print(">>> Starting PJ execution")
-time0 = time.time()
+print('>>> Populate runs_dir')
+my_campaign.populate_runs_dir()
 
+print(">>> Starting PJ execution\n")
 qcgpjexec = easypj.Executor()
 qcgpjexec.create_manager(dir=my_campaign.campaign_dir, log_level='info')
 
-qcgpjexec.add_task(Task(
-    TaskType.ENCODING,
-    TaskRequirements(cores=Resources(exact=1))
-))
+#qcgpjexec.add_task(Task(
+#    TaskType.ENCODING,
+#    TaskRequirements(cores=Resources(exact=1))
+#))
 
 qcgpjexec.add_task(Task(
     TaskType.EXECUTION,
@@ -135,11 +135,10 @@ qcgpjexec.add_task(Task(
 
 qcgpjexec.run(
     campaign=my_campaign,
-    submit_order=SubmitOrder.RUN_ORIENTED
+    submit_order=SubmitOrder.EXEC_ONLY
 )
 
 qcgpjexec.terminate_manager()
-time1 = time.time()
 
 print('>>> Collate')
 my_campaign.collate()
@@ -151,46 +150,28 @@ my_campaign.apply_analysis(analysis)
 
 print('>>> Get results')
 results = my_campaign.get_last_analysis()
-time2 = time.time()
-
-print('>>> Ellapsed time: all PJ ', time1 - time0)
-print('>>> Ellapsed time: Analysis ', time2 - time1)
 
 print('>>> Get Descriptive Statistics')
-#stat_te = results['statistical_moments']['te']
-#sob1_te = results['sobols_first']['te']
-stat_ti = results['statistical_moments']['ti']
-sob1_ti = results['sobols_first']['ti']
-#
-corep = read(os.path.join(cpo_dir,  "ets_coreprof_in.cpo"), "coreprof")
-rho = corep.rho_tor_norm
+stat = {}
+sob1 = {}
+for qoi in output_columns:
+    stat[qoi] = results['statistical_moments'][qoi]
+    sob1[qoi] = results['sobols_first'][qoi]
 
 #  Graphics for Descriptive satatistics
-__PLOTS = True # If True create plots subfolder under outputs folder
+corep = read(os.path.join(cpo_dir,  "ets_coreprof_in.cpo"), "coreprof")
+rho = corep.rho_tor_norm
+uparams_names = list(params.keys())
 
-if __PLOTS:
-    from mfw.utils import plots
-
-    uparams_names = list(params.keys())
-
-#    plots.plot_stats(rho, stat_te,
-#                     xlabel=r'$\rho_{tor} ~ [m]$', ylabel=r'$Te$',
-#                     ftitle='Te profile',
-#                     fname='outputs/Te_STAT_'+campaign_name)
+#for qoi in output_columns:
+#    plots.plot_stats(rho, stat[qoi],
+#                     xlabel=r'$\rho_{tor}$', ylabel=qoi,
+#                     ftitle=qoi+' profile',
+#                     fname='outputs/STAT_'+qoi)
 #
-#    plots.plot_sobols_all(rho, sob1_te, uparams_names,
-#                      ftitle=' First-Order Sobol indices - QoI: Te',
-#                      fname='outputs/Te_SA_'+campaign_name)
-
-    plots.plot_stats(rho, stat_ti,
-                     xlabel=r'$\rho_{tor} ~ [m]$', ylabel=r'$T_i [eV]$',
-                     ftitle='Ti profile',
-                     fname='outputs/Ti_STAT_'+campaign_name)
-
-    plots.plot_sobols_all(rho, sob1_ti, uparams_names,
-                      ftitle=' First-Order Sobol indices - QoI: Ti',
-                      fname='outputs/Ti_SA_'+campaign_name)
-
-print('>>> test ETS : END')
+#
+#    plots.plot_sobols_all(rho, sob1[qoi], uparams_names,
+#                      ftitle='1st Sobol indices: '+qoi,
+#                      fname='outputs/SA_'+qoi)
 
 print('>>> test ETS PJ : END')

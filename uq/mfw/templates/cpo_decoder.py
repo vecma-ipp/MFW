@@ -60,6 +60,8 @@ class CPODecoder(BaseDecoder, decoder_name="cpo_decoder"):
         qoi_values = {}
         for qoi in self.output_columns:
             value = cpo.get_value(qoi)
+            print("qoi: ", qoi)
+            print("value: ", value)
             qoi_values.update({qoi: value})
 
         # Output data frame

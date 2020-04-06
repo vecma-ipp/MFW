@@ -24,6 +24,7 @@ SYS = os.environ['SYS']
 tmp_dir = os.environ['SCRATCH']
 
 # CPO files
+#cpo_dir = os.path.abspath("../workflows/JET_92436_23066")
 cpo_dir = os.path.abspath("../workflows/AUG_28906_6")
 
 # XML and XSD files
@@ -36,13 +37,10 @@ exec_code = "ets_test"
 # Define the uncertain parameters
 uncertain_params = {
     "te.boundary": {
-        "type": "float",
         "dist": "Normal",
         "err":  0.25,
-    }
-    ,
+    },
     "ti.boundary": {
-        "type": "float",
         "dist": "Normal",
         "err": 0.25,
     }
@@ -52,7 +50,7 @@ input_filename = "ets_coreprof_in.cpo"
 input_cponame = "coreprof"
 
 # The quantities of intersts and the cpo file to set them
-output_columns = ["Te", "Ti"]
+output_columns = ["Te"]
 output_filename = "ets_coreprof_out.cpo"
 output_cponame = "coreprof"
 
@@ -106,7 +104,7 @@ my_campaign.add_app(name=campaign_name,
 
 # Create the sampler
 print('>>> Create the sampler')
-my_sampler = uq.sampling.PCESampler(vary=vary, polynomial_order=3)
+my_sampler = uq.sampling.PCESampler(vary=vary, polynomial_order=2)
 my_campaign.set_sampler(my_sampler)
 
 # Will draw all (of the finite set of samples)
@@ -137,8 +135,8 @@ print('>>> Ellapsed time: ', time.time() - time0)
 print('>>> Get Descriptive Statistics')
 stat_te = results['statistical_moments']['Te']
 sob1_te = results['sobols_first']['Te']
-stat_ti = results['statistical_moments']['Ti']
-sob1_ti = results['sobols_first']['Ti']
+#stat_ti = results['statistical_moments']['Ti']
+#sob1_ti = results['sobols_first']['Ti']
 
 corep = read(os.path.join(cpo_dir,  "ets_coreprof_in.cpo"), "coreprof")
 rho = corep.rho_tor_norm
@@ -162,13 +160,13 @@ if __PLOTS:
                       ftitle=' First-Order Sobol indices - QoI: Te',
                       fname='outputs/Te_SA_'+campaign_name)
 
-    plots.plot_stats(rho, stat_ti,
-                     xlabel=r'$\rho_{tor} ~ [m]$', ylabel=r'$T_i [eV]$',
-                     ftitle='Ti profile',
-                     fname='outputs/Ti_STAT_'+campaign_name)
-
-    plots.plot_sobols_all(rho, sob1_ti, uparams_names,
-                      ftitle=' First-Order Sobol indices - QoI: Ti',
-                      fname='outputs/Ti_SA_'+campaign_name)
+#    plots.plot_stats(rho, stat_ti,
+#                     xlabel=r'$\rho_{tor} ~ [m]$', ylabel=r'$T_i [eV]$',
+#                     ftitle='Ti profile',
+#                     fname='outputs/Ti_STAT_'+campaign_name)
+#
+#    plots.plot_sobols_all(rho, sob1_ti, uparams_names,
+#                      ftitle=' First-Order Sobol indices - QoI: Ti',
+#                      fname='outputs/Ti_SA_'+campaign_name)
 
 print('>>> test ETS : END')
