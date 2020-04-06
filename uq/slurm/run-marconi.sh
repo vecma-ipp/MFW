@@ -9,7 +9,7 @@
 #SBATCH --job-name=MFW                    # job name
 #SBATCH --err=test-err.%j                 # std-error file
 #SBATCH --out=test-out.%j                 # std-output file
-#SBATCH --account=FUA33_UQMWA 			      # account number
+#SBATCH --account=FUA34_UQMWA2 			      # account number
 #SBATCH --mail-type=END				            # specify email notification
 #SBATCH --mail-user=ljala@ipp.mpg.de	    # e-mail address
 
