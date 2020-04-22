@@ -1,0 +1,790 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:NS1="ImportNamespace" elementFormDefault="qualified" attributeFormDefault="unqualified">
+  <xs:element name="parameters">
+    <xs:complexType>
+      <xs:all>
+        <xs:element name="COCOS_verbose">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="cocos_in" default="13">
+                <xs:simpleType>
+                  <xs:restriction base="xs:integer">
+                    <xs:minInclusive value="1"/>
+                    <xs:maxInclusive value="18"/>
+                  </xs:restriction>
+                </xs:simpleType>
+              </xs:element>
+              <xs:element name="cocos_out" default="13">
+                <xs:simpleType>
+                  <xs:restriction base="xs:int">
+                    <xs:minInclusive value="1"/>
+                    <xs:maxInclusive value="18"/>
+                  </xs:restriction>
+                </xs:simpleType>
+              </xs:element>
+              <xs:element name="nverbose" type="xs:int" default="1">
+                <xs:annotation>
+                  <xs:documentation>-1 to write nothing, 0 almost nothing, 1 minimal, 3 maximal </xs:documentation>
+                </xs:annotation>
+              </xs:element>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="choice_of_input_profiles">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="first_source">
+                <xs:complexType>
+                  <xs:choice>
+                    <xs:element name="pprime">
+                      <xs:complexType>
+                        <xs:sequence>
+                          <xs:element name="nppfun" fixed="4" type="xs:integer"/>
+                        </xs:sequence>
+                      </xs:complexType>
+                    </xs:element>
+                    <xs:element name="pressure">
+                      <xs:complexType>
+                        <xs:sequence>
+                          <xs:element name="nppfun" fixed="8" type="xs:integer"/>
+                        </xs:sequence>
+                      </xs:complexType>
+                    </xs:element>
+                    <xs:element name="pprime_parametric">
+                      <xs:complexType>
+                        <xs:sequence>
+                          <xs:element name="nppfun" default="2" type="xs:integer"/>
+                        </xs:sequence>
+                      </xs:complexType>
+                    </xs:element>
+                  </xs:choice>
+                </xs:complexType>
+              </xs:element>
+              <xs:element name="second_source">
+                <xs:complexType>
+                  <xs:choice>
+                    <xs:element name="Istar_jphi">
+                      <xs:complexType>
+                        <xs:sequence>
+                          <xs:element name="nfunc" fixed="4" type="xs:int"/>
+                          <xs:element name="nsttp" fixed="2" type="xs:int"/>
+                        </xs:sequence>
+                      </xs:complexType>
+                    </xs:element>
+                    <xs:element name="ffprime">
+                      <xs:complexType>
+                        <xs:sequence>
+                          <xs:element name="nfunc" fixed="4" type="xs:int"/>
+                          <xs:element name="nsttp" fixed="1" type="xs:int"/>
+                        </xs:sequence>
+                      </xs:complexType>
+                    </xs:element>
+                    <xs:element name="Iparallel_chease">
+                      <xs:complexType>
+                        <xs:sequence>
+                          <xs:element name="nfunc" fixed="4" type="xs:int"/>
+                          <xs:element name="nsttp" fixed="3" type="xs:int"/>
+                        </xs:sequence>
+                      </xs:complexType>
+                    </xs:element>
+                    <xs:element name="jparallel_jB_over_B0">
+                      <xs:complexType>
+                        <xs:sequence>
+                          <xs:element name="nfunc" fixed="4" type="xs:int"/>
+                          <xs:element name="nsttp" fixed="4" type="xs:int"/>
+                        </xs:sequence>
+                      </xs:complexType>
+                    </xs:element>
+                    <xs:element name="parametric">
+                      <xs:complexType>
+                        <xs:sequence>
+                          <xs:element name="nfunc" default="2" type="xs:int"/>
+                          <xs:element name="nsttp" default="2" type="xs:int"/>
+                        </xs:sequence>
+                      </xs:complexType>
+                    </xs:element>
+                  </xs:choice>
+                </xs:complexType>
+              </xs:element>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="radial_input_mesh">
+          <xs:annotation>
+            <xs:documentation>Note: rho_tor_norm not valid for ffprime at this stage </xs:documentation>
+          </xs:annotation>
+          <xs:complexType>
+            <xs:choice>
+              <xs:element name="rho_pol_norm_standard_chease">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element name="nfunrho" fixed="0" type="xs:integer"/>
+                    <xs:element name="nrhomesh" fixed="0" type="xs:integer"/>
+                  </xs:sequence>
+                </xs:complexType>
+              </xs:element>
+              <xs:element name="rho_tor_norm">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element name="nfunrho" fixed="1" type="xs:integer"/>
+                    <xs:element name="nrhomesh" fixed="1" type="xs:integer"/>
+                  </xs:sequence>
+                </xs:complexType>
+              </xs:element>
+            </xs:choice>
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="mapping_mesh_output">
+          <xs:annotation>
+            <xs:documentation>In coord_sys in CPO, decides on jacobian ~ R^NER grad_psi^NEGP </xs:documentation>
+          </xs:annotation>
+          <xs:complexType>
+            <xs:choice>
+              <xs:element name="equal_arc_length">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element name="NER" fixed="1" type="xs:integer"/>
+                    <xs:element name="NEGP" fixed="-1" type="xs:integer"/>
+                  </xs:sequence>
+                </xs:complexType>
+              </xs:element>
+              <xs:element name="straight-field-line">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element name="NER" fixed="2" type="xs:integer"/>
+                    <xs:element name="NEGP" fixed="0" type="xs:integer"/>
+                  </xs:sequence>
+                </xs:complexType>
+              </xs:element>
+              <xs:element name="Hamada">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element name="NER" fixed="0" type="xs:integer"/>
+                    <xs:element name="NEGP" fixed="0" type="xs:integer"/>
+                  </xs:sequence>
+                </xs:complexType>
+              </xs:element>
+              <xs:element name="other_choice">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element name="NER" default="1" type="xs:integer"/>
+                    <xs:element name="NEGP" default="-1" type="xs:integer"/>
+                  </xs:sequence>
+                </xs:complexType>
+              </xs:element>
+            </xs:choice>
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="rescaling_options">
+          <xs:annotation>
+            <xs:documentation>Should choose no rescaling within transport loop</xs:documentation>
+          </xs:annotation>
+          <xs:complexType>
+            <xs:choice>
+              <xs:element name="no_rescaling">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element name="ncscal" fixed="4" type="xs:integer"/>
+                  </xs:sequence>
+                </xs:complexType>
+              </xs:element>
+              <xs:element name="specify_q_value_at_csspec">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element name="ncscal" fixed="1" type="xs:integer"/>
+                    <xs:element name="csspec" default="0." type="xs:float"/>
+                    <xs:element name="qspec" default="0.95" type="xs:float"/>
+                  </xs:sequence>
+                </xs:complexType>
+              </xs:element>
+              <xs:element name="specify_tot_current_in_chease_units">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element name="ncscal" fixed="2" type="xs:integer"/>
+                    <xs:element name="currt" default="0.5" type="xs:float"/>
+                  </xs:sequence>
+                </xs:complexType>
+              </xs:element>
+              <xs:element name="any_choice">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element name="ncscal" default="1" type="xs:integer"/>
+                    <xs:element name="currt" default="0.5" type="xs:float"/>
+                    <xs:element name="csspec" default="0." type="xs:float"/>
+                    <xs:element name="qspec" default="0.95" type="xs:float"/>
+                  </xs:sequence>
+                </xs:complexType>
+              </xs:element>
+            </xs:choice>
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="mesh_characteristics">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="number_intervals_equil_mesh">
+                <xs:complexType>
+                  <xs:choice>
+                    <xs:element name="very_small">
+                      <xs:complexType>
+                        <xs:sequence>
+                          <xs:element name="NS" fixed="24" type="xs:integer"/>
+                          <xs:element name="NT" fixed="24" type="xs:integer"/>
+                          <xs:element name="epslon" type="xs:float" default="1.0e-6"/>
+                        </xs:sequence>
+                      </xs:complexType>
+                    </xs:element>
+                    <xs:element name="small">
+                      <xs:complexType>
+                        <xs:sequence>
+                          <xs:element name="NS" fixed="30" type="xs:integer"/>
+                          <xs:element name="NT" fixed="30" type="xs:integer"/>
+                          <xs:element name="epslon" type="xs:float" default="1.0e-7"/>
+                        </xs:sequence>
+                      </xs:complexType>
+                    </xs:element>
+                    <xs:element name="standard">
+                      <xs:complexType>
+                        <xs:sequence>
+                          <xs:element name="NS" fixed="40" type="xs:integer"/>
+                          <xs:element name="NT" fixed="40" type="xs:integer"/>
+                          <xs:element name="epslon" type="xs:float" default="1.0e-8"/>
+                        </xs:sequence>
+                      </xs:complexType>
+                    </xs:element>
+                    <xs:element name="large">
+                      <xs:complexType>
+                        <xs:sequence>
+                          <xs:element name="NS" fixed="60" type="xs:integer"/>
+                          <xs:element name="NT" fixed="60" type="xs:integer"/>
+                          <xs:element name="epslon" type="xs:float" default="1.0e-10"/>
+                        </xs:sequence>
+                      </xs:complexType>
+                    </xs:element>
+                    <xs:element name="other_choice">
+                      <xs:complexType>
+                        <xs:sequence>
+                          <xs:element name="NS" default="40" type="xs:integer"/>
+                          <xs:element name="NT" default="40" type="xs:integer"/>
+                          <xs:element name="epslon" type="xs:float" default="1.0e-8"/>
+                        </xs:sequence>
+                      </xs:complexType>
+                    </xs:element>
+                  </xs:choice>
+                </xs:complexType>
+              </xs:element>
+              <xs:element name="number_intervals_mapping_mesh">
+                <xs:complexType>
+                  <xs:choice>
+                    <xs:element name="small">
+                      <xs:complexType>
+                        <xs:sequence>
+                          <xs:element name="NPSI" fixed="100" type="xs:integer"/>
+                          <xs:element name="NCHI" fixed="100" type="xs:integer"/>
+                          <xs:element name="NISO" fixed="100" type="xs:integer"/>
+                        </xs:sequence>
+                      </xs:complexType>
+                    </xs:element>
+                    <xs:element name="very_small">
+                      <xs:complexType>
+                        <xs:sequence>
+                          <xs:element name="NPSI" fixed="80" type="xs:integer"/>
+                          <xs:element name="NCHI" fixed="80" type="xs:integer"/>
+                          <xs:element name="NISO" fixed="80" type="xs:integer"/>
+                        </xs:sequence>
+                      </xs:complexType>
+                    </xs:element>
+                    <xs:element name="fast_standard">
+                      <xs:complexType>
+                        <xs:sequence>
+                          <xs:element name="NPSI" fixed="120" type="xs:integer"/>
+                          <xs:element name="NCHI" fixed="120" type="xs:integer"/>
+                          <xs:element name="NISO" fixed="120" type="xs:integer"/>
+                        </xs:sequence>
+                      </xs:complexType>
+                    </xs:element>
+                    <xs:element name="standard">
+                      <xs:complexType>
+                        <xs:sequence>
+                          <xs:element name="NPSI" fixed="180" type="xs:integer"/>
+                          <xs:element name="NCHI" fixed="180" type="xs:integer"/>
+                          <xs:element name="NISO" fixed="180" type="xs:integer"/>
+                        </xs:sequence>
+                      </xs:complexType>
+                    </xs:element>
+                    <xs:element name="large">
+                      <xs:complexType>
+                        <xs:sequence>
+                          <xs:element name="NPSI" fixed="256" type="xs:integer"/>
+                          <xs:element name="NCHI" fixed="256" type="xs:integer"/>
+                          <xs:element name="NISO" fixed="256" type="xs:integer"/>
+                        </xs:sequence>
+                      </xs:complexType>
+                    </xs:element>
+                    <xs:element name="other_choice">
+                      <xs:complexType>
+                        <xs:sequence>
+                          <xs:element name="NPSI" fixed="140" type="xs:integer"/>
+                          <xs:element name="NCHI" fixed="140" type="xs:integer"/>
+                          <xs:element name="NISO" fixed="140" type="xs:integer"/>
+                        </xs:sequence>
+                      </xs:complexType>
+                    </xs:element>
+                  </xs:choice>
+                </xs:complexType>
+              </xs:element>
+              <xs:element name="number_eqdskRZ_mesh_and_box">
+                <xs:complexType>
+                  <xs:choice>
+                    <xs:element name="small">
+                      <xs:complexType>
+                        <xs:sequence>
+                          <xs:element name="nrbox" fixed="101" type="xs:integer"/>
+                          <xs:element name="nzbox" fixed="101" type="xs:integer"/>
+                        </xs:sequence>
+                      </xs:complexType>
+                    </xs:element>
+                    <xs:element name="standard">
+                      <xs:complexType>
+                        <xs:sequence>
+                          <xs:element name="nrbox" fixed="129" type="xs:integer"/>
+                          <xs:element name="nzbox" fixed="129" type="xs:integer"/>
+                        </xs:sequence>
+                      </xs:complexType>
+                    </xs:element>
+                    <xs:element name="large">
+                      <xs:complexType>
+                        <xs:sequence>
+                          <xs:element name="nrbox" fixed="257" type="xs:integer"/>
+                          <xs:element name="nzbox" fixed="257" type="xs:integer"/>
+                        </xs:sequence>
+                      </xs:complexType>
+                    </xs:element>
+                    <xs:element name="other_choice">
+                      <xs:complexType>
+                        <xs:sequence>
+                          <xs:element name="nrbox" default="65" type="xs:integer"/>
+                          <xs:element name="nzbox" default="65" type="xs:integer"/>
+                        </xs:sequence>
+                      </xs:complexType>
+                    </xs:element>
+                  </xs:choice>
+                </xs:complexType>
+              </xs:element>
+              <xs:element name="various_mesh_packing">
+                <xs:complexType>
+                  <xs:choice>
+                    <xs:element name="no_packing">
+                      <xs:complexType>
+                        <xs:sequence>
+                          <xs:element name="nmesha" fixed="0" type="xs:integer"/>
+                          <xs:element name="ndifps" fixed="0" type="xs:integer"/>
+                          <xs:element name="nmeshb" fixed="0" type="xs:integer"/>
+                          <xs:element name="nmeshc" fixed="0" type="xs:integer"/>
+                          <xs:element name="nmeshd" fixed="0" type="xs:integer"/>
+                          <xs:element name="ndift"  fixed="0" type="xs:integer"/>
+                          <xs:element name="nmeshe" fixed="0" type="xs:integer"/>
+                        </xs:sequence>
+                      </xs:complexType>
+                    </xs:element>
+                    <xs:element name="standard">
+                      <xs:complexType>
+                        <xs:sequence>
+                          <xs:choice>
+                            <xs:element name="nmesha_stability_s_mesh_packing_on_s_values">
+                              <xs:complexType>
+                                <xs:sequence>
+                                  <xs:element name="nmesha" default="1" type="xs:integer"/>
+                                  <xs:element name="npoida" default="2" type="xs:integer"/>
+                                  <xs:element name="aplace" default="0.96 1.0" type="FloatList"/>
+                                  <xs:element name="awidth" default="0.07 0.02" type="FloatList"/>
+                                  <xs:element name="solpda" default="0.70" type="xs:float"/>
+                                  <xs:element name="ndifps" default="0" type="xs:integer"/>
+                                </xs:sequence>
+                              </xs:complexType>
+                            </xs:element>
+                            <xs:element name="nmeshb_intermediate_s_mesh_nopacking">
+                              <xs:complexType>
+                                <xs:sequence>
+                                  <xs:element name="nmeshb" fixed="0" type="xs:integer"/>
+                                </xs:sequence>
+                              </xs:complexType>
+                            </xs:element>
+                            <xs:element name="nmesha_stability_s_packing_on_q_values">
+                              <xs:complexType>
+                                <xs:sequence>
+                                  <xs:element name="nmesha" default="2" type="xs:integer"/>
+                                  <xs:element name="npoidq" default="2" type="xs:integer"/>
+                                  <xs:element name="qplace" default="0.96 1.0" type="FloatList"/>
+                                  <xs:element name="qwidth" default="0.07 0.02" type="FloatList"/>
+                                  <xs:element name="solpda" default="0.70" type="xs:float"/>
+                                  <xs:element name="ndifps" default="0" type="xs:integer"/>
+                                </xs:sequence>
+                              </xs:complexType>
+                            </xs:element>
+                            <xs:element name="nmesha_stability_s_rhogen_equidistant">
+                              <xs:complexType>
+                                <xs:sequence>
+                                  <xs:element name="ndifps" default="1" type="xs:integer"/>
+                                </xs:sequence>
+                              </xs:complexType>
+                            </xs:element>
+                          </xs:choice>
+                          <xs:choice>
+                            <xs:element name="nmeshb_intermediate_s_mesh_nopacking">
+                              <xs:complexType>
+                                <xs:sequence>
+                                  <xs:element name="nmeshb" fixed="0" type="xs:integer"/>
+                                </xs:sequence>
+                              </xs:complexType>
+                            </xs:element>
+                            <xs:element name="nmeshb_intermediate_s_mesh">
+                              <xs:complexType>
+                                <xs:sequence>
+                                  <xs:element name="nmeshb" default="0" type="xs:integer">
+                                    <xs:annotation>
+                                      <xs:documentation>set nmeshb=1 to enable packing</xs:documentation>
+                                    </xs:annotation>
+                                  </xs:element>
+                                  <xs:element name="npoidb" default="2" type="xs:integer"/>
+                                  <xs:element name="bplace" default="0.96 1.0" type="FloatList"/>
+                                  <xs:element name="bwidth" default="0.07 0.02" type="FloatList"/>
+                                  <xs:element name="solpdb" default="0.70" type="xs:float"/>
+                                </xs:sequence>
+                              </xs:complexType>
+                            </xs:element>
+                          </xs:choice>
+                          <xs:choice>
+                            <xs:element name="nmeshc_equil_sigma_mesh_packing">
+                              <xs:complexType>
+                                <xs:sequence>
+                                  <xs:element name="nmeshc" default="1" type="xs:integer"/>
+                                  <xs:element name="npoidc" default="2" type="xs:integer"/>
+                                  <xs:element name="cplace" default=".95 .99 1.0" type="FloatList"/>
+                                  <xs:element name="cwidth" default=".10 .02 .05" type="FloatList"/>
+                                  <xs:element name="solpdc" default="0.70" type="xs:float"/>
+                                </xs:sequence>
+                              </xs:complexType>
+                            </xs:element>
+                            <xs:element name="nmeshc_equil_sigma_mesh_no_packing">
+                              <xs:complexType>
+                                <xs:sequence>
+                                  <xs:element name="nmeshc" fixed="0" type="xs:integer"/>
+                                </xs:sequence>
+                              </xs:complexType>
+                            </xs:element>
+                          </xs:choice>
+                          <xs:choice>
+                            <xs:element name="nmeshd_equil_theta_mesh_auto_packing">
+                              <xs:complexType>
+                                <xs:sequence>
+                                  <xs:element name="nmeshd" fixed="0" type="xs:integer"/>
+                                  <xs:element name="ndift" default="2" type="xs:integer">
+                                    <xs:annotation>
+                                      <xs:documentation>ndift=1, equal pol. flux area; ndift=2, equal arc length</xs:documentation>
+                                    </xs:annotation>
+                                  </xs:element>
+                                </xs:sequence>
+                              </xs:complexType>
+                            </xs:element>
+                            <xs:element name="nmeshd_equil_theta_mesh_packing">
+                              <xs:complexType>
+                                <xs:sequence>
+                                  <xs:element name="nmeshd" default="1" type="xs:integer"/>
+                                  <xs:element name="npoidd" default="4" type="xs:integer"/>
+                                  <xs:element name="dplace" default="-1.70 -1.70  1.70  1.70" type="FloatList"/>
+                                  <xs:element name="dwidth" default=".18 .08 .18 .08" type="FloatList"/>
+                                  <xs:element name="solpdd" default="0.50" type="xs:float"/>
+                                  <xs:element name="ndift" default="0" type="xs:int"/>
+                                </xs:sequence>
+                              </xs:complexType>
+                            </xs:element>
+                            <xs:element name="nmeshd_equil_chi_mesh_no_packing">
+                              <xs:complexType>
+                                <xs:sequence>
+                                  <xs:element name="nmeshd" fixed="0" type="xs:integer"/>
+                                  <xs:element name="ndift"  fixed="0" type="xs:int"/>
+                                </xs:sequence>
+                              </xs:complexType>
+                            </xs:element>
+                          </xs:choice>
+                          <xs:choice>
+                            <xs:element name="nmeshe_chi_mesh_packing">
+                              <xs:complexType>
+                                <xs:sequence>
+                                  <xs:element name="nmeshe" default="1" type="xs:integer"/>
+                                  <xs:element name="npoide" default="4" type="xs:integer"/>
+                                  <xs:element name="eplace" default="-1.70 -1.70  1.70  1.70" type="FloatList"/>
+                                  <xs:element name="ewidth" default=".18 .08 .18 .08" type="FloatList"/>
+                                  <xs:element name="solpde" default="0.50" type="xs:float"/>
+                                </xs:sequence>
+                              </xs:complexType>
+                            </xs:element>
+                            <xs:element name="nmeshe_chi_mesh_no_packing">
+                              <xs:complexType>
+                                <xs:sequence>
+                                  <xs:element name="nmeshe" fixed="0" type="xs:integer"/>
+                                </xs:sequence>
+                              </xs:complexType>
+                            </xs:element>
+                          </xs:choice>
+                        </xs:sequence>
+                      </xs:complexType>
+                    </xs:element>
+                  </xs:choice>
+                </xs:complexType>
+              </xs:element>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="plasma_boundary">
+          <xs:annotation>
+            <xs:documentation>input for R,Z boundary (from array if from file or database, default)</xs:documentation>
+          </xs:annotation>
+          <xs:complexType>
+            <xs:choice>
+              <xs:element name="from_input_RZ_array">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element name="nsurf" fixed="6" type="xs:integer"/>
+                  </xs:sequence>
+                </xs:complexType>
+              </xs:element>
+              <xs:element name="analytical">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element name="nsurf" default="2" type="xs:integer"/>
+                    <xs:element name="aspct" default="0.32" type="xs:float"/>
+                    <xs:element name="beans" default="0.0" type="xs:float"/>
+                    <xs:element name="ceta" default="0.0" type="xs:float"/>
+                    <xs:element name="cq0" default="0.95" type="xs:float"/>
+                    <xs:element name="delta" default="0.0" type="xs:float"/>
+                    <xs:element name="elong" default="1.7" type="xs:float"/>
+                    <xs:element name="rc" default="1.0" type="xs:float"/>
+                    <xs:element name="rnu" default="0.0" type="xs:float"/>
+                    <xs:element name="rz0" default="0.0" type="xs:float"/>
+                    <xs:element name="r0" default="1.0" type="xs:float"/>
+                    <xs:element name="sgma" default="0.0" type="xs:float"/>
+                    <xs:element name="theta0" default="0.0" type="xs:float"/>
+                    <xs:element name="triang" default="0.5" type="xs:float"/>
+                    <xs:element name="triplt" default="0.0" type="xs:float"/>
+                    <xs:element name="xi" default="0.0" type="xs:float"/>
+                  </xs:sequence>
+                </xs:complexType>
+              </xs:element>
+            </xs:choice>
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="nideal_output_mapping_choice">
+          <xs:annotation>
+            <xs:documentation>type of output calculations for other codes, nideal=6 for standard eqdsk or kepler</xs:documentation>
+          </xs:annotation>
+          <xs:complexType>
+            <xs:choice>
+              <xs:element name="standard_kepler_eqdsk">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element name="nideal" fixed="6" type="xs:integer"/>
+                  </xs:sequence>
+                </xs:complexType>
+              </xs:element>
+              <xs:element name="MARS">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element name="nideal" fixed="0" type="xs:integer"/>
+                  </xs:sequence>
+                </xs:complexType>
+              </xs:element>
+              <xs:element name="LION">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element name="nideal" fixed="2" type="xs:integer"/>
+                  </xs:sequence>
+                </xs:complexType>
+              </xs:element>
+              <xs:element name="XTOR">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element name="nideal" fixed="5" type="xs:integer"/>
+                  </xs:sequence>
+                </xs:complexType>
+              </xs:element>
+              <xs:element name="ORB5_NEMORB_GENE_straightfieldline">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element name="nideal" fixed="9" type="xs:integer"/>
+                  </xs:sequence>
+                </xs:complexType>
+              </xs:element>
+              <xs:element name="GKW_NEOART_hamada">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element name="nideal" fixed="10" type="xs:integer"/>
+                  </xs:sequence>
+                </xs:complexType>
+              </xs:element>
+              <xs:element name="others_1ERATO_8ELITE_4PENN_3NOVA_W_7GYRO">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element name="nideal" default="1" type="xs:integer"/>
+                  </xs:sequence>
+                </xs:complexType>
+              </xs:element>
+            </xs:choice>
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="link_to_database_ala_itm_imas">
+          <xs:annotation>
+            <xs:documentation>should have nitmopt=22 from within kepler, equivalent to nitmopt=0 if outside kepler</xs:documentation>
+          </xs:annotation>
+          <xs:complexType>
+            <xs:choice>
+              <xs:element name="no_link">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element name="nitmopt" fixed="22" type="xs:integer"/>
+                  </xs:sequence>
+                </xs:complexType>
+              </xs:element>
+              <xs:element name="input_from_database_output_on_files">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element name="nitmopt" fixed="1" type="xs:integer"/>
+                    <xs:element name="nitmshot" default="10" type="IntegerList"/>
+                    <xs:element name="nitmrun" default="1" type="IntegerList"/>
+                    <xs:element name="treeitm" default="euitm" type="xs:string"/>
+                  </xs:sequence>
+                </xs:complexType>
+              </xs:element>
+              <xs:element name="input_from_files_output_on_database">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element name="nitmopt" fixed="10" type="xs:integer"/>
+                    <xs:element name="nitmshot" default="10 10" type="IntegerList"/>
+                    <xs:element name="nitmrun" default="1 99" type="IntegerList"/>
+                    <xs:element name="treeitm" default="euitm" type="xs:string"/>
+                  </xs:sequence>
+                </xs:complexType>
+              </xs:element>
+              <xs:element name="input_output_from_to_database">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element name="nitmopt" default="11" type="xs:integer"/>
+                    <xs:element name="nitmshot" default="10 10" type="IntegerList"/>
+                    <xs:element name="nitmrun" default="1 99" type="IntegerList"/>
+                    <xs:element name="treeitm" default="euitm" type="xs:string"/>
+                  </xs:sequence>
+                </xs:complexType>
+              </xs:element>
+            </xs:choice>
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="Others">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="b0exp" minOccurs="1" maxOccurs="1" type="xs:float" default="5.3"/>
+              <xs:element name="r0exp" minOccurs="1" maxOccurs="1" type="xs:float" default="6.2"/>
+              <xs:element name="signb0xp" minOccurs="1" maxOccurs="1" type="xs:float" default="-9."/>
+              <xs:element name="signipxp" minOccurs="1" maxOccurs="1" type="xs:float" default="-9."/>
+              
+              <xs:element name="relax" minOccurs="1" maxOccurs="1" type="xs:float" default="0.2"/>
+              <xs:element name="ninmap" minOccurs="1" maxOccurs="1" type="xs:int" default="40"/>
+              <xs:element name="ninsca" minOccurs="1" maxOccurs="1" type="xs:int" default="40"/>
+              
+              <xs:element name="cfnress" minOccurs="1" maxOccurs="1" type="xs:float" default="1.0"/>
+              <xs:element name="cpress" minOccurs="1" maxOccurs="1" type="xs:float" default="1.0"/>
+              <xs:element name="neqdsk" minOccurs="1" maxOccurs="1" type="xs:int" default="0"/>
+              <xs:element name="nideal" minOccurs="1" maxOccurs="1" type="xs:int" default="6"/>
+              
+              <xs:element name="rboxlen" minOccurs="1" maxOccurs="1" type="xs:float" default="0."/>
+              <xs:element name="rboxlft" minOccurs="1" maxOccurs="1" type="xs:float" default="0."/>
+              <xs:element name="zboxlen" minOccurs="1" maxOccurs="1" type="xs:float" default="0."/>
+              <xs:element name="zboxmid" minOccurs="1" maxOccurs="1" type="xs:float" default="-1.e30"/>
+
+              <xs:element name="nanal" minOccurs="1" maxOccurs="1" type="xs:int" default="0"/>
+              <xs:element name="nbal" minOccurs="1" maxOccurs="1" type="xs:int" default="1"/>
+              <xs:element name="nblc0" minOccurs="1" maxOccurs="1" type="xs:int" default="1"/>
+              <xs:element name="nblopt" minOccurs="1" maxOccurs="1" type="xs:int" default="0"/>
+              <xs:element name="nbpsout" minOccurs="1" maxOccurs="1" type="xs:int" default="100"/>
+              <xs:element name="nbsexpq" minOccurs="1" maxOccurs="1" type="xs:int" default="0"/>
+              <xs:element name="ndiagop" minOccurs="1" maxOccurs="1" type="xs:int" default="1"/>
+              <xs:element name="neonbqs" minOccurs="1" maxOccurs="1" type="xs:int" default="6"/>
+              <xs:element name="neqdxtpo" minOccurs="1" maxOccurs="1" type="xs:int" default="1"/>
+              <xs:element name="nfftopt" minOccurs="1" maxOccurs="1" type="xs:int" default="1"/>
+              <xs:element name="nopt" minOccurs="1" maxOccurs="1" type="xs:int" default="0"/>
+              <xs:element name="nplot" minOccurs="1" maxOccurs="1" type="xs:int" default="0"/>
+              <xs:element name="nprof2d" minOccurs="1" maxOccurs="1" type="xs:int" default="1"/>
+              <xs:element name="npropt" minOccurs="1" maxOccurs="1" type="xs:int" default="2"/>
+              <xs:element name="nprpsi" minOccurs="1" maxOccurs="1" type="xs:int" default="0"/>
+              <xs:element name="nrscal" minOccurs="1" maxOccurs="1" type="xs:int" default="0"/>
+              <xs:element name="nsmooth" minOccurs="1" maxOccurs="1" type="xs:int" default="1"/>
+              <xs:element name="nsour" minOccurs="1" maxOccurs="1" type="xs:int" default="2"/>
+              <xs:element name="ntcase" minOccurs="1" maxOccurs="1" type="xs:int" default="0"/>
+              <xs:element name="ntest" minOccurs="1" maxOccurs="1" type="xs:int" default="0"/>
+              <xs:element name="ntmf0" minOccurs="1" maxOccurs="1" type="xs:int" default="0"/>
+              <xs:element name="nturn" minOccurs="1" maxOccurs="1" type="xs:int" default="20"/>
+              <xs:element name="tensbnd" minOccurs="1" maxOccurs="1" type="xs:float" default="-0.1"/>
+              <xs:element name="tensprof" minOccurs="1" maxOccurs="1" type="xs:float" default="-0.1"/>
+
+
+              <xs:element name="ap" minOccurs="1" maxOccurs="1" type="FloatList" default="0. 0.7 0.4 0. 0. 0. -0.3"/>
+              <xs:element name="ap2" minOccurs="1" maxOccurs="1" type="FloatList" default="0.1 0.5"/>
+              <xs:element name="at" minOccurs="1" maxOccurs="1" type="FloatList" default="0.3 0.8 1. 0. 0. 0. -0.3"/>
+              <xs:element name="at2" minOccurs="1" maxOccurs="1" type="FloatList" default="0.1 0.5"/>
+              <xs:element name="at3" minOccurs="1" maxOccurs="1" type="FloatList" default="0.1 0.5"/>
+              <xs:element name="at4" minOccurs="1" maxOccurs="1" type="FloatList" default="0.1 0.5"/>
+              <xs:element name="comments" minOccurs="1" maxOccurs="1" type="xs:string" default="full new default xml input"/>
+              <xs:element name="etaei" minOccurs="1" maxOccurs="1" type="xs:float" default="1.5"/>
+              <xs:element name="msmax" minOccurs="1" maxOccurs="1" type="xs:int" default="1"/>
+              <xs:element name="nipr" minOccurs="1" maxOccurs="1" type="xs:int" default="1"/>
+              <xs:element name="npp" minOccurs="1" maxOccurs="1" type="xs:int" default="1"/>
+              <xs:element name="nrfp" minOccurs="1" maxOccurs="1" type="xs:int" default="0"/>
+              <xs:element name="rpeop" minOccurs="1" maxOccurs="1" type="xs:float" default="0.5"/>
+              <xs:element name="predge" minOccurs="1" maxOccurs="1" type="xs:float" default="0."/>
+              <xs:element name="psiscl" minOccurs="1" maxOccurs="1" type="xs:float" default="1.0"/>
+              <xs:element name="rext" minOccurs="1" maxOccurs="1" type="xs:float" default="1.0"/>
+              <xs:element name="rzion" minOccurs="1" maxOccurs="1" type="xs:float" default="1.0"/>
+              <xs:element name="scalne" minOccurs="1" maxOccurs="1" type="xs:float" default="0."/>
+
+              <xs:element name="afbs" minOccurs="1" maxOccurs="1" type="FloatList" default="0. 0."/>
+              <xs:element name="afbs2" minOccurs="1" maxOccurs="1" type="FloatList" default="0. 0."/>
+              <xs:element name="bentaxis" minOccurs="1" maxOccurs="1" type="xs:float" default="1.015"/>
+              <xs:element name="bentqprofile" minOccurs="1" maxOccurs="1" type="xs:float" default="0."/>
+              <xs:element name="bentradius" minOccurs="1" maxOccurs="1" type="xs:float" default="0.5"/>
+              <xs:element name="bsfrac" minOccurs="1" maxOccurs="1" type="xs:float" default="0.5"/>
+              <xs:element name="cfbal" minOccurs="1" maxOccurs="1" type="xs:float" default="1.0"/>
+              <xs:element name="qvalneo" minOccurs="1" maxOccurs="1" type="FloatList" default="0.9 1.0 1.5 2.0 3.0"/>
+              <xs:element name="cfnresso" minOccurs="1" maxOccurs="1" type="xs:float" default="1.0"/>
+              <xs:element name="cpresso" minOccurs="1" maxOccurs="1" type="xs:float" default="1.0"/>
+              <xs:element name="nmgaus" minOccurs="1" maxOccurs="1" type="xs:int" default="4"/>
+              <xs:element name="nppr" minOccurs="1" maxOccurs="1" type="xs:int" default="30"/>
+              <xs:element name="nprofz" minOccurs="1" maxOccurs="1" type="xs:int" default="0"/>
+              <xs:element name="nsgaus" minOccurs="1" maxOccurs="1" type="xs:int" default="4"/>
+              <xs:element name="ntgaus" minOccurs="1" maxOccurs="1" type="xs:int" default="4"/>
+              <xs:element name="ntnova" minOccurs="1" maxOccurs="1" type="xs:int" default="64"/>
+              <xs:element name="nv" minOccurs="1" maxOccurs="1" type="xs:int" default="60"/>
+              <xs:element name="nvexp" minOccurs="1" maxOccurs="1" type="xs:int" default="0"/>
+              <xs:element name="nsym" minOccurs="1" maxOccurs="1" type="xs:int" default="0"/>
+              <xs:element name="gamma" minOccurs="1" maxOccurs="1" type="xs:float" default="1.667"/>
+              <xs:element name="pangle" minOccurs="1" maxOccurs="1" type="xs:float" default="0."/>
+              <xs:element name="rz0w" minOccurs="1" maxOccurs="1" type="xs:float" default="0"/>
+              <xs:element name="r0w" minOccurs="1" maxOccurs="1" type="xs:float" default="1.0"/>
+              <xs:element name="scexp" minOccurs="1" maxOccurs="1" type="xs:float" default="1.0"/>
+              <xs:element name="slimit" minOccurs="1" maxOccurs="1" type="xs:float" default="1.e5"/>
+              <xs:element name="snumber" minOccurs="1" maxOccurs="1" type="xs:float" default="1.e7"/>
+              <xs:element name="shift_p" minOccurs="1" maxOccurs="1" type="xs:float" default="0."/>
+              <xs:element name="nbsfun" minOccurs="1" maxOccurs="1" type="xs:int" default="1"/>
+              <xs:element name="nbsopt" minOccurs="1" maxOccurs="1" type="xs:int" default="0"/>
+              <xs:element name="nbstrp" minOccurs="1" maxOccurs="1" type="xs:int" default="1"/>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+      </xs:all>
+    </xs:complexType>
+  </xs:element>
+  <xs:simpleType name="IntegerList">
+    <xs:list itemType="xs:integer"/>
+  </xs:simpleType>
+  <xs:simpleType name="FloatList">
+    <xs:list itemType="xs:float"/>
+  </xs:simpleType>
+</xs:schema>

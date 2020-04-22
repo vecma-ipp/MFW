@@ -3,14 +3,13 @@ import logging
 import pandas as pd
 from easyvvuq import OutputType
 from easyvvuq.decoders.base import BaseDecoder
-from ascii_cpo import read
-from ..utils import cpo_io
+from .cpo_element import CPOElement
 
 
 # Specific Decoder for CPO files
 class CPODecoder(BaseDecoder, decoder_name="cpo_decoder"):
 
-    def __init__(self, target_filename, output_columns):
+    def __init__(self, target_filename, output_columns, cpo_name):
         if target_filename is None:
             msg = (f"target_filename must be set for CPODecoder. This should be"
                    f"the name of the output file this decoder acts on.")
@@ -29,6 +28,7 @@ class CPODecoder(BaseDecoder, decoder_name="cpo_decoder"):
 
         self.target_filename = target_filename
         self.output_columns = output_columns
+        self.cpo_name = cpo_name
 
         self.output_type = OutputType('sample')
 
@@ -54,23 +54,25 @@ class CPODecoder(BaseDecoder, decoder_name="cpo_decoder"):
         out_path = self._get_output_path(run_info, self.target_filename)
 
         # The CPO object
-        cpo_name = cpo_io.get_cponame(self.target_filename)
-        cpo_core = read(out_path, cpo_name)
+        cpo = CPOElement(out_path, self.cpo_name)
 
-        # Get Quantity of Intersets
-        qoi_values = cpo_io.get_qoi(cpo_core)
-        quoi_dict = {}
+        # Get Quantity of Intersets values
+        qoi_values = {}
         for qoi in self.output_columns:
-            quoi_dict.update({qoi: qoi_values[qoi]})
+            value = cpo.get_value(qoi)
+            print("qoi: ", qoi)
+            print("value: ", value)
+            qoi_values.update({qoi: value})
 
         # Output data frame
-        data = pd.DataFrame(quoi_dict)
+        data = pd.DataFrame(qoi_values)
 
         return data
 
     def get_restart_dict(self):
         return {"target_filename": self.target_filename,
-                "output_columns": self.output_columns}
+                "output_columns": self.output_columns,
+                "cpo_name": self.cpo_name}
 
     def element_version(self):
-        return "0.2"
+        return "0.3"

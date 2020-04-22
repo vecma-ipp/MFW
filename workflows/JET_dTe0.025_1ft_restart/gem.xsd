@@ -1,0 +1,324 @@
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+
+  <xs:element name="parameters">
+    <xs:complexType>
+      <xs:all>
+        <xs:element ref="write_cpos" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="equilibrium_parameters" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="local_parameters" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="grid_parameters" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="step_parameters" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="cpu_parameters" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="switches" minOccurs="0" maxOccurs="1"/>
+      </xs:all>
+    </xs:complexType>
+  </xs:element>
+
+<xs:element name="write_cpos" type="xs:boolean"/>
+
+  <xs:element name="equilibrium_parameters">
+    <xs:complexType>
+      <xs:all>
+        <xs:element ref="geometric" minOccurs="0" maxOccurs="1"/>
+      </xs:all>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="geometric">
+    <xs:complexType>
+      <xs:all>
+        <xs:element ref="delta_or_rkps" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="normalise_gxx" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="rr0" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="ra0" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="dra" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="epsa" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="dxshift" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="dshift" minOccurs="0" maxOccurs="1"/>
+      </xs:all>
+    </xs:complexType>
+  </xs:element>
+
+<xs:element name="delta_or_rkps">
+  <xs:simpleType>
+     <xs:restriction base="xs:string">
+        <xs:pattern value="delta|rkps"/>
+     </xs:restriction>
+  </xs:simpleType>
+</xs:element>
+
+<xs:element name="normalise_gxx" type="xs:boolean"/>
+<xs:element name="rr0" type="xs:float"/>
+<xs:element name="ra0" type="xs:float"/>
+<xs:element name="dra" type="xs:float"/>
+<xs:element name="epsa" type="xs:float"/>
+<xs:element name="dxshift" type="xs:float"/>
+<xs:element name="dshift" type="xs:float"/>
+
+  <xs:element name="local_parameters">
+    <xs:complexType>
+      <xs:all>
+        <xs:element ref="physical" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="gradients" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="dissipation" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="initial_amplitude" minOccurs="0" maxOccurs="1"/>
+      </xs:all>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="physical">
+    <xs:complexType>
+      <xs:all>
+        <xs:element ref="rnue" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="beta" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="rmue" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="epss" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="rkps" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="delta" minOccurs="0" maxOccurs="1"/>
+      </xs:all>
+    </xs:complexType>
+  </xs:element>
+
+<xs:element name="rnue" type="xs:float"/>
+<xs:element name="beta" type="xs:float"/>
+<xs:element name="rmue" type="xs:float"/>
+<xs:element name="epss" type="xs:float"/>
+<xs:element name="rkps" type="xs:float"/>
+<xs:element name="delta" type="xs:float"/>
+
+  <xs:element name="gradients">
+    <xs:complexType>
+      <xs:all>
+        <xs:element ref="shat" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="wt" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="wn" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="wi" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="svor" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="taui" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="wcv" minOccurs="0" maxOccurs="1"/>
+      </xs:all>
+    </xs:complexType>
+  </xs:element>
+
+<xs:element name="shat" type="xs:float"/>
+<xs:element name="wn" type="xs:float"/>
+<xs:element name="wt" type="xs:float"/>
+<xs:element name="wi" type="xs:float"/>
+<xs:element name="svor" type="xs:float"/>
+<xs:element name="taui" type="xs:float"/>
+<xs:element name="wcv" type="xs:float"/>
+
+  <xs:element name="dissipation">
+    <xs:complexType>
+      <xs:all>
+        <xs:element ref="ald" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="vpl" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="vple" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="vpli" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="vpp" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="dflux" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="dxdif" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="sflux" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="dxsrc" minOccurs="0" maxOccurs="1"/>
+      </xs:all>
+    </xs:complexType>
+  </xs:element>
+
+<xs:element name="ald" type="xs:float"/>
+<xs:element name="vpl" type="xs:float"/>
+<xs:element name="vple" type="xs:float"/>
+<xs:element name="vpli" type="xs:float"/>
+<xs:element name="vpp" type="xs:float"/>
+<xs:element name="dflux" type="xs:float"/>
+<xs:element name="dxdif" type="xs:float"/>
+<xs:element name="sflux" type="xs:float"/>
+<xs:element name="dxsrc" type="xs:float"/>
+
+  <xs:element name="initial_amplitude">
+    <xs:complexType>
+      <xs:all>
+        <xs:element ref="a0" minOccurs="0" maxOccurs="1"/>
+      </xs:all>
+    </xs:complexType>
+  </xs:element>
+
+<xs:element name="a0" type="xs:float"/>
+
+  <xs:element name="grid_parameters">
+    <xs:complexType>
+      <xs:all>
+        <xs:element ref="active_nodes" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="padding_cells" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="resolution_ratio" minOccurs="0" maxOccurs="1"/>
+      </xs:all>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="active_nodes">
+    <xs:complexType>
+      <xs:all>
+        <xs:element ref="nx00" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="ny00" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="ns00" minOccurs="0" maxOccurs="1"/>
+      </xs:all>
+    </xs:complexType>
+  </xs:element>
+
+<xs:element name="nx00" type="xs:integer"/>
+<xs:element name="ny00" type="xs:integer"/>
+<xs:element name="ns00" type="xs:integer"/>
+
+  <xs:element name="padding_cells">
+    <xs:complexType>
+      <xs:all>
+        <xs:element ref="nxpad" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="nypad" minOccurs="0" maxOccurs="1"/>
+      </xs:all>
+    </xs:complexType>
+  </xs:element>
+
+<xs:element name="nxpad" type="xs:integer"/>
+<xs:element name="nypad" type="xs:integer"/>
+
+  <xs:element name="resolution_ratio">
+    <xs:complexType>
+      <xs:all>
+        <xs:element ref="xres" minOccurs="0" maxOccurs="1"/>
+      </xs:all>
+    </xs:complexType>
+  </xs:element>
+
+<xs:element name="xres" type="xs:float"/>
+
+  <xs:element name="step_parameters">
+    <xs:complexType>
+      <xs:all>
+        <xs:element ref="step_counts" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="time_step" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="times" minOccurs="0" maxOccurs="1"/>
+      </xs:all>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="step_counts">
+    <xs:complexType>
+      <xs:all>
+        <xs:element ref="nstep" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="ndg" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="nplot" minOccurs="0" maxOccurs="1"/>
+      </xs:all>
+    </xs:complexType>
+  </xs:element>
+
+<xs:element name="nstep" type="xs:integer"/>
+<xs:element name="ndg" type="xs:integer"/>
+<xs:element name="nplot" type="xs:integer"/>
+
+  <xs:element name="time_step">
+    <xs:complexType>
+      <xs:all>
+        <xs:element ref="tau0" minOccurs="0" maxOccurs="1"/>
+      </xs:all>
+    </xs:complexType>
+  </xs:element>
+
+<xs:element name="tau0" type="xs:float"/>
+
+  <xs:element name="times">
+    <xs:complexType>
+      <xs:all>
+        <xs:element ref="tramp" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="tprobe" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="tsnap" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="tstop" minOccurs="0" maxOccurs="1"/>
+      </xs:all>
+    </xs:complexType>
+  </xs:element>
+
+<xs:element name="tramp" type="xs:float"/>
+<xs:element name="tprobe" type="xs:float"/>
+<xs:element name="tsnap" type="xs:float"/>
+<xs:element name="tstop" type="xs:float"/>
+
+  <xs:element name="cpu_parameters">
+    <xs:complexType>
+      <xs:all>
+        <xs:element ref="domain_decomposition" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="parallel_cases" minOccurs="0" maxOccurs="1"/>
+      </xs:all>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="domain_decomposition">
+    <xs:complexType>
+      <xs:all>
+        <xs:element ref="npesx" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="npesy" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="npess" minOccurs="0" maxOccurs="1"/>
+      </xs:all>
+    </xs:complexType>
+  </xs:element>
+
+<xs:element name="npesx" type="xs:integer"/>
+<xs:element name="npesy" type="xs:integer"/>
+<xs:element name="npess" type="xs:integer"/>
+
+  <xs:element name="parallel_cases">
+    <xs:complexType>
+      <xs:all>
+        <xs:element ref="nftubes" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="grid_type" minOccurs="0" maxOccurs="1"/>
+      </xs:all>
+    </xs:complexType>
+  </xs:element>
+
+<xs:element name="nftubes" type="xs:integer"/>
+
+<xs:element name="grid_type">
+  <xs:simpleType>
+     <xs:restriction base="xs:string">
+        <xs:pattern value="spread|strung|mids"/>
+     </xs:restriction>
+  </xs:simpleType>
+</xs:element>
+
+  <xs:element name="switches">
+    <xs:complexType>
+      <xs:all>
+        <xs:element ref="nonlinearities" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="setup_scenario" minOccurs="0" maxOccurs="1"/>
+      </xs:all>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="nonlinearities">
+    <xs:complexType>
+      <xs:all>
+        <xs:element ref="wexb" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="wem" minOccurs="0" maxOccurs="1"/>
+      </xs:all>
+    </xs:complexType>
+  </xs:element>
+
+<xs:element name="wexb" type="xs:float"/>
+<xs:element name="wem" type="xs:float"/>
+
+  <xs:element name="setup_scenario">
+    <xs:complexType>
+      <xs:all>
+        <xs:element ref="istart" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="ihamada" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="initsnap" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="iptmp" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="iphi0" minOccurs="0" maxOccurs="1"/>
+      </xs:all>
+    </xs:complexType>
+  </xs:element>
+
+<xs:element name="istart" type="xs:integer"/>
+<xs:element name="ihamada" type="xs:integer"/>
+<xs:element name="initsnap" type="xs:integer"/>
+<xs:element name="iptmp" type="xs:integer"/>
+<xs:element name="iphi0" type="xs:integer"/>
+
+</xs:schema>

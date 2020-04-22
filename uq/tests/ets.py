@@ -2,7 +2,7 @@ import os
 import time
 import easyvvuq as uq
 from ascii_cpo import read
-from mfw.utils import cpo_io
+from mfw.templates.cpo_element import get_inputs
 from mfw.templates.cpo_encoder import CPOEncoder
 from mfw.templates.cpo_decoder import CPODecoder
 
@@ -24,6 +24,7 @@ SYS = os.environ['SYS']
 tmp_dir = os.environ['SCRATCH']
 
 # CPO files
+#cpo_dir = os.path.abspath("../workflows/JET_92436_23066")
 cpo_dir = os.path.abspath("../workflows/AUG_28906_6")
 
 # XML and XSD files
@@ -35,27 +36,29 @@ exec_code = "ets_test"
 
 # Define the uncertain parameters
 uncertain_params = {
-    "Te_boundary": {
-        "type": "float",
-        "distribution": "Normal",
-        "margin_error": 0.25,
+    "te.boundary": {
+        "dist": "Normal",
+        "err":  0.25,
     },
-    "Ti_boundary": {
-        "type": "float",
-        "distribution": "Normal",
-           "margin_error": 0.25,
-      }
+    "ti.boundary": {
+        "dist": "Normal",
+        "err": 0.25,
+    }
 }
 # CPO file containg initial values of uncertain params
 input_filename = "ets_coreprof_in.cpo"
+input_cponame = "coreprof"
 
 # The quantities of intersts and the cpo file to set them
-output_columns = ["Te", "Ti"]
+output_columns = ["Te"]
 output_filename = "ets_coreprof_out.cpo"
+output_cponame = "coreprof"
 
 # Parameter space for campaign and the distributions list for the Sampler
-params, vary = cpo_io.get_inputs(dirname=cpo_dir, filename=input_filename,
-                                 config_dict=uncertain_params)
+input_cpo_file = os.path.join(cpo_dir, input_filename)
+params, vary = get_inputs(cpo_file = input_cpo_file,
+                          cpo_name = input_cponame,
+                          input_params = uncertain_params)
 
 # Initialize Campaign object
 print('>>> Initialize Campaign object')
@@ -78,12 +81,14 @@ os.system("cp " + xml_dir + "/ets.xsd " + common_dir)
 print('>>> Create the encoder')
 encoder = CPOEncoder(template_filename=input_filename,
                      target_filename=input_filename,
+                     cpo_name = input_cponame,
                      common_dir=common_dir)
 
 # Create the encoder
 print('>>> Create the decoder')
-decoder = CPODecoder(target_filename=output_filename,
-                     output_columns=output_columns)
+decoder = CPODecoder(target_filename = output_filename,
+                     output_columns = output_columns,
+                     cpo_name = output_cponame)
 
 # Create a collation element for this campaign
 print('>>> Create Collater')
@@ -99,7 +104,7 @@ my_campaign.add_app(name=campaign_name,
 
 # Create the sampler
 print('>>> Create the sampler')
-my_sampler = uq.sampling.PCESampler(vary=vary, polynomial_order=4)
+my_sampler = uq.sampling.PCESampler(vary=vary, polynomial_order=2)
 my_campaign.set_sampler(my_sampler)
 
 # Will draw all (of the finite set of samples)
@@ -130,8 +135,8 @@ print('>>> Ellapsed time: ', time.time() - time0)
 print('>>> Get Descriptive Statistics')
 stat_te = results['statistical_moments']['Te']
 sob1_te = results['sobols_first']['Te']
-stat_ti = results['statistical_moments']['Ti']
-sob1_ti = results['sobols_first']['Ti']
+#stat_ti = results['statistical_moments']['Ti']
+#sob1_ti = results['sobols_first']['Ti']
 
 corep = read(os.path.join(cpo_dir,  "ets_coreprof_in.cpo"), "coreprof")
 rho = corep.rho_tor_norm
@@ -149,19 +154,19 @@ if __PLOTS:
     plots.plot_stats(rho, stat_te,
                      xlabel=r'$\rho_{tor} ~ [m]$', ylabel=r'$Te$',
                      ftitle='Te profile',
-                     fname='outputs/plots/Te_STAT_'+test_case+test_case)
+                     fname='outputs/Te_STAT_'+campaign_name)
 
     plots.plot_sobols_all(rho, sob1_te, uparams_names,
                       ftitle=' First-Order Sobol indices - QoI: Te',
-                      fname='outputs/plots/Te_SA_'+test_case+test_case)
+                      fname='outputs/Te_SA_'+campaign_name)
 
-    plots.plot_stats(rho, stat_ti,
-                     xlabel=r'$\rho_{tor} ~ [m]$', ylabel=r'$T_i [eV]$',
-                     ftitle='Ti profile',
-                     fname='outputs/plots/Ti_STAT_'+test_case+test_case)
-
-    plots.plot_sobols_all(rho, sob1_ti, uparams_names,
-                      ftitle=' First-Order Sobol indices - QoI: Ti',
-                      fname='outputs/plots/Ti_SA_'+test_case+test_case)
+#    plots.plot_stats(rho, stat_ti,
+#                     xlabel=r'$\rho_{tor} ~ [m]$', ylabel=r'$T_i [eV]$',
+#                     ftitle='Ti profile',
+#                     fname='outputs/Ti_STAT_'+campaign_name)
+#
+#    plots.plot_sobols_all(rho, sob1_ti, uparams_names,
+#                      ftitle=' First-Order Sobol indices - QoI: Ti',
+#                      fname='outputs/Ti_SA_'+campaign_name)
 
 print('>>> test ETS : END')

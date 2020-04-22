@@ -128,6 +128,9 @@ implicit none
      print *,"CPO file not found:",toroidf_file_in
      STOP
   end if 
+  
+  ! For TEST with PJ:
+  call sleep(60)
 
   ! Call ets_standalone
   call ets_cpo(corep, equil, coret, cores, corei, corep_new)
