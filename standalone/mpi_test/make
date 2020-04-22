@@ -1,0 +1,1 @@
+mpiicc -qopenmp main.cc -o main
