@@ -16,6 +16,8 @@ module chease_wrapper
        use euitm_schemas
        type (type_equilibrium), pointer ::  eq_in(:), eq(:)
        type (type_param) :: code_parameters
+       integer, intent(out) :: output_flag
+       character(len=:), pointer :: output_message
      end subroutine chease
   end interface
 
@@ -46,6 +48,8 @@ contains
 
     character(F_STR_SIZE) :: equil_file_in, equil_file_out, username, tmpdir
     integer :: tmpsize
+    integer :: output_flag
+    character(len=:), pointer :: output_message
 
     print *,"fortran CHEASE wrapper"
 
@@ -92,7 +96,7 @@ contains
     call fill_param(code_parameters, 'chease.xml', '', 'chease.xsd')
 
     print *,"run chease routine"
-    call chease(equil_old, equil_new, code_parameters)
+    call chease(equil_old, equil_new, code_parameters, output_flag, output_message)
 
 #ifdef PERF
     call c_getMillis(t1)
