@@ -308,7 +308,7 @@ patch-chease:
 	@grep -q MUSCLE externals/chease/src-f90/Makefile \
 	&& echo -e "\033[32m\033[1m -- ALREADY PATCHED -- \033[0m" \
 	|| (echo -e "\033[36m\033[1m ++++ Patch CHEASE makefiles ++++ \033[0m"; \
-	(patch -p0 -i externals/chease-patch.diff \
+	(patch -p0 -i externals/chease-patch_v12_9.diff \
 	&& echo -e "\033[32m\033[1m -- OK -- \033[0m") \
 	|| echo -e "\033[31m\033[1m -- FAIL -- \033[0m")
 
@@ -339,7 +339,7 @@ chease: ual get-chease strip-chease patch-chease
 get-chease:
 	@if [ ! -d "externals/chease" ]; then \
 	  echo "Checking out chease..."; \
-		svn co $(SVNURL_GFORGE)/chease/chease/tags/4.10b.10_CHEASEv12_3b externals/chease; \
+		svn co $(SVNURL_GFORGE)/chease/chease/tags/4.10b.10_CHEASEv12_9 externals/chease; \
 	else  \
 		echo "Updating chease..."; \
 		svn up externals/chease; \
