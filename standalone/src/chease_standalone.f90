@@ -7,10 +7,12 @@ module chease_standalone
   integer, save :: init_step = 0    !initial step count
 
   interface
-     subroutine chease(eq_in, eq, code_parameters)
+     subroutine chease(eq_in, eq, code_parameters, output_flag, output_message)
        use euitm_schemas
        type (type_equilibrium), pointer ::  eq_in(:), eq(:)
        type (type_param) :: code_parameters
+       integer, intent(out) :: output_flag
+       character(len=:), pointer :: output_message
      end subroutine chease
   end interface
 
@@ -33,12 +35,14 @@ contains
     ! Path to the workflows directory
     character(len=128) :: workflows_dir  
     integer :: len
+    integer :: output_flag
+    character(len=:), pointer :: output_message
     
     ! Get code params
     call fill_param(code_parameters, 'chease.xml', '', 'chease.xsd')
 
     !...  run CHEASE
-    call chease(equil_in, equil_out, code_parameters)
+    call chease(equil_in, equil_out, code_parameters, output_flag, output_message)
 
     ! deallocations
     if (associated(code_parameters%schema)) then
@@ -83,6 +87,9 @@ contains
     integer :: tmpsize
 
     character(len=128) :: workflows_dir  ! Path to the workflows directory
+
+    integer :: output_flag
+    character(len=:), pointer :: output_message
     
     print *,"fortran CHEASE wrapper"
 
@@ -98,7 +105,7 @@ contains
 !
     
     print *,"run chease routine"
-    call chease(equil_old, equil_new, code_parameters)
+    call chease(equil_old, equil_new, code_parameters, output_flag, output_message)
     
     ! Safety factor
     aoutput(:)=equil_new(1)%profiles_1d%q
