@@ -12,7 +12,7 @@ module chease_wrapper
 #endif
 
   interface
-     subroutine chease(eq_in, eq, code_parameters)
+     subroutine chease(eq_in, eq, code_parameters, output_flag, output_message)
        use euitm_schemas
        type (type_equilibrium), pointer ::  eq_in(:), eq(:)
        type (type_param) :: code_parameters
