@@ -117,10 +117,12 @@ BOHMGB_O = ${SHARED_O} ${OBJDIR}/bohmgb_standalone.o
 GEM0_O = ${SHARED_O} ${OBJDIR}/gem0_standalone.o
 GEM_O = ${SHARED_O} ${OBJDIR}/gem_standalone.o
 
-TESTS =  ETS_TEST EQUILUPDATE_TEST CHEASE_TEST EQ_TEST IMP4DV_TEST SOURCES_TEST BOHMGB_TEST GEM0_TEST GEM_TEST 
+TESTS =  ETS_TEST EQUILUPDATE_TEST CHEASE_TEST EQ_TEST IMP4DV_TEST SOURCES_TEST BOHMGB_TEST GEM0_TEST ETS_SRC # GEM_TEST 
 LOOP_TEST = LOOP_BGB LOOP_GEM0
 
 ETS_EXE = ${BINDIR}/ets_test
+ETS_SRC_EXE = ${BINDIR}/ets_src
+#ETS_EQ_EXE = ${BINDIR}/ets_eq
 EQUILUPDATE_EXE = ${BINDIR}/equilupdate_test
 CHEASE_EXE = ${BINDIR}/chease_test
 EQ_EXE = ${BINDIR}/equil_test
@@ -151,9 +153,15 @@ ${OBJDIR}/%.o: %.c
 ###  EXECUTABLES #################################################################
 
 ETS_TEST: ${SHARED_O} ${ETS_O} ${OBJDIR}/ets_test.o
-	$(FC90) -o  ${ETS_EXE} $^ -L${ETS} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_XML} -L${LIB_UAL} -lets -lbds -lxmllib -litmconstants -litmtypes -lual ${LDFLAGS} ${LIBLAPACK}
+	$(FC90) -o ${ETS_EXE} $^ -L${ETS} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_XML} -L${LIB_UAL} -lets -lbds -lxmllib -litmconstants -litmtypes -lual ${LDFLAGS} ${LIBLAPACK}
 
-EQUILUPDATE_TEST:${SHARED_O} ${EQUILUPDATE_O} ${OBJDIR}/equilupdate_test.o
+ETS_SRC: ${SHARED_O} ${SOURCES_O} ${ETS_O} ${OBJDIR}/ets_src.o
+	$(FC90) -o ${ETS_SRC_EXE}  $^ -L${ETS} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_XML} -L${LIB_UAL} -lets -lbds -lxmllib -litmconstants -litmtypes -lual ${LDFLAGS} ${LIBLAPACK}
+
+#ETS_EQ: ${SHARED_O} ${EQUILUPDATE_O} ${ETS_O} ${OBJDIR}/ets_eq.o
+#	$(FC90) -o ${ETS_EQ} $^ -L${ETS} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_XML} -L${LIB_UAL} -lets -lbds -lxmllib -litmconstants -litmtypes -lual ${LDFLAGS} ${LIBLAPACK}
+
+EQUILUPDATE_TEST: ${SHARED_O} ${EQUILUPDATE_O} ${OBJDIR}/equilupdate_test.o
 	$(LD) -o ${EQUILUPDATE_EXE} $^ -L${ETS} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_UAL} -lets -lbds -litmconstants -litmtypes -lual ${LDFLAGS} ${LIBLAPACK}
 
 CHEASE_TEST: ${SHARED_O} ${CHEASE_O} ${OBJDIR}/chease_test.o 
@@ -165,7 +173,7 @@ EQ_TEST: ${SHARED_O} ${CHEASE_O} ${EQUILUPDATE_O} ${OBJDIR}/equil_test.o
 IMP4DV_TEST: ${SHARED_O} ${IMP4DV_O} ${OBJDIR}/imp4dv_test.o 
 	$(LD) -o ${IMP4DV_EXE} $^ -L${IMP4DV} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_UAL} -limp4dv -lbds -litmconstants -litmtypes -lual ${LDFLAGS} ${LIBLAPACK}
 
-SOURCES_TEST:  ${SHARED_O} ${SOURCES_O} ${OBJDIR}/sources_test.o
+SOURCES_TEST: ${SHARED_O} ${SOURCES_O} ${OBJDIR}/sources_test.o
 	$(LD) -o ${SOURCES_EXE} $^ -L${ETS} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_UAL} -L${LIB_XML} -lets -lbds -litmconstants -litmtypes -lual -lxmllib ${LDFLAGS} ${LIBLAPACK}
 
 BOHMGB_TEST:  ${SHARED_O} ${BOHMGB_O} ${OBJDIR}/bohmgb_test.o
@@ -217,6 +225,12 @@ ${OBJDIR}/ets_standalone.o: src/ets_standalone.f90
 
 ${OBJDIR}/ets_test.o: src/ets_test.f90
 	${FC90} -o $@ -c $< $(FC90FLAGS) -I${INC_TYPES}  
+
+${OBJDIR}/ets_src.o: src/ets_src.f90
+	${FC90} -o $@ -c $< $(FC90FLAGS) $(FC90FLAGS_SOURCES) -I${ETS} -I${INC_TYPES}  
+
+#${OBJDIR}/ets_eq.o: src/ets_eq.f90
+#	${FC90} -o $@ -c $< $(FC90FLAGS)  -I${INC_TYPES} 
 
 ${OBJDIR}/equilupdate_standalone.o: src/equilupdate_standalone.f90
 	${MPIF90} -o $@ -c $< $(MPIFLAGS) -I${ETS} -I${INC_CONSTANTS} -I${INC_TYPES} 

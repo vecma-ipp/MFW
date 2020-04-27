@@ -1,7 +1,8 @@
 ! -*- coding: UTF-8 -*-
-program ets_test
+program ets_src
 
   use ets_standalone,         only: ets_cpo
+  use sources_standalone, only: gaussian_source_cpo
 
   use euitm_schemas,   only: type_coreprof,    & 
                           &  type_equilibrium, &
@@ -23,7 +24,7 @@ implicit none
   ! CPO files
   character(len=*), parameter :: corep_file_in   = "ets_coreprof_in.cpo"
   character(len=*), parameter :: equil_file_in   = "ets_equilibrium_in.cpo"
-  character(len=*), parameter :: cores_file_in   = "ets_coresource_in.cpo"
+  !character(len=*), parameter :: cores_file_in   = "ets_coresource_in.cpo"
   character(len=*), parameter :: corei_file_in   = "ets_coreimpur_in.cpo"
   character(len=*), parameter :: coret_file_in   = "ets_coretransp_in.cpo"
   character(len=*), parameter :: toroidf_file_in = "ets_toroidfield_in.cpo"
@@ -90,18 +91,18 @@ implicit none
      STOP
   end if
   
-  open (unit = 13, file = cores_file_in, &
-       status = 'old', form = 'formatted', &
-       action = 'read', iostat = ios)
-  if (ios == 0) then
-     close (13)
-     call open_read_file(13, cores_file_in )
-     call read_cpo(cores(1), 'coresource' )
-     call close_read_file
-  else
-      print *,"CPO file not found:",cores_file_in
-      STOP
-  end if
+!  open (unit = 13, file = cores_file_in, &
+!       status = 'old', form = 'formatted', &
+!       action = 'read', iostat = ios)
+!  if (ios == 0) then
+!     close (13)
+!     call open_read_file(13, cores_file_in )
+!     call read_cpo(cores(1), 'coresource' )
+!     call close_read_file
+!  else
+!      print *,"CPO file not found:",cores_file_in
+!      STOP
+!  end if
   
   open (unit = 14, file = corei_file_in, &
        status = 'old', form = 'formatted', &
@@ -130,8 +131,8 @@ implicit none
   end if 
   
   ! For TEST with PJ:
-  !call sleep(60)
-
+  call gaussian_source_cpo(corep, equil, cores)
+  
   ! Call ets_standalone
   call ets_cpo(corep, equil, coret, cores, corei, corep_new)
  
@@ -149,4 +150,4 @@ implicit none
   call deallocate_cpo(equil)
   call deallocate_cpo(corep)
  
-end program ets_test
+end program ets_src

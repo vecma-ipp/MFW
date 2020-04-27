@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(
-name='mfw-uq',
+name='easymfw',
 
 version='0.1',
 

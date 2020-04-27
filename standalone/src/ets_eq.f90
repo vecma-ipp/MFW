@@ -1,7 +1,8 @@
 ! -*- coding: UTF-8 -*-
-program ets_test
+program ets_eq
 
   use ets_standalone,         only: ets_cpo
+  use equilupdate_standalone 
 
   use euitm_schemas,   only: type_coreprof,    & 
                           &  type_equilibrium, &
@@ -29,6 +30,7 @@ implicit none
   character(len=*), parameter :: toroidf_file_in = "ets_toroidfield_in.cpo"
 
   character(len=*), parameter :: corep_file_out  = "ets_coreprof_out.cpo"
+  character(len=*), parameter :: equil_file_out  = "equilupdate_equilibrium_out.cpo"
 
   ! CPO structures 
   type (type_coreprof)   , pointer :: corep(:)     => NULL()
@@ -37,7 +39,8 @@ implicit none
   type (type_coresource) , pointer :: cores(:)     => NULL()
   type (type_coreimpur)  , pointer :: corei(:)     => NULL()
   type (type_toroidfield), pointer :: toroidf(:)   => NULL()
-  type (type_coreprof)   , pointer :: corep_new(:) => NULL()
+  type (type_coreprof)   , pointer :: corep_out(:) => NULL()
+  type (type_equilibrium), pointer :: equil_out(:) => NULL()
   
   integer :: ios 
 
@@ -48,7 +51,8 @@ implicit none
   allocate(corei(1))
   allocate(toroidf(1))
   
-  allocate(corep_new(1))
+  allocate(corep_out(1))
+  allocate(equil_out(1))
   
   ! Read CPO file and write corresponding structures   
   open (unit = 10, file = corep_file_in, &
@@ -133,15 +137,21 @@ implicit none
   !call sleep(60)
 
   ! Call ets_standalone
-  call ets_cpo(corep, equil, coret, cores, corei, corep_new)
+  call ets_cpo(corep, equil, coret, cores, corei, corep_out)
+  call equilupdate2cpo(corep_out, toroidf, equil, equil_out)
  
   ! Save the output files 
   call open_write_file(20, corep_file_out)
-  call write_cpo(corep_new(1),'coreprof')
+  call write_cpo(corep_out(1),'coreprof')
+  call close_write_file
+
+  call open_write_file(21, equil_file_out)
+  call write_cpo(equil_out(1),'equilibrium')
   call close_write_file
   
   ! CPO deallocations
-  call deallocate_cpo(corep_new)  
+  call deallocate_cpo(corep_out)  
+  call deallocate_cpo(equil_out)
   call deallocate_cpo(toroidf)
   call deallocate_cpo(corei)
   call deallocate_cpo(cores)
@@ -149,4 +159,4 @@ implicit none
   call deallocate_cpo(equil)
   call deallocate_cpo(corep)
  
-end program ets_test
+end program ets_eq
