@@ -1,7 +1,7 @@
 Index: externals/chease/src-f90/Makefile
 ===================================================================
---- externals/chease/src-f90/Makefile	(revision 1317)
-+++ externals/chease/src-f90/Makefile	(working copy)
+--- externals/chease/src-f90/Makefile	(révision 1319)
++++ externals/chease/src-f90/Makefile	(copie de travail)
 @@ -9,6 +9,7 @@
  PROG_TEST_CHEASE = test_chease
  PROG_TEST_CHEASE_ITM = test_chease_itm
@@ -10,7 +10,12 @@ Index: externals/chease/src-f90/Makefile
  
  # Define variable CHEASE_F90 which will then be used to defined the compilation flags automatically
  
-@@ -53,9 +54,10 @@
+@@ -49,15 +50,16 @@
+ SRCS_f90_xml_interface = assign_chease_codeparameters_reflist.f90
+ SRCS_c_xml_interface = 
+ INCLUDE_Clibxml = 
+-ifeq ($(ITM_ENVIRONMENT_LOADED),yes)
++#ifeq ($(ITM_ENVIRONMENT_LOADED),yes)
    ifeq ($(LIBSlibxml),-lxml2)
  	SRCS_0 = chease_new.f90
  	SRCS_1 = chease_prog_new.f90
@@ -22,8 +27,11 @@ Index: externals/chease/src-f90/Makefile
 +	INCLUDE_Clibxml = -I$(INC_XML)
 +
    endif
- endif
+-endif
++#endif
  
+ ifeq ($(IMAS_VERSION),3.6.1)
+  copy_itm_to_ids_equilibrium_eff = copy_itm_v4_10b_to_ids_vDD3.5.3_PUAL3.3.8_equilibrium.f90
 @@ -164,15 +166,17 @@
  SRCS_KEPLER_IMAS	= $(SRCS_0_IMAS) $(SRCS_all) $(SRCS_0_NOHDF5) $(SRCS_2_IMAS) $(SRCS_0_lapackpart)
  SRCS_KEPLER_IMAS_f90	= $(SRCS_f90_xml_interface) $(SRCS_0_IMAS) $(SRCS_all) $(SRCS_0_NOHDF5) $(SRCS_2_IMAS) $(SRCS_0_lapackpart)
@@ -88,8 +96,8 @@ Index: externals/chease/src-f90/Makefile
  evlate.o: globals.o
 Index: externals/chease/src-f90/Makefile.define_FLAGS
 ===================================================================
---- externals/chease/src-f90/Makefile.define_FLAGS	(revision 1317)
-+++ externals/chease/src-f90/Makefile.define_FLAGS	(working copy)
+--- externals/chease/src-f90/Makefile.define_FLAGS	(révision 1319)
++++ externals/chease/src-f90/Makefile.define_FLAGS	(copie de travail)
 @@ -519,3 +519,148 @@
      endif
    endif
@@ -241,8 +249,8 @@ Index: externals/chease/src-f90/Makefile.define_FLAGS
 +
 Index: externals/chease/src-f90/Makefile.define_MACHINE
 ===================================================================
---- externals/chease/src-f90/Makefile.define_MACHINE	(revision 1317)
-+++ externals/chease/src-f90/Makefile.define_MACHINE	(working copy)
+--- externals/chease/src-f90/Makefile.define_MACHINE	(révision 1319)
++++ externals/chease/src-f90/Makefile.define_MACHINE	(copie de travail)
 @@ -84,3 +84,36 @@
        CHEASE_MACHINE = ITER
      endif
