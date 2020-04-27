@@ -16,7 +16,7 @@ Method: Non intrusive (UQP1) with PCE.
 print('>>> UQ-Workflow BC: START')
 
 # execustion with QCJ-PilotJob
-EXEC_PJ = False
+EXEC_PJ = True
 
 # Machine name
 SYS = os.environ['SYS']
@@ -36,7 +36,7 @@ obj_dir = os.path.abspath("../standalone/bin/"+SYS)
 exec_code = "loop_gem0"
 
 # Define the uncertain parameters
-uncertain_params = {
+input_params = {
     "te.boundary": {
         "dist": "Normal",
         "err":  0.25,
@@ -60,9 +60,9 @@ output_cponame = "coreprof"
 # vary: distributions list for the sampler
 print('>>> Get input parmeters')
 input_cpo_file = os.path.join(cpo_dir, input_filename)
-params, vary = get_cpo_inputs(cpo_file = input_cpo_file,
-                              cpo_name = input_cponame,
-                              input_params = uncertain_params)
+params, vary = get_cpo_inputs(cpo_file=input_cpo_file,
+                              cpo_name=input_cponame,
+                              input_params=input_params)
 
 # Initialize Campaign object
 print('>>> Initialize Campaign object')
@@ -94,6 +94,7 @@ print('>>> Create the encoder')
 encoder = CPOEncoder(template_filename=input_filename,
                      target_filename=input_filename,
                      input_cponame=input_cponame,
+                     input_params=input_params,
                      common_dir=common_dir)
 
 # Create the encoder

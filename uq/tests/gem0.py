@@ -15,8 +15,8 @@ IMPORTANT CHECK: in gem0.xml, nrho_transp = 1
 
 print('TEST GEM0-UQ: START')
 
-# We test 1 flux tube (to use list if more)
-flux_indices = 69
+# We test 1 flux tube
+flux_indices = [69]
 
 # execustion with QCJ-PJ
 EXEC_PJ = False
@@ -40,7 +40,7 @@ exec_code = "gem0_test"
 
 # Define the uncertain parameters
 # Electron temperature and its gradient
-uncertain_params = {
+input_params = {
     "te": {
         "dist": "Normal",
         "err":  0.2,
@@ -76,7 +76,7 @@ output_cponame = "coretransp"
 input_cpo_file = os.path.join(cpo_dir, input_filename)
 params, vary = get_cpo_inputs(cpo_file=input_cpo_file,
                               cpo_name=input_cponame,
-                              input_params=uncertain_params)
+                              input_params=input_params)
 
 # Initialize Campaign object
 print('>>> Initialize Campaign object')
@@ -107,8 +107,8 @@ input_filename = "gem0_coreprof_in.cpo"
 encoder = CPOEncoder(template_filename=input_filename,
                      target_filename=input_filename,
                      input_cponame=input_cponame,
-                     common_dir=common_dir,
-                     uncertain_params=uncertain_params)
+                     input_params=input_params,
+                     common_dir=common_dir)
 
 # Create the decoder
 print('>>> Create the decoder')

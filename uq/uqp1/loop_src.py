@@ -68,9 +68,9 @@ ions_heating_params = {
 }
 
 # Choose one of the uncertain params dict, or merge them using
-uncertain_params = {}
-uncertain_params.update(elec_heating_params)
-#uncertain_params.update(ions_heating_params)
+input_params = {}
+input_params.update(elec_heating_params)
+#input_params.update(ions_heating_params)
 
 # XML file containg initial values of uncertain params
 input_xml_filename = "source_dummy.xml"
@@ -84,9 +84,9 @@ output_cponame = "coreprof"
 # Parameter dict for Campaign and distributions list for Sampler
 input_xml_file = os.path.join(xml_dir, input_xml_filename)
 input_xsd_file = os.path.join(xml_dir, input_xsd_filename)
-params, vary = get_xml_inputs(xml_file = input_xml_file,
-                              xsd_file = input_xsd_file,
-                              input_params = uncertain_params)
+params, vary = get_xml_inputs(xml_file=input_xml_file,
+                              xsd_file=input_xsd_file,
+                              input_params = input_params)
 
 # Initialize Campaign object
 print('>>> Initialize Campaign object')
@@ -116,13 +116,14 @@ os.system("cp " + xml_dir + "/source_dummy.x* " + common_dir)
 print('>>> Create the encoder')
 encoder = XMLEncoder(template_filename=input_xml_filename,
                      target_filename=input_xml_filename,
+                     input_params=input_params,
                      common_dir=common_dir)
 
 # Create the encoder
 print('>>> Create the decoder')
-decoder = CPODecoder(target_filename = output_filename,
-                     output_columns = output_columns,
-                     output_cponame="coreprof")
+decoder = CPODecoder(target_filename=output_filename,
+                     output_columns=output_columns,
+                     output_cponame=output_cponame)
 
 # Create a collation element for this campaign
 print('>>> Create Collater')

@@ -10,7 +10,8 @@ from .cpo_element import CPOElement
 class CPOEncoder(BaseEncoder, encoder_name="cpo_encoder"):
 
     def __init__(self, template_filename, target_filename,
-                 input_cponame, common_dir, uncertain_params=None):
+                 input_cponame, input_params, common_dir):
+
         # Check that user has specified the object to use as template
         if template_filename is None:
             msg = ("CPOEncoder must be given 'template_filename': a CPO file.")
@@ -20,8 +21,8 @@ class CPOEncoder(BaseEncoder, encoder_name="cpo_encoder"):
         self.template_filename = template_filename
         self.target_filename = target_filename
         self.input_cponame = input_cponame
+        self.input_params = input_params
         self.common_dir = common_dir
-        self.uncertain_params = uncertain_params
 
         # The cpo object
         input_cpofile = os.path.join(common_dir, template_filename)
@@ -32,14 +33,14 @@ class CPOEncoder(BaseEncoder, encoder_name="cpo_encoder"):
         if not target_dir:
             raise RuntimeError('No target directory specified to encoder')
 
-        if self.uncertain_params is None:
-            self.uncertain_params = list(params)
+        if self.input_params is None:
+            self.input_params = params
 
-        for name, attr in self.uncertain_params.items():
+        for name, attr in self.input_params.items():
             value = params[name]
             index = None
             if "ids" in attr.keys():
-                index = [attr["ids"]]
+                index = attr["ids"]
             self.cpo.set_value(name, value, index)
 
         # Write target input CPO file
@@ -56,7 +57,7 @@ class CPOEncoder(BaseEncoder, encoder_name="cpo_encoder"):
                 "target_filename": self.target_filename,
                 "common_dir": self.common_dir,
                 "input_cponame": self.input_cponame,
-                "uncertain_params": self.uncertain_params}
+                "input_params": self.input_params}
 
     def element_version(self):
         return "0.3"

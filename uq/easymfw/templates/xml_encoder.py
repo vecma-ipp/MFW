@@ -9,7 +9,8 @@ from .xml_element import XMLElement
 class XMLEncoder(BaseEncoder, encoder_name="xml_encoder"):
 
     def __init__(self, template_filename, target_filename,
-                 common_dir, params_names=None):
+                 input_params, common_dir) :
+
         # Check that user has specified the object to use as template
         if template_filename is None:
             msg = ("XMLEncoder must be given 'template_filename': an XML file.")
@@ -18,8 +19,8 @@ class XMLEncoder(BaseEncoder, encoder_name="xml_encoder"):
 
         self.template_filename = template_filename
         self.target_filename = template_filename
+        self.input_params = input_params
         self.common_dir = common_dir
-        self.params_names = params_names
 
         # Parsing xml file
         xml_file = os.path.join(common_dir, template_filename)
@@ -30,10 +31,10 @@ class XMLEncoder(BaseEncoder, encoder_name="xml_encoder"):
         if not target_dir:
             raise RuntimeError('No target directory specified to encoder')
 
-        if self.params_names is None:
-            self.params_names = list(params)
+        if self.input_params is None:
+            self.input_params = params
 
-        for name in self.params_names:
+        for name in self.input_params.keys():
             value = params[name]
             self.xml.set_value(name, value)
 
@@ -50,7 +51,7 @@ class XMLEncoder(BaseEncoder, encoder_name="xml_encoder"):
         return {"template_filename": self.template_filename,
                 "target_filename": self.target_filename,
                 "common_dir": self.common_dir,
-                "params_names": self.params_names}
+                "input_params": self.input_params}
 
     def element_version(self):
         return "0.3"

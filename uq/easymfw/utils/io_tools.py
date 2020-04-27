@@ -62,9 +62,11 @@ def get_cpo_inputs(cpo_file, cpo_name, input_params):
 
         # Select a part of input values
         if "ids" in attr.keys():
-            # TODO use list to get other values
-            i = attr["ids"]
-            value = value[i]
+            indices = attr["ids"]
+            new_value = []
+            for i in indices:
+                new_value.append(value[i])
+            value = new_value
 
         attr_type = type(value)
 

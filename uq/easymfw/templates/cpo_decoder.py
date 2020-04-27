@@ -57,7 +57,6 @@ class CPODecoder(BaseDecoder, decoder_name="cpo_decoder"):
 
     def parse_sim_output(self, run_info={}):
         out_path = self._get_output_path(run_info, self.target_filename)
-
         # The CPO object
         cpo = CPOElement(out_path, self.output_cponame)
 

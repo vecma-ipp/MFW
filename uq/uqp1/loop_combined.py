@@ -37,15 +37,15 @@ obj_dir = os.path.abspath("../standalone/bin/"+SYS)
 exec_code = "loop_gem0"
 
 # Define the uncertain parameters
-uncertain_params_bc = {
-    # Electrons boudary condition
+# Electrons boudary condition
+input_params_bc = {
     "te.boundary": {
         "dist": "Normal",
         "err": 0.2,
     }
 }
 # Gaussian Sources: Electrons heating
-uncertain_params_src = {
+input_params_src = {
     "electrons.heating_el.WTOT_el":{
         "dist": "Normal",
         "err": 0.2,
@@ -71,15 +71,15 @@ print('>>> Get input parmeters')
 # params: the parameter space for campaign object
 # vary: adistributions list for the sampler
 input_cpo_file = os.path.join(cpo_dir, input_cpo_filename)
-params_cpo, vary_cpo = get_cpo_inputs(cpo_file = input_cpo_file,
-                                      cpo_name = input_cponame,
-                                      input_params = uncertain_params_bc)
+params_cpo, vary_cpo = get_cpo_inputs(cpo_file=input_cpo_file,
+                                      cpo_name=input_cponame,
+                                      input_params=input_params_bc)
 
 input_xml_file = os.path.join(xml_dir, input_xml_filename)
 input_xsd_file = os.path.join(xml_dir, input_xsd_filename)
-params_xml, vary_xml = get_xml_inputs(xml_file = input_xml_file,
-                                      xsd_file = input_xsd_file,
-                                      input_params = uncertain_params_src)
+params_xml, vary_xml = get_xml_inputs(xml_file=input_xml_file,
+                                      xsd_file=input_xsd_file,
+                                      input_params=input_params_src)
 
 # Merge the params dict
 params = {**params_cpo, **params_xml}
@@ -118,14 +118,14 @@ print('>>> Create the encoders')
 # params_names dict is given here because we will use MultiEncoder
 encoder_cpo = CPOEncoder(template_filename=input_cpo_filename,
                          target_filename=input_cpo_filename,
-                         common_dir=common_dir,
                          input_cponame=input_cponame,
-                         params_names=list(vary_cpo))
+                         common_dir=common_dir,
+                         input_params=input_params_bc)
 
 encoder_xml = XMLEncoder(template_filename = input_xml_filename,
                          target_filename = input_xml_filename,
-                         common_dir = common_dir,
-                         params_names = list(vary_xml))
+                         input_params=input_params_src,
+                         common_dir=common_dir)
 
 # Combine both encoders into a single encoder
 encoder = uq.encoders.MultiEncoder(encoder_cpo, encoder_xml)

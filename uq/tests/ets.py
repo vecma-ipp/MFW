@@ -1,14 +1,12 @@
 import os
 import easyvvuq as uq
-from ascii_cpo import read
 from easymfw.templates.cpo_encoder import CPOEncoder
 from easymfw.templates.cpo_decoder import CPODecoder
 from easymfw.utils.io_tools import get_cpo_inputs
 # GCG-PJ wrapper
-import easypj
-from easypj import TaskRequirements, Resources
-from easypj import Task, TaskType, SubmitOrder
-
+#import easypj
+#from easypj import TaskRequirements, Resources
+#from easypj import Task, TaskType, SubmitOrder
 
 '''
 Perform UQ for the workflow Transport-Equilibrium-Turblence.
@@ -40,7 +38,7 @@ obj_dir = os.path.abspath("../standalone/bin/"+SYS)
 exec_code = "ets_test"
 
 # Define the uncertain parameters
-uncertain_params = {
+input_params = {
     "te.boundary": {
         "dist": "Normal",
         "err":  0.2,
@@ -63,19 +61,19 @@ output_cponame = "coreprof"
 
 # parameter space for campaign and the distributions list for the sampler
 input_cpo_file = os.path.join(cpo_dir, input_filename)
-params, vary = get_cpo_inputs(cpo_file = input_cpo_file,
-                              cpo_name = input_cponame,
-                              input_params = uncertain_params)
+params, vary = get_cpo_inputs(cpo_file=input_cpo_file,
+                              cpo_name=input_cponame,
+                              input_params=input_params)
 
 # Initialize Campaign object
 print('>>> Initialize Campaign object')
-campaign_name = "UQPJ_ETS_"
+campaign_name = "UQETS_"
 my_campaign = uq.Campaign(name=campaign_name, work_dir=tmp_dir)
 
-# Create new directory for inputs (to be ended with /)
+# Create new directory for inputs
 campaign_dir = my_campaign.campaign_dir
 common_dir = campaign_dir +"/common/"
-os.system("mkdir " + common_dir)
+os.mkdir(common_dir)
 
 # Copy input CPO files (cf test_ets.f90)
 os.system("cp " + cpo_dir + "/*.cpo " + common_dir)
@@ -93,7 +91,7 @@ encoder = CPOEncoder(template_filename=input_filename,
                      target_filename=input_filename,
                      input_cponame=input_cponame,
                      common_dir=common_dir,
-                     uncertain_params=uncertain_params)
+                     input_params=input_params)
 
 # Create the encoder
 print('>>> Create the decoder')
