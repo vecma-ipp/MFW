@@ -75,7 +75,6 @@ my_campaign = uq.Campaign(name=campaign_name, work_dir=tmp_dir)
 campaign_dir = my_campaign.campaign_dir
 common_dir = campaign_dir +"/common/"
 os.mkdir(common_dir)
-print('>>> common_dir = ', common_dir)
 
 # Copy input CPO files (cf test_gem0.f90)
 os.system("cp " +cpo_dir+ "/ets_equilibrium_in.cpo " + common_dir+ "equil_equilibrium_in.cpo")
