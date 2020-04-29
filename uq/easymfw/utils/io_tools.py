@@ -63,10 +63,13 @@ def get_cpo_inputs(cpo_file, cpo_name, input_params):
         # Select a part of input values
         if "ids" in attr.keys():
             indices = attr["ids"]
-            new_value = []
-            for i in indices:
-                new_value.append(value[i])
-            value = new_value
+            if len(indices) == 1:
+                value = value[0]
+            else:
+                new_value = []
+                for i in indices:
+                    new_value.append(value[i])
+                value = new_value
 
         attr_type = type(value)
 

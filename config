@@ -12,7 +12,7 @@ export CXXFLAGS = -g -fPIC
 export FC90 = gfortran
 #export FC90FLAGS = -g -cpp -fPIC -ffree-line-length-none #-fdefault-real-8 -fdefault-double-8
 #export FC90FLAGS = -g -cpp -Wall -fbacktrace -ffree-line-length-none -fcheck=all
-export FC90FLAGS = -O2 -cpp -ffree-line-length-none
+export FC90FLAGS = -O2 -cpp -fPIC -ffree-line-length-none
 export FC77 = gfortran
 export FC77FLAGS = ${FC90FLAGS}
 export MPIF90 = mpif90

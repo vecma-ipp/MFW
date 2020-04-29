@@ -172,11 +172,12 @@ for qoi in output_columns:
     dist = results['output_distributions'][qoi]
 
 #  Graphics for Descriptive satatistics
+from easymfw.utils import plots
+from ascii_cpo import read
+
 corep = read(os.path.join(cpo_dir,  "ets_coreprof_in.cpo"), "coreprof")
 rho = corep.rho_tor_norm
 uparams_names = list(params.keys())
-
-from easymfw.utils import plots
 
 for qoi in output_columns:
     plots.plot_stats(rho, stat[qoi],

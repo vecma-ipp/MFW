@@ -50,17 +50,18 @@ input_params = {
         "dist": "Normal",
         "err":  0.2,
         "ids": flux_indices,
-    },
-    "te.ddrho": {
-        "dist": "Normal",
-        "err": 0.2,
-        "ids": flux_indices,
-    },
-    "ti.ddrho": {
-        "dist": "Normal",
-        "err": 0.2,
-        "ids": flux_indices,
     }
+#    ,
+#    "te.ddrho": {
+#        "dist": "Normal",
+#        "err": 0.2,
+#        "ids": flux_indices,
+#    },
+#    "ti.ddrho": {
+#        "dist": "Normal",
+#        "err": 0.2,
+#        "ids": flux_indices,
+#    }
 }
 
 # CPO file containg initial values of uncertain params
@@ -131,7 +132,7 @@ my_campaign.add_app(name=campaign_name,
 # Create the sampler
 print('>>> Create the sampler')
 my_sampler = uq.sampling.PCESampler(vary=vary,
-                                    polynomial_order=4,
+                                    polynomial_order=2,
                                     regression=True)
 my_campaign.set_sampler(my_sampler)
 
