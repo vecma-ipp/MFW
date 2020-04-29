@@ -21,7 +21,7 @@ endif
 
 # Additional Flags for sources_standalone and test
 ifeq (${SYS},DEFAULT)
-	# GCC: gfortran and mpif90
+	# GCC: gfortran and FC90
 export FC90FLAGS_SOURCES = -fbacktrace -fcheck=all -fstack-check
 else
 	# Intel: ifort and mpifort
@@ -60,8 +60,8 @@ INCLUDES = -I${INCDIR} -I${INC_UAL}
 #--------------------------------------------------------------------#
 # use MPI compiler for all Fortran kernel sources (default=no)       #
 ifeq (${MPI},yes) 
- FC90 = ${MPIF90}
- LD = ${MPIF90}
+ FC90 = ${MPI90}
+ LD = ${MPI90}
  FPPFLAGS += -DMPI -DMPI2
 endif
 
@@ -162,13 +162,13 @@ ETS_SRC: ${SHARED_O} ${SOURCES_O} ${ETS_O} ${OBJDIR}/ets_src.o
 #	$(FC90) -o ${ETS_EQ} $^ -L${ETS} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_XML} -L${LIB_UAL} -lets -lbds -lxmllib -litmconstants -litmtypes -lual ${LDFLAGS} ${LIBLAPACK}
 
 EQUILUPDATE_TEST: ${SHARED_O} ${EQUILUPDATE_O} ${OBJDIR}/equilupdate_test.o
-	$(LD) -o ${EQUILUPDATE_EXE} $^ -L${ETS} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_UAL} -lets -lbds -litmconstants -litmtypes -lual ${LDFLAGS} ${LIBLAPACK}
+	$(FC90) -o ${EQUILUPDATE_EXE} $^ -L${ETS} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_UAL} -lets -lbds -litmconstants -litmtypes -lual ${LDFLAGS} ${LIBLAPACK}
 
 CHEASE_TEST: ${SHARED_O} ${CHEASE_O} ${OBJDIR}/chease_test.o 
-	$(MPIF90) -o ${CHEASE_EXE} $^ -L${CHEASE} -L${LIB_XML} -L${LIB_UAL} -lchease_muscle -lual -lxmllib -lxml2 ${LDFLAGS} ${LIBLAPACK}
+	$(FC90) -o ${CHEASE_EXE} $^ -L${CHEASE} -L${LIB_XML} -L${LIB_UAL} -lchease_muscle -lual -lxmllib -lxml2 ${LDFLAGS} ${LIBLAPACK}
 
 EQ_TEST: ${SHARED_O} ${CHEASE_O} ${EQUILUPDATE_O} ${OBJDIR}/equil_test.o 
-	$(MPIF90) -o ${EQ_EXE} $^ -L${ETS} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${CHEASE} -L${LIB_XML} -L${LIB_UAL} -lets -lbds -litmconstants -litmtypes -lchease_muscle -lual -lxmllib -lxml2 ${LDFLAGS} ${LIBLAPACK}
+	$(FC90) -o ${EQ_EXE} $^ -L${ETS} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${CHEASE} -L${LIB_XML} -L${LIB_UAL} -lets -lbds -litmconstants -litmtypes -lchease_muscle -lual -lxmllib -lxml2 ${LDFLAGS} ${LIBLAPACK}
 
 IMP4DV_TEST: ${SHARED_O} ${IMP4DV_O} ${OBJDIR}/imp4dv_test.o 
 	$(LD) -o ${IMP4DV_EXE} $^ -L${IMP4DV} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_UAL} -limp4dv -lbds -litmconstants -litmtypes -lual ${LDFLAGS} ${LIBLAPACK}
@@ -183,7 +183,7 @@ GEM0_TEST:  ${SHARED_O} ${GEM0_O} ${OBJDIR}/gem0_test.o
 	$(LD) -o ${GEM0_EXE} $^ -L${GEM0} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_XML} -L${LIB_UAL} -lgem0 -lbds -litmconstants -litmtypes -lxmllib -lual ${LDFLAGS} 
 
 GEM_TEST:  ${SHARED_O} ${GEM_O} ${OBJDIR}/gem_test.o
-	$(MPIF90) -o ${GEM_EXE} $^ -L${GEM} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_XML} -L${LIB_UAL} -lgem -lbds -litmconstants -litmtypes -lxmllib -lual ${LDFLAGS} ${FFTW_LIB}
+	$(FC90) -o ${GEM_EXE} $^ -L${GEM} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_XML} -L${LIB_UAL} -lgem -lbds -litmconstants -litmtypes -lxmllib -lual ${LDFLAGS} ${FFTW_LIB}
 
 LOOP_BGB: ${SHARED_O} ${ETS_O} ${EQUILUPDATE_O} ${CHEASE_O} ${BOHMGB_O} ${SOURCES_O} ${OBJDIR}/loop_bgb.o
 	$(LD) -o ${LOOP_BGB_EXE} $^ -L${ETS} -L${CHEASE} -L${BOHMGB} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_XML} -L${LIB_UAL} -lets -lchease_muscle -lbohmgb -lbds -litmconstants -litmtypes -lual -lxmllib -lxml2 ${LDFLAGS} ${LIBLAPACK}
@@ -193,7 +193,7 @@ LOOP_GEM0: ${SHARED_O} ${ETS_O} ${EQUILUPDATE_O} ${CHEASE_O} ${GEM0_O} ${IMP4DV_
 
 
 #ROP_TEST: ${OBJDIR}/uq_modules.o ${OBJDIR}/rop_test.o
-#	$(MPIF90) -o  ${ROP_EXE} $^  -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_XML} -L${LIB_UAL} -lbds -lxmllib -litmconstants -litmtypes -lual ${LDFLAGS} ${LIBLAPACK}
+#	$(FC90) -o  ${ROP_EXE} $^  -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_XML} -L${LIB_UAL} -lbds -lxmllib -litmconstants -litmtypes -lual ${LDFLAGS} ${LIBLAPACK}
 
 ##################################################################################
 
@@ -218,7 +218,7 @@ ${OBJDIR}/string_binding.o: src/tools/string_binding.f90
 #	${FC90} -o $@ -c $< $(FC90FLAGS) 
 
 #${OBJDIR}/spl.o: src/tools/spl.f90
-#	${MPIF90} -o $@ -c $< $(FC90FLAGS) -traceback -check all -fp-stack-check -I${MKL_LIB} 
+#	${FC90} -o $@ -c $< $(FC90FLAGS) -traceback -check all -fp-stack-check -I${MKL_LIB} 
 
 ${OBJDIR}/ets_standalone.o: src/ets_standalone.f90
 	${FC90} -o $@ -c $< $(FC90FLAGS) -I${ETS} -I${INC_CONSTANTS} -I${INC_TYPES} -I${INC_XML} 
@@ -233,19 +233,19 @@ ${OBJDIR}/ets_src.o: src/ets_src.f90
 #	${FC90} -o $@ -c $< $(FC90FLAGS)  -I${INC_TYPES} 
 
 ${OBJDIR}/equilupdate_standalone.o: src/equilupdate_standalone.f90
-	${MPIF90} -o $@ -c $< $(MPIFLAGS) -I${ETS} -I${INC_CONSTANTS} -I${INC_TYPES} 
+	${FC90} -o $@ -c $< $(FC90FLAGS) -I${ETS} -I${INC_CONSTANTS} -I${INC_TYPES} 
 
 ${OBJDIR}/equilupdate_test.o: src/equilupdate_test.f90
-	${MPIF90} -o $@ -c $< $(MPIFLAGS) -I${INC_TYPES}  
+	${FC90} -o $@ -c $< $(FC90FLAGS) -I${INC_TYPES}  
 
 ${OBJDIR}/chease_standalone.o: src/chease_standalone.f90
-	${MPIF90} -o $@ -c $< $(MPIFLAGS) -I${CHEASE} -I${INC_UAL} -I${INC_XML} -I/usr/include/libxml2
+	${FC90} -o $@ -c $< $(FC90FLAGS) -I${CHEASE} -I${INC_UAL} -I${INC_XML} -I/usr/include/libxml2
 
 ${OBJDIR}/chease_test.o: src/chease_test.f90
-	${MPIF90} -o $@ -c $< $(MPIFLAGS) -I${CHEASE} -I${INC_UAL} -I${INC_TYPES} 
+	${FC90} -o $@ -c $< $(FC90FLAGS) -I${CHEASE} -I${INC_UAL} -I${INC_TYPES} 
 
 ${OBJDIR}/equil_test.o: src/equil_test.f90
-	${MPIF90} -o $@ -c $< $(MPIFLAGS) -I${CHEASE} -I${INC_UAL}-I${INC_TYPES} 
+	${FC90} -o $@ -c $< $(FC90FLAGS) -I${CHEASE} -I${INC_UAL}-I${INC_TYPES} 
 
 ${OBJDIR}/imp4dv_standalone.o: src/imp4dv_standalone.f90
 	${FC90} -o $@ -c $< $(FC90FLAGS) -I${INC_BDS}  
@@ -272,10 +272,10 @@ ${OBJDIR}/gem0_test.o: src/gem0_test.f90
 	${FC90} -o $@ -c $< $(FC90FLAGS) -I${INC_BDS}
 
 ${OBJDIR}/gem_standalone.o: src/gem_standalone.f90
-	${MPIF90} -o $@ -c $< $(MPIFLAGS) -I${INC_BDS} -I${INC_XML}
+	${FC90} -o $@ -c $< $(FC90FLAGS) -I${INC_BDS} -I${INC_XML}
 
 ${OBJDIR}/gem_test.o: src/gem_test.f90
-	${MPIF90} -o $@ -c $< $(MPIFLAGS)
+	${FC90} -o $@ -c $< $(FC90FLAGS)
 
 ${OBJDIR}/loop_bgb.o: src/loop_bgb.f90 
 	${FC90} -o $@ -c $< $(FC90FLAGS) -I${INC_TYPES} 
@@ -285,7 +285,7 @@ ${OBJDIR}/loop_gem0.o: src/loop_gem0.f90
 
 #########
 ${OBJDIR}/uq_modules.o: src/rop/uq_modules.f90
-	${MPIF90} -o $@ -c $< $(FC90FLAGS) -I${INC_CONSTANTS} -I${INC_TYPES} -I${INC_XML} 
+	${FC90} -o $@ -c $< $(FC90FLAGS) -I${INC_CONSTANTS} -I${INC_TYPES} -I${INC_XML} 
 
 #${OBJDIR}/rop_test.o: src/rop/rop_test.f90
-#	${MPIF90} -o $@ -c $< $(FC90FLAGS) -I${INC_CONSTANTS} -I${INC_TYPES} -I${INC_XML} 
+#	${FC90} -o $@ -c $< $(FC90FLAGS) -I${INC_CONSTANTS} -I${INC_TYPES} -I${INC_XML} 

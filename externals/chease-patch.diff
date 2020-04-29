@@ -103,7 +103,7 @@ Index: externals/chease/src-f90/Makefile.define_FLAGS
 +ifeq ($(CHEASE_MACHINE),linux_nohdf5)
 +  ifeq ($(CHEASE_F90),gfortran)
 +    F90 = gfortran
-+    F90FLAGS = -g -O2 -fPIC -ffree-line-length-none  -I$(INC_UAL) -I$(INC_XML) -I$(DIR_interpos) 
++    F90FLAGS = -g -O2 -cpp -fPIC -ffree-line-length-none  -I$(INC_UAL) -I$(INC_XML) -I$(DIR_interpos) 
 +    F90FLAGS_parser = -g -O2 -fPIC -ffree-line-length-none  -I$(INC_UAL) -I$(INC_XML) -I$(DIR_interpos) 
 +    F90FLAGS_parser_nor8 = -g -O2 -fPIC -ffree-line-length-none -I$(INC_UAL) -I$(INC_XML) -I$(DIR_interpos)
 +    LDFLAGS = -g -O2 -fPIC -ffree-line-length-none -I$(INC_UAL) 
