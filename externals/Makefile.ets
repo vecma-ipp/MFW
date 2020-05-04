@@ -34,8 +34,10 @@ SOLVERS_O = ${OBJDIR}/type_solver.o ${OBJDIR}/solution_interface.o \
 	${OBJDIR}/solution4.o ${OBJDIR}/solution6.o ${OBJDIR}/solution7.o \
 	${OBJDIR}/solution10.o ${OBJDIR}/SOLVERFEM.o
 
-ETS_O = ${OBJDIR}/s4_parameters.o ${OBJDIR}/plasma_collisionality.o \
-	${OBJDIR}/pedestal.o ${OBJDIR}/main_plasma.o ${OBJDIR}/ets.o \
+ETS_O = ${OBJDIR}/calculate_globals.o ${OBJDIR}/s4_parameters.o \
+	${OBJDIR}/plasma_collisionality.o ${OBJDIR}/pedestal.o \
+	${OBJDIR}/diagnostic_out_ets.o \
+	${OBJDIR}/main_plasma.o ${OBJDIR}/ets.o \
 	${OBJDIR}/equilibrium_input.o ${OBJDIR}/spitzer.o
 
 SOURCES_O = ${OBJDIR}/gausian_src.o
