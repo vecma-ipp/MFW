@@ -55,7 +55,7 @@ module ets_wrapper
        type (type_coretransp), pointer :: coret(:)
        type (type_coresource), pointer :: cores(:)
        type (type_coreimpur), pointer :: corei(:)
-       integer   :: control_integer(2)
+       integer   :: control_integer(5)
        real(R8)  :: control_double(6)  
        type (type_param) :: code_parameters
      end subroutine ITM_ETS
@@ -104,7 +104,7 @@ contains
     integer(kind=c_signed_char), pointer :: corei_in(:)
     integer(kind=c_signed_char), pointer :: toroidf_in(:)
 
-    integer, intent(in)  :: control_integer(3)  !integer control parameters
+    integer, intent(in)  :: control_integer(5)  !integer control parameters
     real(R8), intent(in) :: control_double(6)   !real control parameters
 
     integer(kind=c_signed_char), pointer :: corep_out(:)

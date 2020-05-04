@@ -22,7 +22,7 @@ program ets_kernelB
   integer :: corep_size, equil_size, coret_size, cores_size
   integer :: corei_size, toroidf_size
 
-  integer :: control_integer(3)
+  integer :: control_integer(5)
   real(8)    :: control_double(6)
 
   logical :: end_loop
@@ -221,9 +221,11 @@ contains
   subroutine muscle_ets_control(control_integer, control_double)
     use iso_c_binding
     implicit none
-    integer, intent(out) :: control_integer(3)
+    integer, intent(out) :: control_integer(5)
     real(8), intent(out) :: control_double(6)
     character(kind=c_char, len=255) :: prop, propName
+
+    control_integer = 0
 
     propName = c_char_"solver_type"//C_NULL_CHAR
     call MUSCLE_Get_Property(propName, prop)
@@ -238,7 +240,7 @@ contains
     propName = c_char_"quasi_neut"//C_NULL_CHAR
     call MUSCLE_Get_Property(propName, prop)
     print *,trim(propName),' = ',trim(prop)
-    read(prop,'(i4)') control_integer(2)
+    read(prop,'(i4)') control_integer(3)
 
     propName = c_char_"tau"//C_NULL_CHAR
     call MUSCLE_Get_Property(propName, prop)
