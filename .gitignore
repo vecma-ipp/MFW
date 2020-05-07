@@ -42,5 +42,6 @@ uq/easymfw/templates/*cache*_
 uq/easymfw/templates/*.pyc
 uq/data/outputs/*.png
 uq/data/outputs/*.db
+uq/data/outputs/*.csv
 uq/run-*.sh
 uq/log-*
