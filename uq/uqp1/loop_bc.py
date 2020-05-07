@@ -37,11 +37,11 @@ exec_code = "loop_gem0"
 
 # Define the uncertain parameters
 input_params = {
-    "te.boundary": {
+    "te.boundary.value": {
         "dist": "Normal",
         "err":  0.25,
     },
-    "ti.boundary": {
+    "ti.boundary.value": {
         "dist": "Normal",
         "err": 0.25,
     }
@@ -52,7 +52,7 @@ input_filename = "ets_coreprof_in.cpo"
 input_cponame = "coreprof"
 
 # The quantities of intersts and the cpo file to set them
-output_columns = ["te", "ti"]
+output_columns = ["te.value", "ti.value"]
 output_filename = "ets_coreprof_out.cpo"
 output_cponame = "coreprof"
 
@@ -187,13 +187,14 @@ rho = corep.rho_tor_norm
 uparams_names = list(params.keys())
 
 for qoi in output_columns:
+    fig = campaign_name + qoi.split('.')[0]
     plots.plot_stats(rho, stat[qoi],
                      xlabel=r'$\rho_{tor}$', ylabel=qoi,
                      ftitle=qoi+' profile',
-                     fname='data/outputs/STAT_'+qoi+"_"+campaign_name)
+                     fname='data/outputs/STAT_'+fig)
 
     plots.plot_sobols_all(rho, sob1[qoi], uparams_names,
                       ftitle='1st Sobol indices: '+qoi,
-                      fname='data/outputs/SA_'+qoi+"_"+campaign_name)
+                      fname='data/outputs/SA_'+fig)
 
 print('>>> UQ-Workflow BC: END')

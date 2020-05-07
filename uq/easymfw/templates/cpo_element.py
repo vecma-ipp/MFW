@@ -18,7 +18,7 @@ class CPOElement():
         cpolist = ['coreprof', 'coretransp','equilibrium',
               'coresource', 'coreimpur', 'toroidfield', 'coreneutrals']
         if cpo_name not in cpolist:
-            msg = ("CPOElement must be given a right 'cpo_name'")
+            msg = ("CPOElement: wrong 'cpo_name'")
             logging.error(msg)
             raise RuntimeError(msg)
 
@@ -27,134 +27,87 @@ class CPOElement():
 
     def get_value(self, param):
         # param: str the parameter name
+        # examples: "te.boundary.value", "te.value", "values[0].te_transp.diff_eff"
 
-        stack = param.split(".")
+        # Number of ion species
+        nion = 1
+        if self.cpo_name in ["coreprof", 'coretransp', 'coresource']:
+            nion = len(self.core.compositions.ions)
+
         field = self.core
-        if self.cpo_name == "coretransp":
+        if self.cpo_name == 'coretransp':
             field = self.core.values[0]
 
+        stack = param.split(".")
         for attr in stack:
             field = getattr(field, attr)
 
-        if type(field).__base__ == ual.ualdef.KeepInOrder:
-            if hasattr(field, "value"):
-                value = field.value
+        # take into accout some particular cases
+        if "boundary" in stack:
+            if "ti" in stack and nion == 1:
+                value = field[0][0]
             else:
-                msg = "CPOElement: check 'param' name in get_value"
-                logging.error(msg)
-                raise RuntimeError(msg)
+                value = field[0]
+        elif "ti" in stack or "ni" in stack or "ti_transp" in stack:
+            if nion == 1:
+                value = list(field.T[0])
+            else:
+                value = [list(field.T[0]), list(field.T[1])]
         else:
-            value = field
-
-        # Needed for sampling
-        if type(value) == np.ndarray:
-            shape = np.shape(value)
-            # Particular case
-            if "boundary" in stack:
-                if len(shape) == 1:
-                    value = value[0]
-                else:
-                    if shape[1] == 1:
-                        value = float(value[0])
-                    else:
-                        value = list(value[0])
+            if type(field) == np.ndarray:
+                value = list(field)
             else:
-                # Element with two spices
-                if len(shape) == 2:
-                    if shape[1] == 1:
-                        value = list(value.T[0])
-                    if shape[1] == 2:
-                        value = [list(value[i]) for i in range(len(value))]
-                else:
-                    value = list(value)
+                value = field
 
         return value
 
     def set_value(self, param, value, index=None):
-        # param: uncertain parameter or QoI name
-        # value: the corresponding value to set
-        # index: list of indices to update if value is list
+        # Number of ion species
+        nion = 1
+        if self.cpo_name in ["coreprof", 'coretransp', 'coresource']:
+            nion = len(self.core.compositions.ions)
 
-        # TODO check value and index size and if index are 'int' in the interval [0, len(value)[.
-        # TODO add kack to update neigbours (eg. te and te.ddho, etc..)
-
-        stack = param.split(".")
-        field = self.core
-        if self.cpo_name == "coretransp":
+        # the root
+        field_value = self.core
+        if self.cpo_name == 'coretransp':
             field = self.core.values[0]
 
+        stack = param.split(".")
         for attr in stack:
-            field_base = field
-            field = getattr(field, attr)
+            field_base = field_value
+            field_value = getattr(field_value, attr)
 
-        if type(field).__base__ == ual.ualdef.KeepInOrder:
-            if hasattr(field, "value"):
-                old_value = field.value
-
-                if type(old_value) == np.ndarray:
-                    new_value = old_value
-                    shape = np.shape(new_value)
-
-                    # Particular case
-                    if "boundary" in stack:
-                        if len(shape) == 1:
-                            new_value[0] = value
-                        else:
-                            if shape[1] == 1:
-                                new_value[0] = value
-                            else:
-                                new_value[0] = np.array(value)
-                    else:
-                        # Element with two spieces
-                        if len(shape) == 2 and shape[1] == 2:
-                            new_value.T[0] = np.array(value[0])
-                            new_value.T[1] = np.array(value[1])
-                        elif len(np.shape(value)) == 0:
-                            new_value = np.array([value])
-                        else:
-                            new_value = np.array(value)
-
-                    # update a part of the field
-                    if index is None:
-                        setattr(field, "value", new_value)
-                    else:
-                        j = 0
-                        for i in index:
-                            old_value[i] = new_value[j]
-                            j += 1
-                        setattr(field, "value", old_value)
-                else:
-                    setattr(field, "value", value)
-            else:
-                msg = "CPOElement: check 'param' name in set_value"
-                logging.error(msg)
-                raise RuntimeError(msg)
+        if index is None:
+            new_value = value
         else:
-            old_value = getattr(field_base, stack[-1])
-            if type(old_value) == np.ndarray:
-                new_value = old_value
-                shape = np.shape(new_value)
+            # TODO check value and index have the same sizes, and
+            # if index is composed by int in [0, size(field_value)-1]
+            new_value = self.get_value(param)
+            j = 0
+            for i in index:
+                new_value[i] = value[j]
+                j += 1
 
-                # Element with two spices
-                if len(shape) == 2 and shape[1] == 2:
-                    new_value.T[0] = np.array(value[0])
-                    new_value.T[1] = np.array(value[1])
-                elif len(np.shape(value)) == 0:
-                    new_value = np.array([value])
-                else:
-                    new_value = np.array(value)
-
-                # update a part of the field
-                if index is None:
-                    setattr(field_base, stack[-1], new_value)
-                else:
-                    j = 0
-                    for i in index:
-                        old_value[i] = new_value[j]
-                        j += 1
-                    setattr(field_base, stack[-1], old_value)
+        # take into accout some particular cases
+        if "boundary" in stack:
+            if "ti" in stack and nion == 1:
+                field_value[0][0] = new_value
             else:
-                setattr(field_base, stack[-1], value)
+                field_value[0] = new_value
+        elif "ti" in stack or "ni" in stack or "ti_transp" in stack:
+            if nion == 1:
+                field_value.T[0] = np.array(new_value)
+            else:
+                field_value.T[0] = np.array(new_value[0])
+                field_value.T[1] = np.array(new_value[1])
+        else:
+            if type(field_value) == np.ndarray:
+                field_value = np.array(new_value)
+            else:
+                field_value = new_value
+
+        setattr(field_base, stack[-1], field_value)
+
 
     # Save into new file
     def save(self, filename):

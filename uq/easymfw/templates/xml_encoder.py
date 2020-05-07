@@ -38,14 +38,18 @@ class XMLEncoder(BaseEncoder, encoder_name="xml_encoder"):
             value = params[name]
             self.xml.set_value(name, value)
 
+        # Do a symbolic link to other files (cpo, xml and restart data)
+        os.system("ln -s " + self.common_dir + "*.cpo " + target_dir)
+        os.system("ln -s " + self.common_dir + "*.xml " + target_dir)
+        os.system("ln -s " + self.common_dir + "*.xsd " + target_dir)
+        #os.system("ln -s " + self.common_dir + "*.dat " + target_dir)
+
         # Write target input (XML file)
         target_file_path = os.path.join(target_dir, self.target_filename)
         if(os.path.isfile(target_file_path)):
             os.system("rm " + target_file_path)
         self.xml.save(target_file_path)
 
-        # Do a symbolic link to other files (cpo, xml and restart data)
-        os.system("ln -s " + self.common_dir + "* " + target_dir + " >/dev/null 2>&1")
 
     def get_restart_dict(self):
         return {"template_filename": self.template_filename,

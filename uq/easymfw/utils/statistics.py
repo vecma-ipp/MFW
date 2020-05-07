@@ -27,15 +27,23 @@ def get_dist(name, value, err):
     """
 
     # TODO add the condition: shift if lower threshlod <= a critical value
+    # => for verification
 
     if name.lower() == "normal":
             if type(value) == list:
                 d = []
                 for v in value:
-                    d.append(cp.Normal(v, err*v))
+                    if v == 0.:
+                        dv = cp.Normal(v, err)
+                    else:
+                        dv = cp.Normal(v, err*v)
+                    d.append(dv)
                 dist = cp.J(*d)
             else:
-                dist = cp.Normal(value, err*value)
+                if value == 0.:
+                    dist = cp.Normal(value, err)
+                else:
+                    dist = cp.Normal(value, err*value)
 
     elif name.lower() == "uniform":
 

@@ -36,10 +36,10 @@ exec_code = "equil_test"
 
 # Define uncertain parameters
 temp_params = {
-    "te": {
+    "te.value": {
         "dist": "Normal",
         "err": 0.2,
-        "ids": indices,
+        "idx": indices,
     }#,
     #"ti": {
     #    "dist": "Normal",

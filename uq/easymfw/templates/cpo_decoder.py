@@ -68,7 +68,6 @@ class CPODecoder(BaseDecoder, decoder_name="cpo_decoder"):
 
         # Output data frame
         data = pd.DataFrame(qoi_values)
-
         return data
 
     def get_restart_dict(self):

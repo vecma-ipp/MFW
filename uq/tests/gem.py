@@ -16,7 +16,7 @@ IMPORTANT CHECK: in gem.xml, nrho_transp = 1
 print('TEST gem-UQ: START')
 
 # We test 1 flux tube (to use list if more)
-flux_indices = 69
+flux_indices = [69]
 
 # execustion with QCJ-PJ
 EXEC_PJ = False
@@ -44,25 +44,25 @@ exec_code = "gem_test"
 # Define the uncertain parameters
 # Electron temperature and its gradient
 input_params = {
-    "te": {
+    "te.value": {
         "dist": "Normal",
         "err":  0.2,
-        "ids": flux_indices,
+        "idx": flux_indices,
     },
-    "ti": {
+    "ti.value": {
         "dist": "Normal",
         "err":  0.2,
-        "ids": flux_indices,
+        "idx": flux_indices,
     },
-    "te.ddrho": {
+    "te.ddrho.value": {
         "dist": "Normal",
         "err": 0.2,
-        "ids": flux_indices,
+        "idx": flux_indices,
     },
-    "ti.ddrho": {
+    "ti.ddrho.value": {
         "dist": "Normal",
         "err": 0.2,
-        "ids": flux_indices,
+        "idx": flux_indices,
     }
 }
 

@@ -38,19 +38,27 @@ class CPOEncoder(BaseEncoder, encoder_name="cpo_encoder"):
 
         for name, attr in self.input_params.items():
             value = params[name]
-            index = None
-            if "ids" in attr.keys():
-                index = attr["ids"]
-            self.cpo.set_value(name, value, index)
+            indices = None
+            if "idx" in attr.keys():
+                indices = attr["idx"]
+                if len(indices)==1:
+                    value = [value]
+            self.cpo.set_value(name, value, indices)
+
+        # Do a symbolic link to other files (cpo, xml and restart data)
+        os.system("ln -s " + self.common_dir + "*.xml " + target_dir)
+        os.system("ln -s " + self.common_dir + "*.xsd " + target_dir)
+        os.system("ln -s " + self.common_dir + "*.cpo " + target_dir)
+
+        count = os.system("ls -1 " + self.common_dir + "/*.dat 2>/dev/null | wc -l")
+        if cout != 0:
+            os.system("ln -s " + self.common_dir + "*.dat " + target_dir)
 
         # Write target input CPO file
         target_file_path = os.path.join(target_dir, self.target_filename)
         if(os.path.isfile(target_file_path)):
             os.system("rm " + target_file_path)
         self.cpo.save(target_file_path)
-
-        # Do a symbolic link to other files (cpo, xml and restart data)
-        os.system("ln -s " + self.common_dir + "* " + target_dir + " >/dev/null 2>&1")
 
     def get_restart_dict(self):
         return {"template_filename": self.template_filename,
