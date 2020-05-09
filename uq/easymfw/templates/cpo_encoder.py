@@ -46,13 +46,13 @@ class CPOEncoder(BaseEncoder, encoder_name="cpo_encoder"):
             self.cpo.set_value(name, value, indices)
 
         # Do a symbolic link to other files (cpo, xml and restart data)
-        os.system("ln -s " + self.common_dir + "*.xml " + target_dir)
-        os.system("ln -s " + self.common_dir + "*.xsd " + target_dir)
-        os.system("ln -s " + self.common_dir + "*.cpo " + target_dir)
+        os.system("ln -s " + self.common_dir + "*.xml " + target_dir + " 2>/dev/null")
+        os.system("ln -s " + self.common_dir + "*.xsd " + target_dir + " 2>/dev/null")
+        os.system("ln -s " + self.common_dir + "*.cpo " + target_dir + " 2>/dev/null")
 
         count = os.system("ls -1 " + self.common_dir + "/*.dat 2>/dev/null | wc -l")
-        if cout != 0:
-            os.system("ln -s " + self.common_dir + "*.dat " + target_dir)
+        if count != 0:
+            os.system("ln -s " + self.common_dir + "*.dat " + target_dir + " 2>/dev/null")
 
         # Write target input CPO file
         target_file_path = os.path.join(target_dir, self.target_filename)
