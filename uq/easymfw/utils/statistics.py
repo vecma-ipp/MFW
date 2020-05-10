@@ -28,7 +28,6 @@ def get_dist(name, value, err):
 
     # TODO add the condition: shift if lower threshlod <= a critical value
     # => for verification: Values must be > 0
-
     if name.lower() == "normal":
             if type(value) == list:
                 d = []

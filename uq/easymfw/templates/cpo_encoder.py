@@ -49,10 +49,9 @@ class CPOEncoder(BaseEncoder, encoder_name="cpo_encoder"):
         os.system("ln -s " + self.common_dir + "*.xml " + target_dir + " 2>/dev/null")
         os.system("ln -s " + self.common_dir + "*.xsd " + target_dir + " 2>/dev/null")
         os.system("ln -s " + self.common_dir + "*.cpo " + target_dir + " 2>/dev/null")
-
-        count = os.system("ls -1 " + self.common_dir + "/*.dat 2>/dev/null | wc -l")
-        if count != 0:
-            os.system("ln -s " + self.common_dir + "*.dat " + target_dir + " 2>/dev/null")
+        #count = os.system("ls -1 " + self.common_dir + "/*.dat 2>/dev/null | wc -l")
+        #if count != 0:
+        os.system("ln -s " + self.common_dir + "*.dat " + target_dir + " 2>/dev/null")
 
         # Write target input CPO file
         target_file_path = os.path.join(target_dir, self.target_filename)

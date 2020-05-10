@@ -54,10 +54,10 @@ class CPOElement():
             else:
                 value = [list(field.T[0]), list(field.T[1])]
         else:
-            if type(field) == np.ndarray:
-                value = list(field)
-            else:
-                value = field
+            value = field
+
+        if type(value) == np.ndarray:
+            value = list(value)
 
         return value
 
