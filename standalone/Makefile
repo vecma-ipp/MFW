@@ -21,10 +21,10 @@ endif
 
 # Additional Flags for sources_standalone and test
 ifeq (${SYS},DEFAULT)
-	# GCC: gfortran and FC90
+# GCC: gfortran and FC90
 export FC90FLAGS_SOURCES = -fbacktrace -fcheck=all -fstack-check
 else
-	# Intel: ifort and mpifort
+# Intel: ifort and mpifort
 export FC90FLAGS_SOURCES = -traceback -check all -fp-stack-check
 endif
 
@@ -50,7 +50,7 @@ GEM0 = ../externals/gem0/${SYS}
 ORB5 = ../externals/orb5.git/${SYS}
 
 # set up the VPATH for searching for source files ##############################
-Vpath = ${SRCDIR} ${SRCDIR}/tools ${SRCDIR}/tests
+VPATH = ${SRCDIR} ${SRCDIR}/tools ${SRCDIR}/tests
 
 
 # additional flags #############################################################
@@ -106,7 +106,8 @@ MPIFLAGS += ${INCLUDES} ${MODSPEC}${INCDIR}
 
 # Objects files ################################################################
 
-SHARED_O = ${OBJDIR}/linterp.o ${OBJDIR}/string_binding.o
+SHARED_O = ${OBJDIR}/linterp.o ${OBJDIR}/string_binding.o \
+	   ${OBJDIR}/c_tools.o ${OBJDIR}/filetools.o 
 
 ETS_O = ${OBJDIR}/ets_standalone.o 
 EQUILUPDATE_O = ${OBJDIR}/equilupdate_standalone.o  
@@ -249,7 +250,7 @@ ${OBJDIR}/equil_test.o: src/equil_test.f90
 
 ${OBJDIR}/imp4dv_standalone.o: src/imp4dv_standalone.f90
 	${FC90} -o $@ -c $< $(FC90FLAGS) -I${INC_BDS}  
-	
+
 ${OBJDIR}/imp4dv_test.o: src/imp4dv_test.f90
 	${FC90} -o $@ -c $< $(FC90FLAGS) -I${INC_BDS}  
 
