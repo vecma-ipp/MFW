@@ -65,7 +65,6 @@ contains
   subroutine chease2buf(equil_in_buf, equil_out_buf) 
     use iso_c_binding
     use string_binding
-    use xml_file_reader
     use deallocate_structures
     use read_structures
     use write_structures
@@ -79,13 +78,10 @@ contains
     type (type_equilibrium), pointer :: equil_in(:)
     type (type_equilibrium), pointer :: equil_out(:)
     
-    character(F_STR_SIZE) :: equil_file_in, equil_file_out, username, tmpdir
+    character(F_STR_SIZE) :: equil_in_file, equil_out_file, username, tmpdir
     integer :: tmpsize, ios
 
-    ! Path to the workflows directory
-    integer :: len
-    integer :: output_flag
-    character(len=:), pointer :: output_message
+    allocate(equil_in(1))
 
     call getenv("USER",username)
     call getenv("CPO_SERIALIZATION_DIR",tmpdir)
@@ -95,15 +91,15 @@ contains
           tmpdir = trim(tmpdir)//'/'
        end if
     end if
-    equil_file_in = TRIM(tmpdir)//TRIM(username)//'_chease_equilibrium_in.cpo'
-    call byte2file(equil_file_in, equil_in_buf, size(equil_in_buf))
+    equil_in_file = TRIM(tmpdir)//TRIM(username)//'_chease_equilibrium_in.cpo'
+    call byte2file(equil_in_file, equil_in_buf, size(equil_in_buf))
 
-    open (unit = 10, file = equil_file_in, &
+    open (unit = 10, file = equil_in_file, &
          status = 'old', form = 'formatted', &
          action = 'read', iostat = ios)
     if (ios == 0) then
        close (10)
-       call open_read_file(10, equil_file_in )
+       call open_read_file(10, equil_in_file )
        call read_cpo(equil_in(1), 'equilibrium')
        call close_read_file
     else
@@ -115,15 +111,18 @@ contains
 
     ! transfer CPO to buf
     !...  write the results
-    equil_file_out = 'chease_equilibrium_out.cpo'
-    call open_write_file(11,equil_file_out)
+    equil_out_file = 'chease_equilibrium_out.cpo'
+    call open_write_file(11,equil_out_file)
     call write_cpo(equil_out(1),'equilibrium')
     call close_write_file
 
-    call file2byte(equil_file_out, tmpbuf, tmpsize)
+    call file2byte(equil_out_file, tmpbuf, tmpsize)
     allocate(equil_out_buf(tmpsize))
     equil_out_buf(1:tmpsize) = tmpbuf(1:tmpsize)
     call dealloc_cbytebuf(tmpbuf)
+
+    call deallocate_cpo(equil_in)
+    call deallocate_cpo(equil_out)
 
   end subroutine chease2buf
   ! ...
