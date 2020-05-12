@@ -360,6 +360,158 @@ contains
 
   end subroutine ets_cpo
   ! -----------------------------------------------------------------------
+
+
+
+  ! -----------------------------------------------------------------------
+  subroutine ets2buf(corep_in_buf, &
+       equil_in_buf, &
+       coret_in_buf, &
+       cores_in_buf, &
+       corei_in_buf, &
+       corep_out_buf)
+    use iso_c_binding
+    use string_binding
+    use deallocate_structures
+    use read_structures
+    use write_structures
+    use c_tools
+    implicit none
+
+    integer(kind=c_signed_char), pointer :: equil_in_buf(:)
+    integer(kind=c_signed_char), pointer :: corep_in_buf(:)
+    integer(kind=c_signed_char), pointer :: coret_in_buf(:)
+    integer(kind=c_signed_char), pointer :: corei_in_buf(:)
+    integer(kind=c_signed_char), pointer :: cores_in_buf(:)
+    integer(kind=c_signed_char), pointer :: corep_out_buf(:)
+    integer(kind=c_signed_char), pointer :: tmpbuf(:)
+
+    type (type_equilibrium), pointer :: equil_in(:)
+    type (type_coreprof), pointer :: corep_in(:) 
+    type (type_coretransp), pointer :: coret_in(:) 
+    type (type_coresource), pointer :: cores_in(:) 
+    type (type_coreimpur), pointer :: corei_in(:) 
+    type (type_coreprof), pointer :: corep_out(:)
+
+    character(F_STR_SIZE) :: equil_in_file, corep_in_file, coret_in_file
+    character(F_STR_SIZE) :: corei_in_file, cores_in_file, corep_out_file
+    character(F_STR_SIZE) :: username, tmpdir
+    integer :: tmpsize, ios
+
+    allocate(equil_in(1))
+    allocate(corep_in(1))
+    allocate(coret_in(1))
+    allocate(cores_in(1))
+    allocate(corei_in(1))
+
+    call getenv("USER",username)
+    call getenv("CPO_SERIALIZATION_DIR",tmpdir)
+    tmpsize = len_trim(tmpdir)
+    if (tmpsize.ne.0) then
+       if (tmpdir(tmpsize:tmpsize) .ne. '/') then
+          tmpdir = trim(tmpdir)//'/'
+       end if
+    end if
+
+    equil_in_file = TRIM(tmpdir)//TRIM(username)//'_ets_equilibrium_in.cpo'
+    call byte2file(equil_in_file, equil_in_buf, size(equil_in_buf))
+    open (unit = 10, file = equil_in_file, &
+         status = 'old', form = 'formatted', &
+         action = 'read', iostat = ios)
+    if (ios == 0) then
+       close (10)
+       call open_read_file(10, equil_in_file )
+       call read_cpo(equil_in(1), 'equilibrium')
+       call close_read_file
+    else
+       print *,"ERROR: no input equilibrium"
+       STOP
+    end if
+
+    corep_in_file = TRIM(tmpdir)//TRIM(username)//'_ets_coreprof_in.cpo'
+    call byte2file(corep_in_file, corep_in_buf, size(corep_in_buf))
+    open (unit = 10, file = corep_in_file, &
+         status = 'old', form = 'formatted', &
+         action = 'read', iostat = ios)
+    if (ios == 0) then
+       close (10)
+       call open_read_file(10, corep_in_file )
+       call read_cpo(corep_in(1), 'coreprof')
+       call close_read_file
+    else
+       print *,"ERROR: no input coreprof"
+       STOP
+    end if
+
+    coret_in_file = TRIM(tmpdir)//TRIM(username)//'_ets_coretransp_in.cpo'
+    call byte2file(coret_in_file, coret_in_buf, size(coret_in_buf))
+    open (unit = 10, file = coret_in_file, &
+         status = 'old', form = 'formatted', &
+         action = 'read', iostat = ios)
+    if (ios == 0) then
+       close (10)
+       call open_read_file(10, coret_in_file )
+       call read_cpo(coret_in(1), 'coretransp')
+       call close_read_file
+    else
+       print *,"ERROR: no input coretransp"
+       STOP
+    end if
+
+    cores_in_file = TRIM(tmpdir)//TRIM(username)//'_ets_coresource_in.cpo'
+    call byte2file(cores_in_file, cores_in_buf, size(cores_in_buf))
+    open (unit = 10, file = cores_in_file, &
+         status = 'old', form = 'formatted', &
+         action = 'read', iostat = ios)
+    if (ios == 0) then
+       close (10)
+       call open_read_file(10, cores_in_file )
+       call read_cpo(cores_in(1), 'coresource')
+       call close_read_file
+    else
+       print *,"ERROR: no input coresource"
+       STOP
+    end if
+
+    corei_in_file = TRIM(tmpdir)//TRIM(username)//'_ets_coreimpur_in.cpo'
+    call byte2file(corei_in_file, corei_in_buf, size(corei_in_buf))
+    open (unit = 10, file = corei_in_file, &
+         status = 'old', form = 'formatted', &
+         action = 'read', iostat = ios)
+    if (ios == 0) then
+       close (10)
+       call open_read_file(10, corei_in_file )
+       call read_cpo(corei_in(1), 'coreimpur')
+       call close_read_file
+    else
+       print *,"ERROR: no input coreimpur"
+       STOP
+    end if
+
+    call ets_cpo(corep_in, equil_in, coret_in, cores_in, corei_in, corep_out)
+
+    ! transfer CPO to buf
+    !...  write the results
+    corep_out_file = 'ets_coreprof_out.cpo'
+    call open_write_file(11,corep_out_file)
+    call write_cpo(corep_out(1),'coreprof')
+    call close_write_file
+
+    call file2byte(corep_out_file, tmpbuf, tmpsize)
+    allocate(corep_out_buf(tmpsize))
+    corep_out_buf(1:tmpsize) = tmpbuf(1:tmpsize)
+    call dealloc_cbytebuf(tmpbuf)
+
+    call deallocate_cpo(equil_in)
+    call deallocate_cpo(corep_in)
+    call deallocate_cpo(coret_in)
+    call deallocate_cpo(cores_in)
+    call deallocate_cpo(corei_in)
+    call deallocate_cpo(corep_out)
+
+  end subroutine ets2buf
+
+
   
   ! -----------------------------------------------------------------------
   ! TODO For ets_test => to be modified or use ets_cpo
