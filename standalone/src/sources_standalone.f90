@@ -62,10 +62,10 @@ contains
     use c_tools
     implicit none
 
-    integer(kind=c_signed_char), pointer :: equil_in_buf(:)
-    integer(kind=c_signed_char), pointer :: corep_in_buf(:)
-    integer(kind=c_signed_char), pointer :: cores_out_buf(:)
-    integer(kind=c_signed_char), pointer :: tmpbuf(:)
+    character(kind=c_char), pointer :: equil_in_buf(:)
+    character(kind=c_char), pointer :: corep_in_buf(:)
+    character(kind=c_char), pointer :: cores_out_buf(:)
+    character(kind=c_char), pointer :: tmpbuf(:)
 
     type (type_equilibrium), pointer :: equil_in(:)
     type (type_coreprof), pointer :: corep_in(:)

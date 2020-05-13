@@ -36,7 +36,7 @@ module c_tools
      subroutine c_byte2file(filename, data, size) bind(c,name='byte2file')
        use iso_c_binding
        character(kind=c_char), dimension(*), intent(in) :: filename
-       integer(kind=c_signed_char), dimension(*), intent(in) :: data
+       character(kind=c_char), dimension(*), intent(in) :: data
        integer(kind=c_int), intent(in), value :: size
      end subroutine c_byte2file
   end interface
@@ -55,7 +55,7 @@ contains
 
   subroutine dealloc_cbytebuf(data)
     use iso_c_binding
-    integer(kind=c_signed_char), pointer :: data(:)
+    character(kind=c_char), pointer :: data(:)
     type(c_ptr) :: ptr
 
     ptr = c_loc(data(1))
@@ -83,7 +83,7 @@ contains
     character(kind=c_char, len=128) :: c_filename, c_copyname
     integer(kind=c_int) :: c_size
     type(c_ptr) :: c_data_ptr
-    integer(kind=c_signed_char), pointer :: c_data(:)
+    character(kind=c_char), pointer :: c_data(:)
 
     c_filename = trim(filename)//c_null_char
     c_copyname = trim(copyname)//c_null_char
@@ -120,7 +120,7 @@ contains
   subroutine file2byte(filename, data, size)
     character(*), intent(in) :: filename
     character(kind=c_char, len=128) :: c_filename
-    integer(kind=c_signed_char), pointer :: data(:)
+    character(kind=c_char), pointer :: data(:)
     integer, intent(out) :: size
     integer(kind=c_int) :: c_size
     type(c_ptr) :: data_ptr
@@ -134,7 +134,7 @@ contains
   subroutine byte2file(filename, data, size)
     character(*), intent(in) :: filename
     character(kind=c_char, len=128) :: c_filename
-    integer(kind=c_signed_char), pointer :: data(:)
+    character(kind=c_char), pointer :: data(:)
     integer, intent(in) :: size
     integer(kind=c_int) :: c_size
 

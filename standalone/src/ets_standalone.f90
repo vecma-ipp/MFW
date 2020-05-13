@@ -378,13 +378,13 @@ contains
     use c_tools
     implicit none
 
-    integer(kind=c_signed_char), pointer :: equil_in_buf(:)
-    integer(kind=c_signed_char), pointer :: corep_in_buf(:)
-    integer(kind=c_signed_char), pointer :: coret_in_buf(:)
-    integer(kind=c_signed_char), pointer :: corei_in_buf(:)
-    integer(kind=c_signed_char), pointer :: cores_in_buf(:)
-    integer(kind=c_signed_char), pointer :: corep_out_buf(:)
-    integer(kind=c_signed_char), pointer :: tmpbuf(:)
+    character(kind=c_char), pointer :: equil_in_buf(:)
+    character(kind=c_char), pointer :: corep_in_buf(:)
+    character(kind=c_char), pointer :: coret_in_buf(:)
+    character(kind=c_char), pointer :: corei_in_buf(:)
+    character(kind=c_char), pointer :: cores_in_buf(:)
+    character(kind=c_char), pointer :: corep_out_buf(:)
+    character(kind=c_char), pointer :: tmpbuf(:)
 
     type (type_equilibrium), pointer :: equil_in(:)
     type (type_coreprof), pointer :: corep_in(:) 
@@ -542,8 +542,8 @@ contains
     real(R8) :: control_double(6)   !real control parameters
     real(R8), intent(in) :: tau_in
     real(R8) :: ainput(:),aoutput(:)
-    integer(kind=c_signed_char), pointer :: corep_out(:)
-    integer(kind=c_signed_char), pointer :: tmpbuf(:)
+    character(kind=c_char), pointer :: corep_out(:)
+    character(kind=c_char), pointer :: tmpbuf(:)
 
     integer :: ios
     integer :: npar
