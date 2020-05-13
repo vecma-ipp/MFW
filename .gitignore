@@ -28,6 +28,10 @@ standalone/lib
 standalone/obj
 standalone/include
 
+muscle3/bin
+muscle3/obj
+muscle3/include
+
 uq/logs/*
 uq/build*
 uq/dist*
