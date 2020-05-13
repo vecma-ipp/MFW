@@ -4,7 +4,7 @@ Simple solver for Te in cylindrical geometry
 
 David.Coster@ipp.mpg.de
 """
-import numpy as np 
+import numpy as np
 import matplotlib.pylab as plt
 
 def F_ped(r, b_pos, b_height, b_sol, b_width, b_slope):
@@ -103,14 +103,39 @@ def solve_Te(Qe_tot=2e6, H0=0, Hw=0.1, Te_bc=100, chi=1, a0=1, R0=3, E0=1.5, b_p
     Te.constrain(Te_bc, mesh.facesRight)
     eqI = TransientTerm(coeff=scipy.constants.e*ne*1.5) == DiffusionTerm(coeff=scipy.constants.e*ne*chi) + Qe
 
-    viewer = Viewer(vars=(Te), title='Heating power = %0.3e W\nchi = %s' % (Qe.cellVolumeAverage.value * V, chi), datamin=0, datamax=5000)
+    eqI.solve(var=Te, dt=dt)
 
-    eqI.solve(var=Te, dt=dt) ; viewer.plot()
+    #viewer = Viewer(vars=(Te),
+    #                title='Heating power = %0.3e W\nchi = %s' % (Qe.cellVolumeAverage.value * V, chi),
+    #                datamin=0, datamax=5000)
+    #viewer.plot()
 
     return Te.value, ne.value, mesh.cellCenters.value[0], mesh.cellCenters.value[0]/a
 
 if __name__ == '__main__':
-    Te, ne, rho, rho_norm = solve_Te()
+    import sys
+    import json
+
+    # read samples from json file
+    json_input = sys.argv[1]
+    with open(json_input, "r") as f:
+        inputs = json.load(f)
+
+    # the uncertain parameters
+    Qe_tot = inputs['Qe_tot']
+    H0 = inputs['H0']
+    Hw = inputs['Hw']
+    Te_bc = inputs['Te_bc']
+
+    # call the Fusion toy mpdel model
+    Te, ne, rho, rho_norm = solve_Te(Qe_tot=Qe_tot, H0=H0, Hw=Hw, Te_bc=Te_bc)
+
+    # save QoI value in the output csv file for analysis
+    header = 'Te,ne'
+    output_filename = inputs['out_file']
+    np.savetxt(output_filename, np.c_[Te, ne],
+               delimiter=',', comments='',
+               header=header)
 
 """
 to test:
