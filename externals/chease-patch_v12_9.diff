@@ -98,7 +98,7 @@ Index: externals/chease/src-f90/Makefile.define_FLAGS
 ===================================================================
 --- externals/chease/src-f90/Makefile.define_FLAGS	(révision 1319)
 +++ externals/chease/src-f90/Makefile.define_FLAGS	(copie de travail)
-@@ -519,3 +519,148 @@
+@@ -519,3 +519,162 @@
      endif
    endif
  endif
@@ -166,6 +166,20 @@ Index: externals/chease/src-f90/Makefile.define_FLAGS
 +    LIBSlibxml = -lxml2
 +    OBJS_euitm = 
 +  endif 
++endif 
++
++ifeq ($(CHEASE_MACHINE),marconi-gnu) 
++    F90 = gfortran
++    F90FLAGS = -g -O2 -fPIC -fdefault-real-8 -fdefault-double-8 -ffree-line-length-none  -I$(INC_UAL) -I$(INC_XML) -I$(DIR_interpos) 
++    F90FLAGS_parser = -g -O2 -fPIC -fdefault-real-8 -fdefault-double-8 -ffree-line-length-none  -I$(INC_UAL) -I$(INC_XML) -I$(DIR_interpos) 
++    LDFLAGS = -g -O2 -fPIC -ffree-line-length-none -I$(INC_UAL) -I$(INC_XML)
++    FUTILS = 
++    INCL_FUTILS= 
++    INCL_HDF5 = 
++    LIBS =  -L$(LIB_UAL) -lual -L$(LIB_XML) -lxmllib -lz -L$(MKL_LIB) -llapack -lblas
++    LIBS_HDF5 = 
++    LIBSlibxml = -lxml2
++    OBJS_euitm =
 +endif 
 +
 +ifeq ($(CHEASE_MACHINE),supermuc) 
@@ -251,7 +265,7 @@ Index: externals/chease/src-f90/Makefile.define_MACHINE
 ===================================================================
 --- externals/chease/src-f90/Makefile.define_MACHINE	(révision 1319)
 +++ externals/chease/src-f90/Makefile.define_MACHINE	(copie de travail)
-@@ -84,3 +84,36 @@
+@@ -84,3 +84,39 @@
        CHEASE_MACHINE = ITER
      endif
   endif
@@ -263,6 +277,9 @@ Index: externals/chease/src-f90/Makefile.define_MACHINE
 + endif
 + ifeq ($(SYS),MARCONI)
 +   CHEASE_MACHINE = marconi
++ endif
++ ifeq ($(SYS),MARCONI-GNU)
++   CHEASE_MACHINE = marconi-gnu
 + endif
 + ifeq ($(SYS),SUPERMUC)
 +   CHEASE_MACHINE = supermuc

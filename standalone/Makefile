@@ -20,12 +20,12 @@ ifneq (${MAINMAKE},yes)
 endif
 
 # Additional Flags for sources_standalone and test
-ifeq (${SYS},DEFAULT)
+ifeq (${FC90},gfortran)
 # GCC: gfortran and FC90
-export FC90FLAGS_SOURCES = -fbacktrace -fcheck=all -fstack-check
+export FC90FLAGS_SOURCES = -fbacktrace -fcheck=all -fstack-check 
 else
 # Intel: ifort and mpifort
-export FC90FLAGS_SOURCES = -traceback -check all -fp-stack-check
+export FC90FLAGS_SOURCES = -traceback -check all -fp-stack-check 
 endif
 
 #.SUFFIXES:
@@ -246,7 +246,7 @@ ${OBJDIR}/chease_test.o: src/chease_test.f90
 	${FC90} -o $@ -c $< $(FC90FLAGS) -I${CHEASE} -I${INC_UAL} -I${INC_TYPES} 
 
 ${OBJDIR}/equil_test.o: src/equil_test.f90
-	${FC90} -o $@ -c $< $(FC90FLAGS) -I${CHEASE} -I${INC_UAL}-I${INC_TYPES} 
+	${FC90} -o $@ -c $< $(FC90FLAGS) -I${CHEASE} -I${INC_UAL} -I${INC_TYPES} 
 
 ${OBJDIR}/imp4dv_standalone.o: src/imp4dv_standalone.f90
 	${FC90} -o $@ -c $< $(FC90FLAGS) -I${INC_BDS}  

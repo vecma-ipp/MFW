@@ -432,6 +432,41 @@ export ORB5_LDFLAGS = -lmkl_scalapack_lp64 -lmkl_blacs_intelmpi_lp64 -lmkl_intel
 endif
 
 
+# Marconi (CINECA) with GCC ####################################################################
+ifeq ($(SYS),MARCONI-GNU)
+export CC = gcc
+export CCFLAGS = -g -O3 -fPIC
+export CXX = g++
+export CXXFLAGS = -g -O3 -fPIC
+export FC90= gfortran
+export FC90FLAGS = -g -O3 -fPIC -ffree-line-length-none
+export FC77 = gfortran
+export FC77FLAGS = ${FC90FLAGS}
+export MPIF90 = mpif90
+export MPIFLAGS = ${FC90FLAGS}
+export FPP = cpp
+export FPPFLAGS = -P -traditional
+export LD = gfortran
+export LDFLAGS = 
+
+export FPPGEM = -DMPI -DMPI2 -DMPI_REAL=MPI_DOUBLE_PRECISION \
+       -DMPI_COMPLEX=MPI_DOUBLE_COMPLEX
+
+export MODSPEC = -J
+
+#export MKL_LIB = ${MKLROOT}/lib/intel64
+#export LIBLAPACK = -I${MKLROOT}/include -Wl,--start-group ${MKL_LIB}/libmkl_intel_lp64.a \
+#${MKL_LIB}/libmkl_sequential.a ${MKL_LIB}/libmkl_core.a -Wl,--end-group -lpthread -lm
+export LIBLAPACK = -I${LAPACK_INC} -I${BLAS_INC} -L${LAPACK_LIB} -L${BLAS_LIB} -llapack -lrefblas -lblas
+export FFTW_INC = -I${FFTW_HOME}/include 
+export FFTW_LIB = -L${FFTW_HOME}/lib -lfftw3 
+
+export ORB5_MOD = MARCONI
+export ORB5_LDDIRS = -L${MKL_LIB} -L${HDF5_HOME}/lib -L${HOME}/lib/O
+export ORB5_LDFLAGS = -lmkl_scalapack_lp64 -lmkl_blacs_intelmpi_lp64 -lmkl_intel_lp64  -lmkl_sequential -lmkl_core -lpthread -lfutils -lhdf5_fortran -lhdf5 -lz -lbsplines -lpppack
+endif
+
+
 
 ##########################################################################################
 # Neale at Hartee/STFC ###################################################################

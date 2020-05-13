@@ -19,7 +19,11 @@ ifeq (,$(findstring -r8,$(FC90FLAGS)))
 ifeq ($(SYS),DEFAULT) 
   FC90FLAGS += -k8
 else  
-	FC90FLAGS += -r8
+ifeq ($(FC90),ifort)
+  FC90FLAGS += -r8
+else
+  FC90FLAGS += -fdefault-real-8 -fdefault-double-8
+endif
 endif
 endif
 

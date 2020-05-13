@@ -29,7 +29,11 @@ INCLUDES = -I${INC_UAL} -I${INC_TYPES} -I${INC_CONSTANTS} -I${INC_XML} \
 	-I${INC_BDS} -I${OBJDIR} ${IFLAGS}
 
 ifeq (,$(findstring -r8,$(FC90FLAGS)))
+ifeq ($(FC90),ifort)
   FC90FLAGS += -r8
+else
+  FC90FLAGS += -fdefault-real-8 -fdefault-double-8
+endif
 endif
 
 FC90FLAGS += ${INCLUDES} ${MODSPEC}${OBJDIR} 
