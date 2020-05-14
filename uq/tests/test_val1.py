@@ -10,10 +10,10 @@ from easyvvuq.comparison.validate import Validate_Similarity
 # Experimental data in csv format containing:
 # rho_toroidal,Data,Lower,Upper
 f = []
-f.append(os.path.abspath("exp_data/36266_4000_Te.csv"))
-f.append(os.path.abspath("exp_data/36297_4000_Te.csv"))
-f.append(os.path.abspath("exp_data/36309_4000_Te.csv"))
-f.append(os.path.abspath("exp_data/36440_4000_Te.csv"))
+f.append(os.path.abspath("data/exp_data/36266_4000_Te.csv"))
+f.append(os.path.abspath("data/exp_data/36297_4000_Te.csv"))
+f.append(os.path.abspath("data/exp_data/36309_4000_Te.csv"))
+f.append(os.path.abspath("data/exp_data/36440_4000_Te.csv"))
 
 scale = 1000.
 
@@ -87,7 +87,7 @@ def exp_dist(mid, lo, up):
 mid, lo, up = exp_stats()
 p, c = exp_dist(mid, lo, up)
 
-v1 = Validate_Similarity()
+v1 = Validate_Similarity("JS")
 v2 = Validate_Similarity("W2")
 
 
@@ -97,7 +97,7 @@ v2 = Validate_Similarity("W2")
 #        if i != j:
 #            d.append(v.compare(p[i], p[j]))
 
-ex = ["Experimental data", "36297", "36309", "36440", "Simulation data"]
+ex = ["Exp. (36266)", "Exp. (36297)", "36309", "36440", "UQ output"]
 
 def plot_dd(p, m, l, u, i, j):
 
@@ -124,8 +124,8 @@ def plot_dd(p, m, l, u, i, j):
 
     ax2 = ax1.twinx()
     ax2.plot(x, d, 'r-', alpha=0.5)
-    ax2.set_ylim([0., 1.])
-    ax2.set_ylabel('JSD distance',fontsize=18, color='r')
+    #ax2.set_ylim([0., 1.])
+    ax2.set_ylabel('Wasserstein distance',fontsize=18, color='r')
     ax2.tick_params('y', colors='r')
 
     fig.savefig("exp_dist"+str(i)+str(j)+".png")

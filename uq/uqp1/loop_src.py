@@ -139,7 +139,7 @@ my_campaign.add_app(name=campaign_name,
 
 # Create the sampler
 print('>>> Create the sampler')
-my_sampler = uq.sampling.PCESampler(vary=vary, polynomial_order=2,
+my_sampler = uq.sampling.PCESampler(vary=vary, polynomial_order=4,
                                     regression=False)
 my_campaign.set_sampler(my_sampler)
 
@@ -220,15 +220,15 @@ for qoi in output_columns:
                       fname='data/outputs/SA_'+fig)
 
 # Save STATS into the csv file
-    import numpy as np
-    header = 'rho_tor\t'
-    values = [rho]
-    for qoi in output_columns:
-        values.append(list(stat[qoi]['mean']))
-        values.append(list(stat[qoi]['std']))
-        header = header + '\tmean_'+qoi + '\tstd_'+qoi
-
-    np.savetxt('data/outputs/'+campaign_name+'STATS.csv',
-               np.c_[values].T, delimiter='\t', header=header)
-
+#    import numpy as np
+#    header = 'rho_tor\t'
+#    values = [rho]
+#    for qoi in output_columns:
+#        values.append(list(stat[qoi]['mean']))
+#        values.append(list(stat[qoi]['std']))
+#        header = header + '\tmean_'+qoi + '\tstd_'+qoi
+#
+#    np.savetxt('data/outputs/'+campaign_name+'STATS.csv',
+#               np.c_[values].T, delimiter='\t', header=header)
+#
 print('>>> UQ Workflow Sources: END')
