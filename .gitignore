@@ -44,6 +44,8 @@ uq/easymfw/utils/*cache*_
 uq/easymfw/utils/*.pyc
 uq/easymfw/templates/*cache*_
 uq/easymfw/templates/*.pyc
+uq/tuto/*cache*_
+uq/tuto/*.pyc
 uq/data/outputs/*.png
 uq/data/outputs/*.db
 uq/data/outputs/*.csv
