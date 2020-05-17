@@ -38,10 +38,10 @@ if __name__ == '__main__':      ### This is needed if you are using a local clus
     str = ""
     first = True
     for k in params.keys():
-    if first:
-        str += '{"%s": "$%s"' % (k,k) ; first = False
-    else:
-        str += ', "%s": "$%s"' % (k,k)
+        if first:
+            str += '{"%s": "$%s"' % (k,k) ; first = False
+        else:
+            str += ', "%s": "$%s"' % (k,k)
     str += '}'
     print(str, file=open('jet.template','w'))
     """
@@ -116,7 +116,7 @@ if __name__ == '__main__':      ### This is needed if you are using a local clus
     ### cluster.scale(4)
 
     from dask.distributed import Client
-    client = Client(processes=True, n_workers=4, threads_per_worker=1)
+    client = Client(processes=True, threads_per_worker=1)
     print(client)
 
     cwd = os.getcwd()
@@ -124,6 +124,8 @@ if __name__ == '__main__':      ### This is needed if you are using a local clus
     print(cmd)
     my_campaign.apply_for_each_run_dir(uq.actions.ExecuteLocal(cmd, interpret='python3'), client)
 
+    client.close()
+    
     time_end = time.time()
     print('Time for phase 4', time_end-time_start)
     time_start = time.time()
@@ -209,110 +211,4 @@ if __name__ == '__main__':      ### This is needed if you are using a local clus
     plt.xlabel('Te')
     plt.ylabel('distribution function')
     plt.savefig('distribution_functions.png')
-
-"""
-%run -i easyvvuq_jet_dask_tutorial.py
-Time for phase 1 0.28307414054870605
-Number of samples = 3125
-Time for phase 2 29.378397226333618
-Time for phase 3 2.4428601264953613
-<Client: 'tcp://127.0.0.1:63591' processes=4 threads=4, memory=17.18 GB>
-/Users/dpc/src/EasyVVUQ/jet/jet_model.py jet_in.json
-Time for phase 4 3159.74453663826
-Time for phase 5 449.5551199913025
-Time for phase 6 1438.8484630584717
-Time for phase 7 1.0728836059570312e-05
-Time for phase 8 0.49858593940734863
-
-
-
-
-
-%run -i easyvvuq_jet_dask_tutorial.py                                   
-Time for phase 1 0.47551512718200684
-Number of samples = 3125
-Time for phase 2 27.04229712486267
-Time for phase 3 2.219496250152588
-Time for phase 4 4426.590360164642
-Time for phase 5 289.60593724250793
-Time for phase 6 811.7055320739746
-Time for phase 7 2.09808349609375e-05
-Time for phase 8 0.3314039707183838
-
-
-
-
-
-%run -i easyvvuq_jet_dask_tutorial.py                                   
-Time for phase 1 0.3907310962677002
-Number of samples = 3125
-Time for phase 2 26.767902851104736
-Time for phase 3 2.9965028762817383
-Time for phase 1 0.5438997745513916
-Time for phase 1 0.54457688331604
-Time for phase 1 0.5456032752990723
-Time for phase 1 0.5510129928588867
-Number of samples = 3125
-Time for phase 2 63.53254795074463
-Number of samples = 3125
-Time for phase 2 63.56011414527893
-Number of samples = 3125
-Time for phase 2 64.70177698135376
-Number of samples = 3125
-Time for phase 2 64.723384141922
-Time for phase 3 5.098176002502441
-Time for phase 3 5.140179872512817
-
-
-
-
-
-%run -i easyvvuq_jet_dask_tutorial.py                                   
-Time for phase 1 0.39667820930480957
-Number of samples = 3125
-Time for phase 2 24.74001407623291
-Time for phase 3 2.2722489833831787
-Time for phase 1 0.5663909912109375
-Time for phase 1 0.5660111904144287
-Time for phase 1 0.5694892406463623
-Time for phase 1 0.5694599151611328
-Number of samples = 3125
-Time for phase 2 57.98588705062866
-Number of samples = 3125
-Time for phase 2 58.028733253479004
-Number of samples = 3125
-Time for phase 2 58.20742201805115
-Number of samples = 3125
-Time for phase 2 58.28035593032837
-Time for phase 3 5.187877893447876
-Time for phase 3 5.215036153793335
-
-
-
-
-
-%run -i easyvvuq_jet_dask_tutorial.py                                  
-Time for phase 1 1.1621198654174805
-Time for phase 2 112.04156613349915
-Time for phase 4 4460.67898607254
-Time for phase 5 324.477196931839
-Time for phase 6 595.1378879547119
-Time for phase 7 0.00030493736267089844
-Time for phase 8 0.45113706588745117
-
-
-
-
-
-
-Time for phase 1 0.4670450687408447
-Time for phase 2 39.2676100730896
-Time for phase 3 2.6985158920288086
-Time for phase 4 5216.318249940872
-Time for phase 5 74.85999393463135
-Time for phase 6 537.1869812011719
-Time for phase 7 0.002438068389892578
-Time for phase 8 0.10825705528259277
-
-"""
 
