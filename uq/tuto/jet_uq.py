@@ -10,14 +10,14 @@ import matplotlib.pylab as plt
 time_start = time.time()
 
 # Set to True if execution with QCJ-PilotJob
-EXEC_PJ = False
+EXEC_PJ = True
 
 # Model infos
 TEMPLATE = "DPC/jet.template"
 APPLICATION = "DPC/jet_model.py"
 ENCODED_FILENAME = "jet_in.json"
 
-# Defined in sbach script or bash profile, otherwise use "/tmp/"
+# tmpdir can be defined in sbach script or bash profile, otherwise use "/tmp/"
 tmpdir = os.environ["SCRATCH"]
 jobdir = os.getcwd()
 
@@ -134,7 +134,7 @@ if EXEC_PJ:
     qcgpjexec = easypj.Executor()
     #qcgpjexec.create_manager(dir=my_campaign.campaign_dir, log_level='info')
     # For intercative mode comment above line and use:
-    qcgpjexec.create_manager(dir=my_campaign.campaign_dir, resources='25', log_level='info')
+    # qcgpjexec.create_manager(dir=my_campaign.campaign_dir, resources='40', log_level='info')
 
     qcgpjexec.add_task(Task(
         TaskType.EXECUTION,
@@ -185,11 +185,11 @@ time_start = time.time()
 
 my_campaign.save_state("campaign_state.json")
 
-###old_campaign = uq.Campaign(state_file="campaign_state.json", work_dir=".")
+# Restart campaign
+old_campaign = uq.Campaign(state_file="campaign_state.json", work_dir=tmp_dir)
 
-# TODO separate run after easyvvuq fix
-#pickle.dump(results, open('jet_results.pickle','bw'))
-###saved_results = pickle.load(open('jet_results.pickle','br'))
+pickle.dump(results, open('jet_results.pickle','bw'))
+saved_results = pickle.load(open('jet_results.pickle','br'))
 
 time_end = time.time()
 print('Time for phase 8', time_end-time_start)
