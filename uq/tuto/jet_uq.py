@@ -1,45 +1,73 @@
 import os
 import easyvvuq as uq
 import chaospy as cp
-
-'''
-Perform UQ for the workflow Transport-Equilibrium-Turblence.
-Uncertainties are driven by the following input parameters:
-- Qe_tot: heating power [W].
-- H0: position of Gaussian [m].
-- Hw: width of Gaussian [m].
-- Te_bc: outer edge Te boundary condition [eV].
-'''
+import pickle
+import time
+import numpy as np
+import matplotlib.pylab as plt
 
 
-print('>>> JET_UQ: START')
+time_start = time.time()
+
+# Set to True if execution with QCJ-PilotJob
+EXEC_PJ = False
+
+# Model infos
+TEMPLATE = "DPC/jet.template"
+APPLICATION = "DPC/jet_model.py"
+ENCODED_FILENAME = "jet_in.json"
+
+# Defined in sbach script or bash profile, otherwise use "/tmp/"
+tmpdir = os.environ["SCRATCH"]
+jobdir = os.getcwd()
+
+# Set up a fresh campaign
+campaign_name = "jet_uqpj"
+my_campaign = uq.Campaign(name=campaign_name,  work_dir=tmpdir)
 
 # Define parameter space
-# TODO we can define also the min and max for each param.
 params = {
-    "Qe_tot": {"type": "float", "default": 2e6},
-    "H0": {"type": "float", "default": 0.},
-    "Hw": {"type": "float", "default": 0.1},
-    "Te_bc": {"type": "float", "default": 100.},
-    "out_file": {"type": "string", "default": "output.csv"}
+    "Qe_tot":   {"type": "float",   "min": 1.0e6, "max": 50.0e6, "default": 2e6},
+    "H0":       {"type": "float",   "min": 0.00,  "max": 1.0,    "default": 0},
+    "Hw":       {"type": "float",   "min": 0.01,  "max": 100.0,  "default": 0.1},
+    "Te_bc":    {"type": "float",   "min": 10.0,  "max": 1000.0, "default": 100},
+    "chi":      {"type": "float",   "min": 0.01,  "max": 100.0,  "default": 1},
+    "a0":       {"type": "float",   "min": 0.2,   "max": 10.0,   "default": 1},
+    "R0":       {"type": "float",   "min": 0.5,   "max": 20.0,   "default": 3},
+    "E0":       {"type": "float",   "min": 1.0,   "max": 10.0,   "default": 1.5},
+    "b_pos":    {"type": "float",   "min": 0.95,  "max": 0.99,   "default": 0.98},
+    "b_height": {"type": "float",   "min": 3e19,  "max": 10e19,  "default": 6e19},
+    "b_sol":    {"type": "float",   "min": 2e18,  "max": 3e19,   "default": 2e19},
+    "b_width":  {"type": "float",   "min": 0.005, "max": 0.02,   "default": 0.01},
+    "b_slope":  {"type": "float",   "min": 0.0,   "max": 0.05,   "default": 0.01},
+    "nr":       {"type": "integer", "min": 10,    "max": 1000,   "default": 10},
+    "dt":       {"type": "float",   "min": 1e-3,  "max": 1e3,    "default": 100},
+    "out_file": {"type": "string",  "default": "output.csv"}
 }
+"""
+str = ""
+first = True
+for k in params.keys():
+    if first:
+        str += '{"%s": "$%s"' % (k,k) ; first = False
+    else:
+        str += ', "%s": "$%s"' % (k,k)
+str += '}'
+print(str, file=open('jet.template','w'))
+"""
 
-# output file for QoI
-output_columns = ["Te", "ne"]
+# QoI output and cols
+output_filename = params["out_file"]["default"]
+qoi_cols = ["te", "ne", "rho", "rho_norm"]
 
-# Set up a campaign object
-print('>>> Initialize Campaign object')
-campaign_name = "tmpuq_"
-my_campaign = uq.Campaign(name=campaign_name)
+# Create an encoder, decoder and collater for PCE test app
+encoder = uq.encoders.GenericEncoder(template_fname=jobdir + '/' +TEMPLATE,
+                                     delimiter='$',
+                                     target_filename=ENCODED_FILENAME)
 
-# Create an encoder, decoder and collater
-encoder = uq.encoders.GenericEncoder(
-    template_fname='jet.template',
-    delimiter='$',
-    target_filename='jet_in.json')
 
-decoder = uq.decoders.SimpleCSV(target_filename="output.csv",
-                                output_columns=output_columns,
+decoder = uq.decoders.SimpleCSV(target_filename=output_filename,
+                                output_columns=qoi_cols,
                                 header=0)
 
 collater = uq.collate.AggregateSamples(average=False)
@@ -51,68 +79,192 @@ my_campaign.add_app(name=campaign_name,
                     decoder=decoder,
                     collater=collater)
 
+time_end = time.time()
+print('Time for phase 1', time_end-time_start)
+time_start = time.time()
+
 # Create the sampler
-print('>>> Create the sampler')
 vary = {
-    "Qe_tot": cp.Uniform(0.8*2e6, 1.2*2e6),
-    "H0": cp.Uniform(0, 0.2),
-    "Hw": cp.Uniform(0.8*0.1, 1.2*0.1),
-    "Te_bc": cp.Normal(100, 0.2*100)
+    "Qe_tot":   cp.Uniform(1.8e6, 2.2e6),
+    #"H0":       cp.Uniform(0.0,   0.2),
+    #"Hw":       cp.Uniform(0.1,   0.5),
+    #"chi":      cp.Uniform(0.8,   1.2),
+    "Te_bc":    cp.Uniform(80.0,  120.0)
 }
+"""
+    "a0":       cp.Uniform(0.9,   1.1),
+    "R0":       cp.Uniform(2.7,   3.3),
+    "E0":       cp.Uniform(1.4,   1.5),
+    "b_pos":    cp.Uniform(0.95,  0.99),
+    "b_height": cp.Uniform(5e19,  7e19),
+    "b_sol":    cp.Uniform(1e19,  3e19),
+    "b_width":  cp.Uniform(0.015, 0.025),
+    "b_slope":  cp.Uniform(0.005, 0.020)
+"""
 
-my_sampler = uq.sampling.PCESampler(vary=vary,
-                                    polynomial_order=3,
-                                    regression=True)
-
-# Associate the sampler with the campaign
+# Associate a sampler with the campaign
+my_sampler = uq.sampling.PCESampler(vary=vary, polynomial_order=3)
+print('Number of samples: ', my_sampler.n_samples)
 my_campaign.set_sampler(my_sampler)
 
 # Will draw all (of the finite set of samples)
-print('>>> Draw Samples- Ns = ', my_sampler._number_of_samples)
 my_campaign.draw_samples()
 
-print('>>> Populate runs_dir')
+time_end = time.time()
+print('Time for phase 2', time_end-time_start)
+time_start = time.time()
+
+# Will perform encoder part (it can be done by PJ)
 my_campaign.populate_runs_dir()
 
-cwd = os.getcwd()
-cmd = f"{cwd}/jet.py jet_in.json"
-my_campaign.apply_for_each_run_dir(uq.actions.ExecuteLocal(cmd, interpret='python3'))
+time_end = time.time()
+print('Time for phase 3', time_end-time_start)
+time_start = time.time()
+
+# Commande code to execute
+cmd = jobdir + "/" + APPLICATION + " " + ENCODED_FILENAME
+
+# QCG-PJ execution
+if EXEC_PJ:
+    # GCG-PJ wrapper
+    import easypj
+    from easypj import TaskRequirements, Resources
+    from easypj import Task, TaskType, SubmitOrder
+
+    qcgpjexec = easypj.Executor()
+    #qcgpjexec.create_manager(dir=my_campaign.campaign_dir, log_level='info')
+    # For intercative mode comment above line and use:
+    qcgpjexec.create_manager(dir=my_campaign.campaign_dir, resources='25', log_level='info')
+
+    qcgpjexec.add_task(Task(
+        TaskType.EXECUTION,
+        TaskRequirements(cores=Resources(exact=1)),
+        application='python3 ' + cmd
+    ))
+
+    qcgpjexec.run(
+        campaign=my_campaign,
+        submit_order=SubmitOrder.EXEC_ONLY
+    )
+
+    qcgpjexec.terminate_manager()
+
+# Local execution
+else:
+    my_campaign.apply_for_each_run_dir(uq.actions.ExecuteLocal(cmd, interpret='python3'))
+
+time_end = time.time()
+print('Time for phase 4', time_end-time_start)
+time_start = time.time()
+
+# Collater
 my_campaign.collate()
 
+time_end = time.time()
+print('Time for phase 5', time_end-time_start)
+time_start = time.time()
+
 # Post-processing analysis
-print('>>> Post-processing analysis')
-my_analysis = uq.analysis.PCEAnalysis(sampler=my_sampler,
-                                          qoi_cols=output_columns)
-my_campaign.apply_analysis(my_analysis)
+my_campaign.apply_analysis(uq.analysis.PCEAnalysis(sampler=my_campaign.get_active_sampler(), qoi_cols=qoi_cols))
+
+time_end = time.time()
+print('Time for phase 6', time_end-time_start)
+time_start = time.time()
 
 # Get Descriptive Statistics
-print('>>> Get results')
 results = my_campaign.get_last_analysis()
+stats = results['statistical_moments']['te']
+per = results['percentiles']['te']
+sobols = results['sobols_first']['te']
+rho = results['statistical_moments']['rho']['mean']
+rho_norm = results['statistical_moments']['rho_norm']['mean']
 
-stat = {}
-sob1 = {}
-for qoi in output_columns:
-    stat[qoi] = results['statistical_moments'][qoi]
-    sob1[qoi] = results['sobols_first'][qoi]
+time_end = time.time()
+print('Time for phase 7', time_end-time_start)
+time_start = time.time()
 
-# Save graphics
-print('>>> Plot Descriptive Statistics')
-import jet
-import pylab as plt
+my_campaign.save_state("campaign_state.json")
 
-Te, ne, rho, rho_norm = jet.solve_Te()
+###old_campaign = uq.Campaign(state_file="campaign_state.json", work_dir=".")
 
-mean = stat["Te"]["mean"]
-std = stat["Te"]["std"]
+# TODO separate run after easyvvuq fix
+#pickle.dump(results, open('jet_results.pickle','bw'))
+###saved_results = pickle.load(open('jet_results.pickle','br'))
 
-plt.plot(rho, mean, 'b-', alpha=0.6, label='Mean')
-plt.plot(rho, mean-std, 'b-', alpha=0.25)
-plt.plot(rho, mean+std, 'b-', alpha=0.25)
-plt.fill_between(rho, mean-std, mean+std, alpha=0.2, label=r'Mean $\pm$ deviation')
-plt.xlabel(r"$\rho$")
-plt.ylabel(r"$T_e$")
-plt.title("Te profile")
-plt.grid()
-plt.legend()
-plt.show()
-print('>>> JET_UQ: END')
+time_end = time.time()
+print('Time for phase 8', time_end-time_start)
+
+plt.switch_backend('agg')
+plt.ion()
+
+fig1 = plt.figure()
+plt.plot(rho, stats['mean'], 'b-', label='Mean')
+plt.plot(rho, stats['mean']-stats['std'], 'b--', label='+1 std deviation')
+plt.plot(rho, stats['mean']+stats['std'], 'b--')
+plt.fill_between(rho, stats['mean']-stats['std'], stats['mean']+stats['std'], color='b', alpha=0.2)
+plt.plot(rho, per['p10'], 'b:', label='10 and 90 percentiles')
+plt.plot(rho, per['p90'], 'b:')
+plt.fill_between(rho, per['p10'], per['p90'], color='b', alpha=0.1)
+plt.fill_between(rho, [r.lower[0] for r in results['output_distributions']['te']], [r.upper[0] for r in results['output_distributions']['te']], color='b', alpha=0.05)
+plt.legend(loc=0)
+plt.xlabel('rho [m]')
+plt.ylabel('Te [eV]')
+plt.title(my_campaign.campaign_dir)
+fig1.savefig("fig1")
+plt.close(fig1)
+
+fig2 = plt.figure()
+for k in sobols.keys(): plt.plot(rho, sobols[k][0], label=k)
+plt.legend(loc=0)
+plt.xlabel('rho [m]')
+plt.ylabel('sobols_first')
+plt.title(my_campaign.campaign_dir)
+fig2.savefig("fig2")
+plt.close(fig2)
+
+fig3 = plt.figure()
+for k in results['sobols_total']['te'].keys(): plt.plot(rho, results['sobols_total']['te'][k][0], label=k)
+plt.legend(loc=0)
+plt.xlabel('rho [m]')
+plt.ylabel('sobols_total')
+plt.title(my_campaign.campaign_dir)
+fig3.savefig("fig3")
+plt.close(fig3)
+
+fig4 = plt.figure()
+for i, D in enumerate(results['output_distributions']['te']):
+    _Te = np.linspace(D.lower[0], D.upper[0], 101)
+    _DF = D.pdf(_Te)
+    plt.loglog(_Te, _DF, 'b-')
+    plt.loglog(stats['mean'][i], np.interp(stats['mean'][i], _Te, _DF), 'bo')
+    plt.loglog(stats['mean'][i]-stats['std'][i], np.interp(stats['mean'][i]-stats['std'][i], _Te, _DF), 'b*')
+    plt.loglog(stats['mean'][i]+stats['std'][i], np.interp(stats['mean'][i]+stats['std'][i], _Te, _DF), 'b*')
+    plt.loglog(per['p10'][i],  np.interp(per['p10'][i], _Te, _DF), 'b+')
+    plt.loglog(per['p90'][i],  np.interp(per['p90'][i], _Te, _DF), 'b+')
+plt.xlabel('Te')
+plt.ylabel('distribution function')
+fig4.savefig("fig4")
+plt.close(fig4)
+
+
+"""
+Time for phase 1 0.3424241542816162
+Time for phase 2 78.29818987846375
+Time for phase 3 12.24399185180664
+Time for phase 4 5167.55646109581
+Time for phase 5 65.48898196220398
+Time for phase 6 191.89830493927002
+Time for phase 7 1.9788742065429688e-05
+
+
+
+Time for phase 1 0.4670450687408447
+Time for phase 2 39.2676100730896
+Time for phase 3 2.6985158920288086
+Time for phase 4 5216.318249940872
+Time for phase 5 74.85999393463135
+Time for phase 6 537.1869812011719
+Time for phase 7 0.002438068389892578
+Time for phase 8 0.10825705528259277
+
+"""
