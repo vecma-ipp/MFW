@@ -86,9 +86,9 @@ time_start = time.time()
 # Create the sampler
 vary = {
     "Qe_tot":   cp.Uniform(1.8e6, 2.2e6),
-    #"H0":       cp.Uniform(0.0,   0.2),
-    #"Hw":       cp.Uniform(0.1,   0.5),
-    #"chi":      cp.Uniform(0.8,   1.2),
+    "H0":       cp.Uniform(0.0,   0.2),
+    "Hw":       cp.Uniform(0.1,   0.5),
+    "chi":      cp.Uniform(0.8,   1.2),
     "Te_bc":    cp.Uniform(80.0,  120.0)
 }
 """
@@ -132,9 +132,9 @@ if EXEC_PJ:
     from easypj import Task, TaskType, SubmitOrder
 
     qcgpjexec = easypj.Executor()
-    #qcgpjexec.create_manager(dir=my_campaign.campaign_dir, log_level='info')
+    qcgpjexec.create_manager(dir=my_campaign.campaign_dir, log_level='info')
     # For intercative mode comment above line and use:
-    # qcgpjexec.create_manager(dir=my_campaign.campaign_dir, resources='40', log_level='info')
+    #qcgpjexec.create_manager(dir=my_campaign.campaign_dir, resources='40', log_level='info')
 
     qcgpjexec.add_task(Task(
         TaskType.EXECUTION,
@@ -186,7 +186,7 @@ time_start = time.time()
 my_campaign.save_state("campaign_state.json")
 
 # Restart campaign
-old_campaign = uq.Campaign(state_file="campaign_state.json", work_dir=tmp_dir)
+old_campaign = uq.Campaign(state_file="campaign_state.json", work_dir=tmpdir)
 
 pickle.dump(results, open('jet_results.pickle','bw'))
 saved_results = pickle.load(open('jet_results.pickle','br'))
@@ -195,7 +195,8 @@ time_end = time.time()
 print('Time for phase 8', time_end-time_start)
 
 plt.switch_backend('agg')
-plt.ion()
+# Just for interactive plots:
+#plt.ion()
 
 fig1 = plt.figure()
 plt.plot(rho, stats['mean'], 'b-', label='Mean')

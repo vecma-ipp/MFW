@@ -8,10 +8,10 @@
 #SBATCH --error=pj-%j.err
 
 ## wall time in format MINUTES:SECONDS
-#SBATCH --time=01:00:00
+#SBATCH --time=02:00:00
 
 ## number of nodes and tasks per node
-#SBATCH --nodes=1
+#SBATCH --nodes=2
 #SBATCH --tasks-per-node=40
 
 ## queue name
