@@ -11,7 +11,7 @@
 #SBATCH --time=02:00:00
 
 ## number of nodes and tasks per node
-#SBATCH --nodes=2
+#SBATCH --nodes=5
 #SBATCH --tasks-per-node=40
 
 ## queue name
