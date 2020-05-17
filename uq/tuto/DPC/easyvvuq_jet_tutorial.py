@@ -149,15 +149,15 @@ plt.plot(rho, stats['mean'], 'b-', label='Mean')
 plt.plot(rho, stats['mean']-stats['std'], 'b--', label='+1 std deviation')
 plt.plot(rho, stats['mean']+stats['std'], 'b--')
 plt.fill_between(rho, stats['mean']-stats['std'], stats['mean']+stats['std'], color='b', alpha=0.2)
-plt.plot(rho, per['p10'], 'b:', label='10 and 90 percentiles')
-plt.plot(rho, per['p90'], 'b:')
-plt.fill_between(rho, per['p10'], per['p90'], color='b', alpha=0.1)
+plt.plot(rho, per['p10'].ravel(), 'b:', label='10 and 90 percentiles')
+plt.plot(rho, per['p90'].ravel(), 'b:')
+plt.fill_between(rho, per['p10'].ravel(), per['p90'].ravel(), color='b', alpha=0.1)
 plt.fill_between(rho, [r.lower[0] for r in results['output_distributions']['te']], [r.upper[0] for r in results['output_distributions']['te']], color='b', alpha=0.05)
 plt.legend(loc=0)
 plt.xlabel('rho [m]')
 plt.ylabel('Te [eV]')
 plt.title(my_campaign.campaign_dir)
-
+plt.savefig('Te.png')
 
 plt.figure() 
 for k in sobols.keys(): plt.plot(rho, sobols[k][0], label=k)
@@ -165,7 +165,7 @@ plt.legend(loc=0)
 plt.xlabel('rho [m]')
 plt.ylabel('sobols_first')
 plt.title(my_campaign.campaign_dir)
-
+plt.savefig('sobols_first.png')
 
 plt.figure() 
 for k in results['sobols_total']['te'].keys(): plt.plot(rho, results['sobols_total']['te'][k][0], label=k)
@@ -173,6 +173,7 @@ plt.legend(loc=0)
 plt.xlabel('rho [m]')
 plt.ylabel('sobols_total')
 plt.title(my_campaign.campaign_dir)
+plt.savefig('sobols_total.png')
 
 plt.figure()
 for i, D in enumerate(results['output_distributions']['te']):
@@ -182,11 +183,11 @@ for i, D in enumerate(results['output_distributions']['te']):
     plt.loglog(stats['mean'][i], np.interp(stats['mean'][i], _Te, _DF), 'bo')
     plt.loglog(stats['mean'][i]-stats['std'][i], np.interp(stats['mean'][i]-stats['std'][i], _Te, _DF), 'b*')
     plt.loglog(stats['mean'][i]+stats['std'][i], np.interp(stats['mean'][i]+stats['std'][i], _Te, _DF), 'b*')
-    plt.loglog(per['p10'][i],  np.interp(per['p10'][i], _Te, _DF), 'b+')
-    plt.loglog(per['p90'][i],  np.interp(per['p90'][i], _Te, _DF), 'b+')
+    plt.loglog(per['p10'].ravel()[i],  np.interp(per['p10'].ravel()[i], _Te, _DF), 'b+')
+    plt.loglog(per['p90'].ravel()[i],  np.interp(per['p90'].ravel()[i], _Te, _DF), 'b+')
 plt.xlabel('Te')
 plt.ylabel('distribution function')
-
+plt.savefig('distribution_functions.png')
 
 """
 Time for phase 1 0.3424241542816162
