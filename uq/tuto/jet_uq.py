@@ -96,7 +96,7 @@ vary = {
     "b_pos":    cp.Uniform(0.95,  0.99),
     "b_height": cp.Uniform(5e19,  7e19),
     "b_sol":    cp.Uniform(1e19,  3e19),
-    "b_width":  cp.Uniform(0.015, 0.025),
+    "b_width":  cp.Uniform(0.015, 0.02),
     "b_slope":  cp.Uniform(0.005, 0.020)
 }
 
