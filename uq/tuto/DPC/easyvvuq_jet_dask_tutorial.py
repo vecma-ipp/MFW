@@ -5,9 +5,17 @@ import chaospy as cp
 import pickle
 import time
 import numpy as np 
+import matplotlib
+if not os.getenv("DISPLAY"): matplotlib.use('Agg')
 import matplotlib.pylab as plt
-from dask.distributed import Client, LocalCluster
-### from dask_jobqueue import SLURMCluster
+
+Local = False
+
+if Local:
+    from dask.distributed import Client, LocalCluster
+else:
+    from dask.distributed import Client
+    from dask_jobqueue import SLURMCluster
 
 if __name__ == '__main__':      ### This is needed if you are using a local cluster; see https://github.com/dask/dask/issues/3877#issuecomment-425692984
     
@@ -105,18 +113,14 @@ if __name__ == '__main__':      ### This is needed if you are using a local clus
     print('Time for phase 3', time_end-time_start)
     time_start = time.time()
 
-    ### cluster = SLURMCluster(job_extra=['--qos=p.tok.2h'], queue='p.tok', cores=32, memory='180 GB', processes=32)
-    ### cluster.scale(32)
-    ### print(cluster.job_script())
-    ### client = Client(cluster)
-
-    ### cluster = LocalCluster()
-    ### cluster
-    ### client = Client(cluster)
-    ### cluster.scale(4)
-
-    from dask.distributed import Client
-    client = Client(processes=True, threads_per_worker=1)
+    if Local:
+        from dask.distributed import Client
+        client = Client(processes=True, threads_per_worker=1)
+    else:
+        cluster = SLURMCluster(job_extra=['--qos=p.tok.2h', '--mail-type=end', '--mail-user=dpc@rzg.mpg.de'], queue='p.tok', cores=32, memory='180 GB', processes=32)
+        cluster.scale(2)
+        print(cluster.job_script())
+        client = Client(cluster)
     print(client)
 
     cwd = os.getcwd()

@@ -5,7 +5,6 @@ Simple solver for Te in cylindrical geometry
 David.Coster@ipp.mpg.de
 """
 import numpy as np
-import matplotlib.pylab as plt
 
 def F_ped(r, b_pos, b_height, b_sol, b_width, b_slope):
     """
@@ -87,6 +86,12 @@ def solve_Te(Qe_tot=2e6, H0=0, Hw=0.1, Te_bc=100, chi=1, a0=1, R0=3, E0=1.5, b_p
 
     David.Coster@ipp.mpg.de
     """
+
+    if plots:
+        import os
+        import matplotlib
+        if not os.getenv("DISPLAY"): matplotlib.use('Agg')
+        import matplotlib.pylab as plt
 
     import scipy.constants
     from fipy import Variable, FaceVariable, CellVariable, TransientTerm, DiffusionTerm, Viewer, meshes
