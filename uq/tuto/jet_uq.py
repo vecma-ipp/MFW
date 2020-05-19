@@ -58,7 +58,7 @@ print(str, file=open('jet.template','w'))
 
 # QoI output and cols
 output_filename = params["out_file"]["default"]
-qoi_cols = ["te", "ne", "rho", "rho_norm"]
+qoi_cols = ["te"]
 
 # Create an encoder, decoder and collater for PCE test app
 encoder = uq.encoders.GenericEncoder(template_fname=jobdir + '/' +TEMPLATE,
@@ -89,21 +89,20 @@ vary = {
     "H0":       cp.Uniform(0.0,   0.2),
     "Hw":       cp.Uniform(0.1,   0.5),
     "chi":      cp.Uniform(0.8,   1.2),
-    "Te_bc":    cp.Uniform(80.0,  120.0)
-}
-"""
+    "Te_bc":    cp.Uniform(80.0,  120.0),
     "a0":       cp.Uniform(0.9,   1.1),
     "R0":       cp.Uniform(2.7,   3.3),
     "E0":       cp.Uniform(1.4,   1.5),
     "b_pos":    cp.Uniform(0.95,  0.99),
     "b_height": cp.Uniform(5e19,  7e19),
     "b_sol":    cp.Uniform(1e19,  3e19),
-    "b_width":  cp.Uniform(0.015, 0.025),
+    "b_width":  cp.Uniform(0.015, 0.02),
     "b_slope":  cp.Uniform(0.005, 0.020)
-"""
+}
 
 # Associate a sampler with the campaign
-my_sampler = uq.sampling.PCESampler(vary=vary, polynomial_order=3)
+my_sampler = uq.sampling.PCESampler(vary=vary, polynomial_order=4,
+                                    regression=True)
 print('Number of samples: ', my_sampler.n_samples)
 my_campaign.set_sampler(my_sampler)
 
@@ -133,8 +132,6 @@ if EXEC_PJ:
 
     qcgpjexec = easypj.Executor()
     qcgpjexec.create_manager(dir=my_campaign.campaign_dir, log_level='info')
-    # For intercative mode comment above line and use:
-    #qcgpjexec.create_manager(dir=my_campaign.campaign_dir, resources='40', log_level='info')
 
     qcgpjexec.add_task(Task(
         TaskType.EXECUTION,
@@ -176,8 +173,9 @@ results = my_campaign.get_last_analysis()
 stats = results['statistical_moments']['te']
 per = results['percentiles']['te']
 sobols = results['sobols_first']['te']
-rho = results['statistical_moments']['rho']['mean']
-rho_norm = results['statistical_moments']['rho_norm']['mean']
+sobols_tot = results['sobols_total']['te']
+#rho = results['statistical_moments']['rho']['mean']
+#rho_norm = results['statistical_moments']['rho_norm']['mean']
 
 time_end = time.time()
 print('Time for phase 7', time_end-time_start)
@@ -198,6 +196,10 @@ plt.switch_backend('agg')
 # Just for interactive plots:
 #plt.ion()
 
+# to get rho directly
+import jet
+Te, ne, rho, rho_norm = jet.solve_Te(plots=False)
+
 fig1 = plt.figure()
 plt.plot(rho, stats['mean'], 'b-', label='Mean')
 plt.plot(rho, stats['mean']-stats['std'], 'b--', label='+1 std deviation')
@@ -214,21 +216,37 @@ plt.title(my_campaign.campaign_dir)
 fig1.savefig("fig1")
 plt.close(fig1)
 
-fig2 = plt.figure()
-for k in sobols.keys(): plt.plot(rho, sobols[k][0], label=k)
-plt.legend(loc=0)
-plt.xlabel('rho [m]')
-plt.ylabel('sobols_first')
-plt.title(my_campaign.campaign_dir)
+#fig2 = plt.figure()
+#for k in sobols.keys(): plt.plot(rho, sobols[k][0], label=k)
+fig2, axs2 = plt.subplots(nrows=4, ncols=4, sharex=True, sharey=True)
+for i, k in enumerate(sobols.keys()):
+    plt.plot(rho, sobols[k][0], label=k)
+    ax = axs2[i//4, i%4]
+    ax.plot(xrho, sobols[k][0])
+    ax.grid()
+    ax.set_title(k)
+#plt.legend(loc=0)
+#plt.xlabel('rho [m]')
+#plt.ylabel('sobols_first')
+#plt.title(my_campaign.campaign_dir)
+plt.title('sobols_first')
 fig2.savefig("fig2")
 plt.close(fig2)
 
-fig3 = plt.figure()
-for k in results['sobols_total']['te'].keys(): plt.plot(rho, results['sobols_total']['te'][k][0], label=k)
+#fig3 = plt.figure()
+#for k in results['sobols_total']['te'].keys(): plt.plot(rho, results['sobols_total']['te'][k][0], label=k)
+fig3, axs3 = plt.subplots(nrows=4, ncols=4, sharex=True, sharey=True)
+for i, k in enumerate(sobols_tot.keys()):
+    plt.plot(rho, sobols_tot[k][0], label=k)
+    ax = axs3[i//4, i%4]
+    ax.plot(xrho, sobols_tot[k][0])
+    ax.grid()
+    ax.set_title(k)
 plt.legend(loc=0)
-plt.xlabel('rho [m]')
-plt.ylabel('sobols_total')
-plt.title(my_campaign.campaign_dir)
+#plt.xlabel('rho [m]')
+#plt.ylabel('sobols_total')
+#plt.title(my_campaign.campaign_dir)
+plt.title('sobols_total')
 fig3.savefig("fig3")
 plt.close(fig3)
 
@@ -249,23 +267,25 @@ plt.close(fig4)
 
 
 """
-Time for phase 1 0.3424241542816162
-Time for phase 2 78.29818987846375
-Time for phase 3 12.24399185180664
-Time for phase 4 5167.55646109581
-Time for phase 5 65.48898196220398
-Time for phase 6 191.89830493927002
-Time for phase 7 1.9788742065429688e-05
+5 params:
+2 nodes: 80 Cores
+PCE REG:
+Number of samples:  252
+
+Time for phase 1 1.6128513813018799
+Time for phase 2 4.705455780029297
+Time for phase 3 1.5110487937927246
+Time for phase 4 360.0726363658905
+Time for phase 5 5.015333652496338
+Time for phase 6 736.4704015254974
+Time for phase 7 9.799003601074219e-05
+Time for phase 8 0.33681583404541016
+
+Wall time: 18min41s
 
 
 
-Time for phase 1 0.4670450687408447
-Time for phase 2 39.2676100730896
-Time for phase 3 2.6985158920288086
-Time for phase 4 5216.318249940872
-Time for phase 5 74.85999393463135
-Time for phase 6 537.1869812011719
-Time for phase 7 0.002438068389892578
-Time for phase 8 0.10825705528259277
+13 params:
+
 
 """
