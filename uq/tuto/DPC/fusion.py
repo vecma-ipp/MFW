@@ -118,34 +118,12 @@ def solve_Te(Qe_tot=2e6, H0=0, Hw=0.1, Te_bc=100, chi=1, a0=1, R0=3, E0=1.5, b_p
     return Te.value, ne.value, mesh.cellCenters.value[0], mesh.cellCenters.value[0]/a
 
 if __name__ == '__main__':
-    import sys
-    import json
-
-    # read samples from json file
-    json_input = sys.argv[1]
-    with open(json_input, "r") as f:
-        inputs = json.load(f)
-
-    # the uncertain parameters
-    Qe_tot = inputs['Qe_tot']
-    H0 = inputs['H0']
-    Hw = inputs['Hw']
-    Te_bc = inputs['Te_bc']
-
-    # call the Fusion toy mpdel model
-    Te, ne, rho, rho_norm = solve_Te(Qe_tot=Qe_tot, H0=H0, Hw=Hw, Te_bc=Te_bc, plots=False)
-
-    # save QoI value in the output csv file for analysis
-    header = 'Te,ne'
-    output_filename = inputs['out_file']
-    np.savetxt(output_filename, np.c_[Te, ne],
-               delimiter=',', comments='',
-               header=header)
+    Te, ne, rho, rho_norm = solve_Te()
 
 """
 to test:
 
-  import jet
-  Te, ne, rho, rho_norm = jet.solve_Te()
+  import fusion
+  Te, ne, rho, rho_norm = fusion.solve_Te()
 
 """

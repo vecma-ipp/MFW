@@ -20,8 +20,8 @@ else:
 if __name__ == '__main__':      ### This is needed if you are using a local cluster; see https://github.com/dask/dask/issues/3877#issuecomment-425692984
     
     time_start = time.time()
-    # Set up a fresh campaign called "jet_pce."
-    my_campaign = uq.CampaignDask(name='jet_pce.')
+    # Set up a fresh campaign called "fusion_pce."
+    my_campaign = uq.CampaignDask(name='fusion_pce.')
 
     # Define parameter space
     params = {
@@ -51,13 +51,13 @@ if __name__ == '__main__':      ### This is needed if you are using a local clus
         else:
             str += ', "%s": "$%s"' % (k,k)
     str += '}'
-    print(str, file=open('jet.template','w'))
+    print(str, file=open('fusion.template','w'))
     """
 
     # Create an encoder, decoder and collater for PCE test app
-    encoder = uq.encoders.GenericEncoder(template_fname='jet.template',
+    encoder = uq.encoders.GenericEncoder(template_fname='fusion.template',
                                          delimiter='$',
-                                         target_filename='jet_in.json')
+                                         target_filename='fusion_in.json')
 
 
     decoder = uq.decoders.SimpleCSV(target_filename="output.csv",
@@ -67,7 +67,7 @@ if __name__ == '__main__':      ### This is needed if you are using a local clus
     collater = uq.collate.AggregateSamples(average=False)
 
     # Add the app (automatically set as current app)
-    my_campaign.add_app(name="jet",
+    my_campaign.add_app(name="fusion",
                         params=params,
                         encoder=encoder,
                         decoder=decoder,
@@ -124,7 +124,7 @@ if __name__ == '__main__':      ### This is needed if you are using a local clus
     print(client)
 
     cwd = os.getcwd()
-    cmd = f"{cwd}/jet_model.py jet_in.json"
+    cmd = f"{cwd}/fusion_model.py fusion_in.json"
     print(cmd)
     my_campaign.apply_for_each_run_dir(uq.actions.ExecuteLocal(cmd, interpret='python3'), client)
 
@@ -163,8 +163,8 @@ if __name__ == '__main__':      ### This is needed if you are using a local clus
 
     ###old_campaign = uq.Campaign(state_file="campaign_state.json", work_dir=".")
 
-    pickle.dump(results, open('jet_results.pickle','bw'))
-    ###saved_results = pickle.load(open('jet_results.pickle','br'))
+    pickle.dump(results, open('fusion_results.pickle','bw'))
+    ###saved_results = pickle.load(open('fusion_results.pickle','br'))
 
     time_end = time.time()
     print('Time for phase 8', time_end-time_start)

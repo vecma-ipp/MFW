@@ -7,8 +7,8 @@ import numpy as np
 import matplotlib.pylab as plt
 
 time_start = time.time()
-# Set up a fresh campaign called "jet_pce."
-my_campaign = uq.Campaign(name='jet_pce.')
+# Set up a fresh campaign called "fusion_pce."
+my_campaign = uq.Campaign(name='fusion_pce.')
 
 # Define parameter space
 params = {
@@ -38,13 +38,13 @@ for k in params.keys():
     else:
         str += ', "%s": "$%s"' % (k,k)
 str += '}'
-print(str, file=open('jet.template','w'))
+print(str, file=open('fusion.template','w'))
 """
 
 # Create an encoder, decoder and collater for PCE test app
-encoder = uq.encoders.GenericEncoder(template_fname='jet.template',
+encoder = uq.encoders.GenericEncoder(template_fname='fusion.template',
                                      delimiter='$',
-                                     target_filename='jet_in.json')
+                                     target_filename='fusion_in.json')
 
 
 decoder = uq.decoders.SimpleCSV(target_filename="output.csv",
@@ -54,7 +54,7 @@ decoder = uq.decoders.SimpleCSV(target_filename="output.csv",
 collater = uq.collate.AggregateSamples(average=False)
 
 # Add the app (automatically set as current app)
-my_campaign.add_app(name="jet",
+my_campaign.add_app(name="fusion",
                     params=params,
                     encoder=encoder,
                     decoder=decoder,
@@ -100,7 +100,7 @@ print('Time for phase 3', time_end-time_start)
 time_start = time.time()
 
 cwd = os.getcwd()
-cmd = f"{cwd}/jet_model.py jet_in.json"
+cmd = f"{cwd}/fusion_model.py fusion_in.json"
 my_campaign.apply_for_each_run_dir(uq.actions.ExecuteLocal(cmd, interpret='python3'))
 
 time_end = time.time()
@@ -136,8 +136,8 @@ my_campaign.save_state("campaign_state.json")
 
 ###old_campaign = uq.Campaign(state_file="campaign_state.json", work_dir=".")
 
-pickle.dump(results, open('jet_results.pickle','bw'))
-###saved_results = pickle.load(open('jet_results.pickle','br'))
+pickle.dump(results, open('fusion_results.pickle','bw'))
+###saved_results = pickle.load(open('fusion_results.pickle','br'))
 
 time_end = time.time()
 print('Time for phase 8', time_end-time_start)
@@ -189,66 +189,3 @@ plt.xlabel('Te')
 plt.ylabel('distribution function')
 plt.savefig('distribution_functions.png')
 
-"""
-Time for phase 1 0.3424241542816162
-Time for phase 2 78.29818987846375
-Time for phase 3 12.24399185180664
-Time for phase 4 5167.55646109581
-Time for phase 5 65.48898196220398
-Time for phase 6 191.89830493927002
-Time for phase 7 1.9788742065429688e-05
-
-
-
-Time for phase 1 0.4670450687408447
-Time for phase 2 39.2676100730896
-Time for phase 3 2.6985158920288086
-Time for phase 4 5216.318249940872
-Time for phase 5 74.85999393463135
-Time for phase 6 537.1869812011719
-Time for phase 7 0.002438068389892578
-Time for phase 8 0.10825705528259277
-
-"""
-
-"""
----------------------------------------------------------------------------
-TypeError                                 Traceback (most recent call last)
-~/src/EasyVVUQ/jet/easyvvuq_jet_tutorial.py in <module>
-    131 my_campaign.save_state("campaign_state.json")
-    132 
---> 133 old_campaign = uq.Campaign(state_file="campaign_state.json", work_dir=".")
-    134 
-    135 pickle.dump(results, open('jet_results.pickle','bw'))
-
-/Volumes/G-RAID with Thunderbolt/dpc/GIT/EasyVVUQ/env/lib/python3.7/site-packages/easyvvuq-0.5.1+223.gd452619-py3.7.egg/easyvvuq/campaign.py in __init__(self, name, db_type, db_location, work_dir, state_file, change_to_state, verify_all_runs)
-    149         # campaign with a new campaign database
-    150         if state_file is not None:
---> 151             self._state_dir = self.init_from_state_file(state_file)
-    152             if change_to_state:
-    153                 os.chdir(self._state_dir)
-
-/Volumes/G-RAID with Thunderbolt/dpc/GIT/EasyVVUQ/env/lib/python3.7/site-packages/easyvvuq-0.5.1+223.gd452619-py3.7.egg/easyvvuq/campaign.py in init_from_state_file(self, state_file)
-    276         # Resurrect the sampler
-    277         self._active_sampler_id = campaign_db.get_sampler_id(self.campaign_id)
---> 278         self._active_sampler = campaign_db.resurrect_sampler(self._active_sampler_id)
-    279 
-    280         self.set_app(self._active_app_name)
-
-/Volumes/G-RAID with Thunderbolt/dpc/GIT/EasyVVUQ/env/lib/python3.7/site-packages/easyvvuq-0.5.1+223.gd452619-py3.7.egg/easyvvuq/db/sql.py in resurrect_sampler(self, sampler_id)
-    292 
-    293         serialized_sampler = self.session.query(SamplerTable).get(sampler_id).sampler
---> 294         sampler = BaseSamplingElement.deserialize(serialized_sampler)
-    295         return sampler
-    296 
-
-/Volumes/G-RAID with Thunderbolt/dpc/GIT/EasyVVUQ/env/lib/python3.7/site-packages/easyvvuq-0.5.1+223.gd452619-py3.7.egg/easyvvuq/sampling/base.py in deserialize(serialized_sampler)
-    114             inputs["state"]["vary"] = Vary.deserialize(inputs["state"]["vary"]).vary_dict
-    115 
---> 116         sampler = AVAILABLE_SAMPLERS[inputs["element_name"]](**inputs["state"])
-    117         return sampler
-    118 
-
-TypeError: __init__() got an unexpected keyword argument 'params_size'
-
-"""
