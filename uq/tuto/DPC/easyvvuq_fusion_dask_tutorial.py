@@ -9,11 +9,17 @@ import matplotlib
 if not os.getenv("DISPLAY"): matplotlib.use('Agg')
 import matplotlib.pylab as plt
 
-Local = False
+import argparse
+parser = argparse.ArgumentParser(description="EasyVVUQ applied (using DASK) to a cylindrical tokamak", epilog="",
+                                 formatter_class=argparse.RawTextHelpFormatter)
+parser.add_argument("--local", "-l", action='store_true', default=False)
+args=parser.parse_args()
 
-if Local:
+if args.local:
+    print('Running locally')
     from dask.distributed import Client, LocalCluster
 else:
+    print('Running using SLURM')
     from dask.distributed import Client
     from dask_jobqueue import SLURMCluster
 
@@ -36,7 +42,7 @@ if __name__ == '__main__':      ### This is needed if you are using a local clus
         "b_pos":    {"type": "float",   "min": 0.95,  "max": 0.99,   "default": 0.98}, 
         "b_height": {"type": "float",   "min": 3e19,  "max": 10e19,  "default": 6e19}, 
         "b_sol":    {"type": "float",   "min": 2e18,  "max": 3e19,   "default": 2e19}, 
-        "b_width":  {"type": "float",   "min": 0.005, "max": 0.02,   "default": 0.01}, 
+        "b_width":  {"type": "float",   "min": 0.005, "max": 0.025,  "default": 0.01}, 
         "b_slope":  {"type": "float",   "min": 0.0,   "max": 0.05,   "default": 0.01}, 
         "nr":       {"type": "integer", "min": 10,    "max": 1000,   "default": 100}, 
         "dt":       {"type": "float",   "min": 1e-3,  "max": 1e3,    "default": 100},
@@ -88,7 +94,7 @@ if __name__ == '__main__':      ### This is needed if you are using a local clus
     """
         "a0":       cp.Uniform(0.9,   1.1), 
         "R0":       cp.Uniform(2.7,   3.3), 
-        "E0":       cp.Uniform(1.4,   1.5), 
+        "E0":       cp.Uniform(1.4,   1.6), 
         "b_pos":    cp.Uniform(0.95,  0.99), 
         "b_height": cp.Uniform(5e19,  7e19), 
         "b_sol":    cp.Uniform(1e19,  3e19), 
@@ -113,22 +119,24 @@ if __name__ == '__main__':      ### This is needed if you are using a local clus
     print('Time for phase 3', time_end-time_start)
     time_start = time.time()
 
-    if Local:
+    if args.local:
         from dask.distributed import Client
         client = Client(processes=True, threads_per_worker=1)
     else:
-        cluster = SLURMCluster(job_extra=['--qos=p.tok.2h', '--mail-type=end', '--mail-user=dpc@rzg.mpg.de'], queue='p.tok', cores=32, memory='180 GB', processes=32)
-        cluster.scale(2)
+        cluster = SLURMCluster(job_extra=['--qos=p.tok.openmp.2h', '--mail-type=end', '--mail-user=dpc@rzg.mpg.de'], queue='p.tok.openmp', cores=8, memory='8 GB', processes=8)
+        cluster.scale(32)
+        print(cluster)
         print(cluster.job_script())
         client = Client(cluster)
     print(client)
 
-    cwd = os.getcwd()
+    cwd = os.getcwd().replace(' ', '\ ')
     cmd = f"{cwd}/fusion_model.py fusion_in.json"
     print(cmd)
     my_campaign.apply_for_each_run_dir(uq.actions.ExecuteLocal(cmd, interpret='python3'), client)
 
     client.close()
+    client.shutdown()
     
     time_end = time.time()
     print('Time for phase 4', time_end-time_start)

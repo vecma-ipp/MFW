@@ -1,3 +1,4 @@
+#! /usr/bin/env python
 import os
 import easyvvuq as uq
 import chaospy as cp
@@ -99,7 +100,7 @@ time_end = time.time()
 print('Time for phase 3', time_end-time_start)
 time_start = time.time()
 
-cwd = os.getcwd()
+cwd = os.getcwd().replace(' ', '\ ')
 cmd = f"{cwd}/fusion_model.py fusion_in.json"
 my_campaign.apply_for_each_run_dir(uq.actions.ExecuteLocal(cmd, interpret='python3'))
 
