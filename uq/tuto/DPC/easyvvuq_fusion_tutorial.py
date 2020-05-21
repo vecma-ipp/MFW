@@ -1,4 +1,11 @@
 #! /usr/bin/env python
+"""
+Run an EasyVVUQ campaign to analyze the sensitivity of the temperature
+profile predicted by a simplified model of heat conduction in a
+tokamak plasma.
+
+This is done with PCE.
+"""
 import os
 import easyvvuq as uq
 import chaospy as cp
@@ -24,13 +31,13 @@ params = {
     "b_pos":    {"type": "float",   "min": 0.95,  "max": 0.99,   "default": 0.98}, 
     "b_height": {"type": "float",   "min": 3e19,  "max": 10e19,  "default": 6e19}, 
     "b_sol":    {"type": "float",   "min": 2e18,  "max": 3e19,   "default": 2e19}, 
-    "b_width":  {"type": "float",   "min": 0.005, "max": 0.02,   "default": 0.01}, 
+    "b_width":  {"type": "float",   "min": 0.005, "max": 0.025,  "default": 0.01}, 
     "b_slope":  {"type": "float",   "min": 0.0,   "max": 0.05,   "default": 0.01}, 
-    "nr":       {"type": "integer", "min": 10,    "max": 1000,   "default": 10}, 
+    "nr":       {"type": "integer", "min": 10,    "max": 1000,   "default": 100}, 
     "dt":       {"type": "float",   "min": 1e-3,  "max": 1e3,    "default": 100},
     "out_file": {"type": "string",  "default": "output.csv"}
 }
-"""
+""" code snippet for writing the template file
 str = ""
 first = True
 for k in params.keys():
@@ -62,7 +69,7 @@ my_campaign.add_app(name="fusion",
                     collater=collater)
 
 time_end = time.time()
-print('Time for phase 1', time_end-time_start)
+print('Time for phase 1 = %.3f' % (time_end-time_start))
 time_start = time.time()
 
 # Create the sampler
@@ -73,10 +80,10 @@ vary = {
     "chi":      cp.Uniform(0.8,   1.2), 
     "Te_bc":    cp.Uniform(80.0,  120.0)
 }
-"""
+""" other possible quantities to vary
     "a0":       cp.Uniform(0.9,   1.1), 
     "R0":       cp.Uniform(2.7,   3.3), 
-    "E0":       cp.Uniform(1.4,   1.5), 
+    "E0":       cp.Uniform(1.4,   1.6), 
     "b_pos":    cp.Uniform(0.95,  0.99), 
     "b_height": cp.Uniform(5e19,  7e19), 
     "b_sol":    cp.Uniform(1e19,  3e19), 
@@ -89,36 +96,37 @@ my_campaign.set_sampler(uq.sampling.PCESampler(vary=vary, polynomial_order=3))
 
 # Will draw all (of the finite set of samples)
 my_campaign.draw_samples()
+print('Number of samples = %s' % my_campaign.get_active_sampler().count)
 
 time_end = time.time()
-print('Time for phase 2', time_end-time_start)
+print('Time for phase 2 = %.3f' % (time_end-time_start))
 time_start = time.time()
 
 my_campaign.populate_runs_dir()
 
 time_end = time.time()
-print('Time for phase 3', time_end-time_start)
+print('Time for phase 3 = %.3f' % (time_end-time_start))
 time_start = time.time()
 
-cwd = os.getcwd().replace(' ', '\ ')
+cwd = os.getcwd().replace(' ', '\ ')      # deal with ' ' in the path
 cmd = f"{cwd}/fusion_model.py fusion_in.json"
 my_campaign.apply_for_each_run_dir(uq.actions.ExecuteLocal(cmd, interpret='python3'))
 
 time_end = time.time()
-print('Time for phase 4', time_end-time_start)
+print('Time for phase 4 = %.3f' % (time_end-time_start))
 time_start = time.time()
 
 my_campaign.collate()
 
 time_end = time.time()
-print('Time for phase 5', time_end-time_start)
+print('Time for phase 5 = %.3f' % (time_end-time_start))
 time_start = time.time()
 
 # Post-processing analysis
 my_campaign.apply_analysis(uq.analysis.PCEAnalysis(sampler=my_campaign.get_active_sampler(), qoi_cols=["te", "ne", "rho", "rho_norm"]))
 
 time_end = time.time()
-print('Time for phase 6', time_end-time_start)
+print('Time for phase 6 = %.3f' % (time_end-time_start))
 time_start = time.time()
 
 # Get Descriptive Statistics
@@ -130,7 +138,7 @@ rho = results['statistical_moments']['rho']['mean']
 rho_norm = results['statistical_moments']['rho_norm']['mean']
 
 time_end = time.time()
-print('Time for phase 7', time_end-time_start)
+print('Time for phase 7 = %.3f' % (time_end-time_start))
 time_start = time.time()
 
 my_campaign.save_state("campaign_state.json")
@@ -141,7 +149,7 @@ pickle.dump(results, open('fusion_results.pickle','bw'))
 ###saved_results = pickle.load(open('fusion_results.pickle','br'))
 
 time_end = time.time()
-print('Time for phase 8', time_end-time_start)
+print('Time for phase 8 = %.3f' % (time_end-time_start))
 
 plt.ion()
 

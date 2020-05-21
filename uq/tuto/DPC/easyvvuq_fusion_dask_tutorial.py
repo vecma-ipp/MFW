@@ -1,4 +1,11 @@
 #! /usr/bin/env python
+"""
+Run an EasyVVUQ campaign to analyze the sensitivity of the temperature
+profile predicted by a simplified model of heat conduction in a
+tokamak plasma.
+
+This is done with PCE.
+"""
 import os
 import easyvvuq as uq
 import chaospy as cp
@@ -48,7 +55,7 @@ if __name__ == '__main__':      ### This is needed if you are using a local clus
         "dt":       {"type": "float",   "min": 1e-3,  "max": 1e3,    "default": 100},
         "out_file": {"type": "string",  "default": "output.csv"}
     }
-    """ Snippet for writing the template file
+    """ code snippet for writing the template file
     str = ""
     first = True
     for k in params.keys():
@@ -80,7 +87,7 @@ if __name__ == '__main__':      ### This is needed if you are using a local clus
                         collater=collater)
 
     time_end = time.time()
-    print('Time for phase 1', time_end-time_start)
+    print('Time for phase 1 = %.3f' % (time_end-time_start))
     time_start = time.time()
 
     # Create the sampler
@@ -91,7 +98,7 @@ if __name__ == '__main__':      ### This is needed if you are using a local clus
         "chi":      cp.Uniform(0.8,   1.2), 
         "Te_bc":    cp.Uniform(80.0,  120.0)
     }
-    """
+    """ other possible quantities to vary
         "a0":       cp.Uniform(0.9,   1.1), 
         "R0":       cp.Uniform(2.7,   3.3), 
         "E0":       cp.Uniform(1.4,   1.6), 
@@ -110,13 +117,13 @@ if __name__ == '__main__':      ### This is needed if you are using a local clus
     print('Number of samples = %s' % my_campaign.get_active_sampler().count)
 
     time_end = time.time()
-    print('Time for phase 2', time_end-time_start)
+    print('Time for phase 2 = %.3f' % (time_end-time_start))
     time_start = time.time()
 
     my_campaign.populate_runs_dir()
 
     time_end = time.time()
-    print('Time for phase 3', time_end-time_start)
+    print('Time for phase 3 = %.3f' % (time_end-time_start))
     time_start = time.time()
 
     if args.local:
@@ -130,29 +137,28 @@ if __name__ == '__main__':      ### This is needed if you are using a local clus
         client = Client(cluster)
     print(client)
 
-    cwd = os.getcwd().replace(' ', '\ ')
+    cwd = os.getcwd().replace(' ', '\ ')      # deal with ' ' in the path
     cmd = f"{cwd}/fusion_model.py fusion_in.json"
-    print(cmd)
     my_campaign.apply_for_each_run_dir(uq.actions.ExecuteLocal(cmd, interpret='python3'), client)
 
     client.close()
     client.shutdown()
     
     time_end = time.time()
-    print('Time for phase 4', time_end-time_start)
+    print('Time for phase 4 = %.3f' % (time_end-time_start))
     time_start = time.time()
 
     my_campaign.collate()
 
     time_end = time.time()
-    print('Time for phase 5', time_end-time_start)
+    print('Time for phase 5 = %.3f' % (time_end-time_start))
     time_start = time.time()
 
     # Post-processing analysis
     my_campaign.apply_analysis(uq.analysis.PCEAnalysis(sampler=my_campaign.get_active_sampler(), qoi_cols=["te", "ne", "rho", "rho_norm"]))
 
     time_end = time.time()
-    print('Time for phase 6', time_end-time_start)
+    print('Time for phase 6 = %.3f' % (time_end-time_start))
     time_start = time.time()
 
     # Get Descriptive Statistics
@@ -164,7 +170,7 @@ if __name__ == '__main__':      ### This is needed if you are using a local clus
     rho_norm = results['statistical_moments']['rho_norm']['mean']
 
     time_end = time.time()
-    print('Time for phase 7', time_end-time_start)
+    print('Time for phase 7 = %.3f' % (time_end-time_start))
     time_start = time.time()
 
     my_campaign.save_state("campaign_state.json")
@@ -175,7 +181,7 @@ if __name__ == '__main__':      ### This is needed if you are using a local clus
     ###saved_results = pickle.load(open('fusion_results.pickle','br'))
 
     time_end = time.time()
-    print('Time for phase 8', time_end-time_start)
+    print('Time for phase 8 = %.3f' % (time_end-time_start))
 
     plt.ion()
 
