@@ -62,33 +62,33 @@ program ets_M3
      call LIBMUSCLE_Message_free(rmsg)
 
      ! receive coreprof data
-     rmsg = LIBMUSCLE_Instance_receive(instance, 'coreprof_in')
+     rmsg = LIBMUSCLE_Instance_receive(instance, 'coretransp_in')
      rdata = LIBMUSCLE_Message_get_data(rmsg)
      if (.not. LIBMUSCLE_DataConstRef_is_a_byte_array(rdata)) STOP 'wrong data type received'
-     allocate (coreprof_in_buf(LIBMUSCLE_DataConstRef_size(rdata)))
-     call LIBMUSCLE_DataConstRef_as_byte_array(rdata, coreprof_in_buf, err_code, err_msg)
+     allocate (coretransp_in_buf(LIBMUSCLE_DataConstRef_size(rdata)))
+     call LIBMUSCLE_DataConstRef_as_byte_array(rdata, coretransp_in_buf, err_code, err_msg)
      call LIBMUSCLE_DataConstRef_free(rdata)
      t_cur = LIBMUSCLE_Message_timestamp(rmsg)
      !t_max = LIBMUSCLE_Message_timestamp(rmsg) + t_max
      call LIBMUSCLE_Message_free(rmsg)
 
      ! receive coreprof data
-     rmsg = LIBMUSCLE_Instance_receive(instance, 'coreprof_in')
+     rmsg = LIBMUSCLE_Instance_receive(instance, 'coresource_in')
      rdata = LIBMUSCLE_Message_get_data(rmsg)
      if (.not. LIBMUSCLE_DataConstRef_is_a_byte_array(rdata)) STOP 'wrong data type received'
-     allocate (coreprof_in_buf(LIBMUSCLE_DataConstRef_size(rdata)))
-     call LIBMUSCLE_DataConstRef_as_byte_array(rdata, coreprof_in_buf, err_code, err_msg)
+     allocate (coresource_in_buf(LIBMUSCLE_DataConstRef_size(rdata)))
+     call LIBMUSCLE_DataConstRef_as_byte_array(rdata, coresource_in_buf, err_code, err_msg)
      call LIBMUSCLE_DataConstRef_free(rdata)
      t_cur = LIBMUSCLE_Message_timestamp(rmsg)
      !t_max = LIBMUSCLE_Message_timestamp(rmsg) + t_max
      call LIBMUSCLE_Message_free(rmsg)
 
      ! receive coreprof data
-     rmsg = LIBMUSCLE_Instance_receive(instance, 'coreprof_in')
+     rmsg = LIBMUSCLE_Instance_receive(instance, 'coreimpur_in')
      rdata = LIBMUSCLE_Message_get_data(rmsg)
      if (.not. LIBMUSCLE_DataConstRef_is_a_byte_array(rdata)) STOP 'wrong data type received'
-     allocate (coreprof_in_buf(LIBMUSCLE_DataConstRef_size(rdata)))
-     call LIBMUSCLE_DataConstRef_as_byte_array(rdata, coreprof_in_buf, err_code, err_msg)
+     allocate (coreimpur_in_buf(LIBMUSCLE_DataConstRef_size(rdata)))
+     call LIBMUSCLE_DataConstRef_as_byte_array(rdata, coreimpur_in_buf, err_code, err_msg)
      call LIBMUSCLE_DataConstRef_free(rdata)
      t_cur = LIBMUSCLE_Message_timestamp(rmsg)
      !t_max = LIBMUSCLE_Message_timestamp(rmsg) + t_max

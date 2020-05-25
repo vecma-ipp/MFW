@@ -61,8 +61,8 @@ program equilupdate_M3
      rmsg = LIBMUSCLE_Instance_receive(instance, 'toroidfield_in')
      rdata = LIBMUSCLE_Message_get_data(rmsg)
      if (.not. LIBMUSCLE_DataConstRef_is_a_byte_array(rdata)) STOP 'wrong data type received'
-     allocate (equilibrium_in_buf(LIBMUSCLE_DataConstRef_size(rdata)))
-     call LIBMUSCLE_DataConstRef_as_byte_array(rdata, equilibrium_in_buf, err_code, err_msg)
+     allocate (toroidfield_in_buf(LIBMUSCLE_DataConstRef_size(rdata)))
+     call LIBMUSCLE_DataConstRef_as_byte_array(rdata, toroidfield_in_buf, err_code, err_msg)
      call LIBMUSCLE_DataConstRef_free(rdata)
      call LIBMUSCLE_Message_free(rmsg)
 
