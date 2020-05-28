@@ -19,7 +19,7 @@ program init_M3
 
   real (selected_real_kind(15)) :: t_cur 
 
-  character(256) :: init_cpos_dir
+  character(256) :: init_cpos
 
   ! code specific
   character(kind=c_char), pointer :: equilibrium_init_buf(:)
@@ -45,16 +45,17 @@ program init_M3
   ! main loop
   do while (LIBMUSCLE_Instance_reuse_instance(instance))
 
-     init_cpos_dir = LIBMUSCLE_Instance_get_setting_as_character(instance, 'init_cpos')
+     ! get params
+     init_cpos = LIBMUSCLE_Instance_get_setting_as_character(instance, 'init_cpo_dir')
 
      ! read init CPO files from specified dir
-     call file2byte(trim(init_cpos_dir)//"ets_equilibrium_in.cpo", &
+     call file2byte(trim(init_cpos)//"/ets_equilibrium_in.cpo", &
           tmpbuf, tmpsize)
      allocate(equilibrium_init_buf(tmpsize))
      equilibrium_init_buf(1:tmpsize) = tmpbuf(1:tmpsize)
      call dealloc_cbytebuf(tmpbuf)
 
-     call file2byte(trim(init_cpos_dir)//"ets_coreprof_in.cpo", &
+     call file2byte(trim(init_cpos)//"/ets_coreprof_in.cpo", &
           tmpbuf, tmpsize)
      allocate(coreprof_init_buf(tmpsize))
      coreprof_init_buf(1:tmpsize) = tmpbuf(1:tmpsize)
@@ -62,35 +63,35 @@ program init_M3
   
      allocate(coreprof(1))
      ! Read coreprof CPO to get main time   
-     open (unit = 10, file = trim(init_cpos_dir)//"ets_coreprof_in.cpo", &
+     open (unit = 10, file = trim(init_cpos)//"/ets_coreprof_in.cpo", &
           status = 'old', form = 'formatted', &
           action = 'read', iostat = ios)
      if (ios == 0) then
         close (10)
-        call open_read_file(10, trim(init_cpos_dir)//"ets_coreprof_in.cpo")
+        call open_read_file(10, trim(init_cpos)//"/ets_coreprof_in.cpo")
         call read_cpo(coreprof(1), 'coreprof')
         call close_read_file
      else
         print *,"ERROR. CPO file not found:", &
-             trim(init_cpos_dir)//"ets_coreprof_in.cpo"
+             trim(init_cpos)//"/ets_coreprof_in.cpo"
         STOP
      end if
      t_cur = coreprof(1)%time
      call deallocate_cpo(coreprof)
 
-     call file2byte(trim(init_cpos_dir)//"ets_coresource_in.cpo", &
+     call file2byte(trim(init_cpos)//"/ets_coresource_in.cpo", &
           tmpbuf, tmpsize)
      allocate(coresource_init_buf(tmpsize))
      coresource_init_buf(1:tmpsize) = tmpbuf(1:tmpsize)
      call dealloc_cbytebuf(tmpbuf)
 
-     call file2byte(trim(init_cpos_dir)//"ets_coreimpur_in.cpo", &
+     call file2byte(trim(init_cpos)//"/ets_coreimpur_in.cpo", &
           tmpbuf, tmpsize)
      allocate(coreimpur_init_buf(tmpsize))
      coreimpur_init_buf(1:tmpsize) = tmpbuf(1:tmpsize)
      call dealloc_cbytebuf(tmpbuf)
 
-     call file2byte(trim(init_cpos_dir)//"ets_toroidfield_in.cpo", &
+     call file2byte(trim(init_cpos)//"/ets_toroidfield_in.cpo", &
           tmpbuf, tmpsize)
      allocate(toroidfield_init_buf(tmpsize))
      toroidfield_init_buf(1:tmpsize) = tmpbuf(1:tmpsize)
