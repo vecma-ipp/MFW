@@ -369,7 +369,8 @@ contains
        coret_in_buf, &
        cores_in_buf, &
        corei_in_buf, &
-       corep_out_buf)
+       corep_out_buf, &
+       time_cur)
     use iso_c_binding
     use string_binding
     use deallocate_structures
@@ -392,6 +393,8 @@ contains
     type (type_coresource), pointer :: cores_in(:) 
     type (type_coreimpur), pointer :: corei_in(:) 
     type (type_coreprof), pointer :: corep_out(:)
+
+    real(R8), intent(out) :: time_cur
 
     character(F_STR_SIZE) :: equil_in_file, corep_in_file, coret_in_file
     character(F_STR_SIZE) :: corei_in_file, cores_in_file, corep_out_file
@@ -489,6 +492,8 @@ contains
     end if
 
     call ets_cpo(corep_in, equil_in, coret_in, cores_in, corei_in, corep_out)
+
+    time_cur = corep_out(1)%time
 
     ! transfer CPO to buf
     !...  write the results
