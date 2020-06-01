@@ -38,11 +38,8 @@ program ets_M3
   call LIBMUSCLE_PortsDescription_add(ports, YMMSL_Operator_F_INIT, 'coreimpur_init')
   call LIBMUSCLE_PortsDescription_add(ports, YMMSL_Operator_F_INIT, 'toroidfield_init')
 
-  call LIBMUSCLE_PortsDescription_add(ports, YMMSL_Operator_S, 'coreprof_in')
   call LIBMUSCLE_PortsDescription_add(ports, YMMSL_Operator_S, 'equilibrium_in')
   call LIBMUSCLE_PortsDescription_add(ports, YMMSL_Operator_S, 'coretransp_in')
-  call LIBMUSCLE_PortsDescription_add(ports, YMMSL_Operator_S, 'coresource_in')
-  call LIBMUSCLE_PortsDescription_add(ports, YMMSL_Operator_S, 'coreimpur_in')
 
   call LIBMUSCLE_PortsDescription_add(ports, YMMSL_Operator_O_I, 'coreprof_out')
   call LIBMUSCLE_PortsDescription_add(ports, YMMSL_Operator_O_I, 'equilibrium_out')

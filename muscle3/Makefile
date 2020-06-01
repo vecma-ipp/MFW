@@ -67,10 +67,11 @@ STOP_O = ${STDA_SHARED_O} ${OBJDIR}/stop_M3.o
 ETS_O = ${STDA_SHARED_O} ${STDA_OBJ}/ets_standalone.o ${STDA_OBJ}/equilupdate_standalone.o ${OBJDIR}/ets_M3.o 
 CHEASE_O = ${STDA_SHARED_O} ${STDA_OBJ}/chease_standalone.o ${OBJDIR}/chease_M3.o
 GEM0_O = ${STDA_SHARED_O} ${STDA_OBJ}/gem0_standalone.o ${STDA_OBJ}/imp4dv_standalone.o ${OBJDIR}/gem0_M3.o
+DUPPLICATE_O = ${OBJDIR}/dupplicate_M3.o
 #EQUILUPDATE_O = ${STDA_SHARED_O} ${STDA_OBJ}/equilupdate_standalone.o ${OBJDIR}/equilupdate_M3.o 
 #IMP4DV_O = ${STDA_SHARED_O} ${STDA_OBJ}/imp4dv_standalone.o ${OBJDIR}/imp4dv_M3.o
 
-MODELS = INIT_M3 STOP_M3 ETS_M3 CHEASE_M3 GEM0_M3 
+MODELS = INIT_M3 STOP_M3 ETS_M3 CHEASE_M3 GEM0_M3 DUPPLICATE_M3
 #EQUILUPDATE_M3 IMP4DV_M3
 
 INIT_EXE = ${BINDIR}/init_M3
@@ -78,6 +79,7 @@ STOP_EXE = ${BINDIR}/stop_M3
 ETS_EXE = ${BINDIR}/ets_M3
 CHEASE_EXE = ${BINDIR}/chease_M3
 GEM0_EXE = ${BINDIR}/gem0_M3
+DUPPLICATE_EXE = ${BINDIR}/dupplicate_M3
 #EQUILUPDATE_EXE = ${BINDIR}/equilupdate_M3
 #IMP4DV_EXE = ${BINDIR}/imp4dv_M3
 
@@ -114,6 +116,9 @@ CHEASE_M3: ${CHEASE_O}
 GEM0_M3: ${GEM0_O} 
 	$(FC90) -o ${GEM0_EXE} $^ -L${GEM0} -L${IMP4DV} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_XML} -L${LIB_UAL} -lgem0 -limp4dv -lbds -litmconstants -litmtypes -lxmllib -lual ${LDFLAGS} 
 
+DUPPLICATE_M3: ${DUPPLICATE_O} 
+	$(FC90) -o ${DUPPLICATE_EXE} $^ ${LDFLAGS} 
+
 #EQUILUPDATE_M3: ${EQUILUPDATE_O} 
 #	$(FC90) -o ${EQUILUPDATE_EXE} $^ -L${ETS} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_UAL} -lets -lbds -litmconstants -litmtypes -lual ${LDFLAGS} ${LIBLAPACK}
 #IMP4DV_M3: ${IMP4DV_O} 
@@ -127,7 +132,7 @@ ${SYS}:
 
 clean:
 	@rm -f src/*~ *~ 
-	@rm -f ${CHEASE_EXE} ${GEM0_EXE} ${ETS_EXE} ${INIT_EXE} ${STOP_EXE}
+	@rm -f ${CHEASE_EXE} ${GEM0_EXE} ${ETS_EXE} ${INIT_EXE} ${STOP_EXE} ${DUPPLICATE_EXE}
 	@rm -rf ${OBJDIR} ${INCDIR} ${BINDIR} 
 
 
