@@ -1,5 +1,6 @@
 program gem0_M3
   use gem0_standalone
+  use imp4dv_standalone
   use ymmsl
   use libmuscle
   implicit none
@@ -22,6 +23,7 @@ program gem0_M3
   ! code specific
   character(kind=c_char), pointer :: coreprof_in_buf(:)
   character(kind=c_char), pointer :: equilibrium_in_buf(:)
+  character(kind=c_char), pointer :: coretransp_flux_buf(:)
   character(kind=c_char), pointer :: coretransp_out_buf(:)
 
   ports = LIBMUSCLE_PortsDescription_create()
@@ -57,6 +59,12 @@ program gem0_M3
      call gem02buf( &
           equilibrium_in_buf, &
           coreprof_in_buf, &
+          coretransp_flux_buf)
+
+     call imp4dv2buf( &
+          equilibrium_in_buf, &
+          coreprof_in_buf, &
+          coretransp_flux_buf, &
           coretransp_out_buf)
 
      sdata = LIBMUSCLE_Data_create_byte_array(coretransp_out_buf)
@@ -67,6 +75,7 @@ program gem0_M3
      
      deallocate(equilibrium_in_buf)
      deallocate(coreprof_in_buf)
+     deallocate(coretransp_flux_buf)
      deallocate(coretransp_out_buf)
 
   end do

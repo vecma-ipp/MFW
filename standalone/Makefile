@@ -101,7 +101,7 @@ endif
 
 
 FC90FLAGS += ${INCLUDES} ${MODSPEC}${INCDIR} 
-MPIFLAGS += ${INCLUDES} ${MODSPEC}${INCDIR} 
+MPIFLAGS = ${FC90FLAGS} #${INCLUDES} ${MODSPEC}${INCDIR} 
 
 
 # Objects files ################################################################

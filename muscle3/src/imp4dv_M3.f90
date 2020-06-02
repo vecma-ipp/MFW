@@ -60,7 +60,7 @@ program imp4dv_M3
      rmsg = LIBMUSCLE_Instance_receive(instance, 'coretransp_in')
      rdata = LIBMUSCLE_Message_get_data(rmsg)
      if (.not. LIBMUSCLE_DataConstRef_is_a_byte_array(rdata)) STOP 'wrong data type received'
-     allocate (coreprof_in_buf(LIBMUSCLE_DataConstRef_size(rdata)))
+     allocate (coretransp_in_buf(LIBMUSCLE_DataConstRef_size(rdata)))
      call LIBMUSCLE_DataConstRef_as_byte_array(rdata, coretransp_in_buf, err_code, err_msg)
      call LIBMUSCLE_DataConstRef_free(rdata)
      t_cur = LIBMUSCLE_Message_timestamp(rmsg)
