@@ -52,6 +52,8 @@ program ets_M3
 
   instance = LIBMUSCLE_Instance_create(ports)
   call LIBMUSCLE_PortsDescription_free(ports)
+
+  coretransp_in_buf => null()
   
   ! main loop
   do while (LIBMUSCLE_Instance_reuse_instance(instance))
@@ -130,7 +132,7 @@ program ets_M3
 
         !###  S  #################################!
         deallocate(equilibrium_in_buf)
-        deallocate(coretransp_in_buf)
+        if (associated(coretransp_in_buf)) deallocate(coretransp_in_buf)
         ! recv equilibrium
         rmsg = LIBMUSCLE_Instance_receive(instance, 'equilibrium_in')
         rdata = LIBMUSCLE_Message_get_data(rmsg)
