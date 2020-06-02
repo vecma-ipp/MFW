@@ -106,25 +106,25 @@ program init_M3
 
      sdata = LIBMUSCLE_Data_create_byte_array(coreprof_init_buf)
      smsg = LIBMUSCLE_Message_create(t_cur, sdata)
-     call LIBMUSCLE_Instance_send(instance, 'coreprof_out', smsg)
+     call LIBMUSCLE_Instance_send(instance, 'coreprof_init', smsg)
      call LIBMUSCLE_Message_free(smsg)
      call LIBMUSCLE_Data_free(sdata)
 
      sdata = LIBMUSCLE_Data_create_byte_array(coresource_init_buf)
      smsg = LIBMUSCLE_Message_create(t_cur, sdata)
-     call LIBMUSCLE_Instance_send(instance, 'coresource_out', smsg)
+     call LIBMUSCLE_Instance_send(instance, 'coresource_init', smsg)
      call LIBMUSCLE_Message_free(smsg)
      call LIBMUSCLE_Data_free(sdata)
 
      sdata = LIBMUSCLE_Data_create_byte_array(coreimpur_init_buf)
      smsg = LIBMUSCLE_Message_create(t_cur, sdata)
-     call LIBMUSCLE_Instance_send(instance, 'coreimpur_out', smsg)
+     call LIBMUSCLE_Instance_send(instance, 'coreimpur_init', smsg)
      call LIBMUSCLE_Message_free(smsg)
      call LIBMUSCLE_Data_free(sdata)
      
      sdata = LIBMUSCLE_Data_create_byte_array(toroidfield_init_buf)
      smsg = LIBMUSCLE_Message_create(t_cur, sdata)
-     call LIBMUSCLE_Instance_send(instance, 'toroidfield_out', smsg)
+     call LIBMUSCLE_Instance_send(instance, 'toroidfield_init', smsg)
      call LIBMUSCLE_Message_free(smsg)
      call LIBMUSCLE_Data_free(sdata)
 
