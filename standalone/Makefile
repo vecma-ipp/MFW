@@ -118,12 +118,11 @@ BOHMGB_O = ${SHARED_O} ${OBJDIR}/bohmgb_standalone.o
 GEM0_O = ${SHARED_O} ${OBJDIR}/gem0_standalone.o
 GEM_O = ${SHARED_O} ${OBJDIR}/gem_standalone.o
 
-TESTS =  ETS_TEST EQUILUPDATE_TEST CHEASE_TEST EQ_TEST IMP4DV_TEST SOURCES_TEST BOHMGB_TEST GEM0_TEST ETS_SRC GEM_TEST 
-LOOP_TEST = LOOP_BGB LOOP_GEM0
+TESTS1 =  ETS_TEST EQUILUPDATE_TEST CHEASE_TEST EQ_TEST IMP4DV_TEST SOURCES_TEST BOHMGB_TEST GEM0_TEST GEM_TEST 
+LOOP_TEST = LOOP_BGB LOOP_GEM0 ETS_CHEASE ETS_SRC 
 
 ETS_EXE = ${BINDIR}/ets_test
 ETS_SRC_EXE = ${BINDIR}/ets_src
-#ETS_EQ_EXE = ${BINDIR}/ets_eq
 EQUILUPDATE_EXE = ${BINDIR}/equilupdate_test
 CHEASE_EXE = ${BINDIR}/chease_test
 EQ_EXE = ${BINDIR}/equil_test
@@ -134,6 +133,7 @@ GEM0_EXE = ${BINDIR}/gem0_test
 GEM_EXE = ${BINDIR}/gem_test
 LOOP_BGB_EXE = ${BINDIR}/loop_bgb
 LOOP_GEM0_EXE = ${BINDIR}/loop_gem0
+ETS_CHEASE_EXE = ${BINDIR}/ets_chease
 
 # ROLAND CODE
 ROP_EXE = ${BINDIR}/rop_test
@@ -158,9 +158,6 @@ ETS_TEST: ${SHARED_O} ${ETS_O} ${OBJDIR}/ets_test.o
 
 ETS_SRC: ${SHARED_O} ${SOURCES_O} ${ETS_O} ${OBJDIR}/ets_src.o
 	$(FC90) -o ${ETS_SRC_EXE}  $^ -L${ETS} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_XML} -L${LIB_UAL} -lets -lbds -lxmllib -litmconstants -litmtypes -lual ${LDFLAGS} ${LIBLAPACK}
-
-#ETS_EQ: ${SHARED_O} ${EQUILUPDATE_O} ${ETS_O} ${OBJDIR}/ets_eq.o
-#	$(FC90) -o ${ETS_EQ} $^ -L${ETS} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_XML} -L${LIB_UAL} -lets -lbds -lxmllib -litmconstants -litmtypes -lual ${LDFLAGS} ${LIBLAPACK}
 
 EQUILUPDATE_TEST: ${SHARED_O} ${EQUILUPDATE_O} ${OBJDIR}/equilupdate_test.o
 	$(FC90) -o ${EQUILUPDATE_EXE} $^ -L${ETS} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_UAL} -lets -lbds -litmconstants -litmtypes -lual ${LDFLAGS} ${LIBLAPACK}
@@ -191,7 +188,9 @@ LOOP_BGB: ${SHARED_O} ${ETS_O} ${EQUILUPDATE_O} ${CHEASE_O} ${BOHMGB_O} ${SOURCE
 
 LOOP_GEM0: ${SHARED_O} ${ETS_O} ${EQUILUPDATE_O} ${CHEASE_O} ${GEM0_O} ${IMP4DV_O} ${SOURCES_O} ${OBJDIR}/loop_gem0.o
 	$(LD) -o ${LOOP_GEM0_EXE} $^ -L${ETS} -L${CHEASE} -L${GEM0} -L${IMP4DV} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_XML} -L${LIB_UAL} -lets -lchease_muscle -lgem0 -limp4dv -lbds -litmconstants -litmtypes -lual -lxmllib -lxml2 ${LDFLAGS} ${LIBLAPACK}
-
+	
+ETS_CHEASE: ${SHARED_O} ${ETS_O} ${EQUILUPDATE_O} ${CHEASE_O} ${SOURCES_O} ${OBJDIR}/ets_chease.o
+	$(LD) -o ${ETS_CHEASE_EXE} $^ -L${ETS} -L${CHEASE} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_XML} -L${LIB_UAL} -lets -lchease_muscle -lbds -litmconstants -litmtypes -lual -lxmllib -lxml2 ${LDFLAGS} ${LIBLAPACK}
 
 #ROP_TEST: ${OBJDIR}/uq_modules.o ${OBJDIR}/rop_test.o
 #	$(FC90) -o  ${ROP_EXE} $^  -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_XML} -L${LIB_UAL} -lbds -lxmllib -litmconstants -litmtypes -lual ${LDFLAGS} ${LIBLAPACK}
@@ -215,12 +214,6 @@ ${OBJDIR}/linterp.o: src/tools/linterp.f90
 ${OBJDIR}/string_binding.o: src/tools/string_binding.f90
 	${FC90} -o $@ -c $< $(FC90FLAGS) 
 
-#${OBJDIR}/csv_io.o: src/tools/csv_io.f90
-#	${FC90} -o $@ -c $< $(FC90FLAGS) 
-
-#${OBJDIR}/spl.o: src/tools/spl.f90
-#	${FC90} -o $@ -c $< $(FC90FLAGS) -traceback -check all -fp-stack-check -I${MKL_LIB} 
-
 ${OBJDIR}/ets_standalone.o: src/ets_standalone.f90
 	${FC90} -o $@ -c $< $(FC90FLAGS) -I${ETS} -I${INC_CONSTANTS} -I${INC_TYPES} -I${INC_XML} 
 
@@ -228,10 +221,7 @@ ${OBJDIR}/ets_test.o: src/ets_test.f90
 	${FC90} -o $@ -c $< $(FC90FLAGS) -I${INC_TYPES}  
 
 ${OBJDIR}/ets_src.o: src/ets_src.f90
-	${FC90} -o $@ -c $< $(FC90FLAGS) $(FC90FLAGS_SOURCES) -I${ETS} -I${INC_TYPES}  
-
-#${OBJDIR}/ets_eq.o: src/ets_eq.f90
-#	${FC90} -o $@ -c $< $(FC90FLAGS)  -I${INC_TYPES} 
+	${FC90} -o $@ -c $< $(FC90FLAGS) $(FC90FLAGS_SOURCES) -I${ETS} -I${INC_TYPES}
 
 ${OBJDIR}/equilupdate_standalone.o: src/equilupdate_standalone.f90
 	${FC90} -o $@ -c $< $(FC90FLAGS) -I${ETS} -I${INC_CONSTANTS} -I${INC_TYPES} 
@@ -284,9 +274,12 @@ ${OBJDIR}/loop_bgb.o: src/loop_bgb.f90
 ${OBJDIR}/loop_gem0.o: src/loop_gem0.f90 
 	${FC90} -o $@ -c $< $(FC90FLAGS) -I${INC_TYPES} 
 
-#########
-${OBJDIR}/uq_modules.o: src/rop/uq_modules.f90
-	${FC90} -o $@ -c $< $(FC90FLAGS) -I${INC_CONSTANTS} -I${INC_TYPES} -I${INC_XML} 
+${OBJDIR}/ets_chease.o: src/ets_chease.f90 
+	${FC90} -o $@ -c $< $(FC90FLAGS) -I${INC_TYPES} 
 
+#########
+#${OBJDIR}/uq_modules.o: src/rop/uq_modules.f90
+#	${FC90} -o $@ -c $< $(FC90FLAGS) -I${INC_CONSTANTS} -I${INC_TYPES} -I${INC_XML} 
+#
 #${OBJDIR}/rop_test.o: src/rop/rop_test.f90
 #	${FC90} -o $@ -c $< $(FC90FLAGS) -I${INC_CONSTANTS} -I${INC_TYPES} -I${INC_XML} 

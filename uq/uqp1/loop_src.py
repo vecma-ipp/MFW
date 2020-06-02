@@ -46,11 +46,11 @@ elec_heating_params = {
     "electrons.heating_el.RHEAT_el":{
         "dist": "Uniform",
         "err": 0.2,
-    }#,
-    #"electrons.heating_el.FWHEAT_el":{
-    #    "dist": "Uniform",
-    #    "err": 0.2,
-    #}
+    },
+    "electrons.heating_el.FWHEAT_el":{
+        "dist": "Uniform",
+        "err": 0.2,
+    }
 }
 ions_heating_params = {
     "ions.heating.WTOT":{
@@ -139,12 +139,12 @@ my_campaign.add_app(name=campaign_name,
 
 # Create the sampler
 print('>>> Create the sampler')
-my_sampler = uq.sampling.PCESampler(vary=vary, polynomial_order=4,
+my_sampler = uq.sampling.PCESampler(vary=vary, polynomial_order=3,
                                     regression=False)
 my_campaign.set_sampler(my_sampler)
 
 # Will draw all (of the finite set of samples)
-print('>>> Draw Samples - Ns = ', my_sampler._number_of_samples)
+print('>>> Draw Samples - Ns = ', my_sampler.n_samples)
 my_campaign.draw_samples()
 
 print('>>> Populate runs_dir')

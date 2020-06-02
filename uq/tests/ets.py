@@ -43,11 +43,11 @@ input_params = {
         "dist": "Normal",
         "err":  0.2,
     }
-    ,
-    "ti.boundary.value": {
-        "dist": "Normal",
-        "err": 0.2,
-    }
+    #,
+    #"ti.boundary.value": {
+    #    "dist": "Normal",
+    #    "err": 0.2,
+    #}
 }
 # CPO file containg initial values of uncertain params
 input_filename = "ets_coreprof_in.cpo"
@@ -186,8 +186,8 @@ for qoi in output_columns:
                      ftitle=qoi+' profile',
                      fname='data/outputs/STAT_'+fig)
 
-    plots.plot_sobols_all(rho, sob1[qoi], uparams_names,
-                      ftitle='1st Sobol indices: '+qoi,
-                      fname='data/outputs/SA_'+fig)
+    #plots.plot_sobols_all(rho, sob1[qoi], uparams_names,
+    #                  ftitle='1st Sobol indices: '+qoi,
+    #                  fname='data/outputs/SA_'+fig)
 
 print('>>> test ETS PJ : END')

@@ -3,6 +3,7 @@ import easyvvuq as uq
 from ascii_cpo import read
 from easymfw.templates.cpo_encoder import CPOEncoder
 from easymfw.templates.cpo_decoder import CPODecoder
+from easymfw.templates.xml_element import XMLElement
 from easymfw.utils.io_tools import get_cpo_inputs
 
 '''
@@ -32,7 +33,6 @@ tmp_dir = os.environ['SCRATCH']
 
 # CPO files location
 cpo_dir = os.path.abspath("../workflows/AUG_28906_6")
-#cpo_dir = os.path.abspath("../workflows/JET_92436_23066")
 
 # XML and XSD files location
 xml_dir = os.path.abspath("../workflows")
@@ -139,13 +139,21 @@ my_sampler = uq.sampling.PCESampler(vary=vary,
 my_campaign.set_sampler(my_sampler)
 
 # Will draw all (of the finite set of samples)
-print('>>> Draw Samples - Ns = ', my_sampler._number_of_samples)
+print('>>> Draw Samples - Ns = ', my_sampler.n_samples)
 my_campaign.draw_samples()
 
 print('>>> Populate runs_dir')
 my_campaign.populate_runs_dir()
 
+# get ncores
+gemxml = XMLElement(xml_dir + "/gem.xml")
+npesx = gemxml.get_value("cpu_parameters.domain_decomposition.npesx")
+npess = gemxml.get_value("cpu_parameters.domain_decomposition.npess")
+ncores = npesx*npess
+
 exec_path = os.path.join(common_dir, exec_code)
+mpi_app = " ".join([mpi_instance, "-n", str(ncores), exec_path])
+
 if EXEC_PJ:
     # GCG-PJ wrapper
     import easypj
@@ -158,8 +166,8 @@ if EXEC_PJ:
 
     qcgpjexec.add_task(Task(
         TaskType.EXECUTION,
-        TaskRequirements(cores=Resources(exact=1)),
-        application=exec_path
+        TaskRequirements(cores=Resources(exact=ncores)),
+        application= mpi_app
     ))
 
     qcgpjexec.run(

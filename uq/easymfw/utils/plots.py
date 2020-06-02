@@ -1,4 +1,5 @@
 import matplotlib.pylab as plt
+import matplotlib
 import numpy as np
 
 
@@ -61,7 +62,7 @@ def plot_stats_pctl(x, stat, pctl, xlabel, ylabel, ftitle, fname):
     p90 = pctl['p90']
 
     plt.switch_backend('agg')
-    fig = plt.figure(figsize=(12,9))
+    fig = plt.figure(figsize=(16,9))
 
     ax1 = fig.add_subplot(111)
     ax1.plot(x, mean, 'b-', alpha=0.6, label='Mean')
@@ -84,6 +85,33 @@ def plot_stats_pctl(x, stat, pctl, xlabel, ylabel, ftitle, fname):
     fig.savefig(fname)
     plt.close(fig)
 
+# Statistical Moments (mean +- sdtv) and p90, p10
+def plot_stats_all(x, stat, perc, dist, xlabel, ylabel, ftitle, fname):
+    matplotlib.rcParams.update({'font.size': 11})
+    mean = np.array(stat["mean"])
+    std = np.array(stat['std'])
+    p10 = perc['p10']
+    p90 = perc['p90']
+
+    plt.switch_backend('agg')
+    fig = plt.figure()#figsize=(12,9))
+
+    plt.plot(x, mean, 'b-', label='Mean')
+    plt.plot(x, mean-std, 'g-', alpha=0.6, label=r'Mean $\pm$1 std')
+    plt.plot(x, mean+std, 'g-', alpha=0.6)
+    plt.fill_between(x, mean-std, mean+std, color='g', alpha=0.2)
+    plt.plot(x, p10, 'C1-', alpha=0.6, label='10 and 90 percentiles')
+    plt.plot(x, p90, 'C1-', alpha=0.6)
+    plt.fill_between(x, p10, p90, color='C1', alpha=0.1)
+    plt.fill_between(x, [r.lower[0] for r in dist], [r.upper[0] for r in dist], color='b', alpha=0.05)
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    plt.grid()
+    plt.legend()
+
+    plt.title(ftitle)
+    fig.savefig(fname)
+    plt.close(fig)
 
 # Plot Sobols indices for 2, 4 or 6 params
 def plot_sobols(x, sobols, params, ftitle, fname):

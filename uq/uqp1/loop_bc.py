@@ -25,7 +25,7 @@ SYS = os.environ['SYS']
 tmp_dir = os.environ['SCRATCH']
 
 # CPO files location
-cpo_dir = os.path.abspath("../workflows/AUG_28906_6")
+cpo_dir = os.path.abspath("../workflows/AUG_28906_6_BgB")
 #cpo_dir = os.path.abspath("../workflows/JET_92436_23066")
 
 # XML and XSD files
@@ -33,17 +33,17 @@ xml_dir = os.path.abspath("../workflows")
 
 # The executable code to run
 obj_dir = os.path.abspath("../standalone/bin/"+SYS)
-exec_code = "loop_gem0"
+exec_code = "loop_bgb"
 
 # Define the uncertain parameters
 input_params = {
     "te.boundary.value": {
         "dist": "Normal",
-        "err":  0.25,
+        "err":  0.4,
     },
     "ti.boundary.value": {
         "dist": "Normal",
-        "err": 0.25,
+        "err": 0.4,
     }
 }
 
@@ -52,9 +52,9 @@ input_filename = "ets_coreprof_in.cpo"
 input_cponame = "coreprof"
 
 # The quantities of intersts and the cpo file to set them
-output_columns = ["te.value", "ti.value"]
-output_filename = "ets_coreprof_out.cpo"
-output_cponame = "coreprof"
+output_columns = ["profiles_1d.gm3", "profiles_1d.pressure"]
+output_cponame = "equilibrium"
+output_filename = "chease_equilibrium_out.cpo"
 
 # params: the parameter dict for campaign object
 # vary: distributions list for the sampler
@@ -85,6 +85,8 @@ os.system("cp " + xml_dir + "/chease.xml " + common_dir)
 os.system("cp " + xml_dir + "/chease.xsd " + common_dir)
 os.system("cp " + xml_dir + "/gem0.xml "   + common_dir)
 os.system("cp " + xml_dir + "/gem0.xsd "   + common_dir)
+os.system("cp " + xml_dir + "/bohmgb.xml "   + common_dir)
+os.system("cp " + xml_dir + "/bohmgb.xsd "   + common_dir)
 
 # Copy exec file
 os.system("cp " + exec_code + " " + common_dir)
@@ -123,7 +125,7 @@ my_sampler = uq.sampling.PCESampler(vary=vary,
 my_campaign.set_sampler(my_sampler)
 
 # Will draw all (of the finite set of samples)
-print('>>> Draw Samples- Ns = ', my_sampler._number_of_samples)
+print('>>> Draw Samples- Ns = ', my_sampler.n_samples)
 my_campaign.draw_samples()
 
 print('>>> Populate runs_dir')
@@ -181,20 +183,21 @@ for qoi in output_columns:
 from easymfw.utils import plots
 from ascii_cpo import read
 
-corep = read(input_cpo_file, "coreprof")
-rho = corep.rho_tor_norm
+equil_file = os.path.join(cpo_dir,  "ets_equilibrium_in.cpo")
+equil = read(equil_file, "equilibrium")
+rho = equil.profiles_1d.rho_tor
 
 uparams_names = list(params.keys())
 
-for qoi in output_columns:
-    fig = campaign_name + qoi.split('.')[0]
-    plots.plot_stats(rho, stat[qoi],
-                     xlabel=r'$\rho_{tor}$', ylabel=qoi,
-                     ftitle=qoi+' profile',
-                     fname='data/outputs/STAT_'+fig)
-
-    plots.plot_sobols_all(rho, sob1[qoi], uparams_names,
-                      ftitle='1st Sobol indices: '+qoi,
-                      fname='data/outputs/SA_'+fig)
+#for qoi in output_columns:
+#    fig = campaign_name + qoi.split('.')[0]
+#    plots.plot_stats(rho, stat[qoi],
+#                     xlabel=r'$\rho_{tor}$', ylabel=qoi,
+#                     ftitle=qoi+' profile',
+#                     fname='data/outputs/STAT_'+fig)
+#
+#    plots.plot_sobols_all(rho, sob1[qoi], uparams_names,
+#                      ftitle='1st Sobol indices: '+qoi,
+#                      fname='data/outputs/SA_'+fig)
 
 print('>>> UQ-Workflow BC: END')

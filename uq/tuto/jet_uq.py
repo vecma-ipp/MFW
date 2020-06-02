@@ -38,7 +38,7 @@ params = {
     "b_pos":    {"type": "float",   "min": 0.95,  "max": 0.99,   "default": 0.98},
     "b_height": {"type": "float",   "min": 3e19,  "max": 10e19,  "default": 6e19},
     "b_sol":    {"type": "float",   "min": 2e18,  "max": 3e19,   "default": 2e19},
-    "b_width":  {"type": "float",   "min": 0.005, "max": 0.02,   "default": 0.01},
+    "b_width":  {"type": "float",   "min": 0.005, "max": 0.025,   "default": 0.01},
     "b_slope":  {"type": "float",   "min": 0.0,   "max": 0.05,   "default": 0.01},
     "nr":       {"type": "integer", "min": 10,    "max": 1000,   "default": 10},
     "dt":       {"type": "float",   "min": 1e-3,  "max": 1e3,    "default": 100},
@@ -96,7 +96,7 @@ vary = {
     "b_pos":    cp.Uniform(0.95,  0.99),
     "b_height": cp.Uniform(5e19,  7e19),
     "b_sol":    cp.Uniform(1e19,  3e19),
-    "b_width":  cp.Uniform(0.015, 0.02),
+    "b_width":  cp.Uniform(0.015, 0.025),
     "b_slope":  cp.Uniform(0.005, 0.020)
 }
 
