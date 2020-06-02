@@ -16,12 +16,12 @@ manager_pid=$!
 #export LD_LIBRARY_PATH=$MUSCLE3_HOME/lib:$LD_LIBRARY_PATH
 BINDIR=../bin/MARCONI-GNU
 
-$BINDIR/init_M3 --muscle-instance=init >'init.log' 2>&1 &
-$BINDIR/ets_M3 --muscle-instance=transport >'transport.log' 2>&1 &
-$BINDIR/chease_M3 --muscle-instance=equilibrium >'equilibrium.log' 2>&1 &
+$BINDIR/stop_M3 --muscle-instance=stop >'stop.log' 2>&1 &
 $BINDIR/dupplicate_M3 --muscle-instance=dupplicate >'dupplicate.log' 2>&1 &
 $BINDIR/gem0_M3 --muscle-instance=turbulence >'turbulence.log' 2>&1 &
-$BINDIR/stop_M3 --muscle-instance=stop >'stop.log' 2>&1 &
+$BINDIR/chease_M3 --muscle-instance=equilibrium >'equilibrium.log' 2>&1 &
+$BINDIR/init_M3 --muscle-instance=init >'init.log' 2>&1 &
+$BINDIR/ets_M3 --muscle-instance=transport >'transport.log' 2>&1 &
 
 touch muscle3_manager.log
 tail -f muscle3_manager.log --pid=${manager_pid}

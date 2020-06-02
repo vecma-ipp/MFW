@@ -18,17 +18,12 @@ model:
     init.coresource_init:        transport.coresource_init
     init.coreimpur_init:         transport.coreimpur_init
     init.toroidfield_init:       transport.toroidfield_init
-
     transport.equilibrium_out:   equilibrium.equilibrium_in
     transport.coreprof_out:      turbulence.coreprof_in
-
     equilibrium.equilibrium_out: dupplicate.input
-
     dupplicate.copy_A:           turbulence.equilibrium_in
     dupplicate.copy_B:           transport.equilibrium_in
-
     turbulence.coretransp_out:   transport.coretransp_in
-
     transport.equilibrium_final: stop.equilibrium_in
     transport.coreprof_final:    stop.coreprof_in
     transport.coresource_final:  stop.coresource_in
@@ -40,4 +35,5 @@ settings:
   transport.dt: 0.01
   init_cpo_dir: "AUG_28906_6"
   final_cpo_dir: "./"
-  
+  muscle_remote_log_level: "DEBUG"  
+
