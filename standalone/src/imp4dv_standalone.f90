@@ -92,6 +92,7 @@ contains
 
     allocate(equil_in(1))
     allocate(corep_in(1))
+    allocate(coret_in(1))
 
     call getenv("USER",username)
     call getenv("CPO_SERIALIZATION_DIR",tmpdir)
