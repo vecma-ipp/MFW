@@ -46,17 +46,15 @@ contains
     implicit none
 
     character, dimension(:) :: carray
-    character(:), allocatable :: cstring
+    character(len = size(carray)) :: cstring
 
     integer(itm_i4) :: i
 
-		allocate( character(len=size(carray)) :: cstring )
     
     do i = 1, size(carray)
       cstring(i : i) = carray(i)
     end do
 		
-		return
 
   end function char2str
 
@@ -82,13 +80,12 @@ contains
     character, dimension(:) :: carray
     logical :: cbool
 
-		character(len=:), allocatable :: cstring
+    character(len = size(carray)) :: cstring
 
     cstring = char2str(carray)
 
     read(cstring, *) cbool
 
-		deallocate(cstring)
 
   end subroutine char2bool
 
@@ -99,13 +96,12 @@ contains
     character, dimension(:) :: carray
     integer(itm_i4) :: cint
 
-		character(len=:), allocatable :: cstring
+    character(len = size(carray)) :: cstring
 
     cstring = char2str(carray)
 
     read(cstring, *) cint
 	
-		deallocate(cstring)
 
   end subroutine char2int
 
@@ -116,13 +112,12 @@ contains
     character, dimension(:) :: carray
     real(R8) :: creal
 
-		character(len=:), allocatable :: cstring
+    character(len = size(carray)) :: cstring
 
     cstring = char2str(carray)
 
     read(cstring, *) creal
 
-		deallocate(cstring)
 
   end subroutine char2real
 

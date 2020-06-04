@@ -6,8 +6,9 @@ module xml_file_reader
 ! default parameters, and the W3C XML Schema
 !-----------------------------------------------------------------------
 
-  use itm_types
-  use euitm_schemas
+  use itm_types, only: itm_i4
+  use euitm_schemas, only: type_param
+  use f90_file_reader, only: file2buffer
 
   private
 
@@ -16,7 +17,6 @@ module xml_file_reader
 
   public :: fill_param, read_parameters
 
-! modified by me
 
 contains
 
@@ -41,34 +41,37 @@ contains
 !-- read input parameters
     if (input_name /= '') then
       if (present(path)) then
-        call read_parameters(trim(adjustl(path)) &
-         // trim(adjustl(input_name)), code_parameters, 2)
+        call file2buffer(trim(adjustl(path)) &
+         // trim(adjustl(input_name)), unit_no, buffer_pointer=code_parameters%parameters)
       else
-        call read_parameters(input_name, code_parameters, 2)
+        call file2buffer(input_name, unit_no, buffer_pointer=code_parameters%parameters)
       end if
-    else
-       write(iu6, *) 'no input parameters provided'
     end if
+!   removed based on tracker from Par.
+!    else
+!      write(iu6, *) 'XMLLIB - no input parameters provided'
+!    end if
 
 !-- read default parameters
     if (default_name /= '') then
       if (present(path)) then
-        call read_parameters(trim(adjustl(path)) &
-         // trim(adjustl(default_name)), code_parameters, 3)
+        call file2buffer(trim(adjustl(path)) &
+         // trim(adjustl(default_name)), unit_no, buffer_pointer=code_parameters%default_param)
       else
-        call read_parameters(default_name, code_parameters, 3)
+        call file2buffer(default_name, unit_no, buffer_pointer=code_parameters%default_param)
       end if
-    else
-      !write(iu6, *) 'no default parameters provided'
     end if
+!    else
+      !write(iu6, *) 'no default parameters provided'
+!    end if
 
 !-- read schema
     if (schema_name /= '') then
       if (present(path)) then
-        call read_parameters(trim(adjustl(path)) &
-         // trim(adjustl(schema_name)), code_parameters, 1)
+        call file2buffer(trim(adjustl(path)) &
+         // trim(adjustl(schema_name)), unit_no, buffer_pointer=code_parameters%schema)
       else
-        call read_parameters(schema_name, code_parameters, 1)
+        call file2buffer(schema_name, unit_no, buffer_pointer=code_parameters%schema)
       end if
     else
        write(iu6, *) 'no schema provided'
