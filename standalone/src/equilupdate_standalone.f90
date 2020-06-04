@@ -110,6 +110,7 @@ contains
        STOP
     end if
 
+    nullify(equil_out)
     call equilupdate2cpo(corep_in, toroidf_in, equil_in, equil_out)
 
     ! transfer CPO to buf
