@@ -54,7 +54,7 @@ program stop_M3
      call LIBMUSCLE_DataConstRef_as_byte_array(rdata, equilibrium_in_buf, err_code, err_msg)
      call LIBMUSCLE_DataConstRef_free(rdata)
      call LIBMUSCLE_Message_free(rmsg)
-     call byte2file(final_cpos//'/ets_equilibrium_in.cpo', equilibrium_in_buf, size(equilibrium_in_buf))
+     call byte2file(trim(final_cpos)//'/ets_equilibrium_in.cpo', equilibrium_in_buf, size(equilibrium_in_buf))
      deallocate(equilibrium_in_buf)
      ! coreprof
      rmsg = LIBMUSCLE_Instance_receive(instance, 'coreprof_in')
@@ -65,7 +65,7 @@ program stop_M3
      call LIBMUSCLE_DataConstRef_free(rdata)
      !t_init = LIBMUSCLE_Message_timestamp(rmsg)
      call LIBMUSCLE_Message_free(rmsg)
-     call byte2file(final_cpos//'/ets_coreprof_in.cpo', coreprof_in_buf, size(coreprof_in_buf))
+     call byte2file(trim(final_cpos)//'/ets_coreprof_in.cpo', coreprof_in_buf, size(coreprof_in_buf))
      deallocate(coreprof_in_buf)
      ! recv init coresource
      rmsg = LIBMUSCLE_Instance_receive(instance, 'coresource_in')
@@ -75,7 +75,7 @@ program stop_M3
      call LIBMUSCLE_DataConstRef_as_byte_array(rdata, coresource_in_buf, err_code, err_msg)
      call LIBMUSCLE_DataConstRef_free(rdata)
      call LIBMUSCLE_Message_free(rmsg)
-     call byte2file(final_cpos//'/ets_coresource_in.cpo', coresource_in_buf, size(coresource_in_buf))
+     call byte2file(trim(final_cpos)//'/ets_coresource_in.cpo', coresource_in_buf, size(coresource_in_buf))
      deallocate(coresource_in_buf)
      ! recv init coreimpur
      rmsg = LIBMUSCLE_Instance_receive(instance, 'coreimpur_in')
@@ -85,7 +85,7 @@ program stop_M3
      call LIBMUSCLE_DataConstRef_as_byte_array(rdata, coreimpur_in_buf, err_code, err_msg)
      call LIBMUSCLE_DataConstRef_free(rdata)
      call LIBMUSCLE_Message_free(rmsg)
-     call byte2file(final_cpos//'/ets_coreimpur_in.cpo', coreimpur_in_buf, size(coreimpur_in_buf))
+     call byte2file(trim(final_cpos)//'/ets_coreimpur_in.cpo', coreimpur_in_buf, size(coreimpur_in_buf))
      deallocate(coreimpur_in_buf)
      ! recv init toroidfield
      rmsg = LIBMUSCLE_Instance_receive(instance, 'toroidfield_in')
@@ -95,7 +95,7 @@ program stop_M3
      call LIBMUSCLE_DataConstRef_as_byte_array(rdata, toroidfield_in_buf, err_code, err_msg)
      call LIBMUSCLE_DataConstRef_free(rdata)
      call LIBMUSCLE_Message_free(rmsg)
-     call byte2file(final_cpos//'/ets_toroidfield_in.cpo', toroidfield_in_buf, size(toroidfield_in_buf))
+     call byte2file(trim(final_cpos)//'/ets_toroidfield_in.cpo', toroidfield_in_buf, size(toroidfield_in_buf))
      deallocate(toroidfield_in_buf)
 
   end do

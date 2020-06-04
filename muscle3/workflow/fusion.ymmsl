@@ -31,7 +31,7 @@ model:
     transport.toroidfield_final: stop.toroidfield_in
 
 settings:
-  transport.duration: 1.0
+  transport.duration: 0.1
   transport.dt: 0.01
   init_cpo_dir: "AUG_28906_6"
   final_cpo_dir: "./"

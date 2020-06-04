@@ -127,11 +127,12 @@ program ets_M3
         call LIBMUSCLE_Data_free(sdata)
              
         deallocate(equilibrium_out_buf)
+        nullify(equilibrium_out_buf)
         deallocate(coreprof_out_buf)
-
+        nullify(coreprof_out_buf)
 
         !###  S  #################################!
-        deallocate(equilibrium_in_buf)
+        if (associated(equilibrium_in_buf)) deallocate(equilibrium_in_buf)
         if (associated(coretransp_in_buf)) deallocate(coretransp_in_buf)
         ! recv equilibrium
         rmsg = LIBMUSCLE_Instance_receive(instance, 'equilibrium_in')
@@ -158,6 +159,8 @@ program ets_M3
              coreimpur_in_buf, &
              coreprof_out_buf, &
              t_current)
+
+        print *,"ETS CALCULATED PROFILES AT TIME = ",t_current
 
         deallocate(coreprof_in_buf)
         allocate(coreprof_in_buf, source=coreprof_out_buf)
