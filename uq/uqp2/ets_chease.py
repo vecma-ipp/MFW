@@ -241,7 +241,7 @@ if __name__ == "__main__":
                     {"te.value": {"knot": ty.tolist(), "k": k, "rho": rho.tolist()}},
                     {"te.value": cp.J(*dist_cp)}
                    ]
-    eq_output = ["profiles_1d.pressure"]
+    eq_output = ["profiles_1d.pressue"]
 
     eq_code = "equil_test"
 
