@@ -10,7 +10,7 @@ model:
     transport:   ets_M3
     turbulence:  gem0_M3
     equilibrium: chease_M3
-    dupplicate:  dupplicate_M3
+    duplicate:   duplicate_M3
 
   conduits:
     init.equilibrium_init:       transport.equilibrium_init
@@ -20,9 +20,9 @@ model:
     init.toroidfield_init:       transport.toroidfield_init
     transport.equilibrium_out:   equilibrium.equilibrium_in
     transport.coreprof_out:      turbulence.coreprof_in
-    equilibrium.equilibrium_out: dupplicate.input
-    dupplicate.copy_A:           turbulence.equilibrium_in
-    dupplicate.copy_B:           transport.equilibrium_in
+    equilibrium.equilibrium_out: duplicate.input
+    duplicate.copy_A:            turbulence.equilibrium_in
+    duplicate.copy_B:            transport.equilibrium_in
     turbulence.coretransp_out:   transport.coretransp_in
     transport.equilibrium_final: stop.equilibrium_in
     transport.coreprof_final:    stop.coreprof_in

@@ -1,4 +1,4 @@
-program dupplicate_M3
+program duplicate_M3
   use ymmsl
   use libmuscle
   implicit none
@@ -33,4 +33,4 @@ program dupplicate_M3
   
   call LIBMUSCLE_Instance_free(instance)
 
-end program dupplicate_M3
+end program duplicate_M3

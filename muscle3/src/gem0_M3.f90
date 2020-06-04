@@ -61,6 +61,8 @@ program gem0_M3
           coreprof_in_buf, &
           coretransp_flux_buf)
 
+     print *,"calling imp4dv"
+
      call imp4dv2buf( &
           equilibrium_in_buf, &
           coreprof_in_buf, &
