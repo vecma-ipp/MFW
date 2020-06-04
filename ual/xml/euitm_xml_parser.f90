@@ -28,7 +28,12 @@ module euitm_xml_parser
   end type tree
   integer(itm_i4) :: n_lines_schema
 
+  logical, save :: verbose_parsing = .FALSE.
 contains
+  subroutine set_verbose(in)
+    logical, intent(in) :: in
+    verbose_parsing = in
+  end subroutine set_verbose
 
   subroutine euitm_xml_parse(code_parameters, nparm, parameter_list)
 !------------------------------------------------------------------------
@@ -207,7 +212,7 @@ contains
 
     type(element), pointer :: child
     type(interval) :: found
-    character(len = length) :: cname
+    character(len = : ), allocatable :: cname
     integer(itm_i4) :: i, j, no_of_children
     logical :: can_have_children
 
@@ -219,12 +224,15 @@ contains
     found%ind_start = index(parameter_string, '<xs:element name="' &
      // cname // '"')
     if (found%ind_start == 0) then
+      if (verbose_parsing) then
       write(*, *) 'ERROR: Element ', parent%cname,' not found.'
+      end if
       return
     end if
     can_have_children = .true.
     found%ind_start = found%ind_start + len_trim('<xs:element name="' &
      // cname // '"')
+    deallocate(cname)
     i = found%ind_start
     do
       if (parameter_string(i : i + 1) == '/>') then
@@ -233,7 +241,9 @@ contains
       else if (parameter_string(i : i) == '>') then
         exit
       else if (parameter_string(i : i) == '<') then
+        if (verbose_parsing) then
         write(*, *) 'ERROR: not well-formed XML schema.'
+        end if
         return
       end if
       i = i + 1
@@ -247,7 +257,9 @@ contains
       found%ind_end = index(parameter_string(found%ind_start &
        : len_trim(parameter_string)), '</xs:element>')
       if (found%ind_end == 0) then
+        if (verbose_parsing) then
         write(*, *) 'ERROR: Element ', parent%cname,' not properly closed.'
+        end if
         return
       end if
       found%ind_end = found%ind_end + found%ind_start - 1
@@ -268,7 +280,9 @@ contains
           i = i + len(' ref="') + found%ind_start - 1
           j = index(parameter_string(i : found%ind_end), '"')
           if (j == 0) then
+            if (verbose_parsing) then
             write(*, *) 'ERROR: in ref, not well-formed XML.'
+            end if
             return
           else
             j = j + i - 2
@@ -344,7 +358,9 @@ contains
      full_string, bounds)
 
     if (bounds%ind_start == 0) then
+       if (verbose_parsing) then
       write(*, *) 'ERROR: No document element.'
+       end if
       return
     end if
 
@@ -361,11 +377,15 @@ contains
 
 !-- consistency check
     if (.not. associated(temp_pointer, parameter_list%first)) then
+      if (verbose_parsing) then
       write(*, *) 'ERROR: incomplete tree.'
+      end if
       stop
     end if
 
-    !write(*,*) 'number of parameters in XML file: ', nparm
+    if (verbose_parsing) then
+       write(*,*) 'number of parameters in XML file: ', nparm
+    end if
    
   end subroutine parse_xml_string
 
@@ -521,7 +541,7 @@ contains
 ! + + + + + + + + + + + + + + + + + + + + + + + + + + + +
 SUBROUTINE find_element(mko_ptr_to_element, mko_return_ptr, mko_cname)
   CHARACTER(len=132), INTENT(in) :: mko_cname
-  CHARACTER(len=132) :: mko_tmp_cname
+  CHARACTER(len=:), allocatable :: mko_tmp_cname
   TYPE(element), POINTER, INTENT(in) :: mko_ptr_to_element
   TYPE(element), POINTER, INTENT(out) :: mko_return_ptr
   TYPE(element), POINTER :: mko_tmp_ptr
@@ -532,8 +552,10 @@ SUBROUTINE find_element(mko_ptr_to_element, mko_return_ptr, mko_cname)
      mko_tmp_cname = char2str(mko_tmp_ptr%cname)
      IF ( mko_cname .EQ. mko_tmp_cname) THEN
         mko_return_ptr => mko_tmp_ptr
+        deallocate(mko_tmp_cname)
         RETURN
      END IF
+     deallocate(mko_tmp_cname)
      mko_tmp_ptr => mko_tmp_ptr%sibling
    END DO
    mko_return_ptr => mko_tmp_ptr
@@ -560,6 +582,7 @@ SUBROUTINE find_parameter(mko_str, mko_value, mko_parameters_ptr)
   ! 2. we assume that the deepth of the tree will be not bigger than 10 levels down
   CHARACTER(len=132)   :: mko_word(30)
   CHARACTER(len = 132) :: mko_cname
+  CHARACTER(len = :), allocatable :: mko_value_temp
 
   mko_value = ''
   mko_word  = ''
@@ -591,7 +614,9 @@ SUBROUTINE find_parameter(mko_str, mko_value, mko_parameters_ptr)
        RETURN
     ELSE
        IF ( mko_i == mko_n) THEN
-          mko_value = char2str(mko_found_element%cvalue)
+          mko_value_temp = char2str(mko_found_element%cvalue)
+          write(mko_value,*)trim(mko_value_temp)
+          deallocate(mko_value_temp)
           RETURN
        ELSE
           mko_temp_pointer => mko_found_element%child
