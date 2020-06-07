@@ -39,18 +39,16 @@ program gem0_M3
      ! receive equilibrium data
      rmsg = LIBMUSCLE_Instance_receive(instance, 'equilibrium_in')
      rdata = LIBMUSCLE_Message_get_data(rmsg)
-     if (.not. LIBMUSCLE_DataConstRef_is_a_byte_array(rdata)) STOP 'wrong data type received'
      allocate (equilibrium_in_buf(LIBMUSCLE_DataConstRef_size(rdata)))
-     call LIBMUSCLE_DataConstRef_as_byte_array(rdata, equilibrium_in_buf, err_code, err_msg)
+     call LIBMUSCLE_DataConstRef_as_byte_array(rdata, equilibrium_in_buf)
      call LIBMUSCLE_DataConstRef_free(rdata)
      call LIBMUSCLE_Message_free(rmsg)
 
      ! receive coreprof data
      rmsg = LIBMUSCLE_Instance_receive(instance, 'coreprof_in')
      rdata = LIBMUSCLE_Message_get_data(rmsg)
-     if (.not. LIBMUSCLE_DataConstRef_is_a_byte_array(rdata)) STOP 'wrong data type received'
      allocate (coreprof_in_buf(LIBMUSCLE_DataConstRef_size(rdata)))
-     call LIBMUSCLE_DataConstRef_as_byte_array(rdata, coreprof_in_buf, err_code, err_msg)
+     call LIBMUSCLE_DataConstRef_as_byte_array(rdata, coreprof_in_buf)
      call LIBMUSCLE_DataConstRef_free(rdata)
      t_cur = LIBMUSCLE_Message_timestamp(rmsg)
      !t_max = LIBMUSCLE_Message_timestamp(rmsg) + t_max

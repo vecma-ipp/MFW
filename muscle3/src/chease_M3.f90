@@ -14,9 +14,6 @@ program chease_M3
   type(LIBMUSCLE_Message) :: smsg
   type(LIBMUSCLE_Data) :: sdata
 
-  integer :: err_code
-  character(:), allocatable :: err_msg
-
   real (selected_real_kind(15)) :: t_cur !, t_max, dt, k
 
   ! code specific
@@ -36,10 +33,8 @@ program chease_M3
      rmsg = LIBMUSCLE_Instance_receive(instance, 'equilibrium_in')
      rdata = LIBMUSCLE_Message_get_data(rmsg)
 
-     if (.not. LIBMUSCLE_DataConstRef_is_a_byte_array(rdata)) STOP 'wrong data type received'
-
      allocate (equilibrium_in_buf(LIBMUSCLE_DataConstRef_size(rdata)))
-     call LIBMUSCLE_DataConstRef_as_byte_array(rdata, equilibrium_in_buf, err_code, err_msg)
+     call LIBMUSCLE_DataConstRef_as_byte_array(rdata, equilibrium_in_buf)
      call LIBMUSCLE_DataConstRef_free(rdata)
      
      t_cur = LIBMUSCLE_Message_timestamp(rmsg)

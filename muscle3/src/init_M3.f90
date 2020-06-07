@@ -72,8 +72,8 @@ program init_M3
         call read_cpo(coreprof(1), 'coreprof')
         call close_read_file
      else
-        print *,"ERROR. CPO file not found:", &
-             trim(init_cpos)//"/ets_coreprof_in.cpo"
+        call LIBMUSCLE_Instance_error_shutdown(instance, &
+             "ERROR. CPO file not found: "//trim(init_cpos)//"/ets_coreprof_in.cpo")
         STOP
      end if
      t_cur = coreprof(1)%time

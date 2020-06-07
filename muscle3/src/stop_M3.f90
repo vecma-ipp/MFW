@@ -14,9 +14,6 @@ program stop_M3
   type(LIBMUSCLE_Message) :: rmsg
   type(LIBMUSCLE_DataConstRef) :: rdata, item
 
-  integer :: err_code
-  character(:), allocatable :: err_msg
-
   real (selected_real_kind(15)) :: t_current
 
   character(256) :: final_cpos
@@ -49,9 +46,8 @@ program stop_M3
      ! equilibrium
      rmsg = LIBMUSCLE_Instance_receive(instance, 'equilibrium_in')
      rdata = LIBMUSCLE_Message_get_data(rmsg)
-     if (.not. LIBMUSCLE_DataConstRef_is_a_byte_array(rdata)) STOP 'wrong data type received'
      allocate (equilibrium_in_buf(LIBMUSCLE_DataConstRef_size(rdata)))
-     call LIBMUSCLE_DataConstRef_as_byte_array(rdata, equilibrium_in_buf, err_code, err_msg)
+     call LIBMUSCLE_DataConstRef_as_byte_array(rdata, equilibrium_in_buf)
      call LIBMUSCLE_DataConstRef_free(rdata)
      call LIBMUSCLE_Message_free(rmsg)
      call byte2file(trim(final_cpos)//'/ets_equilibrium_in.cpo', equilibrium_in_buf, size(equilibrium_in_buf))
@@ -59,9 +55,8 @@ program stop_M3
      ! coreprof
      rmsg = LIBMUSCLE_Instance_receive(instance, 'coreprof_in')
      rdata = LIBMUSCLE_Message_get_data(rmsg)
-     if (.not. LIBMUSCLE_DataConstRef_is_a_byte_array(rdata)) STOP 'wrong data type received'
      allocate (coreprof_in_buf(LIBMUSCLE_DataConstRef_size(rdata)))
-     call LIBMUSCLE_DataConstRef_as_byte_array(rdata, coreprof_in_buf, err_code, err_msg)
+     call LIBMUSCLE_DataConstRef_as_byte_array(rdata, coreprof_in_buf)
      call LIBMUSCLE_DataConstRef_free(rdata)
      !t_init = LIBMUSCLE_Message_timestamp(rmsg)
      call LIBMUSCLE_Message_free(rmsg)
@@ -70,9 +65,8 @@ program stop_M3
      ! recv init coresource
      rmsg = LIBMUSCLE_Instance_receive(instance, 'coresource_in')
      rdata = LIBMUSCLE_Message_get_data(rmsg)
-     if (.not. LIBMUSCLE_DataConstRef_is_a_byte_array(rdata)) STOP 'wrong data type received'
      allocate (coresource_in_buf(LIBMUSCLE_DataConstRef_size(rdata)))
-     call LIBMUSCLE_DataConstRef_as_byte_array(rdata, coresource_in_buf, err_code, err_msg)
+     call LIBMUSCLE_DataConstRef_as_byte_array(rdata, coresource_in_buf)
      call LIBMUSCLE_DataConstRef_free(rdata)
      call LIBMUSCLE_Message_free(rmsg)
      call byte2file(trim(final_cpos)//'/ets_coresource_in.cpo', coresource_in_buf, size(coresource_in_buf))
@@ -80,9 +74,8 @@ program stop_M3
      ! recv init coreimpur
      rmsg = LIBMUSCLE_Instance_receive(instance, 'coreimpur_in')
      rdata = LIBMUSCLE_Message_get_data(rmsg)
-     if (.not. LIBMUSCLE_DataConstRef_is_a_byte_array(rdata)) STOP 'wrong data type received'
      allocate (coreimpur_in_buf(LIBMUSCLE_DataConstRef_size(rdata)))
-     call LIBMUSCLE_DataConstRef_as_byte_array(rdata, coreimpur_in_buf, err_code, err_msg)
+     call LIBMUSCLE_DataConstRef_as_byte_array(rdata, coreimpur_in_buf)
      call LIBMUSCLE_DataConstRef_free(rdata)
      call LIBMUSCLE_Message_free(rmsg)
      call byte2file(trim(final_cpos)//'/ets_coreimpur_in.cpo', coreimpur_in_buf, size(coreimpur_in_buf))
@@ -90,9 +83,8 @@ program stop_M3
      ! recv init toroidfield
      rmsg = LIBMUSCLE_Instance_receive(instance, 'toroidfield_in')
      rdata = LIBMUSCLE_Message_get_data(rmsg)
-     if (.not. LIBMUSCLE_DataConstRef_is_a_byte_array(rdata)) STOP 'wrong data type received'
      allocate (toroidfield_in_buf(LIBMUSCLE_DataConstRef_size(rdata)))
-     call LIBMUSCLE_DataConstRef_as_byte_array(rdata, toroidfield_in_buf, err_code, err_msg)
+     call LIBMUSCLE_DataConstRef_as_byte_array(rdata, toroidfield_in_buf)
      call LIBMUSCLE_DataConstRef_free(rdata)
      call LIBMUSCLE_Message_free(rmsg)
      call byte2file(trim(final_cpos)//'/ets_toroidfield_in.cpo', toroidfield_in_buf, size(toroidfield_in_buf))
