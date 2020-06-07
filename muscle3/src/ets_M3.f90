@@ -1,6 +1,7 @@
 program ets_M3
   use ets_standalone
   use equilupdate_standalone
+  use c_tools
   use ymmsl
   use libmuscle
   implicit none
@@ -15,10 +16,9 @@ program ets_M3
   type(LIBMUSCLE_Message) :: smsg
   type(LIBMUSCLE_Data) :: sdata
 
-  integer :: err_code
-  character(:), allocatable :: err_msg
-
-  real (selected_real_kind(15)) :: t_init, t_current, t_duration, dt_max
+  real(kind=LIBMUSCLE_real8) :: t_init, t_current, t_duration, dt_max
+  logical :: save_slice
+  integer(kind=LIBMUSCLE_int8) :: slice_init
 
   ! code specific
   character(kind=c_char), pointer :: coreprof_in_buf(:)
@@ -30,6 +30,9 @@ program ets_M3
 
   character(kind=c_char), pointer :: coreprof_out_buf(:)
   character(kind=c_char), pointer :: equilibrium_out_buf(:)
+
+  integer :: step
+  character(5) :: stepstr
 
   ports = LIBMUSCLE_PortsDescription_create()
   call LIBMUSCLE_PortsDescription_add(ports, YMMSL_Operator_F_INIT, 'coreprof_init')
@@ -63,45 +66,43 @@ program ets_M3
      ! get params
      dt_max = LIBMUSCLE_Instance_get_setting_as_real8(instance, 'dt')
      t_duration = LIBMUSCLE_Instance_get_setting_as_real8(instance, 'duration')
+     slice_init = LIBMUSCLE_Instance_get_setting_as_int8(instance, 'slice_initial_number')
+     save_slice = LIBMUSCLE_Instance_get_setting_as_logical(instance, 'save_slice')
+     
      ! recv init equilibrium
      rmsg = LIBMUSCLE_Instance_receive(instance, 'equilibrium_init')
      rdata = LIBMUSCLE_Message_get_data(rmsg)
-     if (.not. LIBMUSCLE_DataConstRef_is_a_byte_array(rdata)) STOP 'wrong data type received'
      allocate (equilibrium_in_buf(LIBMUSCLE_DataConstRef_size(rdata)))
-     call LIBMUSCLE_DataConstRef_as_byte_array(rdata, equilibrium_in_buf, err_code, err_msg)
+     call LIBMUSCLE_DataConstRef_as_byte_array(rdata, equilibrium_in_buf)
      call LIBMUSCLE_DataConstRef_free(rdata)
      call LIBMUSCLE_Message_free(rmsg)
      ! recv init coreprof
      rmsg = LIBMUSCLE_Instance_receive(instance, 'coreprof_init')
      rdata = LIBMUSCLE_Message_get_data(rmsg)
-     if (.not. LIBMUSCLE_DataConstRef_is_a_byte_array(rdata)) STOP 'wrong data type received'
      allocate (coreprof_in_buf(LIBMUSCLE_DataConstRef_size(rdata)))
-     call LIBMUSCLE_DataConstRef_as_byte_array(rdata, coreprof_in_buf, err_code, err_msg)
+     call LIBMUSCLE_DataConstRef_as_byte_array(rdata, coreprof_in_buf)
      call LIBMUSCLE_DataConstRef_free(rdata)
      t_init = LIBMUSCLE_Message_timestamp(rmsg)
      call LIBMUSCLE_Message_free(rmsg)
      ! recv init coresource
      rmsg = LIBMUSCLE_Instance_receive(instance, 'coresource_init')
      rdata = LIBMUSCLE_Message_get_data(rmsg)
-     if (.not. LIBMUSCLE_DataConstRef_is_a_byte_array(rdata)) STOP 'wrong data type received'
      allocate (coresource_in_buf(LIBMUSCLE_DataConstRef_size(rdata)))
-     call LIBMUSCLE_DataConstRef_as_byte_array(rdata, coresource_in_buf, err_code, err_msg)
+     call LIBMUSCLE_DataConstRef_as_byte_array(rdata, coresource_in_buf)
      call LIBMUSCLE_DataConstRef_free(rdata)
      call LIBMUSCLE_Message_free(rmsg)
      ! recv init coreimpur
      rmsg = LIBMUSCLE_Instance_receive(instance, 'coreimpur_init')
      rdata = LIBMUSCLE_Message_get_data(rmsg)
-     if (.not. LIBMUSCLE_DataConstRef_is_a_byte_array(rdata)) STOP 'wrong data type received'
      allocate (coreimpur_in_buf(LIBMUSCLE_DataConstRef_size(rdata)))
-     call LIBMUSCLE_DataConstRef_as_byte_array(rdata, coreimpur_in_buf, err_code, err_msg)
+     call LIBMUSCLE_DataConstRef_as_byte_array(rdata, coreimpur_in_buf)
      call LIBMUSCLE_DataConstRef_free(rdata)
      call LIBMUSCLE_Message_free(rmsg)
      ! recv init toroidfield
      rmsg = LIBMUSCLE_Instance_receive(instance, 'toroidfield_init')
      rdata = LIBMUSCLE_Message_get_data(rmsg)
-     if (.not. LIBMUSCLE_DataConstRef_is_a_byte_array(rdata)) STOP 'wrong data type received'
      allocate (toroidfield_in_buf(LIBMUSCLE_DataConstRef_size(rdata)))
-     call LIBMUSCLE_DataConstRef_as_byte_array(rdata, toroidfield_in_buf, err_code, err_msg)
+     call LIBMUSCLE_DataConstRef_as_byte_array(rdata, toroidfield_in_buf)
      call LIBMUSCLE_DataConstRef_free(rdata)
      call LIBMUSCLE_Message_free(rmsg)
 
@@ -109,6 +110,7 @@ program ets_M3
      allocate(equilibrium_out_buf, source=equilibrium_in_buf)
 
      t_current = t_init
+     step = 0
      !###  TIME LOOP  ############################!
      do while (t_current+dt_max .lt. t_init+t_duration)
         
@@ -137,19 +139,30 @@ program ets_M3
         ! recv equilibrium
         rmsg = LIBMUSCLE_Instance_receive(instance, 'equilibrium_in')
         rdata = LIBMUSCLE_Message_get_data(rmsg)
-        if (.not. LIBMUSCLE_DataConstRef_is_a_byte_array(rdata)) STOP 'wrong data type received'
         allocate (equilibrium_in_buf(LIBMUSCLE_DataConstRef_size(rdata)))
-        call LIBMUSCLE_DataConstRef_as_byte_array(rdata, equilibrium_in_buf, err_code, err_msg)
+        call LIBMUSCLE_DataConstRef_as_byte_array(rdata, equilibrium_in_buf)
         call LIBMUSCLE_DataConstRef_free(rdata)
         call LIBMUSCLE_Message_free(rmsg)
         ! recv coretransp
         rmsg = LIBMUSCLE_Instance_receive(instance, 'coretransp_in')
         rdata = LIBMUSCLE_Message_get_data(rmsg)
-        if (.not. LIBMUSCLE_DataConstRef_is_a_byte_array(rdata)) STOP 'wrong data type received'
         allocate (coretransp_in_buf(LIBMUSCLE_DataConstRef_size(rdata)))
-        call LIBMUSCLE_DataConstRef_as_byte_array(rdata, coretransp_in_buf, err_code, err_msg)
+        call LIBMUSCLE_DataConstRef_as_byte_array(rdata, coretransp_in_buf)
         call LIBMUSCLE_DataConstRef_free(rdata)
         call LIBMUSCLE_Message_free(rmsg)
+
+        if (save_slice) then
+           write(stepstr,'(I5.5)') slice_init+step
+           call byte2file("equilibrium_"//stepstr//".cpo", &
+                equilibrium_in_buf, &
+                size(equilibrium_in_buf))
+           call byte2file("coreprof_"//stepstr//".cpo", &
+                coreprof_in_buf, &
+                size(coreprof_in_buf))
+           call byte2file("coretransp_"//stepstr//".cpo", &
+                coretransp_in_buf, &
+                size(coretransp_in_buf))           
+        end if
 
         call ets2buf( &
              coreprof_in_buf, &
@@ -171,6 +184,7 @@ program ets_M3
              equilibrium_in_buf, &
              equilibrium_out_buf)
 
+        step = step+1
      end do
 
 
