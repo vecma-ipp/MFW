@@ -269,12 +269,16 @@ if __name__ == "__main__":
                       help="Just test a single plot")
     argp.add_argument('-D','--dataDir',default=os.getcwd(),metavar=('DIR'),
                       help="Specifies directory in which all data are stored (default: %(default)s)")
+    argp.add_argument('-2','--sliceBind2',action='store_true',
+                      help="Uses slice-bind2.py to gather all slices together")    
     args = argp.parse_args()
 
 
     ### load data ###
-    equil_code = "chease"
-    turb_code = "imp4dv"
+    if not args.sliceBind2:
+        equil_code = "chease"
+        turb_code = "imp4dv"
+
     do_equil = False
     do_avg   = False
     do_Ti    = False	# plot Ti
@@ -284,8 +288,10 @@ if __name__ == "__main__":
     PLOTSCRIPTDIR = os.path.dirname(os.path.realpath(__file__))
     DATA_DIR = args.dataDir
 
-    
-    execfile(PLOTSCRIPTDIR+"/slice-bind.py")
+    if args.sliceBind2:
+        execfile(PLOTSCRIPTDIR+"/slice-bind2.py")
+    else:
+        execfile(PLOTSCRIPTDIR+"/slice-bind.py")
 
     
     import multiprocessing
@@ -302,7 +308,7 @@ if __name__ == "__main__":
     else:
         print("Rendering frames")
         for i in range(len(cpo.coretranspArray.array)):
-            filename = "test-"+str('%04d' % i)+".png"
+            filename = "test-"+str('%05d' % i)+".png"
             pool.apply_async(plot_fluxes,[(i+1),False,filename])
             #plot_fluxes(output=filename,nslices=(i+1))
             #print_progress(i + 1, len(cpo.coretranspArray.array)/3)
@@ -313,7 +319,7 @@ if __name__ == "__main__":
         import subprocess
         command = ('ffmpeg',
                    '-i',
-                   'test-%04d.png',
+                   'test-%05d.png',
                    '-c:v',
                    'libx264',
                    '-framerate',
