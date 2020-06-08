@@ -65,6 +65,7 @@ program ets_M3
 
      ! get params
      dt_max = LIBMUSCLE_Instance_get_setting_as_real8(instance, 'dt')
+     tau = dt_max ! tau is from ets_standalone module
      t_duration = LIBMUSCLE_Instance_get_setting_as_real8(instance, 'duration')
      slice_init = LIBMUSCLE_Instance_get_setting_as_int8(instance, 'slice_initial_number')
      save_slice = LIBMUSCLE_Instance_get_setting_as_logical(instance, 'save_slice')
