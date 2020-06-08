@@ -36,6 +36,8 @@ module ets_standalone
   real(8), pointer :: d_prof(:) => NULL() ! 1. !(/ ((1/log(i+1.)),i=1,100) /)
   real(8), pointer :: v_prof(:) => NULL() ! 1. !(/ ((1/log(i+1.)),i=1,100) /)
 
+  real(8), save :: tau = 0.01_8 
+
   type (type_coretransp), pointer :: coret_old(:) => NULL()
 
   interface
@@ -111,7 +113,6 @@ contains
     type (type_coretransp), pointer :: coret_sigma(:)
     type (type_coreprof), pointer :: corep_old_test(:) => NULL(), corep_iter_test(:) => NULL(), corep_new_test(:) => NULL(), corep_ref(:) => NULL()
 
-    real(R8)  :: tau                 !time step
     integer   :: ii                  !!! dummy variable
     integer   :: j                   !!! dummy variable
     real(R8)  :: dtime               !!! incremental time step size
@@ -132,7 +133,6 @@ contains
     
     ! hard-coded, usually input of ets_wrapper and set by muscle cxa config file
 
-    tau = 0.01_8!control_double(1)
     control_integer = (/ 4, 0, 0 /)
     control_double = (/ tau, 1.0_8, 1.0_8, 1.e0_8, 1.e-4_8, 1.0_8 /) 
 
