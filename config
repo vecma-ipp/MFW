@@ -237,13 +237,13 @@ export CCFLAGS = -g -fPIC
 export CXX = g++
 export CXXFLAGS = -g -fPIC 
 export FC90= gfortran
-export FC90FLAGS = -g -fPIC -fdefault-real-8 -fdefault-double-8 -ffree-line-length-none
+export FC90FLAGS = -g -fPIC -ffree-line-length-none
 export FC77 = gfortran
 export FC77FLAGS = ${FC90FLAGS}
 export MPIF90 = mpif90
 export MPIFLAGS = ${FC90FLAGS}
 export FPP = cpp
-export FPPFLAGS = -C  
+export FPPFLAGS = -P -traditional 
 export LD = gfortran
 export LDFLAGS = 
 
