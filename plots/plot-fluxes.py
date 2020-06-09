@@ -74,7 +74,7 @@ nti = np.array(ti)
 
 ### Ne ###
 n=[]
-for i in range(times):
+for i in times:
     n.append(interp1d(full_rho_tor,cpo.coreprofArray[i].ne.value)(ft_rho_tor))
 nn = np.array(n)
 
@@ -153,7 +153,7 @@ plt.tick_params(
     bottom='off',      # ticks along the bottom edge are off
     top='off',         # ticks along the top edge are off
     labelbottom='off') # labels along the bottom edge are off
-plt.ylabel(r'$Delta t$'+" "+r'$(s)$')
+plt.ylabel(r'$\Delta t$'+" "+r'$(s)$')
 
 
 ax = plt.subplot(gs[4:,:])
@@ -256,7 +256,7 @@ plt.tick_params(
     bottom='off',      # ticks along the bottom edge are off
     top='off',         # ticks along the top edge are off
     labelbottom='off') # labels along the bottom edge are off
-plt.ylabel(r'$Delta t$'+" "+r'$(s)$')
+plt.ylabel(r'$\Delta t$'+" "+r'$(s)$')
 
 
 ax = plt.subplot(gs[4:,:])
@@ -359,7 +359,7 @@ plt.tick_params(
     bottom='off',      # ticks along the bottom edge are off
     top='off',         # ticks along the top edge are off
     labelbottom='off') # labels along the bottom edge are off
-plt.ylabel(r'$Delta t$'+" "+r'$(s)$')
+plt.ylabel(r'$\Delta t$'+" "+r'$(s)$')
 
 
 ax = plt.subplot(gs[4:,:])
