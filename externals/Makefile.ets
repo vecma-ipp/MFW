@@ -27,9 +27,11 @@ FPPFLAGS += -DNO_EUITM_ROUTINES -DNO_LIBMATHEVAL
 
 # objects files ################################################################
 TYPES_O = ${OBJDIR}/allocate_deallocate.o ${OBJDIR}/ets_plasma.o \
-	${OBJDIR}/mod_f90_kind.o ${OBJDIR}/convert.o 
+	${OBJDIR}/mod_f90_kind.o ${OBJDIR}/interpolate_cpo.o \
+	${OBJDIR}/convert.o
 
-SOLVERS_O = ${OBJDIR}/type_solver.o ${OBJDIR}/solution_interface.o \
+SOLVERS_O = ${OBJDIR}/type_solver.o ${OBJDIR}/ets_math.o \
+	${OBJDIR}/solution_interface.o \
 	${OBJDIR}/solution1.o ${OBJDIR}/solution2.o ${OBJDIR}/solution3.o \
 	${OBJDIR}/solution4.o ${OBJDIR}/solution6.o ${OBJDIR}/solution7.o \
 	${OBJDIR}/solution10.o ${OBJDIR}/SOLVERFEM.o
@@ -42,7 +44,8 @@ ETS_O = ${OBJDIR}/calculate_globals.o ${OBJDIR}/s4_parameters.o \
 
 SOURCES_O = ${OBJDIR}/gausian_src.o
 
-SHARED_O = ${OBJDIR}/itm_toolbox.o ${OBJDIR}/l3interp.o 
+SHARED_O = ${OBJDIR}/fortranparser_parameters.o ${OBJDIR}/fortranparser.o \
+	${OBJDIR}/itm_toolbox.o ${OBJDIR}/l3interp.o \
 ### add local l3interp waiting for usage from itm_toolbox or l3interps modules
 
 LIB_ETS_O = ${SHARED_O} ${TYPES_O} ${SOLVERS_O} ${SOURCES_O} ${ETS_O} 
