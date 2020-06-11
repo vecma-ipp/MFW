@@ -33,7 +33,7 @@ model:
 settings:
   transport.duration: 0.5
   transport.dt: 0.01
-  init_cpo_dir: "AUG_28906_6"
+  init_cpo_dir: "../../workflows/AUG_28906_6"
   final_cpo_dir: "./"
   muscle_remote_log_level: "DEBUG"  
   slice_initial_number: 0
