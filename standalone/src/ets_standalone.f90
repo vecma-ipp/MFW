@@ -41,6 +41,28 @@ module ets_standalone
   type (type_coretransp), pointer :: coret_old(:) => NULL()
 
   interface
+     ! Dmitriy: new interface with ETS v5.7.1
+     subroutine TRANSPORT_SOLVER_INTERFACE(                   &
+          coreprof_old, coreprof_iter, coreprof_new,          &
+          equilibrium_old, equilibrium_iter, coretransp_iter, &
+          coresource_iter, coreimpur_iter, corefast_iter,     &
+          control_integer, control_double, hyper_diff, diag)
+       use euitm_schemas
+       use itm_types
+       use ets_plasma
+       type(type_coreprof), pointer :: coreprof_old(:), coreprof_iter(:), coreprof_new(:)
+       type(type_equilibrium), pointer :: equilibrium_old(:), equilibrium_iter(:)
+       type(type_coretransp), pointer :: coretransp_iter(:)
+       type(type_coresource), pointer :: coresource_iter(:)
+       type(type_coreimpur), pointer :: coreimpur_iter(:)
+       type(type_corefast), pointer :: corefast_iter(:)
+       integer, intent(in) :: control_integer(5) 
+       real(R8), intent(in) :: control_double(6) 
+       real(R8), intent(in) :: hyper_diff(2)
+       type(diagnostic) :: diag
+     end subroutine TRANSPORT_SOLVER_INTERFACE
+
+     ! deprecated interface?
      subroutine ITM_ETS(corep_old, corep_iter, corep_new, &
           equil_old, equil_iter, coret,                   &
           cores, corei,                                   &
@@ -74,6 +96,7 @@ contains
        coret_in, &
        cores_in, &
        corei_in, &
+       coref_in, &
        corep_out)
 
     use itm_types
@@ -83,11 +106,14 @@ contains
     use allocate_deallocate
     use xml_file_reader
     use ets
+    use ets_plasma ! diag
     use spitzer
     implicit none
 
     integer :: control_integer(5)  !integer control parameters
     real(R8) :: control_double(6)   !real control parameters
+    real(R8) :: hyper_diff(2)
+    type(diagnostic) :: diag
 
     integer :: ios
     integer :: npar
@@ -96,17 +122,16 @@ contains
     integer, save :: cpt = 0
     character(4)  :: cptstr
 
-
     ! input args
     type (type_equilibrium), pointer :: equil_in(:)
     type (type_coreprof), pointer :: corep_in(:) 
     type (type_coretransp), pointer :: coret_in(:) 
     type (type_coresource), pointer :: cores_in(:) 
     type (type_coreimpur), pointer :: corei_in(:) 
+    type (type_corefast), pointer :: coref_in(:) 
 
     type (type_coreprof), pointer :: corep_iter(:), corep_out(:)
     type (type_equilibrium), pointer :: equil_iter(:)
-    type (type_param) :: code_parameters
 
     type (type_coretransp), pointer :: coret_work(:), coret_ext(:)
     type (type_coresource), pointer :: cores_work(:)
@@ -132,10 +157,9 @@ contains
 
     
     ! hard-coded, usually input of ets_wrapper and set by muscle cxa config file
-
-    tau = 0.01_8!control_double(1)
     control_integer = (/ 4, 0, 0, 0, 0 /)
-    control_double = (/ tau, 1.0_8, 1.0_8, 1.e0_8, 1.e-4_8, 1.0_8 /) 
+    control_double = (/ tau, 1.0_R8, 1.0_R8, 1.e0_R8, 1.e-4_R8, 1.0_R8 /) 
+    hyper_diff = (/ 0.0_R8, 0.0_R8 /)
 
     allocate(coret_ext(1))
     allocate(cores_work(1))
@@ -163,9 +187,6 @@ contains
     call copy_cpo(equil_in(1),equil_iter(1))
 
     time_in = corep_in(1)%time
-
-    print *,"run ets"
-    call fill_param(code_parameters, 'ets.xml', '', 'ets.xsd')
 
     write(cptstr,'(I4.4)') init_step+cpt
 
@@ -260,11 +281,18 @@ contains
 
       do while (ii .le. inner_steps_cur)
 
-         call ITM_ETS(corep_old_test, corep_iter_test, corep_new_test, &
-              equil_in, equil_iter, coret_work,                        &
-              cores_in, corei_in,                                      &
-              control_integer, control_double_test,                    &
-              code_parameters)
+         call TRANSPORT_SOLVER_INTERFACE( &
+              corep_old_test, corep_iter_test, corep_new_test, &
+              equil_in, equil_iter, coret_work,                &
+              cores_in, corei_in, coref_in,                    &
+              control_integer, control_double_test,            &
+              hyper_diff, diag)
+
+!!$         call ITM_ETS(corep_old_test, corep_iter_test, corep_new_test, &
+!!$              equil_in, equil_iter, coret_work,                        &
+!!$              cores_in, corei_in,                                      &
+!!$              control_integer, control_double_test,                    &
+!!$              code_parameters)
 
          exceeds_limit = .false.
          Te_frac = abs( (corep_ref(1)%te%value - corep_new_test(1)%te%value) / corep_ref(1)%te%value )
@@ -319,11 +347,18 @@ contains
     corep_out(1)%time = time_in + (ii-1)*dtime
 
     else
-      call ITM_ETS(corep_old_test, corep_iter_test, corep_out, &
-              equil_in, equil_iter, coret_work,                        &
-              cores_in, corei_in,                                      &
-              control_integer, control_double_test,                    &
-              code_parameters)
+       call TRANSPORT_SOLVER_INTERFACE(                 &
+            corep_old_test, corep_iter_test, corep_out, &
+            equil_in, equil_iter, coret_work,           &
+            cores_in, corei_in, coref_in,               &
+            control_integer, control_double_test,       &
+            hyper_diff, diag)
+
+!!$      call ITM_ETS(corep_old_test, corep_iter_test, corep_out, &
+!!$              equil_in, equil_iter, coret_work,                        &
+!!$              cores_in, corei_in,                                      &
+!!$              control_integer, control_double_test,                    &
+!!$              code_parameters)
 
       dtime = tau
       corep_out(1)%time = time_in + dtime
@@ -346,16 +381,6 @@ contains
     call deallocate_cpo(corep_iter_test)
     call deallocate_cpo(corep_new_test)
     call deallocate_cpo(corep_ref)
-
-    if (associated(code_parameters%schema)) then
-       deallocate(code_parameters%schema)
-    endif
-    if (associated(code_parameters%parameters)) then
-       deallocate(code_parameters%parameters)
-    endif
-    if (associated(code_parameters%default_param)) then
-       deallocate(code_parameters%default_param)
-    endif
 
     print *,"return from ets_cpo Fortran wrapper"
 
@@ -385,6 +410,7 @@ contains
     character(kind=c_char), pointer :: coret_in_buf(:)
     character(kind=c_char), pointer :: corei_in_buf(:)
     character(kind=c_char), pointer :: cores_in_buf(:)
+    character(kind=c_char), pointer :: coref_in_buf(:)
     character(kind=c_char), pointer :: corep_out_buf(:)
     character(kind=c_char), pointer :: tmpbuf(:)
 
@@ -393,13 +419,14 @@ contains
     type (type_coretransp), pointer :: coret_in(:) 
     type (type_coresource), pointer :: cores_in(:) 
     type (type_coreimpur), pointer :: corei_in(:) 
+    type (type_corefast), pointer :: coref_in(:) 
     type (type_coreprof), pointer :: corep_out(:)
 
     real(R8), intent(out) :: time_cur
 
     character(F_STR_SIZE) :: equil_in_file, corep_in_file, coret_in_file
     character(F_STR_SIZE) :: corei_in_file, cores_in_file, corep_out_file
-    character(F_STR_SIZE) :: username, tmpdir
+    character(F_STR_SIZE) :: coref_in_file, username, tmpdir
     integer :: tmpsize, ios
 
     allocate(equil_in(1))
@@ -407,6 +434,7 @@ contains
     allocate(coret_in(1))
     allocate(cores_in(1))
     allocate(corei_in(1))
+    allocate(coref_in(1))
 
     call getenv("USER",username)
     call getenv("CPO_SERIALIZATION_DIR",tmpdir)
@@ -492,7 +520,22 @@ contains
        STOP
     end if
 
-    call ets_cpo(corep_in, equil_in, coret_in, cores_in, corei_in, corep_out)
+    coref_in_file = TRIM(tmpdir)//TRIM(username)//'_ets_corefast_in.cpo'
+    call byte2file(coref_in_file, coref_in_buf, size(coref_in_buf))
+    open (unit = 10, file = coref_in_file, &
+         status = 'old', form = 'formatted', &
+         action = 'read', iostat = ios)
+    if (ios == 0) then
+       close (10)
+       call open_read_file(10, coref_in_file )
+       call read_cpo(coref_in(1), 'corefast')
+       call close_read_file
+    else
+       print *,"ERROR: no input corefast"
+       STOP
+    end if
+
+    call ets_cpo(corep_in, equil_in, coret_in, cores_in, corei_in, coref_in, corep_out)
 
     time_cur = corep_out(1)%time
 
@@ -513,6 +556,7 @@ contains
     call deallocate_cpo(coret_in)
     call deallocate_cpo(cores_in)
     call deallocate_cpo(corei_in)
+    call deallocate_cpo(coref_in)
     call deallocate_cpo(corep_out)
 
   end subroutine ets2buf
