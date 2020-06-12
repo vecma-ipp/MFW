@@ -23,7 +23,7 @@ def get_flux_index(corep_file, coret_file):
     rp = [r.flat[np.abs(r - rt[i]).argmin()] for i in range(n_flux)]
     print('rho_corep = ', rp)
 
-    # the correponding index
+    # the corresponding index
     idx = [list(r).index(rp[i]) for i in range(n_flux)]
     return idx
 

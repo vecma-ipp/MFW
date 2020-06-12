@@ -27,15 +27,22 @@ def get_dist(name, value, err):
     """
 
     # TODO add the condition: shift if lower threshlod <= a critical value
-
+    # => for verification: Values must be > 0
     if name.lower() == "normal":
             if type(value) == list:
                 d = []
                 for v in value:
-                    d.append(cp.Normal(v, err*v))
+                    if v == 0.:
+                        dv = cp.Normal(v, err)
+                    else:
+                        dv = cp.Normal(v, err*v)
+                    d.append(dv)
                 dist = cp.J(*d)
             else:
-                dist = cp.Normal(value, err*value)
+                if value == 0.:
+                    dist = cp.Normal(value, err)
+                else:
+                    dist = cp.Normal(value, err*value)
 
     elif name.lower() == "uniform":
 
@@ -111,23 +118,26 @@ class Split_Normal():
     """
     The split-normal distribution is a result from joining at the mode
     the corresponding halves of two normal distributions with the same
-    mean but different variances.
+    mode but two different variances.
     """
-    def __init__(self, mu, sig1, sig2):
-        self.mu = mu
+    def __init__(self, mode, sig1, sig2):
+        self.mode = mode
         self.sig1 = sig1
         self.sig2 = sig2
 
+        pi = np.pi
+
         # Mode and STD
-        self.mode = mu - np.sqrt(2 / np.pi) * (sig2 - sig1)
-        self.sigma = np.sqrt((1. -2. / np.pi) * (sig2 - sig1)**2 + sig1 * sig2)
+        self.mu = mode + np.sqrt(2/pi) * (sig2 - sig1)
+        self.sigma = np.sqrt((1. -2/pi) * (sig2 - sig1)**2 + sig1 * sig2)
+        self.skew = np.sqrt(2/pi)*(sig2 - sig1)*((4/pi - 1)*(sig2 - sig1)**2 + sig1*sig2)
 
         # Normalizing constant
-        self.A =1.# np.sqrt(2. / np.pi) / (sig1 + sig2)
+        self.A = np.sqrt(2./pi) / (sig1 + sig2)
 
         # Halves distributions
-        self.dist1 = cp.Normal(self.mode, sig1)
-        self.dist2 = cp.Normal(self.mode, sig2)
+        self.dist1 = cp.Normal(mode, sig1)
+        self.dist2 = cp.Normal(mode, sig2)
 
     # Probability density function
     def pdf(self, x):
@@ -135,10 +145,10 @@ class Split_Normal():
         x = np.sort(x)
 
         x1 = x[x<=self.mode]
-        y1 = self.A * self.dist1.pdf(x1)
+        y1 = 2*self.sig1/(self.sig1 + self.sig2) * self.dist1.pdf(x1)
 
         x2 = x[x>self.mode]
-        y2 = self.A * self.dist2.pdf(x2)
+        y2 = 2*self.sig2/(self.sig1 + self.sig2) * self.dist2.pdf(x2)
 
         y = np.concatenate((y1, y2))
         return y
@@ -149,10 +159,10 @@ class Split_Normal():
         x = np.sort(x)
 
         x1 = x[x<=self.mode]
-        y1 = self.A * self.dist1.cdf(x1)
+        y1 = 2*self.sig1/(self.sig1 + self.sig2)*self.dist1.cdf(x1)
 
         x2 = x[x>self.mode]
-        y2 = self.A * self.dist2.cdf(x2)
+        y2 = 1+ 2*self.sig2/(self.sig1 + self.sig2)*(self.dist2.cdf(x2) - 1)
 
         y = np.concatenate((y1, y2))
         return y

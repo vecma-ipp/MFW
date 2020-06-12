@@ -16,10 +16,10 @@ IMPORTANT CHECK: in gem0.xml, nrho_transp = 1
 print('TEST GEM0-UQ: START')
 
 # We test 1 flux tube
-flux_indices = [69]
+flux_indices = [69, 33]
 
 # execustion with QCJ-PJ
-EXEC_PJ = False
+EXEC_PJ = True
 
 # Machine name
 SYS = os.environ['SYS']
@@ -41,15 +41,15 @@ exec_code = "gem0_test"
 # Define the uncertain parameters
 # Electron temperature and its gradient
 input_params = {
-    "te": {
+    "te.value": {
         "dist": "Normal",
         "err":  0.2,
-        "ids": flux_indices,
+        "idx": flux_indices,
     },
-    "ti": {
+    "ti.value": {
         "dist": "Normal",
         "err":  0.2,
-        "ids": flux_indices,
+        "idx": flux_indices,
     }
 #    ,
 #    "te.ddrho": {
@@ -132,7 +132,7 @@ my_campaign.add_app(name=campaign_name,
 # Create the sampler
 print('>>> Create the sampler')
 my_sampler = uq.sampling.PCESampler(vary=vary,
-                                    polynomial_order=2,
+                                    polynomial_order=3,
                                     regression=True)
 my_campaign.set_sampler(my_sampler)
 

@@ -40,29 +40,29 @@ exec_code = "loop_gem0"
 # Amplitude, Position and Width from source_dummy.xml
 elec_heating_params = {
     "electrons.heating_el.WTOT_el":{
-        "dist": "Normal",
+        "dist": "Uniform",
         "err": 0.2,
     },
     "electrons.heating_el.RHEAT_el":{
-        "dist": "Normal",
+        "dist": "Uniform",
         "err": 0.2,
     },
     "electrons.heating_el.FWHEAT_el":{
-        "dist": "Normal",
+        "dist": "Uniform",
         "err": 0.2,
     }
 }
 ions_heating_params = {
     "ions.heating.WTOT":{
-        "dist": "Normal",
+        "dist": "Uniform",
         "err": 0.2,
     },
     "ions.heating.RHEAT_el":{
-        "dist": "Normal",
+        "dist": "Uniform",
         "err": 0.2,
     },
     "ions.heating.FWHEAT":{
-        "dist": "Normal",
+        "dist": "Uniform",
         "err": 0.2,
     }
 }
@@ -77,7 +77,7 @@ input_xml_filename = "source_dummy.xml"
 input_xsd_filename = "source_dummy.xsd"
 
 # The quantities of intersts and the cpo file to set them
-output_columns = ["te"]
+output_columns = ["te.value"]
 output_filename = "ets_coreprof_out.cpo"
 output_cponame = "coreprof"
 
@@ -140,11 +140,11 @@ my_campaign.add_app(name=campaign_name,
 # Create the sampler
 print('>>> Create the sampler')
 my_sampler = uq.sampling.PCESampler(vary=vary, polynomial_order=3,
-                                    regression=True)
+                                    regression=False)
 my_campaign.set_sampler(my_sampler)
 
 # Will draw all (of the finite set of samples)
-print('>>> Draw Samples - Ns = ', my_sampler._number_of_samples)
+print('>>> Draw Samples - Ns = ', my_sampler.n_samples)
 my_campaign.draw_samples()
 
 print('>>> Populate runs_dir')
@@ -209,25 +209,26 @@ rho = corep.rho_tor_norm
 uparams_names = list(params.keys())
 
 for qoi in output_columns:
+    fig = campaign_name + qoi.split('.')[0]
     plots.plot_stats(rho, stat[qoi],
                      xlabel=r'$\rho_{tor}$', ylabel=qoi,
                      ftitle=qoi+' profile',
-                     fname='data/outputs/STAT_'+qoi+"_"+campaign_name)
+                     fname='data/outputs/STAT_'+fig)
 
     plots.plot_sobols_all(rho, sob1[qoi], uparams_names,
                       ftitle='1st Sobol indices: '+qoi,
-                      fname='data/outputs/SA_'+qoi+"_"+campaign_name)
+                      fname='data/outputs/SA_'+fig)
 
 # Save STATS into the csv file
-    import numpy as np
-    header = 'rho_tor\t'
-    values = [rho]
-    for qoi in output_columns:
-        values.append(list(stat[qoi]['mean']))
-        values.append(list(stat[qoi]['std']))
-        header = header + '\tmean_'+qoi + '\tstd_'+qoi
-
-    np.savetxt('data/outputs/'+campaign_name+'STATS.csv',
-               np.c_[values].T, delimiter='\t', header=header)
-
+#    import numpy as np
+#    header = 'rho_tor\t'
+#    values = [rho]
+#    for qoi in output_columns:
+#        values.append(list(stat[qoi]['mean']))
+#        values.append(list(stat[qoi]['std']))
+#        header = header + '\tmean_'+qoi + '\tstd_'+qoi
+#
+#    np.savetxt('data/outputs/'+campaign_name+'STATS.csv',
+#               np.c_[values].T, delimiter='\t', header=header)
+#
 print('>>> UQ Workflow Sources: END')

@@ -59,10 +59,9 @@ def get_cpo_inputs(cpo_file, cpo_name, input_params):
     for name, attr in input_params.items():
         # get inital value and update params
         value = cpo.get_value(name)
-
         # Select a part of input values
-        if "ids" in attr.keys():
-            indices = attr["ids"]
+        if "idx" in attr.keys():
+            indices = attr["idx"]
             if len(indices) == 1:
                 value = value[0]
             else:

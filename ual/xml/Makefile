@@ -17,8 +17,9 @@ FC90FLAGS += ${INCLUDES} ${MODSPEC}${INCDIR}/xml
 
 
 # objects files ################################################################
-OBJ = 	string_manipulation_tools.o euitm_xml_parser.o xml_file_reader.o \
-	xml_tools.o xml2eg_c.o xml2eg.o xml_path.o xmllib_pathquery.o 
+OBJ = 	string_manipulation_tools.o f90_file_reader.o euitm_xml_parser.o \
+	xml_file_reader.o xml_tools.o xml2eg_c.o xml2eg.o xml_path.o \
+	xmllib_pathquery.o 
 
 
 # rules ########################################################################

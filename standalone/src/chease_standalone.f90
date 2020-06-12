@@ -60,6 +60,74 @@ contains
   end subroutine chease_cpo
   ! ...
 
+
+  ! ...
+  subroutine chease2buf(equil_in_buf, equil_out_buf) 
+    use iso_c_binding
+    use string_binding
+    use deallocate_structures
+    use read_structures
+    use write_structures
+    use c_tools
+    implicit none
+
+    character(kind=c_char), pointer :: equil_in_buf(:)
+    character(kind=c_char), pointer :: equil_out_buf(:)
+    character(kind=c_char), pointer :: tmpbuf(:)
+
+    type (type_equilibrium), pointer :: equil_in(:)
+    type (type_equilibrium), pointer :: equil_out(:)
+    
+    character(F_STR_SIZE) :: equil_in_file, equil_out_file, username, tmpdir
+    integer :: tmpsize, ios
+
+    allocate(equil_in(1))
+
+    call getenv("USER",username)
+    call getenv("CPO_SERIALIZATION_DIR",tmpdir)
+    tmpsize = len_trim(tmpdir)
+    if (tmpsize.ne.0) then
+       if (tmpdir(tmpsize:tmpsize) .ne. '/') then
+          tmpdir = trim(tmpdir)//'/'
+       end if
+    end if
+    equil_in_file = TRIM(tmpdir)//TRIM(username)//'_chease_equilibrium_in.cpo'
+    call byte2file(equil_in_file, equil_in_buf, size(equil_in_buf))
+
+    open (unit = 10, file = equil_in_file, &
+         status = 'old', form = 'formatted', &
+         action = 'read', iostat = ios)
+    if (ios == 0) then
+       close (10)
+       call open_read_file(10, equil_in_file )
+       call read_cpo(equil_in(1), 'equilibrium')
+       call close_read_file
+    else
+       print *,"ERROR: no input equilibrium"
+       STOP
+    end if
+
+    call chease_cpo(equil_in, equil_out)
+
+    ! transfer CPO to buf
+    !...  write the results
+    equil_out_file = 'chease_equilibrium_out.cpo'
+    call open_write_file(11,equil_out_file)
+    call write_cpo(equil_out(1),'equilibrium')
+    call close_write_file
+
+    call file2byte(equil_out_file, tmpbuf, tmpsize)
+    allocate(equil_out_buf(tmpsize))
+    equil_out_buf(1:tmpsize) = tmpbuf(1:tmpsize)
+    call dealloc_cbytebuf(tmpbuf)
+
+    call deallocate_cpo(equil_in)
+    call deallocate_cpo(equil_out)
+
+  end subroutine chease2buf
+  ! ...
+
+
   ! ...
   subroutine chease2file(equil_old, aoutput) 
     use iso_c_binding

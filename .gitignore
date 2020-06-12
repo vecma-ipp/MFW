@@ -28,6 +28,10 @@ standalone/lib
 standalone/obj
 standalone/include
 
+muscle3/bin
+muscle3/obj
+muscle3/include
+
 uq/logs/*
 uq/build*
 uq/dist*
@@ -40,7 +44,10 @@ uq/easymfw/utils/*cache*_
 uq/easymfw/utils/*.pyc
 uq/easymfw/templates/*cache*_
 uq/easymfw/templates/*.pyc
+uq/tuto/*cache*_
+uq/tuto/*.pyc
 uq/data/outputs/*.png
 uq/data/outputs/*.db
+uq/data/outputs/*.csv
 uq/run-*.sh
 uq/log-*

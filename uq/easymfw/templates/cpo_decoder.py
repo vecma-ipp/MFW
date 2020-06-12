@@ -1,6 +1,7 @@
 import os
 import logging
 import pandas as pd
+import numpy as np
 from easyvvuq import OutputType
 from easyvvuq.decoders.base import BaseDecoder
 from .cpo_element import CPOElement
@@ -59,16 +60,20 @@ class CPODecoder(BaseDecoder, decoder_name="cpo_decoder"):
         out_path = self._get_output_path(run_info, self.target_filename)
         # The CPO object
         cpo = CPOElement(out_path, self.output_cponame)
-
         # Get Quantity of Intersets values
         qoi_values = {}
         for qoi in self.output_columns:
             value = cpo.get_value(qoi)
-            qoi_values.update({qoi: value})
+            n = len(np.shape(value))
+            # one or two spices
+            if n == 1:
+                qoi_values.update({qoi: value})
+            else:
+                for i in range(n):
+                    qoi_values.update({(qoi, i): value[i]})
 
         # Output data frame
         data = pd.DataFrame(qoi_values)
-
         return data
 
     def get_restart_dict(self):

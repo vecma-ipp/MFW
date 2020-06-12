@@ -3,9 +3,8 @@ equil_code = "chease"
 turb_code = "imp4dv"
 do_equil = False
 do_avg   = False
-do_Ti    = False	# plot Ti
-do_vmark = True		# plot vertical markers every time simulation run ends
-do_limit = False		# plot vertical markers every time acceptance limits change
+do_vmark = False 	# plot vertical markers every time simulation run ends
+do_limit = False	# plot vertical markers every time acceptance limits change
 execfile("/gh/g2olivh/public/pyscripts/plots/slice-bind.py")
 
 import matplotlib.pyplot as plt
@@ -50,13 +49,16 @@ for i in times:
 
 
 ### fluxes ###
-f=[]
+fe=[]
+fi=[]
+fn=[]
 for i in times:
-    if do_Ti:
-        f.append(cpo.coretranspArray[i].values[0].ti_transp.flux)
-    else:
-        f.append(cpo.coretranspArray[i].values[0].te_transp.flux)
-nf = np.array(f)
+    fe.append(cpo.coretranspArray[i].values[0].te_transp.flux)
+    fi.append(cpo.coretranspArray[i].values[0].ti_transp.flux[:,0])
+    fn.append(cpo.coretranspArray[i].values[0].ne_transp.flux)
+nfe = np.array(fe)
+nfi = np.array(fi)
+nfn = np.array(fn)
 
 ### Te ###
 te=[]
@@ -71,10 +73,10 @@ for i in times:
 nti = np.array(ti)
 
 ### Ne ###
-#n=[]
-#for i in range(times):
-#    n.append(interp1d(full_rho_tor,cpo.coreprofArray[i].ne.value)(ft_rho_tor))
-#nn = np.array(n)
+n=[]
+for i in times:
+    n.append(interp1d(full_rho_tor,cpo.coreprofArray[i].ne.value)(ft_rho_tor))
+nn = np.array(n)
 
 
 ### plot ###
@@ -92,10 +94,9 @@ plt.gca().set_color_cycle([colormap(i) for i in np.linspace(0.0,0.9,nftubes)])
 plt.subplots_adjust(wspace=0, hspace=0)
 for i in range(nftubes):
     if fluxlog:
-        plt.semilogy(t[:],nf[:,i],'+-',label=str(round(cpo.coretranspArray[0].values[0].rho_tor_norm[i],3)))
+        plt.semilogy(t[:],nfe[:,i]/1.e6,'+-',label=str(round(cpo.coretranspArray[0].values[0].rho_tor_norm[i],3)))
     else:
-        plt.plot(t[:],nf[:,i],'+-',label=str(round(cpo.coretranspArray[0].values[0].rho_tor_norm[i],3)))
-    #plt.semilogy(t[:],nf[:,i],'+-',label=str(round(cpo.coretranspArray[0].values[0].rho_tor_norm[i],3)))
+        plt.plot(t[:],nfe[:,i]/1.e6,'+-',label=str(round(cpo.coretranspArray[0].values[0].rho_tor_norm[i],3)))
 if do_vmark:
     for k in ran_tstops:
         alpha = tstops[k]
@@ -117,7 +118,8 @@ plt.tick_params(
     bottom='off',      # ticks along the bottom edge are off
     top='off',         # ticks along the top edge are off
     labelbottom='off') # labels along the bottom edge are off
-plt.ylabel("flux")
+#plt.ylabel("flux")
+plt.ylabel(r'$q_e$'+" "+r'$(MJ \cdot m^{-2} \cdot s^{-1})$')
 
 l = plt.legend(bbox_to_anchor=(0.5,1), loc='lower center', ncol=nftubes, title=r'$||\rho_{tor}||$')
 lt = l.get_title()
@@ -131,7 +133,6 @@ for i in range(len(times)-1):
 plt.semilogy(t[:],tstep[:],'*')
 #plt.plot(t[:],tstep[:],'*')
 plt.ylim(0.000001,0.0999)
-print tstep
 if do_vmark:
     for k in ran_tstops:
         alpha = tstops[k]
@@ -152,37 +153,27 @@ plt.tick_params(
     bottom='off',      # ticks along the bottom edge are off
     top='off',         # ticks along the top edge are off
     labelbottom='off') # labels along the bottom edge are off
-plt.ylabel("time step")
+plt.ylabel(r'$\Delta t$'+" "+r'$(s)$')
 
 
-#plt.subplot(312)
 ax = plt.subplot(gs[4:,:])
 plt.gca().set_color_cycle([colormap(i) for i in np.linspace(0.0,0.9,nftubes)])
 plt.subplots_adjust(wspace=0, hspace=0)
 for i in range(nftubes):
-    if do_Ti:
-        plt.plot(t[:],nti[:,i],'+-',label=str(round(cpo.coretranspArray[0].values[0].rho_tor_norm[i],3)))
-    else:
-        plt.plot(t[:],nte[:,i],'+-',label=str(round(cpo.coretranspArray[0].values[0].rho_tor_norm[i],3)))
+    plt.plot(t[:],nte[:,i],'+-',label=str(round(cpo.coretranspArray[0].values[0].rho_tor_norm[i],3)))
 #plt.legend(loc="best")
 
 if do_avg:
     meanwidth = 1./3 # between 0 and 1
     imean = np.empty(times_len)
     for i in range(nftubes):
-        if do_Ti:
-            imean.fill(nti[int(times_len*(1-meanwidth)):times_len-1,i].mean())
-        else:
-            imean.fill(nte[int(times_len*(1-meanwidth)):times_len-1,i].mean())
+        imean.fill(nte[int(times_len*(1-meanwidth)):times_len-1,i].mean())
         plt.plot(t[int(times_len*(1-meanwidth)):times_len-1],imean[int(times_len*(1-meanwidth)):times_len-1],'--',lw=3.0)
         plt.text(t[-1]*1.01,imean[-1],str(round(imean[-1],2)))
 
-plt.xlabel("time")
+plt.xlabel("time (s)")
 
-if do_Ti:
-    plt.ylabel("Ti")
-else:
-    plt.ylabel("Te")
+plt.ylabel(r'$T_e$'+" (eV)")
 if do_vmark:
     for k in ran_tstops:
         alpha = tstops[k]
@@ -197,6 +188,211 @@ if do_limit:
 ylab = ax.get_yticklabels()
 ylab[-1].set_visible(False)
 
+plt.figure(2)
+plt.suptitle("AUG#28906/4, imp4dv, ndg=50, "+r'$Te_{dev}=0.2, dTe_{dev}=0.1, max(\tau)=$'+str(tau))
+
+
+ax = plt.subplot(gs[0:-4,:])
+plt.gca().set_color_cycle([colormap(i) for i in np.linspace(0.0,0.9,nftubes)])
+plt.subplots_adjust(wspace=0, hspace=0)
+for i in range(nftubes):
+    if fluxlog:
+        plt.semilogy(t[:],nfi[:,i]/1.e6,'+-',label=str(round(cpo.coretranspArray[0].values[0].rho_tor_norm[i],3)))
+    else:
+        plt.plot(t[:],nfi[:,i]/1.e6,'+-',label=str(round(cpo.coretranspArray[0].values[0].rho_tor_norm[i],3)))
+if do_vmark:
+    for k in ran_tstops:
+        alpha = tstops[k]
+        xc = t[alpha]
+        plt.axvline(x=xc, color='0.5', linestyle='--')
+if do_limit:
+    for k in ran_tlimits:
+        alpha = tlimits[k]
+        xc = t[alpha]
+        plt.axvline(x=xc, color=colors['brown'], linestyle=':')
+ylab = ax.get_yticklabels()
+ylab[0].set_visible(False)
+#plt.legend(loc="best")
+#plt.xlabel("time")
+
+plt.tick_params(
+    axis='x',          # changes apply to the x-axis
+    which='both',      # both major and minor ticks are affected
+    bottom='off',      # ticks along the bottom edge are off
+    top='off',         # ticks along the top edge are off
+    labelbottom='off') # labels along the bottom edge are off
+#plt.ylabel("flux")
+plt.ylabel(r'$q_i$'+" "+r'$(MJ \cdot m^{-2} \cdot s^{-1})$')
+
+l = plt.legend(bbox_to_anchor=(0.5,1), loc='lower center', ncol=nftubes, title=r'$||\rho_{tor}||$')
+lt = l.get_title()
+lt.set_position((0.0,-5.0))
+
+
+ax = plt.subplot(gs[3,:])
+tstep=[0.]
+for i in range(len(times)-1):
+    tstep.append(t[i+1]-t[i])
+plt.semilogy(t[:],tstep[:],'*')
+#plt.plot(t[:],tstep[:],'*')
+plt.ylim(0.000001,0.0999)
+if do_vmark:
+    for k in ran_tstops:
+        alpha = tstops[k]
+        xc = t[alpha]
+        plt.axvline(x=xc, color='0.5', linestyle='--')
+if do_limit:
+    for k in ran_tlimits:
+        alpha = tlimits[k]
+        xc = t[alpha]
+        plt.axvline(x=xc, color=colors['brown'], linestyle=':')
+ylab = ax.get_yticklabels()
+ylab[0].set_visible(False)
+ylab[-1].set_visible(False)
+
+plt.tick_params(
+    axis='x',          # changes apply to the x-axis
+    which='both',      # both major and minor ticks are affected
+    bottom='off',      # ticks along the bottom edge are off
+    top='off',         # ticks along the top edge are off
+    labelbottom='off') # labels along the bottom edge are off
+plt.ylabel(r'$\Delta t$'+" "+r'$(s)$')
+
+
+ax = plt.subplot(gs[4:,:])
+plt.gca().set_color_cycle([colormap(i) for i in np.linspace(0.0,0.9,nftubes)])
+plt.subplots_adjust(wspace=0, hspace=0)
+for i in range(nftubes):
+    plt.plot(t[:],nti[:,i],'+-',label=str(round(cpo.coretranspArray[0].values[0].rho_tor_norm[i],3)))
+#plt.legend(loc="best")
+
+if do_avg:
+    meanwidth = 1./3 # between 0 and 1
+    imean = np.empty(times_len)
+    for i in range(nftubes):
+        imean.fill(nti[int(times_len*(1-meanwidth)):times_len-1,i].mean())
+        plt.plot(t[int(times_len*(1-meanwidth)):times_len-1],imean[int(times_len*(1-meanwidth)):times_len-1],'--',lw=3.0)
+        plt.text(t[-1]*1.01,imean[-1],str(round(imean[-1],2)))
+
+plt.xlabel("time (s)")
+
+plt.ylabel(r'$T_i$'+" (eV)")
+if do_vmark:
+    for k in ran_tstops:
+        alpha = tstops[k]
+        xc = t[alpha]
+        plt.axvline(x=xc, color='0.5', linestyle='--')
+if do_limit:
+    for k in ran_tlimits:
+        alpha = tlimits[k]
+        xc = t[alpha]
+        plt.axvline(x=xc, color=colors['brown'], linestyle=':')
+
+ylab = ax.get_yticklabels()
+ylab[-1].set_visible(False)
+
+plt.figure(3)
+plt.suptitle("AUG#28906/4, imp4dv, ndg=50, "+r'$Te_{dev}=0.2, dTe_{dev}=0.1, max(\tau)=$'+str(tau))
+
+
+ax = plt.subplot(gs[0:-4,:])
+plt.gca().set_color_cycle([colormap(i) for i in np.linspace(0.0,0.9,nftubes)])
+plt.subplots_adjust(wspace=0, hspace=0)
+for i in range(nftubes):
+    if fluxlog:
+        plt.semilogy(t[:],nfn[:,i],'+-',label=str(round(cpo.coretranspArray[0].values[0].rho_tor_norm[i],3)))
+    else:
+        plt.plot(t[:],nfn[:,i],'+-',label=str(round(cpo.coretranspArray[0].values[0].rho_tor_norm[i],3)))
+if do_vmark:
+    for k in ran_tstops:
+        alpha = tstops[k]
+        xc = t[alpha]
+        plt.axvline(x=xc, color='0.5', linestyle='--')
+if do_limit:
+    for k in ran_tlimits:
+        alpha = tlimits[k]
+        xc = t[alpha]
+        plt.axvline(x=xc, color=colors['brown'], linestyle=':')
+ylab = ax.get_yticklabels()
+ylab[0].set_visible(False)
+#plt.legend(loc="best")
+#plt.xlabel("time")
+
+plt.tick_params(
+    axis='x',          # changes apply to the x-axis
+    which='both',      # both major and minor ticks are affected
+    bottom='off',      # ticks along the bottom edge are off
+    top='off',         # ticks along the top edge are off
+    labelbottom='off') # labels along the bottom edge are off
+#plt.ylabel("flux")
+plt.ylabel(r'$\Gamma$'+" "+r'$(m^{-2} \cdot s^{-1})$')
+
+l = plt.legend(bbox_to_anchor=(0.5,1), loc='lower center', ncol=nftubes, title=r'$||\rho_{tor}||$')
+lt = l.get_title()
+lt.set_position((0.0,-5.0))
+
+
+ax = plt.subplot(gs[3,:])
+tstep=[0.]
+for i in range(len(times)-1):
+    tstep.append(t[i+1]-t[i])
+plt.semilogy(t[:],tstep[:],'*')
+#plt.plot(t[:],tstep[:],'*')
+plt.ylim(0.000001,0.0999)
+if do_vmark:
+    for k in ran_tstops:
+        alpha = tstops[k]
+        xc = t[alpha]
+        plt.axvline(x=xc, color='0.5', linestyle='--')
+if do_limit:
+    for k in ran_tlimits:
+        alpha = tlimits[k]
+        xc = t[alpha]
+        plt.axvline(x=xc, color=colors['brown'], linestyle=':')
+ylab = ax.get_yticklabels()
+ylab[0].set_visible(False)
+ylab[-1].set_visible(False)
+
+plt.tick_params(
+    axis='x',          # changes apply to the x-axis
+    which='both',      # both major and minor ticks are affected
+    bottom='off',      # ticks along the bottom edge are off
+    top='off',         # ticks along the top edge are off
+    labelbottom='off') # labels along the bottom edge are off
+plt.ylabel(r'$\Delta t$'+" "+r'$(s)$')
+
+
+ax = plt.subplot(gs[4:,:])
+plt.gca().set_color_cycle([colormap(i) for i in np.linspace(0.0,0.9,nftubes)])
+plt.subplots_adjust(wspace=0, hspace=0)
+for i in range(nftubes):
+    plt.plot(t[:],nn[:,i],'+-',label=str(round(cpo.coretranspArray[0].values[0].rho_tor_norm[i],3)))
+#plt.legend(loc="best")
+
+if do_avg:
+    meanwidth = 1./3 # between 0 and 1
+    imean = np.empty(times_len)
+    for i in range(nftubes):
+        imean.fill(nn[int(times_len*(1-meanwidth)):times_len-1,i].mean())
+        plt.plot(t[int(times_len*(1-meanwidth)):times_len-1],imean[int(times_len*(1-meanwidth)):times_len-1],'--',lw=3.0)
+        plt.text(t[-1]*1.01,imean[-1],str(round(imean[-1],2)))
+
+plt.xlabel("time (s)")
+
+plt.ylabel(r'$n_i = n_e (m^{-3})$')
+if do_vmark:
+    for k in ran_tstops:
+        alpha = tstops[k]
+        xc = t[alpha]
+        plt.axvline(x=xc, color='0.5', linestyle='--')
+if do_limit:
+    for k in ran_tlimits:
+        alpha = tlimits[k]
+        xc = t[alpha]
+        plt.axvline(x=xc, color=colors['brown'], linestyle=':')
+
+ylab = ax.get_yticklabels()
+ylab[-1].set_visible(False)
 #xpoints = np.arange(0,times,1)
 #xlabels = []
 #for i in range(len(xpoints)):

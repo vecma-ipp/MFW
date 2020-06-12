@@ -39,23 +39,23 @@ exec_code = "ets_test"
 
 # Define the uncertain parameters
 input_params = {
-    "te.boundary": {
+    "te.boundary.value": {
         "dist": "Normal",
         "err":  0.2,
     }
-    ,
-    "ti.boundary": {
-        "dist": "Normal",
-        "err": 0.2,
-    }
+    #,
+    #"ti.boundary.value": {
+    #    "dist": "Normal",
+    #    "err": 0.2,
+    #}
 }
 # CPO file containg initial values of uncertain params
 input_filename = "ets_coreprof_in.cpo"
 input_cponame = "coreprof"
 
 # The quantities of intersts and the cpo file to set them
-#output_columns = ["te", "ti", "ne", "ni", "psi"]
-output_columns = ["te"]
+#output_columns = ["te.value", "ti.value", "ne.value", "ni.value", "psi.value"]
+output_columns = ["te.value"]
 output_filename = "ets_coreprof_out.cpo"
 output_cponame = "coreprof"
 
@@ -180,13 +180,14 @@ rho = corep.rho_tor_norm
 uparams_names = list(params.keys())
 
 for qoi in output_columns:
+    fig = campaign_name + qoi.split('.')[0]
     plots.plot_stats(rho, stat[qoi],
                      xlabel=r'$\rho_{tor}$', ylabel=qoi,
                      ftitle=qoi+' profile',
-                     fname='data/outputs/STAT_'+qoi+"_"+campaign_name)
+                     fname='data/outputs/STAT_'+fig)
 
-    plots.plot_sobols_all(rho, sob1[qoi], uparams_names,
-                      ftitle='1st Sobol indices: '+qoi,
-                      fname='data/outputs/SA_'+qoi+"_"+campaign_name)
+    #plots.plot_sobols_all(rho, sob1[qoi], uparams_names,
+    #                  ftitle='1st Sobol indices: '+qoi,
+    #                  fname='data/outputs/SA_'+fig)
 
 print('>>> test ETS PJ : END')
