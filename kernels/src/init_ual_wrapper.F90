@@ -15,6 +15,7 @@ contains
        coret_out, &
        cores_out, &
        corei_out, &
+       coref_out, &
        equil_out, &
        toroidf_out) 
     use iso_c_binding
@@ -35,15 +36,17 @@ contains
     integer(kind=c_signed_char), pointer :: coret_out(:)
     integer(kind=c_signed_char), pointer :: cores_out(:)
     integer(kind=c_signed_char), pointer :: corei_out(:)
+    integer(kind=c_signed_char), pointer :: coref_out(:)
     integer(kind=c_signed_char), pointer :: equil_out(:)
     integer(kind=c_signed_char), pointer :: toroidf_out(:)
     integer(kind=c_signed_char), pointer :: tmpbuf(:)
     integer :: corep_size, coret_size, cores_size
-    integer :: corei_size, equil_size, toroidf_size
+    integer :: corei_size, equil_size, toroidf_size, coref_size
 
     character(F_STR_SIZE) :: cpo_file
     character(F_STR_SIZE) :: corep_file, coret_file, cores_file 
     character(F_STR_SIZE) :: corei_file, equil_file, toroidf_file
+    character(F_STR_SIZE) :: coref_file
 
     integer :: ios
 
@@ -51,6 +54,7 @@ contains
     type (type_coretransp), pointer :: coret(:) => NULL()
     type (type_coresource), pointer :: cores(:) => NULL()
     type (type_coreimpur), pointer :: corei(:) => NULL()
+    type (type_corefast), pointer :: coref(:) => NULL()
     type (type_equilibrium), pointer :: equil(:) => NULL()
     type (type_toroidfield), pointer :: toroidf(:) => NULL()
 
@@ -62,6 +66,7 @@ contains
     allocate(coret(1))
     allocate(cores(1))
     allocate(corei(1))
+    allocate(coref(1))
     allocate(equil(1))
     allocate(toroidf(1))
 
@@ -70,6 +75,7 @@ contains
     call euitm_get_slice(idx,'coretransp',coret(1),time,2)
     call euitm_get_slice(idx,'coresource',cores(1),time,2)
     call euitm_get_slice(idx,'coreimpur',corei(1),time,2)
+    call euitm_get_slice(idx,'corefast',coref(1),time,2)
     call euitm_get_slice(idx,'equilibrium',equil(1),time,2)
     call euitm_get_slice(idx,'toroidfield',toroidf(1),time,2)
 
@@ -93,6 +99,7 @@ contains
     coret_file = "init_coretransp.cpo"
     cores_file = "init_coresource.cpo"
     corei_file = "init_coreimpur.cpo"
+    coref_file = "init_corefast.cpo"
     equil_file = "init_equilibrium.cpo"
     toroidf_file = "init_toroidfield.cpo"
 
@@ -122,11 +129,16 @@ contains
     call write_cpo(toroidf(1),'toroidfield')
     call close_write_file
 
+    call open_write_file(18,coref_file)
+    call write_cpo(coref(1),'corefast')
+    call close_write_file
+
     print *,'transfer CPO to buf'
     call file2byte(corep_file, corep_out, corep_size)
     call file2byte(coret_file, coret_out, coret_size)
     call file2byte(cores_file, cores_out, cores_size)
     call file2byte(corei_file, corei_out, corei_size)
+    call file2byte(coref_file, coref_out, coref_size)
     call file2byte(equil_file, equil_out, equil_size)
     call file2byte(toroidf_file, toroidf_out, toroidf_size)
 
@@ -135,6 +147,7 @@ contains
     call deallocate_cpo(coret)
     call deallocate_cpo(cores)
     call deallocate_cpo(corei)
+    call deallocate_cpo(coref)
     call deallocate_cpo(equil)
     call deallocate_cpo(toroidf)
 
