@@ -9,6 +9,7 @@ program ets_src
                           &  type_coretransp,  &
                           &  type_coresource,  &
                           &  type_coreimpur,   &
+                          &  type_corefast,    &
                           &  type_toroidfield
 
   use read_structures, only: open_read_file,  &
@@ -26,6 +27,7 @@ implicit none
   character(len=*), parameter :: equil_file_in   = "ets_equilibrium_in.cpo"
   !character(len=*), parameter :: cores_file_in   = "ets_coresource_in.cpo"
   character(len=*), parameter :: corei_file_in   = "ets_coreimpur_in.cpo"
+  character(len=*), parameter :: coref_file_in   = "ets_corefast_in.cpo"
   character(len=*), parameter :: coret_file_in   = "ets_coretransp_in.cpo"
   character(len=*), parameter :: toroidf_file_in = "ets_toroidfield_in.cpo"
 
@@ -37,6 +39,7 @@ implicit none
   type (type_coretransp) , pointer :: coret(:)     => NULL()
   type (type_coresource) , pointer :: cores(:)     => NULL()
   type (type_coreimpur)  , pointer :: corei(:)     => NULL()
+  type (type_corefast)  , pointer  :: coref(:)     => NULL()
   type (type_toroidfield), pointer :: toroidf(:)   => NULL()
   type (type_coreprof)   , pointer :: corep_new(:) => NULL()
   
@@ -47,6 +50,7 @@ implicit none
   allocate(coret(1))
   allocate(cores(1))
   allocate(corei(1))
+  allocate(coref(1))
   allocate(toroidf(1))
   
   allocate(corep_new(1))
@@ -62,6 +66,19 @@ implicit none
     call close_read_file
   else
      print *,"ERROR. CPO file not found:",corep_file_in
+     STOP
+  end if
+
+  open (unit = 10, file = coref_file_in, &
+       status = 'old', form = 'formatted', &
+       action = 'read', iostat = ios)
+  if (ios == 0) then
+    close (10)
+    call open_read_file(10, coref_file_in)
+    call read_cpo(coref(1), 'corefast' )
+    call close_read_file
+  else
+     print *,"ERROR. CPO file not found:",coref_file_in
      STOP
   end if
   
@@ -134,7 +151,7 @@ implicit none
   call gaussian_source_cpo(corep, equil, cores)
   
   ! Call ets_standalone
-  call ets_cpo(corep, equil, coret, cores, corei, corep_new)
+  call ets_cpo(corep, equil, coret, cores, corei, coref, corep_new)
  
   ! Save the output files 
   call open_write_file(20, corep_file_out)
@@ -145,6 +162,7 @@ implicit none
   call deallocate_cpo(corep_new)  
   call deallocate_cpo(toroidf)
   call deallocate_cpo(corei)
+  call deallocate_cpo(coref)
   call deallocate_cpo(cores)
   call deallocate_cpo(coret)  
   call deallocate_cpo(equil)

@@ -20,6 +20,7 @@ program loop_gem0
                           &  type_coretransp,  &
                           &  type_coresource,  &
                           &  type_coreimpur,   &
+                          &  type_corefast,    &
                           &  type_toroidfield
   use read_structures, only: open_read_file,  &
                           &  close_read_file, &
@@ -47,6 +48,7 @@ implicit none
   character(len=*), parameter :: cores_file_in   = "ets_coresource_in.cpo"
   character(len=*), parameter :: corei_file_in   = "ets_coreimpur_in.cpo"
   character(len=*), parameter :: coret_file_in   = "ets_coretransp_in.cpo"
+  character(len=*), parameter :: coref_file_in   = "ets_corefast_in.cpo"
   character(len=*), parameter :: toroidf_file_in = "ets_toroidfield_in.cpo"
 
   integer, parameter :: STEPS = 10
@@ -63,6 +65,7 @@ implicit none
   type(type_coretransp),  pointer :: coret_imp4dv(:) => null()
   type(type_coresource),  pointer :: cores_in(:)     => null()
   type(type_coreimpur),   pointer :: corei_in(:)     => null()
+  type(type_corefast),    pointer :: coref_in(:)     => null()
   type(type_equilibrium), pointer :: equil_in(:)     => null()
   type(type_equilibrium), pointer :: equil_update(:) => null() 
   type(type_equilibrium), pointer :: equil_chease(:) => null()
@@ -76,6 +79,7 @@ implicit none
   allocate(coret_in(1))
   allocate(cores_in(1))
   allocate(corei_in(1))
+  allocate(coref_in(1))
   allocate(equil_in(1))
   allocate(toroidf_in(1))
 
@@ -86,6 +90,16 @@ implicit none
      close (10)
      call open_read_file(10, corep_file_in)
      call read_cpo(corep_in(1), 'coreprof' )
+     call close_read_file
+  end if
+
+  open (unit = 10, file = coref_file_in, &
+       status = 'old', form = 'formatted', &
+       action = 'read', iostat = ios)
+  if (ios == 0) then
+     close (10)
+     call open_read_file(10, coref_file_in)
+     call read_cpo(coref_in(1), 'corefast' )
      call close_read_file
   end if
 
@@ -163,7 +177,7 @@ implicit none
      call copy_cpo(corep_ets(1),corep_old(1))
      call deallocate_cpo(corep_ets)
      nullify(corep_ets)
-     call ets_cpo(corep_old, equil_chease, coret_imp4dv, cores_in, corei_in, corep_ets)
+     call ets_cpo(corep_old, equil_chease, coret_imp4dv, cores_in, corei_in, coref_in, corep_ets)
      if (TIMETRACE) then
         call open_write_file(20,'ets_coreprof_'//itstr//'.cpo')
         call write_cpo(corep_ets(1),'coreprof')
@@ -229,6 +243,7 @@ implicit none
   call deallocate_cpo(equil_chease)
   call deallocate_cpo(cores_in)
   call deallocate_cpo(corei_in)
+  call deallocate_cpo(coref_in)
   call deallocate_cpo(toroidf_in)
 
 end program loop_gem0
