@@ -166,3 +166,72 @@ class Split_Normal():
 
         y = np.concatenate((y1, y2))
         return y
+
+
+# to EasyVVUQ with doc
+class ValidateCompatibility():
+    def __init__(self, weight_factor=0.5):
+        """Measure compatability between two QoI distributions.
+        Each distribution is characterized by three moments:
+        Mean, variance and skewness.
+        Lower metric means hight compatability.
+
+        Parameters
+        ----------
+        weight_factor : float, optional
+           parameter in [0, 1]
+           default: 0.5
+        """
+
+        if weight_factor < 0. or weight_factor > 1.:
+            raise RuntimeError("Validate_Compatability: Wrong parameter value.")
+
+        self._weight_factor = weight_factor
+
+    def element_name(self):
+        return "Validate_Compatability"
+
+    def element_version(self):
+        return "0.1"
+
+    @property
+    def weight_factor(self):
+        return self._weight_factor
+
+    @weight_factor.setter
+    def weight_factor(self, weight_factor):
+        """
+        Parameters
+        ----------
+        weight_factor : float
+        """
+
+        if weight_factor < 0. or weight_factor > 1.:
+            raise RuntimeError("set_weight_factor: wrong parameter value.")
+        self._weight_factor = weight_factor
+
+    def dist(self, mom1, mom2):
+        """ Compute distance between
+
+        Parameters
+        ----------
+        mom1: list
+              contains three moments of the first distribution: mean,
+              variance and skewness
+        mom2: list
+              contains three moments of the second distribution: mean,
+              variance and skewness
+
+        Returns
+        -------
+
+        """
+        m1 = mom1[0]
+        v1 = mom1[1]
+        s1 = mom1[2]
+        m2 = mom2[0]
+        v2 = mom2[1]
+        s2 = mom2[2]
+        term1 = (m2 - m1)**2 / (2 * (v1 + v2) + (m2 - m1)**2)
+        term2 = (s2 - s1)**2 / (2 * (v1 + v2) + (m2 - m1)**2 + (abs(s1) + abs(s2))**2)
+        return (1 - self._weight_factor) * term1 + self._weight_factor * term2
