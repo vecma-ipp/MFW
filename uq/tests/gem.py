@@ -20,7 +20,7 @@ print('TEST gem-UQ: START')
 flux_indices = [69]
 
 # execustion with QCJ-PJ
-EXEC_PJ = False
+EXEC_PJ = True
 
 # From Slurm script
 mpi_instance =  os.environ['MPICMD']
@@ -53,17 +53,17 @@ input_params = {
         "dist": "Normal",
         "err":  0.2,
         "idx": flux_indices,
-    },
-    "te.ddrho.value": {
-        "dist": "Normal",
-        "err": 0.2,
-        "idx": flux_indices,
-    },
-    "ti.ddrho.value": {
-        "dist": "Normal",
-        "err": 0.2,
-        "idx": flux_indices,
-    }
+    }#,
+    #"te.ddrho.value": {
+    #    "dist": "Normal",
+    #    "err": 0.2,
+    #    "idx": flux_indices,
+    #},
+    #"ti.ddrho.value": {
+    #    "dist": "Normal",
+    #    "err": 0.2,
+    #    "idx": flux_indices,
+    #}
 }
 
 # CPO file containg initial values of uncertain params
@@ -83,7 +83,7 @@ params, vary = get_cpo_inputs(cpo_file=input_cpo_file,
 
 # Initialize Campaign object
 print('>>> Initialize Campaign object')
-campaign_name = "UQ_gem_"+cpo_dir.split('/')[-1]+"_"
+campaign_name = "UQ_gem_"
 my_campaign = uq.Campaign(name=campaign_name, work_dir=tmp_dir)
 
 # Create new directory for inputs
@@ -134,7 +134,7 @@ my_campaign.add_app(name=campaign_name,
 # Create the sampler
 print('>>> Create the sampler')
 my_sampler = uq.sampling.PCESampler(vary=vary,
-                                    polynomial_order=4,
+                                    polynomial_order=3,
                                     regression=True)
 my_campaign.set_sampler(my_sampler)
 
@@ -153,7 +153,7 @@ ncores = npesx*npess
 
 exec_path = os.path.join(common_dir, exec_code)
 mpi_app = " ".join([mpi_instance, "-n", str(ncores), exec_path])
-
+print('MPI_APP: ', mpi_app)
 if EXEC_PJ:
     # GCG-PJ wrapper
     import easypj
