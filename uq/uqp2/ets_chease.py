@@ -20,7 +20,7 @@ from easypj import Task, TaskType, SubmitOrder
 # Global params
 SYS = os.environ['SYS']
 tmp_dir = os.environ['SCRATCH']
-cpo_dir = os.path.abspath("../workflows/AUG_28906_6_BgB")
+cpo_dir = os.path.abspath("../workflows/AUG_28906_6")
 xml_dir = os.path.abspath("../workflows")
 obj_dir = os.path.abspath("../standalone/bin/"+SYS)
 
@@ -38,8 +38,8 @@ def setup_ets(ets_dir, ets_code, ets_input, ets_output):
     input_xmlfilename = "source_dummy.xml"
     input_xsdfilename = "source_dummy.xsd"
 
-    output_filename = "ets_coreprof_out.cpo"
-    output_cponame = "coreprof"
+    output_filename = "ets_equilibrium_out.cpo"
+    output_cponame = "equilibrium"
 
     # Copy XML and XSD files
     os.system("cp " + xml_dir + "/ets.xml "    + ets_dir)
@@ -89,7 +89,8 @@ def setup_ets(ets_dir, ets_code, ets_input, ets_output):
 
     collater = uq.collate.AggregateSamples(average=False)
 
-    sampler = uq.sampling.PCESampler(vary=vary, polynomial_order=4)
+    sampler = uq.sampling.PCESampler(vary=vary, polynomial_order=3,
+                                     regression=True)
     action = uq.actions.ExecuteLocal(exec_code)
     stats = uq.analysis.PCEAnalysis(sampler=sampler, qoi_cols=ets_output)
 
@@ -102,10 +103,10 @@ def setup_eq(eq_dir, eq_code, eq_input, eq_output):
     spline = eq_input[1]
     vary = eq_input[2]
 
-    input_cpofilename = "equil_coreprof_in.cpo"
-    input_cponame = "coreprof"
+    input_cpofilename = "chease_equilibrium_in.cpo"
+    input_cponame = "equilibrium"
 
-    output_filename = "equil_equilibrium_out.cpo"
+    output_filename = "chease_equilibrium_out.cpo"
     output_cponame = "equilibrium"
 
     # Copy XML and XSD files
@@ -113,9 +114,8 @@ def setup_eq(eq_dir, eq_code, eq_input, eq_output):
     os.system("cp " + xml_dir + "/chease.xsd " + eq_dir)
 
     # Copy input CPO files in common directory
-    os.system("cp " + cpo_dir + "/ets_coreprof_in.cpo "    + eq_dir + "/equil_coreprof_in.cpo")
-    os.system("cp " + cpo_dir + "/ets_equilibrium_in.cpo " + eq_dir + "/equil_equilibrium_in.cpo")
-    os.system("cp " + cpo_dir + "/ets_toroidfield_in.cpo " + eq_dir + "/equil_toroidfield_in.cpo")
+    os.system("cp " + cpo_dir + "/ets_coreprof_in.cpo "    + eq_dir + "/chease_coreprof_in.cpo")
+    os.system("cp " + cpo_dir + "/ets_equilibrium_in.cpo " + eq_dir + "/chease_equilibrium_in.cpo")
 
     os.system("cp " + obj_dir +"/" + eq_code + " " + eq_dir)
     exec_code = os.path.join(eq_dir, eq_code)
@@ -132,7 +132,8 @@ def setup_eq(eq_dir, eq_code, eq_input, eq_output):
 
     collater = uq.collate.AggregateSamples(average=False)
 
-    sampler = uq.sampling.PCESampler(vary=vary, polynomial_order=4, regression=True)
+    sampler = uq.sampling.PCESampler(vary=vary, polynomial_order=3,
+                                     regression=True)
     #action = uq.actions.ExecuteLocal(exec_code)
     stats = uq.analysis.PCEAnalysis(sampler=sampler, qoi_cols=eq_output)
 
@@ -184,7 +185,7 @@ if __name__ == "__main__":
         }
     }
     ets_input = [input_params_bc, input_params_src]
-    ets_output = ["te.value"]
+    ets_output = ["profiles_1d.pressure"]
 
     # The execute code
     ets_code = "ets_src"
@@ -209,22 +210,20 @@ if __name__ == "__main__":
     results1 = campaign.get_last_analysis()
 
     # Get Descriptive Statistics
-    mean = results1['statistical_moments']["te.value"]["mean"]
-    stat = results1['statistical_moments']["te.value"]
-    sob1 = results1['sobols_first']["te.value"]
-    perc = results1['percentiles']["te.value"]
-    dist = results1['output_distributions']["te.value"]
+    mean_1 = results1['statistical_moments']["profiles_1d.pressure"]["mean"]
+    stat_1 = results1['statistical_moments']["profiles_1d.pressure"]
+    sob1_1 = results1['sobols_first']["profiles_1d.pressure"]
+    perc_1 = results1['percentiles']["profiles_1d.pressure"]
+    dist_1 = results1['output_distributions']["profiles_1d.pressure"]
 
-    corep_file = os.path.join(cpo_dir,  "ets_coreprof_in.cpo")
-    corep = read(corep_file, "coreprof")
-    rho = corep.rho_tor_norm
+    equil_file = os.path.join(cpo_dir, "ets_equilibrium_in.cpo")
+    equil = read(equil_file, "equilibrium")
+    rho = equil.profiles_1d.rho_tor
 
-    import sys
-    sys.exit()
     # Approxiamte mean by spline of dgree 3 using 5 elements
     ne = 4
     k = 3
-    ty, cy = spl_fit(mean, ne, k)
+    ty, cy = spl_fit(mean_1, ne, k)
     tx, cx = spl_fit(rho, ne, k)
 
     # Distribtion for CP
@@ -234,16 +233,16 @@ if __name__ == "__main__":
         # index of the closet rho to CP abscissa cx
         i = np.abs(rho - cx[i]).argmin()
         #dist_cp.append(dist[i])
-        dist_cp.append(cp.Normal(mean[i], 0.2*mean[i]))
-        te.append(mean[i])
+        dist_cp.append(cp.Normal(mean_1[i], 0.2*mean_1[i]))
+        te.append(mean_1[i])
 
-    eq_input = [{"te.value": {"type": "list", "default": te}},
-                    {"te.value": {"knot": ty.tolist(), "k": k, "rho": rho.tolist()}},
-                    {"te.value": cp.J(*dist_cp)}
+    eq_input = [{"profiles_1d.pressure": {"type": "list", "default": te}},
+                    {"profiles_1d.pressure": {"knot": ty.tolist(), "k": k, "rho": rho.tolist()}},
+                    {"profiles_1d.pressure": cp.J(*dist_cp)}
                    ]
-    eq_output = ["profiles_1d.pressue"]
+    eq_output = ["profiles_1d.gm3"]
 
-    eq_code = "equil_test"
+    eq_code = "chease_test"
 
     eq_dir = campaign.campaign_dir +"/eq/"
     os.mkdir(eq_dir)
@@ -269,21 +268,34 @@ if __name__ == "__main__":
     results2 = campaign.get_last_analysis()
 
     # Get Descriptive Statistics
-    stat = results2['statistical_moments']["profiles_1d.pressure"]
+    stat_2 = results2['statistical_moments']["profiles_1d.gm3"]
+    sob1_2 = results2['sobols_first']["profiles_1d.gm3"]
+    perc_2 = results2['percentiles']["profiles_1d.gm3"]
+    dist_2 = results2['output_distributions']["profiles_1d.gm3"]
 
-    sob1 = results2['sobols_first']["profiles_1d.pressure"]
-    perc = results2['percentiles']["profiles_1d.pressure"]
-    distp = results2['output_distributions']["profiles_1d.pressure"]
+    # Plots
+    plots.plot_stats_all(rho, stat_1, perc_1, dist_1,
+                 xlabel=r'$\rho_{tor} [m]$', ylabel="Pressure",
+                 ftitle='Pressure profile',
+                 fname='data/outputs/STAT_1')
 
-    equil_file = os.path.join(cpo_dir, "ets_equilibrium_in.cpo")
-    equil = read(equil_file, "equilibrium")
-    rho = equil.profiles_1d.rho_tor
+    plots.plot_stats_all(rho, stat_2, perc_2, dist_2,
+                 xlabel=r'$\rho_{tor} [m]$', ylabel="Pressure",
+                 ftitle='gm3 profile',
+                 fname='data/outputs/STAT_2')
 
-#    plots.plot_stats_all(rho, stat, perc, dist,
-#                 xlabel=r'$\rho_{tor} [m]$', ylabel="Te [eV]",
-#                 ftitle='Temperature profile',
-#                 fname='data/outputs/STAT_Te')
+    plots.plot_spl(rho, mean_1, cx, cy,
+                 xlabel=r'$\rho_{tor} [m]$', ylabel="Pressure",
+                 ftitle='BSpline interpolation',
+                 fname='data/outputs/SPL')
+
+#    plots.plot_sobols_all(rho, sob1_1, ["profiles_1d.pressure"],
+#                  ftitle='1st Sobol indices: Pressure',
+#                  fname='data/outputs/SA_1')
 #
-#    plots.plot_sobols_all(rho, sob1, ["te.value"]
-#                  ftitle='1st Sobol indices',
-#                  fname='data/outputs/SA_Te')
+#    plots.plot_sobols_all(rho, sob1_2, ["profiles_1d.gm3"],
+#                  ftitle='1st Sobol indices: gm3',
+#                  fname='data/outputs/SA_2')
+
+    print('>> SOB1: ', sob1_1)
+    print('>> SOB2: ', sob1_2)

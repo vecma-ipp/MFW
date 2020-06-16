@@ -87,22 +87,22 @@ def plot_stats_pctl(x, stat, pctl, xlabel, ylabel, ftitle, fname):
 
 # Statistical Moments (mean +- sdtv) and p90, p10
 def plot_stats_all(x, stat, perc, dist, xlabel, ylabel, ftitle, fname):
-    matplotlib.rcParams.update({'font.size': 11})
+    matplotlib.rcParams.update({'font.size': 12})
     mean = np.array(stat["mean"])
     std = np.array(stat['std'])
     p10 = perc['p10']
     p90 = perc['p90']
 
     plt.switch_backend('agg')
-    fig = plt.figure()#figsize=(12,9))
+    fig = plt.figure(figsize=(12,9))
 
     plt.plot(x, mean, 'b-', label='Mean')
-    plt.plot(x, mean-std, 'g-', alpha=0.6, label=r'Mean $\pm$1 std')
-    plt.plot(x, mean+std, 'g-', alpha=0.6)
-    plt.fill_between(x, mean-std, mean+std, color='g', alpha=0.2)
-    plt.plot(x, p10, 'C1-', alpha=0.6, label='10 and 90 percentiles')
-    plt.plot(x, p90, 'C1-', alpha=0.6)
-    plt.fill_between(x, p10, p90, color='C1', alpha=0.1)
+    plt.plot(x, mean-std, 'b--', label=r'Mean $\pm$1 std')
+    plt.plot(x, mean+std, 'b--')
+    plt.fill_between(x, mean-std, mean+std, color='b', alpha=0.2)
+    plt.plot(x, p10, 'b:', label='10 and 90 percentiles')
+    plt.plot(x, p90, 'b:')
+    plt.fill_between(x, p10, p90, color='b', alpha=0.1)
     plt.fill_between(x, [r.lower[0] for r in dist], [r.upper[0] for r in dist], color='b', alpha=0.05)
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
@@ -181,5 +181,23 @@ def plot_sobols_all(x, sobols, params, ftitle, fname):
 
     ax.set_title(ftitle)
     plt.legend()
+    fig.savefig(fname)
+    plt.close(fig)
+
+# Spline
+def plot_spl(x, y, cx, cy, xlabel, ylabel, ftitle, fname):
+
+    plt.switch_backend('agg')
+    fig = plt.figure(figsize=(12,9))
+
+    ax1 = fig.add_subplot(111)
+    ax1.plot(x, y, 'b-', label='Mean')
+    ax1.plot(cx, cy, 'ro', label='CP')
+    ax1.set_xlabel(xlabel)
+    ax1.set_ylabel(ylabel)
+    ax1.grid()
+    ax1.legend()
+
+    plt.title(ftitle)
     fig.savefig(fname)
     plt.close(fig)

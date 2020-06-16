@@ -3,6 +3,7 @@ program ets_src
 
   use ets_standalone,         only: ets_cpo
   use sources_standalone, only: gaussian_source_cpo
+  use equilupdate_standalone, only: equilupdate2cpo
 
   use euitm_schemas,   only: type_coreprof,    & 
                           &  type_equilibrium, &
@@ -28,8 +29,8 @@ implicit none
   character(len=*), parameter :: corei_file_in   = "ets_coreimpur_in.cpo"
   character(len=*), parameter :: coret_file_in   = "ets_coretransp_in.cpo"
   character(len=*), parameter :: toroidf_file_in = "ets_toroidfield_in.cpo"
-
-  character(len=*), parameter :: corep_file_out  = "ets_coreprof_out.cpo"
+  !character(len=*), parameter :: corep_file_out  = "ets_coreprof_out.cpo"
+  character(len=*), parameter :: equil_out_file  = "ets_equilibrium_out.cpo"
 
   ! CPO structures 
   type (type_coreprof)   , pointer :: corep(:)     => NULL()
@@ -39,6 +40,7 @@ implicit none
   type (type_coreimpur)  , pointer :: corei(:)     => NULL()
   type (type_toroidfield), pointer :: toroidf(:)   => NULL()
   type (type_coreprof)   , pointer :: corep_new(:) => NULL()
+  type (type_equilibrium), pointer :: equil_new(:) => NULL()
   
   integer :: ios 
 
@@ -48,8 +50,8 @@ implicit none
   allocate(cores(1))
   allocate(corei(1))
   allocate(toroidf(1))
-  
   allocate(corep_new(1))
+  allocate(equil_new(1))
   
   ! Read CPO file and write corresponding structures   
   open (unit = 10, file = corep_file_in, &
@@ -135,10 +137,17 @@ implicit none
   
   ! Call ets_standalone
   call ets_cpo(corep, equil, coret, cores, corei, corep_new)
+  
+  ! Update the Geometry
+  call equilupdate2cpo(corep_new, toroidf, equil, equil_new)
  
   ! Save the output files 
-  call open_write_file(20, corep_file_out)
-  call write_cpo(corep_new(1),'coreprof')
+!  call open_write_file(20, corep_file_out)
+!  call write_cpo(corep_new(1),'coreprof')
+!  call close_write_file
+
+  call open_write_file(20, equil_out_file)
+  call write_cpo(equil_new(1),'equilibrium')
   call close_write_file
   
   ! CPO deallocations
@@ -149,5 +158,6 @@ implicit none
   call deallocate_cpo(coret)  
   call deallocate_cpo(equil)
   call deallocate_cpo(corep)
+  call deallocate_cpo(equil_new)
  
 end program ets_src

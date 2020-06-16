@@ -5,6 +5,11 @@ ifeq ($(SYS),EAGLE)
 module load impi
 endif
 
+ifeq ($(SYS),COBRA) 
+module load intel
+module load impi
+endif
+
 ifeq ($(SYS),MARCONI) 
 module load intel
 module load intelmpi

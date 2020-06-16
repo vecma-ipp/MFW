@@ -156,7 +156,7 @@ ${OBJDIR}/%.o: %.c
 ETS_TEST: ${SHARED_O} ${ETS_O} ${OBJDIR}/ets_test.o
 	$(FC90) -o ${ETS_EXE} $^ -L${ETS} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_XML} -L${LIB_UAL} -lets -lbds -lxmllib -litmconstants -litmtypes -lual ${LDFLAGS} ${LIBLAPACK}
 
-ETS_SRC: ${SHARED_O} ${SOURCES_O} ${ETS_O} ${OBJDIR}/ets_src.o
+ETS_SRC: ${SHARED_O} ${SOURCES_O} ${ETS_O} ${EQUILUPDATE_O} ${OBJDIR}/ets_src.o
 	$(FC90) -o ${ETS_SRC_EXE}  $^ -L${ETS} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_XML} -L${LIB_UAL} -lets -lbds -lxmllib -litmconstants -litmtypes -lual ${LDFLAGS} ${LIBLAPACK}
 
 EQUILUPDATE_TEST: ${SHARED_O} ${EQUILUPDATE_O} ${OBJDIR}/equilupdate_test.o

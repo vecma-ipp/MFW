@@ -8,10 +8,10 @@
 #SBATCH --error=pj-%j.err
 
 ## wall time in format MINUTES:SECONDS
-#SBATCH --time=06:00:00
+#SBATCH --time=02:00:00
 
 ## number of nodes and tasks per node
-#SBATCH --nodes=10
+#SBATCH --nodes=1
 #SBATCH --tasks-per-node=40
 
 ## queue name
@@ -28,4 +28,4 @@ export SCRATCH=/ptmp/ljala/
 export PYTHONPATH=$PYTHONPATH:$PWD
 
 # Run the UQ code
-python jet_uq.py > pj-${SLURM_JOBID}.log
+python jet_uq_restart.py > pj-${SLURM_JOBID}.log
