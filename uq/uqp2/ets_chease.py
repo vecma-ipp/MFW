@@ -20,7 +20,9 @@ from easypj import Task, TaskType, SubmitOrder
 # Global params
 SYS = os.environ['SYS']
 tmp_dir = os.environ['SCRATCH']
-cpo_dir = os.path.abspath("../workflows/AUG_28906_6")
+#cpo_dir = os.path.abspath("../workflows/AUG_28906_6")
+cpo_dir = os.path.abspath("../workflows/AUG_28906_6_8ft_restart")
+#cpo_dir = os.path.abspath("../workflows/JET_92436_23066")
 xml_dir = os.path.abspath("../workflows")
 obj_dir = os.path.abspath("../standalone/bin/"+SYS)
 
@@ -222,9 +224,9 @@ if __name__ == "__main__":
 
     # Approxiamte mean by spline of dgree 3 using 5 elements
     ne = 4
-    k = 3
-    ty, cy = spl_fit(mean_1, ne, k)
-    tx, cx = spl_fit(rho, ne, k)
+    #u = rho/rho.max()
+    ty, cy = spl_fit(mean_1, ne)
+    tx, cx = spl_fit(rho, ne)
 
     # Distribtion for CP
     dist_cp = []
@@ -233,11 +235,14 @@ if __name__ == "__main__":
         # index of the closet rho to CP abscissa cx
         i = np.abs(rho - cx[i]).argmin()
         #dist_cp.append(dist[i])
-        dist_cp.append(cp.Normal(mean_1[i], 0.2*mean_1[i]))
+        if i==0:
+            dist_cp.append(cp.Normal(mean_1[i], 0.2*mean_1[i]))
+        else:
+            dist_cp.append(cp.Uniform(0.9*mean_1[i], 1.1*mean_1[i]))
         te.append(mean_1[i])
 
     eq_input = [{"profiles_1d.pressure": {"type": "list", "default": te}},
-                    {"profiles_1d.pressure": {"knot": ty.tolist(), "k": k, "rho": rho.tolist()}},
+                    {"profiles_1d.pressure": {"knot": ty.tolist(), "rho": rho.tolist()}},
                     {"profiles_1d.pressure": cp.J(*dist_cp)}
                    ]
     eq_output = ["profiles_1d.gm3"]
@@ -274,28 +279,26 @@ if __name__ == "__main__":
     dist_2 = results2['output_distributions']["profiles_1d.gm3"]
 
     # Plots
-    plots.plot_stats_all(rho, stat_1, perc_1, dist_1,
-                 xlabel=r'$\rho_{tor} [m]$', ylabel="Pressure",
-                 ftitle='Pressure profile',
-                 fname='data/outputs/STAT_1')
-
-    plots.plot_stats_all(rho, stat_2, perc_2, dist_2,
-                 xlabel=r'$\rho_{tor} [m]$', ylabel="Pressure",
-                 ftitle='gm3 profile',
-                 fname='data/outputs/STAT_2')
-
-    plots.plot_spl(rho, mean_1, cx, cy,
-                 xlabel=r'$\rho_{tor} [m]$', ylabel="Pressure",
-                 ftitle='BSpline interpolation',
-                 fname='data/outputs/SPL')
-
-#    plots.plot_sobols_all(rho, sob1_1, ["profiles_1d.pressure"],
+#    plots.plot_stats_all(rho, stat_1, perc_1, dist_1,
+#                 xlabel=r'$\rho_{tor} [m]$', ylabel="Pressure",
+#                 ftitle='Pressure profile',
+#                 fname='data/outputs/STAT_1')
+#
+#    plots.plot_stats_all(rho, stat_2, perc_2, dist_2,
+#                 xlabel=r'$\rho_{tor} [m]$', ylabel="Pressure",
+#                 ftitle='gm3 profile',
+#                 fname='data/outputs/STAT_2')
+#
+#    plots.plot_spl(rho, mean_1, cx, cy,
+#                 xlabel=r'$\rho_{tor} [m]$', ylabel="Pressure",
+#                 ftitle='BSpline interpolation',
+#                 fname='data/outputs/SPL')
+#
+#    plots.plot_sobols_all(rho, sob1_1, list(params1.keys()),
 #                  ftitle='1st Sobol indices: Pressure',
 #                  fname='data/outputs/SA_1')
 #
-#    plots.plot_sobols_all(rho, sob1_2, ["profiles_1d.gm3"],
+#    plots.plot_sobols_all(rho, sob1_2, ["profiles_1d.pressure"],
 #                  ftitle='1st Sobol indices: gm3',
 #                  fname='data/outputs/SA_2')
 
-    print('>> SOB1: ', sob1_1)
-    print('>> SOB2: ', sob1_2)

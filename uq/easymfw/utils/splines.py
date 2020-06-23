@@ -3,16 +3,20 @@ from scipy.interpolate import splrep, splev
 
 
 # Spline fitting
-def spl_fit(x, n, p):
+def spl_fit(x, n, u=None):
     # x: vertices to approximate
     # n: control points number
-    # p: spline degree
+    # u: the parameterization
+
+    #pline degree
+    p=3
 
     # Vertices number
     m = len(x)
 
     # The parameterization
-    u = np.linspace(0., 1., m)
+    if u is None:
+        u = np.linspace(0., 1., m)
 
     # Knots vector to define spline space
     T = np.linspace(0., 1., n-p+1)[1:-1]

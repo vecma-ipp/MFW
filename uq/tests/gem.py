@@ -17,7 +17,8 @@ IMPORTANT CHECK: in gem.xml, nrho_transp = 1
 print('TEST gem-UQ: START')
 
 # We test 1 flux tube (to use list if more)
-flux_indices = [31, 66]
+flux_indices = [69]
+#flux_indices = [15, 31, 44, 55, 66, 76, 85, 94]
 
 # execustion with QCJ-PJ
 EXEC_PJ = True
@@ -32,10 +33,12 @@ SYS = os.environ['SYS']
 tmp_dir = os.environ['SCRATCH']
 
 # CPO files location
-cpo_dir = os.path.abspath("../workflows/AUG_28906_6")
+#cpo_dir = os.path.abspath("../workflows/AUG_28906_6")
+cpo_dir = os.path.abspath("../workflows/AUG_28906_6_1ft_restart")
 
 # XML and XSD files location
-xml_dir = os.path.abspath("../workflows")
+#xml_dir = os.path.abspath("../workflows")
+xml_dir = cpo_dir
 
 # The executable code to run
 obj_dir = os.path.abspath("../standalone/bin/"+SYS)
@@ -53,17 +56,7 @@ input_params = {
         "dist": "Normal",
         "err": 0.2,
         "idx": flux_indices,
-    },
-#    "ti.value": {
-#        "dist": "Normal",
-#        "err":  0.2,
-#        "idx": flux_indices,
-#    }
-#    "ti.ddrho": {
-#        "dist": "Normal",
-#        "err": 0.2,
-#        "ids": flux_indices,
-#    }
+    }
 }
 
 # CPO file containg initial values of uncertain params
@@ -96,6 +89,8 @@ os.system("cp " + cpo_dir + "/ets_equilibrium_in.cpo "
                 + common_dir + "gem_equilibrium_in.cpo")
 os.system("cp " + cpo_dir + "/ets_coreprof_in.cpo "
                 + common_dir + "/gem_coreprof_in.cpo")
+
+os.system("cp " + cpo_dir + "/t00.dat " + common_dir)
 
 # Copy XML and XSD files
 os.system("cp " + xml_dir + "/gem.xml " + common_dir)
@@ -134,8 +129,7 @@ my_campaign.add_app(name=campaign_name,
 # Create the sampler
 print('>>> Create the sampler')
 my_sampler = uq.sampling.PCESampler(vary=vary,
-                                    polynomial_order=3,
-                                    regression=True)
+                                    polynomial_order=3)
 my_campaign.set_sampler(my_sampler)
 
 # Will draw all (of the finite set of samples)
@@ -149,11 +143,13 @@ my_campaign.populate_runs_dir()
 gemxml = XMLElement(xml_dir + "/gem.xml")
 npesx = gemxml.get_value("cpu_parameters.domain_decomposition.npesx")
 npess = gemxml.get_value("cpu_parameters.domain_decomposition.npess")
-ncores = npesx*npess
+nftubes = gemxml.get_value("cpu_parameters.parallel_cases.nftubes")
+ncores = npesx*npess*nftubes
 
 exec_path = os.path.join(common_dir, exec_code)
 mpi_app = " ".join([mpi_instance, "-n", str(ncores), exec_path])
 print('MPI_APP: ', mpi_app)
+
 if EXEC_PJ:
     # GCG-PJ wrapper
     import easypj

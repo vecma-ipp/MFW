@@ -94,9 +94,7 @@ class CPOEncoder(BaseEncoder, encoder_name="cpo_encoder"):
         os.system("ln -s " + self.common_dir + "*.xml " + target_dir + " 2>/dev/null")
         os.system("ln -s " + self.common_dir + "*.xsd " + target_dir + " 2>/dev/null")
         os.system("ln -s " + self.common_dir + "*.cpo " + target_dir + " 2>/dev/null")
-        #count = os.system("ls -1 " + self.common_dir + "/*.dat 2>/dev/null | wc -l")
-        #if count != 0:
-        #os.system("ln -s " + self.common_dir + "*.dat " + target_dir + " 2>/dev/null")
+        os.system("ln -s " + self.common_dir + "*.dat " + target_dir + " 2>/dev/null")
 
         # Write target input CPO file
         target_file_path = os.path.join(target_dir, self.target_filename)
@@ -107,9 +105,10 @@ class CPOEncoder(BaseEncoder, encoder_name="cpo_encoder"):
     def get_restart_dict(self):
         return {"template_filename": self.template_filename,
                 "target_filename": self.target_filename,
-                "common_dir": self.common_dir,
                 "input_cponame": self.input_cponame,
-                "input_params": self.input_params}
+                "input_params": self.input_params,
+                "common_dir": self.common_dir,
+                }
 
     def element_version(self):
         return "0.3"
