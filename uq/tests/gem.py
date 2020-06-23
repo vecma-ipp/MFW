@@ -17,7 +17,7 @@ IMPORTANT CHECK: in gem.xml, nrho_transp = 1
 print('TEST gem-UQ: START')
 
 # We test 1 flux tube (to use list if more)
-flux_indices = [69]
+flux_indices = [31, 66]
 
 # execustion with QCJ-PJ
 EXEC_PJ = True
@@ -49,21 +49,21 @@ input_params = {
         "err":  0.2,
         "idx": flux_indices,
     },
-    "ti.value": {
+    "te.ddrho": {
         "dist": "Normal",
-        "err":  0.2,
+        "err": 0.2,
         "idx": flux_indices,
-    }#,
-    #"te.ddrho.value": {
-    #    "dist": "Normal",
-    #    "err": 0.2,
-    #    "idx": flux_indices,
-    #},
-    #"ti.ddrho.value": {
-    #    "dist": "Normal",
-    #    "err": 0.2,
-    #    "idx": flux_indices,
-    #}
+    },
+#    "ti.value": {
+#        "dist": "Normal",
+#        "err":  0.2,
+#        "idx": flux_indices,
+#    }
+#    "ti.ddrho": {
+#        "dist": "Normal",
+#        "err": 0.2,
+#        "ids": flux_indices,
+#    }
 }
 
 # CPO file containg initial values of uncertain params

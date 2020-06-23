@@ -28,7 +28,7 @@ def get_flux_index(corep_file, coret_file):
     return idx
 
 
-# Calculate Te at neighboring +/-2 rho_tor grid points based on sample value of dTdrho at flux-tube
+# calculate te at neighboring +/-2 rho_tor grid points based on sample value of dTdrho at flux-tube
 def update_te_grad(cpo_core, v, flux_index):
     # TODO verify that cpo_core has corprof base_type
     # v = Grad_Te at flux_index point

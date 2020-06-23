@@ -16,10 +16,10 @@ IMPORTANT CHECK: in gem0.xml, nrho_transp = 1
 print('TEST GEM0-UQ: START')
 
 # We test 1 flux tube
-flux_indices = [69, 33]
-
+flux_indices = [31, 66]
+#flux_indices = [15, 31, 44, 55, 66, 76, 85, 94]
 # execustion with QCJ-PJ
-EXEC_PJ = True
+EXEC_PJ = False
 
 # Machine name
 SYS = os.environ['SYS']
@@ -28,7 +28,8 @@ SYS = os.environ['SYS']
 tmp_dir = os.environ['SCRATCH']
 
 # CPO files location
-cpo_dir = os.path.abspath("../workflows/AUG_28906_6")
+#cpo_dir = os.path.abspath("../workflows/AUG_28906_6")
+cpo_dir = os.path.abspath("../workflows/AUG_28906_6_8ft_restart")
 #cpo_dir = os.path.abspath("../workflows/JET_92436_23066")
 
 # XML and XSD files location
@@ -46,17 +47,16 @@ input_params = {
         "err":  0.2,
         "idx": flux_indices,
     },
-    "ti.value": {
+    "te.ddrho": {
         "dist": "Normal",
-        "err":  0.2,
+        "err": 0.2,
         "idx": flux_indices,
-    }
-#    ,
-#    "te.ddrho": {
+    },
+#    "ti.value": {
 #        "dist": "Normal",
-#        "err": 0.2,
-#        "ids": flux_indices,
-#    },
+#        "err":  0.2,
+#        "idx": flux_indices,
+#    }
 #    "ti.ddrho": {
 #        "dist": "Normal",
 #        "err": 0.2,
@@ -81,7 +81,7 @@ params, vary = get_cpo_inputs(cpo_file=input_cpo_file,
 
 # Initialize Campaign object
 print('>>> Initialize Campaign object')
-campaign_name = "UQ_GEM0_"+cpo_dir.split('/')[-1]+"_"
+campaign_name = "UQ_GEM0_"
 my_campaign = uq.Campaign(name=campaign_name, work_dir=tmp_dir)
 
 # Create new directory for inputs
@@ -100,7 +100,7 @@ os.system("cp " + xml_dir + "/gem0.xml " + common_dir)
 os.system("cp " + xml_dir + "/gem0.xsd " + common_dir)
 
 # Copy  exec file
-os.system("cp " + obj_dir +"/"+ exec_code + " " + common_dir)
+#os.system("cp " + obj_dir +"/"+ exec_code + " " + common_dir)
 
 # Create the encoder
 print('>>> Create the encoder')
@@ -132,66 +132,65 @@ my_campaign.add_app(name=campaign_name,
 # Create the sampler
 print('>>> Create the sampler')
 my_sampler = uq.sampling.PCESampler(vary=vary,
-                                    polynomial_order=3,
-                                    regression=True)
+                                    polynomial_order=3,regression=True)
 my_campaign.set_sampler(my_sampler)
 
 # Will draw all (of the finite set of samples)
-print('>>> Draw Samples - Ns = ', my_sampler._number_of_samples)
+print('>>> Draw Samples - Ns = ', my_sampler.n_samples)
 my_campaign.draw_samples()
 
 print('>>> Populate runs_dir')
 my_campaign.populate_runs_dir()
 
-exec_path = os.path.join(common_dir, exec_code)
-if EXEC_PJ:
-    # GCG-PJ wrapper
-    import easypj
-    from easypj import TaskRequirements, Resources
-    from easypj import Task, TaskType, SubmitOrder
-
-    print(">>> Starting PJ execution\n")
-    qcgpjexec = easypj.Executor()
-    qcgpjexec.create_manager(dir=my_campaign.campaign_dir, log_level='info')
-
-    qcgpjexec.add_task(Task(
-        TaskType.EXECUTION,
-        TaskRequirements(cores=Resources(exact=1)),
-        application=exec_path
-    ))
-
-    qcgpjexec.run(
-        campaign=my_campaign,
-        submit_order=SubmitOrder.EXEC_ONLY
-    )
-
-    qcgpjexec.terminate_manager()
-else:
-    print('>>> Starting Local execution')
-    my_campaign.apply_for_each_run_dir(uq.actions.ExecuteLocal(exec_path))
-
-print('>>> Collate')
-my_campaign.collate()
-
-# Post-processing analysis
-print('>>> Post-processing analysis')
-analysis = uq.analysis.PCEAnalysis(sampler=my_sampler, qoi_cols=output_columns)
-my_campaign.apply_analysis(analysis)
-
-print('>>> Get results')
-results = my_campaign.get_last_analysis()
-
-# Get Descriptive Statistics
-print('>>> Get Descriptive Statistics: \n')
-stat = {}
-sob1 = {}
-dist = {}
-for qoi in output_columns:
-    stat[qoi] = results['statistical_moments'][qoi]
-    sob1[qoi] = results['sobols_first'][qoi]
-
-    print(qoi)
-    print('Stats: \n', stat[qoi] )
-    print('Sobol 1st: \n',sob1[qoi])
-
+#exec_path = os.path.join(common_dir, exec_code)
+#if EXEC_PJ:
+#    # GCG-PJ wrapper
+#    import easypj
+#    from easypj import TaskRequirements, Resources
+#    from easypj import Task, TaskType, SubmitOrder
+#
+#    print(">>> Starting PJ execution\n")
+#    qcgpjexec = easypj.Executor()
+#    qcgpjexec.create_manager(dir=my_campaign.campaign_dir, log_level='info')
+#
+#    qcgpjexec.add_task(Task(
+#        TaskType.EXECUTION,
+#        TaskRequirements(cores=Resources(exact=1)),
+#        application=exec_path
+#    ))
+#
+#    qcgpjexec.run(
+#        campaign=my_campaign,
+#        submit_order=SubmitOrder.EXEC_ONLY
+#    )
+#
+#    qcgpjexec.terminate_manager()
+#else:
+#    print('>>> Starting Local execution')
+#    my_campaign.apply_for_each_run_dir(uq.actions.ExecuteLocal(exec_path))
+#
+#print('>>> Collate')
+#my_campaign.collate()
+#
+## Post-processing analysis
+#print('>>> Post-processing analysis')
+#analysis = uq.analysis.PCEAnalysis(sampler=my_sampler, qoi_cols=output_columns)
+#my_campaign.apply_analysis(analysis)
+#
+#print('>>> Get results')
+#results = my_campaign.get_last_analysis()
+#
+## Get Descriptive Statistics
+#print('>>> Get Descriptive Statistics: \n')
+#stat = {}
+#sob1 = {}
+#dist = {}
+#for qoi in output_columns:
+#    stat[qoi] = results['statistical_moments'][qoi]
+#    sob1[qoi] = results['sobols_first'][qoi]
+#
+#    print(qoi)
+#    print('Stats: \n', stat[qoi] )
+#    print('Sobol 1st: \n',sob1[qoi])
+#
 print('>>> TEST GEM0-UQ: END')

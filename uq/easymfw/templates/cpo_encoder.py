@@ -46,11 +46,49 @@ class CPOEncoder(BaseEncoder, encoder_name="cpo_encoder"):
                     value = [value]
             if "knot" in attr.keys():
                 knot = attr["knot"]
-                k = attr["k"]
                 rho = attr["rho"]
-                tck = [knot, value, k]
+                tck = [knot, value, 3]
                 value = splev(rho, tck)
             self.cpo.set_value(name, value, indices)
+            # particular case: te.value and ti.value
+            # update neighbors +/-2 rho_tor grid points according to
+            # the slops given by te.ddrho and ti.ddrho
+            if name == 'te.value' or name == 'te.ddrho':
+                rho = self.cpo.get_value('rho_tor_norm')
+                neighb_values = []
+                if name == 'te.value':
+                    dte = self.cpo.get_value('te.ddrho')
+                    j = 0
+                    for i in indices:
+                        rho_i = rho[i]
+                        te_i  = value[j]
+                        dte_i = dte[i]
+                        neighb_values.append(dte_i*(rho[i-2] - rho_i) + te_i)
+                        neighb_values.append(dte_i*(rho[i-1] - rho_i) + te_i)
+                        neighb_values.append(dte_i*(rho[i+1] - rho_i) + te_i)
+                        neighb_values.append(dte_i*(rho[i+2] - rho_i) + te_i)
+                        j+=1
+                if name == 'te.ddrho':
+                    te = self.cpo.get_value('te.value')
+                    j = 0
+                    for i in indices:
+                        rho_i = rho[i]
+                        te_i  = te[i]
+                        dte_i = value[j]
+                        neighb_values.append(dte_i*(rho[i-2] - rho_i) + te_i)
+                        neighb_values.append(dte_i*(rho[i-1] - rho_i) + te_i)
+                        neighb_values.append(dte_i*(rho[i+1] - rho_i) + te_i)
+                        neighb_values.append(dte_i*(rho[i+2] - rho_i) + te_i)
+                        j+=1
+                j = 0
+                neighb_indices = []
+                for i in indices:
+                    neighb_indices.append(i-2)
+                    neighb_indices.append(i-1)
+                    neighb_indices.append(i+1)
+                    neighb_indices.append(i+2)
+                    j+=1
+                self.cpo.set_value('te.value', neighb_values, neighb_indices)
 
         # Do a symbolic link to other files (cpo, xml and restart data)
         os.system("ln -s " + self.common_dir + "*.xml " + target_dir + " 2>/dev/null")

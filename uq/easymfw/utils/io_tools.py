@@ -63,7 +63,7 @@ def get_cpo_inputs(cpo_file, cpo_name, input_params):
         if "idx" in attr.keys():
             indices = attr["idx"]
             if len(indices) == 1:
-                value = value[0]
+                value = value[indices[0]]
             else:
                 new_value = []
                 for i in indices:
