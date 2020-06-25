@@ -129,7 +129,7 @@ my_campaign.add_app(name=campaign_name,
 # Create the sampler
 print('>>> Create the sampler')
 my_sampler = uq.sampling.PCESampler(vary=vary,
-                                    polynomial_order=3)
+                                    polynomial_order=2)
 my_campaign.set_sampler(my_sampler)
 
 # Will draw all (of the finite set of samples)
@@ -158,7 +158,8 @@ if EXEC_PJ:
 
     print(">>> Starting PJ execution\n")
     qcgpjexec = easypj.Executor()
-    qcgpjexec.create_manager(dir=my_campaign.campaign_dir, log_level='info')
+    qcgpjexec.create_manager(dir=my_campaign.campaign_dir,
+                             log_level='debug')
 
     qcgpjexec.add_task(Task(
         TaskType.EXECUTION,
