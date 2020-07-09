@@ -60,8 +60,8 @@ INCLUDES = -I${INCDIR} -I${INC_UAL}
 #--------------------------------------------------------------------#
 # use MPI compiler for all Fortran kernel sources (default=no)       #
 ifeq (${MPI},yes) 
- FC90 = ${MPI90}
- LD = ${MPI90}
+ FC90 = ${MPIF90}
+ LD = ${MPIF90}
  FPPFLAGS += -DMPI -DMPI2
 endif
 
