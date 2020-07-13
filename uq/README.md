@@ -1,11 +1,13 @@
 ## Installation
 
-1. Install EasyVVUQ-QCGPJ, a lightweight wrapper over [EasyVVUQ](https://easyvvuq.readthedocs.io/en/latest/installation.html) library and [QCG Pilot Job Manager](https://github.com/vecma-project/QCG-PilotJob), by typing:
+1. Install [EasyVVUQ](https://easyvvuq.readthedocs.io/en/latest/installation.html), [QCG Pilot Job Manager](https://github.com/vecma-project/QCG-PilotJob) and the [EasyVVUQ-QCGPJ](https://easyvvuq-qcgpj.readthedocs.io/en/latest/) wrapper by typing:
 ```
-pip3 install git+https://github.com/vecma-project/EasyVVUQ-QCGPJ.git@master --user
+pip3 install easyvvuq
+pip3 install qcg-pilotjob
+pip3 install easyvvq-qcgpj
 ```
 
-2. Install the MFW python package by typing:
+2. Install the current MFW python package by typing:
 ```
 python3 setup.py install --user
 ```
