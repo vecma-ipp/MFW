@@ -16,10 +16,10 @@ IMPORTANT CHECK: in gem0.xml, nrho_transp = 1
 print('TEST GEM0-UQ: START')
 
 # We test 1 flux tube
-flux_indices = [66]
+flux_indices = [69]
 #flux_indices = [15, 31, 44, 55, 66, 76, 85, 94]
 # execustion with QCJ-PJ
-EXEC_PJ = True
+EXEC_PJ = True #False
 
 # Machine name
 SYS = os.environ['SYS']
@@ -28,8 +28,9 @@ SYS = os.environ['SYS']
 tmp_dir = os.environ['SCRATCH']
 
 # CPO files location
-#cpo_dir = os.path.abspath("../workflows/AUG_28906_6")
-cpo_dir = os.path.abspath("../workflows/AUG_28906_6_8ft_restart")
+cpo_dir = os.path.abspath("../workflows/AUG_28906_6_1ft_restart")
+#cpo_dir = os.path.abspath("../workflows/AUG_28906_6_8ft_restart")
+print("cpodir: " + cpo_dir + "\n")
 #cpo_dir = os.path.abspath("../workflows/JET_92436_23066")
 
 # XML and XSD files location
@@ -51,12 +52,12 @@ input_params = {
         "dist": "Normal",
         "err": 0.2,
         "idx": flux_indices,
-    },
+    } #,
 #    "ti.value": {
 #        "dist": "Normal",
 #        "err":  0.2,
 #        "idx": flux_indices,
-#    }
+#    },
 #    "ti.ddrho": {
 #        "dist": "Normal",
 #        "err": 0.2,
@@ -69,12 +70,13 @@ input_filename = "ets_coreprof_in.cpo"
 input_cponame = "coreprof"
 
 # The quantities of intersts and the cpo file to set them
-output_columns = ["te_transp.flux", "ti_transp.flux"]
+output_columns = ["te_transp.flux"] #, "ti_transp.flux"]
 output_filename = "gem0_coretransp_out.cpo"
 output_cponame = "coretransp"
 
 # parameter space for campaign and the distributions list for the sampler
 input_cpo_file = os.path.join(cpo_dir, input_filename)
+print("input file: " + input_cpo_file + "\n")
 params, vary = get_cpo_inputs(cpo_file=input_cpo_file,
                               cpo_name=input_cponame,
                               input_params=input_params)
@@ -151,7 +153,7 @@ if EXEC_PJ:
 
     print(">>> Starting PJ execution\n")
     qcgpjexec = easypj.Executor()
-    qcgpjexec.create_manager(dir=my_campaign.campaign_dir, log_level='info')
+    qcgpjexec.create_manager(dir=my_campaign.campaign_dir, log_level='debug')
 
     qcgpjexec.add_task(Task(
         TaskType.EXECUTION,
