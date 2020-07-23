@@ -2,6 +2,8 @@ __author__ = 'Anna Nikishova & Jalal Lakhlili'
 
 import os
 import timeit
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import numpy as np
 from ascii_cpo import read
@@ -28,10 +30,11 @@ def load_data(corep_file, coret_file, flux_tube_index):
     ti_transp_flux = coret.values[0].ti_transp.flux[0]
 
     return te_value, ti_value, te_ddrho, ti_ddrho, te_transp_flux, ti_transp_flux
-
+    #return te_value, te_ddrho, te_transp_flux
 
 # The results are saved in uq/data/outputs folder
-def plot_res(prediction, original, name, num, out_color):
+def plot_res(prediction, original, name, num, out_color, output_folder):
+    plt.ioff()
     plt.figure(figsize=(5, 11))
     plt.subplot(311)
     plt.title('{} training sample of size: {}'.format(type_train, str(len(train_n))))
@@ -45,7 +48,7 @@ def plot_res(prediction, original, name, num, out_color):
     plt.subplot(312)
     plt.plot(prediction- original, '.', color=out_color)
     plt.grid()
-    # plt.yscale("log")
+    plt.yscale("symlog")
     plt.xlabel('Run number')
     plt.ylabel('Error')
     plt.subplot(313)
@@ -53,9 +56,9 @@ def plot_res(prediction, original, name, num, out_color):
     plt.grid()
     plt.xlabel('Run number')
     plt.ylabel('Relative error (%)')
-    # plt.yscale("log")
+    #plt.yscale("log")
     plt.tight_layout()
-    plt.savefig('data/outputs/GP_prediction_' + num + '_' + type_train + '_' + str(len(train_n)) + '.png',bbox_inches='tight', dpi=100)
+    plt.savefig(output_folder + '/GP_prediction_' + num + '_' + type_train + '_' + str(len(train_n)) + '.png',bbox_inches='tight', dpi=100)
     plt.clf()
 
 
@@ -65,30 +68,39 @@ if __name__ == "__main__":
 
     # TODO to modify
     WORKDIR = os.environ['WORKDIR']
-    data_dir = WORKDIR + "/Fusion_Inputs/UQ_GEM_Data/runs/"
+    #campaign_id = "wvkryt88_sequential"
+    #campaign_id = "jh2q6ts1"
+    campaign_id = "b9e9pzco"
+    #data_dir = WORKDIR + "/Fusion_Inputs/UQ_GEM_Data/runs/"
+    data_dir = WORKDIR + "UQ_GEM0_" + campaign_id + "/runs/"
 
     # Campaign for mutliapp
     flux_tube_index = 69
-    N_runs = 625
-    input_dim = 4
+    N_runs = 16 #625
+    input_dim = 2 #4
     input_samples = np.zeros((N_runs, input_dim))
 
-    output_dim = 2
+    output_dim = 1 #2
     output_samples = np.zeros((N_runs, output_dim))
 
     for run in range(N_runs):
-        corep_file = data_dir + "Run_"+str(run+1)+"/gem_coreprof_in.cpo"
-        coret_file = data_dir + "Run_"+str(run+1)+"/gem_coretransp_out.cpo"
+        corep_file = data_dir + "Run_"+str(run+1)+"/gem0_coreprof_in.cpo" #gem_coreprof_in.cpo
+        coret_file = data_dir + "Run_"+str(run+1)+"/gem0_coretransp_out.cpo" #gem_coreprof_in.cpo
 
-        te_value, ti_value, te_ddrho, ti_ddrho, te_transp_flux, ti_transp_flux = load_data(corep_file, coret_file, flux_tube_index)
+        te_value, _, te_ddrho, _, te_transp_flux, _ = load_data(corep_file, coret_file, flux_tube_index)
+        #te_value, ti_value, te_ddrho, ti_ddrho, te_transp_flux, ti_transp_flux = load_data(corep_file, coret_file, flux_tube_index)
 
-        input_samples[run] = te_value, ti_value, te_ddrho, ti_ddrho
-        output_samples[run] = te_transp_flux, ti_transp_flux
+        input_samples[run] = te_value, te_ddrho
+        #input_samples[run] = te_value, ti_value, te_ddrho, ti_ddrho
+        
+        output_samples[run] = te_transp_flux
+        #output_samples[run] = te_transp_flux, ti_transp_flux
 
     print(input_samples)
+    print(output_samples)	
 
-    N_tr = 300
-    type_train = 'random'#'regular'#
+    N_tr = 7 #300
+    type_train = 'random' #'regular'#
     if type_train == 'random':
         train_n = np.random.randint(0, N_runs, N_tr)
     else:
@@ -98,13 +110,22 @@ if __name__ == "__main__":
     X = input_samples[train_n]
     Y = output_samples[train_n]
 
+    #print(train_n)
+
+    test_n = np.array([el for el in list(range(0, N_runs)) if el not in train_n])
+    X_test = input_samples[test_n]
+    Y_test = output_samples[test_n]
+
+    #print(test_n)
+	
     start = timeit.timeit()
-    n_features = 4
-    kernel = Matern(length_scale=[100, 100, 100, 100], nu=0.5) + RBF(length_scale=[100, 100, 100, 100])
+    n_features = 2 #4
+    kernel = Matern(length_scale=[100,100], nu=0.5) + RBF(length_scale=[100,100])
+    #kernel = Matern(length_scale=[100, 100, 100, 100], nu=0.5) + RBF(length_scale=[100, 100, 100, 100])
 
     gpr = GaussianProcessRegressor(kernel=kernel, random_state=0).fit(X, Y)
     print(gpr.kernel_)
-    prediction_y = gpr.predict(input_samples)
+    prediction_y = gpr.predict(X_test)
 
     end = timeit.timeit()
     print("GP took ", end - start)
@@ -112,5 +133,5 @@ if __name__ == "__main__":
     color_1 = 'blue'
     color_2 = 'orange'
 
-    plot_res(prediction_y[:, 0], output_samples[:, 0], r'$T_e$', '1', color_1)
-    plot_res(prediction_y[:, 1], output_samples[:, 1], r'$T_i$', '2', color_2)
+    plot_res(prediction_y[:, 0], Y_test[:, 0], r'$T_e$', '1', color_1, WORKDIR+'outputs/gem0/'+campaign_id)
+    #plot_res(prediction_y[:, 1], Y_test[:, 1], r'$T_i$', '2', color_2, WORKDIR+'/outputs') #/gem0')
