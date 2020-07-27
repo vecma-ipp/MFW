@@ -14,7 +14,7 @@ json_input = sys.argv[1]
 with open(json_input, "r") as f:
     inputs = json.load(f)
 
-Te, ne, rho, rho_norm = fusion.solve_Te(
+Te, ne, rho, rho_norm, Qe = fusion.solve_Te(
                                         Qe_tot =   float(inputs['Qe_tot']),
                                         H0 =       float(inputs['H0']),
                                         Hw =       float(inputs['Hw']),
