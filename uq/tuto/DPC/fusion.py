@@ -126,6 +126,6 @@ if __name__ == '__main__':
 to test:
 
   import fusion
-  Te, ne, rho, rho_norm = fusion.solve_Te()
+  Te, ne, rho, rho_norm, Qe = fusion.solve_Te()
 
 """
