@@ -1,6 +1,8 @@
 import numpy as np
-import matplotlib.pylab as plt 
+import matplotlib.pylab as plt
+from numba import jit
 
+@jit(nopython=True) # Set "nopython" mode for best performance, equivalent to @njit
 def randomize(N1, N2, N3, l1, l2, l3, s2, s3, d2, d3, x1=None, x2=None, alpha=None):
 
     """
@@ -37,7 +39,7 @@ x2 	is the updated running mean of the value squared
     
 """
 
-    x = np.zeros([N1+N2+1])
+    x = np.zeros((N1+N2+1))
     x[0] = l1
     x[1] = l2+s2*(np.random.random()*2-1)
     for i in range(2,N1+1):
