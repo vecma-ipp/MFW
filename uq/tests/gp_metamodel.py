@@ -70,13 +70,14 @@ if __name__ == "__main__":
     WORKDIR = os.environ['WORKDIR']
     #campaign_id = "wvkryt88_sequential"
     #campaign_id = "jh2q6ts1"
-    campaign_id = "b9e9pzco"
+    #campaign_id = "b9e9pzco"
+    campaign_id = "LHC_hafbz8o3"
     #data_dir = WORKDIR + "/Fusion_Inputs/UQ_GEM_Data/runs/"
     data_dir = WORKDIR + "UQ_GEM0_" + campaign_id + "/runs/"
 
     # Campaign for mutliapp
     flux_tube_index = 69
-    N_runs = 16 #625
+    N_runs = 1000 # 16 #625
     input_dim = 2 #4
     input_samples = np.zeros((N_runs, input_dim))
 
@@ -96,10 +97,10 @@ if __name__ == "__main__":
         output_samples[run] = te_transp_flux
         #output_samples[run] = te_transp_flux, ti_transp_flux
 
-    print(input_samples)
-    print(output_samples)	
+    #print(input_samples)
+    #print(output_samples)	
 
-    N_tr = 7 #300
+    N_tr = 700 # 7 #300
     type_train = 'random' #'regular'#
     if type_train == 'random':
         train_n = np.random.randint(0, N_runs, N_tr)
