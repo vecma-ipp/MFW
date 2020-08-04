@@ -37,7 +37,7 @@ def mtanh(x, b_slope):
     :rtype: numpy float scalar or array (sime dimensions as x)
 
     See https://pdfs.semanticscholar.org/5dc9/029eb9614a0128ae7c3f16ae6c4e54be4ac5.pdf
-    for the mtanh definistion
+    for the mtanh definition
     """
     return ((1 + b_slope * x)*np.exp(x)-np.exp(-x))/(np.exp(x)+np.exp(-x))
 
@@ -83,6 +83,8 @@ def solve_Te(Qe_tot=2e6, H0=0, Hw=0.1, Te_bc=100, chi=1, a0=1, R0=3, E0=1.5, b_p
     :type: numpy float array
     :return: rho_norm values corresponding to the Te and ne values [-]
     :type: numpy float array
+    :return: array of Qe [-]
+    :type: numpy float array
 
     David.Coster@ipp.mpg.de
     """
@@ -102,10 +104,10 @@ def solve_Te(Qe_tot=2e6, H0=0, Hw=0.1, Te_bc=100, chi=1, a0=1, R0=3, E0=1.5, b_p
     Te = CellVariable(name="Te", mesh=mesh, value=1e3)
     ne = CellVariable(name="ne", mesh=mesh, value=F_ped(mesh.cellCenters.value[0]/a, b_pos, b_height, b_sol, b_width, b_slope))
     Qe = CellVariable(name="Qe", mesh=mesh, value=np.exp(-((mesh.cellCenters.value/a-H0)/(Hw))**2)[0])
-    Qe = Qe * Qe_tot/V / Qe.cellVolumeAverage.value
+    Qe = Qe * Qe_tot/((mesh.cellVolumes*Qe.value).sum() * V)
 
     print('Volume = %s m^3' % (mesh.cellVolumes.sum() * V))
-    print('Heating power = %0.3e W' % (Qe.cellVolumeAverage.value * V))
+    print('Heating power = %0.3e W' % ((mesh.cellVolumes*Qe).sum() * V))
 
     Te.constrain(Te_bc, mesh.facesRight)
     eqI = TransientTerm(coeff=scipy.constants.e*ne*1.5) == DiffusionTerm(coeff=scipy.constants.e*ne*chi) + Qe
@@ -115,15 +117,15 @@ def solve_Te(Qe_tot=2e6, H0=0, Hw=0.1, Te_bc=100, chi=1, a0=1, R0=3, E0=1.5, b_p
     eqI.solve(var=Te, dt=dt)
     if plots: viewer.plot()
 
-    return Te.value, ne.value, mesh.cellCenters.value[0], mesh.cellCenters.value[0]/a
+    return Te.value, ne.value, mesh.cellCenters.value[0], mesh.cellCenters.value[0]/a, Qe.value
 
 if __name__ == '__main__':
-    Te, ne, rho, rho_norm = solve_Te()
+    Te, ne, rho, rho_norm, Qe = solve_Te()
 
 """
 to test:
 
   import fusion
-  Te, ne, rho, rho_norm = fusion.solve_Te()
+  Te, ne, rho, rho_norm, Qe = fusion.solve_Te()
 
 """
