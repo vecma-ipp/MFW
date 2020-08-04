@@ -52,17 +52,17 @@ input_params = {
         "dist": "Normal",
         "err": 0.2,
         "idx": flux_indices,
-    } #,
-#    "ti.value": {
-#        "dist": "Normal",
-#        "err":  0.2,
-#        "idx": flux_indices,
-#    },
-#    "ti.ddrho": {
-#        "dist": "Normal",
-#        "err": 0.2,
-#        "ids": flux_indices,
-#    }
+    },
+    "ti.value": {
+        "dist": "Normal",
+        "err":  0.2,
+        "idx": flux_indices,
+    },
+    "ti.ddrho": {
+        "dist": "Normal",
+        "err": 0.2,
+        "ids": flux_indices,
+    }
 }
 
 # CPO file containg initial values of uncertain params
