@@ -85,6 +85,9 @@ def solve_Te(Qe_tot=2e6, H0=0, Hw=0.1, Te_bc=100, chi=1, a0=1, R0=3, E0=1.5, b_p
     :type: numpy float array
     :return: array of Qe [-]
     :type: numpy float array
+    :return: array of volume element [m^3]
+    :type: numpy float array
+
 
     David.Coster@ipp.mpg.de
     """
@@ -117,10 +120,10 @@ def solve_Te(Qe_tot=2e6, H0=0, Hw=0.1, Te_bc=100, chi=1, a0=1, R0=3, E0=1.5, b_p
     eqI.solve(var=Te, dt=dt)
     if plots: viewer.plot()
 
-    return Te.value, ne.value, mesh.cellCenters.value[0], mesh.cellCenters.value[0]/a, Qe.value
+    return Te.value, ne.value, mesh.cellCenters.value[0], mesh.cellCenters.value[0]/a, Qe.value, mesh.cellVolumes*V
 
 if __name__ == '__main__':
-    Te, ne, rho, rho_norm, Qe = solve_Te()
+    Te, ne, rho, rho_norm, Qe, V = solve_Te()
 
 """
 to test:
