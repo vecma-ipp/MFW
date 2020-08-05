@@ -1,5 +1,6 @@
 import os
 import logging
+import numpy as np
 from scipy.interpolate import splev
 from easyvvuq import OutputType
 from easyvvuq.encoders.base import BaseEncoder
@@ -46,9 +47,10 @@ class CPOEncoder(BaseEncoder, encoder_name="cpo_encoder"):
                     value = [value]
             if "knot" in attr.keys():
                 knot = attr["knot"]
-                rho = attr["rho"]
+                u = attr["u"]
+                value = [value[0]] + value
                 tck = [knot, value, 3]
-                value = splev(rho, tck)
+                value = splev(u, tck)
             self.cpo.set_value(name, value, indices)
             # particular case: te.value and ti.value
             # update neighbors +/-2 rho_tor grid points according to
@@ -94,7 +96,7 @@ class CPOEncoder(BaseEncoder, encoder_name="cpo_encoder"):
         os.system("ln -s " + self.common_dir + "*.xml " + target_dir + " 2>/dev/null")
         os.system("ln -s " + self.common_dir + "*.xsd " + target_dir + " 2>/dev/null")
         os.system("ln -s " + self.common_dir + "*.cpo " + target_dir + " 2>/dev/null")
-        os.system("ln -s " + self.common_dir + "*.dat " + target_dir + " 2>/dev/null")
+        #os.system("ln -s " + self.common_dir + "*.dat " + target_dir + " 2>/dev/null")
 
         # Write target input CPO file
         target_file_path = os.path.join(target_dir, self.target_filename)
