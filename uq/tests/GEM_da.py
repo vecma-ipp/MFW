@@ -126,11 +126,30 @@ def AUG_GM_date_explore(filename='AUG_gem_inoutput.txt'):
     plt.show(block=True)
 
     y1 = AUG_gem['dTe-ft1']
-    print('[' + str(y1.min()) + ';' + str(y1.max()) + ']')
+    print('[' + str(y1.min()) + ';' + str(y1.max()))
     y1 = pd.to_numeric(y1, downcast='float')
     y1.fillna(value=pd.np.nan, inplace=True)
 
     #GP_analysis_toy(X=AUG_gem['time'], y=y1)
+
+
+def SA_exploite(analysis, qoi):
+    #stat = {}
+    sob1 = {}
+    sob2 = {}
+    #stat[qoi] = analysis['statistical_moments'][qoi]
+    sob1[qoi] = analysis['sobols_first'][qoi]
+    sob2[qoi] = analysis['sobols_second'][qoi]
+
+    sens_mat = np.zeros((qoi.len(), qoi.len()))
+    sens_mat.fill_diagonal(sob1)
+    for sob in sob2:
+        sens_mat[sob.keys()[0]][sob.keys()[1]] = sob.values()
+        sens_mat[sob.keys()[1]][sob.keys()[0]] = sob.values()  
+    
+    sens_eigva, sens_eigve =  np.linalg.eigh(sens_mat)
+    for ea, ee in zip(sens_eigva, sens_eigve): 
+        print('E.Val. {0} for E.Vec. {1}'.format(ea,ee))
 
 
 ### GPR model and analysis

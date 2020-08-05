@@ -11,7 +11,7 @@ from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import DotProduct, WhiteKernel, Matern, RBF
 from sklearn.gaussian_process.kernels \
     import RBF, WhiteKernel, ConstantKernel as C
-
+from sklearn.metrics import mean_squared_error as mse
 
 # Load data from CPOs, example:
 # corep_file: gem_coreprof_in.cpo
@@ -70,17 +70,18 @@ if __name__ == "__main__":
     WORKDIR = os.environ['WORKDIR']
     #campaign_id = "wvkryt88_sequential"
     #campaign_id = "jh2q6ts1"
-    campaign_id = "b9e9pzco"
+    #campaign_id = "b9e9pzco"
+    campaign_id = "61_e9zvw66q"
     #data_dir = WORKDIR + "/Fusion_Inputs/UQ_GEM_Data/runs/"
-    data_dir = WORKDIR + "UQ_GEM0_" + campaign_id + "/runs/"
+    data_dir = WORKDIR + "/UQ_GEM0_" + campaign_id + "/runs/"
 
     # Campaign for mutliapp
-    flux_tube_index = 69
+    flux_tube_index = 61 # 69
     N_runs = 16 #625
-    input_dim = 2 #4
+    input_dim = 2
     input_samples = np.zeros((N_runs, input_dim))
 
-    output_dim = 1 #2
+    output_dim = 1
     output_samples = np.zeros((N_runs, output_dim))
 
     for run in range(N_runs):
@@ -133,5 +134,8 @@ if __name__ == "__main__":
     color_1 = 'blue'
     color_2 = 'orange'
 
-    plot_res(prediction_y[:, 0], Y_test[:, 0], r'$T_e$', '1', color_1, WORKDIR+'outputs/gem0/'+campaign_id)
+    plot_res(prediction_y[:, 0], Y_test[:, 0], r'$T_e$', '1', color_1, WORKDIR+'/outputs/gem0/'+campaign_id)
     #plot_res(prediction_y[:, 1], Y_test[:, 1], r'$T_i$', '2', color_2, WORKDIR+'/outputs') #/gem0')
+    
+    print ('MSE of the GPR predistion is: {0}'.format(mse(Y_test, prediction_y)))
+    
