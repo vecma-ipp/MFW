@@ -1,14 +1,14 @@
 #!/bin/bash -l
 
 ## job name
-#SBATCH --job-name=UQ_GEM0_PCE_8ft
+#SBATCH --job-name=UQ_GEM0_PCE_8FT
 
 ## stdout and stderr files
-#SBATCH --output=test-out.%j.8ft
-#SBATCH --error=test-err.%j.8ft
+#SBATCH --output=test-out.%j.qmc
+#SBATCH --error=test-err.%j.qmc
 
 ## wall time in format MINUTES:SECONDS
-#SBATCH --time=1:00:00
+#SBATCH --time=2:00:00
 
 ## number of nodes and tasks per node
 #SBATCH --nodes=1
@@ -46,5 +46,5 @@ echo $PATH
 echo
 scontrol show --detail job $SLURM_JOBID
 echo
-python3 tests/gem0_sample.py > test-log.${SLURM_JOBID}.8ft
+python3 tests/gem0_sample.py > test-log.${SLURM_JOBID}.qmc
 

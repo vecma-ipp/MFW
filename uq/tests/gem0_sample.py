@@ -18,7 +18,7 @@ IMPORTANT CHECK: in gem0.xml, nrho_transp = 1
 print('TEST GEM0-UQ: START')
 
 # We test 1 flux tube
-#flux_indices = [49]  # [69] #!!!
+#flux_indices = [61]  # [69] #!!!
 flux_indices = [15, 31, 44, 55, 66, 76, 85, 94]
 # execustion with QCJ-PJ
 EXEC_PJ = True
@@ -49,7 +49,7 @@ input_params = {
         "dist": "Normal",
         "err":  0.2, # 1.0
         "idx": flux_indices,
-    },
+    } ,
     "te.ddrho": {
         "dist": "Normal",
         "err": 0.2, # 1.0
@@ -89,7 +89,7 @@ params, vary = get_cpo_inputs(cpo_file=input_cpo_file,
 
 # Initialize Campaign object
 print('>>> Initialize Campaign object')
-campaign_name = "UQ_GEM0_8FT_"
+campaign_name = "UQ_GEM0_8ft_"
 my_campaign = uq.Campaign(name=campaign_name, work_dir=tmp_dir)
 
 # Create new directory for inputs
@@ -104,8 +104,8 @@ os.system("cp " + cpo_dir + "/ets_coreprof_in.cpo "
                 + common_dir + "/gem0_coreprof_in.cpo")
 
 # Copy XML and XSD files
-os.system("cp " + xml_dir + "/gem0.xml " + common_dir)
-os.system("cp " + xml_dir + "/gem0.xsd " + common_dir)
+os.system("cp " + xml_dir + "/gem0_8ft.xml " + common_dir + "/gem0.xml")
+os.system("cp " + xml_dir + "/gem0_8ft.xsd " + common_dir + "/gem0.xsd")
 
 # Copy  exec file
 os.system("cp " + obj_dir +"/"+ exec_code + " " + common_dir)
@@ -140,9 +140,9 @@ my_campaign.add_app(name=campaign_name,
 # Create the sampler
 print('>>> Create the sampler')
 print('> Sampler version used from'+str(uq.__file__))
-my_sampler = uq.sampling.QMCSampler(vary=vary, n_mc_samples=1000) #, count=0, n_samples=10**3)
+my_sampler = uq.sampling.QMCSampler(vary=vary, n_mc_samples=10000)   #, count=0, n_samples=10**3)
 #my_sampler = uq.sampling.LHCSampler(vary=vary, count=0, max_num=10**3)
-#my_sampler = uq.sampling.PCESampler(vary=vary, polynomial_order=3)
+#my_sampler = uq.sampling.PCESampler(vary=vary, polynomial_order=2)
 my_campaign.set_sampler(my_sampler)
 
 # Will draw all (of the finite set of samples)
