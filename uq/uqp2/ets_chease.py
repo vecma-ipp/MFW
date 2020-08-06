@@ -91,8 +91,7 @@ def setup_ets(ets_dir, ets_code, ets_input, ets_output):
 
     collater = uq.collate.AggregateSamples(average=False)
 
-    sampler = uq.sampling.PCESampler(vary=vary, polynomial_order=3,
-                                     regression=True)
+    sampler = uq.sampling.PCESampler(vary=vary, polynomial_order=3)
     action = uq.actions.ExecuteLocal(exec_code)
     stats = uq.analysis.PCEAnalysis(sampler=sampler, qoi_cols=ets_output)
 
@@ -135,23 +134,32 @@ def setup_eq(eq_dir, eq_code, eq_input, eq_output):
     collater = uq.collate.AggregateSamples(average=False)
 
     sampler = uq.sampling.PCESampler(vary=vary, polynomial_order=3,
-                                     regression=True)
+                                     rosenblatt=True )
     #action = uq.actions.ExecuteLocal(exec_code)
     stats = uq.analysis.PCEAnalysis(sampler=sampler, qoi_cols=eq_output)
 
     return params, encoder, decoder, collater, sampler, exec_code, stats
 
+# execution using QCG-PJ
 def exec_pj(campaign, exec_code):
     qcgpjexec = easypj.Executor()
     qcgpjexec.create_manager(dir=campaign.campaign_dir, log_level='info')
+
+    qcgpjexec.add_task(Task(
+        TaskType.ENCODING,
+        TaskRequirements(cores=Resources(exact=1))
+    ))
+
     qcgpjexec.add_task(Task(
         TaskType.EXECUTION,
         TaskRequirements(cores=Resources(exact=1)),
         application=exec_code
     ))
+
     qcgpjexec.run(
         campaign=campaign,
-        submit_order=SubmitOrder.EXEC_ONLY
+        #submit_order=SubmitOrder.EXEC_ONLY
+        submit_order=SubmitOrder.RUN_ORIENTED
     )
     qcgpjexec.terminate_manager()
 
@@ -159,7 +167,12 @@ def exec_pj(campaign, exec_code):
 # Main
 if __name__ == "__main__":
     # Campaign for mutliapp
+    time_start = time.time()
     campaign = uq.Campaign(name='uqp2_', work_dir=tmp_dir)
+
+    time_end = time.time()
+    print('Time for phase 1', time_end-time_start)
+    time_start = time.time()
 
     # Create common directory for ETS inputs
     ets_dir = campaign.campaign_dir +"/ets/"
@@ -195,6 +208,10 @@ if __name__ == "__main__":
     # Get ETS setup
     (params1, encoder1, decoder1, collater1, sampler1, action1, stats1) = setup_ets(ets_dir, ets_code, ets_input, ets_output)
 
+    time_end = time.time()
+    print('Time for phase 2', time_end-time_start)
+    time_start = time.time()
+
     # Add the ETS app to the campaign
     campaign.add_app(name="ets",
                      params=params1,
@@ -204,11 +221,35 @@ if __name__ == "__main__":
 
     campaign.set_app("ets")
     campaign.set_sampler(sampler1)
+    time_end = time.time()
+    print('Time for phase 3', time_end-time_start)
+    time_start = time.time()
+
     campaign.draw_samples()
+    time_end = time.time()
+    print('Time for phase 4', time_end-time_start)
+    time_start = time.time()
+
     campaign.populate_runs_dir()
+    time_end = time.time()
+    print('Time for phase 5', time_end-time_start)
+    time_start = time.time()
+
     campaign.apply_for_each_run_dir(action1)
+    time_end = time.time()
+    print('Time for phase 6', time_end-time_start)
+    time_start = time.time()
+
     campaign.collate()
+    time_end = time.time()
+    print('Time for phase 7', time_end-time_start)
+    time_start = time.time()
+
     campaign.apply_analysis(stats1)
+    time_end = time.time()
+    print('Time for phase 8', time_end-time_start)
+    time_start = time.time()
+
     results1 = campaign.get_last_analysis()
 
     # Get Descriptive Statistics
@@ -218,33 +259,51 @@ if __name__ == "__main__":
     perc_1 = results1['percentiles']["profiles_1d.pressure"]
     dist_1 = results1['output_distributions']["profiles_1d.pressure"]
 
+    time_end = time.time()
+    print('Time for phase 9', time_end-time_start)
+    time_start = time.time()
+
     equil_file = os.path.join(cpo_dir, "ets_equilibrium_in.cpo")
     equil = read(equil_file, "equilibrium")
     rho = equil.profiles_1d.rho_tor
 
+    time_end = time.time()
+    print('Time for phase 10', time_end-time_start)
+    time_start = time.time()
+
     # Approxiamte mean by spline of dgree 3 using 5 elements
-    ne = 4
-    #u = rho/rho.max()
+    ne = 6
     ty, cy = spl_fit(mean_1, ne)
     tx, cx = spl_fit(rho, ne)
 
-    # Distribtion for CP
-    dist_cp = []
-    te = []
-    for i in range(ne):
-        # index of the closet rho to CP abscissa cx
-        i = np.abs(rho - cx[i]).argmin()
-        #dist_cp.append(dist[i])
-        if i==0:
-            dist_cp.append(cp.Normal(mean_1[i], 0.2*mean_1[i]))
-        else:
-            dist_cp.append(cp.Uniform(0.9*mean_1[i], 1.1*mean_1[i]))
-        te.append(mean_1[i])
+    time_end = time.time()
+    print('Time for phase 11', time_end-time_start)
+    time_start = time.time()
 
-    eq_input = [{"profiles_1d.pressure": {"type": "list", "default": te}},
-                    {"profiles_1d.pressure": {"knot": ty.tolist(), "rho": rho.tolist()}},
-                    {"profiles_1d.pressure": cp.J(*dist_cp)}
-                   ]
+    # Impose a derivative = 0 in rho = 0
+    cy[1] = cy[0]
+
+    # Distribtion for CP
+    dist_cp = [dist_1[0]]
+    pe = [mean_1[0]]
+    u = np.linspace(0., 1., 101)
+    for i in range(2, ne):
+        # index of the closet rho to CP abscissa cx
+        j = np.abs(rho - cx[i]).argmin()
+        print('>>> j= ', j)
+        dist_cp.append(dist_1[j])
+        pe.append(mean_1[j])
+
+    time_end = time.time()
+    print('Time for phase 12', time_end-time_start)
+    time_start = time.time()
+
+    eq_input = [{"profiles_1d.pressure": {"type": "list", "default": pe}},
+                {"profiles_1d.pressure":
+                        {"knot": ty.tolist(),
+                         "u": u.tolist()}},
+                {"profiles_1d.pressure": cp.J(*dist_cp)}
+               ]
     eq_output = ["profiles_1d.gm3"]
 
     eq_code = "chease_test"
@@ -252,8 +311,16 @@ if __name__ == "__main__":
     eq_dir = campaign.campaign_dir +"/eq/"
     os.mkdir(eq_dir)
 
+    time_end = time.time()
+    print('Time for phase 13', time_end-time_start)
+    time_start = time.time()
+
     # Get EQUIL setup
     (params2, encoder2, decoder2, collater2, sampler2, exec_code, stats2) = setup_eq(eq_dir, eq_code, eq_input, eq_output)
+
+    time_end = time.time()
+    print('Time for phase 14', time_end-time_start)
+    time_start = time.time()
 
     campaign.add_app(name="eq",
                      params=params2,
@@ -263,13 +330,37 @@ if __name__ == "__main__":
 
     campaign.set_app("eq")
     campaign.set_sampler(sampler2)
+    time_end = time.time()
+    print('Time for phase 15', time_end-time_start)
+    time_start = time.time()
+
     campaign.draw_samples()
-    campaign.populate_runs_dir()
+    time_end = time.time()
+    print('Time for phase 16', time_end-time_start)
+    time_start = time.time()
+
+    #campaign.populate_runs_dir()
     print("Ns = ", sampler2.n_samples)
+    #time_end = time.time()
+    #print('Time for phase 16', time_end-time_start)
+    #time_start = time.time()
+
     #campaign.apply_for_each_run_dir(action2)
     exec_pj(campaign, exec_code)
+    time_end = time.time()
+    print('Time for phase 17', time_end-time_start)
+    time_start = time.time()
+
     campaign.collate()
+    time_end = time.time()
+    print('Time for phase 18', time_end-time_start)
+    time_start = time.time()
+
     campaign.apply_analysis(stats2)
+    time_end = time.time()
+    print('Time for phase 19', time_end-time_start)
+    time_start = time.time()
+
     results2 = campaign.get_last_analysis()
 
     # Get Descriptive Statistics
@@ -279,26 +370,26 @@ if __name__ == "__main__":
     dist_2 = results2['output_distributions']["profiles_1d.gm3"]
 
     # Plots
-#    plots.plot_stats_all(rho, stat_1, perc_1, dist_1,
-#                 xlabel=r'$\rho_{tor} [m]$', ylabel="Pressure",
-#                 ftitle='Pressure profile',
-#                 fname='data/outputs/STAT_1')
-#
-#    plots.plot_stats_all(rho, stat_2, perc_2, dist_2,
-#                 xlabel=r'$\rho_{tor} [m]$', ylabel="Pressure",
-#                 ftitle='gm3 profile',
-#                 fname='data/outputs/STAT_2')
-#
-#    plots.plot_spl(rho, mean_1, cx, cy,
-#                 xlabel=r'$\rho_{tor} [m]$', ylabel="Pressure",
-#                 ftitle='BSpline interpolation',
-#                 fname='data/outputs/SPL')
-#
-#    plots.plot_sobols_all(rho, sob1_1, list(params1.keys()),
-#                  ftitle='1st Sobol indices: Pressure',
-#                  fname='data/outputs/SA_1')
-#
-#    plots.plot_sobols_all(rho, sob1_2, ["profiles_1d.pressure"],
-#                  ftitle='1st Sobol indices: gm3',
-#                  fname='data/outputs/SA_2')
+    plots.plot_stats_all(rho, stat_1, perc_1, dist_1,
+                 xlabel=r'$\rho_{tor} [m]$', ylabel="Pressure",
+                 ftitle='Pressure profile',
+                 fname='data/outputs/STAT_1')
+
+    plots.plot_stats_all(rho, stat_2, perc_2, dist_2,
+                 xlabel=r'$\rho_{tor} [m]$', ylabel="Pressure",
+                 ftitle='gm3 profile',
+                 fname='data/outputs/STAT_2')
+
+    plots.plot_spl(rho, mean_1, cx, cy,
+                 xlabel=r'$\rho_{tor} [m]$', ylabel="Pressure",
+                 ftitle='BSpline interpolation',
+                 fname='data/outputs/SPL')
+
+    plots.plot_sobols_all(rho, sob1_1, list(params1.keys()),
+                  ftitle='1st Sobol indices: Pressure',
+                  fname='data/outputs/SA_1')
+
+    plots.plot_sobols_all(rho, sob1_2, ["profiles_1d.pressure"],
+                  ftitle='1st Sobol indices: gm3',
+                  fname='data/outputs/SA_2')
 

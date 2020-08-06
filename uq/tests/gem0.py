@@ -19,7 +19,7 @@ print('TEST GEM0-UQ: START')
 flux_indices = [66]
 #flux_indices = [15, 31, 44, 55, 66, 76, 85, 94]
 # execustion with QCJ-PJ
-EXEC_PJ = True
+EXEC_PJ = False
 
 # Machine name
 SYS = os.environ['SYS']
@@ -131,8 +131,8 @@ my_campaign.add_app(name=campaign_name,
 
 # Create the sampler
 print('>>> Create the sampler')
-my_sampler = uq.sampling.PCESampler(vary=vary,
-                                    polynomial_order=3)
+#my_sampler = uq.sampling.PCESampler(vary=vary, polynomial_order=3)
+my_sampler = uq.sampling.QMCSampler(vary=vary, n_mc_samples=10)
 my_campaign.set_sampler(my_sampler)
 
 # Will draw all (of the finite set of samples)
@@ -174,7 +174,8 @@ my_campaign.collate()
 
 # Post-processing analysis
 print('>>> Post-processing analysis')
-analysis = uq.analysis.PCEAnalysis(sampler=my_sampler, qoi_cols=output_columns)
+#analysis = uq.analysis.PCEAnalysis(sampler=my_sampler, qoi_cols=output_columns)
+analysis = uq.analysis.QMCAnalysis(sampler=my_sampler, qoi_cols=output_columns)
 my_campaign.apply_analysis(analysis)
 
 print('>>> Get results')
