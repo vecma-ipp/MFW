@@ -173,7 +173,8 @@ clean-bohmgb:
 
 
 # gem0 #########################################################################
-gem0: ual libbds get-gem0
+# patch to force gem0 to read ra0 param from the xml file
+gem0: ual libbds get-gem0 patch-gem0
 	@echo -e "\033[36m\033[1m ++++ Build GEM0 ++++ \033[0m"; \
 	($(MAKE) --no-print-directory -C externals -f Makefile.gem0 \
 	&& echo -e "\033[32m\033[1m -- OK -- \033[0m") \
@@ -187,6 +188,22 @@ get-gem0:
 		echo "Updating gem0..."; \
 		svn up externals/gem0 -r 119; \
 	fi
+
+patch-gem0: 
+	@grep -q ra0 externals/gem0/main/gem.F90 \
+	&& echo -e "\033[32m\033[1m -- ALREADY PATCHED -- \033[0m" \
+	|| (echo -e "\033[36m\033[1m ++++ Patch GEM0 sources ++++ \033[0m"; \
+	(patch -p0 -i externals/gem0-ra0patch.diff \
+	&& echo -e "\033[32m\033[1m -- OK -- \033[0m") \
+	|| echo -e "\033[31m\033[1m -- FAIL -- \033[0m")
+
+revert-gem0:
+	@echo -e "\033[36m\033[1m ++++ Revert GEM0 sources ++++ \033[0m"; \
+	(svn revert externals/gem0/main/* \
+        && svn revert externals/gem0/inputs/* \
+        && svn revert externals/gem0/include/* \
+	&& echo -e "\033[32m\033[1m -- OK -- \033[0m") \
+	|| echo -e "\033[31m\033[1m -- FAIL -- \033[0m"
 
 clean-gem0:
 	@echo -e "\033[36m\033[1m ++++ Clean GEM0 ++++ \033[0m"; \

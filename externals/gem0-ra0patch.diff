@@ -1,0 +1,59 @@
+
+--- externals/gem0/main/assign_turb_parameters.F90	2020-08-07 16:08:51.974141000 +0200
++++ externals/gem0/main/assign_turb_parameters.F90	2020-08-07 15:32:52.825692000 +0200
+@@ -96,6 +96,9 @@
+       case ("nrho_transp")
+         if (allocated(temp_pointer%cvalue)) &
+          call char2num(temp_pointer%cvalue, nrho_transp)
++      case ("ra0")
++        if (allocated(temp_pointer%cvalue)) &
++          call char2num(temp_pointer%cvalue, ra0)
+       case ("nion")
+         if (allocated(temp_pointer%cvalue)) &
+          call char2num(temp_pointer%cvalue, nion)
+ 
+--- externals/gem0/inputs/gem.xsd	2020-08-07 17:30:59.725956000 +0200
++++ externals/gem0/inputs/gem.xsd	2020-08-07 17:41:16.831939000 +0200
+@@ -58,7 +58,6 @@
+     <xs:complexType>
+       <xs:all>
+         <xs:element ref="nrho_transp" minOccurs="0" maxOccurs="1"/>
+-        <xs:element ref="ra0" minOccurs="0" maxOccurs="1" />
+         <xs:element ref="nion" minOccurs="0" maxOccurs="1"/>
+       </xs:all>
+     </xs:complexType>
+@@ -66,7 +65,6 @@
+ 
+ <xs:element name="nrho_transp" type="xs:integer"/>
+ <xs:element name="nion" type="xs:integer"/>
+-<xs:element name="ra0" type="xs:float"/>
+ 
+ </xs:schema>
+ 
+
+--- externals/gem0/main/gem.F90	2020-08-07 18:29:17.977178902 +0200
++++ externals/gem0/main/gem.F90	2020-08-07 18:30:52.947572514 +0200
+@@ -117,7 +117,9 @@
+   rho0 = coreprof(1)%rho_tor
+   rho0 = rho0/MAXVAL(rho0)
+ 
+-  IF (nrho_transp == (nrho_prof-1)/2) THEN
++  IF (nrho_transp == 1) THEN
++     rho = ra0
++  ELSE IF (nrho_transp == (nrho_prof-1)/2) THEN
+      rho = rho0(2:nrho_prof-1:2)
+   ELSE
+      rho = (/ ((1.0/REAL(2*nrho_transp))*(2*i-1), i=1,nrho_transp) /)**0.7
+
+--- externals/gem0/include/turb_coeff.h90	2020-08-07 18:29:17.301025000 +0200
++++ externals/gem0/include/turb_coeff.h90	2020-08-07 18:10:56.459445000 +0200
+@@ -17,7 +17,8 @@
+   INTEGER(ITM_I4), SAVE :: nrho_transp = 0, nion = 0
+   REAL(R8), SAVE :: thresh = 6., &
+        beta_reduction = 10., etae_pinch = 3., &
+-       chi_d = 3., chiratio_phi = 0.7
++       chi_d = 3., chiratio_phi = 0.7, &
++       ra0 = 0.7
+ 
+ END MODULE Turb_Coeff
+ 
