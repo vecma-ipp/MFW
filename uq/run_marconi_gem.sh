@@ -8,7 +8,7 @@
 #SBATCH --error=test-err.%j.gem
 
 ## wall time in format MINUTES:SECONDS
-#SBATCH --time=4:00:00
+#SBATCH --time=3:00:00
 
 ## number of nodes and tasks per node
 #SBATCH --nodes=4

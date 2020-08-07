@@ -90,13 +90,13 @@ os.system("cp " + cpo_dir + "/ets_equilibrium_in.cpo "
 os.system("cp " + cpo_dir + "/ets_coreprof_in.cpo "
                 + common_dir + "/gem_coreprof_in.cpo")
 
-os.system("cp " + cpo_dir + "/t00.dat " + common_dir)
+#os.system("cp " + cpo_dir + "/t00.dat " + common_dir)
 
 # Copy XML and XSD files
-#os.system("cp " + xml_dir + "/gem_sample.xml " + common_dir + "/gem.xml")
-#os.system("cp " + xml_dir + "/gem_sample.xsd " + common_dir + "/gem.xsd")
-os.system("cp " + xml_dir + "/gem.xml " + common_dir + "/gem.xml")
-os.system("cp " + xml_dir + "/gem.xsd " + common_dir + "/gem.xsd")
+os.system("cp " + xml_dir + "/gem_sample.xml " + common_dir + "/gem.xml")
+os.system("cp " + xml_dir + "/gem_sample.xsd " + common_dir + "/gem.xsd")
+#os.system("cp " + xml_dir + "/gem.xml " + common_dir + "/gem.xml")
+#os.system("cp " + xml_dir + "/gem.xsd " + common_dir + "/gem.xsd")
 
 # Copy  exec file
 os.system("cp " + obj_dir + "/" + exec_code + " " + common_dir)
@@ -143,7 +143,7 @@ print('>>> Populate runs_dir')
 my_campaign.populate_runs_dir()
 
 # get ncores
-gemxml = XMLElement(xml_dir + "/gem.xml") # "/gem_sample.xml")
+gemxml = XMLElement(xml_dir + "/gem_sample.xml") # "/gem_sample.xml")
 npesx = gemxml.get_value("cpu_parameters.domain_decomposition.npesx")
 npess = gemxml.get_value("cpu_parameters.domain_decomposition.npess")
 nftubes = gemxml.get_value("cpu_parameters.parallel_cases.nftubes")

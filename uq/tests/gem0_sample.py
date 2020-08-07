@@ -87,6 +87,10 @@ params, vary = get_cpo_inputs(cpo_file=input_cpo_file,
                               cpo_name=input_cponame,
                               input_params=input_params)
 
+print('desciption of parameter space')
+print(params)
+print(vary)
+
 # Initialize Campaign object
 print('>>> Initialize Campaign object')
 campaign_name = "UQ_GEM0_8ft_"

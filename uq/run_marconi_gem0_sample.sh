@@ -8,7 +8,7 @@
 #SBATCH --error=test-err.%j.qmc
 
 ## wall time in format MINUTES:SECONDS
-#SBATCH --time=2:00:00
+#SBATCH --time=1:00:00
 
 ## number of nodes and tasks per node
 #SBATCH --nodes=1
