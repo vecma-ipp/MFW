@@ -47,14 +47,24 @@ exec_code = "gem0_test"
 input_params = {
     "te.value": {
         "dist": "Normal",
-        "err":  0.2, # 1.0
-        "idx": flux_indices,
-    } ,
-    "te.ddrho": {
-        "dist": "Normal",
         "err": 0.2, # 1.0
-        "idx": flux_indices,
-    } #,
+        "idx": [44] #flux_indices,
+    } ,
+    "te.value": {
+        "dist": "Normal",
+        "err": 0.2,
+        "idx": [66]
+    } , 
+    "te.value": {
+        "dist": "Normal",
+        "err": 0.2,
+        "idx": [94]
+    } , 
+#    "te.ddrho": {
+#        "dist": "Normal",
+#        "err": 0.2, # 1.0
+#        "idx": flux_indices,
+#    } #,
 #    "ti.value": {
 #        "dist": "Normal",
 #        "err":  1.0,
@@ -144,7 +154,7 @@ my_campaign.add_app(name=campaign_name,
 # Create the sampler
 print('>>> Create the sampler')
 print('> Sampler version used from'+str(uq.__file__))
-my_sampler = uq.sampling.QMCSampler(vary=vary, n_mc_samples=10000)   #, count=0, n_samples=10**3)
+my_sampler = uq.sampling.QMCSampler(vary=vary, n_mc_samples=150)   #, count=0, n_samples=10**3)
 #my_sampler = uq.sampling.LHCSampler(vary=vary, count=0, max_num=10**3)
 #my_sampler = uq.sampling.PCESampler(vary=vary, polynomial_order=2)
 my_campaign.set_sampler(my_sampler)
