@@ -30,12 +30,14 @@ def plot_res(prediction, original, name, num, out_color):
     plt.ylabel('Relative error (%)')
     # plt.yscale("log")
     plt.tight_layout()
-    plt.savefig('data/GP_prediction_' + name + '_' + type_train + '_' + str(len(train_n)) + '(linear).png',bbox_inches='tight', dpi=100)
+    plt.savefig('../data/GP_prediction_' + name + '_' + type_train + '_' + str(len(train_n)) + '(linear).png',bbox_inches='tight', dpi=100)
     plt.show()
     plt.clf()
 
+#path_to_datafile = 'data/AUG_gem_inoutput.txt'
+path_to_datafile = '../data/AUG_gem_inoutput.txt'
 
-data = np.genfromtxt('data/AUG_gem_inoutput.txt', skip_header=1)
+data = np.genfromtxt(path_to_datafile, skip_header=1)
 input_samples_all = data[:, 1:58]
 output_samples_all = data[:, 58:]
 input_dim = 8
