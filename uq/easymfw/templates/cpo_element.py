@@ -70,7 +70,7 @@ class CPOElement():
         # the root
         field_value = self.core
         if self.cpo_name == 'coretransp':
-            field = self.core.values[0]
+            field_value = self.core.values[0]
 
         stack = param.split(".")
         for attr in stack:
