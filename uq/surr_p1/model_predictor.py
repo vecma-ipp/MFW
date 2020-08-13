@@ -34,10 +34,11 @@ def load_data(corep_file, flux_tube_index):
     return te_value, ti_value, te_ddrho, ti_ddrho
 
 
-def save_data(coret_file,value):
+def save_data(coret_file, value):
     cpo = CPOElement(coret_file, "coretransp")
-    cpo.set_value("ti_transp.flux", value)
-
+    cpo.set_value("te_transp.flux", value[0])
+    cpo.set_value("ti_transp.flux", value[1])
+    cpo.save(coret_file)
 
 # Main
 if __name__ == "__main__":
