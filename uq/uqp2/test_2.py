@@ -15,6 +15,7 @@ from easypj import TaskRequirements, Resources
 from easypj import Task, TaskType, SubmitOrder
 
 
+# ETS + CHEASE
 # USE SPLINE INTERPOLATION based on DPC code
 
 # Global params
@@ -221,34 +222,11 @@ if __name__ == "__main__":
 
     campaign.set_app("ets")
     campaign.set_sampler(sampler1)
-    time_end = time.time()
-    print('Time for phase 3', time_end-time_start)
-    time_start = time.time()
-
     campaign.draw_samples()
-    time_end = time.time()
-    print('Time for phase 4', time_end-time_start)
-    time_start = time.time()
-
     campaign.populate_runs_dir()
-    time_end = time.time()
-    print('Time for phase 5', time_end-time_start)
-    time_start = time.time()
-
     campaign.apply_for_each_run_dir(action1)
-    time_end = time.time()
-    print('Time for phase 6', time_end-time_start)
-    time_start = time.time()
-
     campaign.collate()
-    time_end = time.time()
-    print('Time for phase 7', time_end-time_start)
-    time_start = time.time()
-
     campaign.apply_analysis(stats1)
-    time_end = time.time()
-    print('Time for phase 8', time_end-time_start)
-    time_start = time.time()
 
     results1 = campaign.get_last_analysis()
 

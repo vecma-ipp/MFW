@@ -9,6 +9,7 @@ from easymfw.templates.cpo_decoder import CPODecoder
 from easymfw.utils.io_tools import get_cpo_inputs
 
 
+# Update gem0.xml: set nrho_transp = 2
 
 # Global params
 SYS = os.environ['SYS']
@@ -22,18 +23,28 @@ obj_dir = os.path.abspath("../standalone/bin/"+SYS)
 exec_code = "gem0_test"
 
 
-def setup_gem0(common_dir, n_mc_samples, flux_indices):
+def setup_gem0(common_dir, n_mc_samples, ft_index):
     # Define the uncertain parameters
     input_params = {
         "te.value": {
             "dist": "Normal",
             "err":  0.2,
-            "idx": flux_indices,
+            "ft_index": ft_index,
         },
         "te.ddrho": {
             "dist": "Normal",
             "err": 0.2,
-            "idx": flux_indices,
+            "ft_index": ft_index,
+        },
+        "ti.value": {
+            "dist": "Normal",
+            "err":  0.2,
+            "ft_index": ft_index,
+        },
+        "ti.ddrho": {
+            "dist": "Normal",
+            "err": 0.2,
+            "ft_index": ft_index,
         }
     }
 
@@ -91,7 +102,6 @@ def exec_pj(campaign, exec_path):
         TaskRequirements(cores=Resources(exact=1)),
         application=exec_path
     ))
-
     qcgpjexec.run(
         campaign=campaign,
         submit_order=SubmitOrder.EXEC_ONLY
@@ -113,10 +123,11 @@ if __name__ == "__main__":
     exec_path = os.path.join(common_dir, exec_code)
 
     # The number of Monte-Carlo samples
-    n_mc_samples = 100
+    n_mc_samples = 1000
 
     # Get setup for the 1st Flux tube and set it to the campaign
-    (params1, encoder1, decoder1, collater1, sampler1, analysis1) = setup_gem0(common_dir, n_mc_samples, flux_indices=[66])
+    (params1, encoder1, decoder1, collater1, sampler1, analysis1) = \
+                                    setup_gem0(common_dir, n_mc_samples, ft_index=38)
     campaign.add_app(name="gemuq-ft1",
                      params=params1,
                      encoder=encoder1,
@@ -124,7 +135,8 @@ if __name__ == "__main__":
                      collater=collater1)
 
     # Get setup for the 2st Flux tube and add it to the campaign
-    (params2, encoder2, decoder2, collater2, sampler2, analysis2) = setup_gem0(common_dir, n_mc_samples, flux_indices=[15])
+    (params2, encoder2, decoder2, collater2, sampler2, analysis2) = \
+                                    setup_gem0(common_dir, n_mc_samples, ft_index=81)
     campaign.add_app(name="gemuq-ft2",
                      params=params2,
                      encoder=encoder2,

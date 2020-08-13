@@ -29,6 +29,10 @@ class CPOEncoder(BaseEncoder, encoder_name="cpo_encoder"):
         # The cpo object
         input_cpofile = os.path.join(common_dir, template_filename)
         self.cpo = CPOElement(input_cpofile, input_cponame)
+        self.nion = 1
+        if input_cponame in ["coreprof", 'coretransp', 'coresource']:
+            self.nion = len(self.cpo.get_value('compositions.ions'))
+
 
     # Create simulation input files
     def encode(self, params={}, target_dir=''):
@@ -40,57 +44,63 @@ class CPOEncoder(BaseEncoder, encoder_name="cpo_encoder"):
 
         for name, attr in self.input_params.items():
             value = params[name]
-            indices = None
-            if "idx" in attr.keys():
-                indices = attr["idx"]
-                if len(indices)==1:
-                    value = [value]
+
+            # Particular case 1: te.value or ti.value.
+            # Get the Flux tube position and update neighbors (+/-2 grid
+            # points) according to the slops given by te.ddrho and ti.ddrho
+            # TODO add more parameters
+            if "ft_index" in attr.keys():
+                i = attr["ft_index"]
+                values = []
+                indices = []
+                if name in ['te.value', 'te.ddrho', 'ti.value', 'ti.ddrho']:
+                    rho = self.cpo.get_value('rho_tor_norm')
+                    if name == 'te.value':
+                        dt = self.cpo.get_value('te.ddrho')
+                        t_i  = value
+                        dt_i = dt[i]
+                        values.append(value)
+                        indices.append(i)
+                    if name == 'te.ddrho':
+                        t = self.cpo.get_value('te.value')
+                        t_i  = t[i]
+                        dt_i = value
+                    if name == 'ti.value':
+                        dt = self.cpo.get_value('ti.ddrho')
+                        t_i  = value
+                        if self.nion == 1:
+                            dt_i = dt[i]
+                        else:
+                            dt_i = dt[i][0]
+                        values.append(value)
+                        indices.append(i)
+                    if name == 'ti.ddrho':
+                        t = self.cpo.get_value('te.value')
+                        if self.nion == 1:
+                            t_i  = t[i]
+                        else:
+                            t_i  = t[i][0]
+                        dt_i = value
+
+                    # neighbors to update
+                    values.append(dt_i*(rho[i-2] - rho[i]) + t_i)
+                    values.append(dt_i*(rho[i-1] - rho[i]) + t_i)
+                    values.append(dt_i*(rho[i+1] - rho[i]) + t_i)
+                    values.append(dt_i*(rho[i+2] - rho[i]) + t_i)
+                    indices += [i-2, i-1, i+1, i+2]
+                    if name in ['te.value', 'te.ddrho']:
+                        self.cpo.set_value('te.value', values, indices)
+                    if name in ['ti.value', 'ti.ddrho']:
+                        self.cpo.set_value('ti.value', values, indices)
+
+            # Particular case 2: vary FT values
             if "bsp_x" in attr.keys():
                 x = attr["bsp_x"]
                 y = value
                 rho = attr["rho"]
                 S = scipy.interpolate.make_interp_spline(x, y, bc_type=([(1, 0.0)], [(2, 0.0)]))
                 value = S(rho).tolist()
-            self.cpo.set_value(name, value, indices)
-            # particular case: te.value and ti.value
-            # update neighbors +/-2 rho_tor grid points according to
-            # the slops given by te.ddrho and ti.ddrho
-            if name == 'te.value' or name == 'te.ddrho':
-                rho = self.cpo.get_value('rho_tor_norm')
-                neighb_values = []
-                if name == 'te.value':
-                    dte = self.cpo.get_value('te.ddrho')
-                    j = 0
-                    for i in indices:
-                        rho_i = rho[i]
-                        te_i  = value[j]
-                        dte_i = dte[i]
-                        neighb_values.append(dte_i*(rho[i-2] - rho_i) + te_i)
-                        neighb_values.append(dte_i*(rho[i-1] - rho_i) + te_i)
-                        neighb_values.append(dte_i*(rho[i+1] - rho_i) + te_i)
-                        neighb_values.append(dte_i*(rho[i+2] - rho_i) + te_i)
-                        j+=1
-                if name == 'te.ddrho':
-                    te = self.cpo.get_value('te.value')
-                    j = 0
-                    for i in indices:
-                        rho_i = rho[i]
-                        te_i  = te[i]
-                        dte_i = value[j]
-                        neighb_values.append(dte_i*(rho[i-2] - rho_i) + te_i)
-                        neighb_values.append(dte_i*(rho[i-1] - rho_i) + te_i)
-                        neighb_values.append(dte_i*(rho[i+1] - rho_i) + te_i)
-                        neighb_values.append(dte_i*(rho[i+2] - rho_i) + te_i)
-                        j+=1
-                j = 0
-                neighb_indices = []
-                for i in indices:
-                    neighb_indices.append(i-2)
-                    neighb_indices.append(i-1)
-                    neighb_indices.append(i+1)
-                    neighb_indices.append(i+2)
-                    j+=1
-                self.cpo.set_value('te.value', neighb_values, neighb_indices)
+                self.cpo.set_value(name, value)
 
         # Do a symbolic link to other files (cpo, xml and restart data)
         os.system("ln -s " + self.common_dir + "*.xml " + target_dir + " 2>/dev/null")

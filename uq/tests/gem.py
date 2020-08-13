@@ -16,9 +16,8 @@ IMPORTANT CHECK: in gem.xml, nrho_transp = 1
 
 print('TEST gem-UQ: START')
 
-# We test 1 flux tube (to use list if more)
-flux_indices = [69]
-#flux_indices = [15, 31, 44, 55, 66, 76, 85, 94]
+# We test 1 flux tube
+ft_index = [61]
 
 # execustion with QCJ-PJ
 EXEC_PJ = True
@@ -33,7 +32,6 @@ SYS = os.environ['SYS']
 tmp_dir = os.environ['SCRATCH']
 
 # CPO files location
-#cpo_dir = os.path.abspath("../workflows/AUG_28906_6")
 cpo_dir = os.path.abspath("../workflows/AUG_28906_6_1ft_restart")
 
 # XML and XSD files location
@@ -50,15 +48,24 @@ input_params = {
     "te.value": {
         "dist": "Normal",
         "err":  0.2,
-        "idx": flux_indices,
+        "ft_index": ft_index,
     },
     "te.ddrho": {
         "dist": "Normal",
         "err": 0.2,
-        "idx": flux_indices,
+        "ft_index": ft_index,
+    },
+    "ti.value": {
+        "dist": "Normal",
+        "err":  0.2,
+        "ft_index": ft_index,
+    },
+    "ti.ddrho": {
+        "dist": "Normal",
+        "err": 0.2,
+        "ft_index": ft_index,
     }
 }
-
 # CPO file containg initial values of uncertain params
 input_filename = "ets_coreprof_in.cpo"
 input_cponame = "coreprof"
