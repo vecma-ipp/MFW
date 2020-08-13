@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import os
 #import timeit
 #import matplotlib.pyplot as plt
@@ -12,7 +14,7 @@ from sklearn.gaussian_process.kernels \
 #import pickle
 #import pickletools
 from joblib import dump, load
-import easymfw.templates.CPOElement as CPOElement
+from easymfw.templates.cpo_element import CPOElement
 
 
 # Load data from CPOs, example:
@@ -36,6 +38,7 @@ def load_data(corep_file, flux_tube_index):
 
 def save_data(coret_file, value):
     cpo = CPOElement(coret_file, "coretransp")
+    print(cpo.core)
     cpo.set_value("te_transp.flux", value[0])
     cpo.set_value("ti_transp.flux", value[1])
     cpo.save(coret_file)
@@ -58,8 +61,8 @@ if __name__ == "__main__":
     # case when we read one set of CPO files from the local directory
     # and get one output CPO file with a prediceted value
     for run in range(dim_pred_sample):
-        corep_file = "/gem_coreprof_in.cpo"
-        #coret_file = "/gem_coretransp_out.cpo"
+        corep_file = "gem_coreprof_in.cpo"
+        #coret_file = "gem_coretransp_out.cpo"
 
         te_value, ti_value, te_ddrho, ti_ddrho = load_data(corep_file, flux_tube_index)
 
@@ -73,16 +76,17 @@ if __name__ == "__main__":
     #kernel = Matern(length_scale=[100, 100, 100, 100], nu=0.5) + RBF(length_scale=[100, 100, 100, 100])
     #gpr = GaussianProcessRegressor(kernel=kernel, random_state=0).fit(X, Y)
 
-    mod_folder = '/data'
+    mod_folder = 'data/models'
     mod_filename = 'gpr_gem_1.joblib'
     model_path = os.path.join(mod_folder, mod_filename)
 
     gpr = load(model_path)
 
     prediction_y = gpr.predict(input_samples)
+    #print(prediction_y)
 
     for run in range(dim_pred_sample):
-        coret_file = "/gem_coretransp_out.cpo"
+        coret_file = "gem_coretransp_out.cpo"
         save_data(coret_file, prediction_y[run])
 
     print("> Prediction finished")
