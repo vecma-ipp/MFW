@@ -103,10 +103,12 @@ class CPOEncoder(BaseEncoder, encoder_name="cpo_encoder"):
                 self.cpo.set_value(name, value)
 
         # Do a symbolic link to other files (cpo, xml and restart data)
-        os.system("ln -s " + self.common_dir + "*.xml " + target_dir + " 2>/dev/null")
-        os.system("ln -s " + self.common_dir + "*.xsd " + target_dir + " 2>/dev/null")
-        os.system("ln -s " + self.common_dir + "*.cpo " + target_dir + " 2>/dev/null")
-        #os.system("ln -s " + self.common_dir + "*.dat " + target_dir + " 2>/dev/null")
+        os.system("ln -s " + self.common_dir + "*.xml " + target_dir)
+        os.system("ln -s " + self.common_dir + "*.xsd " + target_dir)
+        os.system("ln -s " + self.common_dir + "*.cpo " + target_dir)
+        for fname in os.listdir(self.common_dir):
+            if fname.endswith(".dat"):
+                os.system("ln -s " + self.common_dir + fname + " " + target_dir)
 
         # Write target input CPO file
         target_file_path = os.path.join(target_dir, self.target_filename)
@@ -123,4 +125,4 @@ class CPOEncoder(BaseEncoder, encoder_name="cpo_encoder"):
                 }
 
     def element_version(self):
-        return "0.3"
+        return "0.4"

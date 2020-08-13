@@ -14,8 +14,6 @@ IMPORTANT CHECK: in gem.xml, nrho_transp = 1
 '''
 
 
-print('TEST gem-UQ: START')
-
 # We test 1 flux tube
 ft_index = [61]
 
@@ -82,7 +80,6 @@ params, vary = get_cpo_inputs(cpo_file=input_cpo_file,
                               input_params=input_params)
 
 # Initialize Campaign object
-print('>>> Initialize Campaign object')
 campaign_name = "UQ_gem_"
 my_campaign = uq.Campaign(name=campaign_name, work_dir=tmp_dir)
 
@@ -107,7 +104,6 @@ os.system("cp " + xml_dir + "/gem.xsd " + common_dir)
 os.system("cp " + obj_dir +"/"+ exec_code + " " + common_dir)
 
 # Create the encoder
-print('>>> Create the encoder')
 input_filename = "gem_coreprof_in.cpo"
 encoder = CPOEncoder(template_filename=input_filename,
                      target_filename=input_filename,
@@ -116,17 +112,14 @@ encoder = CPOEncoder(template_filename=input_filename,
                      common_dir=common_dir)
 
 # Create the decoder
-print('>>> Create the decoder')
 decoder = CPODecoder(target_filename=output_filename,
                      output_columns=output_columns,
                      output_cponame=output_cponame)
 
 # Create a collation element for this campaign
-print('>>> Create Collater')
 collater = uq.collate.AggregateSamples(average=False)
 
 # Add the app (automatically set as current app)
-print('>>> Add app to campaign object')
 my_campaign.add_app(name=campaign_name,
                     params=params,
                     encoder=encoder,
@@ -134,16 +127,14 @@ my_campaign.add_app(name=campaign_name,
                     collater=collater)
 
 # Create the sampler
-print('>>> Create the sampler')
 my_sampler = uq.sampling.PCESampler(vary=vary,
-                                    polynomial_order=2)
+                                    polynomial_order=3)
 my_campaign.set_sampler(my_sampler)
 
 # Will draw all (of the finite set of samples)
-print('>>> Draw Samples - Ns = ', my_sampler.n_samples)
+print('Draw Samples - Ns = ', my_sampler.n_samples)
 my_campaign.draw_samples()
 
-print('>>> Populate runs_dir')
 my_campaign.populate_runs_dir()
 
 # get ncores
@@ -163,10 +154,10 @@ if EXEC_PJ:
     from easypj import TaskRequirements, Resources
     from easypj import Task, TaskType, SubmitOrder
 
-    print(">>> Starting PJ execution\n")
+    # PJ execution
     qcgpjexec = easypj.Executor()
     qcgpjexec.create_manager(dir=my_campaign.campaign_dir,
-                             log_level='debug')
+                             log_level='info')
 
     qcgpjexec.add_task(Task(
         TaskType.EXECUTION,
@@ -181,22 +172,19 @@ if EXEC_PJ:
 
     qcgpjexec.terminate_manager()
 else:
-    print('>>> Starting Local execution')
+    # Local execution
     my_campaign.apply_for_each_run_dir(uq.actions.ExecuteLocal(exec_path))
 
-print('>>> Collate')
 my_campaign.collate()
 
 # Post-processing analysis
-print('>>> Post-processing analysis')
 analysis = uq.analysis.PCEAnalysis(sampler=my_sampler, qoi_cols=output_columns)
 my_campaign.apply_analysis(analysis)
 
-print('>>> Get results')
 results = my_campaign.get_last_analysis()
 
 # Get Descriptive Statistics
-print('>>> Get Descriptive Statistics: \n')
+print('Get Descriptive Statistics: \n')
 stat = {}
 sob1 = {}
 dist = {}
@@ -207,5 +195,3 @@ for qoi in output_columns:
     print(qoi)
     print('Stats: \n', stat[qoi] )
     print('Sobol 1st: \n',sob1[qoi])
-
-print('>>> TEST gem-UQ: END')
