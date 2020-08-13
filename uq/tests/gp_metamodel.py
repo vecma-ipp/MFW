@@ -1,4 +1,4 @@
-__author__ = 'Anna Nikishova & Jalal Lakhlili'
+__author__ = 'Anna Nikishova & Jalal Lakhlili & Yehor Yudin'
 
 import os
 import timeit
@@ -11,7 +11,13 @@ from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import DotProduct, WhiteKernel, Matern, RBF
 from sklearn.gaussian_process.kernels \
     import RBF, WhiteKernel, ConstantKernel as C
+
 from sklearn.metrics import mean_squared_error as mse
+
+# for model saving and preparation
+import pickle
+import pickletools
+from joblib import dump, load
 
 # Load data from CPOs, example:
 # corep_file: gem_coreprof_in.cpo
@@ -126,7 +132,18 @@ if __name__ == "__main__":
 
     gpr = GaussianProcessRegressor(kernel=kernel, random_state=0).fit(X, Y)
     print(gpr.kernel_)
-    prediction_y = gpr.predict(X_test)
+
+    # save and loaad model, then use to predice
+    st_gpr = pickle.dumps(gpr)
+    gpr_l1 = pickle.loads(st_gpr)
+
+    mod_folder = '/data'
+    mod_filename = 'gpr_gem_1.joblib'
+    model_path = os.path.join(mod_folder, mod_filename)
+    dump(gpr, model_path)
+    gpr_l2 = load(model_path)
+
+    prediction_y = gpr_l2.predict(input_samples)
 
     end = timeit.timeit()
     print("GP took ", end - start)
