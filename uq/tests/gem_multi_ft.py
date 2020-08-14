@@ -7,6 +7,7 @@ from easypj import TaskRequirements, Resources
 from easypj import Task, TaskType, SubmitOrder
 from easymfw.templates.cpo_encoder import CPOEncoder
 from easymfw.templates.cpo_decoder import CPODecoder
+from easymfw.templates.xml_element import XMLElement
 from easymfw.utils.io_tools import get_cpo_inputs
 
 
@@ -16,6 +17,9 @@ tmp_dir = os.environ['SCRATCH']
 cpo_dir = os.path.abspath("../workflows/AUG_28906_6_8ft_restart")
 xml_dir = os.path.abspath("../workflows")
 obj_dir = os.path.abspath("../standalone/bin/"+SYS)
+
+# From Slurm script
+mpi_instance =  os.environ['MPICMD']
 
 # The executable code to run
 obj_dir = os.path.abspath("../standalone/bin/"+SYS)
@@ -92,7 +96,7 @@ def setup_gem(common_dir, ft_index):
     return params, encoder, decoder, collater, sampler, analysis
 
 # Execution using QCG Pilot Job
-def exec_pj(campaign, exec_path):
+def exec_pj(campaign, app_path):
     qcgpjexec = easypj.Executor()
     qcgpjexec.create_manager(dir=campaign.campaign_dir, log_level='info')
 
@@ -119,7 +123,16 @@ if __name__ == "__main__":
 
     # Copy exec code
     os.system("cp " + obj_dir +"/"+ exec_code + " " + common_dir)
+
+    # Get ncores
+    gemxml = XMLElement(xml_dir + "/gem.xml")
+    npesx = gemxml.get_value("cpu_parameters.domain_decomposition.npesx")
+    npess = gemxml.get_value("cpu_parameters.domain_decomposition.npess")
+    nftubes = gemxml.get_value("cpu_parameters.parallel_cases.nftubes")
+    ncores = npesx*npess*nftubes
+
     exec_path = os.path.join(common_dir, exec_code)
+    mpi_app = " ".join([mpi_instance, "-n", str(ncores), exec_path])
 
     # From: Run Gem once and use easymfw.utils.get_fluxtube_index
     ft_indices = [15, 31, 44, 55, 66, 76, 85, 94]
@@ -139,7 +152,7 @@ if __name__ == "__main__":
         campaign.set_sampler(sampler)
         campaign.draw_samples()
         campaign.populate_runs_dir()
-        exec_pj(campaign, exec_path)
+        exec_pj(campaign, mpi_app)
         campaign.collate()
         campaign.apply_analysis(analysis)
 
