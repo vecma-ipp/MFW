@@ -29,13 +29,14 @@ SYS = os.environ['SYS']
 tmp_dir = os.environ['SCRATCH']
 
 # CPO files location
-cpo_dir = os.path.abspath("../workflows/AUG_28906_6_1ft_restart")
+cpo_dir = os.path.abspath("../workflows/AUG_28906_6")
 # XML and XSD files location
 xml_dir = os.path.abspath("../workflows")
 
 # The executable code to run --- key difference for a box
-obj_dir = os.path.abspath("data/models/")
-exec_code = "model_predictor"
+#obj_dir = os.path.abspath("data/models/")
+obj_dir = os.path.abspath("surr_p1")
+exec_code = "model_predictor.py"
 
 # Define the uncertain parameters
 # Electron temperature and its gradient
@@ -94,7 +95,7 @@ os.system("cp " + cpo_dir + "/ets_equilibrium_in.cpo "
 os.system("cp " + cpo_dir + "/ets_coreprof_in.cpo "
                 + common_dir + "/gem_coreprof_in.cpo")
 
-os.system("cp " + cpo_dir + "/t00.dat " + common_dir)
+#os.system("cp " + cpo_dir + "/t00.dat " + common_dir)
 
 # Copy XML and XSD files
 os.system("cp " + xml_dir + "/gem.xml " + common_dir)
@@ -134,6 +135,8 @@ my_campaign.add_app(name=campaign_name,
 print('>>> Create the sampler')
 my_sampler = uq.sampling.PCESampler(vary=vary,
                                     polynomial_order=2)
+#my_sampler = uq.sampling.QMCSampler(vary=vary, n_mc_samples=1000)
+
 my_campaign.set_sampler(my_sampler)
 
 # Will draw all (of the finite set of samples)
