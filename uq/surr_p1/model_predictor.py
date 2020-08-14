@@ -39,11 +39,12 @@ def load_data(corep_file, flux_tube_index):
 
 
 def save_data(coret_file, value):
+    print(value)
     #print("reading cpos")
     cpo = CPOElement(coret_file, "coretransp")
     #print(cpo.core)
-    cpo.set_value("te_transp.flux", [value[0]])
-    cpo.set_value("ti_transp.flux", [value[1]])
+    cpo.set_value("te_transp.flux", value[0])
+    cpo.set_value("ti_transp.flux", value[1])
     #print("set the te_fl and ti_fl value in the cpo file")
     #print('New te_flux value is: {0}'.format(value[0]))
     cpo.save(coret_file)
@@ -63,7 +64,7 @@ if __name__ == "__main__":
     output_dim = 2
     output_samples = np.zeros((dim_pred_sample, output_dim))
 
-    os.system("cp ~/code/MFW/workflows/AUG_28906_6/ets_coretransp_in.cpo gem_coretransp_out.cpo .") # TODO probably should be a part of EasyVVUQ campaing : either as new Encoder, or as as an Action
+    os.system("cp ~/code/MFW/workflows/AUG_28906_6/ets_coretransp_in.cpo gem_coretransp_out.cpo") # TODO probably should be a part of EasyVVUQ campaing : either as new Encoder, or as as an Action
    
     # case when we read one set of CPO files from the local directory
     # and get one output CPO file with a prediceted value
@@ -85,7 +86,8 @@ if __name__ == "__main__":
 
     os.system("cp ~/code/MFW/uq/data/models/* .")
 
-    mod_folder = 'data/models'
+    #mod_folder = 'data/models'
+    mod_folder = ''
     mod_filename = 'gpr_gem_1.joblib'
     model_path = os.path.join(mod_folder, mod_filename)
 
@@ -97,4 +99,4 @@ if __name__ == "__main__":
         coret_file = "gem_coretransp_out.cpo"
         save_data(coret_file, prediction_y[run, :])
 
-    print("> Prediction finished")
+    #print("> Prediction finished")
