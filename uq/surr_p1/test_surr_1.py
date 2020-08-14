@@ -19,7 +19,7 @@ import pickle
 # BOX1 - GPR model by SKL
 
 # location of the flux tubes
-flux_indices = [69]
+flux_indices = 69
 # execustion with QCJ-PJ
 EXEC_PJ = False
 
@@ -44,23 +44,23 @@ input_params = {
     "te.value": {
         "dist": "Normal",
         "err":  0.2,
-        "idx": flux_indices,
-    },
-    "te.ddrho": {
-        "dist": "Normal",
-        "err": 0.2,
-        "idx": flux_indices,
-    },
-    "ti.value": {
-        "dist": "Normal",
-        "err":  0.2,
-        "idx": flux_indices,
-    },
-    "ti.ddrho": {
-        "dist": "Normal",
-        "err": 0.2,
-        "ids": flux_indices,
-    }
+        "ft_index": flux_indices,
+    }#,
+#    "te.ddrho": {
+#        "dist": "Normal",
+#        "err": 0.2,
+#        "idx": flux_indices,
+#    },
+#    "ti.value": {
+#        "dist": "Normal",
+#        "err":  0.2,
+#        "idx": flux_indices,
+#    } #,
+#    "ti.ddrho": {
+#        "dist": "Normal",
+#        "err": 0.2,
+#        "ids": flux_indices,
+#    }
 }
 
 # CPO file containg initial values of uncertain params
