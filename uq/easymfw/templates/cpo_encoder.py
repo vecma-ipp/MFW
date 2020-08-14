@@ -1,7 +1,7 @@
 import os
 import logging
 import numpy as np
-from scipy.interpolate import splev
+import scipy.interpolate
 from easyvvuq import OutputType
 from easyvvuq.encoders.base import BaseEncoder
 from ascii_cpo import read, write
@@ -45,12 +45,12 @@ class CPOEncoder(BaseEncoder, encoder_name="cpo_encoder"):
                 indices = attr["idx"]
                 if len(indices)==1:
                     value = [value]
-            if "knot" in attr.keys():
-                knot = attr["knot"]
-                u = attr["u"]
-                value = [value[0]] + value
-                tck = [knot, value, 3]
-                value = splev(u, tck)
+            if "bsp_x" in attr.keys():
+                x = attr["bsp_x"]
+                y = value
+                rho = attr["rho"]
+                S = scipy.interpolate.make_interp_spline(x, y, bc_type=([(1, 0.0)], [(2, 0.0)]))
+                value = S(rho).tolist()
             self.cpo.set_value(name, value, indices)
             # particular case: te.value and ti.value
             # update neighbors +/-2 rho_tor grid points according to

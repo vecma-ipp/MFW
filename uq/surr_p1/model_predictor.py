@@ -63,6 +63,8 @@ if __name__ == "__main__":
     output_dim = 2
     output_samples = np.zeros((dim_pred_sample, output_dim))
 
+    os.system("cp ~/code/MFW/workflows/AUG_28906_6/ets_coretransp_in.cpo gem_coretransp_out.cpo .") # TODO probably should be a part of EasyVVUQ campaing : either as new Encoder, or as as an Action
+   
     # case when we read one set of CPO files from the local directory
     # and get one output CPO file with a prediceted value
     for run in range(dim_pred_sample):
@@ -80,6 +82,8 @@ if __name__ == "__main__":
     #n_features = 4
     #kernel = Matern(length_scale=[100, 100, 100, 100], nu=0.5) + RBF(length_scale=[100, 100, 100, 100])
     #gpr = GaussianProcessRegressor(kernel=kernel, random_state=0).fit(X, Y)
+
+    os.system("cp ~/code/MFW/uq/data/models/* .")
 
     mod_folder = 'data/models'
     mod_filename = 'gpr_gem_1.joblib'
