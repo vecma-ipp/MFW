@@ -9,96 +9,23 @@ from easymfw.templates.cpo_decoder import CPODecoder
 from easymfw.templates.xml_encoder import XMLEncoder
 from easymfw.utils.io_tools import get_cpo_inputs
 from easymfw.utils.io_tools import get_xml_inputs
-from easymfw.utils.splines import spl_fit
-from easymfw.utils.splines import spl_eval
 from easymfw.utils import plots
 import easypj
 from easypj import TaskRequirements, Resources
 from easypj import Task, TaskType, SubmitOrder
 
 
+# USE SPLINE INTERPOLATION based on DPC code
+
 # Global params
 SYS = os.environ['SYS']
 tmp_dir = os.environ['SCRATCH']
-#cpo_dir = os.path.abspath("../workflows/AUG_28906_6")
-cpo_dir = os.path.abspath("../workflows/AUG_28906_6_8ft_restart")
-#cpo_dir = os.path.abspath("../workflows/JET_92436_23066")
+cpo_dir = os.path.abspath("../workflows/AUG_28906_6")
 xml_dir = os.path.abspath("../workflows")
 obj_dir = os.path.abspath("../standalone/bin/"+SYS)
 
 
-# The 1st BOX
-def setup_ets(ets_dir, ets_code, ets_input, ets_output):
-    input_params_bc = ets_input[0]
-    input_params_src = ets_input[1]
-    input_params = {}
-    input_params.update(input_params_bc)
-    input_params.update(input_params_src)
-
-    input_cpofilename = "ets_coreprof_in.cpo"
-    input_cponame = "coreprof"
-    input_xmlfilename = "source_dummy.xml"
-    input_xsdfilename = "source_dummy.xsd"
-
-    output_filename = "ets_equilibrium_out.cpo"
-    output_cponame = "equilibrium"
-
-    # Copy XML and XSD files
-    os.system("cp " + xml_dir + "/ets.xml "    + ets_dir)
-    os.system("cp " + xml_dir + "/ets.xsd "    + ets_dir)
-    os.system("cp " + xml_dir + "/source_dummy.xml " + ets_dir)
-    os.system("cp " + xml_dir + "/source_dummy.xsd " + ets_dir)
-
-    # Copy input CPO files in common directory
-    os.system("cp " + cpo_dir + "/ets_coreprof_in.cpo "    + ets_dir)
-    os.system("cp " + cpo_dir + "/ets_equilibrium_in.cpo " + ets_dir)
-    os.system("cp " + cpo_dir + "/ets_coreimpur_in.cpo "   + ets_dir)
-    os.system("cp " + cpo_dir + "/ets_coretransp_in.cpo "  + ets_dir)
-    os.system("cp " + cpo_dir + "/ets_toroidfield_in.cpo " + ets_dir)
-
-    os.system("cp " + obj_dir +"/" + ets_code + " " + ets_dir)
-    exec_code = os.path.join(ets_dir, ets_code)
-
-    #
-    input_cpofile = os.path.join(cpo_dir, input_cpofilename)
-    params_cpo, vary_cpo = get_cpo_inputs(cpo_file=input_cpofile,
-                                          cpo_name=input_cponame,
-                                          input_params=input_params_bc)
-
-    input_xmlfile = os.path.join(xml_dir, input_xmlfilename)
-    input_xsdfile = os.path.join(xml_dir, input_xsdfilename)
-    params_xml, vary_xml = get_xml_inputs(xml_file=input_xmlfile,
-                                          xsd_file=input_xsdfile,
-                                          input_params=input_params_src)
-
-    params = {**params_cpo, **params_xml}
-    vary = {**vary_cpo, **vary_xml}
-
-    encoder_cpo = CPOEncoder(template_filename=input_cpofilename,
-                             target_filename=input_cpofilename,
-                             input_cponame=input_cponame,
-                             common_dir=ets_dir,
-                             input_params=input_params_bc)
-    encoder_xml = XMLEncoder(template_filename = input_xmlfilename,
-                             target_filename = input_xmlfilename,
-                             input_params=input_params_src,
-                             common_dir=ets_dir)
-    encoder = uq.encoders.MultiEncoder(encoder_cpo, encoder_xml)
-
-    decoder = CPODecoder(target_filename=output_filename,
-                         output_columns=ets_output,
-                         output_cponame=output_cponame)
-
-    collater = uq.collate.AggregateSamples(average=False)
-
-    sampler = uq.sampling.PCESampler(vary=vary, polynomial_order=3)
-    action = uq.actions.ExecuteLocal(exec_code)
-    stats = uq.analysis.PCEAnalysis(sampler=sampler, qoi_cols=ets_output)
-
-    return params, encoder, decoder, collater, sampler, action, stats
-
-
-# The 2nd BOX
+# Chease box
 def setup_eq(eq_dir, eq_code, eq_input, eq_output):
     params = eq_input[0]
     spline = eq_input[1]
@@ -271,38 +198,26 @@ if __name__ == "__main__":
     print('Time for phase 10', time_end-time_start)
     time_start = time.time()
 
-    # Approxiamte mean by spline of dgree 3 using 5 elements
-    ne = 6
-    ty, cy = spl_fit(mean_1, ne)
-    tx, cx = spl_fit(rho, ne)
+    # Input data size reduction
+    pressure = mean_1
+    rho = rho/rho[-1]
+
+    # Get n points to interpolate using splines
+    n = 5
+    I = np.linspace(0, len(pressure)-1, n, dtype=int)
+    rho_i = rho[I]
+    pressure_i = pressure[I]
+    dist_i = dist_1[I].tolist()
 
     time_end = time.time()
     print('Time for phase 11', time_end-time_start)
     time_start = time.time()
 
-    # Impose a derivative = 0 in rho = 0
-    cy[1] = cy[0]
-
-    # Distribtion for CP
-    dist_cp = [dist_1[0]]
-    pe = [mean_1[0]]
-    u = np.linspace(0., 1., 101)
-    for i in range(2, ne):
-        # index of the closet rho to CP abscissa cx
-        j = np.abs(rho - cx[i]).argmin()
-        print('>>> j= ', j)
-        dist_cp.append(dist_1[j])
-        pe.append(mean_1[j])
-
-    time_end = time.time()
-    print('Time for phase 12', time_end-time_start)
-    time_start = time.time()
-
-    eq_input = [{"profiles_1d.pressure": {"type": "list", "default": pe}},
+    eq_input = [{"profiles_1d.pressure": {"type": "list", "default": pressure_i.tolist()}},
                 {"profiles_1d.pressure":
-                        {"knot": ty.tolist(),
-                         "u": u.tolist()}},
-                {"profiles_1d.pressure": cp.J(*dist_cp)}
+                        {"bsp_x": rho_i.tolist(),
+                         "rho":rho.tolist()}},
+                {"profiles_1d.pressure": cp.J(*dist_i)}
                ]
     eq_output = ["profiles_1d.gm3"]
 
