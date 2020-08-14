@@ -1,4 +1,5 @@
 import os
+import csv
 import easyvvuq as uq
 from ascii_cpo import read
 import easypj
@@ -9,8 +10,6 @@ from easymfw.templates.cpo_decoder import CPODecoder
 from easymfw.utils.io_tools import get_cpo_inputs
 
 
-# Update gem0.xml: set nrho_transp = 2
-
 # Global params
 SYS = os.environ['SYS']
 tmp_dir = os.environ['SCRATCH']
@@ -20,10 +19,10 @@ obj_dir = os.path.abspath("../standalone/bin/"+SYS)
 
 # The executable code to run
 obj_dir = os.path.abspath("../standalone/bin/"+SYS)
-exec_code = "gem0_test"
+exec_code = "gem_test"
 
 
-def setup_gem0(common_dir, n_mc_samples, ft_index):
+def setup_gem(common_dir, ft_index):
     # Define the uncertain parameters
     input_params = {
         "te.value": {
@@ -54,7 +53,7 @@ def setup_gem0(common_dir, n_mc_samples, ft_index):
 
     # The quantities of intersts and the cpo file to set them
     output_columns = ["te_transp.flux", "ti_transp.flux"]
-    output_filename = "gem0_coretransp_out.cpo"
+    output_filename = "gem_coretransp_out.cpo"
     output_cponame = "coretransp"
 
     # parameter space for campaign and the distributions list for the sampler
@@ -63,18 +62,18 @@ def setup_gem0(common_dir, n_mc_samples, ft_index):
                                   cpo_name=input_cponame,
                                   input_params=input_params)
 
-    # Copy input CPO files (cf. test_gem0.f90)
+    # Copy input CPO files (cf. test_gem.f90)
     os.system("cp " + cpo_dir + "/ets_equilibrium_in.cpo "
-                    + common_dir + "gem0_equilibrium_in.cpo")
+                    + common_dir + "gem_equilibrium_in.cpo")
     os.system("cp " + cpo_dir + "/ets_coreprof_in.cpo "
-                    + common_dir + "/gem0_coreprof_in.cpo")
+                    + common_dir + "/gem_coreprof_in.cpo")
 
     # Copy XML and XSD files
-    os.system("cp " + xml_dir + "/gem0.xml " + common_dir)
-    os.system("cp " + xml_dir + "/gem0.xsd " + common_dir)
+    os.system("cp " + xml_dir + "/gem.xml " + common_dir)
+    os.system("cp " + xml_dir + "/gem.xsd " + common_dir)
 
     # Create the encoder, decoder, collater and the sampler
-    input_filename = "gem0_coreprof_in.cpo"
+    input_filename = "gem_coreprof_in.cpo"
     encoder = CPOEncoder(template_filename=input_filename,
                          target_filename=input_filename,
                          input_cponame=input_cponame,
@@ -84,11 +83,9 @@ def setup_gem0(common_dir, n_mc_samples, ft_index):
                      output_columns=output_columns,
                      output_cponame=output_cponame)
     collater = uq.collate.AggregateSamples(average=False)
-    #sampler = uq.sampling.QMCSampler(vary=vary, n_mc_samples=n_mc_samples)
     sampler = uq.sampling.PCESampler(vary=vary, polynomial_order=3)
 
     # The Analysis
-    #analysis = uq.analysis.QMCAnalysis(sampler=sampler, qoi_cols=output_columns)
     analysis = uq.analysis.PCEAnalysis(sampler=sampler, qoi_cols=output_columns)
 
     # The setup outputs
@@ -124,57 +121,35 @@ if __name__ == "__main__":
     os.system("cp " + obj_dir +"/"+ exec_code + " " + common_dir)
     exec_path = os.path.join(common_dir, exec_code)
 
-    # The number of Monte-Carlo samples
-    n_mc_samples = 1000
+    # From: Run Gem once and use easymfw.utils.get_fluxtube_index
+    ft_indices = [15, 31, 44, 55, 66, 76, 85, 94]
 
-    # Get setup for the 1st Flux tube and set it to the campaign
-    (params1, encoder1, decoder1, collater1, sampler1, analysis1) = \
-                                    setup_gem0(common_dir, n_mc_samples, ft_index=38)
-    campaign.add_app(name="gemuq-ft1",
-                     params=params1,
-                     encoder=encoder1,
-                     decoder=decoder1,
-                     collater=collater1)
+    results = []
+    for i, j in enumerate(ft_indices):
+        # Get setup and set it to the campaign
+        (params, encoder, decoder, collater, sampler, analysis) = setup_gem(common_dir, ft_index=j)
+        campaign.add_app(name="gemuq-ft"+str(i+1),
+                         params=params,
+                         encoder=encoder,
+                         decoder=decoder,
+                         collater=collater)
 
-    # Get setup for the 2st Flux tube and add it to the campaign
-    (params2, encoder2, decoder2, collater2, sampler2, analysis2) = \
-                                    setup_gem0(common_dir, n_mc_samples, ft_index=81)
-    campaign.add_app(name="gemuq-ft2",
-                     params=params2,
-                     encoder=encoder2,
-                     decoder=decoder2,
-                     collater=collater2)
+        # Set and run the 1st campaign
+        campaign.set_app("gemuq-ft"+str(i+1))
+        campaign.set_sampler(sampler)
+        campaign.draw_samples()
+        campaign.populate_runs_dir()
+        exec_pj(campaign, exec_path)
+        campaign.collate()
+        campaign.apply_analysis(analysis)
 
-    # Set and run the 1st campaign
-    campaign.set_app("gemuq-ft1")
-    campaign.set_sampler(sampler1)
-    campaign.draw_samples()
-    campaign.populate_runs_dir()
-    exec_pj(campaign, exec_path)
-    campaign.collate()
-    campaign.apply_analysis(analysis1)
-
-    results1 = campaign.get_last_analysis()
-
-    # Set and run the 2nd campaign
-    campaign.set_app("gemuq-ft2")
-    campaign.set_sampler(sampler2)
-    campaign.draw_samples()
-    campaign.populate_runs_dir()
-    exec_pj(campaign, exec_path)
-    campaign.collate()
-    campaign.apply_analysis(analysis2)
-
-    results2 = campaign.get_last_analysis()
+        result = campaign.get_last_analysis()
+        results.append(result)
 
     # Get Descriptive Statistics
-    print('Get Descriptive Statistics: \n')
-    output_columns = ["te_transp.flux", "ti_transp.flux"]
-    for qoi in output_columns:
-        print("\n QoI: "+qoi)
-        print("1st FT:")
-        print('Stats: \n', results1['statistical_moments'][qoi])
-        print('Sobol 1st: \n',results1['sobols_first'][qoi])
-        print("2nd FT:")
-        print('Stats: \n', results2['statistical_moments'][qoi])
-        print('Sobol 1st: \n',results2['sobols_first'][qoi])
+    print('Save escriptive Statistics: \n')
+    with open('gem_uq.csv', 'w') as f:
+        for i in range(7):
+            f.write("%s %i\n"%("Flux Tube: ", i+1))
+            for key in results[i].keys():
+                f.write("%s,%s\n"%(key, results[i][key]))
