@@ -21,7 +21,7 @@ import pickle
 # location of the flux tubes
 flux_indices = 69
 # execustion with QCJ-PJ
-EXEC_PJ = False
+EXEC_PJ = True
 
 # Machine name
 SYS = os.environ['SYS']
@@ -45,17 +45,17 @@ input_params = {
         "dist": "Normal",
         "err":  0.2,
         "ft_index": flux_indices,
-    }#,
+    },
 #    "te.ddrho": {
 #        "dist": "Normal",
 #        "err": 0.2,
 #        "idx": flux_indices,
-#    },
+#    }#,
 #    "ti.value": {
 #        "dist": "Normal",
 #        "err":  0.2,
 #        "idx": flux_indices,
-#    } #,
+#    } ,
 #    "ti.ddrho": {
 #        "dist": "Normal",
 #        "err": 0.2,
@@ -134,7 +134,7 @@ my_campaign.add_app(name=campaign_name,
 # Create the sampler
 print('>>> Create the sampler')
 my_sampler = uq.sampling.PCESampler(vary=vary,
-                                    polynomial_order=2)
+                                    polynomial_order=3)
 #my_sampler = uq.sampling.QMCSampler(vary=vary, n_mc_samples=1000)
 
 my_campaign.set_sampler(my_sampler)
