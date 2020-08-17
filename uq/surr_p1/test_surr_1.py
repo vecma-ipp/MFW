@@ -29,9 +29,11 @@ SYS = os.environ['SYS']
 tmp_dir = os.environ['SCRATCH']
 
 # CPO files location
-cpo_dir = os.path.abspath("../workflows/AUG_28906_6")
+cpo_dir = os.path.abspath("../workflows/AUG_28906_6_1ft_restart")
 # XML and XSD files location
 xml_dir = os.path.abspath("../workflows")
+
+model_dir = os.path.abspath("data/models")
 
 # The executable code to run --- key difference for a box
 #obj_dir = os.path.abspath("data/models/")
@@ -88,12 +90,18 @@ my_campaign = uq.Campaign(name=campaign_name, work_dir=tmp_dir)
 campaign_dir = my_campaign.campaign_dir
 common_dir = campaign_dir +"/common/"
 os.mkdir(common_dir)
+surrogate_dir = campaign_dir +"/common/surrogate/"
+os.mkdir(surrogate_dir)
 
 # Copy input CPO files (cf. test_gem.f90)
 os.system("cp " + cpo_dir + "/ets_equilibrium_in.cpo "
                 + common_dir + "gem_equilibrium_in.cpo")
 os.system("cp " + cpo_dir + "/ets_coreprof_in.cpo "
                 + common_dir + "/gem_coreprof_in.cpo")
+os.system("cp " + cpo_dir + "/ets_coretransp_in.cpo " 
+                + surrogate_dir + "/gem_coretransp_out.cpo")
+os.system("cp " + model_dir + "/gpr_gem_1.joblib "
+                + surrogate_dir + "/GPR.joblib")
 
 #os.system("cp " + cpo_dir + "/t00.dat " + common_dir)
 
@@ -182,3 +190,18 @@ my_campaign.collate()
 print('>>> Post-processing analysis')
 analysis = uq.analysis.PCEAnalysis(sampler=my_sampler, qoi_cols=output_columns)
 my_campaign.apply_analysis(analysis)
+
+
+results = my_campaign.get_last_analysis()
+# Get Descriptive Statistics
+print('Get Descriptive Statistics: \n')
+stat = {}
+sob1 = {}
+dist = {}
+for qoi in output_columns:
+    stat[qoi] = results['statistical_moments'][qoi]
+    sob1[qoi] = results['sobols_first'][qoi]
+
+    print(qoi)
+    print('Stats: \n', stat[qoi] )
+    print('Sobol 1st: \n',sob1[qoi])
