@@ -109,6 +109,9 @@ class CPOEncoder(BaseEncoder, encoder_name="cpo_encoder"):
         for fname in os.listdir(self.common_dir):
             if fname.endswith(".dat"):
                 os.system("ln -s " + self.common_dir + fname + " " + target_dir)
+        if os.path.isdir(self.common_dir + "/surrogate"):
+            os.system("ln -s " + self.common_dir + "/surrogate/" + "*.joblib " + target_dir)
+            os.system("cp " + self.common_dir + "/surrogate/" + "*.cpo " + target_dir)
 
         # Write target input CPO file
         target_file_path = os.path.join(target_dir, self.target_filename)
