@@ -96,7 +96,7 @@ class CPOElement():
                 field_value[0] = new_value
         elif "ti" in stack or "ni" in stack or "ti_transp" in stack:
             if nion == 1:
-                field_value = np.array(new_value)
+                field_value.T[0] = np.array(new_value)
             else:
                 field_value.T[0] = np.array(new_value[0])
                 field_value.T[1] = np.array(new_value[1])
