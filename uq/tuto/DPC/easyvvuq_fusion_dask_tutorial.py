@@ -51,6 +51,7 @@ if __name__ == '__main__':      ### This is needed if you are using a local clus
         "b_sol":    {"type": "float",   "min": 2e18,  "max": 3e19,   "default": 2e19}, 
         "b_width":  {"type": "float",   "min": 0.005, "max": 0.025,  "default": 0.01}, 
         "b_slope":  {"type": "float",   "min": 0.0,   "max": 0.05,   "default": 0.01}, 
+        "Te_0":     {"type": "float",   "min": 1e-5,  "max": 1e6,    "default": 1000.0}, 
         "nr":       {"type": "integer", "min": 10,    "max": 1000,   "default": 100}, 
         "dt":       {"type": "float",   "min": 1e-3,  "max": 1e3,    "default": 100},
         "out_file": {"type": "string",  "default": "output.csv"}
@@ -106,7 +107,8 @@ if __name__ == '__main__':      ### This is needed if you are using a local clus
         "b_height": cp.Uniform(5e19,  7e19), 
         "b_sol":    cp.Uniform(1e19,  3e19), 
         "b_width":  cp.Uniform(0.015, 0.025), 
-        "b_slope":  cp.Uniform(0.005, 0.020)
+        "b_slope":  cp.Uniform(0.005, 0.020), 
+        "Te_0":     cp.Uniform(500.0, 2000.0)
     """
 
     # Associate a sampler with the campaign
