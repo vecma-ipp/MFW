@@ -41,7 +41,7 @@ def mtanh(x, b_slope):
     """
     return ((1 + b_slope * x)*np.exp(x)-np.exp(-x))/(np.exp(x)+np.exp(-x))
 
-def solve_Te(Qe_tot=2e6, H0=0, Hw=0.1, Te_bc=100, chi=1, a0=1, R0=3, E0=1.5, b_pos=0.98, b_height=6e19, b_sol=2e19, b_width=0.01, b_slope=0.01, nr=100, dt=100, plots=True):
+def solve_Te(Qe_tot=2e6, H0=0, Hw=0.1, Te_bc=100, chi=1, a0=1, R0=3, E0=1.5, b_pos=0.98, b_height=6e19, b_sol=2e19, b_width=0.01, b_slope=0.01, Te_0=1000.0, nr=100, dt=100, plots=True):
     """
     :param Qe_tot: heating power [W]
     :type Qe_tot: numpy float
@@ -69,6 +69,8 @@ def solve_Te(Qe_tot=2e6, H0=0, Hw=0.1, Te_bc=100, chi=1, a0=1, R0=3, E0=1.5, b_p
     :type b_width: numpy float
     :param b_slope: slope of density pedestal [?]
     :type b_slope: numpy float
+    :param Te_0: initial temperature [eV]
+    :type Te_0: numpy float
     :param nr: number of radial grid points
     :type nr: inteher
     :param dt: time-step [s]
@@ -104,7 +106,7 @@ def solve_Te(Qe_tot=2e6, H0=0, Hw=0.1, Te_bc=100, chi=1, a0=1, R0=3, E0=1.5, b_p
     a = a0*np.sqrt(E0)
     V = 2*np.pi * 2*np.pi*R0
     mesh = meshes.CylindricalGrid1D(nr=nr, Lr=a)
-    Te = CellVariable(name="Te", mesh=mesh, value=1e3)
+    Te = CellVariable(name="Te", mesh=mesh, value=Te_0)
     ne = CellVariable(name="ne", mesh=mesh, value=F_ped(mesh.cellCenters.value[0]/a, b_pos, b_height, b_sol, b_width, b_slope))
     Qe = CellVariable(name="Qe", mesh=mesh, value=np.exp(-((mesh.cellCenters.value/a-H0)/(Hw))**2)[0])
     Qe = Qe * Qe_tot/((mesh.cellVolumes*Qe.value).sum() * V)
@@ -129,6 +131,6 @@ if __name__ == '__main__':
 to test:
 
   import fusion
-  Te, ne, rho, rho_norm, Qe = fusion.solve_Te()
+  Te, ne, rho, rho_norm, Qe, V = fusion.solve_Te()
 
 """
