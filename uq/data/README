@@ -1,0 +1,28 @@
+The files named 'AUG_*gem_inoutput.txt' contains selected inputs of and outputs from GEM in the AUG production runs:
+
+The following contains the column titles from the .txt files and the corresponding CPO:
+
+
+inputs:
+
+column title	CPO name					further descriptions
+************	********					********************
+time            coreprof.time
+Te-ft*          coreprof.te.value				use interpolation to get values at the flux-tubes
+dTe-ft*		coreprof.te.ddrho				use interpolation to get values at the flux-tubes
+Ti-ft*          coreprof.ti.value				use interpolation to get values at the flux-tubes
+dTi-ft*		coreprof.ti.ddrho				use interpolation to get values at the flux-tubes
+ne-ft*		coreprof.ne.value				use interpolation to get values at the flux-tubes
+dne-ft*		coreprof.ne.ddrho				use interpolation to get values at the flux-tubes
+q-ft*		equilibrium.profiles_1d.q			use interpolation to get values at the flux-tubes
+B0		equilibrium.global_param.toroid_field.b0	use interpolation to get values at the flux-tubes
+
+
+outputs:
+
+column title	CPO name					further descriptions
+************	********					********************
+flux-Te-ft*	coretransp.values.te_transp.flux
+flux-Ti-ft*	coretransp.values.ti_transp.flux
+flux-ne-ft*	coretransp.values.ne_transp.flux
+
