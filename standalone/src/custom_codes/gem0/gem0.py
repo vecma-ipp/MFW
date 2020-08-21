@@ -3,16 +3,15 @@ import math
 
 from ascii_cpo import read, write, copy_cpo #TODO double check
 
-import turb_coeff #TODO: check what's there
+from turb_coeff import nrho_transp, nion, thresh = 6, beta_reduction, etae_pinch, chi_d, chiratio_phi, ra0 #TODO: check what's there
 
 import turb_constructor  #TODO what is that
-import l3interp  #TODO from libbsd ???
-import l3deriv  #TODO from libbds ???
+from utils import l3interp, l3deriv  # TODO from libbds ???
 
 import assign_turb_parameters
 import open_write_file
 
-from libbds import phys_constants
+from phys_constants import kb, ee, md, mu_0, cc
 
 def gem(eq, coreprof, coretransp,code_parameters):
 
@@ -133,7 +132,7 @@ def gem(eq, coreprof, coretransp,code_parameters):
     if q_choice == "equilibrium":
         l3interp(eq[0].profiles_1d.q, rho_eq, npsi, qqx, rho, nrho_transp)
     if q_choice == "coreprof":
-        l3interp(coreprof[0].profiles_1d.q, rho_eq, npsi, shatz, rho, nrho_transp)
+        l3interp(coreprof[0].profiles_1d.q, rho_eq, npsi, shatx, rho, nrho_transp)
     if q_choice == "jtot":
         if coreprof[0].profiles.q.value == None : #TODO check what it deos ALLOCATE(coreprof(1)%profiles1d%q%value(nrho_prof)) ???
             coreprof[0].profiles_1d.q.value[nrho_prof] = np.zeros((1)) #TODO how to pass size to ALLOCATE ?
