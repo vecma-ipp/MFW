@@ -9,4 +9,4 @@ md = cnst.proton_mass
 
 mu_0 = pc['vacuum mag. permeability'].value
 
-cc =
+cc = 1.0
