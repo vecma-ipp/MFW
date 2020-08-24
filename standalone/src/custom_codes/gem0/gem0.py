@@ -3,7 +3,7 @@ import math
 
 from ascii_cpo import read, write, copy_cpo #TODO double check
 
-from turb_coeff import nrho_transp, nion, thresh = 6, beta_reduction, etae_pinch, chi_d, chiratio_phi, ra0 #TODO: check what's there
+from turb_coeff import nrho_transp, nion, thresh, beta_reduction, etae_pinch, chi_d, chiratio_phi, ra0 #TODO: check what's there
 
 import turb_constructor  #TODO what is that
 from utils import l3interp, l3deriv  # TODO from libbds ???
@@ -11,9 +11,9 @@ from utils import l3interp, l3deriv  # TODO from libbds ???
 import assign_turb_parameters
 import open_write_file
 
-from phys_constants import kb, ee, md, mu_0, cc
+from phys_constants import *
 
-def gem(eq, coreprof, coretransp,code_parameters):
+def gem(eq, coreprof, coretransp, code_parameters):
 
     # XML declarataion
     codename[0] = 'GEM0'
