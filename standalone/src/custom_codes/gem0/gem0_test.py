@@ -8,7 +8,8 @@ import gem0
 
 from ascii_cpo import read, write
 
-import xml_file_reader
+#import xml_file_reader
+import xml.etree.ElementTree as ET
 
 # init_step = 0 # inital step count
 
@@ -21,7 +22,7 @@ def gem0_cpo(equil, corep, coret) :
 
     # print ("python GEM0 wrapper in python")
     # print ("get code params")
-    fill_param(code_parameters, 'gem0.xml', '', 'gem0.xsd')
+    fill_param(code_parameters, 'gem0.xml', '', 'gem0.xsd') #TODO check if fill_param() in ascii_cpo
 
     # print ("run gem0 routine")
     gem0(equil, corep, coret, code_parameters)

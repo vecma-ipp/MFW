@@ -9,11 +9,14 @@ import turb_constructor  #TODO what is that
 from utils import l3interp, l3deriv  # TODO from libbds ???
 
 import assign_turb_parameters
-import open_write_file
+#import open_write_file
 
 from phys_constants import *
 
 def gem(eq, coreprof, coretransp, code_parameters):
+
+    codename = [] #TODO check
+    codeversion = [] #TODO check
 
     # XML declarataion
     codename[0] = 'GEM0'
@@ -36,14 +39,14 @@ def gem(eq, coreprof, coretransp, code_parameters):
     coretransp[0].codeparam.parameters = code_parameters.parameters
 
     # Asign code paramteters to interval variabe;s
-    return_status = assign_turb_parameters(code_parameters) #TODO check implementation
+    return_status = assign_turb_parameters(code_parameters) #TODO check if actually something cannot be initialized in runtime
     if return_status != 0:
         print('ERROR: Could not assign GEM0 parameters!')
     print('Done assigning GEM0 parameters')
 
     # Write I/O CPOs
     if write_cpos:
-        open_write_file('GEMCPOs')  #TODO check where it is
+        #open_write_file('GEMCPOs')  #TODO is it same as ascii_cpo write
         write(coreprof[0], 'coreprof')  #TODO check if the same as python interface
         write(eq[0], 'equil')
 
@@ -103,18 +106,18 @@ def gem(eq, coreprof, coretransp, code_parameters):
         gm3 = 1.0
 
     # ???
-    nnex = np.array((nrho_transp))
-    ttex = np.array((nrho_transp))
-    nnix = np.array((nrho_transp))
-    ttix = np.array((nrho_transp))
+    nnex  = np.array((nrho_transp))
+    ttex  = np.array((nrho_transp))
+    nnix  = np.array((nrho_transp))
+    ttix  = np.array((nrho_transp))
     zeffx = np.array((nrho_transp))
-    qqx = np.array((nrho_transp))
+    qqx   = np.array((nrho_transp))
     rlnex = np.array((nrho_transp))
     rlnix = np.array((nrho_transp))
     rltex = np.array((nrho_transp))
     rltix = np.array((nrho_transp))
     shatx = np.array((nrho_transp))
-    chix = np.array((nrho_transp))
+    chix  = np.array((nrho_transp))
 
     # Main ion params
 
@@ -294,7 +297,7 @@ def gem(eq, coreprof, coretransp, code_parameters):
     coretransp[0].values[0].vtor_transp.diff_eff = chiratio_phi * coretransp[0].values[0].ti_transp.diff_eff
 
     # timestamp
-    time = time + 1.0
+    time = time + 1.0  #TODO checj is read from CPO??
     coretransp[0].time = time
 
     # write diags
