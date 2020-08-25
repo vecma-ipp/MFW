@@ -1,7 +1,9 @@
 
-import ITM_Types #TODO
-import Euitm_schemas
-import coretransp_types
+#import ITM_Types #TODO
+#import Euitm_schemas
+#import coretransp_types
+
+import numpy as np
 
 def turb_constructor(coretransp, nrho0, nrho, nion):
 
@@ -9,7 +11,7 @@ def turb_constructor(coretransp, nrho0, nrho, nion):
 
      #ALLOCATE(coretransp.values[0])
 
-     coretransp.values[0].sigma[nrho0:nrho]
+     coretransp.values[0].sigma = np.array((nrho - nrho0))
 
      # ALLOCATE(coretransp.values[0].rho_tor(nrho0:nrho))
      # ALLOCATE(coretransp.values[0].rho_tor_norm(nrho0:nrho))

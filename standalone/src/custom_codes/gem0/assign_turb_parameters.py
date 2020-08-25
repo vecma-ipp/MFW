@@ -1,5 +1,7 @@
 import turb_coeff as tc
 
+import xml.etree.ElementTree as ET
+
 def assign_turb_parameters(code_parameters):
     """
     calls the XML parser for the code parameters and assign the
@@ -7,20 +9,20 @@ def assign_turb_parameters(code_parameters):
     """
 
     #TODO check if replaceble with xml.etree
-    if IMAS == True:
-        import imas_xml_parser
-    else:
-        import euitm_xml_parser
+#    if IMAS == True:
+#        import imas_xml_parser
+#    else:
+#        import euitm_xml_parser
 
     #TODO check what difference doe it make
-    if IMAS == True:
-        code_parameters = {}
-        return_status = 0
-        i, nparm, n_values = 0
-    else:
-        code_parameters = {}
-        return_status = 0
-        i, nparm, n_values = 0
+#    if IMAS == True:
+#        code_parameters = {}
+#        return_status = 0
+#        i, nparm, n_values = 0
+#    else:
+#        code_parameters = {}
+#        return_status = 0
+#        i, nparm, n_values = 0
 
     parameter_list = {}
 
@@ -29,12 +31,14 @@ def assign_turb_parameters(code_parameters):
     n_values = 0
     return_status = 0
 
-    # parse xml-string code_parameters%parameters using W3C XML schema in code_parameters%schema
+    # parse xml-string code_parameters.parameters using W3C XML schema in code_parameters%schema
 
-    if IMAS == True:
-        imas_xml_parse(code_parameters, nparm, parameter_list)
-    else:
-        euitm_xml_parse(code_parameters, nparm, parameter_list)
+#    if IMAS == True:
+#        imas_xml_parse(code_parameters, nparm, parameter_list)
+#    else:
+#        euitm_xml_parse(code_parameters, nparm, parameter_list)
+
+    parameter_list = ET.parse(code_parameters)
 
     # assign variables
 
