@@ -1,12 +1,12 @@
 import numpy as np
 import math
 
-from ascii_cpo import read, write, copy_cpo #TODO double check
+from ascii_cpo import read, write, copy #TODO double check if the same as fortran interface
 
-from turb_coeff import nrho_transp, nion, thresh, beta_reduction, etae_pinch, chi_d, chiratio_phi, ra0 #TODO: check what's there
+from turb_coeff import nrho_transp, nion, thresh, beta_reduction, etae_pinch, chi_d, chiratio_phi, ra0 #TODO: check if overwritten properly
 
-import turb_constructor  #TODO what is that
-from utils import l3interp, l3deriv  # TODO from libbds ???
+import turb_constructor  #TODO check if structure is asctually created
+from utils import l3interp, l3deriv  # TODO check implementation correctness
 
 import assign_turb_parameters
 #import open_write_file
@@ -15,14 +15,14 @@ from phys_constants import *
 
 def gem(eq, coreprof, coretransp, code_parameters):
 
-    codename = [] #TODO check
+    codename = [] #TODO check if should be wrritten as list/array
     codeversion = [] #TODO check
 
     # XML declarataion
-    codename[0] = 'GEM0'
-    codeversion[0] = '4.10b'
+    codename.append('GEM0')
+    codeversion.append('4.10b')
 
-    coretransp[0].codeparam.codename = codename
+    coretransp[0].codeparam.codename = codename #TODO check if CPOs should be taken as root
 
     # Assign params
     if code_parameters.parameters == None:
@@ -38,7 +38,7 @@ def gem(eq, coreprof, coretransp, code_parameters):
     coretransp[0].codeparam.codeversion = codeversion
     coretransp[0].codeparam.parameters = code_parameters.parameters
 
-    # Asign code paramteters to interval variabe;s
+    # Asign code paramteters to interval variables
     return_status = assign_turb_parameters(code_parameters) #TODO check if actually something cannot be initialized in runtime
     if return_status != 0:
         print('ERROR: Could not assign GEM0 parameters!')

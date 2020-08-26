@@ -1,5 +1,5 @@
 
-import gem0
+from gem0 import gem
 
 #from euitm_schemas import  type_coreprof, type_equilibrium, type_coretransp
 #from read_structures import open_read_file, close_read_file, read_cpo
@@ -8,6 +8,10 @@ import gem0
 
 from ascii_cpo import read, write
 
+from ual.coreprof import coreprof
+from ual.coretransp import coretransp
+from ual.equilibrium import equilibrium
+
 #import xml_file_reader
 import xml.etree.ElementTree as ET
 
@@ -15,17 +19,18 @@ import xml.etree.ElementTree as ET
 
 def gem0_cpo(equil, corep, coret) :
 
-    equil = {}
-    corep = {}
-    coret = {}
-    code_parameters = {}
+    equil = equilibrium()
+    corep = coreprof()
+    coret = coretransp()
+    #code_parameters = {}
 
     # print ("python GEM0 wrapper in python")
     # print ("get code params")
-    fill_param(code_parameters, 'gem0.xml', '', 'gem0.xsd') #TODO check if fill_param() in ascii_cpo
+    # fill_param(code_parameters, 'gem0.xml', '', 'gem0.xsd') #TODO check if fill_param() does exactly the same as parsing
+    code_parameters = ET.parse('gem0.xml') # TODO check if schema is not needed
 
     # print ("run gem0 routine")
-    gem0(equil, corep, coret, code_parameters)
+    gem(equil, corep, coret, code_parameters)
 
 def gem0_test():
     """
@@ -45,7 +50,7 @@ def gem0_test():
     # Read CPO file and write structures
 
     equil = read(equil_file_in, "equilibrium")
-    corep = read(corep_file_in, "coreprofile")
+    corep = read(corep_file_in, "coreprof")
     #coret = read(coret_file_out , "coretransp")
 
     gem0_cpo(equil, corep, coret)
