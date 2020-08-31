@@ -173,7 +173,8 @@ clean-bohmgb:
 
 
 # gem0 #########################################################################
-gem0: ual libbds get-gem0
+gem0: 
+#ual libbds get-gem0
 	@echo -e "\033[36m\033[1m ++++ Build GEM0 ++++ \033[0m"; \
 	($(MAKE) --no-print-directory -C externals -f Makefile.gem0 \
 	&& echo -e "\033[32m\033[1m -- OK -- \033[0m") \

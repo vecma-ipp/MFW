@@ -1,9 +1,9 @@
 import numpy
+from ascii_cpo import read
 from .statistics import get_dist
 from ..templates.xml_element import XMLElement
 from ..templates.cpo_element import CPOElement
 
-# TODO use one routine for both
 
 def get_xml_inputs(xml_file, xsd_file, input_params):
     """
@@ -42,6 +42,8 @@ def get_xml_inputs(xml_file, xsd_file, input_params):
 
     return params, vary
 
+
+
 def get_cpo_inputs(cpo_file, cpo_name, input_params):
     """
     input_params dict
@@ -57,18 +59,13 @@ def get_cpo_inputs(cpo_file, cpo_name, input_params):
     vary = {}
 
     for name, attr in input_params.items():
-        # get inital value and update params
+        # Get inital value and update params
         value = cpo.get_value(name)
-        # Select a part of input values
-        if "idx" in attr.keys():
-            indices = attr["idx"]
-            if len(indices) == 1:
-                value = value[indices[0]]
-            else:
-                new_value = []
-                for i in indices:
-                    new_value.append(value[i])
-                value = new_value
+
+        # Particular case, the flux tube index is given
+        if "ft_index" in attr.keys():
+            i = attr["ft_index"]
+            value = value[i]
 
         attr_type = type(value)
 
@@ -88,3 +85,28 @@ def get_cpo_inputs(cpo_file, cpo_name, input_params):
         vary.update({name: dist})
 
     return params, vary
+
+
+# Get a list of indices in rho_tor_norm (in coreprof) that correspond
+# to the closest rho_thor_norm of flux tubes (in coretransp).
+#   corprof cpo file in one of gem0 input
+#   coretransp cpo file is the gem0 outpout
+def get_fluxtube_index(corep_file, coret_file):
+    corep = read(corep_file, 'coreprof')
+    coret = read(coret_file, 'coretransp')
+
+    # rho_tor_norm_transp_flux
+    rt = coret.values[0].rho_tor_norm
+    n_flux = len(rt)
+    print('rho_cores = ', rt)
+
+    # rho_tor_norm vector in coreprof
+    r = corep.rho_tor_norm
+
+    # the closest rho_tor in coreprof
+    rp = [r.flat[numpy.abs(r - rt[i]).argmin()] for i in range(n_flux)]
+    print('rho_corep = ', rp)
+
+    # the corresponding indices
+    ind = [list(r).index(rp[i]) for i in range(n_flux)]
+    return ind

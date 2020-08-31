@@ -33,6 +33,7 @@ params = {
     "b_sol":    {"type": "float",   "min": 2e18,  "max": 3e19,   "default": 2e19}, 
     "b_width":  {"type": "float",   "min": 0.005, "max": 0.025,  "default": 0.01}, 
     "b_slope":  {"type": "float",   "min": 0.0,   "max": 0.05,   "default": 0.01}, 
+    "Te_0":     {"type": "float",   "min": 1e-5,  "max": 1e6,    "default": 1000.0}, 
     "nr":       {"type": "integer", "min": 10,    "max": 1000,   "default": 100}, 
     "dt":       {"type": "float",   "min": 1e-3,  "max": 1e3,    "default": 100},
     "out_file": {"type": "string",  "default": "output.csv"}
@@ -88,7 +89,8 @@ vary = {
     "b_height": cp.Uniform(5e19,  7e19), 
     "b_sol":    cp.Uniform(1e19,  3e19), 
     "b_width":  cp.Uniform(0.015, 0.025), 
-    "b_slope":  cp.Uniform(0.005, 0.020)
+    "b_slope":  cp.Uniform(0.005, 0.020), 
+    "Te_0":     cp.Uniform(500.0, 2000.0)
 """
 
 # Associate a sampler with the campaign
@@ -102,12 +104,14 @@ time_end = time.time()
 print('Time for phase 2 = %.3f' % (time_end-time_start))
 time_start = time.time()
 
+# Create and populate the run directories
 my_campaign.populate_runs_dir()
 
 time_end = time.time()
 print('Time for phase 3 = %.3f' % (time_end-time_start))
 time_start = time.time()
 
+# Run the cases
 cwd = os.getcwd().replace(' ', '\ ')      # deal with ' ' in the path
 cmd = f"{cwd}/fusion_model.py fusion_in.json"
 my_campaign.apply_for_each_run_dir(uq.actions.ExecuteLocal(cmd, interpret='python3'))
@@ -116,6 +120,7 @@ time_end = time.time()
 print('Time for phase 4 = %.3f' % (time_end-time_start))
 time_start = time.time()
 
+# Collate the results
 my_campaign.collate()
 
 time_end = time.time()
@@ -153,6 +158,7 @@ print('Time for phase 8 = %.3f' % (time_end-time_start))
 
 plt.ion()
 
+# plot the calculated Te: mean, with std deviation, 10 and 90% and range
 plt.figure() 
 plt.plot(rho, stats['mean'], 'b-', label='Mean')
 plt.plot(rho, stats['mean']-stats['std'], 'b--', label='+1 std deviation')
@@ -168,6 +174,7 @@ plt.ylabel('Te [eV]')
 plt.title(my_campaign.campaign_dir)
 plt.savefig('Te.png')
 
+# plot the first Sobol results
 plt.figure() 
 for k in sobols.keys(): plt.plot(rho, sobols[k][0], label=k)
 plt.legend(loc=0)
@@ -176,6 +183,7 @@ plt.ylabel('sobols_first')
 plt.title(my_campaign.campaign_dir)
 plt.savefig('sobols_first.png')
 
+# plot the total Sobol results
 plt.figure() 
 for k in results['sobols_total']['te'].keys(): plt.plot(rho, results['sobols_total']['te'][k][0], label=k)
 plt.legend(loc=0)    
@@ -184,6 +192,7 @@ plt.ylabel('sobols_total')
 plt.title(my_campaign.campaign_dir)
 plt.savefig('sobols_total.png')
 
+# plot the distributions
 plt.figure()
 for i, D in enumerate(results['output_distributions']['te']):
     _Te = np.linspace(D.lower[0], D.upper[0], 101)

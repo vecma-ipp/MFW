@@ -14,7 +14,7 @@ json_input = sys.argv[1]
 with open(json_input, "r") as f:
     inputs = json.load(f)
 
-Te, ne, rho, rho_norm, Qe = fusion.solve_Te(
+Te, ne, rho, rho_norm, Qe, V = fusion.solve_Te(
                                         Qe_tot =   float(inputs['Qe_tot']),
                                         H0 =       float(inputs['H0']),
                                         Hw =       float(inputs['Hw']),
@@ -28,6 +28,7 @@ Te, ne, rho, rho_norm, Qe = fusion.solve_Te(
                                         b_sol =    float(inputs['b_sol']),
                                         b_width =  float(inputs['b_width']),
                                         b_slope =  float(inputs['b_slope']),
+                                        Te_0 =     float(inputs['Te_0']),
                                         nr =       int(inputs['nr']),
                                         dt =       float(inputs['dt']),
                                         plots =    False)

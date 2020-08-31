@@ -1,3 +1,9 @@
 .ipynb_checkpoints/
 __pycache__/
 *.png
+fusion_pce.*/
+campaign_state.json
+fusion_results.pickle
+*.local
+*.orig
+*~

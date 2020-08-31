@@ -16,10 +16,11 @@ IMPORTANT CHECK: in gem0.xml, nrho_transp = 1
 print('TEST GEM0-UQ: START')
 
 # We test 1 flux tube
-flux_indices = [69]
 #flux_indices = [15, 31, 44, 55, 66, 76, 85, 94]
+ft_index = 61
+
 # execustion with QCJ-PJ
-EXEC_PJ = False
+EXEC_PJ = True
 
 # Machine name
 SYS = os.environ['SYS']
@@ -30,7 +31,6 @@ tmp_dir = os.environ['SCRATCH']
 # CPO files location
 cpo_dir = os.path.abspath("../workflows/AUG_28906_6_1ft_restart")
 #cpo_dir = os.path.abspath("../workflows/AUG_28906_6_8ft_restart")
-print("cpodir: " + cpo_dir + "\n")
 #cpo_dir = os.path.abspath("../workflows/JET_92436_23066")
 
 # XML and XSD files location
@@ -46,22 +46,22 @@ input_params = {
     "te.value": {
         "dist": "Normal",
         "err":  0.2,
-        "idx": flux_indices,
+        "ft_index": ft_index,
     },
     "te.ddrho": {
         "dist": "Normal",
         "err": 0.2,
-        "idx": flux_indices,
+        "ft_index": ft_index,
     },
     "ti.value": {
         "dist": "Normal",
         "err":  0.2,
-        "idx": flux_indices,
+        "ft_index": ft_index,
     },
     "ti.ddrho": {
         "dist": "Normal",
         "err": 0.2,
-        "ids": flux_indices,
+        "ft_index": ft_index,
     }
 }
 
@@ -133,8 +133,8 @@ my_campaign.add_app(name=campaign_name,
 
 # Create the sampler
 print('>>> Create the sampler')
-#my_sampler = uq.sampling.PCESampler(vary=vary, polynomial_order=3)
-my_sampler = uq.sampling.QMCSampler(vary=vary, n_mc_samples=10)
+my_sampler = uq.sampling.PCESampler(vary=vary, polynomial_order=3)
+#my_sampler = uq.sampling.QMCSampler(vary=vary, n_mc_samples=10)
 my_campaign.set_sampler(my_sampler)
 
 # Will draw all (of the finite set of samples)
@@ -176,8 +176,8 @@ my_campaign.collate()
 
 # Post-processing analysis
 print('>>> Post-processing analysis')
-#analysis = uq.analysis.PCEAnalysis(sampler=my_sampler, qoi_cols=output_columns)
-analysis = uq.analysis.QMCAnalysis(sampler=my_sampler, qoi_cols=output_columns)
+analysis = uq.analysis.PCEAnalysis(sampler=my_sampler, qoi_cols=output_columns)
+#analysis = uq.analysis.QMCAnalysis(sampler=my_sampler, qoi_cols=output_columns)
 my_campaign.apply_analysis(analysis)
 
 print('>>> Get results')
