@@ -2,11 +2,13 @@ import os
 import numpy as np
 
 from ascii_cpo import read
-import easymfw.utils.cpo_tools
+import easymfw.utils.io_tools
 
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+
+import pandas as pd
 
 def get_rho(filename):
     return read(filename, "coreprof").rho.values
@@ -28,7 +30,7 @@ def get_tegrad(filename):
 
 def get_tigrad(filename):
     coreprof = read(filename, "coreprof")
-    tigrad = coreprod.ti.ddrho
+    tigrad = coreprof.ti.ddrho
     return tigrad
 
 def get_te_flux(filename):
@@ -64,24 +66,30 @@ def walklevel(some_dir, level=1):
         if num_sep + level <= num_sep_this:
             del dirs[:]
 
-def get_camp_data(foldname, input_index):
+def get_camp_data(foldname, input_index=[61]):
     input_filename = "gem0_coreprof_in.cpo"
     result_filename = "gem0_coretransp_out.cpo"
     run_foldername = foldname + 'runs/'
     Te_prof_vals = []
     Ti_prof_vals = []
+    Te_grad_vals = []
+    Ti_grad_vals = []
     Te_flux_vals = []
     Ti_flux_vals = []
     #print(run_foldername)
     for _,runs,_ in walklevel(run_foldername):
         for run in runs:
             #print(run)
-            Te_prof_vals.append(get_te(os.path.join(run_foldername, run, input_filename))[input_index])
-            Ti_prof_vals.append(get_ti(os.path.join(run_foldername, run, input_filename))[input_index]) 
-            Te_flux_vals.append(get_te_flux(os.path.join(run_foldername, run, result_filename)))
-            Ti_flux_vals.append(get_ti_flux(os.path.join(run_foldername, run, result_filename)))
-    
-    return Te_prof_vals, Ti_prof_vals, Te_flux_vals, Ti_flux_vals    
+            run_in_path  = os.path.join(run_foldername, run, input_filename)
+            run_out_path = os.path.join(run_foldername, run, result_filename)
+            Te_prof_vals.append(get_te(run_in_path)[input_index])
+            Ti_prof_vals.append(get_ti(run_in_path)[input_index])
+            Te_grad_vals.append(get_tegrad(run_in_path)[input_index])
+            Ti_grad_vals.append(get_tigrad(run_in_path)[input_index]) 
+            Te_flux_vals.append(get_te_flux(run_out_path))
+            Ti_flux_vals.append(get_ti_flux(run_out_path))    
+
+    return Te_prof_vals, Ti_prof_vals, Te_grad_vals, Ti_grad_vals, Te_flux_vals, Ti_flux_vals    
 
 
 def plot_prof(prof, rho, name):
@@ -118,7 +126,29 @@ def plot_scatter_2D(profvals, resvals, campname):
     #plt.autoscale(enable=True, axis='both', tight=True)
     plt.savefig('Te_scatter_' + campname + '.png')
     plt.close()
+
+
+def read_data_totensor(folder):
+    Tes, Tis, Tegs, Tigs, Tefs, Tifs = get_camp_data(folder)
+    X = pd.DataFrame(list(zip(Tes, Tis, Tigs, Tegs)))
+    Xmat = np.array([np.unique(X[:, i]) for i in range(X.shape[1])]) 
+    return X, Xmat
+
+
+def plot_2d_map(X, Y, inds=[2,3]):
+    Xlabels = ['Te_val', 'Ti_val', 'Te_grad', 'Ti_grad']
+    Ylabels = ['Te_flux', 'Ti_flux']
     
+    plt.pcolormesh(X[:, inds[0]], X[:, inds[1]], Y[:, 1])
+
+    plt.savefig("plot2d_" + Xlabels[inds[0]] + "_" + Xlabels[inds[1]] + ".png")
+    plt.close()
+
+
+#def get_slice(Xmat, n_slice = [3]):
+#     Xsl = np.array([i for i in itertools.product([],[],[],np.linspace(Xmat))
+ 
+        
 ###--------------------------------------------------------- 
 	
 ft1_indx = 61 # 69
@@ -138,6 +168,7 @@ basefolder = "/u/yyudin00/code/MFW/workflow/AUG_28906_6_1ft_restart/"
 #basefolder = scratch_folder + "UQ_GEM0_LVR_m9qiu5tm/"
 #basefolder = scratch_folder + "UQ_GEM0_LVR_37os6gq0/"
 basefolder = scratch_folder + "UQ_GEM0_61_e9zvw66q/"
+basefolder = scratch_folder + "gemuq_qmc_tjpqqq_4/"
 
 #filename = "Run_1/gem0_coreprof_in.cpo" 
 #filename = "gem0_coreprof_in.cpo"
@@ -158,7 +189,7 @@ filename_res = "gem0_coretransp_out.cpo"
 #res2 = get_te_flux(basefolder + runfold2 + "/" + filename_res)[0]
 
 ###---Print the values in selected folders-----
-#print(runfold1 + " te: " + str(pr11[ft1_indx]) + " ; " + runfold2 + " te: " + str(pr21[ft1_indx]) + " ; " + runfold1 + " gradte: " + str(pr12[ft1_indx]) + " ; " + runfold2 + " gradte: " + str(pr22[ft1_indx]) + " ; " + runfold1 + " teflux: " + str(res1) + " ; " + runfold2 + "teflux: " + str(res2))
+#print(runfold1 + " te: " + str(pr11[ft1_indx]) + " ; " + runfold2 + " te: " + str(pr21[ft1_indx]) + " ; " + runfold1 + " gradte: " + str(pr12[ft1_indx]) + " ; " + runfold2 + " gradte: " + str(pr22[ft1_indx]) + " ; " + runfold1 + " teflux: " + str(res1) + " ; " + run/fold2 + "teflux: " + str(res2))
 
 ###---Print all fluxes in a campaing---
 #for i in range(1,200):
@@ -178,10 +209,19 @@ filename_res = "gem0_coretransp_out.cpo"
 #print("flux for the case " + str(2) + " : " + '%.3g'%(res2))
 
 ###---Plot scatter plot of Te and Te_flux ofr a  campaing----
-teprvals, tiprvals, teflvals, tiflvals = get_camp_data(basefolder, ft1_indx)
+teprvals, tiprvals, tegrvals, tigrvals, teflvals, tiflvals = get_camp_data(basefolder, ft1_indx)
+print(1)
 plot_scatter_2D(teprvals, teflvals, 'fuswfGEM0_ft61_PCE')
+print(2)
 #print("Te flux values: ")
 #print(teflvals)
+
+###---Plot color mesh---
+#X = read_data_totensor(basefolder)
+X = np.array([teprvals, tiprvals, tegrvals, tigrvals])
+X = np.transpose(X)
+print(3)
+plot_2d_map(X,Y)
 
 
 ###---Check flux tube indices--
