@@ -20,6 +20,7 @@
  
    <grid>
      <nrho_transp> 1 </nrho_transp>
+     <ra0> 0.7 </ra0>
      <nion> 0 </nion>
    </grid>
 

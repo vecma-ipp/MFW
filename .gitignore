@@ -9,6 +9,7 @@ externals/*
 !Makefile.libbds
 !chease-patch.diff
 !gem-tmppatch.diff
+!gem0-ra0patch.diff
 
 ual/fortran_interface/*.o
 ual/python_interface/*.pyc
