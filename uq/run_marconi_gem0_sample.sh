@@ -1,14 +1,14 @@
 #!/bin/bash -l
 
 ## job name
-#SBATCH --job-name=UQ_GEM0_PCE_2FT
+#SBATCH --job-name=UQ_GEM0_QMC_1FT
 
 ## stdout and stderr files
 #SBATCH --output=test-out.%j.qmc
 #SBATCH --error=test-err.%j.qmc
 
 ## wall time in format MINUTES:SECONDS
-#SBATCH --time=0:30:00
+#SBATCH --time=1:00:00
 
 ## number of nodes and tasks per node
 #SBATCH --nodes=1
@@ -39,12 +39,6 @@ export ENCODER_MODULES
 export EASYPJ_CONFIG=conf.sh
 
 # Run the UQ code
-echo
-echo $PYTHONPATH
-echo
-echo $PATH
-echo
 scontrol show --detail job $SLURM_JOBID
-echo
-python3 tests/gem0_sample.py > test-log.${SLURM_JOBID}.qmc
+python3 tests/gem0_qmc.py > test-log.${SLURM_JOBID}.qmc
 
