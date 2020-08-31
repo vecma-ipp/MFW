@@ -220,6 +220,8 @@ print(2)
 #X = read_data_totensor(basefolder)
 X = np.array([teprvals, tiprvals, tegrvals, tigrvals])
 X = np.transpose(X)
+Y = np.array([teflvals, tiflvals])
+Y = np.transpose(Y)
 print(3)
 plot_2d_map(X,Y)
 
