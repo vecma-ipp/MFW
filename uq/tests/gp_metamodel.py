@@ -8,9 +8,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from ascii_cpo import read
 from sklearn.gaussian_process import GaussianProcessRegressor
-from sklearn.gaussian_process.kernels import DotProduct, WhiteKernel, Matern, RBF
-from sklearn.gaussian_process.kernels \
-    import RBF, WhiteKernel, ConstantKernel as C
+from sklearn.gaussian_process.kernels import DotProduct, WhiteKernel, Matern, RBF, ConstantKernel
 
 from sklearn.metrics import mean_squared_error as mse
 
@@ -128,7 +126,9 @@ if __name__ == "__main__":
     start = timeit.timeit()
     n_features = 4 #2
     #kernel = Matern(length_scale=[100,100], nu=0.5) + RBF(length_scale=[100,100])
-    kernel = Matern(length_scale=[100, 100, 100, 100], nu=0.5) + RBF(length_scale=[100, 100, 100, 100])
+    #kernel = Matern(length_scale=[100, 100, 100, 100], nu=0.5) + RBF(length_scale=[100, 100, 100, 100])
+    kernel = ConstantKernel() + Matern(length_scale=[100, 100, 100, 100], nu=0.5) + WhiteKernel(noise_level=0.5)
+    # to do noise level from GEM
 
     gpr = GaussianProcessRegressor(kernel=kernel, random_state=0).fit(X, Y)
     #print(gpr.kernel_)
