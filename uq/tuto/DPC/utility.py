@@ -87,7 +87,11 @@ def plot_smoothed(data, what, logy=True):
     for i, W in enumerate(what):
         for D in data:
             for c in W["cols"]:
-                ax[i].plot(D["data"].time, _ewma(np.array(D["data"][c]), 1e-3), D["style"], label=c)
+                M = _ewma(np.array(D["data"][c]), 1e-3)
+                M2 = _ewma(np.array(D["data"][c])**2, 1e-3)
+                S = np.sqrt(M2-M**2)
+                base_line, = ax[i].plot(D["data"].time, M, D["style"], label=c)
+                ax[i].fill_between(D["data"].time, M-S, M+S, facecolor=base_line.get_color(), alpha=0.1)
             ax[i].set_prop_cycle(None)
             if logy: ax[i].set_yscale('log')
         ax[i].legend(loc=0, ncol=4)
