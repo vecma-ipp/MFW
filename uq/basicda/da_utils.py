@@ -5,8 +5,9 @@ import pandas as pd
 import chaospy as cp
 
 import matplotlib
-matplotlib.use('Agg')
+#matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+import matplotlib.tri as mtri
 
 from mpl_toolkits.mplot3d import Axes3D
 #import seaborn as sns
@@ -94,21 +95,34 @@ def plot_3d_wire(df, xinds=[2,3], yind=1):
     ax.set_zlabel(ylab)
     plt.savefig("plot3d_" + x1lab + "_" + x2lab + "_" + ylab + "_mid_wf.png")
     plt.close()
- 
+
+def plot_3d_suraface(x ,y, z, name):
+    triang = mtri.Triangulation(x, y)
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    ax.plot_trisurf(triang, z, cmap='viridis')
+    ax.scatter(x, y, z, marker='.', alpha=0.3)
+    ax.view_init(elev=60, azim=-45)
+    ax.set_xlabel('X')
+    ax.set_ylabel('Y')
+    ax.set_zlabel('F')
+    plt.savefig('3dmeshplot_' + name + '.png')
+    plt.show()
+    plt.close()
 
 def plot_distr(dist=cp.J(cp.Uniform(0.8, 1.2), cp.Uniform(0.8, 1.2))):
     # Create contour plot for the probability density function
-    grid_init, grid_rate = grid = np.meshgrid(np.linspace(0.8, 1.2, 32), numpy.linspace(0.8, 1.2, 32))
+    grid_init, grid_rate = grid = np.meshgrid(np.linspace(0.8, 1.2, 32), np.linspace(0.8, 1.2, 32))
     contour = plt.contourf(grid_init, grid_rate, dist.pdf(grid), levels=20, cmap="gray", alpha=0.3)
     colorbar = plt.colorbar(contour)
     # Create scatter plot for 50 random samples
     np.random.seed(123)
     samples = dist.sample(50)
-    plr.scatter(*samples, marker="x", color="k")
+    plt.scatter(*samples, marker="x", color="k")
     # Make figure pretty
-    pyplot.axis([0.5, 1.5, 0.5, 1.5])
-    pyplot.xlabel("omega_a (uniform)")
-    pyplot.ylabel("omega_b (uniform)")
+    plt.axis([0.5, 1.5, 0.5, 1.5])
+    plt.xlabel("omega_a (uniform)")
+    plt.ylabel("omega_b (uniform)")
     colorbar.ax.set_ylabel("Joint probability density")
     plt.savefig('dist' + '.png')
     plt.close()
@@ -133,3 +147,17 @@ def plot_conv(sample_sizes, errors_mean, errors_variance):
     plt.legend()
     plt.savefig('toy' + '_cos' + '_convergence' + '.png')
     plt.close()
+
+def exponential_model(x, theta=[1.0, 1.0, 1.0]):
+    """
+    :param theta: paramters of size (n+1,1); A = theta[0] and theta[1:] are rates
+    :param x: coordinates of size (n,1)
+    :return:
+    """
+    return theta[0]*np.e**(-np.dot(x, np.array(theta[1:])))
+
+def exponential_model_sp(xs, a, k, l, s, b, e=np.e):
+    return b + a*e**(-xs[:,0]*k-xs[:,1]*l-s)
+
+def cossin_model(x, theta):
+    return np.cos(x*theta[0])*np.sin(x*theta[1])

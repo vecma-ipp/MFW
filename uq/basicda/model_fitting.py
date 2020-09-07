@@ -3,6 +3,8 @@ import numpy as np
 import sklearn
 from scipy.optimize import curve_fit
 
+from da_utils import exponential_model_sp
+
 #from ascii_cpo import read
 
 def read():
@@ -62,10 +64,8 @@ def test_func(x, a, m, s):
     y = a * np.exp(-(x-m)**2 / (2*s*s))
     return y
 
-def fit(data_y=[], n_fp=[]):
-
+def fit_norm(data_y=[], n_fp=[]):
     x = np.linspace(0, 1, 101)
-
     # y =  read_orig_data() # take from existing GEM data
     y = test_func(x, 2.33, 0.21, 1.51) + np.random.normal(0, 0.2, x.size)
 
@@ -73,8 +73,13 @@ def fit(data_y=[], n_fp=[]):
     init_vals = [1, 0, 1]  # for [amp, cen, wid]
 
     best_vals, covar = curve_fit(test_func, x, y, p0=init_vals)
-
     print('best_vals: {}'.format(best_vals))
 
+def fit_exp(x, y, z, f=exponential_model_sp):
+    X = np.dstack((x, y))[0]
+    init_vals = [1500.0, 10.0, 10.0, 0.0, 0.0, np.e]
+    best_vals, covar = curve_fit(f, X, z, p0=init_vals)
+    print('best_vals: {}'.format(best_vals))
+    return best_vals
 
-fit()
+#fit()

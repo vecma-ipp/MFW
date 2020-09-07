@@ -1,6 +1,7 @@
 
 from da_utils import *
 
+from model_fitting import *
 
 def calc_var_num(N=2, K=4, dist=cp.J(cp.Uniform(0.1, 0.3), cp. Uniform(0.7, 1.3)), f=(lambda th,x: np.cos(th[0]*x) * np.sin(th[1]*x))):
     thetas, ws = cp.generate_quadrature(K, dist, rule="gaussian")
@@ -30,6 +31,49 @@ def perf_analysis(true_mean=-1, true_variance=0.02, f=(lambda a,x: np.cos(a*x)))
 def test_bivariate(f=lambda x, y, a, b: cos(a*x)*sin(b*y), val=[np.pi, np.pi/2], priors=[[1.0, ],[]]):
     return 0
 
+def test_exponent():
+    n = 128
+    x0 = 0
+    xm = 10
+    y0 = 0
+    ym = 10
+    x = np.random.rand(n) * (xm - x0) + x0
+    y = np.random.rand(n) * (ym - y0) + y0
+    X = np.dstack((x, y))
+    z = np.array([exponential_model(coord) for coord in X[0]])
+    plot_3d_suraface(x, y, z, 'exp')
+
+def test_cossin():
+    xval = np.pi/2.0
+    n = 128
+    x0 = 0.05
+    xm = 5.0
+    y0 = 0.05
+    ym = 5.0
+    x = np.random.rand(n) * (xm - x0) + x0
+    y = np.random.rand(n) * (ym - y0) + y0
+    X = np.dstack((x, y))
+    z = np.array([cossin_model(xval,parval) for parval in X[0]])
+    plot_3d_suraface(x, y, z, 'cossin')
+
+
+def test_data(datafile):
+    dat, _, _ = read_sim_csv(datafile)
+    pord = 4
+    # plot_2d_map(data, X,Y)
+    plot_3d_wire(dat, yind=1)
+    x = dat['te_ddrho'].unique()
+    y = dat['ti_ddrho'].unique()
+    x, y = np.meshgrid(x, y)
+    # z = dat['te_transp_flux'].to_numpy().reshape(((int(len(x)**(1.0/pord)),)*4))
+    z = dat['te_transp_flux'].to_numpy().reshape((x.shape[0], y.shape[0], x.shape[0], y.shape[0]))
+    z = z[:, :, z.shape[2] // 5, z.shape[3] // 5]
+    x = np.ravel(x)
+    y = np.ravel(y)
+    z = np.ravel(z)
+    plot_3d_suraface(x, y, z, 'gemdata')
+    return x, y, z
+
 
 datafile = "../data/gem_uq_inoutput.csv"
 
@@ -46,18 +90,25 @@ datafile = "../data/gem_uq_inoutput.csv"
 #Y = np.array([teflvals, tiflvals])
 #Y = np.transpose(Y)
 
-###!!!
-#X, Y = read_sim_csv(datafile)
-#data, X, Y = read_sim_csv(datafile)
-#plot_2d_map(data, X,Y)
-#plot_3d_wire(data, yind=1)
-
 
 ###---Find variance of parameter numerically---
-exp, std, var, fns = calc_var_num()
+#exp, std, var, fns = calc_var_num()
 #xs = np.linspace(0,10,100)
 #ind = (np.abs(xs - np.pi)).argmin()
 #print(exp[ind])
 
 ###---Convergence for polynomial orders---
-perf_analysis()
+#perf_analysis()
+
+###---Plot surface for an exponent---
+#test_exponent()
+
+###---Plot response surfaces for GEM data---
+#X, Y, Z = test_data(datafile)
+
+###---See what exponent might model the data---
+#fit_exp(X,Y,Z)
+
+
+###---Plot cos(ax)*sin(bx) at x=pi/4---
+test_cossin()

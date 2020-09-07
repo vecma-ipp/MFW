@@ -13,10 +13,27 @@ plt.ion()
 np.random.seed(2)  # check other random seeds - huge difference! (42, 100 are bad)
 
 
-def plot_prediction_variance(X, y,  x, y_pred, sigma, f, dy=0):
+def plot_prediction_variance(X, y, x, y_pred, sigma, f, dy=0):
     # Plot function,prediction and 95% confidence interval
     plt.figure()
     plt.plot(x, f(x), 'r:', label=r'$f(x) = x\,\sin(x)$')
+    plt.errorbar(X.ravel(), y, dy, fmt='r.', markersize=10, label='Observations')
+    plt.plot(x, y_pred, 'b-', label='Prediction')
+    plt.fill(np.concatenate([x, x[::-1]]),
+             np.concatenate([y_pred - 1.9600 * sigma,
+                             (y_pred + 1.9600 * sigma)[::-1]]),
+             alpha=.5, fc='b', ec='None', label='95% confidence interval')
+    plt.xlabel('$x$')
+    plt.ylabel('$f(x)$')
+    plt.ylim(-10, 20)
+    plt.legend(loc='upper left')
+    plt.show(block=True)
+
+
+def plot_prediction_variance_2d(X, y, x, y_pred, sigma, f, dy=0):
+    # Plot function,prediction and 95% confidence interval
+    plt.figure()
+    plt.plot(x, f(x), 'r:', label=r'$f(x) = \cos(ax)\,\sin(bx)$')
     plt.errorbar(X.ravel(), y, dy, fmt='r.', markersize=10, label='Observations')
     plt.plot(x, y_pred, 'b-', label='Prediction')
     plt.fill(np.concatenate([x, x[::-1]]),
