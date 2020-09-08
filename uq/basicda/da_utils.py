@@ -110,6 +110,21 @@ def plot_3d_suraface(x ,y, z, name):
     plt.show()
     plt.close()
 
+def plot_mult_lines(x, y, params, name):
+    fig = plt.figure()
+    #ax = fig.add_subplot(111, projection='2d')
+    ax = fig.add_subplot(111)
+
+    for p in range(len(params)):
+        plt.plot(x[p], y[p], label=str(params[p]))
+
+    ax.set_xlabel('X')
+    ax.set_ylabel('F(x)')
+    plt.legend()
+    plt.title('Graphs for F(x) for multiple values of parameters')
+    plt.savefig('shoot_' + name + '.png')
+    plt.close()
+
 def plot_distr(dist=cp.J(cp.Uniform(0.8, 1.2), cp.Uniform(0.8, 1.2))):
     # Create contour plot for the probability density function
     grid_init, grid_rate = grid = np.meshgrid(np.linspace(0.8, 1.2, 32), np.linspace(0.8, 1.2, 32))

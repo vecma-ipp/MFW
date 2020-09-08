@@ -74,6 +74,7 @@ def fit_norm(data_y=[], n_fp=[]):
 
     best_vals, covar = curve_fit(test_func, x, y, p0=init_vals)
     print('best_vals: {}'.format(best_vals))
+    return best_vals
 
 def fit_exp(x, y, z, f=exponential_model_sp):
     X = np.dstack((x, y))[0]
@@ -81,5 +82,3 @@ def fit_exp(x, y, z, f=exponential_model_sp):
     best_vals, covar = curve_fit(f, X, z, p0=init_vals)
     print('best_vals: {}'.format(best_vals))
     return best_vals
-
-#fit()

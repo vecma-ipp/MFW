@@ -45,6 +45,7 @@ def test_exponent():
 
 def test_cossin():
     xval = np.pi/2.0
+    xval = 1.0
     n = 128
     x0 = 0.05
     xm = 5.0
@@ -56,6 +57,19 @@ def test_cossin():
     z = np.array([cossin_model(xval,parval) for parval in X[0]])
     plot_3d_suraface(x, y, z, 'cossin')
 
+def test_cossin_proj():
+    a = np.array([0.1, 1.0, 5.0])
+    b = np.array([1.0, 2.0])
+    #par = np.tensordot(a.T,b,1)
+    par = np.transpose([np.tile(a, len(b)), np.repeat(b, len(a))])
+    X = []
+    Y = []
+    x = np.linspace(0.0, np.pi/2, 64)
+    for parval in par:
+        X.append(x)
+        y = cossin_model(x, parval)
+        Y.append(y)
+    plot_mult_lines(X, Y, par, 'cossinproj')
 
 def test_data(datafile):
     dat, _, _ = read_sim_csv(datafile)
@@ -109,6 +123,6 @@ datafile = "../data/gem_uq_inoutput.csv"
 ###---See what exponent might model the data---
 #fit_exp(X,Y,Z)
 
-
 ###---Plot cos(ax)*sin(bx) at x=pi/4---
-test_cossin()
+#test_cossin()
+test_cossin_proj()

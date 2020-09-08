@@ -4,6 +4,8 @@ import matplotlib.pylab as plt
 
 import datetime
 
+from da_utils import *
+
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import DotProduct, WhiteKernel, Matern, RBF, WhiteKernel, ConstantKernel as C
 
@@ -11,7 +13,6 @@ from sklearn.neural_network import MLPRegressor
 
 plt.ion()
 np.random.seed(2)  # check other random seeds - huge difference! (42, 100 are bad)
-
 
 def plot_prediction_variance(X, y, x, y_pred, sigma, f, dy=0):
     # Plot function,prediction and 95% confidence interval
@@ -28,7 +29,6 @@ def plot_prediction_variance(X, y, x, y_pred, sigma, f, dy=0):
     plt.ylim(-10, 20)
     plt.legend(loc='upper left')
     plt.show(block=True)
-
 
 def plot_prediction_variance_2d(X, y, x, y_pred, sigma, f, dy=0):
     # Plot function,prediction and 95% confidence interval
@@ -51,7 +51,6 @@ def func_from_data(x, data):
 
 def get_new_sample(x, sigma):
     return x[sigma.argmax()]
-
 
 def GPR_analysis_toy(data, y_par=[0.1, 9.9, 20], x_par=[0, 10, 100], f=lambda x: x*np.sin(x), eps=1.0):
 
@@ -87,6 +86,28 @@ def GPR_analysis_toy(data, y_par=[0.1, 9.9, 20], x_par=[0, 10, 100], f=lambda x:
 
     # plot predictions with variance
     plot_prediction_variance(X, y, x, y_pred, sigma, f)
+
+    return get_new_sample(x, sigma)
+
+def GPR_analysis_toy_2d(data, domain_par, func):
+
+    X = data
+    y = np.array([func(coord, [1.0, 1.0, 1.0]) for coord in X]).reshape(-1,1)
+
+    x0 = np.linspace(domain_par[0], domain_par[1], domain_par[2])
+    x1 = np.linspace(domain_par[3], domain_par[4], domain_par[5])
+    x = np.transpose([np.tile(x0, len(x1)), np.repeat(x0, len(x1))])
+
+    kernel = C() + Matern([1.0, 1.0]) + WhiteKernel(1e-6)
+    gp = GaussianProcessRegressor(kernel=kernel, n_restarts_optimizer=9)
+
+    start_ts = datetime.datetime.now()
+    gp.fit(X, y)
+    print("time to train GP model: " + str((datetime.datetime.now() - start_ts).total_seconds()) + " seconds")
+
+    y_pred, sigma = gp.predict(x, return_std=True)
+
+    #plot_prediction_variance(X, y, x, y_pred, sigma, func)
 
     return get_new_sample(x, sigma)
 
@@ -129,7 +150,6 @@ def FNN_Regression_toy(y=0, f=0, n=20, eps=1.0):
     plt.legend(loc='upper left')
     plt.show(block=True)
 
-
 def AUG_GM_date_explore(filename='AUG_gem_inoutput.txt'):
     """
     :param filename: a csv file with the sim data
@@ -159,7 +179,6 @@ def AUG_GM_date_explore(filename='AUG_gem_inoutput.txt'):
 
     #GP_analysis_toy(X=AUG_gem['time'], y=y1)
 
-
 def SA_exploite(analysis, qoi):
     #stat = {}
     sob1 = {}
@@ -178,13 +197,21 @@ def SA_exploite(analysis, qoi):
     for ea, ee in zip(sens_eigva, sens_eigve): 
         print('E.Val. {0} for E.Vec. {1}'.format(ea,ee))
 
-
-### GPR model and analysis
-data = np.zeros((3, 2))
-data[:, 0] = np.linspace(0.0, 10.0, 3)
-for i in range(8):
-    x_n = GPR_analysis_toy(data, y_par=[0.0, 10.0, 6], x_par=[0, 10, 50], f=lambda x: x*np.cos(1.0*x), eps=0.0)
-    data = np.concatenate((data, np.array([[x_n[0], 0.0]])), axis=0)
+def surrogate_loop(pardim):
+    if pardim == 1:
+        data = np.zeros((3, 2))
+        data[:, 0] = np.linspace(0.0, 10.0, 3)
+        for i in range(8):
+            x_n = GPR_analysis_toy(data, y_par=[0.0, 10.0, 6], x_par=[0, 10, 50], f=lambda x: x*np.cos(1.0*x), eps=0.0)
+            data = np.concatenate((data, np.array([[x_n[0], 0.0]])), axis=0)
+    elif pardim == 2:
+        X = np.linspace(0.2, 2.8, 3)
+        Y = np.linspace(0.2, 2.8, 3)
+        #data = np.dstack((X, Y))[0]
+        data = np.transpose([np.tile(X, len(Y)), np.repeat(Y, len(X))])
+        for i in range(16):
+            x_n = GPR_analysis_toy_2d(data, domain_par=[0.0, 3.0, 16, 0.0, 3.0, 16], func=exponential_model)
+            data = np.append(data, x_n.reshape(1,-1), axis=0)
 
 
 #AUG_GM_date_explore(filename='../data/AUG_gem_inoutput.txt')
@@ -192,3 +219,7 @@ for i in range(8):
 
 ### FFNR model and test:
 # FNN_Regression_toy()
+
+
+### 2d surrogate loop:
+surrogate_loop(2)
