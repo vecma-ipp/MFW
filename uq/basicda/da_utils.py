@@ -166,7 +166,7 @@ def plot_model_response(n_points=128, a_interval=[0., 10.], b_interval=[0., 10.]
     ab = np.dstack((a, b))[0]
     z = np.array([function(x_value, par_value) for par_value in ab]).reshape(-1,)
 
-    plot_3d_suraface(a, b, z, name)
+    plot_3d_suraface(a, b, z, function.__name__)
 
 def plot_mult_lines(x, y, params, name):
     """
@@ -209,7 +209,7 @@ def plot_distr(dist=cp.J(cp.Uniform(0.8, 1.2), cp.Uniform(0.8, 1.2))):
     plt.savefig('dist' + '.png')
     plt.close()
 
-def plot_unc(f, E, Std, X, K, N):
+def plot_uncertainties(f, E, Std, X, K, N):
     """
 
     :param f:
@@ -228,7 +228,7 @@ def plot_unc(f, E, Std, X, K, N):
     plt.savefig('toy' + '_cos_sin' + '_var_' + str(K) + '_' + str(N) +'.png')
     plt.close()
 
-def plot_conv(sample_sizes, errors_mean, errors_variance):
+def plot_convergence(sample_sizes, errors_mean, errors_variance):
     # Error plot for mean
     plt.loglog(sample_sizes, errors_mean, "ko-", label="mean")
     # Error plot for variance
@@ -239,3 +239,37 @@ def plot_conv(sample_sizes, errors_mean, errors_variance):
     plt.legend()
     plt.savefig('toy' + '_cos' + '_convergence' + '.png')
     plt.close()
+
+def plot_prediction_variance(X, y, x, y_pred, sigma, f, dy=0):
+    # Plot function,prediction and 95% confidence interval
+    plt.figure()
+    y_test = f(x)
+    plt.plot(x, y_test, 'r:', label=r'$f(x) = x\,\sin(x)$')
+    plt.errorbar(X.ravel(), y, dy, fmt='r.', markersize=10, label='Observations')
+    plt.plot(x, y_pred, 'b-', label='Prediction')
+    plt.fill(np.concatenate([x, x[::-1]]),
+             np.concatenate([y_pred - 1.9600 * sigma,
+                             (y_pred + 1.9600 * sigma)[::-1]]),
+             alpha=.5, fc='b', ec='None', label='95% confidence interval')
+    plt.xlabel('$x$')
+    plt.ylabel('$f(x)$')
+    #plt.ylim(-10, 20)
+    plt.legend(loc='upper left')
+    plt.show(block=True)
+    return y_test.T.reshape(-1)
+
+def plot_prediction_variance_2d(X, y, x, y_pred, sigma, f, dy=0):
+    # Plot function,prediction and 95% confidence interval
+    plt.figure()
+    plt.plot(x, f(x), 'r:', label=r'$f(x) = \cos(ax)\,\sin(bx)$')
+    plt.errorbar(X.ravel(), y, dy, fmt='r.', markersize=10, label='Observations')
+    plt.plot(x, y_pred, 'b-', label='Prediction')
+    plt.fill(np.concatenate([x, x[::-1]]),
+             np.concatenate([y_pred - 1.9600 * sigma,
+                             (y_pred + 1.9600 * sigma)[::-1]]),
+             alpha=.5, fc='b', ec='None', label='95% confidence interval')
+    plt.xlabel('$x$')
+    plt.ylabel('$f(x)$')
+    plt.ylim(-10, 20)
+    plt.legend(loc='upper left')
+    plt.show(block=True)
