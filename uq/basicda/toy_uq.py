@@ -1,9 +1,8 @@
 
 from da_utils import *
-
 from model_fitting import *
 
-def calc_var_num(N=2, K=4, dist=cp.J(cp.Uniform(0.1, 0.3), cp. Uniform(0.7, 1.3)), f=(lambda th,x: np.cos(th[0]*x) * np.sin(th[1]*x))):
+def calc_var_pce(N=2, K=4, dist=cp.J(cp.Uniform(0.1, 0.3), cp. Uniform(0.7, 1.3)), f=(lambda th,x: np.cos(th[0]*x) * np.sin(th[1]*x))):
     thetas, ws = cp.generate_quadrature(K, dist, rule="gaussian")
     pexp = cp.orth_ttr(N, dist)
     xs = np.linspace(0, 5, 32)
@@ -15,7 +14,7 @@ def calc_var_num(N=2, K=4, dist=cp.J(cp.Uniform(0.1, 0.3), cp. Uniform(0.7, 1.3)
     plot_unc(f, exp, std, xs, K, N)
     return exp, std, var, fns
 
-def perf_analysis(true_mean=-1, true_variance=0.02, f=(lambda a,x: np.cos(a*x))):
+def perf_pce_conv_analysis(true_mean=-1, true_variance=0.02, f=(lambda a,x: np.cos(a*x))):
     polynomial_orders = list(range(1, 4))
     sample_sizes = []
     errors_mean = []
@@ -30,32 +29,6 @@ def perf_analysis(true_mean=-1, true_variance=0.02, f=(lambda a,x: np.cos(a*x)))
 
 def test_bivariate(f=lambda x, y, a, b: cos(a*x)*sin(b*y), val=[np.pi, np.pi/2], priors=[[1.0, ],[]]):
     return 0
-
-def test_exponent():
-    n = 128
-    x0 = 0
-    xm = 10
-    y0 = 0
-    ym = 10
-    x = np.random.rand(n) * (xm - x0) + x0
-    y = np.random.rand(n) * (ym - y0) + y0
-    X = np.dstack((x, y))
-    z = np.array([exponential_model(coord) for coord in X[0]])
-    plot_3d_suraface(x, y, z, 'exp')
-
-def test_cossin():
-    xval = np.pi/2.0
-    xval = 1.0
-    n = 128
-    x0 = 0.05
-    xm = 5.0
-    y0 = 0.05
-    ym = 5.0
-    x = np.random.rand(n) * (xm - x0) + x0
-    y = np.random.rand(n) * (ym - y0) + y0
-    X = np.dstack((x, y))
-    z = np.array([cossin_model(xval,parval) for parval in X[0]])
-    plot_3d_suraface(x, y, z, 'cossin')
 
 def test_cossin_proj():
     a = np.array([0.1, 1.0, 5.0])
@@ -85,9 +58,18 @@ def test_data(datafile):
     x = np.ravel(x)
     y = np.ravel(y)
     z = np.ravel(z)
-    plot_3d_suraface(x, y, z, 'gemdata')
+    #plot_3d_suraface(x, y, z, 'gemdata')
     return x, y, z
 
+
+def test_exp_fitting(X, Y, Z):
+    # fit_exp(X, Y, Z)
+    best_vals = fit_exp_lin(X, Y, Z)
+    new_exp_theta = [np.e ** best_vals[0], -best_vals[1], -best_vals[2]]
+    Z_mod = np.array([exponential_model(coord, new_exp_theta) for coord in np.dstack((X, Y))[0]])
+    rmse = np.sqrt(((Z - Z_mod) ** 2).sum()) / len(Z)
+    # print('error limits are for abs: {} , rel: {}'.format(abs_error.max(),rel_error.max()))
+    print('RMSE of exp fitting is {}'.format(rmse))
 
 datafile = "../data/gem_uq_inoutput.csv"
 
@@ -115,14 +97,14 @@ datafile = "../data/gem_uq_inoutput.csv"
 #perf_analysis()
 
 ###---Plot surface for an exponent---
-#test_exponent()
+#plot_model_response(name='exp')
 
 ###---Plot response surfaces for GEM data---
-#X, Y, Z = test_data(datafile)
+X, Y, Z = test_data(datafile)
 
 ###---See what exponent might model the data---
-#fit_exp(X,Y,Z)
+test_exp_fitting(X, Y, Z)
 
 ###---Plot cos(ax)*sin(bx) at x=pi/4---
 #test_cossin()
-test_cossin_proj()
+#test_cossin_proj()

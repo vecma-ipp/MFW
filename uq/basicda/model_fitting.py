@@ -3,7 +3,7 @@ import numpy as np
 import sklearn
 from scipy.optimize import curve_fit
 
-from da_utils import exponential_model_sp
+from da_utils import exponential_model_sp, linear_model_sp
 
 #from ascii_cpo import read
 
@@ -80,5 +80,14 @@ def fit_exp(x, y, z, f=exponential_model_sp):
     X = np.dstack((x, y))[0]
     init_vals = [1500.0, 10.0, 10.0, 0.0, 0.0, np.e]
     best_vals, covar = curve_fit(f, X, z, p0=init_vals)
-    print('best_vals: {}'.format(best_vals))
+    #print('best_vals: {}'.format(best_vals))
+    return best_vals
+
+def fit_exp_lin(x, y, z, f=linear_model_sp):
+    z = np.log(z)
+    X = np.dstack((x, y))[0]
+    init_vals = [1500.0, 10.0, 10.0, 0.0, 0.0, np.e]
+    init_vals_lin = [np.log(init_vals[0])-init_vals[3], -init_vals[1], -init_vals[2]]
+    best_vals, covar = curve_fit(f, X, z, p0=init_vals_lin)
+    #print('best_vals: {} with covar : {}'.format(best_vals, covar))
     return best_vals

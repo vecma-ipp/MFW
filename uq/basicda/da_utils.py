@@ -1,5 +1,4 @@
 import os
-import math
 import numpy as np
 import pandas as pd
 import chaospy as cp
@@ -10,9 +9,34 @@ import matplotlib.pyplot as plt
 import matplotlib.tri as mtri
 
 from mpl_toolkits.mplot3d import Axes3D
-#import seaborn as sns
+
+def exponential_model(x, theta=[1.0, 1.0, 1.0]):
+    """
+    :param theta: paramters of size (n+1,1); A = theta[0] and theta[1:] are rates r
+    :param x: coordinates of size (n,1)
+    :return: A*exp(-(r,x))
+    """
+    return theta[0]*np.e**(-np.dot(x, np.array(theta[1:])))
+
+def exponential_model_sp(xs, a, k, l, s, b, e=np.e):
+    """
+    Expoential model with signature fit for curve_fit at scipy
+    """
+    return b + a*e**(-xs[:,0]*k-xs[:,1]*l)
+
+def linear_model_sp(xs, a, k, l,):
+    return a + xs[:,0]*k + xs[:,1]*l
+
+def cossin_model(x, theta):
+    return np.cos(x*theta[0])*np.sin(x*theta[1])
 
 def walklevel(some_dir, level=1):
+    """
+    function to iterate over files of a subfolder of solected level а nesting
+    :param some_dir:
+    :param level:
+    :return:
+    """
     some_dir = some_dir.rstrip(os.path.sep)
     assert os.path.isdir(some_dir)
     num_sep = some_dir.count(os.path.sep)
@@ -22,13 +46,11 @@ def walklevel(some_dir, level=1):
         if num_sep + level <= num_sep_this:
             del dirs[:]
 
-
 def read_data_totensor(folder):
     Tes, Tis, Tegs, Tigs, Tefs, Tifs = get_camp_data(folder)
     X = pd.DataFrame(list(zip(Tes, Tis, Tigs, Tegs)))
     Xmat = np.array([np.unique(X[:, i]) for i in range(X.shape[1])]) 
     return X, Xmat
-
 
 #def get_slice(Xmat, n_slice = [3]):
 #     Xsl = np.array([i for i in itertools.product([],[],[],np.linspace(Xmat))
@@ -70,7 +92,6 @@ def plot_2d_map(df, X, Y, inds=[2,3]):
     plt.savefig("plot2d_" + x1lab + "_" + x2lab + ".png")
     plt.close()
 
-
 def plot_3d_wire(df, xinds=[2,3], yind=1):
     Xlabels = ['te_value', 'ti_value', 'te_ddrho', 'ti_ddrho'] # make global / part of class/ passable
     Ylabels = ['te_transp_flux', 'ti_transp_flux']
@@ -97,6 +118,15 @@ def plot_3d_wire(df, xinds=[2,3], yind=1):
     plt.close()
 
 def plot_3d_suraface(x ,y, z, name):
+    """
+    Prints a surface for function f:X*Y->Z for list for arbitrary list of coordinates
+    i.e. f(x[i],y[i])=z[i] using triangulated mesh at X*Y
+    :param x: list of coordinates in X
+    :param y: list of cordinates in Y
+    :param z: list of results f(x, y) in Z
+    :param name: name of function, to be used in plot file name
+    :return:
+    """
     triang = mtri.Triangulation(x, y)
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
@@ -110,7 +140,44 @@ def plot_3d_suraface(x ,y, z, name):
     plt.show()
     plt.close()
 
+def plot_model_response(n_points=128, a_interval=[0., 10.], b_interval=[0., 10.],
+                        function=exponential_model, name='exp', x_value=1.0):
+    """
+    Plots a surface of a function as f(x|a,b):A*B->Z on the given square region of A*B for given x
+    :param n_points: number of samples in A*B
+    :param a_interval: interval of interest in A
+    :param b_interval: interval of interest in B
+    :param function: function for pointwise mapping f
+    :param name: name of function, for choosing and for naming files
+    :param: x_value: value of coordinate in X
+    :return:
+    """
+    if name == 'cossin':
+        x_value = 1.0
+        n_points = 128
+        a_interval = [0.05, 5.0]
+        b_interval = [0.05, 5.0]
+        function = cossin_model
+    elif name == 'exp':
+        pass
+
+    a = np.random.rand(n_points) * (a_interval[1] - a_interval[0]) + a_interval[0]
+    b = np.random.rand(n_points) * (b_interval[1] - b_interval[0]) + b_interval[0]
+    ab = np.dstack((a, b))[0]
+    z = np.array([function(x_value, par_value) for par_value in ab]).reshape(-1,)
+
+    plot_3d_suraface(a, b, z, name)
+
 def plot_mult_lines(x, y, params, name):
+    """
+    Plots mutiple realisations for functions of type f(x|a,b):X->Y
+    for different values of (a, b)
+    :param x: list of lists coordinates in X
+    :param y: list of lists results in Y
+    :param params: list of parameter realisations
+    :param name: name of function
+    :return:
+    """
     fig = plt.figure()
     #ax = fig.add_subplot(111, projection='2d')
     ax = fig.add_subplot(111)
@@ -143,6 +210,16 @@ def plot_distr(dist=cp.J(cp.Uniform(0.8, 1.2), cp.Uniform(0.8, 1.2))):
     plt.close()
 
 def plot_unc(f, E, Std, X, K, N):
+    """
+
+    :param f:
+    :param E:
+    :param Std:
+    :param X:
+    :param K:
+    :param N:
+    :return:
+    """
     plt.xlabel("x")
     plt.ylabel("approximation")
     #plt.axis([0, 5, -1, 1])
@@ -162,17 +239,3 @@ def plot_conv(sample_sizes, errors_mean, errors_variance):
     plt.legend()
     plt.savefig('toy' + '_cos' + '_convergence' + '.png')
     plt.close()
-
-def exponential_model(x, theta=[1.0, 1.0, 1.0]):
-    """
-    :param theta: paramters of size (n+1,1); A = theta[0] and theta[1:] are rates
-    :param x: coordinates of size (n,1)
-    :return:
-    """
-    return theta[0]*np.e**(-np.dot(x, np.array(theta[1:])))
-
-def exponential_model_sp(xs, a, k, l, s, b, e=np.e):
-    return b + a*e**(-xs[:,0]*k-xs[:,1]*l-s)
-
-def cossin_model(x, theta):
-    return np.cos(x*theta[0])*np.sin(x*theta[1])
