@@ -64,7 +64,7 @@ def plot_correlations(data, active_t):
         plt.imshow(corr, cmap='RdBu_r', vmin=-1, vmax=+1)
         plt.xticks(np.arange(corr.shape[0]), t, rotation=90); plt.yticks(np.arange(corr.shape[1]), t); plt.colorbar();
         
-def plot_smoothed(data, what, logy=True):
+def plot_smoothed(data, what, logy=True, figsize=(24,8)):
     r"""Plot smoothed VECMA fusion WF data
     
     Parameters
@@ -83,7 +83,8 @@ def plot_smoothed(data, what, logy=True):
     -------
     nothing except the plots
     """
-    fig, ax = plt.subplots(1,len(what), figsize=(24,8))
+    fig, ax = plt.subplots(1, len(what), figsize=figsize)
+    ax = np.atleast_1d(ax)
     for i, W in enumerate(what):
         for D in data:
             for c in W["cols"]:
@@ -100,7 +101,7 @@ def plot_smoothed(data, what, logy=True):
         ax[i].set_xlabel('time [s]')
         ax[i].set_ylabel(W["label"]);
 
-def plot_unsmoothed(data, what, logy=True):
+def plot_unsmoothed(data, what, logy=True, figsize=(24,8)):
     r"""Plot unsmoothed VECMA fusion WF data
     
     Parameters
@@ -119,7 +120,8 @@ def plot_unsmoothed(data, what, logy=True):
     -------
     nothing except the plots
     """
-    fig, ax = plt.subplots(1,len(what), figsize=(24,8))
+    fig, ax = plt.subplots(1, len(what), figsize=figsize)
+    ax = np.atleast_1d(ax)
     for i, W in enumerate(what):
         for D in data:
             D["data"].plot(x='time', y=W["cols"], logy=logy, ax=ax[i], style=D["style"]);
