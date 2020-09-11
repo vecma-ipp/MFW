@@ -141,7 +141,7 @@ def plot_3d_suraface(x ,y, z, name):
     plt.close()
 
 def plot_model_response(n_points=128, a_interval=[0., 10.], b_interval=[0., 10.],
-                        function=exponential_model, name='exp', x_value=1.0):
+                        function=exponential_model, name='exp', x_value=1.):
     """
     Plots a surface of a function as f(x|a,b):A*B->Z on the given square region of A*B for given x
     :param n_points: number of samples in A*B
@@ -152,14 +152,20 @@ def plot_model_response(n_points=128, a_interval=[0., 10.], b_interval=[0., 10.]
     :param: x_value: value of coordinate in X
     :return:
     """
-    if name == 'cossin':
-        x_value = 1.0
-        n_points = 128
-        a_interval = [0.05, 5.0]
-        b_interval = [0.05, 5.0]
-        function = cossin_model
-    elif name == 'exp':
-        pass
+    func_dict = {'cossin': (cossin_model, [[0.05, 5.0], [0.05, 5.0]], 1.),
+                 'exp': (exponential_model, [[0, 10.], [0., 10.]], 1.),
+                 }
+
+    #if name == 'cossin':
+    #    x_value = 1.0
+    #    n_points = 128
+    #    a_interval = [0.05, 5.0]
+    #    b_interval = [0.05, 5.0]
+    #    function = cossin_model
+    #elif name == 'exp':
+    #    pass
+
+    (function, [a_interval, b_interval], x_value) = func_dict(name)
 
     a = np.random.rand(n_points) * (a_interval[1] - a_interval[0]) + a_interval[0]
     b = np.random.rand(n_points) * (b_interval[1] - b_interval[0]) + b_interval[0]
@@ -211,13 +217,12 @@ def plot_distr(dist=cp.J(cp.Uniform(0.8, 1.2), cp.Uniform(0.8, 1.2))):
 
 def plot_uncertainties(f, E, Std, X, K, N):
     """
-
-    :param f:
-    :param E:
-    :param Std:
-    :param X:
-    :param K:
-    :param N:
+    :param f: function object
+    :param E: expectation for function value
+    :param Std: standart deviation of function value
+    :param X: domain (roi) of function
+    :param K: number of expansion terms (for naming)
+    :param N: number of basis polynomials (for naming)
     :return:
     """
     plt.xlabel("x")

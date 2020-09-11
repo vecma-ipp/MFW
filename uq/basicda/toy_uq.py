@@ -1,3 +1,5 @@
+import numpy as np
+import chaospy as cp
 
 from da_utils import *
 from model_fitting import *
@@ -20,12 +22,12 @@ def perf_pce_conv_analysis(true_mean=-1, true_variance=0.02, f=(lambda a,x: np.c
     errors_mean = []
     errors_variance = []
     for order in polynomial_orders:
-        exp, std, _, _ = calc_var_num(N=order, K=8)
+        exp, std, _, _ = calc_var_pce(N=order, K=8)
         sample_sizes.append((order+1)**2)
         errors_mean.append(np.mean(np.abs(exp-true_mean)))
         errors_variance.append(np.mean(np.abs(exp-true_variance)))
 
-    plot_conv(sample_sizes, errors_mean, errors_variance)
+    plot_convergence(sample_sizes, errors_mean, errors_variance)
 
 def test_bivariate(f=lambda x, y, a, b: cos(a*x)*sin(b*y), val=[np.pi, np.pi/2], priors=[[1.0, ],[]]):
     return 0
@@ -61,13 +63,12 @@ def test_data(datafile):
     #plot_3d_suraface(x, y, z, 'gemdata')
     return x, y, z
 
-
 def test_exp_fitting(X, Y, Z):
     # fit_exp(X, Y, Z)
     best_vals = fit_exp_lin(X, Y, Z)
     new_exp_theta = [np.e ** best_vals[0], -best_vals[1], -best_vals[2]]
     Z_mod = np.array([exponential_model(coord, new_exp_theta) for coord in np.dstack((X, Y))[0]])
-    rmse = np.sqrt(((Z - Z_mod) ** 2).sum()) / len(Z)
+    rmse = np.sqrt(((Z - Z_mod) ** 2).sum() / len(Z))
     # print('error limits are for abs: {} , rel: {}'.format(abs_error.max(),rel_error.max()))
     print('RMSE of exp fitting is {}'.format(rmse))
 
