@@ -1,4 +1,5 @@
 
+import gem0
 from gem0 import gem
 
 #from euitm_schemas import  type_coreprof, type_equilibrium, type_coretransp
@@ -14,20 +15,22 @@ from ual.equilibrium import equilibrium
 
 #import xml_file_reader
 import xml.etree.ElementTree as ET
+from easymfw.templates.xml_element import XMLElement
 
 # init_step = 0 # inital step count
 
 def gem0_cpo(equil, corep, coret) :
 
-    equil = equilibrium()
-    corep = coreprof()
+    #equil = equilibrium()
+    #corep = coreprof()
     coret = coretransp()
     #code_parameters = {}
 
-    # print ("python GEM0 wrapper in python")
-    # print ("get code params")
+    print ("python GEM0 wrapper in python")
+    print ("get code params")
     # fill_param(code_parameters, 'gem0.xml', '', 'gem0.xsd') #TODO check if fill_param() does exactly the same as parsing
-    code_parameters = ET.parse('gem0.xml') # TODO check if schema is not needed
+    #code_parameters = ET.parse('gem0.xml') # TODO check if schema is not needed
+    code_parameters = XMLElement('gem0.xml')
 
     # print ("run gem0 routine")
     gem(equil, corep, coret, code_parameters)
@@ -51,7 +54,7 @@ def gem0_test():
 
     equil = read(equil_file_in, "equilibrium")
     corep = read(corep_file_in, "coreprof")
-    #coret = read(coret_file_out , "coretransp")
+    coret = read(coret_file_out , "coretransp")
 
     gem0_cpo(equil, corep, coret)
 

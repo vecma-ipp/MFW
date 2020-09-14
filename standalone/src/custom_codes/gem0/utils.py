@@ -18,7 +18,10 @@ def l3interp(y_in, x_in, nr_in, y_out, x_out, nr_out):
     j1 = jstart
 
     for j in range(jfirst, jlast, jstep):
-        x = x_out[j]
+        if isinstance(x_out, float) == 1:
+            x = x_out
+        else:
+            x = x_out[j]
         while x >= x_in[j1] and nr_in - 1.0 > j1 > 2:
             j1 = j1 + jstep
 

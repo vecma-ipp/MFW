@@ -2,6 +2,10 @@
 nrho_transp = 0
 nion = 0
 
+write_diags = True
+write_cpos = True
+hmode = True
+
 thresh = 6.
 beta_reduction = 10.
 etae_pinch = 3.
