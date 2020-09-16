@@ -24,7 +24,6 @@ def gem(eq, coreprof, coretransp, code_parameters):
     codename.append('GEM0')
     codeversion.append('4.10b')
 
-    coretransp
     coretransp.codeparam.codename = codename #TODO check if CPOs should be taken as root
 
     # Assign params
@@ -48,6 +47,7 @@ def gem(eq, coreprof, coretransp, code_parameters):
     
     # VERY BAD WORKAROUND
     write_cpos = True
+    write_cpos = code_parameters.get_value('flags.write_cpos')
     write_diags = True
     hmode = True
     nrho_transp = 1 
@@ -55,7 +55,6 @@ def gem(eq, coreprof, coretransp, code_parameters):
     q_choice = "equilibrium"
     
     print('Done assigning GEM0 parameters')
-
     
     # Write I/O CPOs
     if write_cpos:
@@ -110,26 +109,27 @@ def gem(eq, coreprof, coretransp, code_parameters):
     else:
         rho = [((1.0/(2*nrho_transp))*(2*x-1))**0.7 for x in range(nrho_transp)]
 
-    gm3 = np.zeros((nrho_transp))
+    gm3 = np.empty(nrho_transp)
 
     if not eq.profiles_1d.gm3 is None:
-        l3interp(eq.profiles_1d.gm3, rho_eq, npsi-1, gm3, rho, nrho_transp)  #TODO check implementation
+        l3interp(eq.profiles_1d.gm3, rho_eq, npsi-1, gm3, rho, nrho_transp-1)  #TODO check implementation
     else:
-        gm3 = 1.0
+        gm3 = [1.0 for i in gm3]
+    
 
     # ???
-    nnex  = np.empty((nrho_transp))
-    ttex  = np.empty((nrho_transp))
-    nnix  = np.empty((nrho_transp))
-    ttix  = np.empty((nrho_transp))
-    zeffx = np.array((nrho_transp))
-    qqx   = np.array((nrho_transp))
-    rlnex = np.array((nrho_transp))
-    rlnix = np.array((nrho_transp))
-    rltex = np.array((nrho_transp))
-    rltix = np.array((nrho_transp))
-    shatx = np.array((nrho_transp))
-    chix  = np.array((nrho_transp))
+    nnex  = np.empty(coreprof.ne.value.size)
+    ttex  = np.empty(coreprof.te.value.size)
+    nnix  = np.empty(coreprof.ni.value.size)
+    ttix  = np.empty(coreprof.ti.value.size)
+    zeffx = np.empty(coreprof.profiles1d.zeff.value.size)
+    qqx   = np.empty((nrho_transp))
+    rlnex = np.empty(coreprof.ne.value.size)
+    rlnix = np.empty(coreprof.ni.value.size)
+    rltex = np.empty(coreprof.te.value.size)
+    rltix = np.empty(coreprof.ti.value.size)
+    shatx = np.empty((nrho_transp))
+    chix  = np.empty((nrho_transp))
 
     # Main ion params
 
@@ -138,14 +138,14 @@ def gem(eq, coreprof, coretransp, code_parameters):
 
     # Interpolate to get params and gradients
 
-    l3interp(coreprof.profiles1d.zeff.value, rho0, nrho_prof-1, zeffx, rho, nrho_transp)  #TODO check implementation
+    l3interp(coreprof.profiles1d.zeff.value, rho0, nrho_prof-1, zeffx, rho, nrho_transp-1)  #TODO check implementation
 
     # Q-profile
 
     cases = ["equilibrium", "coreprof", "jtot"]
 
     if q_choice == "equilibrium":
-        l3interp(eq.profiles_1d.q, rho_eq, npsi-1, qqx, rho, nrho_transp)
+        l3interp(eq.profiles_1d.q, rho_eq, npsi-1, qqx, rho, nrho_transp-1)
     if q_choice == "coreprof":
         l3interp(coreprof.profiles_1d.q, rho_eq, npsi-1, shatx, rho, nrho_transp)
     if q_choice == "jtot":
@@ -166,10 +166,10 @@ def gem(eq, coreprof, coretransp, code_parameters):
 
     shatx = shatx * rho / qqx
 
-    l3interp(coreprof.ne.value, rho0, nrho_prof, nnex, rho, nrho_transp)
-    l3interp(coreprof.te.value, rho0, nrho_prof, ttex, rho, nrho_transp)
-    l3deriv(coreprof.ne.value, rho0, nrho_prof, rlnex, rho, nrho_transp)
-    l3deriv(coreprof.te.value, rho0, nrho_prof, rltex, rho, nrho_transp)
+    l3interp(coreprof.ne.value, rho0, nrho_prof-1, nnex, rho, nrho_transp-1)
+    l3interp(coreprof.te.value, rho0, nrho_prof-1, ttex, rho, nrho_transp-1)
+    l3deriv(coreprof.ne.value, rho0, nrho_prof-1, rlnex, rho, nrho_transp-1)
+    l3deriv(coreprof.te.value, rho0, nrho_prof-1, rltex, rho, nrho_transp-1)
 
     rlnex = rlnex / nnex
     rltex = rltex / ttex
@@ -178,10 +178,10 @@ def gem(eq, coreprof, coretransp, code_parameters):
 
     for ion in range(nion):
 
-        l3interp(coreprof.ni.value[:, ion], rho0, nrho_prof, nnix, rho, nrho_transp)
-        l3interp(coreprof.ti.value[:, ion], rho0, nrho_prof, ttix, rho, nrho_transp)
-        l3deriv(coreprof.ti.value[:, ion], rho0, nrho_prof, rlnix, rho, nrho_transp)
-        l3deriv(coreprof.ti.value[:, ion], rho0, nrho_prof, rltix, rho, nrho_transp)
+        l3interp(coreprof.ni.value[:, ion], rho0, nrho_prof-1, nnix, rho, nrho_transp-1)
+        l3interp(coreprof.ti.value[:, ion], rho0, nrho_prof-1, ttix, rho, nrho_transp-1)
+        l3deriv(coreprof.ti.value[:, ion], rho0, nrho_prof-1, rlnix, rho, nrho_transp-1)
+        l3deriv(coreprof.ti.value[:, ion], rho0, nrho_prof-1, rltix, rho, nrho_transp-1)
 
         rlnix = rlnix / nnix
         rltix = rltix / ttix
@@ -194,7 +194,7 @@ def gem(eq, coreprof, coretransp, code_parameters):
             nni = nnix[i]
             tte = ttex[i]
             tti = ttix[i]
-            zeff = zeff[i]
+            zeff = zeffx[i]
 
             rlne = rlnex[i] / a00
             rlte = rltex[i] / a00
@@ -283,6 +283,8 @@ def gem(eq, coreprof, coretransp, code_parameters):
             # different models can reconstruct theirs using the D's and V's
             # coeficient is 3/2 due to Poynting flux cancelation
 
+            print('some resulting datastruct (ne transp): '.format(coretransp.values)) # TODO check why cpo*.values is neither list nor anyhting else
+
             if ion == 0:
 
                 coretransp.values[0].ne_transp.diff_eff[i, 1] = diffe
@@ -309,7 +311,7 @@ def gem(eq, coreprof, coretransp, code_parameters):
     coretransp.values[0].vtor_transp.diff_eff = chiratio_phi * coretransp.values[0].ti_transp.diff_eff
 
     # timestamp
-    time = time + 1.0  #TODO checj is read from CPO??
+    time = time + 1.0  #TODO check if it is read from CPO
     coretransp.time = time
 
     # write diags

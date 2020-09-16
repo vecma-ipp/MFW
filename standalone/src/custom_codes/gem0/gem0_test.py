@@ -54,7 +54,8 @@ def gem0_test():
 
     equil = read(equil_file_in, "equilibrium")
     corep = read(corep_file_in, "coreprof")
-    coret = read(coret_file_out , "coretransp")
+    #coret = read(coret_file_out , "coretransp")
+    coret = coretransp()
 
     gem0_cpo(equil, corep, coret)
 
