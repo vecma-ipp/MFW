@@ -1,11 +1,13 @@
-
+# some default geometrical paramteres
 nrho_transp = 0
 nion = 0
 
-write_diags = True
-write_cpos = True
+# default parameters for codeparame
+write_diags = False
+write_cpos = False
 hmode = True
 
+# some default equation parameters
 thresh = 6. # turbulence effects threshold; check range: 5.-7. ; NOT USED CURRENTLY
 beta_reduction = 10. # reduction for high transport; check range: 8-12 ; NOT USED CURRENTLY
 etae_pinch = 3. # for some ratio of gradient the pinch is created; might be only for particles; check range: 2.8-3.2
