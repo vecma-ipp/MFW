@@ -1,21 +1,20 @@
 import numpy as np
 import math
+import copy
 
 from ascii_cpo import read, write, copy #TODO double check if the same as fortran interface
 
-from turb_coeff import write_diags, write_cpos, hmode, nrho_transp, nion, thresh, beta_reduction, etae_pinch, chi_d, chiratio_phi, ra0 #TODO: check if overwritten properly
-
-from turb_constructor import turb_constructor  #TODO check if structure is asctually created
+#from turb_coeff import write_diags, write_cpos, hmode, nrho_transp, nion, thresh, beta_reduction, etae_pinch, chi_d, chiratio_phi, ra0 
+from turb_constructor import turb_constructor
 from utils import l3interp, l3deriv  # TODO check implementation correctness
-
 import assign_turb_parameters
-
 from phys_constants import *
-
-import copy
 
 
 def gem(eq, coreprof, coretransp, code_parameters):
+
+    from turb_coeff import write_diags, write_cpos, hmode, nrho_transp, nion, thresh, beta_reduction, etae_pinch, chi_d, chiratio_phi, ra0
+    time = 0.
 
     codename = [] #TODO check if should be wrritten as list/array
     codeversion = [] #TODO check
@@ -27,6 +26,7 @@ def gem(eq, coreprof, coretransp, code_parameters):
     coretransp.codeparam.codename = codename #TODO check if CPOs should be taken as root
 
     # Assign params
+
     #if code_parameters.get_value('parameters') == None:
     #    print('ERROR: GEM0 parameters not associated!')
     #else:
@@ -35,25 +35,24 @@ def gem(eq, coreprof, coretransp, code_parameters):
     print('GEM0 Parameters : ')
     #print(code_parameters.parameters)
 
-     # Add to coretransp
+    # Add to coretransp
+
     #coretransp.codeparam.codename = codename
     #coretransp.codeparam.codeversion = codeversion
     #coretransp.codeparam.parameters = code_parameters.parameters
 
-    # Asign code paramteters to interval variables
+    # Assign code paramteters to interval variables
+
     #return_status = assign_turb_parameters(code_parameters) #TODO check if actually something cannot be initialized in runtime
     #if return_status != 0:
     #    print('ERROR: Could not assign GEM0 parameters!')
     
-    # VERY BAD WORKAROUND
-    write_cpos = True
-    write_cpos = code_parameters.get_value('flags.write_cpos')
-    write_diags = True
-    hmode = True
+    # BAD WORKAROUND
+    #write_cpos = code_parameters.get_value('flags.write_cpos')
     nrho_transp = 1 
     nion_prof = 1
     q_choice = "equilibrium"
-    
+
     print('Done assigning GEM0 parameters')
     
     # Write I/O CPOs
@@ -61,12 +60,10 @@ def gem(eq, coreprof, coretransp, code_parameters):
         write(coreprof, 'coreprof')  #TODO check if the same as python interface
         write(eq, 'equil')
 
-    # Grid size for equilibrium and profiles,
-    # Ion species nu
+    # Grid size for equilibrium and profiles, ion species nu
 
     npsi = np.size(eq.profiles_1d.rho_tor)
     nrho_prof = np.size(coreprof.rho_tor)
-    nion = np.size(coreprof.ni.value, 0)
 
     # Grid and coretransp
     if nrho_transp == 0:
@@ -74,9 +71,9 @@ def gem(eq, coreprof, coretransp, code_parameters):
     if nion == 0:
         nion = nion_prof
 
-    turb_constructor(coretransp, 1, nrho_transp, nion)
+    coretransp = turb_constructor(coretransp, 1, nrho_transp, nion)
 
-    # copy composition
+    # Copy composition
     coretransp.compositions = copy.deepcopy(coreprof.compositions) #TODO check against python interface
 
     # Geometry and transport grid
@@ -94,16 +91,14 @@ def gem(eq, coreprof, coretransp, code_parameters):
             r00 = (r_max + r_min)/2
             b00 = b00 / r00
 
-    rho_eq = np.array((npsi))
-    rho0 = np.array((nrho_prof))
-    rho = np.array((nrho_transp))
+    rho_eq = np.empty((npsi))
+    rho0 = np.empty((nrho_prof))
+    rho = np.empty((nrho_transp))
 
     rho_eq = eq.profiles_1d.rho_tor / rho_tor_max
-    rho0 = np.zeros(nrho_prof)
-    rho = np.zeros(nrho_transp)
 
     if nrho_transp == 1:
-        rho = ra0
+        rho = np.array([ra0])
     elif nrho_transp == (nrho_transp-1)/2 :
             rho = rho0[1:nrho_transp-1:2]
     else:
@@ -117,7 +112,7 @@ def gem(eq, coreprof, coretransp, code_parameters):
         gm3 = [1.0 for i in gm3]
     
 
-    # ???
+    # TODO: check if correct size
     nnex  = np.empty(coreprof.ne.value.size)
     ttex  = np.empty(coreprof.te.value.size)
     nnix  = np.empty(coreprof.ni.value.size)
@@ -171,6 +166,8 @@ def gem(eq, coreprof, coretransp, code_parameters):
     l3deriv(coreprof.ne.value, rho0, nrho_prof-1, rlnex, rho, nrho_transp-1)
     l3deriv(coreprof.te.value, rho0, nrho_prof-1, rltex, rho, nrho_transp-1)
 
+    print('profile te: {}; interpolated te: {}'.format(coreprof.te.value, ttex))
+
     rlnex = rlnex / nnex
     rltex = rltex / ttex
 
@@ -210,12 +207,14 @@ def gem(eq, coreprof, coretransp, code_parameters):
             cs = math.sqrt(kb * tte / ionmass)
             taui = tti / tte
 
+            print('some intial params. cc: {}; ionmass: {}; tte: {}; ee:{}; b00: {}; rhos: {}'.format(cc, ionmass, tte, ee, b00, rhos))
+
             beta = mu_0 * nne * kb * tte / (b00 * b00)
             rmue = me / ionmass
             rnue = (lcoul / 3.44e11) * zeff * nne / (tte ** 1.5)
             rnui = (lcoul / 2.09e13) * nni / (tti ** 1.5)
 
-            # normalized parameters
+            # Normalized parameters
 
             # lperp = 1. / max(1. / r00, abs(rlte))
             lperp = 1.0 / max(1.0 / r00, abs(rlte), abs(rlne))
@@ -227,8 +226,8 @@ def gem(eq, coreprof, coretransp, code_parameters):
             beta = beta * epss
             rnue = rnue * lperp / cs
 
-            # gyroBohm diffusion coefficient uses R_0
-            # downward correction
+            # GyroBohm diffusion coefficient uses R_0
+            # Downward correction
 
             if ion == 0:
                 # chigb = rhos * rhos * cs / r00
@@ -236,6 +235,8 @@ def gem(eq, coreprof, coretransp, code_parameters):
                 # chigb = chigb * max(0.0, (1.0 - thresh / abs((r00 * rlti))))
 
                 chigb = rhos * rhos * cs / lperp
+
+                print('some intial params. nion: {}; nrho_transp: {}; rhos: {}; cs:{}; lperp: {}'.format(nion, nrho_transp, rhos, cs, lperp))
 
                 if(hmode):
                     # chigb = 0.3 * chigb
@@ -283,8 +284,6 @@ def gem(eq, coreprof, coretransp, code_parameters):
             # different models can reconstruct theirs using the D's and V's
             # coeficient is 3/2 due to Poynting flux cancelation
 
-            print('some resulting datastruct (ne transp): '.format(coretransp.values)) # TODO check why cpo*.values is neither list nor anyhting else
-
             if ion == 0:
 
                 coretransp.values[0].ne_transp.diff_eff[i, 1] = diffe
@@ -293,7 +292,7 @@ def gem(eq, coreprof, coretransp, code_parameters):
                 coretransp.values[0].ne_transp.flux[i] = nne * ffe * gm3[i]
                 coretransp.values[0].te_transp.flux[i] = nne * kb * tte * gge * gm3[i]
 
-            coretransp.values[1].ni_transp.diff_eff[i, ion, 1] = diffi
+            coretransp.values[0].ni_transp.diff_eff[i, ion, 1] = diffi
             coretransp.values[0].ti_transp.diff_eff[i, ion] = chii
             coretransp.values[0].ni_transp.vconv_eff[i, ion, 1] = vconvi
             coretransp.values[0].ni_transp.flux[i, ion] = nni * ffi * gm3[i]
@@ -301,10 +300,13 @@ def gem(eq, coreprof, coretransp, code_parameters):
 
     # End species loop
 
+    print('ti flux value is : {}; from nni : {}, kb: {}, tti: {}, ggi: {}, (chii: {}, rlti: {}),  gm3: {}'.format(
+          coretransp.values[0].ti_transp.flux, nni, kb, tti, ggi, chii, rlti, gm3[0]))
+
     # Set transp grid in the CPO
 
-    coretransp.value[0].rho_tor_norm = rho
-    coretransp.value[0].rho_tor = rho * rho_tor_max
+    coretransp.values[0].rho_tor_norm = rho
+    coretransp.values[0].rho_tor = rho * rho_tor_max
 
     # Set other ion ceofficients with ration switches
 
@@ -316,6 +318,8 @@ def gem(eq, coreprof, coretransp, code_parameters):
 
     # write diags
     if write_diags:
+        # write a data file for turbulence diagnostics
+
         # open(10, file='turbdiags.dat', form='formatted', position='append')
         # write(10, *) 'eq coreprof coretransp sizes', size(eq), size(coreprof), size(coretransp)
         # write(10, *) 'coretransp sizes', nrho_transp, nion
@@ -323,15 +327,16 @@ def gem(eq, coreprof, coretransp, code_parameters):
         for i in range(nrho_transp):
             # WRITE(10, 100)
             write(
-            coretransp.values[0].rho_tor_norm(i),
-            coretransp.values[0].ne_transp.flux(i),
-            coretransp.values[0].te_transp.flux(i),
-            coretransp.values[0].ni_transp.flux(i, 1),
-            coretransp.values[0].ti_transp.flux(i, 1))
+            coretransp.values[0].rho_tor_norm[i],
+            coretransp.values[0].ne_transp.flux[i],
+            coretransp.values[0].te_transp.flux[i],
+            coretransp.values[0].ni_transp.flux[i, 0],
+            coretransp.values[0].ti_transp.flux[i, 0])
 
     # write out cpos
     if write_cpos:
         # open_write_file(12, 'cout_000') # ???
         write(coretransp, 'coretransp') # check were it is the same as python interface
 
+    return coretransp
 

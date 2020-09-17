@@ -21,11 +21,6 @@ from easymfw.templates.xml_element import XMLElement
 
 def gem0_cpo(equil, corep, coret) :
 
-    #equil = equilibrium()
-    #corep = coreprof()
-    coret = coretransp()
-    #code_parameters = {}
-
     print ("python GEM0 wrapper in python")
     print ("get code params")
     # fill_param(code_parameters, 'gem0.xml', '', 'gem0.xsd') #TODO check if fill_param() does exactly the same as parsing
@@ -54,13 +49,13 @@ def gem0_test():
 
     equil = read(equil_file_in, "equilibrium")
     corep = read(corep_file_in, "coreprof")
-    #coret = read(coret_file_out , "coretransp")
+    #coret = read(coret_file_out, "coretransp")
     coret = coretransp()
 
-    gem0_cpo(equil, corep, coret)
+    coret = gem0_cpo(equil, corep, coret)
 
     # transfer CPO to buf
-    write(coret_file_out, coret[0], 'coretransp')
+    write(coret, coret_file_out, 'coretransp')
 
 if __name__ == '__main__':
     gem0_test()
