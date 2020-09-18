@@ -1,10 +1,10 @@
-# some default geometrical paramteres
-nrho_transp = 0
-nion = 0
+# some general default paramteres
+nrho_transp = 8 # number of flux tubes
+nion = 0 # number of ions
 
 # default parameters for codeparame
 write_diags = False
-write_cpos = False
+write_cpos = True
 hmode = True
 
 # some default equation parameters

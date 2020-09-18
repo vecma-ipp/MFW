@@ -17,13 +17,13 @@ def gem(eq, coreprof, coretransp, code_parameters):
     time = 0.
 
     codename = [] #TODO check if should be wrritten as list/array
-    codeversion = [] #TODO check
+    codeversion = []
 
     # XML declarataion
     codename.append('GEM0')
     codeversion.append('4.10b')
 
-    coretransp.codeparam.codename = codename #TODO check if CPOs should be taken as root
+    coretransp.codeparam.codename = codename
 
     # Assign params
 
@@ -49,7 +49,7 @@ def gem(eq, coreprof, coretransp, code_parameters):
     
     # BAD WORKAROUND
     #write_cpos = code_parameters.get_value('flags.write_cpos')
-    nrho_transp = 1 
+    #nrho_transp = 1 
     nion_prof = 1
     q_choice = "equilibrium"
 
@@ -95,14 +95,16 @@ def gem(eq, coreprof, coretransp, code_parameters):
     rho0 = np.empty((nrho_prof))
     rho = np.empty((nrho_transp))
 
+    rho0 = coreprof.rho_tor
+    rho0 = rho0/max(rho0)
     rho_eq = eq.profiles_1d.rho_tor / rho_tor_max
 
     if nrho_transp == 1:
         rho = np.array([ra0])
-    elif nrho_transp == (nrho_transp-1)/2 :
+    elif nrho_transp == (nrho_prof-1)/2 :
             rho = rho0[1:nrho_transp-1:2]
     else:
-        rho = [((1.0/(2*nrho_transp))*(2*x-1))**0.7 for x in range(nrho_transp)]
+        rho = [((1.0/(2*nrho_transp))*(2*x+1))**0.7 for x in range(nrho_transp)]
 
     gm3 = np.empty(nrho_transp)
 
@@ -144,8 +146,8 @@ def gem(eq, coreprof, coretransp, code_parameters):
     if q_choice == "coreprof":
         l3interp(coreprof.profiles_1d.q, rho_eq, npsi-1, shatx, rho, nrho_transp)
     if q_choice == "jtot":
-        if coreprof.profiles.q.value == None : #TODO check what it deos ALLOCATE(coreprof(1)%profiles1d%q%value(nrho_prof)) ???
-            coreprof.profiles_1d.q.value[nrho_prof] = np.zeros((1)) #TODO how to pass size to ALLOCATE ?
+        if coreprof.profiles.q.value == None:
+            coreprof.profiles_1d.q.value[nrho_prof] = np.zeros((1))
             qq0 = coreprof.profiles_1d.q.value
             jj0 = coreprof.profiles_1d.jtot.value
             qq0[0] = 0.0
@@ -161,12 +163,14 @@ def gem(eq, coreprof, coretransp, code_parameters):
 
     shatx = shatx * rho / qqx
 
+    print('nnex size is {}'.format(nnex.shape))
+
     l3interp(coreprof.ne.value, rho0, nrho_prof-1, nnex, rho, nrho_transp-1)
     l3interp(coreprof.te.value, rho0, nrho_prof-1, ttex, rho, nrho_transp-1)
     l3deriv(coreprof.ne.value, rho0, nrho_prof-1, rlnex, rho, nrho_transp-1)
     l3deriv(coreprof.te.value, rho0, nrho_prof-1, rltex, rho, nrho_transp-1)
 
-    print('profile te: {}; interpolated te: {}'.format(coreprof.te.value, ttex))
+    #print('profile te: {}; interpolated te: {}'.format(coreprof.te.value, ttex))
 
     rlnex = rlnex / nnex
     rltex = rltex / ttex
@@ -175,13 +179,18 @@ def gem(eq, coreprof, coretransp, code_parameters):
 
     for ion in range(nion):
 
+        print('ti value at profile: {}, rho0: {}, nrho_prof: {}, rho: {}, nrho_transp: {}'
+              .format(coreprof.ti.value[:, ion], rho0, nrho_prof, rho, nrho_transp))
+
         l3interp(coreprof.ni.value[:, ion], rho0, nrho_prof-1, nnix, rho, nrho_transp-1)
         l3interp(coreprof.ti.value[:, ion], rho0, nrho_prof-1, ttix, rho, nrho_transp-1)
         l3deriv(coreprof.ti.value[:, ion], rho0, nrho_prof-1, rlnix, rho, nrho_transp-1)
         l3deriv(coreprof.ti.value[:, ion], rho0, nrho_prof-1, rltix, rho, nrho_transp-1)
 
         rlnix = rlnix / nnix
-        rltix = rltix / ttix
+        rltix = rltix / ttix # TODO: check why rlti is garbage at implementation
+
+        print('rlti: {}'.format(rltix))
 
         # Radial grid
 
@@ -286,6 +295,9 @@ def gem(eq, coreprof, coretransp, code_parameters):
 
             if ion == 0:
 
+                print('ne_transp.diff_eff size: {}; diff_eff : {}'
+                      .format(coretransp.values[0].ne_transp.diff_eff.shape, diffe.shape))
+                
                 coretransp.values[0].ne_transp.diff_eff[i, 1] = diffe
                 coretransp.values[0].te_transp.diff_eff[i] = chie
                 coretransp.values[0].ne_transp.vconv_eff[i, 1] = vconve
@@ -305,15 +317,17 @@ def gem(eq, coreprof, coretransp, code_parameters):
 
     # Set transp grid in the CPO
 
+    #print('rho :{}; rho_tor_max: {}'.format(rho, rho_tor_max))
+
     coretransp.values[0].rho_tor_norm = rho
-    coretransp.values[0].rho_tor = rho * rho_tor_max
+    coretransp.values[0].rho_tor = rho_tor_max * np.array(rho)
 
     # Set other ion ceofficients with ration switches
 
     coretransp.values[0].vtor_transp.diff_eff = chiratio_phi * coretransp.values[0].ti_transp.diff_eff
 
     # timestamp
-    time = time + 1.0  #TODO check if it is read from CPO
+    time = time + 1.0
     coretransp.time = time
 
     # write diags
