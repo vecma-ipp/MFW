@@ -93,7 +93,7 @@ def plot_camp_vals(data, name='gem0'):
     
     data[Ylabels].plot(style='o')
     plt.savefig(name + '_camp_res_vals.png')
-    #plt.close()
+    plt.close()
 
 
 def get_camp_dataframe(foldname, input_index=[61]):
@@ -255,7 +255,7 @@ filename_res = "gem0_coretransp_out.cpo"
 ###---Plot profiles for a case------
 #for i in range(16):    
 #    rho = get_rho(basefolder + "Run_" + str(i) + "/gem0_coreprof_in.cpo")
-#    plot_prof(pr11, np.linspace(0,1,100), "_gem0_aug_seq_run_input_1")
+#    ploti_prof(pr11, np.linspace(0,1,100), "_gem0_aug_seq_run_input_1")
 
 #plot_prof_seq(basefolder, 16, "_gem0_aug_par_tes_at61_", ft1_indx)
 
@@ -272,8 +272,11 @@ filename_res = "gem0_coretransp_out.cpo"
 gemdata, _, _ = read_sim_csv("data/gem_uq_inoutput.csv")
 gem0data, _, _ = read_sim_csv("campaign_data.csv")
 
-plot_param_vals(gem0data, "gem0")
-plot_param_vals(gemdata, "gem")
+#plot_camp_vals(gem0data, "gem0")
+#plot_camp_vals(gemdata, "gem")
+
+plot_scatter_2D(gem0data['te_value'], gem0data['te_transp_flux'], 'gem0_te_')
+plot_scatter_2D(gemdata['te_value'], gemdata['te_transp_flux'], 'gem_te_')
 
 diff = compare_response_pointwise(gem0data, gemdata)
 print(diff)
