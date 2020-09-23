@@ -9,8 +9,8 @@ from sklearn.neural_network import MLPRegressor
 
 from da_utils import *
 
-def get_new_sample(x, sigma):
-    return x[sigma.argmax()]
+def get_new_sample(x, utility):
+    return x[utility.argmax()]
 
 def stop_train_criterium_rsd(y_pred, sigma, eps=0.005):
     rsd_min = (sigma/abs(y_pred)).min()
@@ -143,6 +143,21 @@ def surrogate_loop(pardim):
             data = np.append(data, x_n.reshape(1, -1), axis=0)
             #print('new data {} and std {}'.format(x_n, std))
 
+def surrogate_utility(x_train_data, y_train_data, x_roi_data, original_model):
+    utility = []
+    kernel = RBF()
+    gpr = GaussianProcessRegressor(kernel=kernel, n_restarts_optimizer=4)
+
+    for x in x_roi_data:
+        x_new_train_data = x_train_data.append(x)
+        y_new_train_data = y_train_data.append(original_model(x))
+        gpr = gpr.fit(x_new_train_data, y_new_train_data)
+        x_new_test_data = np.delete(x_roi_data, np.argwhere(x_roi_data == x))
+        y_new_test_data = np.array([original_model(x) for x in x_new_test_data])
+        y_new_pred_data, new_var = gpr.pred(x_new_test_data)
+        utility.append(new_var)
+
+    return -utility.sum()
 
 #np.random.seed(2)  # check other random seeds - huge difference! (42, 100 are bad)
 plt.ion()
