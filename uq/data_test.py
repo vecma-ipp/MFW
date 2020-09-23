@@ -82,6 +82,20 @@ def get_run_data(foldname, input_index=[61]):
     
     return pd.DataFrame([[teval[0], tival[0], teddrho[0], tiddrho[0], teflux[0], tiflux[0]]], columns = Xlabels + Ylabels)
 
+def plot_camp_vals(data, name='gem0'):
+    Xlabels = ['te_value', 'ti_value', 'te_ddrho', 'ti_ddrho']
+    Ylabels = ['te_transp_flux', 'ti_transp_flux']
+    data.reset_index()
+    
+    data[Xlabels].plot(style='o')
+    plt.savefig(name + '_camp_par_vals.png')
+    #plt.close()
+    
+    data[Ylabels].plot(style='o')
+    plt.savefig(name + '_camp_res_vals.png')
+    #plt.close()
+
+
 def get_camp_dataframe(foldname, input_index=[61]):
     Xlabels = ['te_value', 'ti_value', 'te_ddrho', 'ti_ddrho']
     Ylabels = ['te_transp_flux', 'ti_transp_flux']
@@ -207,7 +221,9 @@ basefolder = "/u/yyudin00/code/MFW/workflow/AUG_28906_6_1ft_restart/"
 basefolder = scratch_folder + "UQ_GEM0_61_e9zvw66q/"
 basefolder = scratch_folder + "gemuq_qmc_tjpqqq_4/"
 
-basefolder = os.path.join(scratch_folder, "gem0uq_pce_i67og8gy")
+basefolder = os.path.join(scratch_folder,"gemuq_qmc_hjwchjla") # gem0 campaign run with 3e+3 samples (QMC, 1ft @69) on 21.09.2020
+
+basefolder = os.path.join(scratch_folder, "gem0uq_pce_i67og8gy") # gem0 campaign run with 625 runs (PCE, const gradients, 1ft @69) on 22.09.2020
 
 #filename = "Run_1/gem0_coreprof_in.cpo" 
 #filename = "gem0_coreprof_in.cpo"
@@ -251,8 +267,14 @@ filename_res = "gem0_coretransp_out.cpo"
 
 
 ###---Compare GEM and GEM0 results for PCE
-gem0data = get_camp_dataframe(basefolder, [ft1_indx])
+
+#gem0data = get_camp_dataframe(basefolder, [ft1_indx])
 gemdata, _, _ = read_sim_csv("data/gem_uq_inoutput.csv")
+gem0data, _, _ = read_sim_csv("campaign_data.csv")
+
+plot_param_vals(gem0data, "gem0")
+plot_param_vals(gemdata, "gem")
+
 diff = compare_response_pointwise(gem0data, gemdata)
 print(diff)
 
