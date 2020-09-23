@@ -1,16 +1,16 @@
 import os
 import numpy as np
+import pandas as pd
 
-#from ascii_cpo import read
+from ascii_cpo import read
 import easymfw.utils.io_tools
 
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
-import pandas as pd
-
-import walklevel from basicda.toy_uq
+#from basicda.toy_uq import walklevel
+from basicda.da_utils import read_sim_csv, walklevel
 
 def get_rho(filename):
     return read(filename, "coreprof").rho.values
@@ -58,6 +58,48 @@ def check_equal(prof1, prof2):
         return False
     return True
 
+def get_run_data(foldname, input_index=[61]):
+    Xlabels = ['te_value', 'ti_value', 'te_ddrho', 'ti_ddrho']
+    Ylabels = ['te_transp_flux', 'ti_transp_flux']
+    input_filename = "gem0_coreprof_in.cpo"
+    output_filename = "gem0_coretransp_out.cpo"
+    #Te_prof_vals = []
+    #Ti_prof_vals = []
+    #Te_grad_vals = []
+    #Ti_grad_vals = []
+    #Te_flux_vals = []
+    #Ti_flux_vals = []
+    coretransp = read(os.path.join(foldname, output_filename), "coretransp")
+    tiflux = coretransp.values[0].ti_transp.flux[0]
+    teflux = coretransp.values[0].te_transp.flux
+    coreprof = read(os.path.join(foldname, input_filename), "coreprof")
+    teval = coreprof.te.value[input_index]
+    tival = coreprof.ti.value[input_index][0]
+    teddrho = coreprof.te.ddrho[input_index]    
+    tiddrho = coreprof.ti.ddrho[input_index][0]
+
+    #print(teddrho)
+    
+    return pd.DataFrame([[teval[0], tival[0], teddrho[0], tiddrho[0], teflux[0], tiflux[0]]], columns = Xlabels + Ylabels)
+
+def get_camp_dataframe(foldname, input_index=[61]):
+    Xlabels = ['te_value', 'ti_value', 'te_ddrho', 'ti_ddrho']
+    Ylabels = ['te_transp_flux', 'ti_transp_flux']
+    simdata = pd.DataFrame(columns = Xlabels + Ylabels)
+
+    for _,runs,_ in walklevel(os.path.join(foldname, 'runs/')):
+        for run in runs:
+            runfolder = os.path.join(foldname, 'runs/', run)
+            runres = get_run_data(runfolder, input_index)
+            #print(runres)
+            simdata = pd.concat([simdata, runres], ignore_index=True)
+            #simdata = simdata.append(runres, ignore_index=True)
+    
+    #print(simdata)
+    simdata.to_csv('campaign_data.csv',index=False)
+    return simdata
+            
+
 def get_camp_data(foldname, input_index=[61]):
     Xlabels = ['te_value', 'ti_value', 'te_ddrho', 'ti_ddrho']
     Ylabels = ['te_transp_flux', 'ti_transp_flux']
@@ -85,9 +127,30 @@ def get_camp_data(foldname, input_index=[61]):
 
     data = pd.DataFrame({Xlabels[0]: Te_prof_vals, Xlabels[1]: Ti_prof_vals, Xlabels[2]: Te_grad_vals,
                          Xlabels[3]: Ti_grad_vals, Ylabels[2]: Te_flux_vals, Ylabels[1]: Ti_flux_vals, })
-    data.to_csv(foldname + "camping_basic_data" +'.csv')
+    data.to_csv(foldname + "campaign_basic_data" +'.csv')
     #return Te_prof_vals, Ti_prof_vals, Te_grad_vals, Ti_grad_vals, Te_flux_vals, Ti_flux_vals    
     return data
+
+def compare_response_pointwise(data1, data2, res_lab_num=0):
+      
+    Xlabels = ['te_value', 'ti_value', 'te_ddrho', 'ti_ddrho']
+    Ylabels = ['te_transp_flux', 'ti_transp_flux']
+
+    #data1.reset_index()
+    #data2.reset_index()
+    #print((data1[[Xlabels[0]]].iloc[0] - data2[[Xlabels[0]]].iloc[0]))
+
+    diff = pd.DataFrame()
+    diff_rel = pd.DataFrame()
+    for i in range(len(data1.index)):
+        if all( [ (abs(data1.iloc[i][label] - data2.iloc[i][label]) < 1e-12) for label in Xlabels] ):
+             diff_row = abs(data1.loc[Ylabels[res_lab_num]].iloc[i] - data2.loc[Ylabels[res_lab_num]].iloc[i])
+             diff = diff.append(diff_row*diff_row)
+             diff_rel = diff_rel.append(diff_row / data2.loc[Ylabels[res_lab_num]].iloc[i])
+    
+    diff_rel.to_csv("camp_comp_dat" + Ylabels[res_lab_num] + ".scv")
+    return diff.sum()
+
 
 def plot_prof(prof, rho, name):
     fig = plt.plot(rho, prof, label='Te profile')
@@ -126,7 +189,7 @@ def plot_scatter_2D(profvals, resvals, campname):
 
 ###--------------------------------------------------------- 
 	
-ft1_indx = 61 # 69
+ft1_indx = 69 # 61
 
 scratch_folder = "/marconi_scratch/userexternal/yyudin00/"
 #basefolder = "/ptmp/yyudin/UQ_GEM0_wvkryt88_sequential/runs/"
@@ -143,6 +206,8 @@ basefolder = "/u/yyudin00/code/MFW/workflow/AUG_28906_6_1ft_restart/"
 #basefolder = scratch_folder + "UQ_GEM0_LVR_37os6gq0/"
 basefolder = scratch_folder + "UQ_GEM0_61_e9zvw66q/"
 basefolder = scratch_folder + "gemuq_qmc_tjpqqq_4/"
+
+basefolder = os.path.join(scratch_folder, "gem0uq_pce_i67og8gy")
 
 #filename = "Run_1/gem0_coreprof_in.cpo" 
 #filename = "gem0_coreprof_in.cpo"
@@ -184,4 +249,10 @@ filename_res = "gem0_coretransp_out.cpo"
 
 ###---Check flux tube indices--
 
+
+###---Compare GEM and GEM0 results for PCE
+gem0data = get_camp_dataframe(basefolder, [ft1_indx])
+gemdata, _, _ = read_sim_csv("data/gem_uq_inoutput.csv")
+diff = compare_response_pointwise(gem0data, gemdata)
+print(diff)
 
