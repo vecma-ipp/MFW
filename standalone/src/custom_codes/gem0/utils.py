@@ -24,10 +24,7 @@ def l3interp(y_in, x_in, nr_in, y_out, x_out, nr_out): #TODO currently intepolat
     #print('the iteration for interpolation is over {}; {}; {}'.format(jfirst, jlast, jstep))
 
     for j in range(jfirst, jlast, jstep):
-        if isinstance(x_out, float) == 1:
-            x = x_out # TODO: should not be that, might read garbage
-        else:
-            x = x_out[j]
+        x = x_out[j]
         while x >= x_in[j1] and nr_in - 1 > j1 > 2:
             j1 = j1 + jstep
 
@@ -52,10 +49,10 @@ def l3interp(y_in, x_in, nr_in, y_out, x_out, nr_out): #TODO currently intepolat
         #print('interpol ref points : {} {} {} {} {}'.format(x0, x1, x2, xm, x))
         #print('interpol coefs : {} {} {} {}'.format(aintm, aint0, aint1, aint2))
 
-        if isinstance(y_in, float) or isinstance(y_out, float):
-            y_out = aintm * y_in + aint0 * y_in + aint1 * y_in + aint2 * y_in
-        else:
-            y_out[j] = aintm * y_in[jm] + aint0 * y_in[j0] + aint1 * y_in[j1] + aint2 * y_in[j2]
+        #if isinstance(y_in, float) or isinstance(y_out, float):
+        #    y_out = aintm * y_in + aint0 * y_in + aint1 * y_in + aint2 * y_in
+        #else:
+        y_out[j] = aintm * y_in[jm] + aint0 * y_in[j0] + aint1 * y_in[j1] + aint2 * y_in[j2]
 
         #print('y_out : {}'.format(y_out))
 
@@ -98,7 +95,7 @@ def l3deriv(y_in, x_in, nr_in, dydx_out, x_out, nr_out):
         aint1 = ((x - x0) * (x - x2) + (x - xm) * (x - x2) + (x - xm) * (x - x0)) / ((x1 - xm) * (x1 - x0) * (x1 - x2))
         aint2 = ((x - x0) * (x - x1) + (x - xm) * (x - x1) + (x - xm) * (x - x0)) / ((x2 - xm) * (x2 - x0) * (x2 - x1))
 
-        if isinstance(y_in, float):
-            dydx_out = aintm * y_in + aint0 * y_in + aint1 * y_in + aint2 * y_in
-        else:
-            dydx_out[j] = aintm * y_in[jm] + aint0 * y_in[j0] + aint1 * y_in[j1] + aint2 * y_in[j2]
+        #if isinstance(y_in, float):
+        #    dydx_out = aintm * y_in + aint0 * y_in + aint1 * y_in + aint2 * y_in
+        #else:
+        dydx_out[j] = aintm * y_in[jm] + aint0 * y_in[j0] + aint1 * y_in[j1] + aint2 * y_in[j2]

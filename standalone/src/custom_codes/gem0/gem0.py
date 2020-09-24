@@ -33,12 +33,12 @@ def gem(eq, coreprof, coretransp, code_parameters):
     #    coretransp.codeparam.parameters = np.array(np.size(code_parameters.parameters))
 
     print('GEM0 Parameters : ')
-    #print(code_parameters.parameters)
+    print(code_parameters)
 
     # Add to coretransp
 
-    #coretransp.codeparam.codename = codename
-    #coretransp.codeparam.codeversion = codeversion
+    coretransp.codeparam.codename = codename[0]
+    coretransp.codeparam.codeversion = codeversion[0]
     #coretransp.codeparam.parameters = code_parameters.parameters
 
     # Assign code paramteters to interval variables
@@ -47,13 +47,13 @@ def gem(eq, coreprof, coretransp, code_parameters):
     #if return_status != 0:
     #    print('ERROR: Could not assign GEM0 parameters!')
     
-    # BAD WORKAROUND
-    #write_cpos = code_parameters.get_value('flags.write_cpos')
-    #nrho_transp = 1 
-    nion_prof = 1
-    q_choice = "equilibrium"
+    # WORKAROUND
+    write_cpos = code_parameters['flags.write_cpos']
+    nrho_transp = code_parameters['grid.nrho_transp']
+    nion_prof = code_parameters['grid.nion']
+    q_choice = code_parameters['flags.write_cpos']
 
-    print('Done assigning GEM0 parameters')
+    print('> Done assigning GEM0 parameters')
     
     # Write I/O CPOs
     if write_cpos:
@@ -109,9 +109,9 @@ def gem(eq, coreprof, coretransp, code_parameters):
     gm3 = np.empty(nrho_transp)
 
     if not eq.profiles_1d.gm3 is None:
-        l3interp(eq.profiles_1d.gm3, rho_eq, npsi-1, gm3, rho, nrho_transp-1)  #TODO check implementation
+        l3interp(eq.profiles_1d.gm3, rho_eq, npsi-1, gm3, rho, nrho_transp-1)
     else:
-        gm3 = [1.0 for i in gm3]
+        gm3 = np.array([1.0 for i in gm3])
     
 
     # TODO: check if correct size
@@ -144,7 +144,7 @@ def gem(eq, coreprof, coretransp, code_parameters):
     if q_choice == "equilibrium":
         l3interp(eq.profiles_1d.q, rho_eq, npsi-1, qqx, rho, nrho_transp-1)
     if q_choice == "coreprof":
-        l3interp(coreprof.profiles_1d.q, rho_eq, npsi-1, shatx, rho, nrho_transp)
+        l3interp(coreprof.profiles_1d.q, rho_eq, npsi-1, shatx, rho, nrho_transp-1)
     if q_choice == "jtot":
         if coreprof.profiles.q.value == None:
             coreprof.profiles_1d.q.value[nrho_prof] = np.zeros((1))
@@ -163,7 +163,7 @@ def gem(eq, coreprof, coretransp, code_parameters):
 
     shatx = shatx * rho / qqx
 
-    print('nnex size is {}'.format(nnex.shape))
+    #print('nnex size is {}'.format(nnex.shape))
 
     l3interp(coreprof.ne.value, rho0, nrho_prof-1, nnex, rho, nrho_transp-1)
     l3interp(coreprof.te.value, rho0, nrho_prof-1, ttex, rho, nrho_transp-1)
@@ -179,12 +179,12 @@ def gem(eq, coreprof, coretransp, code_parameters):
 
     for ion in range(nion):
 
-        print('ti value at profile: {}, rho0: {}, nrho_prof: {}, rho: {}, nrho_transp: {}'
-              .format(coreprof.ti.value[:, ion], rho0, nrho_prof, rho, nrho_transp))
+        #print('ti value at profile: {}, rho0: {}, nrho_prof: {}, rho: {}, nrho_transp: {}'
+        #      .format(coreprof.ti.value[:, ion], rho0, nrho_prof, rho, nrho_transp))
 
         l3interp(coreprof.ni.value[:, ion], rho0, nrho_prof-1, nnix, rho, nrho_transp-1)
         l3interp(coreprof.ti.value[:, ion], rho0, nrho_prof-1, ttix, rho, nrho_transp-1)
-        l3deriv(coreprof.ti.value[:, ion], rho0, nrho_prof-1, rlnix, rho, nrho_transp-1)
+        l3deriv(coreprof.ni.value[:, ion], rho0, nrho_prof-1, rlnix, rho, nrho_transp-1)
         l3deriv(coreprof.ti.value[:, ion], rho0, nrho_prof-1, rltix, rho, nrho_transp-1)
 
         rlnix = rlnix / nnix
