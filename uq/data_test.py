@@ -193,12 +193,29 @@ def plot_prof_seq(runfolder, nruns, name, targind=0):
 
 
 def plot_scatter_2D(profvals, resvals, campname):
-    fig = plt.scatter(profvals, resvals, label='Te_flux(Te|flux)')
-    plt.xlabel('Te[eV]')
-    plt.ylabel('Te_flux')
+    fig = plt.scatter(profvals, resvals, label='Ti_flux(DTi|flux)')
+    plt.xlabel('Ti[eV/m?]')
+    plt.ylabel('Ti_flux')
+    plt.yscale('log')
     #plt.ylim(83820,83840)
     #plt.autoscale(enable=True, axis='both', tight=True)
     plt.savefig('Te_scatter_' + campname + '.png')
+    plt.close()
+
+def plot_scatter_2D_mult(profvals, resvals, campname):
+
+    fig = plt.figure()
+    ax1 = fig.add_subplot(111)
+
+    for i in range(len(profvals)):
+        ax1.scatter(profvals[i],  resvals[i], alpha=0.4, )
+    
+    plt.title('Ti_flux(Ti|flux)')
+    plt.xlabel('Ti[eV/m?]')
+    plt.ylabel('Ti_flux')
+    plt.yscale('log')
+    plt.legend(loc='upper left')
+    plt.savefig('T_mult_scatter_' + campname + '.pdf')
     plt.close()
 
 ###--------------------------------------------------------- 
@@ -224,6 +241,7 @@ basefolder = scratch_folder + "gemuq_qmc_tjpqqq_4/"
 basefolder = os.path.join(scratch_folder,"gemuq_qmc_hjwchjla") # gem0 campaign run with 3e+3 samples (QMC, 1ft @69) on 21.09.2020
 
 basefolder = os.path.join(scratch_folder, "gem0uq_pce_i67og8gy") # gem0 campaign run with 625 runs (PCE, const gradients, 1ft @69) on 22.09.2020
+basefolder = os.path.join(scratch_folder, "gem0uq_pce_gbw0uhl3")
 
 #filename = "Run_1/gem0_coreprof_in.cpo" 
 #filename = "gem0_coreprof_in.cpo"
@@ -275,8 +293,10 @@ gem0data, _, _ = read_sim_csv("campaign_data.csv")
 #plot_camp_vals(gem0data, "gem0")
 #plot_camp_vals(gemdata, "gem")
 
-plot_scatter_2D(gem0data['te_value'], gem0data['te_transp_flux'], 'gem0_te_')
-plot_scatter_2D(gemdata['te_value'], gemdata['te_transp_flux'], 'gem_te_')
+#plot_scatter_2D(gem0data['ti_value'], gem0data['ti_transp_flux'], 'gem0_ti_new')
+#plot_scatter_2D(gemdata['ti_value'], gemdata['ti_transp_flux'], 'gem_tiddrho_')
+plot_scatter_2D_mult([gem0data['ti_value'], gemdata['ti_value']] , 
+                     [gem0data['ti_transp_flux'], gemdata['ti_transp_flux']] , '_multgemgem0titi')
 
 diff = compare_response_pointwise(gem0data, gemdata)
 print(diff)
