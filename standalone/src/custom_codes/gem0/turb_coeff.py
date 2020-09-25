@@ -1,4 +1,6 @@
-# some general default paramteres
+# DEFAULT / FALLBACK code parameter values
+
+# some general paramteres
 nrho_transp = 1 # number of flux tubes
 nion = 0 # number of ions
 
