@@ -6,7 +6,7 @@ from ascii_cpo import read, write, copy #TODO double check if the same as fortra
 
 #from turb_coeff import write_diags, write_cpos, hmode, nrho_transp, nion, thresh, beta_reduction, etae_pinch, chi_d, chiratio_phi, ra0 
 from turb_constructor import turb_constructor
-from utils import l3interp, l3deriv  # TODO check implementation correctness
+from utils import l3interp, l3deriv  # TODO test more
 import assign_turb_parameters
 from phys_constants import *
 
@@ -109,24 +109,35 @@ def gem(eq, coreprof, coretransp, code_parameters):
     gm3 = np.empty(nrho_transp)
 
     if not eq.profiles_1d.gm3 is None:
-        l3interp(eq.profiles_1d.gm3, rho_eq, npsi-1, gm3, rho, nrho_transp-1)
+        gm3 = l3interp(eq.profiles_1d.gm3, rho_eq, npsi, gm3, rho, nrho_transp)
     else:
         gm3 = np.array([1.0 for i in gm3])
     
+    # nnex  = np.empty(coreprof.ne.value.size)
+    # ttex  = np.empty(coreprof.te.value.size)
+    # nnix  = np.empty(coreprof.ni.value.size)
+    # ttix  = np.empty(coreprof.ti.value.size)
+    # zeffx = np.empty(coreprof.profiles1d.zeff.value.size)
+    # qqx   = np.empty((nrho_transp))
+    # rlnex = np.empty(coreprof.ne.value.size)
+    # rlnix = np.empty(coreprof.ni.value.size)
+    # rltex = np.empty(coreprof.te.value.size)
+    # rltix = np.empty(coreprof.ti.value.size)
+    # shatx = np.empty((nrho_transp))
+    # chix  = np.empty((nrho_transp))
 
-    # TODO: check if correct size
-    nnex  = np.empty(coreprof.ne.value.size)
-    ttex  = np.empty(coreprof.te.value.size)
-    nnix  = np.empty(coreprof.ni.value.size)
-    ttix  = np.empty(coreprof.ti.value.size)
-    zeffx = np.empty(coreprof.profiles1d.zeff.value.size)
+    nnex  = np.empty(nrho_transp)
+    ttex  = np.empty(nrho_transp)
+    nnix  = np.empty(nrho_transp)
+    ttix  = np.empty(nrho_transp)
+    zeffx = np.empty(nrho_transp)
     qqx   = np.empty((nrho_transp))
-    rlnex = np.empty(coreprof.ne.value.size)
-    rlnix = np.empty(coreprof.ni.value.size)
-    rltex = np.empty(coreprof.te.value.size)
-    rltix = np.empty(coreprof.ti.value.size)
-    shatx = np.empty((nrho_transp))
-    chix  = np.empty((nrho_transp))
+    rlnex = np.empty(nrho_transp)
+    rlnix = np.empty(nrho_transp)
+    rltex = np.empty(nrho_transp)
+    rltix = np.empty(nrho_transp)
+    shatx = np.empty(nrho_transp)
+    chix  = np.empty(nrho_transp)
 
     # Main ion params
 
@@ -135,40 +146,40 @@ def gem(eq, coreprof, coretransp, code_parameters):
 
     # Interpolate to get params and gradients
 
-    l3interp(coreprof.profiles1d.zeff.value, rho0, nrho_prof-1, zeffx, rho, nrho_transp-1)  #TODO check implementation
+    zeffx = l3interp(coreprof.profiles1d.zeff.value, rho0, nrho_prof, zeffx, rho, nrho_transp)
 
     # Q-profile
 
     cases = ["equilibrium", "coreprof", "jtot"]
 
     if q_choice == "equilibrium":
-        l3interp(eq.profiles_1d.q, rho_eq, npsi-1, qqx, rho, nrho_transp-1)
+        qqx = l3interp(eq.profiles_1d.q, rho_eq, npsi, qqx, rho, nrho_transp)
     if q_choice == "coreprof":
-        l3interp(coreprof.profiles_1d.q, rho_eq, npsi-1, shatx, rho, nrho_transp-1)
+        shatx = l3interp(coreprof.profiles_1d.q, rho_eq, npsi-1, shatx, rho, nrho_transp-1)
     if q_choice == "jtot":
         if coreprof.profiles.q.value == None:
             coreprof.profiles_1d.q.value[nrho_prof] = np.zeros((1))
             qq0 = coreprof.profiles_1d.q.value
             jj0 = coreprof.profiles_1d.jtot.value
             qq0[0] = 0.0
-            for i in range(1,nrho_prof):
+            for i in range(0,nrho_prof):
                 qq0[i] = qq0[i-1] + 0.5*(rho0[i]*rho0[i-1] - rho0[i-1]) * (jj0[i]+jj0[i-1])
             qq0 = mu_0 * qq0 * r00 / (2.0 * b00)
             qq0[0] = 1.0
             qq0 = rho0 * rho0 / qq0
             qq0[0] = 2.0 * qq0[1] - qq0[2]
-            l3interp(qq0, rho0, nrho_prof-1, qqx, rho, nrho_transp)
-            l3deriv(qq0, rho0, nrho_prof-1, shatx, rho, nrho_transp)
+            qqx = l3interp(qq0, rho0, nrho_prof-1, qqx, rho, nrho_transp)
+            shatx = l3deriv(qq0, rho0, nrho_prof-1, shatx, rho, nrho_transp)
 
 
     shatx = shatx * rho / qqx
 
     #print('nnex size is {}'.format(nnex.shape))
 
-    l3interp(coreprof.ne.value, rho0, nrho_prof-1, nnex, rho, nrho_transp-1)
-    l3interp(coreprof.te.value, rho0, nrho_prof-1, ttex, rho, nrho_transp-1)
-    l3deriv(coreprof.ne.value, rho0, nrho_prof-1, rlnex, rho, nrho_transp-1)
-    l3deriv(coreprof.te.value, rho0, nrho_prof-1, rltex, rho, nrho_transp-1)
+    nnex = l3interp(coreprof.ne.value, rho0, nrho_prof, nnex, rho, nrho_transp)
+    ttex = l3interp(coreprof.te.value, rho0, nrho_prof, ttex, rho, nrho_transp)
+    rlnex = l3deriv(coreprof.ne.value, rho0, nrho_prof, rlnex, rho, nrho_transp)
+    rltex = l3deriv(coreprof.te.value, rho0, nrho_prof, rltex, rho, nrho_transp)
 
     #print('profile te: {}; interpolated te: {}'.format(coreprof.te.value, ttex))
 
@@ -182,15 +193,13 @@ def gem(eq, coreprof, coretransp, code_parameters):
         #print('ti value at profile: {}, rho0: {}, nrho_prof: {}, rho: {}, nrho_transp: {}'
         #      .format(coreprof.ti.value[:, ion], rho0, nrho_prof, rho, nrho_transp))
 
-        l3interp(coreprof.ni.value[:, ion], rho0, nrho_prof-1, nnix, rho, nrho_transp-1)
-        l3interp(coreprof.ti.value[:, ion], rho0, nrho_prof-1, ttix, rho, nrho_transp-1)
-        l3deriv(coreprof.ni.value[:, ion], rho0, nrho_prof-1, rlnix, rho, nrho_transp-1)
-        l3deriv(coreprof.ti.value[:, ion], rho0, nrho_prof-1, rltix, rho, nrho_transp-1)
+        nnix = l3interp(coreprof.ni.value[:, ion], rho0, nrho_prof, nnix, rho, nrho_transp)
+        ttix = l3interp(coreprof.ti.value[:, ion], rho0, nrho_prof, ttix, rho, nrho_transp)
+        rlnix = l3deriv(coreprof.ni.value[:, ion], rho0, nrho_prof, rlnix, rho, nrho_transp)
+        rltix = l3deriv(coreprof.ti.value[:, ion], rho0, nrho_prof, rltix, rho, nrho_transp)
 
         rlnix = rlnix / nnix
-        rltix = rltix / ttix # TODO: check why rlti is garbage at implementation
-
-        print('rlti: {}'.format(rltix))
+        rltix = rltix / ttix
 
         # Radial grid
 
@@ -216,7 +225,7 @@ def gem(eq, coreprof, coretransp, code_parameters):
             cs = math.sqrt(kb * tte / ionmass)
             taui = tti / tte
 
-            print('some intial params. cc: {}; ionmass: {}; tte: {}; ee:{}; b00: {}; rhos: {}'.format(cc, ionmass, tte, ee, b00, rhos))
+            #print('some intial params. cc: {}; ionmass: {}; tte: {}; ee:{}; b00: {}; rhos: {}'.format(cc, ionmass, tte, ee, b00, rhos))
 
             beta = mu_0 * nne * kb * tte / (b00 * b00)
             rmue = me / ionmass
@@ -245,7 +254,7 @@ def gem(eq, coreprof, coretransp, code_parameters):
 
                 chigb = rhos * rhos * cs / lperp
 
-                print('some intial params. nion: {}; nrho_transp: {}; rhos: {}; cs:{}; lperp: {}'.format(nion, nrho_transp, rhos, cs, lperp))
+                #print('some intial params. nion: {}; nrho_transp: {}; rhos: {}; cs:{}; lperp: {}'.format(nion, nrho_transp, rhos, cs, lperp))
 
                 if(hmode):
                     # chigb = 0.3 * chigb
@@ -295,8 +304,8 @@ def gem(eq, coreprof, coretransp, code_parameters):
 
             if ion == 0:
 
-                print('ne_transp.diff_eff size: {}; diff_eff : {}'
-                      .format(coretransp.values[0].ne_transp.diff_eff.shape, diffe.shape))
+                #print('ne_transp.diff_eff size: {}; diff_eff : {}'
+                #      .format(coretransp.values[0].ne_transp.diff_eff.shape, diffe.shape))
                 
                 coretransp.values[0].ne_transp.diff_eff[i, 1] = diffe
                 coretransp.values[0].te_transp.diff_eff[i] = chie
@@ -312,8 +321,8 @@ def gem(eq, coreprof, coretransp, code_parameters):
 
     # End species loop
 
-    print('ti flux value is : {}; from nni : {}, kb: {}, tti: {}, ggi: {}, (chii: {}, rlti: {}),  gm3: {}'.format(
-          coretransp.values[0].ti_transp.flux, nni, kb, tti, ggi, chii, rlti, gm3[0]))
+    #print('ti flux value is : {}; from nni : {}, kb: {}, tti: {}, ggi: {}, (chii: {}, rlti: {}),  gm3: {}'.format(
+    #      coretransp.values[0].ti_transp.flux, nni, kb, tti, ggi, chii, rlti, gm3[0]))
 
     # Set transp grid in the CPO
 
