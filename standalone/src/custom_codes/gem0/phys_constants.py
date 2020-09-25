@@ -4,7 +4,8 @@ from scipy.constants import physical_constants as pc
 #pi = cnst.pi
 pi = 3.141592653589793238462643383280
 
-kb = cnst.Boltzmann
+#kb = cnst.Boltzmann
+kb = 1.602176565E-019 
 
 ee = cnst.elementary_charge
 

@@ -1,5 +1,5 @@
 # some general default paramteres
-nrho_transp = 8 # number of flux tubes
+nrho_transp = 1 # number of flux tubes
 nion = 0 # number of ions
 
 # default parameters for codeparame
