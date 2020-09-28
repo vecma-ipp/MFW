@@ -145,8 +145,6 @@ nftubes = gemxml.get_value("cpu_parameters.parallel_cases.nftubes")
 ncores = npesx*npess*nftubes
 
 exec_path = os.path.join(common_dir, exec_code)
-mpi_app = " ".join([mpi_instance, "-n", str(ncores), exec_path])
-print('MPI_APP: ', mpi_app)
 
 if EXEC_PJ:
     # GCG-PJ wrapper
