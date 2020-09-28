@@ -15,7 +15,7 @@ IMPORTANT CHECK: in gem.xml, nrho_transp = 1
 
 
 # We test 1 flux tube
-ft_index = [61]
+ft_index = 69
 
 # execustion with QCJ-PJ
 EXEC_PJ = True
@@ -94,7 +94,7 @@ os.system("cp " + cpo_dir + "/ets_equilibrium_in.cpo "
 os.system("cp " + cpo_dir + "/ets_coreprof_in.cpo "
                 + common_dir + "/gem_coreprof_in.cpo")
 
-os.system("cp " + cpo_dir + "/t00.dat " + common_dir)
+#os.system("cp " + cpo_dir + "/t00.dat " + common_dir)
 
 # Copy XML and XSD files
 os.system("cp " + xml_dir + "/gem.xml " + common_dir)
@@ -157,12 +157,13 @@ if EXEC_PJ:
     # PJ execution
     qcgpjexec = easypj.Executor()
     qcgpjexec.create_manager(dir=my_campaign.campaign_dir,
-                             log_level='info')
+                             log_level='debug')
 
     qcgpjexec.add_task(Task(
         TaskType.EXECUTION,
         TaskRequirements(cores=Resources(exact=ncores)),
-        application= mpi_app
+        model='mpiintel',
+        application=exec_path
     ))
 
     qcgpjexec.run(
