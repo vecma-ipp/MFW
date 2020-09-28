@@ -162,7 +162,7 @@ if EXEC_PJ:
     qcgpjexec.add_task(Task(
         TaskType.EXECUTION,
         TaskRequirements(cores=Resources(exact=ncores)),
-        model='mpiintel',
+        model='intelmpi',
         application=exec_path
     ))
 
