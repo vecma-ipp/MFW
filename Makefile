@@ -44,7 +44,8 @@ all: kernels
 	@echo -e "\033[35m\033[1m ==== Full Build Completed ==== \033[0m"
 
 
-codes: libbds bdseq bohmgb ets gem chease dfefi imp4dv gem0 
+codes: libbds bohmgb chease imp4dv gem0 
+#bdseq ets gem dfefi
 #orb5
 
 
@@ -104,7 +105,8 @@ clean-ual:
 
 
 # libbds #######################################################################
-libbds: ual get-libbds
+libbds: ual 
+#get-libbds
 	@echo -e "\033[36m\033[1m ++++ Build LIBBDS ++++ \033[0m"; \
 	($(MAKE) --no-print-directory -C externals -f Makefile.libbds \
   && echo -e "\033[32m\033[1m -- OK -- \033[0m") \
