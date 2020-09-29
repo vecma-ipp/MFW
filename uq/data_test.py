@@ -166,7 +166,7 @@ def compare_response_pointwise(data1, data2, res_lab_num=0):
              diff_rel = diff_rel.append(diff_row / data2.loc[Ylabels[res_lab_num]].iloc[i])
     
     diff_rel.to_csv("camp_comp_dat" + Ylabels[res_lab_num] + ".scv")
-    return math.sqrt(diff.sum())
+    return np.sqrt(diff.sum())
 
 def plot_prof(prof, rho, name):
     """
@@ -278,18 +278,20 @@ def two_camp_compare():
 
     gemdata_slice = gemdata[ (gemdata['te_ddrho'] == np.median(gemdata['te_ddrho'].unique())) & 
                          (gemdata['ti_ddrho'] == np.median(gemdata['ti_ddrho'].unique())) &
-                         (gemdata['te_value'] == np.median(gemdata['te_value'].unique())) ] 
+                         (gemdata['te_value'] == np.median(gemdata['te_value'].unique())) &
+                         (gemdata['ti_value'] == np.median(gemdata['ti_value'].unique())) ] 
                         
     gem0data_slice = gem0data[gem0data['te_value'] == np.median(gem0data['te_value'].unique())]
 
-    #print(len(gem0data.groupby(['te_value', 'ti_value']).groups)) # check how many unique values are there in {Te}x{Ti}              
+    #print(len(gem0data.groupby(['te_value', 'ti_value']).groups)) # check how many unique values are there in {Te}x{Ti}         
+    print(gemdata_slice[['ti_transp_flux', 'te_transp_flux']])
 
     #plot_scatter_2D(gem0data_slice['ti_value'], gem0data_slice['ti_transp_flux'], 'gem0_titi_single')
     #plot_scatter_2D(gemdata['ti_value'], gemdata['ti_transp_flux'], 'gem_tiddrho_')
 
-    plot_scatter_2D_mult([gem0data_slice['ti_value'], gemdata_slice['ti_value']] , 
-                         [gem0data_slice['ti_transp_flux'], gemdata_slice['ti_transp_flux']] ,
-                         ['gem0', 'gem'], '_multgemgem0titi_med')
+    #plot_scatter_2D_mult([gem0data_slice['ti_value'], gemdata_slice['ti_value']] , 
+    #                     [gem0data_slice['ti_transp_flux'], gemdata_slice['ti_transp_flux']] ,
+    #                     ['gem0', 'gem'], '_multgemgem0titi_med')
 
     diff = compare_response_pointwise(gem0data, gemdata)
     return diff
