@@ -46,7 +46,8 @@ def gem(eq, coreprof, coretransp, code_parameters):
     
     # WORKAROUND
     write_cpos = code_parameters['flags.write_cpos']
-    q_choice = code_parameters['flags.write_cpos']
+    write_diags = code_parameters['flags.write_diags']
+    q_choice = code_parameters['flags.q_choice']
 
     nrho_transp = code_parameters['grid.nrho_transp']
     nion_prof = code_parameters['grid.nion']
@@ -138,16 +139,19 @@ def gem(eq, coreprof, coretransp, code_parameters):
     # Q-profile
 
     cases = ["equilibrium", "coreprof", "jtot"]
+    print('q_choice: {}'.format(q_choice))
 
     if q_choice == "equilibrium":
         qqx = l3interp(eq.profiles_1d.q, rho_eq, npsi, qqx, rho, nrho_transp)
+        shatx = l3deriv( eq.profiles_1d.q, rho_eq, npsi, shatx, rho, nrho_transp)
     if q_choice == "coreprof":
-        shatx = l3interp(coreprof.profiles_1d.q, rho_eq, npsi-1, shatx, rho, nrho_transp)
+        qqx = l3interp( coreprof.profiles1d.q.value, rho0, nrho_prof, qqx, rho, nrho_transp)
+        shatx = l3deriv( coreprof.profiles1d.q.value, rho0, nrho_prof, shatx, rho, nrho_transp)
     if q_choice == "jtot":
-        if coreprof.profiles.q.value == None:
-            coreprof.profiles_1d.q.value[nrho_prof] = np.zeros((1))
-            qq0 = coreprof.profiles_1d.q.value
-            jj0 = coreprof.profiles_1d.jtot.value
+        if coreprof.profiles1d.q.value is None:
+            coreprof.profiles1d.q.value[nrho_prof] = np.zeros((1))
+            qq0 = coreprof.profiles1d.q.value
+            jj0 = coreprof.profiles1d.jtot.value
             qq0[0] = 0.0
             for i in range(0,nrho_prof):
                 qq0[i] = qq0[i-1] + 0.5*(rho0[i]*rho0[i-1] - rho0[i-1]) * (jj0[i]+jj0[i-1])
@@ -155,8 +159,8 @@ def gem(eq, coreprof, coretransp, code_parameters):
             qq0[0] = 1.0
             qq0 = rho0 * rho0 / qq0
             qq0[0] = 2.0 * qq0[1] - qq0[2]
-            qqx = l3interp(qq0, rho0, nrho_prof-1, qqx, rho, nrho_transp)
-            shatx = l3deriv(qq0, rho0, nrho_prof-1, shatx, rho, nrho_transp)
+            qqx = l3interp(qq0, rho0, nrho_prof, qqx, rho, nrho_transp)
+            shatx = l3deriv(qq0, rho0, nrho_prof, shatx, rho, nrho_transp)
 
     print('qqx: {}'.format(qqx))
     shatx = shatx * rho / qqx
@@ -187,6 +191,8 @@ def gem(eq, coreprof, coretransp, code_parameters):
         ttix = l3interp(coreprof.ti.value[:, ion], rho0, nrho_prof, ttix, rho, nrho_transp)
         rlnix = l3deriv(coreprof.ni.value[:, ion], rho0, nrho_prof, rlnix, rho, nrho_transp)
         rltix = l3deriv(coreprof.ti.value[:, ion], rho0, nrho_prof, rltix, rho, nrho_transp)
+
+        print('ttex: {} ; ttix: {}'.format(ttex, ttix))
 
         rlnix = rlnix / nnix
         rltix = rltix / ttix
@@ -238,11 +244,14 @@ def gem(eq, coreprof, coretransp, code_parameters):
             # Downward correction
 
             if ion == 0:
-                # chigb = rhos * rhos * cs / r00
-                # chigb = chigb * 40.0 / math.sqrt(1.0 + (beta_reduction * beta) ** 2.0)
-                # chigb = chigb * max(0.0, (1.0 - thresh / abs((r00 * rlti))))
+                #chigb = rhos * rhos * cs / r00
+                #chigb = chigb * 40.0 / math.sqrt(1.0 + (beta_reduction * beta) ** 2.0)
+                #chigb = chigb * max(0.0, (1.0 - thresh / abs((r00 * rlti))))
 
                 chigb = rhos * rhos * cs / lperp
+
+                #print('SOME COEFS: {} {} {} {}'.format(1/lperp, (1/r00), max(0.0, (1.0 - thresh / abs((r00 * rlti)))), 
+                #      40.0 / math.sqrt(1.0 + (beta_reduction * beta) ** 2.0)))
 
                 #print('some intial params. nion: {}; nrho_transp: {}; rhos: {}; cs:{}; lperp: {}'.format(nion, nrho_transp, rhos, cs, lperp))
 
@@ -296,18 +305,22 @@ def gem(eq, coreprof, coretransp, code_parameters):
 
                 #print('ne_transp.diff_eff size: {}; diff_eff : {}'
                 #      .format(coretransp.values[0].ne_transp.diff_eff.shape, diffe.shape))
+
+                te_transp_flux = nne * kb * tte * gge * gm3[i]
                 
                 coretransp.values[0].ne_transp.diff_eff[i, 1] = diffe
                 coretransp.values[0].te_transp.diff_eff[i] = chie
                 coretransp.values[0].ne_transp.vconv_eff[i, 1] = vconve
                 coretransp.values[0].ne_transp.flux[i] = nne * ffe * gm3[i]
-                coretransp.values[0].te_transp.flux[i] = nne * kb * tte * gge * gm3[i]
+                coretransp.values[0].te_transp.flux[i] = te_transp_flux
+
+            ti_transp_flux = nni * kb * tti * ggi * gm3[i]
 
             coretransp.values[0].ni_transp.diff_eff[i, ion, 1] = diffi
             coretransp.values[0].ti_transp.diff_eff[i, ion] = chii
             coretransp.values[0].ni_transp.vconv_eff[i, ion, 1] = vconvi
             coretransp.values[0].ni_transp.flux[i, ion] = nni * ffi * gm3[i]
-            coretransp.values[0].ti_transp.flux[i, ion] = nni * kb * tti * ggi * gm3[i]
+            coretransp.values[0].ti_transp.flux[i, ion] = ti_transp_flux
 
     # End species loop
 
@@ -351,5 +364,5 @@ def gem(eq, coreprof, coretransp, code_parameters):
     #    # open_write_file(12, 'cout_000') # ???
     #    write(coretransp, 'coretransp') # check were it is the same as python interface
 
-    return coretransp
+    return coretransp, te_transp_flux, ti_transp_flux
 
