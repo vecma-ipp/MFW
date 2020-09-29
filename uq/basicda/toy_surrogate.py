@@ -27,8 +27,8 @@ def GPR_analysis_toy(data, y_par=[0.1, 9.9, 20], x_par=[0, 10, 64], f=lambda x: 
     # case: with noise - NO
     #X = np.atleast_2d(np.linspace(y_par[0], y_par[1], y_par[2])).T
 
-    X = np.atleast_2d(data[:, 0]).T
-    y = f(X).ravel()
+    x_observ = np.atleast_2d(data[:, 0]).T
+    y_observ = f(x_observ).ravel()
 
     # add noise - NO
     # dy = 0.5 + eps * np.random.random(y.shape)
@@ -36,7 +36,7 @@ def GPR_analysis_toy(data, y_par=[0.1, 9.9, 20], x_par=[0, 10, 64], f=lambda x: 
     #y += noise
 
     # input space mesh, the prediction and
-    x = np.atleast_2d(np.linspace(*x_par)).T
+    x_domain = np.atleast_2d(np.linspace(*x_par)).T
 
     # GP model
     kernel = C(1.0, (1e-3, 1e3)) * RBF(10, (1e-2, 1e2))  # initial kernel is N(1.0, 0.01)
@@ -44,16 +44,17 @@ def GPR_analysis_toy(data, y_par=[0.1, 9.9, 20], x_par=[0, 10, 64], f=lambda x: 
     gp = GaussianProcessRegressor(kernel=kernel, n_restarts_optimizer=9) # no noise
 
     start_ts = datetime.datetime.now()
-    gp.fit(X, y)
+    gp.fit(x_observ, y_observ)
     print("time to train GP model: " + str((datetime.datetime.now() - start_ts).total_seconds()) + " seconds")
 
     # predictions + MSE
-    y_pred, sigma = gp.predict(x, return_std=True)
+    y_pred, sigma = gp.predict(x_domain, return_std=True)
 
     # plot predictions with variance
-    y_test = plot_prediction_variance(X, y, x, y_pred, sigma, f)
+    #y_test = plot_prediction_variance(x_observ, y_observ, x, y_pred, sigma, f)
+    #return x, y_test, y_pred, sigma
 
-    return x, y_test, y_pred, sigma
+    return x_observ, y_observ, x_domain, y_pred, sigma
 
 def GPR_analysis_2d(data, domain_par, func):
 
@@ -122,11 +123,14 @@ def surrogate_loop(pardim):
         x_param = [0., 1.5, 32]
         n_init = 1
         data = np.zeros((n_init, 2))
+        new_points = []
         # data[:, 0] = np.linspace(*x_param[:-1], n_init)
         data[:, 0] = np.random.rand(n_init)*(x_param[1] - x_param[0]) + x_param[0]
         for i in range(10):
-            x, y_test, y_pred, sigma = GPR_analysis_toy(data, y_par=[0.0, 1.5, 32], x_par=x_param, f=function, eps=0.0)
-            x_n = get_new_sample(x, sigma)
+            x_observ, y_observ, x_domain, y_pred, sigma = GPR_analysis_toy(data, y_par=[0.0, 1.5, 32], x_par=x_param, f=function, eps=0.0)
+            x_n = get_new_sample(x_domain, sigma)
+            y_test = plot_prediction_variance(x_observ, y_observ, x_domain, y_pred, sigma, function, [x_n], new_points)
+            new_points = [x_n]
             data = np.concatenate((data, np.array([[x_n[0], 0.0]])), axis=0)
             #data = np.append(data, x_n.reshape(1,-1), axis=0)
             if stop_train_criterium_rmse(y_pred, y_test):

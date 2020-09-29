@@ -6,6 +6,8 @@ import chaospy as cp
 import matplotlib
 #matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+params = {'legend.fontsize': 7, 'legend.handlelength': 1}
+plt.rcParams.update(params)
 import matplotlib.tri as mtri
 
 from mpl_toolkits.mplot3d import Axes3D
@@ -32,7 +34,7 @@ def cossin_model(x, theta):
 
 def walklevel(some_dir, level=1):
     """
-    function to iterate over files of a subfolder of solected level а nesting
+    function to iterate over files of a subfolder of selected level of nesting
     :param some_dir:
     :param level:
     :return:
@@ -119,7 +121,7 @@ def plot_3d_wire(df, xinds=[2,3], yind=1):
 
 def plot_3d_suraface(x ,y, z, name):
     """
-    Prints a surface for function f:X*Y->Z for list for arbitrary list of coordinates
+    Prints a surface for function f:X*Y->Z arbitrary list of coordinates
     i.e. f(x[i],y[i])=z[i] using triangulated mesh at X*Y
     :param x: list of coordinates in X
     :param y: list of cordinates in Y
@@ -143,7 +145,7 @@ def plot_3d_suraface(x ,y, z, name):
 def plot_model_response(n_points=128, a_interval=[0., 10.], b_interval=[0., 10.],
                         function=exponential_model, name='exp', x_value=1.):
     """
-    Plots a surface of a function as f(x|a,b):A*B->Z on the given square region of A*B for given x
+    Plots a surface of a function as f(x|a,b):A*B->Z on the given rectangular region of A*B for given x
     :param n_points: number of samples in A*B
     :param a_interval: interval of interest in A
     :param b_interval: interval of interest in B
@@ -245,22 +247,34 @@ def plot_convergence(sample_sizes, errors_mean, errors_variance):
     plt.savefig('toy' + '_cos' + '_convergence' + '.png')
     plt.close()
 
-def plot_prediction_variance(X, y, x, y_pred, sigma, f, dy=0):
-    # Plot function,prediction and 95% confidence interval
+def plot_prediction_variance(x_observ, y_observ, x_domain, y_pred, sigma, f, x_choice=[], newpoints=[], dy=0):
+    """ 
+    Plots prediction and 95% confidence interval
+    :param x_observ: domain values for function evaluations
+    :param y_observ: function evaluation values
+    :param x_domain: values of domain (RoI)
+    :param y_pred: function values prediceted by model
+    :param sigma: std for model predictions
+    :param f: true function
+    """
     plt.figure()
-    y_test = f(x)
-    plt.plot(x, y_test, 'r:', label=r'$f(x) = x\,\sin(x)$')
-    plt.errorbar(X.ravel(), y, dy, fmt='r.', markersize=10, label='Observations')
-    plt.plot(x, y_pred, 'b-', label='Prediction')
-    plt.fill(np.concatenate([x, x[::-1]]),
+    y_test = f(x_domain)
+    plt.plot(x_domain, y_test, 'r:', label='e-x cos x ') #r'$f(x) = x\,\sin(x)$')
+    plt.errorbar(x_observ.ravel(), y_observ, dy, fmt='r.', markersize=10, label='Observations')
+    plt.plot(x_domain, y_pred, 'b-', label='Prediction')
+    plt.fill(np.concatenate([x_domain, x_domain[::-1]]),
              np.concatenate([y_pred - 1.9600 * sigma,
                              (y_pred + 1.9600 * sigma)[::-1]]),
              alpha=.5, fc='b', ec='None', label='95% confidence interval')
+    plt.vlines(x_choice, -1, 1, colors='k', alpha=0.5, linestyles='dashed', label='new opt choice')
+    if len(newpoints) != 0:
+        plt.plot(newpoints, f(np.array(newpoints)), 'go', markersize=12, label='new samples')
     plt.xlabel('$x$')
     plt.ylabel('$f(x)$')
     #plt.ylim(-10, 20)
-    plt.legend(loc='upper left')
-    plt.show(block=True)
+    plt.legend(loc='upper right')
+    #plt.show(block=True)
+    plt.savefig('surr_new_' + str(len(y_observ)) + '.png')
     return y_test.T.reshape(-1)
 
 def plot_prediction_variance_2d(X, y, x, y_pred, sigma, f, dy=0):
