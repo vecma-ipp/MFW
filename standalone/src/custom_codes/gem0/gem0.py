@@ -127,6 +127,9 @@ def gem(eq, coreprof, coretransp, code_parameters):
     shatx = np.empty((nrho_transp))
     chix  = np.empty((nrho_transp))
 
+    cpo_teddrho = np.empty((nrho_transp))
+    cpo_tiddrho = np.empty((nrho_transp))
+
     # Main ion params
 
     ionmass = md
@@ -172,10 +175,12 @@ def gem(eq, coreprof, coretransp, code_parameters):
     rlnex = l3deriv(coreprof.ne.value, rho0, nrho_prof, rlnex, rho, nrho_transp)
     rltex = l3deriv(coreprof.te.value, rho0, nrho_prof, rltex, rho, nrho_transp)
 
+    cpo_teddrho = l3deriv(coreprof.te.ddrho, rho0, nrho_prof, cpo_teddrho, rho, nrho_transp)
+
     #print('profile te: {}; interpolated te: {}'.format(coreprof.te.value, ttex))
 
-    print('nnex: {}'.format(nnex))
-    print('ttex: {}'.format(ttex))
+    #print('nnex: {}'.format(nnex))
+    #print('ttex: {}'.format(ttex))
     rlnex = rlnex / nnex
     rltex = rltex / ttex
 
@@ -192,7 +197,13 @@ def gem(eq, coreprof, coretransp, code_parameters):
         rlnix = l3deriv(coreprof.ni.value[:, ion], rho0, nrho_prof, rlnix, rho, nrho_transp)
         rltix = l3deriv(coreprof.ti.value[:, ion], rho0, nrho_prof, rltix, rho, nrho_transp)
 
-        print('ttex: {} ; ttix: {}'.format(ttex, ttix))
+        cpo_tiddrho = l3deriv(coreprof.ti.ddrho[:, ion], rho0, nrho_prof, cpo_tiddrho, rho, nrho_transp)
+
+        #one flux tube case: get the intepolated gradinets
+        teddrho = rltex
+        tiddrho = rltix
+        print('int teddrho?: {} ; int tiddrho?: {}'.format(teddrho, tiddrho))
+        print('cpo teddrho : {} ; cpo tiddrho : {}'.format(cpo_teddrho, cpo_tiddrho))
 
         rlnix = rlnix / nnix
         rltix = rltix / ttix
@@ -364,5 +375,5 @@ def gem(eq, coreprof, coretransp, code_parameters):
     #    # open_write_file(12, 'cout_000') # ???
     #    write(coretransp, 'coretransp') # check were it is the same as python interface
 
-    return coretransp, te_transp_flux, ti_transp_flux
+    return coretransp, te_transp_flux, ti_transp_flux, teddrho, tiddrho
 

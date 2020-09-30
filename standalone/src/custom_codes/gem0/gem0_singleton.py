@@ -69,8 +69,8 @@ class GEM0Singleton():
         for xl in Xlabels:
             self.corep_elem = modify_code_ios(corep_elem, xl, xs)
 
-        coret, tefl, tifl = gem(equil, corep_elem.core, coret, code_parameters)
-        return [tefl, tifl]
+        coret, tefl, tifl, tedr, tidr = gem(equil, corep_elem.core, coret, code_parameters)
+        return [tefl, tifl, tedr, tidr]
 
     def gem0_test(self,):
         """
@@ -80,7 +80,7 @@ class GEM0Singleton():
         #corep_elem = modify_code_ios(corep_elem, 'ti.value', 0)
 
         print ("> Run gem0 routine")
-        coret, tefl, tifl = gem(self.equil, self.corep_elem.core, self.coret, self.code_parameters)
+        coret, tefl, tifl, tedr, tidr = gem(self.equil, self.corep_elem.core, self.coret, self.code_parameters)
         print('ti_transp_flux is: {}'.format(tifl))
 
         # Transfer CPO to buffer / write file
