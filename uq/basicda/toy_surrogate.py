@@ -1,10 +1,11 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pylab as plt
-import datetime
+#import datetime
+import time
 
 from sklearn.gaussian_process import GaussianProcessRegressor
-from sklearn.gaussian_process.kernels import DotProduct, WhiteKernel, Matern, RBF, WhiteKernel, ConstantKernel as C
+from sklearn.gaussian_process.kernels import DotProduct, WhiteKernel, Matern, RBF, WhiteKernel, ConstantKernel
 from sklearn.neural_network import MLPRegressor
 
 from da_utils import *
@@ -20,7 +21,7 @@ def stop_train_criterium_rsd(y_pred, sigma, eps=0.005):
 def stop_train_criterium_rmse(y_pred, y, eps=0.05):
     rmse = np.sqrt(((y - y_pred) ** 2).sum() / len(y))
     print('rmse : {}'.format(rmse))
-    return rmse < eps
+    return rmse < eps, rmse
 
 def GPR_analysis_toy(data, y_par=[0.1, 9.9, 20], x_par=[0, 10, 64], f=lambda x: x*np.sin(x), eps=1.0):
 
@@ -39,13 +40,17 @@ def GPR_analysis_toy(data, y_par=[0.1, 9.9, 20], x_par=[0, 10, 64], f=lambda x: 
     x_domain = np.atleast_2d(np.linspace(*x_par)).T
 
     # GP model
-    kernel = C(1.0, (1e-3, 1e3)) * RBF(10, (1e-2, 1e2))  # initial kernel is N(1.0, 0.01)
+    #kernel = ConstantKernel(1.0, (1e-3, 1e3)) * RBF(10, (1e-2, 1e2))  # initial kernel is N(1.0, 0.01)
+    #kernel = ConstantKernel() + RBF() 
+    kernel = ConstantKernel() + Matern(1.0) # + WhiteKernel(1.0)
     #gp = GaussianProcessRegressor(kernel=kernel, alpha=dy**2, n_restarts_optimizer=9)
     gp = GaussianProcessRegressor(kernel=kernel, n_restarts_optimizer=9) # no noise
 
-    start_ts = datetime.datetime.now()
+    #start_ts = datetime.datetime.now()
+    start_ts = time.time()
     gp.fit(x_observ, y_observ)
-    print("time to train GP model: " + str((datetime.datetime.now() - start_ts).total_seconds()) + " seconds")
+    #print("time to train GP model: " + str((datatime.datatime.now() - start_ts).total_seconds()) + " seconds")
+    print("time to train GP model: " + str(time.time() - start_ts) + " seconds")
 
     # predictions + MSE
     y_pred, sigma = gp.predict(x_domain, return_std=True)
@@ -68,9 +73,11 @@ def GPR_analysis_2d(data, domain_par, func):
     kernel = C() + Matern([1.0, 1.0]) + WhiteKernel(1e-6)
     gp = GaussianProcessRegressor(kernel=kernel, n_restarts_optimizer=9)
 
-    start_ts = datetime.datetime.now()
+    #start_ts = datetime.datetime.now()
+    start_ts = time.time()
     gp.fit(X, y)
-    print("time to train GP model: " + str((datetime.datetime.now() - start_ts).total_seconds()) + " seconds")
+    #print("time to train GP model: " + str((datatime.datatime.now() - start_ts).total_seconds()) + " seconds")
+    print("time to train GP model: " + str(time.time() - start_ts) + " seconds")
 
     y_pred, sigma = gp.predict(x, return_std=True)
 
@@ -117,6 +124,9 @@ def FNN_Regression_toy(y=0, f=0, n=20, eps=1.0):
     plt.show(block=True)
 
 def surrogate_loop(pardim):
+    np.random.seed(int(time.time()))
+    errors = []
+
     if pardim == 1:
         # function = lambda x: x * np.cos(1.0 * x)
         function = lambda x: (np.e**(-1.0 * x)) * np.cos(2.0 * np.pi * x)
@@ -130,10 +140,12 @@ def surrogate_loop(pardim):
             x_observ, y_observ, x_domain, y_pred, sigma = GPR_analysis_toy(data, y_par=[0.0, 1.5, 32], x_par=x_param, f=function, eps=0.0)
             x_n = get_new_sample(x_domain, sigma)
             y_test = plot_prediction_variance(x_observ, y_observ, x_domain, y_pred, sigma, function, [x_n], new_points)
+            stop_crit, err = stop_train_criterium_rmse(y_pred, y_test, 0.01)
+            errors.append(err)
             new_points = [x_n]
             data = np.concatenate((data, np.array([[x_n[0], 0.0]])), axis=0)
             #data = np.append(data, x_n.reshape(1,-1), axis=0)
-            if stop_train_criterium_rmse(y_pred, y_test):
+            if stop_crit:
                 print("Reached stopping criterium!")
                 break
     elif pardim == 2:
@@ -146,6 +158,8 @@ def surrogate_loop(pardim):
             x_n = get_new_sample(x, sigma)
             data = np.append(data, x_n.reshape(1, -1), axis=0)
             #print('new data {} and std {}'.format(x_n, std))
+    
+    plot_error(errors, 'RMSE')
 
 def surrogate_utility(x_train_data, y_train_data, x_roi_data, original_model):
     utility = []
@@ -163,7 +177,7 @@ def surrogate_utility(x_train_data, y_train_data, x_roi_data, original_model):
 
     return -utility.sum()
 
-#np.random.seed(2)  # check other random seeds - huge difference! (42, 100 are bad)
+#np.random.seed(2)  # check other random seeds
 plt.ion()
 
 ### FFNR model and test:
