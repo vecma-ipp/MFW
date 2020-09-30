@@ -130,24 +130,31 @@ def surrogate_loop(pardim):
     if pardim == 1:
         # function = lambda x: x * np.cos(1.0 * x)
         function = lambda x: (np.e**(-1.0 * x)) * np.cos(2.0 * np.pi * x)
+        #function = lambda x: np.e**(+1.0*x)
         x_param = [0., 1.5, 32]
         n_init = 1
         data = np.zeros((n_init, 2))
         new_points = []
         # data[:, 0] = np.linspace(*x_param[:-1], n_init)
         data[:, 0] = np.random.rand(n_init)*(x_param[1] - x_param[0]) + x_param[0]
-        for i in range(10):
+        for i in range(15):
             x_observ, y_observ, x_domain, y_pred, sigma = GPR_analysis_toy(data, y_par=[0.0, 1.5, 32], x_par=x_param, f=function, eps=0.0)
             x_n = get_new_sample(x_domain, sigma)
-            y_test = plot_prediction_variance(x_observ, y_observ, x_domain, y_pred, sigma, function, [x_n], new_points)
-            stop_crit, err = stop_train_criterium_rmse(y_pred, y_test, 0.01)
+
+            y_test = function(x_domain) # TODO: some of the things e.g. x_domain are never chenged - should be returned all the time
+            plot_prediction_variance(x_observ, y_observ, x_domain, y_test, y_pred, sigma, function, [x_n], new_points)
+            #y_test = y_test.T.reshape(-1)
+
+            stop_crit, err = stop_train_criterium_rmse(y_pred, y_test.T.reshape(-1), 0.01)
             errors.append(err)
+
             new_points = [x_n]
             data = np.concatenate((data, np.array([[x_n[0], 0.0]])), axis=0)
             #data = np.append(data, x_n.reshape(1,-1), axis=0)
             if stop_crit:
                 print("Reached stopping criterium!")
                 break
+
     elif pardim == 2:
         X = np.linspace(0.2, 2.8, 3)
         Y = np.linspace(0.2, 2.8, 3)

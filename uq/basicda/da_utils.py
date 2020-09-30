@@ -247,7 +247,7 @@ def plot_convergence(sample_sizes, errors_mean, errors_variance):
     plt.savefig('toy' + '_cos' + '_convergence' + '.png')
     plt.close()
 
-def plot_prediction_variance(x_observ, y_observ, x_domain, y_pred, sigma, f, x_choice=[], newpoints=[], rmse=0.0, funcname='e^-x cos x', dy=0):
+def plot_prediction_variance(x_observ, y_observ, x_domain, y_test, y_pred, sigma, f, x_choice=[], newpoints=[], rmse=0.0, funcname='e^-x cos x', dy=0):
     """ 
     Plots prediction and 95% confidence interval
     :param x_observ: domain values for function evaluations
@@ -258,7 +258,7 @@ def plot_prediction_variance(x_observ, y_observ, x_domain, y_pred, sigma, f, x_c
     :param f: true function
     """
     plt.figure()
-    y_test = f(x_domain)
+    #y_test = f(x_domain)
     plt.plot(x_domain, y_test, 'r:', label=funcname) #r'$f(x) = x\,\sin(x)$')
     plt.errorbar(x_observ.ravel(), y_observ, dy, fmt='r.', markersize=10, label='Observations')
     plt.plot(x_domain, y_pred, 'b-', label='Prediction')
@@ -271,14 +271,14 @@ def plot_prediction_variance(x_observ, y_observ, x_domain, y_pred, sigma, f, x_c
         plt.plot(newpoints, f(np.array(newpoints)), 'go', markersize=12, label='new samples')
     plt.xlabel('$x$')
     plt.ylabel('$f(x)$')
-    plt.title('GPR results for ' + funcname + ' with ' + str(len(y_observ)) + ' number of function evaluations') 
+    plt.title('GPR results for f=(' + funcname + ') with ' + str(len(y_observ)) + ' number of function evaluations') 
                # + 'PRediction RMSE is ' + str(rmse))
     #plt.ylim(-10, 20)
     plt.legend(loc='upper right')
     #plt.show(block=True)
     plt.savefig('surr_new_' + str(len(y_observ)) + '.png')
     plt.close()
-    return y_test.T.reshape(-1)
+    #return y_test.T.reshape(-1)
 
 def plot_prediction_variance_2d(X, y, x, y_pred, sigma, f, dy=0):
     # Plot function,prediction and 95% confidence interval
