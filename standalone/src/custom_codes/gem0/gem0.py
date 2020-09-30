@@ -97,7 +97,9 @@ def gem(eq, coreprof, coretransp, code_parameters):
     rho = np.empty((nrho_transp))
 
     rho0 = coreprof.rho_tor
-    rho0 = rho0/max(rho0)
+    # use to compare gradient values from code and from cpo file 
+    rho0_bound = max(rho0) # correction for gradient calculation (rho_tor_norm/ rho_tor = 1.43840892 for AUG)
+    rho0 = rho0/rho0_bound
     rho_eq = eq.profiles_1d.rho_tor / rho_tor_max
 
     if nrho_transp == 1:
@@ -106,6 +108,8 @@ def gem(eq, coreprof, coretransp, code_parameters):
             rho = rho0[1:nrho_transp-1:2]
     else:
         rho = np.array([((1.0/(2*nrho_transp))*(2*x+1))**0.7 for x in range(nrho_transp)])
+
+    print('rho: {}'.format(rho))
 
     gm3 = np.empty(nrho_transp)
 
@@ -175,12 +179,14 @@ def gem(eq, coreprof, coretransp, code_parameters):
     rlnex = l3deriv(coreprof.ne.value, rho0, nrho_prof, rlnex, rho, nrho_transp)
     rltex = l3deriv(coreprof.te.value, rho0, nrho_prof, rltex, rho, nrho_transp)
 
-    cpo_teddrho = l3deriv(coreprof.te.ddrho, rho0, nrho_prof, cpo_teddrho, rho, nrho_transp)
+    cpo_teddrho = l3interp(coreprof.te.ddrho, rho0, nrho_prof, cpo_teddrho, rho, nrho_transp)
 
     #print('profile te: {}; interpolated te: {}'.format(coreprof.te.value, ttex))
 
     #print('nnex: {}'.format(nnex))
     #print('ttex: {}'.format(ttex))
+    teddrho = rltex
+
     rlnex = rlnex / nnex
     rltex = rltex / ttex
 
@@ -197,13 +203,14 @@ def gem(eq, coreprof, coretransp, code_parameters):
         rlnix = l3deriv(coreprof.ni.value[:, ion], rho0, nrho_prof, rlnix, rho, nrho_transp)
         rltix = l3deriv(coreprof.ti.value[:, ion], rho0, nrho_prof, rltix, rho, nrho_transp)
 
-        cpo_tiddrho = l3deriv(coreprof.ti.ddrho[:, ion], rho0, nrho_prof, cpo_tiddrho, rho, nrho_transp)
+        cpo_tiddrho = l3interp(coreprof.ti.ddrho[:, ion], rho0, nrho_prof, cpo_tiddrho, rho, nrho_transp)
 
         #one flux tube case: get the intepolated gradinets
-        teddrho = rltex
         tiddrho = rltix
+        print('\n>>> Trying to get effective gradient sfor the code: ')
         print('int teddrho?: {} ; int tiddrho?: {}'.format(teddrho, tiddrho))
-        print('cpo teddrho : {} ; cpo tiddrho : {}'.format(cpo_teddrho, cpo_tiddrho))
+        print('cpo teddrho : {} ; cpo tiddrho : {}'.format(cpo_teddrho * rho0_bound, cpo_tiddrho * rho0_bound))
+        print('\n')
 
         rlnix = rlnix / nnix
         rltix = rltix / ttix
