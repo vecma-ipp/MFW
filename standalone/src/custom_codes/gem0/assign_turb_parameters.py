@@ -29,9 +29,9 @@ def get_value_cast_func(param_name, xml_root, xsd_root):
     elif elem_type == "integer":
         func = lambda x: int(x)
     elif elem_type == "boolean":
-        func = lambda x: strtobool(x)
+        func = lambda x: strtobool(x.strip())
     elif elem_type == "string":
-        func = lambda x: str(x)
+        func = lambda x: str(x.strip())
 
     return func
 
