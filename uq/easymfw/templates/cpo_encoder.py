@@ -65,6 +65,7 @@ class CPOEncoder(BaseEncoder, encoder_name="cpo_encoder"):
                         t = self.cpo.get_value('te.value')
                         t_i  = t[i]
                         dt_i = value
+                        self.cpo.set_value('te.ddrho', [value], [i])
                     if name == 'ti.value':
                         dt = self.cpo.get_value('ti.ddrho')
                         t_i  = value
@@ -81,6 +82,7 @@ class CPOEncoder(BaseEncoder, encoder_name="cpo_encoder"):
                         else:
                             t_i  = t[i][0]
                         dt_i = value
+                        self.cpo.set_value('ti.ddrho', [value], [i])
 
                     # neighbors to update
                     values.append(dt_i*(rho[i-2] - rho[i]) + t_i)

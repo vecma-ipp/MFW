@@ -15,7 +15,7 @@ from easymfw.utils.io_tools import get_cpo_inputs
 SYS = os.environ['SYS']
 tmp_dir = os.environ['SCRATCH']
 cpo_dir = os.path.abspath("../workflows/AUG_28906_6_8ft_restart")
-xml_dir = os.path.abspath("../workflows")
+xml_dir = os.path.abspath("../workflows/AUG_28906_6_8ft_restart")
 obj_dir = os.path.abspath("../standalone/bin/"+SYS)
 
 # From Slurm script
@@ -96,14 +96,15 @@ def setup_gem(common_dir, ft_index):
     return params, encoder, decoder, collater, sampler, analysis
 
 # Execution using QCG Pilot Job
-def exec_pj(campaign, app_path):
+def exec_pj(campaign, app_path, ncores):
     qcgpjexec = easypj.Executor()
     qcgpjexec.create_manager(dir=campaign.campaign_dir, log_level='info')
 
     qcgpjexec.add_task(Task(
         TaskType.EXECUTION,
-        TaskRequirements(cores=Resources(exact=1)),
-        application=exec_path
+        TaskRequirements(cores=Resources(exact=ncores)),
+        model=mpi_instance,
+        application=app_path
     ))
     qcgpjexec.run(
         campaign=campaign,
@@ -132,7 +133,6 @@ if __name__ == "__main__":
     ncores = npesx*npess*nftubes
 
     exec_path = os.path.join(common_dir, exec_code)
-    mpi_app = " ".join([mpi_instance, "-n", str(ncores), exec_path])
 
     # From: Run Gem once and use easymfw.utils.get_fluxtube_index
     ft_indices = [15, 31, 44, 55, 66, 76, 85, 94]
@@ -152,7 +152,7 @@ if __name__ == "__main__":
         campaign.set_sampler(sampler)
         campaign.draw_samples()
         campaign.populate_runs_dir()
-        exec_pj(campaign, mpi_app)
+        exec_pj(campaign, exec_path, ncores)
         campaign.collate()
         campaign.apply_analysis(analysis)
 

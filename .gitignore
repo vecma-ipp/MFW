@@ -11,6 +11,8 @@ externals/*
 !gem-tmppatch.diff
 !gem0-ra0patch.diff
 
+usr/*
+
 ual/fortran_interface/*.o
 ual/python_interface/*.pyc
 ual/python_interface/usr
