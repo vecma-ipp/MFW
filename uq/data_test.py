@@ -12,6 +12,8 @@ import matplotlib.pyplot as plt
 #from basicda.toy_uq import walklevel
 from basicda.da_utils import read_sim_csv, walklevel
 
+from utils import l3interp, l3deriv
+
 def get_rho(filename):
     return read(filename, "coreprof").rho.values
 
@@ -295,6 +297,13 @@ def two_camp_compare():
 
     diff = compare_response_pointwise(gem0data, gemdata)
     return diff
+
+def get_int_camp_data(basefolder, paramname='te.ddrho'):
+    df = pd.Empty(columns=['te_ddrho'])
+    # TODO: same as get_camp_dataframe() but get new get_run_data() has to read profiles or the whole cpo and call interpolation routines
+    return df
+
+
 
 ###--------------------------------------------------------- 
 	
