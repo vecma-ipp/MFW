@@ -45,6 +45,10 @@ class GEM0Singleton():
         self.code_parameters = get_code_params()
         self.equil, self.corep_elem, self.coret = get_code_ios(self.equil_file_in, self.corep_file_in, self.coret_file_out)
         
+    def get_curr_params(self, ft=69):
+
+        return self.corep_elem.get_value('te.value')[ft], self.corep_elem.get_value('ti.value')[ft], \
+               self.corep_elem.get_value('te.ddrho')[ft], self.corep_elem.get_value('ti.ddrho')[ft]
 
     def modify_code_ios(self, attrib, new_value, ft=[69]):
         val = self.corep_elem.get_value(attrib)
@@ -55,6 +59,12 @@ class GEM0Singleton():
     def modify_code_params(self, attrib, value):
         self.code_parameters[attrib] = value
         #return self.code_parameters
+
+    def gem0_call(self, param):
+        for k, v in param.items():
+            self.modify_code_ios(k, v)
+        coret, tefl, tifl, tedr, tidr = gem(self.equil, self.corep_elem.core, self.coret, self.code_parameters)
+        return tefl, tifl, tedr, tidr
 
     def gem0_fit_call(xs, thresh, beta_reduction, etae_pinch, chi_d, chiratio_phi):
 
