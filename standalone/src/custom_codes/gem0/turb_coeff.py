@@ -2,12 +2,15 @@
 
 # some general paramteres
 nrho_transp = 1 # number of flux tubes
-nion = 0 # number of ions
+nion_prof = 1 # number of ions (at profile file)
+nion = 0 # number of ions (for the code)
 
 # default parameters for codeparame
 write_diags = False
 write_cpos = True
 hmode = True
+
+q_choice = "coreprof"
 
 # some default equation parameters
 thresh = 6. # turbulence effects threshold; check range: 5.-7. ; NOT USED CURRENTLY

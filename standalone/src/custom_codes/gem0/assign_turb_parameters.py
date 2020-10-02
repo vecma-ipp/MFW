@@ -4,8 +4,7 @@ import xml.etree.ElementTree as ET
 
 from distutils.util import strtobool
 
-from turb_coeff import write_diags, write_cpos, hmode, nrho_transp, nion, thresh, beta_reduction, etae_pinch, chi_d, chiratio_phi, ra0
-
+from turb_coeff import write_diags, write_cpos, hmode, q_choice, nrho_transp, nion_prof, nion, thresh, beta_reduction, etae_pinch, chi_d, chiratio_phi, ra0
 
 def get_value(param_name, xml_root, xsd_root):
     param_path = "./" + param_name.replace(".", "/")
@@ -59,8 +58,12 @@ def assign_turb_parameters(code_parameters_filename):
 
     parameter_list = ["flags.write_cpos", "flags.write_diags", "flags.hmode", 'flags.q_choice',
                       "physical.thresh", "physical.beta_reduction", "physical.etae_pinch", "physical.chi_d", "physical.chiratio_phi",
-                      "grid.nrho_transp", "grid.ra0", "grid.nion",]
-    code_parameters = {}
+                      "grid.nrho_transp", "grid.ra0", "grid.nion", "grid.nion_prof"]
+
+    code_parameters = {"flags.write_cpos": write_cpos, "flags.write_diags": write_diags, 
+                       "flags.hmode": hmode, 'flags.q_choice': q_choice,
+                       "grid.nrho_transp" : nrho_transp, "grid.ra0": ra0, 
+                       "grid.nion": nion, "grid.nion_prof": nion_prof}
 
     # initialization
     nparm = 0
@@ -81,12 +84,12 @@ def assign_turb_parameters(code_parameters_filename):
 
     for param in parameter_list:
         param_path = "./" + param.replace(".", "/")
-        elem = parameters.findall(param_path)[0].text
+        elem_obj = parameters.findall(param_path)
+        if len(elem_obj) == 0:
+            continue
+        elem = elem_obj[0].text
         cast_func = get_value_cast_func(param, parameters, xsd_root)
         code_parameters[param] = cast_func(elem)
-
-
-    
 
 # """     #cname = current.name   # necessary for AIX
 #     # parameters overall

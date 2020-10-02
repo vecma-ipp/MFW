@@ -26,7 +26,7 @@ def run_batch(folder_list):
     # should actually call easyvvuq-qcgpj?!
     return 0
 
-def plot_res(x, y):
+def plot_gem0_res(x, y):
     plt.plot(x, y, label='python-gem0 response in ti')
     plt.savefig('pythongem0_tifl_vs_tival')
     plt.close()

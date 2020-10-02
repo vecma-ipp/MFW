@@ -10,7 +10,6 @@ from phys_constants import *
 
 def gem(eq, coreprof, coretransp, code_parameters):
 
-    from turb_coeff import write_diags, write_cpos, hmode, nrho_transp, nion, thresh, beta_reduction, etae_pinch, chi_d, chiratio_phi, ra0
     time = 0.
 
     codename = [] #TODO check if should be wrritten as list/array
@@ -48,11 +47,20 @@ def gem(eq, coreprof, coretransp, code_parameters):
     write_cpos = code_parameters['flags.write_cpos']
     write_diags = code_parameters['flags.write_diags']
     q_choice = code_parameters['flags.q_choice']
+    hmode = code_parameters['flags.hmode']
 
     nrho_transp = code_parameters['grid.nrho_transp']
-    nion_prof = code_parameters['grid.nion']
-    #nion = code_parameters['grid.nion']
+    #nion_prof = code_parameters['grid.nion']
+    nion = code_parameters['grid.nion']
+    nion_prof = code_parameters['grid.nion_prof']
     ra0 = code_parameters['grid.ra0']
+
+    thresh = code_parameters['physical.thresh']
+    beta_reduction = code_parameters['physical.beta_reduction'] 
+    etae_pinch = code_parameters['physical.etae_pinch']
+    chi_d = code_parameters['physical.chi_d'] 
+    chiratio_phi = code_parameters['physical.chiratio_phi']
+
 
     print('> Done assigning GEM0 parameters')
     
@@ -324,7 +332,7 @@ def gem(eq, coreprof, coretransp, code_parameters):
                 #print('ne_transp.diff_eff size: {}; diff_eff : {}'
                 #      .format(coretransp.values[0].ne_transp.diff_eff.shape, diffe.shape))
 
-                te_transp_flux = nne * kb * tte * gge * gm3[i]
+                te_transp_flux = nne * kb * tte * gge * gm3[i] # TODO: check for multiple flu tubes why it is not assigned
                 
                 coretransp.values[0].ne_transp.diff_eff[i, 1] = diffe
                 coretransp.values[0].te_transp.diff_eff[i] = chie

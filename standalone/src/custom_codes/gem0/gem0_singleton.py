@@ -53,7 +53,14 @@ class GEM0Singleton():
     def modify_code_ios(self, attrib, new_value, ft=[69]):
         val = self.corep_elem.get_value(attrib)
         #self.corep_elem.set_value(attrib, [val[ft] + new_value], ft)
-        self.corep_elem.set_value(attrib, [new_value], ft)
+        if attrib.split('.')[-1] == 'ddrho':
+            modify
+        else:
+            self.corep_elem.set_value(attrib, [new_value], ft)
+        # TODO: for gradients: read the coreprof cpo-s, get the gradient by interpolation
+        # for new inputs re-wrtie gradeints at cpo, always plot the new gradeints
+        # move to ONLY modifying gradients i.e. temaparature has to be interpolated?
+        
         #return self.corep_elem
 
     def modify_code_params(self, attrib, value):
