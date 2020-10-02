@@ -9,18 +9,18 @@ from easymfw.templates.cpo_decoder import CPODecoder
 from easymfw.utils.io_tools import get_cpo_inputs
 
 
-# Update gem0.xml: set nrho_transp = 2
-
 # Global params
 SYS = os.environ['SYS']
 tmp_dir = os.environ['SCRATCH']
 cpo_dir = os.path.abspath("../workflows/AUG_28906_6_8ft_restart")
+#cpo_dir = os.path.abspath("../workflows/AUG_28906_6")
 xml_dir = os.path.abspath("../workflows")
 obj_dir = os.path.abspath("../standalone/bin/"+SYS)
 
 # The executable code to run
-obj_dir = os.path.abspath("../standalone/bin/"+SYS)
-exec_code = "gem0_test"
+#obj_dir = os.path.abspath("../standalone/bin/"+SYS)
+obj_dir = os.path.abspath("../standalone/src/custom_codes/gem0") #folder with gem0python scripts!
+exec_code = "gem0_test.py"
 
 
 def setup_gem0(common_dir, n_polyn, ft_index):
@@ -84,11 +84,10 @@ def setup_gem0(common_dir, n_polyn, ft_index):
                      output_columns=output_columns,
                      output_cponame=output_cponame)
     collater = uq.collate.AggregateSamples(average=False)
-    #sampler = uq.sampling.QMCSampler(vary=vary, n_mc_samples=n_mc_samples)
+
     sampler = uq.sampling.PCESampler(vary=vary, polynomial_order=n_polyn)
 
     # The Analysis
-    #analysis = uq.analysis.QMCAnalysis(sampler=sampler, qoi_cols=output_columns)
     analysis = uq.analysis.PCEAnalysis(sampler=sampler, qoi_cols=output_columns)
 
     # The setup outputs
@@ -114,35 +113,35 @@ def exec_pj(campaign, exec_path):
 # Main
 if __name__ == "__main__":
     # Campaign for mutliapp
-    campaign = uq.Campaign(name='gem08ftuq_pce_', work_dir=tmp_dir)
+    campaign = uq.Campaign(name='gem08ftuq_python_pce_', work_dir=tmp_dir)
 
-    # Create common directory for ETS inputs
+    # Create common directory for ETS iinputs
     common_dir = campaign.campaign_dir +"/common/"
     os.mkdir(common_dir)
 
     # Copy exec code
-    os.system("cp " + obj_dir +"/"+ exec_code + " " + common_dir)
+    #os.system("cp " + obj_dir +"/"+ exec_code + " " + common_dir)
+    os.system("cp " + obj_dir + "/*.py " + common_dir + "/.")
     exec_path = os.path.join(common_dir, exec_code)
 
-    # The number of Monte-Carlo samples
-    #n_mc_samples = 1000
     n_polyn = 3
     ft_indices = [15, 31, 44, 55, 66, 76, 85, 94]
-    #ft_indices = [69]
+    #ft_indices = [69]    
 
     # Get setup for the 1st Flux tube and set it to the campaign
     results = []
+    dfs = []
     for i, j in enumerate(ft_indices):
         # Get setup and set it to the campaign
         (params, encoder, decoder, collater, sampler, analysis) = setup_gem0(common_dir, n_polyn, ft_index=j)
-        campaign.add_app(name="gem0uq-ft"+str(i+1),
+        campaign.add_app(name="gem0pyuq-ft"+str(i+1),
                          params=params,
                          encoder=encoder,
                          decoder=decoder,
                          collater=collater)
 
         # Set and run the 1st campaign
-        campaign.set_app("gem0uq-ft"+str(i+1))
+        campaign.set_app("gem0pyuq-ft"+str(i+1))
         campaign.set_sampler(sampler)
         campaign.draw_samples()
         campaign.populate_runs_dir()
@@ -152,6 +151,11 @@ if __name__ == "__main__":
 
         result = campaign.get_last_analysis()
         results.append(result)
+        dfs.append(campaign.get_collation_result())
+
+
+    for i in dfs:  # TODO: collate the result with a ready campaign folders
+        dfs[i].to_csv('res' + str(i) + '.csv')
 
     # Get Descriptive Statistics
     print('Save descriptive Statistics: \n')
@@ -160,3 +164,5 @@ if __name__ == "__main__":
             f.write("%s %i\n"%("Flux Tube: ", i+1))
             for key in results[i].keys():
                 f.write("%s,%s\n"%(key, results[i][key]))
+
+
