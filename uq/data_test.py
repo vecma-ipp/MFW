@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 #from basicda.toy_uq import walklevel
 from basicda.da_utils import read_sim_csv, walklevel
 
-from utils import l3interp, l3deriv
+#from utils import l3interp, l3deriv
 
 def get_rho(filename):
     return read(filename, "coreprof").rho.values
@@ -85,6 +85,7 @@ def plot_camp_vals(data, name='gem0'):
     """
     Xlabels = ['te_value', 'ti_value', 'te_ddrho', 'ti_ddrho']
     Ylabels = ['te_transp_flux', 'ti_transp_flux']
+    #Ylabels = ['te_transp_flux']
     data.reset_index()
     
     data[Xlabels].plot(style='o')
@@ -339,5 +340,9 @@ filename = "gem0_coreprof_in.cpo"
 filename_res = "gem0_coretransp_out.cpo"
 
 
+gem0data, _, _ = read_sim_csv("campaign_data.csv")
+plot_camp_vals(gem0data, 'gem0')
+
+
 # compare gem and gem0 campaign
-two_camp_compare()
+#two_camp_compare()
