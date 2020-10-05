@@ -125,7 +125,7 @@ if __name__ == "__main__":
     exec_path = os.path.join(common_dir, exec_code)
 
     n_polyn = 3
-    ft_indices = [15, 31, 44, 55, 66, 76, 85, 94]
+    ft_indices = [15, 31, 44, 55, 66, 76, 85, 94] # cheick if 94 is correct index for coords [0.1435, 0.3098, 0.4429, 0.5606, 0.6684, 0.7692, 0.8647, 0.9558]
     #ft_indices = [69]    
 
     # Get setup for the 1st Flux tube and set it to the campaign
@@ -147,6 +147,9 @@ if __name__ == "__main__":
         campaign.populate_runs_dir()
         exec_pj(campaign, exec_path)
         campaign.collate()
+
+        campaign.save_state(os.path.join(common_dir, "camp_state_before_analysis_" + str(i) + "_" + str(j) + ".json"))
+
         campaign.apply_analysis(analysis)
 
         result = campaign.get_last_analysis()
@@ -154,15 +157,13 @@ if __name__ == "__main__":
         dfs.append(campaign.get_collation_result())
 
 
-    for i in dfs:  # TODO: collate the result with a ready campaign folders
-        dfs[i].to_csv('res' + str(i) + '.csv')
+    for i in range(len(dfs)):  # TODO: collate the result with a ready campaign folders
+        dfs[i].to_csv(os.path.join(common_dir, 'res' + str(i) + '.csv'))
 
     # Get Descriptive Statistics
     print('Save descriptive Statistics: \n')
-    with open('gem0py_uq.csv', 'w') as f:
+    with open(os.path.join(common_dir, 'gem0pypy_uq_8ft.csv'), 'w') as f:
         for i in range(len(ft_indices)):
             f.write("%s %i\n"%("Flux Tube: ", i+1))
             for key in results[i].keys():
                 f.write("%s,%s\n"%(key, results[i][key]))
-
-

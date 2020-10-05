@@ -132,6 +132,7 @@ if __name__ == "__main__":
 
     # Get setup for the 1st Flux tube and set it to the campaign
     results = []
+    dfs = []
     for i, j in enumerate(ft_indices):
         # Get setup and set it to the campaign
         (params, encoder, decoder, collater, sampler, analysis) = setup_gem0(common_dir, n_polyn, ft_index=j)
@@ -152,10 +153,15 @@ if __name__ == "__main__":
 
         result = campaign.get_last_analysis()
         results.append(result)
+        dfs.append(campaign.get_collation_result())
 
+    
+    for i in range(len(dfs)):  # TODO: collate the result with a ready campaign folders
+        dfs[i].to_csv('res' + str(i) + '.csv')
+    
     # Get Descriptive Statistics
     print('Save descriptive Statistics: \n')
-    with open('gem0py_uq.csv', 'w') as f:
+    with open(os.path.join(common_dir, 'gem0py_uq_8ft.csv'), 'w') as f:
         for i in range(len(ft_indices)):
             f.write("%s %i\n"%("Flux Tube: ", i+1))
             for key in results[i].keys():
