@@ -1,3 +1,7 @@
+#import importlib.util
+#spec = importlib.util.spec_from_file_location("gem0", "/marconi/home/userexternal/yyudin00/code/MFW/standalone/src/custom_codes/gem0/gem0.py")
+#gem0 = importlib.util.module_from_spec(spec)
+#spec.loader.exec_module(gem0)
 from gem0 import gem
 
 from ascii_cpo import read, write
@@ -52,13 +56,16 @@ class GEM0Singleton():
 
     def modify_code_ios(self, attrib, new_value, ft=[69]):
         val = self.corep_elem.get_value(attrib)
+        
         #self.corep_elem.set_value(attrib, [val[ft] + new_value], ft)
-        if attrib.split('.')[-1] == 'ddrho':
-            modify
-        else:
-            self.corep_elem.set_value(attrib, [new_value], ft)
+        #if attrib.split('.')[-1] == 'ddrho':
+        #    continue
+        #else:
+        
+        self.corep_elem.set_value(attrib, [new_value], ft)
+
         # TODO: for gradients: read the coreprof cpo-s, get the gradient by interpolation
-        # for new inputs re-wrtie gradeints at cpo, always plot the new gradeints
+        # for new inputs re-wrtie gradeints at cpo, always write the new gradeints?
         # move to ONLY modifying gradients i.e. temaparature has to be interpolated?
         
         #return self.corep_elem

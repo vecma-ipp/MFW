@@ -2,11 +2,22 @@ import numpy as np
 import math
 import copy
 
+#import sys
+#import os
+#sys.path.append(os.path.abspath("/marconi/home/userexternal/yyudin00/code/MFW/standalone/src/custom_codes/gem0/"))
+
 from turb_constructor import turb_constructor
-from utils import l3interp, l3deriv  # TODO test more
 import assign_turb_parameters
 from phys_constants import *
 
+#import importlib.util
+#spec = importlib.util.spec_from_file_location("codeutils", "/marconi/home/userexternal/yyudin00/code/MFW/standalone/src/custom_codes/gem0/codeutils.py")
+#codeutils = importlib.util.module_from_spec(spec)
+#spec.loader.exec_module(codeutils)
+
+from codeutils import l3interp, l3deriv
+
+#TODO: use numba for interpolations etc.
 
 def gem(eq, coreprof, coretransp, code_parameters):
 
@@ -28,8 +39,8 @@ def gem(eq, coreprof, coretransp, code_parameters):
     #else:
     #    coretransp.codeparam.parameters = np.array(np.size(code_parameters.parameters))
 
-    print('GEM0 Parameters : ')
-    print(code_parameters)
+    #print('GEM0 Parameters : ')
+    #print(code_parameters)
 
     # Add to coretransp
 
@@ -62,7 +73,7 @@ def gem(eq, coreprof, coretransp, code_parameters):
     chiratio_phi = code_parameters['physical.chiratio_phi']
 
 
-    print('> Done assigning GEM0 parameters')
+    #print('> Done assigning GEM0 parameters')
     
     # Write I/O CPOs
     if write_cpos:
@@ -117,7 +128,7 @@ def gem(eq, coreprof, coretransp, code_parameters):
     else:
         rho = np.array([((1.0/(2*nrho_transp))*(2*x+1))**0.7 for x in range(nrho_transp)])
 
-    print('rho: {}'.format(rho))
+    #print('rho: {}'.format(rho))
 
     gm3 = np.empty(nrho_transp)
 
@@ -139,8 +150,8 @@ def gem(eq, coreprof, coretransp, code_parameters):
     shatx = np.empty((nrho_transp))
     chix  = np.empty((nrho_transp))
 
-    cpo_teddrho = np.empty((nrho_transp))
-    cpo_tiddrho = np.empty((nrho_transp))
+    #cpo_teddrho = np.empty((nrho_transp))
+    #cpo_tiddrho = np.empty((nrho_transp))
 
     # Main ion params
 
@@ -154,7 +165,7 @@ def gem(eq, coreprof, coretransp, code_parameters):
     # Q-profile
 
     cases = ["equilibrium", "coreprof", "jtot"]
-    print('q_choice: {}'.format(q_choice))
+    #print('q_choice: {}'.format(q_choice))
 
     if q_choice == "equilibrium":
         qqx = l3interp(eq.profiles_1d.q, rho_eq, npsi, qqx, rho, nrho_transp)
@@ -177,7 +188,7 @@ def gem(eq, coreprof, coretransp, code_parameters):
             qqx = l3interp(qq0, rho0, nrho_prof, qqx, rho, nrho_transp)
             shatx = l3deriv(qq0, rho0, nrho_prof, shatx, rho, nrho_transp)
 
-    print('qqx: {}'.format(qqx))
+    #print('qqx: {}'.format(qqx))
     shatx = shatx * rho / qqx
 
     #print('nnex size is {}'.format(nnex.shape))
@@ -187,7 +198,7 @@ def gem(eq, coreprof, coretransp, code_parameters):
     rlnex = l3deriv(coreprof.ne.value, rho0, nrho_prof, rlnex, rho, nrho_transp)
     rltex = l3deriv(coreprof.te.value, rho0, nrho_prof, rltex, rho, nrho_transp)
 
-    cpo_teddrho = l3interp(coreprof.te.ddrho, rho0, nrho_prof, cpo_teddrho, rho, nrho_transp)
+    #cpo_teddrho = l3interp(coreprof.te.ddrho, rho0, nrho_prof, cpo_teddrho, rho, nrho_transp)
 
     #print('profile te: {}; interpolated te: {}'.format(coreprof.te.value, ttex))
 
@@ -199,7 +210,7 @@ def gem(eq, coreprof, coretransp, code_parameters):
     rltex = rltex / ttex
 
     # Species loop
-    print('nion:{} nion_prof:{} nrho_prof:{} nrho_transp:{}'.format(nion, nion_prof, nrho_prof, nrho_transp))
+    #print('nion:{} nion_prof:{} nrho_prof:{} nrho_transp:{}'.format(nion, nion_prof, nrho_prof, nrho_transp))
 
     for ion in range(nion):
 
@@ -211,14 +222,14 @@ def gem(eq, coreprof, coretransp, code_parameters):
         rlnix = l3deriv(coreprof.ni.value[:, ion], rho0, nrho_prof, rlnix, rho, nrho_transp)
         rltix = l3deriv(coreprof.ti.value[:, ion], rho0, nrho_prof, rltix, rho, nrho_transp)
 
-        cpo_tiddrho = l3interp(coreprof.ti.ddrho[:, ion], rho0, nrho_prof, cpo_tiddrho, rho, nrho_transp)
+        #cpo_tiddrho = l3interp(coreprof.ti.ddrho[:, ion], rho0, nrho_prof, cpo_tiddrho, rho, nrho_transp)
 
         #one flux tube case: get the intepolated gradinets
         tiddrho = rltix
-        print('\n>>> Trying to get effective gradient sfor the code: ')
-        print('int teddrho?: {} ; int tiddrho?: {}'.format(teddrho, tiddrho))
-        print('cpo teddrho : {} ; cpo tiddrho : {}'.format(cpo_teddrho * rho0_bound, cpo_tiddrho * rho0_bound))
-        print('\n')
+        #print('\n>>> Trying to get effective gradient sfor the code: ')
+        #print('int teddrho?: {} ; int tiddrho?: {}'.format(teddrho, tiddrho))
+        #print('cpo teddrho : {} ; cpo tiddrho : {}'.format(cpo_teddrho * rho0_bound, cpo_tiddrho * rho0_bound))
+        #print('\n')
 
         rlnix = rlnix / nnix
         rltix = rltix / ttix

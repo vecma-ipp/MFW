@@ -6,7 +6,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-#from euitm_schemas import  type_coreprof, type_equilibrium, type_coretransp
+#from euitm_schemas import type_coreprof, type_equilibrium, type_coretransp
 #from read_structures import open_read_file, close_read_file, read_cpo
 #from write_structures import open_write_file, close_write_file, write_cpo
 #from deallocate_structures import deallocate_cpo
