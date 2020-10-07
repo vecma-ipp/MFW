@@ -157,7 +157,7 @@ if __name__ == "__main__":
 
     
     for i in range(len(dfs)):  # TODO: collate the result with a ready campaign folders
-        dfs[i].to_csv('res' + str(i) + '.csv')
+        dfs[i].to_csv(os.path.join(common_dir, 'res' + str(i) + '.csv'))
     
     # Get Descriptive Statistics
     print('Save descriptive Statistics: \n')
