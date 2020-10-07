@@ -167,7 +167,7 @@ def plot_model_response(n_points=128, a_interval=[0., 10.], b_interval=[0., 10.]
     #elif name == 'exp':
     #    pass
 
-    (function, [a_interval, b_interval], x_value) = func_dict(name)
+    (function, [a_interval, b_interval], x_value) = func_dict[name]
 
     a = np.random.rand(n_points) * (a_interval[1] - a_interval[0]) + a_interval[0]
     b = np.random.rand(n_points) * (b_interval[1] - b_interval[0]) + b_interval[0]
@@ -244,7 +244,7 @@ def plot_convergence(sample_sizes, errors_mean, errors_variance):
     plt.xlabel("N samples")
     plt.ylabel("MSE")
     plt.legend()
-    plt.savefig('toy' + '_cos' + '_convergence' + '.png')
+    plt.savefig('toy' + '_gem0' + '_convergence' + '.png')
     plt.close()
 
 def plot_prediction_variance(x_observ, y_observ, x_domain, y_test, y_pred, sigma, f, x_choice=[], newpoints=[], rmse=0.0, funcname='e^-x cos x', dy=0):
@@ -253,10 +253,14 @@ def plot_prediction_variance(x_observ, y_observ, x_domain, y_test, y_pred, sigma
     :param x_observ: domain values for function evaluations
     :param y_observ: function evaluation values
     :param x_domain: values of domain (RoI)
+    :param y_test: function values for points at x_domain
     :param y_pred: function values prediceted by model
     :param sigma: std for model predictions
     :param f: true function
     """
+
+    #print(x_domain, y_test)
+
     plt.figure()
     #y_test = f(x_domain)
     plt.plot(x_domain, y_test, 'r:', label=funcname) #r'$f(x) = x\,\sin(x)$')
@@ -276,7 +280,7 @@ def plot_prediction_variance(x_observ, y_observ, x_domain, y_test, y_pred, sigma
     #plt.ylim(-10, 20)
     plt.legend(loc='upper right')
     #plt.show(block=True)
-    plt.savefig('surr_new_' + str(len(y_observ)) + '.png')
+    plt.savefig('surr_gem0_' + str(len(y_observ)) + '.png')
     plt.close()
     #return y_test.T.reshape(-1)
 
@@ -300,5 +304,5 @@ def plot_error(err, name):
     plt.plot(range(1, len(err) + 1), err, label=name)
     plt.xlabel('n. interations')
     plt.ylabel('error')
-    plt.title('Error of GPR surrogate predictions at fucntion evaluations')
+    plt.title('Error of GPR surrogate predictions at function evaluations')
     plt.savefig('surr_err_' + name + '.png')

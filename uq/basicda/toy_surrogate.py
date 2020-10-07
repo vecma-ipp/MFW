@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import math
 import matplotlib.pylab as plt
 #import datetime
 import time
@@ -10,56 +11,74 @@ from sklearn.neural_network import MLPRegressor
 
 from da_utils import *
 
+import sys
+import os
+
+#TODO: make a new package + install / or get relative paths consistent
+sys.path.append(os.path.abspath("/../../standalone/src/custom_codes/gem0"))
+import importlib.util
+spec = importlib.util.spec_from_file_location("gem0_singleton", os.path.abspath("/../../standalone/src/custom_codes/gem0/gem0_singleton.py"))
+gem0_singleton = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(gem0_singleton)
+from gem0_singleton import GEM0Singleton
+
 def get_new_sample(x, utility):
     return x[utility.argmax()]
+
+def get_new_candidates(x, utility): # TODO: get an array of candidates, for each "variance anti-node"
+    cands = []
+    nodes_inds = utility < 1e-6
+    for i in range(len(nodes_inds)-1):
+        cands.append(utility[nodes_inds[i], nodes_inds[i+1]].argmax())
+    return cands
 
 def stop_train_criterium_rsd(y_pred, sigma, eps=0.005):
     rsd_min = (sigma/abs(y_pred)).min()
     print('rsd : {}'.format(rsd_min))
     return rsd_min < eps
 
-def stop_train_criterium_rmse(y_pred, y, eps=0.05):
+def stop_train_criterium_rmse(y_pred, y, eps=0.05): # TODO: get the reasonable rmse threshold for each given case
     rmse = np.sqrt(((y - y_pred) ** 2).sum() / len(y))
     print('rmse : {}'.format(rmse))
     return rmse < eps, rmse
 
-def GPR_analysis_toy(data, y_par=[0.1, 9.9, 20], x_par=[0, 10, 64], f=lambda x: x*np.sin(x), eps=1.0):
+def GPR_analysis_toy(x_data, x_domain, y_par=[0.1, 9.9, 20], x_par=[0, 10, 64], f=lambda x: x*np.sin(x), eps=1.0, scale=1e7):
 
     # case: with noise - NO
     #X = np.atleast_2d(np.linspace(y_par[0], y_par[1], y_par[2])).T
 
-    x_observ = np.atleast_2d(data[:, 0]).T
-    y_observ = f(x_observ).ravel()
+    x_observ = np.atleast_2d(x_data[:, 0]).T
+    y_observ = f(x_observ).ravel() #TODO reuse the old function evaluations
+
+    y_observ = y_observ/scale #scale naive-est
 
     # add noise - NO
     # dy = 0.5 + eps * np.random.random(y.shape)
     #noise = np.random.normal(0, dy)
     #y += noise
 
-    # input space mesh, the prediction and
-    x_domain = np.atleast_2d(np.linspace(*x_par)).T
+    # GP model - kernels
+    # TODO: compose a suitable kernel/ methods to defince kernel
+    #kernel = ConstantKernel(1.0, (1e-3, 1e3)) * RBF(10, (1e-2, 1e2))
+    kernel = ConstantKernel() + Matern() # + WhiteKernel(1.0)
+    #kernel = ConstantKernel(1e7, (1e-8, 1e+10)) + Matern(length_scale=1e1, length_scale_bounds=(1e-8, 1e+10)) # for GEM in Te/Ti unscaled
 
-    # GP model
-    #kernel = ConstantKernel(1.0, (1e-3, 1e3)) * RBF(10, (1e-2, 1e2))  # initial kernel is N(1.0, 0.01)
-    #kernel = ConstantKernel() + RBF() 
-    kernel = ConstantKernel() + Matern(1.0) # + WhiteKernel(1.0)
     #gp = GaussianProcessRegressor(kernel=kernel, alpha=dy**2, n_restarts_optimizer=9)
     gp = GaussianProcessRegressor(kernel=kernel, n_restarts_optimizer=9) # no noise
 
-    #start_ts = datetime.datetime.now()
     start_ts = time.time()
     gp.fit(x_observ, y_observ)
-    #print("time to train GP model: " + str((datatime.datatime.now() - start_ts).total_seconds()) + " seconds")
     print("time to train GP model: " + str(time.time() - start_ts) + " seconds")
 
     # predictions + MSE
     y_pred, sigma = gp.predict(x_domain, return_std=True)
 
-    # plot predictions with variance
-    #y_test = plot_prediction_variance(x_observ, y_observ, x, y_pred, sigma, f)
-    #return x, y_test, y_pred, sigma
+    y_observ = y_observ*scale  #scale naive-est
+    y_pred = y_pred*scale
+    sigma = sigma*scale
 
-    return x_observ, y_observ, x_domain, y_pred, sigma
+    #print(sigma)
+    return x_observ, y_observ, y_pred, sigma
 
 def GPR_analysis_2d(data, domain_par, func):
 
@@ -79,13 +98,35 @@ def GPR_analysis_2d(data, domain_par, func):
     #print("time to train GP model: " + str((datatime.datatime.now() - start_ts).total_seconds()) + " seconds")
     print("time to train GP model: " + str(time.time() - start_ts) + " seconds")
 
-    y_pred, sigma = gp.predict(x, return_std=True)
+    y_pred, sigma = gp.predict(x, return_std=True) 
 
     #plot_prediction_variance(X, y, x, y_pred, sigma, func)
 
     return x, y, y_pred, sigma
 
-def FNN_Regression_toy(y=0, f=0, n=20, eps=1.0):
+def GPR_analysis(dim=2, func=exponential_model): #TODO arbitrary dimension, print resuluts in a clear way
+    xdomain_par =[ 0., 1., 8]**dim # TODO move into initalisation list
+    xdata = np.linspace(xdomain_par) # TODO move inot initialisation list
+
+    X = xdata
+    y = np.array([func(coord, xdomain_par) for coord in X]).reshape(-1,1)
+
+    #x0 = np.linspace(domain_par[0], domain_par[1], domain_par[2])
+    #x1 = np.linspace(domain_par[3], domain_par[4], domain_par[5])
+    #x = np.transpose([np.tile(x0, len(x1)), np.repeat(x0, len(x1))])
+
+    kernel = C() + Matern() + WhiteKernel()
+    gp = GaussianProcessRegressor(kernel=kernel, n_restarts_optimizer=9)
+
+    start_ts = time.time()
+    gp.fit(X, y)
+    print("time to train GP model: " + str(time.time() - start_ts) + " seconds")
+
+    y_pred, sigma = gp.predict(x, return_std=True) 
+
+    return y_pred, sigma
+
+def FFNN_Regression_toy(y=0, f=0, n=20, eps=1.0):
 
     # function to fit
     if f==0:
@@ -127,29 +168,55 @@ def surrogate_loop(pardim):
     np.random.seed(int(time.time()))
     errors = []
 
+    gem0obj = GEM0Singleton()
+
+    def gem0_call_teflteval_array(x):
+        res = []
+        for el in x: 
+            res.append([gem0obj.gem0_call({'te.value': el[0]})[0]])
+        return np.array(res)
+
+    def gem0_call_teflteval_log_array(x):
+        res = []
+        for el in x: 
+            res.append([math.log(gem0obj.gem0_call({'te.value': el[0]})[0])])
+        return np.array(res)
+
     if pardim == 1:
-        # function = lambda x: x * np.cos(1.0 * x)
-        function = lambda x: (np.e**(-1.0 * x)) * np.cos(2.0 * np.pi * x)
+        #function = lambda x: x * np.cos(1.0 * x)
+        #function = lambda x: (np.e**(-1.0 * x)) * np.cos(2.0 * np.pi * x)
         #function = lambda x: np.e**(+1.0*x)
-        x_param = [0., 1.5, 32]
+        #x_param = [0., 1.5, 32] for cos 
+
+        function = lambda x: gem0_call_teflteval_array(x)
+        #x_param = [-1000., -4000, 16] # for gem in te-grad
+        x_param = [400., 2000, 32] # for gem in te-val #TODO change the gradient sampling!
+
         n_init = 1
-        data = np.zeros((n_init, 2))
+        x_data = np.zeros((n_init, 2))
         new_points = []
+
+        x_domain = np.atleast_2d(np.linspace(*x_param)).T
+        y_test = function(x_domain) # TODO: some of the things e.g. x_domain are never changed - should be returned all the time
+        
+        y_scaling = lambda y: (y - y_test.min()) / (y.max() - y.min())
+        x_scaling = lambda x: (x - x_domain.min()) / (x_domain.max() - x_domain.min())
+
+        simple_whitening = lambda y: y_test.min() + (x - x.min())*(y.max() - y.min())/(x.max() - x.min()) # TODO check if intependent calls are comiled out
+
         # data[:, 0] = np.linspace(*x_param[:-1], n_init)
-        data[:, 0] = np.random.rand(n_init)*(x_param[1] - x_param[0]) + x_param[0]
+        x_data[:, 0] = np.random.rand(n_init)*(x_param[1] - x_param[0]) + x_param[0] #TODO either choose among grid points or make grid irregular
+
         for i in range(15):
-            x_observ, y_observ, x_domain, y_pred, sigma = GPR_analysis_toy(data, y_par=[0.0, 1.5, 32], x_par=x_param, f=function, eps=0.0)
+            x_observ, y_observ, y_pred, sigma = GPR_analysis_toy(x_data, x_domain, y_par=x_param, x_par=x_param, f=function, eps=0.0)
             x_n = get_new_sample(x_domain, sigma)
+            plot_prediction_variance(x_observ, y_observ, x_domain, y_test, y_pred, sigma, function, [x_n], new_points, funcname='gem0, flTe in Te')
 
-            y_test = function(x_domain) # TODO: some of the things e.g. x_domain are never chenged - should be returned all the time
-            plot_prediction_variance(x_observ, y_observ, x_domain, y_test, y_pred, sigma, function, [x_n], new_points)
-            #y_test = y_test.T.reshape(-1)
-
-            stop_crit, err = stop_train_criterium_rmse(y_pred, y_test.T.reshape(-1), 0.01)
+            stop_crit, err = stop_train_criterium_rmse(y_pred, y_test.T.reshape(-1), 1e6) # for normalized problems chooes rmse threshold ~0.05
             errors.append(err)
 
             new_points = [x_n]
-            data = np.concatenate((data, np.array([[x_n[0], 0.0]])), axis=0)
+            x_data = np.concatenate((x_data, np.array([[x_n[0], 0.0]])), axis=0) #TODO adapt grid around new candidates
             #data = np.append(data, x_n.reshape(1,-1), axis=0)
             if stop_crit:
                 print("Reached stopping criterium!")

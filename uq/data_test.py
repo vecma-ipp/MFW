@@ -267,14 +267,14 @@ def plot_run_profiles(basefolder):
     plot_prof(pr21, np.linspace(0,1,100), "_gem0_aug_sew_tun_input_2")
     print("flux for the case " + str(2) + " : " + '%.3g'%(res2))
 
-def two_camp_compare():
+def two_camp_compare(filename1="data/gem_uq_inoutput.csv", filename2="campaign_data.csv"):
     """
     Compare GEM and GEM0 results for PCE
     """
 
     #gem0data = get_camp_dataframe(basefolder, [ft1_indx])
-    gemdata, _, _ = read_sim_csv("data/gem_uq_inoutput.csv")
-    gem0data, _, _ = read_sim_csv("campaign_data.csv")
+    gemdata, _, _ = read_sim_csv(filename1)
+    gem0data, _, _ = read_sim_csv(filename2)
 
     #plot_camp_vals(gem0data, "gem0")
     #plot_camp_vals(gemdata, "gem")
@@ -346,3 +346,10 @@ plot_camp_vals(gem0data, 'gem0')
 
 # compare gem and gem0 campaign
 #two_camp_compare()
+
+os.system("diff" + os.path.join(scratch_folder, "gem08ftuq_pce_v0ij1gtr/common/res0.csv " + 
+          os.path.join(scratch_folder, "gem08ftuq_python_pce_8o_og7c8/common/res0.csv")
+
+gem0van, _, _ = read_sim_csv("gem08ftuq_pce_v0ij1gtr/common/res0.csv")
+gem0pyt, _, _ = read_sim_csv("gem08ftuq_python_pce_8o_og7c8/common/res0.csv")
+
