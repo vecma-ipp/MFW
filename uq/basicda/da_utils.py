@@ -284,21 +284,29 @@ def plot_prediction_variance(x_observ, y_observ, x_domain, y_test, y_pred, sigma
     plt.close()
     #return y_test.T.reshape(-1)
 
-def plot_prediction_variance_2d(X, y, x, y_pred, sigma, f, dy=0):
+def plot_prediction_variance_2d(x_observ, y_observ, x_domain, y_test, sigma, newpoints, funcname):
     # Plot function,prediction and 95% confidence interval
+    #TODO shuldplot two figures: one for response function wiht observations, one for std
     plt.figure()
-    plt.plot(x, f(x), 'r:', label=r'$f(x) = \cos(ax)\,\sin(bx)$')
-    plt.errorbar(X.ravel(), y, dy, fmt='r.', markersize=10, label='Observations')
+    plt.plot(x_domain, y_test, 'r:', label=r'$f(x) = \cos(ax)\,\sin(bx)$')
     plt.plot(x, y_pred, 'b-', label='Prediction')
-    plt.fill(np.concatenate([x, x[::-1]]),
-             np.concatenate([y_pred - 1.9600 * sigma,
-                             (y_pred + 1.9600 * sigma)[::-1]]),
-             alpha=.5, fc='b', ec='None', label='95% confidence interval')
+    
+    plt.errorbar(X.ravel(), y, dy, fmt='r.', markersize=10, label='Observations')
+    #plt.fill(np.concatenate([x, x[::-1]]),
+    #         np.concatenate([y_pred - 1.9600 * sigma,
+    #                         (y_pred + 1.9600 * sigma)[::-1]]),
+    #         alpha=.5, fc='b', ec='None', label='95% confidence interval')
+
+    if len(newpoints) != 0:
+        plt.plot(newpoints, f(np.array(newpoints)), 'go', markersize=11, label='new samples')
+
     plt.xlabel('$x$')
     plt.ylabel('$f(x)$')
-    plt.ylim(-10, 20)
-    plt.legend(loc='upper left')
-    plt.show(block=True)
+    plt.title('GPR results for f=(' + funcname + ') with ' + str(len(y_observ)) + ' # func. eval-s')
+    #plt.ylim(-10, 20)
+    plt.legend(loc='upper right')
+    plt.savefig('surr2d_toy_' + str(len(y_observ))+'.png')
+    plt.close
 
 def plot_error(err, name):
     plt.plot(range(1, len(err) + 1), err, label=name)
