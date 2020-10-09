@@ -148,7 +148,7 @@ if __name__ == "__main__":
         campaign.draw_samples()
         campaign.populate_runs_dir()
         exec_pj(campaign, exec_path)
-        campaign.collate()
+        campaign.collate() # TODO: check two flux tubes and see if they are independent
         campaign.apply_analysis(analysis)
 
         result = campaign.get_last_analysis()
