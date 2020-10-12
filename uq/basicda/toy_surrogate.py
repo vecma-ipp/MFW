@@ -84,26 +84,31 @@ def GPR_analysis_2d(x_data, x_domain, x_par=[[0.,1.,8],[0.,1.,8]], f=exponential
 
     x_observ = x_data
     #y = np.array([f(coord, [1.0, 1.0, 1.0]) for coord in X]).reshape(-1,1)
-    y_observ = f(x_observ)
 
+    #print(x_observ)
+    #print(x_observ.shape)
+
+    y_observ = f(x_observ)
     y_observ = y_observ / scale
 
     x1 = np.linspace(*x_par[0])
     x2 = np.linspace(*x_par[1])
     x = np.transpose([np.tile(x1, len(x2)), np.repeat(x1, len(x2))])
 
-    kernel = C() + Matern + WhiteKernel(1e-4)
+    #kernel = ConstantKernel() + Matern + WhiteKernel(1e-4) # TODO white kernel has issues with singularities? e.g. gets log(0)?
+    kernel = ConstantKernel() + Matern()
     gp = GaussianProcessRegressor(kernel=kernel, n_restarts_optimizer=9)
 
-    start_ts = time.time()
-    gp.fit(x, y)
-    print("time to train GP model: " + str(time.time() - start_ts) + " seconds")
+    #print(x_observ)
+    #print(y_observ)
 
+    start_ts = time.time()
+    gp.fit(x_observ, y_observ)
+    print("time to train GP model: " + str(time.time() - start_ts) + " seconds")
 
     y_pred, sigma = gp.predict(x, return_std=True) 
 
     #plot_prediction_variance(X, y, x, y_pred, sigma, func)
-
 
     return x_observ, y_observ * scale, y_pred * scale, sigma * scale
 
@@ -192,7 +197,7 @@ def surrogate_loop(pardim):
         """
         res = []
         for el in x:
-            res.append([gem0obj.gem0obj.gem0_call({'te.value': el[0], 'te.ddrho': el[1]})[0]])
+            res.append([gem0obj.gem0_call({'te.value': el[0], 'te.ddrho': el[1]})[0]])
         return res
 
     def gem0_call_tefltevlativl_array(x):
@@ -202,7 +207,7 @@ def surrogate_loop(pardim):
         """
         res = []
         for el in x:
-            res.append([gem0obj.gem0obj.gem0_call({'te.value': el[0], 'ti.value': el[1]})[0]])
+            res.append(gem0obj.gem0_call({'te.value': el[0], 'ti.value': el[1]})[0])
         return res
 
     new_points = []
@@ -245,9 +250,14 @@ def surrogate_loop(pardim):
                 break
 
     elif pardim == 2:
-        function = lambda x: (np.e**(-1. * x[0] - 1. * x[1])) * np.cos(2. * np.pi * x[0]) * np.cos(2. * np.pi * x[1])
-        
-        x_param = [[0., 1.5, 16], [0., 1.5, 16.]]
+        #function = lambda x: (np.e**(-1. * x[:,0] - 1. * x[:,1])) * np.cos(np.pi * (x[:,0]*x[:,0] + x[:,1]*x[:,1]))  
+        #x_param = [[0., 1.5, 16], [0., 1.5, 16]]]
+        #scale = 1.
+
+        function = lambda x: np.array(gem0_call_tefltevlativl_array(x)) # TODO double check dimensions
+        x_param = [[400., 2000, 16], [400., 2000, 16]]
+        scale = 1e7
+
         x1 = np.linspace(*x_param[0])
         x2 = np.linspace(*x_param[1])
         #data = np.dstack((X, Y))[0]
@@ -256,17 +266,19 @@ def surrogate_loop(pardim):
 
         # chose one of the grid point as initial point at random
         x_data = np.zeros((n_init,2))
-        x_data[0, :] = [np.random.randint(len(x1)), np.random.randint(len(x2))]
+        #x_data[0, :] = [np.random.randint(len(x1)), np.random.randint(len(x2))]
+        x_data[...] = [[np.random.rand(n_init)*(x_param[0][1] - x_param[0][0]) + x_param[0][0],
+                       np.random.rand(n_init)*(x_param[1][1] - x_param[1][0]) + x_param[1][0]]]
 
         for i in range(8):
-            x_observ, y_observ, y_pred, sigma = GPR_analysis_2d(x_data, x_domain, x_par=x_param, func=function)
+            x_observ, y_observ, y_pred, sigma = GPR_analysis_2d(x_data, x_domain, x_par=x_param, f=function, scale=scale)
             x_n = get_new_sample(x_domain, sigma)
 
             stop_crit, err = stop_train_criterium_rmse(y_pred, y_test, 0.05)
             errors.append(err)
 
-            new_points = [x_n]
-            #plot_prediction_variance_2d(x_observ, y_observ, x_domain, y_test, y_pred, sigma, new_points, funcname='dump-cos')
+            new_points = (x_n, function(np.array([x_n])))
+            plot_prediction_variance_2d(x_observ, y_observ, x_domain, y_test, y_pred, sigma, new_points, funcname='dumped cosine')
 
             x_data = np.append(x_data, x_n.reshape(1, -1), axis=0)
             if stop_crit:

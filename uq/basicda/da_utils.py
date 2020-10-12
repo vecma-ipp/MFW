@@ -277,34 +277,60 @@ def plot_prediction_variance(x_observ, y_observ, x_domain, y_test, y_pred, sigma
     plt.ylabel('$f(x)$')
     plt.title('GPR results for f=(' + funcname + ') with ' + str(len(y_observ)) + ' number of function evaluations') 
                # + 'PRediction RMSE is ' + str(rmse))
-    #plt.ylim(-10, 20)
     plt.legend(loc='upper right')
     #plt.show(block=True)
     plt.savefig('surr_gem0_' + str(len(y_observ)) + '.png')
     plt.close()
     #return y_test.T.reshape(-1)
 
-def plot_prediction_variance_2d(x_observ, y_observ, x_domain, y_test, sigma, newpoints, funcname):
+def plot_prediction_variance_2d(x_observ, y_observ, x_domain, y_test, y_pred, sigma, newpoints, funcname):
     # Plot function,prediction and 95% confidence interval
-    #TODO shuldplot two figures: one for response function wiht observations, one for std
-    plt.figure()
-    plt.plot(x_domain, y_test, 'r:', label=r'$f(x) = \cos(ax)\,\sin(bx)$')
-    plt.plot(x, y_pred, 'b-', label='Prediction')
+    #TODO should plot three figures: responce, GP mean, GP STD
+    x1o = x_observ[:,0]
+    x2o = x_observ[:,1]
+    x1i = x_domain[:,0]
+    x2i = x_domain[:,1]
     
-    plt.errorbar(X.ravel(), y, dy, fmt='r.', markersize=10, label='Observations')
-    #plt.fill(np.concatenate([x, x[::-1]]),
-    #         np.concatenate([y_pred - 1.9600 * sigma,
-    #                         (y_pred + 1.9600 * sigma)[::-1]]),
-    #         alpha=.5, fc='b', ec='None', label='95% confidence interval')
+    fig, (ax1, ax2, ax3) = plt.subplots(nrows=3, ncols=1)
 
-    if len(newpoints) != 0:
-        plt.plot(newpoints, f(np.array(newpoints)), 'go', markersize=11, label='new samples')
+    ### --- First plot for response function
+    #ax1.contour(x1, x2, y1, levels=14, linewidths=0.5, colors='k')
+    cntr1 = ax1.tricontourf(x1i, x2i, y_test, levels=12, cmap="RdBu_r")
+    fig.colorbar(cntr1, ax=ax1)
+    ax1.set_title('Ground truth response function')
+    plt.xlabel('$x1$')
+    plt.ylabel('$x2$')
+    ax1.set_aspect('equal')
 
-    plt.xlabel('$x$')
-    plt.ylabel('$f(x)$')
-    plt.title('GPR results for f=(' + funcname + ') with ' + str(len(y_observ)) + ' # func. eval-s')
-    #plt.ylim(-10, 20)
-    plt.legend(loc='upper right')
+
+    ### --- Second plot for GPR mean
+    cntr2 = ax2.tricontourf(x1i, x2i, y_pred, levels=12, cmap="RdBu_r")
+    ax2.scatter(x1o, x2o, c=y_observ, cmap='RdBu_r', edgecolors='k')
+    fig.colorbar(cntr2, ax=ax2)
+    #ax2.set_title('GPR results for f=(' + funcname + ') with ' + str(len(y_observ)) + ' # func. eval-s')
+    ax2.set_title('Prediction for {} func. eval-s'.format(len(y_observ)))
+    plt.xlabel('$x1$')
+    plt.ylabel('$x2$')
+    ax2.set_aspect('equal')
+    #if len(newpoints) != 0: #TODO fix two differen scatter one plot
+    #    ax2.scatter(newpoints[0][0], newpoints[0][1], newpoints[1][0], c='g', edgecolors='k') #, label='new samples')
+
+    ### --- Third plot for the neg-utility (GPR STD)
+    #ax2.tricontour(x1i, x2i, sigma, levels=14, linewidths=0.5, colors='k')
+    cntr3 = ax3.tricontourf(x1i, x2i, sigma, levels=14, cmap="RdBu_r")
+    fig.colorbar(cntr3, ax=ax3)
+    #ax2.plot(x, y, 'ko', ms=3)
+    ax3.set_title('GPR STD')
+    plt.xlabel('$x1$')
+    plt.ylabel('$x2$')
+    ax3.set_aspect('equal')
+
+    ################################
+    #plt.plot(x_domain, y_test, 'r:', label='e-|x|^2 * cos(|x|^2)') #r'$f(x) = \cos(ax)\,\sin(bx)$')
+    #plt.legend(loc='upper right')
+
+    plt.tight_layout()
+    plt.subplots_adjust() # TODO should have less margin at saved figure
     plt.savefig('surr2d_toy_' + str(len(y_observ))+'.png')
     plt.close
 
