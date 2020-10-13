@@ -45,10 +45,20 @@ class CPOEncoder(BaseEncoder, encoder_name="cpo_encoder"):
         for name, attr in self.input_params.items():
             value = params[name]
 
-            # Particular case 1: te.value or ti.value.
-            # Get the Flux tube position and update neighbors (+/-2 grid
-            # points) according to the slops given by te.ddrho and ti.ddrho
-            # TODO add more parameters
+            # Particular case: pofile as uncertain paramert: reduce the
+            # size using bspline approximation. TODO new Specific Encoder
+            if "bsp_x" in attr.keys():
+                x = attr["bsp_x"]
+                y = value
+                rho = attr["rho"]
+                S = scipy.interpolate.make_interp_spline(x, y, bc_type=([(1, 0.0)], [(2, 0.0)]))
+                value = S(rho).tolist()
+
+            # Particular case: uncertain parmater is te.value or
+            # ti.value in a given flux tube. Get the Flux tube position
+            # and update neighbors (+/-2 grid points) according to the
+            # slops given by te.ddrho and ti.ddrho
+            # TODO add more parameters and use external routine
             if "ft_index" in attr.keys():
                 i = attr["ft_index"]
                 values = []
@@ -95,22 +105,17 @@ class CPOEncoder(BaseEncoder, encoder_name="cpo_encoder"):
                     if name in ['ti.value', 'ti.ddrho']:
                         self.cpo.set_value('ti.value', values, indices)
 
-            # Particular case 2: vary FT values
-            if "bsp_x" in attr.keys():
-                x = attr["bsp_x"]
-                y = value
-                rho = attr["rho"]
-                S = scipy.interpolate.make_interp_spline(x, y, bc_type=([(1, 0.0)], [(2, 0.0)]))
-                value = S(rho).tolist()
+            else
                 self.cpo.set_value(name, value)
 
-        # Do a symbolic link to other files (cpo, xml and restart data)
+        # Do a symbolic link to other files (cpo and xml)
         os.system("ln -s " + self.common_dir + "*.xml " + target_dir)
         os.system("ln -s " + self.common_dir + "*.xsd " + target_dir)
         os.system("ln -s " + self.common_dir + "*.cpo " + target_dir)
+        # Copy restart data if given
         for fname in os.listdir(self.common_dir):
             if fname.endswith(".dat"):
-                os.system("ln -s " + self.common_dir + fname + " " + target_dir)
+                os.system("cp " + self.common_dir + fname + " " + target_dir)
         if os.path.isdir(self.common_dir + "/surrogate"):
             os.system("ln -s " + self.common_dir + "/surrogate/" + "*.joblib " + target_dir)
             os.system("cp " + self.common_dir + "/surrogate/" + "*.cpo " + target_dir)

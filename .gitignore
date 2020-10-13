@@ -41,6 +41,9 @@ uq/dist*
 uq/*cache_*
 uq/*.pyc
 uq/*.egg-info*
+uq/*.log
+uq/*.out
+uq/*.err
 uq/easymfw/*cache*_
 uq/easymfw/*.pyc
 uq/easymfw/utils/*cache*_
