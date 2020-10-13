@@ -291,7 +291,7 @@ def plot_prediction_variance_2d(x_observ, y_observ, x_domain, y_test, y_pred, si
     x1i = x_domain[:,0]
     x2i = x_domain[:,1]
     
-    fig, (ax1, ax2, ax3) = plt.subplots(nrows=3, ncols=1)
+    fig, (ax1, ax2, ax3) = plt.subplots(nrows=1, ncols=3)
 
     ### --- First plot for response function
     #ax1.contour(x1, x2, y1, levels=14, linewidths=0.5, colors='k')
@@ -331,7 +331,7 @@ def plot_prediction_variance_2d(x_observ, y_observ, x_domain, y_test, y_pred, si
 
     plt.tight_layout()
     plt.subplots_adjust() # TODO should have less margin at saved figure
-    plt.savefig('surr2d_toy_' + str(len(y_observ))+'.png')
+    plt.savefig('surr2d_toy_' + str(len(y_observ))+'.pdf')
     plt.close
 
 def plot_error(err, name):
