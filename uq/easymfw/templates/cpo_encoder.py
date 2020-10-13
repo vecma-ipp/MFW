@@ -105,7 +105,7 @@ class CPOEncoder(BaseEncoder, encoder_name="cpo_encoder"):
                     if name in ['ti.value', 'ti.ddrho']:
                         self.cpo.set_value('ti.value', values, indices)
 
-            else
+            else:
                 self.cpo.set_value(name, value)
 
         # Do a symbolic link to other files (cpo and xml)
