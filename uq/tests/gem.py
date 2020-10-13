@@ -31,6 +31,7 @@ tmp_dir = os.environ['SCRATCH']
 
 # CPO files location
 cpo_dir = os.path.abspath("../workflows/AUG_28906_6_1ft_restart")
+#cpo_dir = os.path.abspath("../workflows/AUG_28906_6")
 
 # XML and XSD files location
 #xml_dir = os.path.abspath("../workflows")
@@ -94,7 +95,7 @@ os.system("cp " + cpo_dir + "/ets_equilibrium_in.cpo "
 os.system("cp " + cpo_dir + "/ets_coreprof_in.cpo "
                 + common_dir + "/gem_coreprof_in.cpo")
 
-#os.system("cp " + cpo_dir + "/t00.dat " + common_dir)
+os.system("cp " + cpo_dir + "/t00.dat " + common_dir)
 
 # Copy XML and XSD files
 os.system("cp " + xml_dir + "/gem.xml " + common_dir)
@@ -155,12 +156,12 @@ if EXEC_PJ:
     # PJ execution
     qcgpjexec = easypj.Executor()
     qcgpjexec.create_manager(dir=my_campaign.campaign_dir,
-                             log_level='debug')
+                             log_level='info')
 
     qcgpjexec.add_task(Task(
         TaskType.EXECUTION,
         TaskRequirements(cores=Resources(exact=ncores)),
-        model='intelmpi',
+        model=mpi_instance,
         application=exec_path
     ))
 
@@ -183,14 +184,20 @@ my_campaign.apply_analysis(analysis)
 results = my_campaign.get_last_analysis()
 
 # Get Descriptive Statistics
-print('Get Descriptive Statistics: \n')
+print('Descriptive Statistics: \n')
 stat = {}
 sob1 = {}
+sob2 = {}
+sobt = {}
 dist = {}
 for qoi in output_columns:
     stat[qoi] = results['statistical_moments'][qoi]
     sob1[qoi] = results['sobols_first'][qoi]
+    sob2[qoi] = results['sobols_second'][qoi]
+    sobt[qoi] = results['sobols_total'][qoi]
 
     print(qoi)
     print('Stats: \n', stat[qoi] )
     print('Sobol 1st: \n',sob1[qoi])
+    print('Sobol 2nd: \n',sob2[qoi])
+    print('Sobol tot: \n',sobt[qoi])
