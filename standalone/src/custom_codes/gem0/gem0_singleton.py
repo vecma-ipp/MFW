@@ -49,20 +49,63 @@ class GEM0Singleton():
         self.code_parameters = get_code_params()
         self.equil, self.corep_elem, self.coret = get_code_ios(self.equil_file_in, self.corep_file_in, self.coret_file_out)
         
+        self.code_parameters["grid.nion"] = 1 #TODO: workaround
+
     def get_curr_params(self, ft=69):
 
         return self.corep_elem.get_value('te.value')[ft], self.corep_elem.get_value('ti.value')[ft], \
                self.corep_elem.get_value('te.ddrho')[ft], self.corep_elem.get_value('ti.ddrho')[ft]
 
     def modify_code_ios(self, attrib, new_value, ft=[69]):
-        val = self.corep_elem.get_value(attrib)
-        
-        #self.corep_elem.set_value(attrib, [val[ft] + new_value], ft)
-        #if attrib.split('.')[-1] == 'ddrho':
-        #    continue
-        #else:
-        
-        self.corep_elem.set_value(attrib, [new_value], ft)
+     
+        old_value = self.corep_elem.get_value(attrib)  
+
+        values = []
+        indices = []
+        ind = ft[0] # TODO: workaround for single flux tube
+        if attrib in ['te.value', 'te.ddrho', 'ti.value', 'ti.ddrho']:
+            rho = self.corep_elem.get_value('rho_tor_norm')
+            if attrib == 'te.value':
+                dt = self.corep_elem.get_value('te.ddrho')
+                t_i  = new_value
+                dt_i = dt[ind]
+                values.append(new_value)
+                indices.append(ind)
+            if attrib == 'te.ddrho':
+                t = self.corep_elem.get_value('te.value')
+                t_i  = t[ind]
+                dt_i = new_value
+                self.corep_elem.set_value('te.ddrho', [new_value], [ind])
+            if attrib == 'ti.value':
+                dt = self.corep_elem.get_value('ti.ddrho')
+                t_i  = new_value
+                if self.code_parameters["grid.nion"] == 1:
+                    dt_i = dt[ind]
+                else:
+                    dt_i = dt[ind][0]
+                values.append(new_value)
+                indices.append(ind)
+            if attrib == 'ti.ddrho':
+                t = self.corep_elem.get_value('te.value')
+                if self.code_parameters["grid.nion"] == 1:
+                    t_i  = t[ind]
+                else:
+                    t_i  = t[ind][0]
+                dt_i = new_value
+                self.cpo.set_value('ti.ddrho', [new_value], [ind])
+
+            # neighbors to update
+            values.append(dt_i*(rho[ind-2] - rho[ind]) + t_i)
+            values.append(dt_i*(rho[ind-1] - rho[ind]) + t_i)
+            values.append(dt_i*(rho[ind+1] - rho[ind]) + t_i)
+            values.append(dt_i*(rho[ind+2] - rho[ind]) + t_i)
+            indices += [ind-2, ind-1, ind+1, ind+2]
+            if attrib in ['te.value', 'te.ddrho']:
+                self.corep_elem.set_value('te.value', values, indices)
+            if attrib in ['ti.value', 'ti.ddrho']:
+                self.corep_elem.set_value('ti.value', values, indices)
+
+        #self.corep_elem.set_value(attrib, [new_value], ft)
 
         # TODO: for gradients: read the coreprof cpo-s, get the gradient by interpolation
         # for new inputs re-wrtie gradeints at cpo, always write the new gradeints?
