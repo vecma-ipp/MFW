@@ -190,17 +190,17 @@ def surrogate_loop(pardim):
             res.append([math.log(gem0obj.gem0_call({'te.value': el[0]})[0])])
         return np.array(res)
 
-    def gem0_call_tefltevlategrad_array(x):
+    def gem0_call_tefltevltegrad_array(x):
         """
         calls the gem0 code for desired te.valus and te.ddrho
         :param x: x[0] is desired tevalue, x[1] is desired tegrad
         """
         res = []
         for el in x:
-            res.append([gem0obj.gem0_call({'te.value': el[0], 'te.ddrho': el[1]})[0]])
+            res.append(gem0obj.gem0_call({'te.value': el[0], 'te.ddrho': el[1]})[0])
         return res
 
-    def gem0_call_tefltevlativl_array(x):
+    def gem0_call_tefltevltivl_array(x):
         """
         calls the gem0 code for desired te.valus and te.ddrho
         :param x: x[0] is desired tevalue, x[1] is desired tegrad
@@ -252,16 +252,17 @@ def surrogate_loop(pardim):
     elif pardim == 2:
         #function = lambda x: (np.e**(-1. * x[:,0] - 1. * x[:,1])) * np.cos(np.pi * (x[:,0]*x[:,0] + x[:,1]*x[:,1]))  
         #x_param = [[0., 1.5, 16], [0., 1.5, 16]]]
-        #scale = 1.
+        #y_scale = 1.
 
-        function = lambda x: np.array(gem0_call_tefltevlativl_array(x)) # TODO double check dimensions
-        x_param = [[400., 2000, 16], [400., 2000, 16]]
-        scale = 1e7
+        #function = lambda x: np.array(gem0_call_tefltevltivl_array(x)) # TODO double check numpy dimensions
+        function = lambda x: np.array(gem0_call_tefltevltegrad_array(x))
+        x_param = [[400., 2000, 16], [-1500., 4500., 16]] # sqaure in domain in {Te}x{gradTe}
+        y_scale = 1e7
 
         x1 = np.linspace(*x_param[0])
         x2 = np.linspace(*x_param[1])
         #data = np.dstack((X, Y))[0]
-        x_domain = np.transpose([np.tile(x1, len(x2)), np.repeat(x2, len(x1))]) #TODO very bulky and ineffective
+        x_domain = np.transpose([np.tile(x1, len(x2)), np.repeat(x2, len(x1))]) #TODO very bulky and ineffective?
         y_test = function(x_domain)
 
         # chose one of the grid point as initial point at random
@@ -270,8 +271,8 @@ def surrogate_loop(pardim):
         x_data[...] = [[np.random.rand(n_init)*(x_param[0][1] - x_param[0][0]) + x_param[0][0],
                        np.random.rand(n_init)*(x_param[1][1] - x_param[1][0]) + x_param[1][0]]]
 
-        for i in range(8):
-            x_observ, y_observ, y_pred, sigma = GPR_analysis_2d(x_data, x_domain, x_par=x_param, f=function, scale=scale)
+        for i in range(24):
+            x_observ, y_observ, y_pred, sigma = GPR_analysis_2d(x_data, x_domain, x_par=x_param, f=function, scale=y_scale)
             x_n = get_new_sample(x_domain, sigma)
 
             stop_crit, err = stop_train_criterium_rmse(y_pred, y_test, 0.05)
