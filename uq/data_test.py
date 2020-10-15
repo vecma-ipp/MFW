@@ -15,7 +15,7 @@ from basicda.da_utils import read_sim_csv, walklevel
 #from utils import l3interp, l3deriv
 
 def get_rho(filename):
-    return read(filename, "coreprof").rho.values
+    return read(filename, "coreprof").rho_tor[0].values
 
 def get_te(filename):
     coreprof = read(filename, "coreprof")
@@ -189,15 +189,17 @@ def plot_prof_seq(runfolder, nruns, name, targind=0):
     Plots multiple profiles (val-s vs rho) at the sam figure
     """
     rho = range(100)
-    for i in range(nruns):
-        prof = get_te(runfolder+"runs/Run_"+str(i+1)+"/gem0_coreprof_in.cpo")
-        plt.plot(rho, prof)
+    for i in range(1, nruns):
+        #prof = get_te(runfolder+"/runs/Run_"+str(i+1)+"/gem0_coreprof_in.cpo")
+        prof = get_tegrad(runfolder+"/runs/Run_"+str(i+1)+"/gem0_coreprof_in.cpo")
+        plt.plot(rho, prof, linewidth=0.5)
+        plt.plot(rho, prof, 'ko', markersize=8)
     plt.xlabel('rho[ind]')
-    plt.ylabel('Te[eV]')
+    plt.ylabel('grTe[eV/m]')
     if targind !=0:
         plt.axvline(targind,0,3000)
-    plt.title("Te profile for " + name)
-    plt.savefig('te_prof_all_' + name + '.png')
+    plt.title("gradTe profile for " + name)
+    plt.savefig('tegrad_prof_all_' + name + '.pdf')
     plt.close()
 
 def plot_scatter_2D(profvals, resvals, campname):
@@ -253,19 +255,22 @@ def print_camp_fluxes(basefolder, pr1):
         print(check_equal(pr1,pr2))
         print(str(pr2) + "\n")
 
-def plot_run_profiles(basefolder):
+def plot_run_profiles(basefolder, name="_gem0_aug_par_tes_at69_"):
     """
     Plot profiles for a single run
     """
-    for i in range(16):    
-            rho = get_rho(basefolder + "Run_" + str(i) + "/gem0_coreprof_in.cpo")
-            plot_prof(pr11, np.linspace(0,1,100), "_gem0_aug_seq_run_input_1")
+    n_runs = 2048
+    targind = 0 # 69
+    for i in range(1, n_runs): 
+        continue   
+        #rho = get_rho(basefolder + "/runs/Run_" + str(i) + "/gem0_coreprof_in.cpo")
+        #plot_prof(pr11, np.linspace(0,1,100), "_gem0_aug_seq_run_input_1")
 
-    plot_prof_seq(basefolder, 16, "_gem0_aug_par_tes_at61_", ft1_indx)
+    plot_prof_seq(basefolder, n_runs, name, targind)
 
-    print("flux for the case " + str(1) + " : " + '%.3g'%(res1))
-    plot_prof(pr21, np.linspace(0,1,100), "_gem0_aug_sew_tun_input_2")
-    print("flux for the case " + str(2) + " : " + '%.3g'%(res2))
+    #print("flux for the case " + str(1) + " : " + '%.3g'%(res1))
+    #plot_prof(pr21, np.linspace(0,1,100), "_gem0_aug_sew_tun_input_2")
+    #print("flux for the case " + str(2) + " : " + '%.3g'%(res2))
 
 def two_camp_compare(filename1="data/gem_uq_inoutput.csv", filename2="campaign_data.csv"):
     """
@@ -324,7 +329,7 @@ basefolder = "/u/yyudin00/code/MFW/workflow/AUG_28906_6_1ft_restart/"
 #basefolder = scratch_folder + "UQ_GEM0_LVR_m9qiu5tm/"
 #basefolder = scratch_folder + "UQ_GEM0_LVR_37os6gq0/"
 basefolder = scratch_folder + "UQ_GEM0_61_e9zvw66q/"
-basefolder = scratch_folder + "gemuq_qmc_tjpqqq_4/"
+basefolder = scratch_folder + "gemuq_qmc_tjpqqq_4/" 
 
 basefolder = os.path.join(scratch_folder,"gemuq_qmc_hjwchjla") # gem0 campaign run with 3e+3 samples (QMC, 1ft @69) on 21.09.2020
 
@@ -341,15 +346,24 @@ filename_res = "gem0_coretransp_out.cpo"
 
 
 gem0data, _, _ = read_sim_csv("campaign_data.csv")
-plot_camp_vals(gem0data, 'gem0')
+#plot_camp_vals(gem0data, 'gem0')
 
 
 # compare gem and gem0 campaign
 #two_camp_compare()
 
-os.system("diff" + os.path.join(scratch_folder, "gem08ftuq_pce_v0ij1gtr/common/res0.csv " + 
-          os.path.join(scratch_folder, "gem08ftuq_python_pce_8o_og7c8/common/res0.csv")
+#os.system("diff" + os.path.join(scratch_folder, "gem08ftuq_pce_v0ij1gtr/common/res0.csv " + 
+#          os.path.join(scratch_folder, "gem08ftuq_python_pce_8o_og7c8/common/res0.csv")
 
-gem0van, _, _ = read_sim_csv("gem08ftuq_pce_v0ij1gtr/common/res0.csv")
-gem0pyt, _, _ = read_sim_csv("gem08ftuq_python_pce_8o_og7c8/common/res0.csv")
+#gem0van, _, _ = read_sim_csv("gem08ftuq_pce_v0ij1gtr/common/res0.csv")
+#gem0pyt, _, _ = read_sim_csv("gem08ftuq_python_pce_8o_og7c8/common/res0.csv")
 
+
+# see how profiles are sampled for 2ft
+folder2ftrun = os.path.join(scratch_folder, "gem08ftuq_pce_z85mi86u") # a 2ft gem0 campaing on 13.10.2020
+folder8ftrun = os.path.join(scratch_folder, "gem08ftuq_pce_v0ij1gtr") # a 8ft gem0 campaing on ...10.2020
+
+plot_run_profiles(folder8ftrun, "_gem0_aug_8ft_")
+
+num = 2047 
+plot_prof(get_te(folder8ftrun+'/runs/Run_'+str(num)+'/gem0_coreprof_in.cpo'), np.linspace(0,1,100), 'prof_8ftrun_at_'+str(8))

@@ -129,6 +129,7 @@ if __name__ == "__main__":
     n_polyn = 3
     ft_indices = [15, 31, 44, 55, 66, 76, 85, 94]
     #ft_indices = [69]
+    ft_indices = [38,81]
 
     # Get setup for the 1st Flux tube and set it to the campaign
     results = []
