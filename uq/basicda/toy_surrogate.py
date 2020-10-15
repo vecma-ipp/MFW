@@ -2,7 +2,6 @@ import pandas as pd
 import numpy as np
 import math
 import matplotlib.pylab as plt
-#import datetime
 import time
 
 from sklearn.gaussian_process import GaussianProcessRegressor
@@ -37,7 +36,7 @@ def stop_train_criterium_rsd(y_pred, sigma, eps=0.005):
     print('rsd : {}'.format(rsd_min))
     return rsd_min < eps
 
-def stop_train_criterium_rmse(y_pred, y, eps=0.05): # TODO: get the reasonable rmse threshold for each given case
+def stop_train_criterium_rmse(y_pred, y, eps=0.05): # TODO: get the reasonable rmse threshold for each given case + check for multivariate f-s
     rmse = np.sqrt(((y - y_pred) ** 2).sum() / len(y))
     print('rmse : {}'.format(rmse))
     return rmse < eps, rmse
@@ -80,39 +79,37 @@ def GPR_analysis_toy(x_data, x_domain, y_par=[0.1, 9.9, 20], x_par=[0, 10, 64], 
     #print(sigma)
     return x_observ, y_observ, y_pred, sigma
 
-def GPR_analysis_2d(x_data, x_domain, x_par=[[0.,1.,8],[0.,1.,8]], f=exponential_model, scale=1.):
+def GPR_analysis_2d(x_observ, y_observ, x_domain, x_par=[[0.,1.,8],[0.,1.,8]], f=exponential_model, x_scale=1., y_scale=1.):
+    
+    y_sc_factor = 1e4
+    x_sc_factor = 1e4
 
-    x_observ = x_data
-    #y = np.array([f(coord, [1.0, 1.0, 1.0]) for coord in X]).reshape(-1,1)
+    # --- observation in Y for fitting
+    #y_observ = f(x_observ) # TODO: pass instead of recalcualtion
 
-    #print(x_observ)
-    #print(x_observ.shape)
+    print("x_observ_sc: "); print(x_observ)
+    print("y_observ_sc: "); print(y_observ)
 
-    y_observ = f(x_observ)
-    y_observ = y_observ / scale
+    # --- domain points for prediction
+    #x1 = np.linspace(*x_par[0]) # TODO use passed domain
+    #x2 = np.linspace(*x_par[1])
+    #x = np.transpose([np.tile(x1, len(x2)), np.repeat(x1, len(x2))])
+    #x = x
 
-    x1 = np.linspace(*x_par[0])
-    x2 = np.linspace(*x_par[1])
-    x = np.transpose([np.tile(x1, len(x2)), np.repeat(x1, len(x2))])
-
-    #kernel = ConstantKernel() + Matern + WhiteKernel(1e-4) # TODO white kernel has issues with singularities? e.g. gets log(0)?
-    kernel = ConstantKernel() + Matern()
+    #kernel = ConstantKernel() + Matern + WhiteKernel(1e-4) # TODO white kernel has issues with singularities? e.g. gets log(0) somewhere?
+    kernel = ConstantKernel() + Matern() #TODO after preprocessing to white noize at [0;1]^2 (better [-1;1]^2 ?) consider scale limits + get initials from datapoints??? 
     gp = GaussianProcessRegressor(kernel=kernel, n_restarts_optimizer=9)
-
-    #print(x_observ)
-    #print(y_observ)
 
     start_ts = time.time()
     gp.fit(x_observ, y_observ)
     print("time to train GP model: " + str(time.time() - start_ts) + " seconds")
 
-    y_pred, sigma = gp.predict(x, return_std=True) 
+    y_pred, sigma = gp.predict(x_domain, return_std=True) 
 
-    #plot_prediction_variance(X, y, x, y_pred, sigma, func)
+    return x_observ, y_observ , y_pred, sigma
+    #return x_observ * x_sc_factor, y_observ * y_sc_factor, y_pred * y_sc_factor, sigma * y_sc_factor
 
-    return x_observ, y_observ * scale, y_pred * scale, sigma * scale
-
-def GPR_analysis(dim=2, func=exponential_model): #TODO arbitrary dimension, print resuluts in a clear way
+def GPR_analysis(dim=2, xdomain_par=[[-1.,1.,8],[-1.,1.,8]], func=exponential_model): #TODO arbitrary dimension, print resuluts in a clear way
     xdomain_par =[ 0., 1., 8]**dim # TODO move into initalisation list
     xdata = np.linspace(xdomain_par) # TODO move inot initialisation list
 
@@ -187,7 +184,13 @@ def surrogate_loop(pardim):
     def gem0_call_teflteval_log_array(x):
         res = []
         for el in x: 
-            res.append([math.log(gem0obj.gem0_call({'te.value': el[0]})[0])])
+            res.append([math.log(gem0obj.gem0_call({'te.value': el[0]})[0])]) #TODO actually negative values
+        return np.array(res)
+
+    def gem0_call_tefltegrad_array(x):
+        res = []
+        for el in x: 
+            res.append([gem0obj.gem0_call({'te.ddrho': el[0]})[0]])
         return np.array(res)
 
     def gem0_call_tefltevltegrad_array(x):
@@ -218,68 +221,122 @@ def surrogate_loop(pardim):
         #function = lambda x: (np.e**(-1.0 * x)) * np.cos(2.0 * np.pi * x)
         #function = lambda x: np.e**(+1.0*x)
         #x_param = [0., 1.5, 32] for cos 
+
         function = lambda x: gem0_call_teflteval_array(x)
-
-        #x_param = [-1000., -4000, 16] # for gem in te-grad
         x_param = [400., 2000, 32] # for gem in te-val #TODO change the gradient sampling!
+        
+        function = lambda x: np.array(gem0_call_tefltegrad_array(x))
+        x_param = [-6000., -200., 64] # for gem in te-grad
+        
         x_data = np.zeros((n_init, 2))
-
         x_domain = np.atleast_2d(np.linspace(*x_param)).T
         y_test = function(x_domain) # TODO: some of the things e.g. x_domain are never changed - should be returned all the time
-        
-        y_scaling = lambda y: (y - y_test.min()) / (y.max() - y.min())
-        x_scaling = lambda x: (x - x_domain.min()) / (x_domain.max() - x_domain.min())
-        simple_whitening = lambda y: y_test.min() + (x - x.min())*(y.max() - y.min())/(x.max() - x.min()) # TODO check if intependent calls are comiled out
 
+        y_scaling = lambda y: (y - y_test.min()) / (y_test.max() - y_test.min()) # scale to [0;1]
+        x_scaling = lambda x: (x - x_domain.min()) / (x_domain.max() - x_domain.min())
+        simple_nonstationary = lambda x, y: y - y_test.min() + (x - x_domain.min())*(y_test.max() - y_test.min())/(x_domain.max() - x_domain.min()) # TODO check if intependent calls are comiled out
+        
         # data[:, 0] = np.linspace(*x_param[:-1], n_init)
         x_data[:, 0] = np.random.rand(n_init)*(x_param[1] - x_param[0]) + x_param[0] #TODO either choose among grid points or make grid irregular
 
-        for i in range(15):
+        for i in range(16):
             x_observ, y_observ, y_pred, sigma = GPR_analysis_toy(x_data, x_domain, y_par=x_param, x_par=x_param, f=function, eps=0.0)
             x_n = get_new_sample(x_domain, sigma)
             plot_prediction_variance(x_observ, y_observ, x_domain, y_test, y_pred, sigma, function, [x_n], new_points, funcname='gem0, flTe in Te')
 
-            stop_crit, err = stop_train_criterium_rmse(y_pred, y_test.T.reshape(-1), 1e6) # for normalized problems chooes rmse threshold ~0.05
+            stop_crit, err = stop_train_criterium_rmse(y_pred, y_test.T.reshape(-1), 1e3) # for normalized problems chooes rmse threshold ~0.05
             errors.append(err)
 
-            new_points = [x_n]
-            x_data = np.concatenate((x_data, np.array([[x_n[0], 0.0]])), axis=0) #TODO adapt grid around new candidates
+            new_points = [x_n] #TODO choice is always chosen from grid -> apply simple refinement?
+            x_data = np.concatenate((x_data, np.array([[x_n[0], 0.0]])), axis=0) #TODO adapt grid around new candidates? 
             #data = np.append(data, x_n.reshape(1,-1), axis=0)
             if stop_crit:
                 print("Reached stopping criterium!")
                 break
 
     elif pardim == 2:
+        # --- Chose the fuction and its domain
+
         #function = lambda x: (np.e**(-1. * x[:,0] - 1. * x[:,1])) * np.cos(np.pi * (x[:,0]*x[:,0] + x[:,1]*x[:,1]))  
-        #x_param = [[0., 1.5, 16], [0., 1.5, 16]]]
+        #x_param = [[0., 1.5, 8], [0., 1.5, 8]]
         #y_scale = 1.
 
         #function = lambda x: np.array(gem0_call_tefltevltivl_array(x)) # TODO double check numpy dimensions
         function = lambda x: np.array(gem0_call_tefltevltegrad_array(x))
-        x_param = [[400., 2000, 16], [-1500., 4500., 16]] # sqaure in domain in {Te}x{gradTe}
-        y_scale = 1e7
+        #x_param = [[200., 4800, 64], [-8000, 0., 64]] # sqaure in domain in {Te}x{gradTe}
+        x_param = [[400., 2000, 8], [-3000., 1200., 8]] 
 
+        # --- Prepare the domain in X and test Y values
         x1 = np.linspace(*x_param[0])
         x2 = np.linspace(*x_param[1])
         #data = np.dstack((X, Y))[0]
-        x_domain = np.transpose([np.tile(x1, len(x2)), np.repeat(x2, len(x1))]) #TODO very bulky and ineffective?
+        x_domain = np.transpose([np.tile(x1, len(x2)), np.repeat(x2, len(x1))]) #TODO very bulky and ineffective? -> more dims
         y_test = function(x_domain)
 
-        # chose one of the grid point as initial point at random
+        # --- Chose one of the grid point as initial point at random
         x_data = np.zeros((n_init,2))
-        #x_data[0, :] = [np.random.randint(len(x1)), np.random.randint(len(x2))]
-        x_data[...] = [[np.random.rand(n_init)*(x_param[0][1] - x_param[0][0]) + x_param[0][0],
-                       np.random.rand(n_init)*(x_param[1][1] - x_param[1][0]) + x_param[1][0]]]
+        print(x_data.shape)
+        print(x1.shape)
+        x_data[:, 0] = x1[np.random.randint(low=0, high=len(x1)-1, size=n_init)]
+        x_data[:, 1] = x2[np.random.randint(low=0, high=len(x2)-1, size=n_init)]
+        #x_data[:,0] = np.random.rand(n_init)*(x_param[0][1] - x_param[0][0]) + x_param[0][0] # chose of rand unmber in domain in 1d
+        #x_data[:,1] = np.random.rand(n_init)*(x_param[1][1] - x_param[1][0]) + x_param[1][0]
 
-        for i in range(24):
-            x_observ, y_observ, y_pred, sigma = GPR_analysis_2d(x_data, x_domain, x_par=x_param, f=function, scale=y_scale)
+        # --- Some data and functions need to preprocessin - for now only done when dealing wiht GPR
+        x_scale = 1. #1e4
+        x_domain_min = [x_domain[0].min(), x_domain[1].min()]
+        x_domain_max = [x_domain[0].max(), x_domain[1].max()]
+        x1_scaling = lambda x: (x - x_domain_min[0]) / (x_domain_max[0] - x_domain_min[0])
+        x2_scaling = lambda x: (x - x_domain_min[1]) / (x_domain_max[1] - x_domain_min[1])
+        x_scaling = lambda x: (x - x_domain_min) / (x_domain_max - x_domain_min)
+        x1_rev_scaling = lambda x: x_domain_min[0] + x * (x_domain_max[0] - x_domain_min[0])
+        x2_rev_scaling = lambda x: x_domain_min[1] + x * (x_domain_max[1] - x_domain_min[1])
+        x_rev_scaling = lambda x: x_domain_min + x * (x_domain_max - x_domain_min)
+
+        y_test_min = y_test.min()
+        y_test_max = y_test.max()
+        y_test_scaling = lambda y: (y - y_test_min) / (y_test_max - y_test_min)
+        y_test_rev_scaling = lambda y: y_test_min + y * (y_test_max - y_test_min) 
+
+        simple_whitening = lambda x, y: y - y_test_min + (x - x_domain_min)*(y_test_max - y_test_min)/(x_domain_max - x_domain_min) # TODO check if intependent calls are compiled out
+
+        print("x_domain: "); print(x_domain)
+        print("y_test: "); print(y_test)
+
+        for i in range(48):
+            print("iteration nu {}".format(i))
+
+            y_observ = function(x_data)
+            # --- some scaling depends on observed data:
+            #y_scale = 1e6
+            y_observ_min = y_observ.min()
+            y_observ_max = y_observ.max()
+            y_scaling = lambda y: (y - y_observ_min) / (y_observ_max - y_observ_min)
+
+            # --- fit the regeresson and chose a new sample
+            x_observ, y_observ, y_pred, sigma = GPR_analysis_2d(
+                                                 np.apply_along_axis(x_scaling, 1, x_data), 
+                                                 np.apply_along_axis(y_test_scaling, 1, y_observ),
+                                                 x_domain,
+                                                 x_par=x_param, 
+                                                 f=function, 
+                                                 x_scale=[x1_scaling, x2_scaling], 
+                                                 y_scale=y_scaling)
+            x_observ = np.apply_along_axis(x_rev_scaling, 1, x_observ)                             
+            for datas in x_observ, y_observ, y_pred, sigma:
+                datas = np.apply_along_axis(y_test_rev_scaling, 1, datas)
+            
+            # --- chose samples for the new model
             x_n = get_new_sample(x_domain, sigma)
 
-            stop_crit, err = stop_train_criterium_rmse(y_pred, y_test, 0.05)
+            stop_crit, err = stop_train_criterium_rmse(y_pred, y_test, 0.05) #1e4
             errors.append(err)
 
+            print("y_pred: "); print(y_pred)
+
             new_points = (x_n, function(np.array([x_n])))
-            plot_prediction_variance_2d(x_observ, y_observ, x_domain, y_test, y_pred, sigma, new_points, funcname='dumped cosine')
+            if i%4 == 0:
+                plot_prediction_variance_2d(x_observ, y_observ, x_domain, y_test, y_pred, sigma, new_points, funcname='gem0')
 
             x_data = np.append(x_data, x_n.reshape(1, -1), axis=0)
             if stop_crit:
@@ -304,11 +361,9 @@ def surrogate_utility(x_train_data, y_train_data, x_roi_data, original_model):
 
     return -utility.sum()
 
+
 #np.random.seed(2)  # check other random seeds
 plt.ion()
-
-### FFNR model and test:
-# FNN_Regression_toy()
 
 ### surrogate loop:
 #surrogate_loop(2)
