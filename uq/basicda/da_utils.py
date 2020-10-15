@@ -6,11 +6,20 @@ import chaospy as cp
 import matplotlib
 #matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-params = {'legend.fontsize': 7, 'legend.handlelength': 1}
+params = {"text.usetex": True,
+          'axes.labelsize': 6,
+          'axes.titlesize':5,
+          'xtick.labelsize':5,
+          'ytick.labelsize':5,
+          'axes.titlepad': 1,
+          'axes.labelpad': 1,
+          'legend.fontsize': 7, 
+          'legend.handlelength': 1}
 plt.rcParams.update(params)
 import matplotlib.tri as mtri
 
 from mpl_toolkits.mplot3d import Axes3D
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 def exponential_model(x, theta=[1.0, 1.0, 1.0]):
     """
@@ -259,8 +268,6 @@ def plot_prediction_variance(x_observ, y_observ, x_domain, y_test, y_pred, sigma
     :param f: true function
     """
 
-    #print(x_domain, y_test)
-
     plt.figure()
     #y_test = f(x_domain)
     plt.plot(x_domain, y_test, 'r:', label=funcname) #r'$f(x) = x\,\sin(x)$')
@@ -273,17 +280,21 @@ def plot_prediction_variance(x_observ, y_observ, x_domain, y_test, y_pred, sigma
     plt.vlines(x_choice, -1, 1, colors='k', alpha=0.5, linestyles='dashed', label='new opt choice')
     if len(newpoints) != 0:
         plt.plot(newpoints, f(np.array(newpoints)), 'go', markersize=12, label='new samples')
-    plt.xlabel('$x$')
-    plt.ylabel('$f(x)$')
+    plt.xlabel(r'$\nabla Te$')
+    plt.ylabel('$Te flux$')
     plt.title('GPR results for f=(' + funcname + ') with ' + str(len(y_observ)) + ' number of function evaluations') 
                # + 'PRediction RMSE is ' + str(rmse))
     plt.legend(loc='upper right')
     #plt.show(block=True)
-    plt.savefig('surr_gem0_' + str(len(y_observ)) + '.png')
+    plt.savefig('surr_gem0_Teddrho_' + str(len(y_observ)) + '.pdf')
     plt.close()
     #return y_test.T.reshape(-1)
 
 def plot_prediction_variance_2d(x_observ, y_observ, x_domain, y_test, y_pred, sigma, newpoints, funcname):
+
+    #wrt_dir = os.path.join(os.environ['SCRATCH'], 'outputs/plots') # wrt_dir = ''
+    wrt_dir = os.environ['PWD'] #TODO most likely read wronly alligned data!
+
     # Plot function,prediction and 95% confidence interval
     #TODO should plot three figures: responce, GP mean, GP STD
     x1o = x_observ[:,0]
@@ -296,33 +307,38 @@ def plot_prediction_variance_2d(x_observ, y_observ, x_domain, y_test, y_pred, si
     ### --- First plot for response function
     #ax1.contour(x1, x2, y1, levels=14, linewidths=0.5, colors='k')
     cntr1 = ax1.tricontourf(x1i, x2i, y_test, levels=12, cmap="RdBu_r")
-    fig.colorbar(cntr1, ax=ax1)
+    divider1 = make_axes_locatable(ax1)
+    cax1 = divider1.append_axes("right", size="8%", pad=0.08)
+    plt.colorbar(cntr1, cax=cax1)
     ax1.set_title('Ground truth response function')
-    plt.xlabel('$x1$')
-    plt.ylabel('$x2$')
+    plt.xlabel('x1') #(r'$Te$')
+    plt.ylabel('x2') #(r'$\nabla Te$')
     ax1.set_aspect('equal')
-
 
     ### --- Second plot for GPR mean
     cntr2 = ax2.tricontourf(x1i, x2i, y_pred, levels=12, cmap="RdBu_r")
-    ax2.scatter(x1o, x2o, c=y_observ, cmap='RdBu_r', edgecolors='k')
-    fig.colorbar(cntr2, ax=ax2)
+    ax2.scatter(x1o, x2o, c=y_observ, cmap='RdBu_r', edgecolors='k', s=6)
+    divider2 = make_axes_locatable(ax2)
+    cax2 = divider2.append_axes("right", size="8%", pad=0.08)
+    plt.colorbar(cntr2, cax=cax2)
     #ax2.set_title('GPR results for f=(' + funcname + ') with ' + str(len(y_observ)) + ' # func. eval-s')
     ax2.set_title('Prediction for {} func. eval-s'.format(len(y_observ)))
-    plt.xlabel('$x1$')
-    plt.ylabel('$x2$')
+    plt.xlabel('x1') #(r'$Te$')
+    plt.ylabel('x2') #(r'$\nabla Te$')
     ax2.set_aspect('equal')
-    #if len(newpoints) != 0: #TODO fix two differen scatter one plot
-    #    ax2.scatter(newpoints[0][0], newpoints[0][1], newpoints[1][0], c='g', edgecolors='k') #, label='new samples')
+    if len(newpoints) != 0: #TODO fix two differen scatter one plot
+        ax2.scatter(newpoints[0][0], newpoints[0][1], c=newpoints[1][0], edgecolors='g', s=8) #, label='new samples')
 
     ### --- Third plot for the neg-utility (GPR STD)
     #ax2.tricontour(x1i, x2i, sigma, levels=14, linewidths=0.5, colors='k')
     cntr3 = ax3.tricontourf(x1i, x2i, sigma, levels=14, cmap="RdBu_r")
-    fig.colorbar(cntr3, ax=ax3)
+    divider3 = make_axes_locatable(ax3)
+    cax3 = divider3.append_axes("right", size="8%", pad=0.08)
+    plt.colorbar(cntr3, cax=cax3)
     #ax2.plot(x, y, 'ko', ms=3)
-    ax3.set_title('GPR STD')
-    plt.xlabel('$x1$')
-    plt.ylabel('$x2$')
+    ax3.set_title(r'GPR $\sigma$')
+    plt.xlabel('x1') #(r'$Te$')
+    plt.ylabel('x2') #(r'$\nabla Te$')
     ax3.set_aspect('equal')
 
     ################################
@@ -331,12 +347,15 @@ def plot_prediction_variance_2d(x_observ, y_observ, x_domain, y_test, y_pred, si
 
     plt.tight_layout()
     plt.subplots_adjust() # TODO should have less margin at saved figure
-    plt.savefig('surr2d_toy_' + str(len(y_observ))+'.pdf')
-    plt.close
+    plt.savefig(os.path.join(wrt_dir, 'surr2d_gem0_' + str(len(y_observ))+'.pdf'))
+    plt.close()
 
 def plot_error(err, name):
+    #wrt_dir = os.path.join(os.environ['SCRATCH'], 'outputs/plots') # wrt_dir = ''
+    wrt_dir = os.environ['PWD']
     plt.plot(range(1, len(err) + 1), err, label=name)
     plt.xlabel('n. interations')
     plt.ylabel('error')
     plt.title('Error of GPR surrogate predictions at function evaluations')
-    plt.savefig('surr_err_' + name + '.png')
+    plt.savefig(os.path.join(wrt_dir, 'surr_err_' + name + '.png'))
+    plt.close()
