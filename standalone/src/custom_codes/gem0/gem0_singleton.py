@@ -57,7 +57,9 @@ class GEM0Singleton():
                self.corep_elem.get_value('te.ddrho')[ft], self.corep_elem.get_value('ti.ddrho')[ft]
 
     def modify_code_ios(self, attrib, new_value, ft=[69]):
-     
+        """
+        Modifies a gem0 coreprof cpo object for a single parameter
+        """
         old_value = self.corep_elem.get_value(attrib)  
 
         values = []
@@ -65,24 +67,15 @@ class GEM0Singleton():
         ind = ft[0] # TODO: workaround for single flux tube
         if attrib in ['te.value', 'te.ddrho', 'ti.value', 'ti.ddrho']:
             rho = self.corep_elem.get_value('rho_tor_norm')
-            if attrib == 'te.value':
-                dt = self.corep_elem.get_value('te.ddrho')
-                t_i  = new_value
-                dt_i = dt[ind]
-                values.append(new_value)
-                indices.append(ind)
             if attrib == 'te.ddrho':
                 t = self.corep_elem.get_value('te.value')
                 t_i  = t[ind]
                 dt_i = new_value
                 self.corep_elem.set_value('te.ddrho', [new_value], [ind])
-            if attrib == 'ti.value':
-                dt = self.corep_elem.get_value('ti.ddrho')
+            if attrib == 'te.value':
+                dt = self.corep_elem.get_value('te.ddrho')
                 t_i  = new_value
-                if self.code_parameters["grid.nion"] == 1:
-                    dt_i = dt[ind]
-                else:
-                    dt_i = dt[ind][0]
+                dt_i = dt[ind]
                 values.append(new_value)
                 indices.append(ind)
             if attrib == 'ti.ddrho':
@@ -92,9 +85,18 @@ class GEM0Singleton():
                 else:
                     t_i  = t[ind][0]
                 dt_i = new_value
-                self.cpo.set_value('ti.ddrho', [new_value], [ind])
+                self.corep_elem.set_value('ti.ddrho', [new_value], [ind])
+            if attrib == 'ti.value':
+                dt = self.corep_elem.get_value('ti.ddrho')
+                t_i  = new_value
+                if self.code_parameters["grid.nion"] == 1:
+                    dt_i = dt[ind]
+                else:
+                    dt_i = dt[ind][0]
+                values.append(new_value)
+                indices.append(ind)
 
-            # neighbors to update
+            # if profile: neighbors to update
             values.append(dt_i*(rho[ind-2] - rho[ind]) + t_i)
             values.append(dt_i*(rho[ind-1] - rho[ind]) + t_i)
             values.append(dt_i*(rho[ind+1] - rho[ind]) + t_i)
