@@ -6,7 +6,7 @@ import chaospy as cp
 import matplotlib
 #matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-params = {"text.usetex": True,
+params = { #"text.usetex": True,
           'axes.labelsize': 6,
           'axes.titlesize':5,
           'xtick.labelsize':5,
@@ -310,8 +310,8 @@ def plot_prediction_variance_2d(x_observ, y_observ, x_domain, y_test, y_pred, si
     cax1 = divider1.append_axes("right", size="8%", pad=0.08)
     plt.colorbar(cntr1, cax=cax1)
     ax1.set_title('Ground truth response function')
-    plt.xlabel(r'$Te$')
-    plt.ylabel(r'$\nabla Te$')
+    plt.xlabel("Te") #(r'$Te$')
+    plt.ylabel("gradTe") #(r'$\nabla Te$')
     ax1.set_aspect('equal')
 
     ### --- Second plot for GPR mean
@@ -322,8 +322,8 @@ def plot_prediction_variance_2d(x_observ, y_observ, x_domain, y_test, y_pred, si
     plt.colorbar(cntr2, cax=cax2)
     #ax2.set_title('GPR results for f=(' + funcname + ') with ' + str(len(y_observ)) + ' # func. eval-s')
     ax2.set_title('Prediction for {} func. eval-s'.format(len(y_observ)))
-    plt.xlabel(r'$Te$')
-    plt.ylabel(r'$\nabla Te$')
+    plt.xlabel("Te") #(r'$Te$')
+    plt.ylabel("gradTe") #(r'$\nabla Te$')
     ax2.set_aspect('equal')
     if len(newpoints) != 0: #TODO fix two differen scatter one plot
         ax2.scatter(newpoints[0][0], newpoints[0][1], c=newpoints[1][0], edgecolors='g', s=8) #, label='new samples')
@@ -335,9 +335,9 @@ def plot_prediction_variance_2d(x_observ, y_observ, x_domain, y_test, y_pred, si
     cax3 = divider3.append_axes("right", size="8%", pad=0.08)
     plt.colorbar(cntr3, cax=cax3)
     #ax2.plot(x, y, 'ko', ms=3)
-    ax3.set_title(r'GPR $\sigma$')
-    plt.xlabel(r'$Te$')
-    plt.ylabel(r'$\nabla Te$')
+    ax3.set_title('GPR sigma') #(r'GPR $\sigma$')
+    plt.xlabel("Te") #(r'$Te$')
+    plt.ylabel("gradTe") #(r'$\nabla Te$')
     ax3.set_aspect('equal')
 
     ################################
