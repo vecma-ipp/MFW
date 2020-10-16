@@ -309,7 +309,7 @@ def plot_prediction_variance_2d(x_observ, y_observ, x_domain, y_test, y_pred, si
     divider1 = make_axes_locatable(ax1)
     cax1 = divider1.append_axes("right", size="8%", pad=0.08)
     plt.colorbar(cntr1, cax=cax1)
-    ax1.set_title('Ground truth response function')
+    ax1.set_title('Ground truth Te flux response')
     plt.xlabel("Te") #(r'$Te$')
     plt.ylabel("gradTe") #(r'$\nabla Te$')
     ax1.set_aspect('equal')
@@ -321,7 +321,7 @@ def plot_prediction_variance_2d(x_observ, y_observ, x_domain, y_test, y_pred, si
     cax2 = divider2.append_axes("right", size="8%", pad=0.08)
     plt.colorbar(cntr2, cax=cax2)
     #ax2.set_title('GPR results for f=(' + funcname + ') with ' + str(len(y_observ)) + ' # func. eval-s')
-    ax2.set_title('Prediction for {} func. eval-s'.format(len(y_observ)))
+    ax2.set_title('Te flux prediction for {} evaluations'.format(len(y_observ)))
     plt.xlabel("Te") #(r'$Te$')
     plt.ylabel("gradTe") #(r'$\nabla Te$')
     ax2.set_aspect('equal')
@@ -346,7 +346,7 @@ def plot_prediction_variance_2d(x_observ, y_observ, x_domain, y_test, y_pred, si
 
     plt.tight_layout()
     plt.subplots_adjust() # TODO should have less margin at saved figure
-    plt.savefig(os.path.join(wrt_dir, 'surr2d_gem0_' + str(len(y_observ))+'.pdf'))
+    plt.savefig(os.path.join(wrt_dir, 'surr2d_gem0_' + str(len(y_observ))+'.png'))
     plt.close()
 
 def plot_error(err, name):
@@ -356,5 +356,5 @@ def plot_error(err, name):
     plt.xlabel('n. interations')
     plt.ylabel('error')
     plt.title('Error of GPR surrogate predictions at function evaluations')
-    plt.savefig(os.path.join(wrt_dir, 'surr_gem0_err_' + name + '.pdf'))
+    plt.savefig(os.path.join(wrt_dir, 'surr_gem0_err_' + name + '.png'))
     plt.close()
