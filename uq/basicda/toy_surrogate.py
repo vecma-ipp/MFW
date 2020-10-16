@@ -79,7 +79,7 @@ def GPR_analysis_toy(x_data, x_domain, y_par=[0.1, 9.9, 20], x_par=[0, 10, 64], 
     #print(sigma)
     return x_observ, y_observ, y_pred, sigma
 
-def GPR_analysis_2d(x_observ, y_observ, x_domain, x_par=[[0.,1.,8],[0.,1.,8]], f=exponential_model, x_scale=1., y_scale=1.):
+def GPR_analysis_2d(x_observ, y_observ, x_domain, x_par=[[0.,1.,8],[0.,1.,8]]):
     
     y_sc_factor = 1e4
     x_sc_factor = 1e4
@@ -87,8 +87,9 @@ def GPR_analysis_2d(x_observ, y_observ, x_domain, x_par=[[0.,1.,8],[0.,1.,8]], f
     # --- observation in Y for fitting
     #y_observ = f(x_observ) # TODO: pass instead of recalcualtion
 
-    print("x_observ_sc: "); print(x_observ)
-    print("y_observ_sc: "); print(y_observ)
+    ##print("x_domain: "); print(x_domain)
+    ##print("x_observ_sc: "); print(x_observ)
+    ##print("y_observ_sc: "); print(y_observ)
 
     # --- domain points for prediction
     #x1 = np.linspace(*x_par[0]) # TODO use passed domain
@@ -105,6 +106,9 @@ def GPR_analysis_2d(x_observ, y_observ, x_domain, x_par=[[0.,1.,8],[0.,1.,8]], f
     print("time to train GP model: " + str(time.time() - start_ts) + " seconds")
 
     y_pred, sigma = gp.predict(x_domain, return_std=True) 
+
+    ##print("sigma: "); print(sigma)
+    ##print("y_pred: "); print(y_pred)
 
     return x_observ, y_observ , y_pred, sigma
     #return x_observ * x_sc_factor, y_observ * y_sc_factor, y_pred * y_sc_factor, sigma * y_sc_factor
@@ -214,7 +218,7 @@ def surrogate_loop(pardim):
         return res
 
     new_points = []
-    n_init = 1
+    n_init = 8
 
     if pardim == 1:
         #function = lambda x: x * np.cos(1.0 * x)
@@ -263,20 +267,17 @@ def surrogate_loop(pardim):
 
         #function = lambda x: np.array(gem0_call_tefltevltivl_array(x)) # TODO double check numpy dimensions
         function = lambda x: np.array(gem0_call_tefltevltegrad_array(x))
-        #x_param = [[200., 4800, 64], [-8000, 0., 64]] # sqaure in domain in {Te}x{gradTe}
-        x_param = [[400., 2000, 8], [-3000., 1200., 8]] 
+        x_param = [[200., 4800, 64], [-8000, 0., 64]] # sqaure in domain in {Te}x{gradTe}
+        #x_param = [[400., 2400, 32], [-3600., 0., 32]] 
 
         # --- Prepare the domain in X and test Y values
         x1 = np.linspace(*x_param[0])
         x2 = np.linspace(*x_param[1])
-        #data = np.dstack((X, Y))[0]
         x_domain = np.transpose([np.tile(x1, len(x2)), np.repeat(x2, len(x1))]) #TODO very bulky and ineffective? -> more dims
         y_test = function(x_domain)
 
         # --- Chose one of the grid point as initial point at random
         x_data = np.zeros((n_init,2))
-        print(x_data.shape)
-        print(x1.shape)
         x_data[:, 0] = x1[np.random.randint(low=0, high=len(x1)-1, size=n_init)]
         x_data[:, 1] = x2[np.random.randint(low=0, high=len(x2)-1, size=n_init)]
         #x_data[:,0] = np.random.rand(n_init)*(x_param[0][1] - x_param[0][0]) + x_param[0][0] # chose of rand unmber in domain in 1d
@@ -284,55 +285,50 @@ def surrogate_loop(pardim):
 
         # --- Some data and functions need to preprocessin - for now only done when dealing wiht GPR
         x_scale = 1. #1e4
-        x_domain_min = [x_domain[0].min(), x_domain[1].min()]
-        x_domain_max = [x_domain[0].max(), x_domain[1].max()]
-        x1_scaling = lambda x: (x - x_domain_min[0]) / (x_domain_max[0] - x_domain_min[0])
-        x2_scaling = lambda x: (x - x_domain_min[1]) / (x_domain_max[1] - x_domain_min[1])
+        x_domain_min = np.amin(x_domain, 0)
+        x_domain_max = np.amax(x_domain, 0)
         x_scaling = lambda x: (x - x_domain_min) / (x_domain_max - x_domain_min)
-        x1_rev_scaling = lambda x: x_domain_min[0] + x * (x_domain_max[0] - x_domain_min[0])
-        x2_rev_scaling = lambda x: x_domain_min[1] + x * (x_domain_max[1] - x_domain_min[1])
         x_rev_scaling = lambda x: x_domain_min + x * (x_domain_max - x_domain_min)
 
-        y_test_min = y_test.min()
-        y_test_max = y_test.max()
+        y_test_min = np.amin(y_test, 0)
+        y_test_max = np.amax(y_test, 0)
         y_test_scaling = lambda y: (y - y_test_min) / (y_test_max - y_test_min)
         y_test_rev_scaling = lambda y: y_test_min + y * (y_test_max - y_test_min) 
 
         simple_whitening = lambda x, y: y - y_test_min + (x - x_domain_min)*(y_test_max - y_test_min)/(x_domain_max - x_domain_min) # TODO check if intependent calls are compiled out
 
-        print("x_domain: "); print(x_domain)
-        print("y_test: "); print(y_test)
+        ##print("y_test: "); print(y_test)
 
         for i in range(48):
             print("iteration nu {}".format(i))
 
             y_observ = function(x_data)
             # --- some scaling depends on observed data:
-            #y_scale = 1e6
             y_observ_min = y_observ.min()
             y_observ_max = y_observ.max()
-            y_scaling = lambda y: (y - y_observ_min) / (y_observ_max - y_observ_min)
+            y_observ_scaling = lambda y: (y - y_observ_min) / (y_observ_max - y_observ_min)
+            y_observ_rev_scaling = lambda y: y_observ_min + y *  (y_observ_max - y_observ_min)
 
             # --- fit the regeresson and chose a new sample
             x_observ, y_observ, y_pred, sigma = GPR_analysis_2d(
                                                  np.apply_along_axis(x_scaling, 1, x_data), 
-                                                 np.apply_along_axis(y_test_scaling, 1, y_observ),
-                                                 x_domain,
-                                                 x_par=x_param, 
-                                                 f=function, 
-                                                 x_scale=[x1_scaling, x2_scaling], 
-                                                 y_scale=y_scaling)
-            x_observ = np.apply_along_axis(x_rev_scaling, 1, x_observ)                             
-            for datas in x_observ, y_observ, y_pred, sigma:
-                datas = np.apply_along_axis(y_test_rev_scaling, 1, datas)
+                                                 np.apply_along_axis(y_test_scaling, 0, y_observ),
+                                                 np.apply_along_axis(x_scaling, 1, x_domain),
+                                                 x_par=x_param)
+
+            x_observ = np.apply_along_axis(x_rev_scaling, 1, x_observ)
+            y_observ = np.apply_along_axis(y_test_rev_scaling, 0, y_observ)
+            y_pred = np.apply_along_axis(y_test_rev_scaling, 0, y_pred)
+            sigma = np.apply_along_axis(y_test_rev_scaling, 0, sigma)
+
+            #for datas in y_observ, y_pred, sigma:
+            #    datas = np.apply_along_axis(y_test_rev_scaling, 0, datas)
             
             # --- chose samples for the new model
             x_n = get_new_sample(x_domain, sigma)
 
             stop_crit, err = stop_train_criterium_rmse(y_pred, y_test, 0.05) #1e4
             errors.append(err)
-
-            print("y_pred: "); print(y_pred)
 
             new_points = (x_n, function(np.array([x_n])))
             if i%4 == 0:
