@@ -8,6 +8,8 @@ from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import DotProduct, WhiteKernel, Matern, RBF, WhiteKernel, ConstantKernel
 from sklearn.neural_network import MLPRegressor
 
+from sklearn.linear_model import LinearRegression
+
 from da_utils import *
 
 import sys
@@ -40,6 +42,22 @@ def stop_train_criterium_rmse(y_pred, y, eps=0.05): # TODO: get the reasonable r
     rmse = np.sqrt(((y - y_pred) ** 2).sum() / len(y))
     print('rmse : {}'.format(rmse))
     return rmse < eps, rmse
+
+def white_out_linear_trend(x_observ, y_observ):
+    #thetas = np.zeros(x_observ.shape[1])
+    reg = LinearRegression().fit(x_observ, y_observ)
+    #thetas = reg.coef_
+    #theta0 = reg.intercept_
+    y_observ_trend = reg.predict(x_observ)
+    y_whitened = y_observ - y_observ_trend
+    return y_whitened, reg
+
+def white_reverse_linear_trend(x_observ, y_observ_white, reg):
+    
+    y_observ_trend = reg.predict(x_observ)
+    y_observ = y_observ_white + y_observ_trend
+
+    return y_observ
 
 def GPR_analysis_toy(x_data, x_domain, y_par=[0.1, 9.9, 20], x_par=[0, 10, 64], f=lambda x: x*np.sin(x), eps=1.0, scale=1e7):
 
@@ -81,8 +99,8 @@ def GPR_analysis_toy(x_data, x_domain, y_par=[0.1, 9.9, 20], x_par=[0, 10, 64], 
 
 def GPR_analysis_2d(x_observ, y_observ, x_domain, x_par=[[0.,1.,8],[0.,1.,8]]):
     
-    y_sc_factor = 1e4
-    x_sc_factor = 1e4
+    #y_sc_factor = 1e4
+    #x_sc_factor = 1e4
 
     # --- observation in Y for fitting
     #y_observ = f(x_observ) # TODO: pass instead of recalcualtion
@@ -97,12 +115,14 @@ def GPR_analysis_2d(x_observ, y_observ, x_domain, x_par=[[0.,1.,8],[0.,1.,8]]):
     #x = np.transpose([np.tile(x1, len(x2)), np.repeat(x1, len(x2))])
     #x = x
 
+    y_observ_new, reg = white_out_linear_trend(x_observ, y_observ)
+
     #kernel = ConstantKernel() + Matern + WhiteKernel(1e-4) # TODO white kernel has issues with singularities? e.g. gets log(0) somewhere?
     kernel = ConstantKernel() + Matern() #TODO after preprocessing to white noize at [0;1]^2 (better [-1;1]^2 ?) consider scale limits + get initials from datapoints??? 
     gp = GaussianProcessRegressor(kernel=kernel, n_restarts_optimizer=9)
 
     start_ts = time.time()
-    gp.fit(x_observ, y_observ)
+    gp.fit(x_observ, y_observ_new)
     print("time to train GP model: " + str(time.time() - start_ts) + " seconds")
 
     y_pred, sigma = gp.predict(x_domain, return_std=True) 
@@ -110,7 +130,9 @@ def GPR_analysis_2d(x_observ, y_observ, x_domain, x_par=[[0.,1.,8],[0.,1.,8]]):
     ##print("sigma: "); print(sigma)
     ##print("y_pred: "); print(y_pred)
 
-    return x_observ, y_observ , y_pred, sigma
+    y_pred_new = white_reverse_linear_trend(x_domain, y_pred, reg)
+
+    return x_observ, y_observ, y_pred_new, sigma
     #return x_observ * x_sc_factor, y_observ * y_sc_factor, y_pred * y_sc_factor, sigma * y_sc_factor
 
 def GPR_analysis(dim=2, xdomain_par=[[-1.,1.,8],[-1.,1.,8]], func=exponential_model): #TODO arbitrary dimension, print resuluts in a clear way
@@ -218,7 +240,7 @@ def surrogate_loop(pardim):
         return res
 
     new_points = []
-    n_init = 8
+    n_init = 1
 
     if pardim == 1:
         #function = lambda x: x * np.cos(1.0 * x)
@@ -267,7 +289,7 @@ def surrogate_loop(pardim):
 
         #function = lambda x: np.array(gem0_call_tefltevltivl_array(x)) # TODO double check numpy dimensions
         function = lambda x: np.array(gem0_call_tefltevltegrad_array(x))
-        x_param = [[200., 4800, 64], [-8000, 0., 64]] # sqaure in domain in {Te}x{gradTe}
+        x_param = [[200., 4800, 64], [-8000, 0., 64]] # square/rectangle in domain in {Te}x{gradTe}
         #x_param = [[400., 2400, 32], [-3600., 0., 32]] 
 
         # --- Prepare the domain in X and test Y values
@@ -299,7 +321,7 @@ def surrogate_loop(pardim):
 
         ##print("y_test: "); print(y_test)
 
-        for i in range(48):
+        for i in range(80):
             print("iteration nu {}".format(i))
 
             y_observ = function(x_data)
@@ -331,7 +353,7 @@ def surrogate_loop(pardim):
             errors.append(err)
 
             new_points = (x_n, function(np.array([x_n])))
-            if i%4 == 0:
+            if i%1 == 0:
                 plot_prediction_variance_2d(x_observ, y_observ, x_domain, y_test, y_pred, sigma, new_points, funcname='gem0')
 
             x_data = np.append(x_data, x_n.reshape(1, -1), axis=0)
@@ -339,6 +361,11 @@ def surrogate_loop(pardim):
                 print("Reached stopping criterium!")
                 break
     
+    #x1_slice_value = x_observ[32*17, 0]
+    #x_observ_inds = x_observ[:,0]==x1_slice_value
+    #x_observ_slice = x_observ[x_observ_inds, 0]
+    #y_observ_slice = y_observ[x_observ_inds]
+
     plot_error(errors, 'RMSE')
 
 def surrogate_utility(x_train_data, y_train_data, x_roi_data, original_model):
