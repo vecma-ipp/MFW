@@ -292,11 +292,10 @@ def plot_prediction_variance(x_observ, y_observ, x_domain, y_test, y_pred, sigma
 
 def plot_prediction_variance_2d(x_observ, y_observ, x_domain, y_test, y_pred, sigma, newpoints, funcname):
 
-    #wrt_dir = os.path.join(os.environ['SCRATCH'], 'outputs/plots') # wrt_dir = ''
-    wrt_dir = os.environ['PWD'] #TODO most likely read wronly alligned data!
+    wrt_dir = os.path.join(os.environ['SCRATCH'], 'outputs/plots')
+    #wrt_dir = os.environ['PWD']
 
     # Plot function,prediction and 95% confidence interval
-    #TODO should plot three figures: responce, GP mean, GP STD
     x1o = x_observ[:,0]
     x2o = x_observ[:,1]
     x1i = x_domain[:,0]
@@ -311,8 +310,8 @@ def plot_prediction_variance_2d(x_observ, y_observ, x_domain, y_test, y_pred, si
     cax1 = divider1.append_axes("right", size="8%", pad=0.08)
     plt.colorbar(cntr1, cax=cax1)
     ax1.set_title('Ground truth response function')
-    plt.xlabel('x1') #(r'$Te$')
-    plt.ylabel('x2') #(r'$\nabla Te$')
+    plt.xlabel(r'$Te$')
+    plt.ylabel(r'$\nabla Te$')
     ax1.set_aspect('equal')
 
     ### --- Second plot for GPR mean
@@ -323,8 +322,8 @@ def plot_prediction_variance_2d(x_observ, y_observ, x_domain, y_test, y_pred, si
     plt.colorbar(cntr2, cax=cax2)
     #ax2.set_title('GPR results for f=(' + funcname + ') with ' + str(len(y_observ)) + ' # func. eval-s')
     ax2.set_title('Prediction for {} func. eval-s'.format(len(y_observ)))
-    plt.xlabel('x1') #(r'$Te$')
-    plt.ylabel('x2') #(r'$\nabla Te$')
+    plt.xlabel(r'$Te$')
+    plt.ylabel(r'$\nabla Te$')
     ax2.set_aspect('equal')
     if len(newpoints) != 0: #TODO fix two differen scatter one plot
         ax2.scatter(newpoints[0][0], newpoints[0][1], c=newpoints[1][0], edgecolors='g', s=8) #, label='new samples')
@@ -337,8 +336,8 @@ def plot_prediction_variance_2d(x_observ, y_observ, x_domain, y_test, y_pred, si
     plt.colorbar(cntr3, cax=cax3)
     #ax2.plot(x, y, 'ko', ms=3)
     ax3.set_title(r'GPR $\sigma$')
-    plt.xlabel('x1') #(r'$Te$')
-    plt.ylabel('x2') #(r'$\nabla Te$')
+    plt.xlabel(r'$Te$')
+    plt.ylabel(r'$\nabla Te$')
     ax3.set_aspect('equal')
 
     ################################
@@ -351,11 +350,11 @@ def plot_prediction_variance_2d(x_observ, y_observ, x_domain, y_test, y_pred, si
     plt.close()
 
 def plot_error(err, name):
-    #wrt_dir = os.path.join(os.environ['SCRATCH'], 'outputs/plots') # wrt_dir = ''
-    wrt_dir = os.environ['PWD']
+    wrt_dir = os.path.join(os.environ['SCRATCH'], 'outputs/plots') # wrt_dir = ''
+    #wrt_dir = os.environ['PWD']
     plt.plot(range(1, len(err) + 1), err, label=name)
     plt.xlabel('n. interations')
     plt.ylabel('error')
     plt.title('Error of GPR surrogate predictions at function evaluations')
-    plt.savefig(os.path.join(wrt_dir, 'surr_err_' + name + '.png'))
+    plt.savefig(os.path.join(wrt_dir, 'surr_gem0_err_' + name + '.pdf'))
     plt.close()
