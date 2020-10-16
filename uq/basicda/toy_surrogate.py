@@ -9,6 +9,7 @@ from sklearn.gaussian_process.kernels import DotProduct, WhiteKernel, Matern, RB
 from sklearn.neural_network import MLPRegressor
 
 from sklearn.linear_model import LinearRegression
+from sklearn import preprocessing
 
 from da_utils import *
 
@@ -290,7 +291,7 @@ def surrogate_loop(pardim):
         #function = lambda x: np.array(gem0_call_tefltevltivl_array(x)) # TODO double check numpy dimensions
         function = lambda x: np.array(gem0_call_tefltevltegrad_array(x))
         x_param = [[200., 4800, 64], [-8000, 0., 64]] # square/rectangle in domain in {Te}x{gradTe}
-        #x_param = [[400., 2400, 32], [-3600., 0., 32]] 
+        #x_param = [[400., 2400, 16], [-3600., 0., 16]] 
 
         # --- Prepare the domain in X and test Y values
         x1 = np.linspace(*x_param[0])
@@ -349,11 +350,11 @@ def surrogate_loop(pardim):
             # --- chose samples for the new model
             x_n = get_new_sample(x_domain, sigma)
 
-            stop_crit, err = stop_train_criterium_rmse(y_pred, y_test, 0.05) #1e4
+            stop_crit, err = stop_train_criterium_rmse(y_pred, y_test, 1e2) #1e4
             errors.append(err)
 
             new_points = (x_n, function(np.array([x_n])))
-            if i%1 == 0:
+            if i%4 == 0:
                 plot_prediction_variance_2d(x_observ, y_observ, x_domain, y_test, y_pred, sigma, new_points, funcname='gem0')
 
             x_data = np.append(x_data, x_n.reshape(1, -1), axis=0)
@@ -367,6 +368,14 @@ def surrogate_loop(pardim):
     #y_observ_slice = y_observ[x_observ_inds]
 
     plot_error(errors, 'RMSE')
+
+    # --- plot histograms of results
+    y_observ_clean = np.apply_along_axis(y_test_scaling, 0, y_observ)
+    y_observ_clean, _ = white_out_linear_trend(x_observ, y_observ_clean)
+    y_pred_clean = np.apply_along_axis(y_test_scaling, 0, y_pred)
+    y_pred_clean, _ = white_out_linear_trend(x_domain, y_pred_clean)
+    plot_histograms(y_observ, y_observ_clean, y_pred, y_pred_clean)
+
 
 def surrogate_utility(x_train_data, y_train_data, x_roi_data, original_model):
     utility = []

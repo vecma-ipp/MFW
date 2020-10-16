@@ -358,3 +358,22 @@ def plot_error(err, name):
     plt.title('Error of GPR surrogate predictions at function evaluations')
     plt.savefig(os.path.join(wrt_dir, 'surr_gem0_err_' + name + '.png'))
     plt.close()
+
+def plot_histograms(y_orig, y_orig_clean, y_pred, y_pred_clean):
+    wrt_dir = os.path.join(os.environ['SCRATCH'], 'outputs/plots')
+    
+    plt.hist(y_orig, bins=16)
+    plt.savefig(os.path.join(wrt_dir, 'y_orig.png'))
+    plt.close()
+
+    plt.hist(y_pred, bins=16)
+    plt.savefig(os.path.join(wrt_dir, 'y_pred.png'))
+    plt.close()
+
+    plt.hist(y_orig_clean, bins=16)
+    plt.savefig(os.path.join(wrt_dir, 'y_orig_cl.png'))
+    plt.close()
+
+    plt.hist(y_pred_clean, bins=16)
+    plt.savefig(os.path.join(wrt_dir, 'y_pred_cl.png'))
+    plt.close()
