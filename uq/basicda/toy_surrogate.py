@@ -24,14 +24,45 @@ gem0_singleton = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(gem0_singleton)
 from gem0_singleton import GEM0Singleton
 
+
+def get_domain_gride(self, x_domain_params, mode='LHS'):
+    """
+    Creates a domain grid for input paramters for surrogate
+    """
+    ndim = x_domain_params.shape[1]
+    nfeat = x_domain_params.shape[0]
+    x_domain = np.zeros((nfeat, ndim))
+    if mode == 'LHS':
+        x_domain = x_domain # TODO get the LHC set of points
+    return x_domain
+
 def get_new_sample(x, utility):
     return x[utility.argmax()]
 
 def get_new_candidates(x, utility): # TODO: get an array of candidates, for each "variance anti-node"
     cands = []
+    ### --- easy option 1: split domain in fixes subdomains and find local max for every each
+    ### --- make adaptive decomposition accroding to number of new points
+    
+    n_batch = 4
+    n_batch_pd = math.pow(n_batch, -x.shape[1])
+    for i in range(n_batch_pd):
+        continue
+
+    ### --- easy option 2: apply a mask for neighbours of the known points/ or threshold for too bad utility
+    ### --- apply both and domain decompositions
+
     nodes_inds = utility < 1e-6
-    for i in range(len(nodes_inds)-1):
-        cands.append(utility[nodes_inds[i], nodes_inds[i+1]].argmax())
+    #for i in range(len(nodes_inds)-1):
+    #    cands.append(utility[nodes_inds[i], nodes_inds[i+1]].argmax())
+
+    ### --- option 3: make adaptive grid, considering geometrical element around known samples
+    ### --- e.g. Voronoi tesselation and consider to mask a band around border?
+
+    ### --- option 4: make a sparse grid (or just space filling set of points) and consider only them
+
+    ### -- option 5: iterative optimiser started from several point in paramter space
+
     return cands
 
 def stop_train_criterium_rsd(y_pred, sigma, eps=0.005):
@@ -44,7 +75,7 @@ def stop_train_criterium_rmse(y_pred, y, eps=0.05): # TODO: get the reasonable r
     print('rmse : {}'.format(rmse))
     return rmse < eps, rmse
 
-def white_out_linear_trend(x_observ, y_observ):
+def white_out_linear_trend(x_observ, y_observ): #TODO use some decomposition / better transfromation/ consider nonlinearity and higher dimensions
     #thetas = np.zeros(x_observ.shape[1])
     reg = LinearRegression().fit(x_observ, y_observ)
     #thetas = reg.coef_
@@ -290,7 +321,7 @@ def surrogate_loop(pardim):
 
         #function = lambda x: np.array(gem0_call_tefltevltivl_array(x)) # TODO double check numpy dimensions
         function = lambda x: np.array(gem0_call_tefltevltegrad_array(x))
-        x_param = [[200., 4800, 64], [-8000, 0., 64]] # square/rectangle in domain in {Te}x{gradTe}
+        x_param = [[200., 4800, 128], [-8000, 0., 128]] # square/rectangle in domain in {Te}x{gradTe}
         #x_param = [[400., 2400, 16], [-3600., 0., 16]] 
 
         # --- Prepare the domain in X and test Y values
@@ -322,7 +353,7 @@ def surrogate_loop(pardim):
 
         ##print("y_test: "); print(y_test)
 
-        for i in range(80):
+        for i in range(128):
             print("iteration nu {}".format(i))
 
             y_observ = function(x_data)
@@ -375,7 +406,6 @@ def surrogate_loop(pardim):
     y_pred_clean = np.apply_along_axis(y_test_scaling, 0, y_pred)
     y_pred_clean, _ = white_out_linear_trend(x_domain, y_pred_clean)
     plot_histograms(y_observ, y_observ_clean, y_pred, y_pred_clean)
-
 
 def surrogate_utility(x_train_data, y_train_data, x_roi_data, original_model):
     utility = []
