@@ -112,55 +112,50 @@ def get_new_candidates(x_mesh, utility): # TODO: get an array of candidates, for
     # cands = x[peaks1 and peaks2]
 
     ### brute force local maxima search:
-    size1 = utility.shape[0]
-    size2 = utility.shape[1]
+    all_localmax = 0
+    if all_localmax:
+        loc_maxs = get_localmax_brut(utility)
 
-    for i in range(1, size1-1): #TODO very bad, make with a TF filter?
-
-        if utility[i,0] > utility[i,1] and utility[i,0] > utility[i-1,0] and utility[i,0] > utility[i+1,0]:
-            loc_maxs.append([i,0])
-
-        for j in range(1, size2-1):
-            if   utility[i,j] > utility[i,j+1] and \
-                 utility[i,j] > utility[i,j-1] and \
-                 utility[i,j] > utility[i+1,j] and \
-                 utility[i,j] < utility[i-1,j]:
-               loc_maxs.append((i,j))
-
-        if utility[i,size2-1] > utility[i,size2-2] and utility[i,size2-1] > utility[i,size2-2] and utility[i,j] > utility[i-1,size2-1]:
-            loc_maxs.append([i,j])
-
-    for j in range(1, size2-1):
-        if utility[0,j] > utility[1,j] and utility[0,j] > utility[0,j-1] and utility[i,0] > utility[0,j+1]:
-            loc_maxs.append([i,0])
-        if utility[size1-1,j] > utility[size1-1,j] and utility[size1-1,j] > utility[size1-1,j] and utility[size1-1,j] > utility[size1-1,j]:
-            loc_maxs.append([size1-1,j])
-
-    if utility[0,0] > utility[0,1] and utility[0,0] > utility[1,0]:
-        loc_maxs.append([0,0])
-    if utility[0,size2-1] > utility[0,size2-2] and utility[0,0] > utility[1,size2-2]:
-        loc_maxs.append([0,0])
-    if utility[size1-1,0] > utility[size1-1,1] and utility[size1-1,0] > utility[size1-2,0]:
-        loc_maxs.append([0,0])
-    if utility[size1-1,size2-1] > utility[size1-1,size2-2] and utility[0,0] > utility[size1-2,size2-1]:
-        loc_maxs.append([size1-1,size2-1])
-
-    loc_maxs = [el for ind, el in enumerate(loc_maxs) if el not in loc_maxs[:ind]]
-
-    if len(loc_maxs) == 0:
-        loc_maxs = [ list( np.unravel_index(utility.argmax(), utility.shape) ) ]
-    #print(loc_maxs)
-    for lm in loc_maxs:
-        cands.append([ x_mesh[0][lm[0], lm[1]], x_mesh[1][lm[0], lm[1]] ])
-    #print(cands)
+        if len(loc_maxs) == 0:
+            loc_maxs = [ list( np.unravel_index(utility.argmax(), utility.shape) ) ]
+        #print(loc_maxs)
+        for lm in loc_maxs:
+            cands.append([ x_mesh[0][lm[0], lm[1]], x_mesh[1][lm[0], lm[1]] ])
+        #print(cands)
 
     ### --- easy option 1: split domain in fixes subdomains and find local max for every each
     ### --- make adaptive decomposition accroding to number of new points
-    
-    #n_batch = 4
-    #n_batch_pd = math.pow(n_batch, -x.shape[1])
-    #for i in range(n_batch_pd):
-    #    continue
+    domain_split = True
+    if domain_split:
+        loc_loc_maxs = []
+        n_batch = 4
+        n_batch_pd = int(math.pow(n_batch, 1/len(x_mesh)))
+        subd_size1 = x_mesh[0].shape[0] // n_batch_pd
+        subd_size2 = x_mesh[0].shape[1] // n_batch_pd
+
+        for i in range(n_batch_pd - 1):
+            for j in range(n_batch_pd - 1):
+                #x_mesh_subd = x_mesh[0][i*subd_size1:(i+1)*subd_size1, j*subd_size2:(j+1)*subd_size2]
+                utility_subd = utility[i*subd_size1:(i+1)*subd_size1, j*subd_size2:(j+1)*subd_size2]
+                loc_loc_maxs.append( [sum(x) for x in zip( list( np.unravel_index(utility_subd.argmax(), utility_subd.shape)),
+                                                           [i*subd_size1, j*subd_size2]) ])
+            utility_subd = utility[i*subd_size1:(i+1)*subd_size1, (n_batch_pd-1)*subd_size2:]
+            loc_loc_maxs.append( [sum(x) for x in zip( list( np.unravel_index(utility_subd.argmax(), utility_subd.shape)),
+                                                       [i*subd_size1, (n_batch_pd-1)*subd_size2]) ])
+            
+        for j in range(n_batch_pd - 1):
+            utility_subd = utility[(n_batch_pd-1)*subd_size1:, j*subd_size2:(j+1)*subd_size2]
+            loc_loc_maxs.append( [sum(x) for x in zip( list( np.unravel_index(utility_subd.argmax(), utility_subd.shape)),
+                                                       [(n_batch_pd-1)*subd_size1, j*subd_size2]) ])
+
+        utility_subd = utility[(n_batch_pd-1)*subd_size1:, (n_batch_pd-1)*subd_size2:]
+        loc_loc_maxs.append( [sum(x) for x in zip( list( np.unravel_index(utility_subd.argmax(), utility_subd.shape)), 
+                                                   [(n_batch_pd-1)*subd_size1, (n_batch_pd-1)*subd_size2]) ])
+        #print(utility_subd)                             
+        #print(loc_loc_maxs)
+
+        for lm in loc_loc_maxs:
+            cands.append([ x_mesh[0][lm[0], lm[1]], x_mesh[1][lm[0], lm[1]] ])
 
     ### --- easy option 2: apply a mask for neighbours of the known points/ or threshold for too bad utility
     ### --- apply both and domain decompositions
@@ -450,8 +445,8 @@ def surrogate_loop(pardim):
 
         #function = lambda x: np.array(gem0_call_tefltevltivl_array(x)) # TODO double check numpy dimensions
         function = lambda x: np.array(gem0_call_tefltevltegrad_array(x))
-        x_param = [[200., 4800, 128], [-8000, 0., 128]] # square/rectangle in domain in {Te}x{gradTe}
-        #x_param = [[400., 2400, 16], [-3600., 0., 16]] 
+        #x_param = [[200., 4800, 128], [-8000, 0., 128]] # square/rectangle in domain in {Te}x{gradTe}
+        x_param = [[400., 2400, 16], [-3600., 0., 16]] 
 
         # --- Prepare the domain in X and test Y values
         x1 = np.linspace(*x_param[0])
@@ -476,7 +471,7 @@ def surrogate_loop(pardim):
 
         #print(x_domain_mesh[0].shape)
         #print(len(x1), len(x2))
-        y_domain = np.zeros(x_domain_mesh[0].shape)
+        y_domain = np.zeros(x_domain_mesh[0].shape) # TODO the slowest part of teh initialization
         for i in range(len(x1)): #TODO very very bad, arbitrary dimension as well? vectorize???
             for j in range(len(x2)):
                 y_domain[i,j] = function([ [x_domain_mesh[0][i, j], x_domain_mesh[1][i, j]] ])
@@ -508,7 +503,7 @@ def surrogate_loop(pardim):
 
         ##print("y_test: "); print(y_test)
 
-        for i in range(48):
+        for i in range(12):
             print("iteration nu {}".format(i))
             start_ts = time.time()
 
