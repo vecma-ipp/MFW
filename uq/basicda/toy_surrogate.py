@@ -4,12 +4,14 @@ import math
 import matplotlib.pylab as plt
 import time
 
+import itertools
+
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import DotProduct, WhiteKernel, Matern, RBF, WhiteKernel, ConstantKernel
 from sklearn.neural_network import MLPRegressor
 
 from sklearn.linear_model import LinearRegression
-from sklearn import preprocessing
+from sklearn.preprocessing import StandardScaler
 
 from da_utils import *
 
@@ -25,7 +27,7 @@ spec.loader.exec_module(gem0_singleton)
 from gem0_singleton import GEM0Singleton
 
 
-def get_domain_gride(self, x_domain_params, mode='LHS'):
+def get_domain_grid(self, x_domain_params, mode='LHS'):
     """
     Creates a domain grid for input paramters for surrogate
     """
@@ -36,23 +38,134 @@ def get_domain_gride(self, x_domain_params, mode='LHS'):
         x_domain = x_domain # TODO get the LHC set of points
     return x_domain
 
+def get_ongrid(x_mesh, x, y):
+    x1_size = x_mesh[0].shape[0]
+    x2_size = x_mesh[0].shape[1]
+    y_ongrid = np.zeros((x1_size, x2_size))
+    for i in range(x1_size): #TODO very very bad, arbitrary dimension as well? vectorize???
+        for j in range(x2_size):
+            for k in range(len(y)): # TODO VERY VERY VERY BAD
+                if  x[k][0] == x_mesh[0][i][j] and x[k][1] == x_mesh[1][i][j]:
+                    y_ongrid[i,j] = y[k]
+
+    return y_ongrid
+
+def get_localmax_brut(utility):
+    loc_maxs = []
+    size1 = utility.shape[0]
+    size2 = utility.shape[1]
+
+    for i in range(1, size1-1): #TODO very bad, make with a TF filter?
+
+        if utility[i,0] > utility[i,1] and utility[i,0] > utility[i-1,0] and utility[i,0] > utility[i+1,0]:
+            loc_maxs.append([i,0])
+
+        for j in range(1, size2-1):
+            if   utility[i,j] > utility[i,j+1] and \
+                 utility[i,j] > utility[i,j-1] and \
+                 utility[i,j] > utility[i+1,j] and \
+                 utility[i,j] < utility[i-1,j]:
+               loc_maxs.append((i,j))
+
+        if utility[i,size2-1] > utility[i,size2-2] and utility[i,size2-1] > utility[i,size2-2] and utility[i,j] > utility[i-1,size2-1]:
+            loc_maxs.append([i,j])
+
+    for j in range(1, size2-1):
+        if utility[0,j] > utility[1,j] and utility[0,j] > utility[0,j-1] and utility[i,0] > utility[0,j+1]:
+            loc_maxs.append([i,0])
+        if utility[size1-1,j] > utility[size1-1,j] and utility[size1-1,j] > utility[size1-1,j] and utility[size1-1,j] > utility[size1-1,j]:
+            loc_maxs.append([size1-1,j])
+
+    if utility[0,0] > utility[0,1] and utility[0,0] > utility[1,0]:
+        loc_maxs.append([0,0])
+    if utility[0,size2-1] > utility[0,size2-2] and utility[0,0] > utility[1,size2-2]:
+        loc_maxs.append([0,0])
+    if utility[size1-1,0] > utility[size1-1,1] and utility[size1-1,0] > utility[size1-2,0]:
+        loc_maxs.append([0,0])
+    if utility[size1-1,size2-1] > utility[size1-1,size2-2] and utility[0,0] > utility[size1-2,size2-1]:
+        loc_maxs.append([size1-1,size2-1])
+    
+    loc_maxs = [el for ind, el in enumerate(loc_maxs) if el not in loc_maxs[:ind]]
+    return loc_maxs
+
 def get_new_sample(x, utility):
     return x[utility.argmax()]
 
-def get_new_candidates(x, utility): # TODO: get an array of candidates, for each "variance anti-node"
+def get_new_candidates(x_mesh, utility): # TODO: get an array of candidates, for each "variance anti-node"
     cands = []
+    ### --- find local maximum of sigma
+    # work for 2D only now
+    #print(utility)
+    loc_maxs = []
+
+    # peaks1 = []
+    # peaks2 = []
+    # for i in range(utility.shape[1]):
+    #     print(utility[:,i])
+    #     peaks2.append((np.where((utility[1:-1, i] > utility[0:-2, i]) 
+    #                     * (utility[1:-1, i] > utility[2:, i]))[0] + 1))
+    # for i in range(utility.shape[0]):
+    #     peaks1.append(np.where((utility[i, 1:-1] > utility[i, 0:-2])
+    #                 * (utility[i, 1:-1] > utility[i, 2:]))[0] + 1)
+    # print(peaks1)
+    # print(peaks2)
+    # cands = x[peaks1 and peaks2]
+
+    ### brute force local maxima search:
+    size1 = utility.shape[0]
+    size2 = utility.shape[1]
+
+    for i in range(1, size1-1): #TODO very bad, make with a TF filter?
+
+        if utility[i,0] > utility[i,1] and utility[i,0] > utility[i-1,0] and utility[i,0] > utility[i+1,0]:
+            loc_maxs.append([i,0])
+
+        for j in range(1, size2-1):
+            if   utility[i,j] > utility[i,j+1] and \
+                 utility[i,j] > utility[i,j-1] and \
+                 utility[i,j] > utility[i+1,j] and \
+                 utility[i,j] < utility[i-1,j]:
+               loc_maxs.append((i,j))
+
+        if utility[i,size2-1] > utility[i,size2-2] and utility[i,size2-1] > utility[i,size2-2] and utility[i,j] > utility[i-1,size2-1]:
+            loc_maxs.append([i,j])
+
+    for j in range(1, size2-1):
+        if utility[0,j] > utility[1,j] and utility[0,j] > utility[0,j-1] and utility[i,0] > utility[0,j+1]:
+            loc_maxs.append([i,0])
+        if utility[size1-1,j] > utility[size1-1,j] and utility[size1-1,j] > utility[size1-1,j] and utility[size1-1,j] > utility[size1-1,j]:
+            loc_maxs.append([size1-1,j])
+
+    if utility[0,0] > utility[0,1] and utility[0,0] > utility[1,0]:
+        loc_maxs.append([0,0])
+    if utility[0,size2-1] > utility[0,size2-2] and utility[0,0] > utility[1,size2-2]:
+        loc_maxs.append([0,0])
+    if utility[size1-1,0] > utility[size1-1,1] and utility[size1-1,0] > utility[size1-2,0]:
+        loc_maxs.append([0,0])
+    if utility[size1-1,size2-1] > utility[size1-1,size2-2] and utility[0,0] > utility[size1-2,size2-1]:
+        loc_maxs.append([size1-1,size2-1])
+
+    loc_maxs = [el for ind, el in enumerate(loc_maxs) if el not in loc_maxs[:ind]]
+
+    if len(loc_maxs) == 0:
+        loc_maxs = [ list( np.unravel_index(utility.argmax(), utility.shape) ) ]
+    #print(loc_maxs)
+    for lm in loc_maxs:
+        cands.append([ x_mesh[0][lm[0], lm[1]], x_mesh[1][lm[0], lm[1]] ])
+    #print(cands)
+
     ### --- easy option 1: split domain in fixes subdomains and find local max for every each
     ### --- make adaptive decomposition accroding to number of new points
     
-    n_batch = 4
-    n_batch_pd = math.pow(n_batch, -x.shape[1])
-    for i in range(n_batch_pd):
-        continue
+    #n_batch = 4
+    #n_batch_pd = math.pow(n_batch, -x.shape[1])
+    #for i in range(n_batch_pd):
+    #    continue
 
     ### --- easy option 2: apply a mask for neighbours of the known points/ or threshold for too bad utility
     ### --- apply both and domain decompositions
+    #nodes_inds = utility < 1e-6
 
-    nodes_inds = utility < 1e-6
     #for i in range(len(nodes_inds)-1):
     #    cands.append(utility[nodes_inds[i], nodes_inds[i+1]].argmax())
 
@@ -76,6 +189,7 @@ def stop_train_criterium_rmse(y_pred, y, eps=0.05): # TODO: get the reasonable r
     return rmse < eps, rmse
 
 def white_out_linear_trend(x_observ, y_observ): #TODO use some decomposition / better transfromation/ consider nonlinearity and higher dimensions
+    #TODO: use Cholesky decomposition; consider SVD (may be for higher dimension)
     #thetas = np.zeros(x_observ.shape[1])
     reg = LinearRegression().fit(x_observ, y_observ)
     #thetas = reg.coef_
@@ -83,6 +197,9 @@ def white_out_linear_trend(x_observ, y_observ): #TODO use some decomposition / b
     y_observ_trend = reg.predict(x_observ)
     y_whitened = y_observ - y_observ_trend
     return y_whitened, reg
+
+def data_preprocessing(x_observ, y_observ):
+    return x_observ, y_observ
 
 def white_reverse_linear_trend(x_observ, y_observ_white, reg):
     
@@ -150,12 +267,13 @@ def GPR_analysis_2d(x_observ, y_observ, x_domain, x_par=[[0.,1.,8],[0.,1.,8]]):
     y_observ_new, reg = white_out_linear_trend(x_observ, y_observ)
 
     #kernel = ConstantKernel() + Matern + WhiteKernel(1e-4) # TODO white kernel has issues with singularities? e.g. gets log(0) somewhere?
-    kernel = ConstantKernel() + Matern() #TODO after preprocessing to white noize at [0;1]^2 (better [-1;1]^2 ?) consider scale limits + get initials from datapoints??? 
+    kernel = ConstantKernel() + ConstantKernel() * Matern() #TODO after preprocessing to white noize at [0;1]^2 (better [-1;1]^2 ?) consider scale limits + get initials from datapoints??? 
     gp = GaussianProcessRegressor(kernel=kernel, n_restarts_optimizer=9)
 
     start_ts = time.time()
     gp.fit(x_observ, y_observ_new)
     print("time to train GP model: " + str(time.time() - start_ts) + " seconds")
+    #print(gp.get_params(True))
 
     y_pred, sigma = gp.predict(x_domain, return_std=True) 
 
@@ -206,7 +324,6 @@ def FFNN_Regression_toy(y=0, f=0, n=20, eps=1.0):
     # input space mesh, the prediction and
     x = np.atleast_2d(np.linspace(0, 10, 1000)).T
 
-
     # Analysis: network set-up, training, exploitation
     ffnr = MLPRegressor(random_state=1, max_iter=500)
     ffnr.fit(X, y)
@@ -227,11 +344,23 @@ def FFNN_Regression_toy(y=0, f=0, n=20, eps=1.0):
     plt.legend(loc='upper left')
     plt.show(block=True)
 
+def get_1d_slice(x_domain, y_test, x_observ, y_observ):
+    x1_slice_value = x_observ[32*17, 0]
+    x_observ_inds = x_observ[:,0]==x1_slice_value
+    x_observ_slice = x_observ[x_observ_inds, 0]
+    y_observ_slice = y_observ[x_observ_inds]
+
 def surrogate_loop(pardim):
     np.random.seed(int(time.time()))
     errors = []
 
     gem0obj = GEM0Singleton()
+
+    def gem0_call_tefltevltegrad(x): # TODO np.vectorize?
+        """
+        :param x: x is a 1D array; x[0] is Te, x[1] is gradTe 
+        """
+        return gem0obj.gem0_call({'te.value': x[0], 'te.ddrho': x[1]})[0]
 
     def gem0_call_teflteval_array(x):
         res = []
@@ -239,7 +368,7 @@ def surrogate_loop(pardim):
             res.append([gem0obj.gem0_call({'te.value': el[0]})[0]])
         return np.array(res)
 
-    def gem0_call_teflteval_log_array(x):
+    def gem0_call_teflteval_log_array(x): 
         res = []
         for el in x: 
             res.append([math.log(gem0obj.gem0_call({'te.value': el[0]})[0])]) #TODO actually negative values
@@ -251,7 +380,7 @@ def surrogate_loop(pardim):
             res.append([gem0obj.gem0_call({'te.ddrho': el[0]})[0]])
         return np.array(res)
 
-    def gem0_call_tefltevltegrad_array(x):
+    def gem0_call_tefltevltegrad_array(x): # TODO np.vectorize?
         """
         calls the gem0 code for desired te.valus and te.ddrho
         :param x: x[0] is desired tevalue, x[1] is desired tegrad
@@ -272,7 +401,7 @@ def surrogate_loop(pardim):
         return res
 
     new_points = []
-    n_init = 1
+    n_init = 4
 
     if pardim == 1:
         #function = lambda x: x * np.cos(1.0 * x)
@@ -327,17 +456,43 @@ def surrogate_loop(pardim):
         # --- Prepare the domain in X and test Y values
         x1 = np.linspace(*x_param[0])
         x2 = np.linspace(*x_param[1])
-        x_domain = np.transpose([np.tile(x1, len(x2)), np.repeat(x2, len(x1))]) #TODO very bulky and ineffective? -> more dims
+        x_domain = np.transpose([np.tile(x1, len(x2)), np.repeat(x2, len(x1))]) #TODO very bulky and ineffective? -> more dims?
         y_test = function(x_domain)
 
-        # --- Chose one of the grid point as initial point at random
+        ### MESHES FOR TEST SPACE ----------------------------------------------------------
+        ### x and y values arranged in a grid now:
+        # get dimentionality if parameter space i.e. number of features
+        ndim_domain = 2 # x_domain.shape[0]
+        # from X domain paramters get a tuple to descibe number of points along each dimension 
+        y_size = (x_param[0][-1],)
+        for i in range(1, ndim_domain):
+            y_size += (x_param[i][-1],)
+        y_test_ongrid = np.zeros(y_size)
+
+        x_meshes = [x1, x2]
+        x_size = y_size + (2,)
+        x_domain_ongrid = np.zeros((x_size))
+        x_domain_mesh = np.meshgrid(*x_meshes)
+
+        #print(x_domain_mesh[0].shape)
+        #print(len(x1), len(x2))
+        y_domain = np.zeros(x_domain_mesh[0].shape)
+        for i in range(len(x1)): #TODO very very bad, arbitrary dimension as well? vectorize???
+            for j in range(len(x2)):
+                y_domain[i,j] = function([ [x_domain_mesh[0][i, j], x_domain_mesh[1][i, j]] ])
+
+        #print(y_domain)
+        #print(y_test)
+
+        ### INITIAL TRAINING POINTS (RANDOM) ------------------------------------------------
+        # --- Chose one/several of the grid point as initial point at random
         x_data = np.zeros((n_init,2))
         x_data[:, 0] = x1[np.random.randint(low=0, high=len(x1)-1, size=n_init)]
         x_data[:, 1] = x2[np.random.randint(low=0, high=len(x2)-1, size=n_init)]
         #x_data[:,0] = np.random.rand(n_init)*(x_param[0][1] - x_param[0][0]) + x_param[0][0] # chose of rand unmber in domain in 1d
         #x_data[:,1] = np.random.rand(n_init)*(x_param[1][1] - x_param[1][0]) + x_param[1][0]
 
-        # --- Some data and functions need to preprocessin - for now only done when dealing wiht GPR
+        # --- Some data and functions need to preprocessing - for now only done when dealing wiht GPR
         x_scale = 1. #1e4
         x_domain_min = np.amin(x_domain, 0)
         x_domain_max = np.amax(x_domain, 0)
@@ -353,15 +508,16 @@ def surrogate_loop(pardim):
 
         ##print("y_test: "); print(y_test)
 
-        for i in range(128):
+        for i in range(48):
             print("iteration nu {}".format(i))
+            start_ts = time.time()
 
             y_observ = function(x_data)
             # --- some scaling depends on observed data:
-            y_observ_min = y_observ.min()
-            y_observ_max = y_observ.max()
-            y_observ_scaling = lambda y: (y - y_observ_min) / (y_observ_max - y_observ_min)
-            y_observ_rev_scaling = lambda y: y_observ_min + y *  (y_observ_max - y_observ_min)
+            #y_observ_min = y_observ.min()
+            #y_observ_max = y_observ.max()
+            #y_observ_scaling = lambda y: (y - y_observ_min) / (y_observ_max - y_observ_min)
+            #y_observ_rev_scaling = lambda y: y_observ_min + y *  (y_observ_max - y_observ_min)
 
             # --- fit the regeresson and chose a new sample
             x_observ, y_observ, y_pred, sigma = GPR_analysis_2d(
@@ -378,25 +534,30 @@ def surrogate_loop(pardim):
             #for datas in y_observ, y_pred, sigma:
             #    datas = np.apply_along_axis(y_test_rev_scaling, 0, datas)
             
-            # --- chose samples for the new model
-            x_n = get_new_sample(x_domain, sigma)
+            ### --- Chose samples for the new model
+            start_resample_ts = time.time()
+            #x_n = get_new_sample(x_domain, sigma)
+            sigma_ongrid = get_ongrid(x_domain_mesh, x_domain, sigma)
+            x_new_batch = get_new_candidates(x_domain_mesh, sigma_ongrid)
+            #print('new {} samples: {}'.format(len(x_new_batch), x_new_batch))
+            new_points = (np.array(x_new_batch), function(np.array(x_new_batch)))
+            print("Choosing new samples took: " + str(time.time() - start_resample_ts) + " seconds")
 
+            # --- Check the error for convergence
             stop_crit, err = stop_train_criterium_rmse(y_pred, y_test, 1e2) #1e4
             errors.append(err)
 
-            new_points = (x_n, function(np.array([x_n])))
-            if i%4 == 0:
+            if i%1 == 0:
                 plot_prediction_variance_2d(x_observ, y_observ, x_domain, y_test, y_pred, sigma, new_points, funcname='gem0')
 
-            x_data = np.append(x_data, x_n.reshape(1, -1), axis=0)
+            #x_data_old = np.append(x_data, x_n.reshape(1, -1), axis=0)
+            x_data = np.append(x_data, x_new_batch, axis=0)
+            print("Single training iteration took: " + str(time.time() - start_ts) + " seconds")
             if stop_crit:
                 print("Reached stopping criterium!")
                 break
     
-    #x1_slice_value = x_observ[32*17, 0]
-    #x_observ_inds = x_observ[:,0]==x1_slice_value
-    #x_observ_slice = x_observ[x_observ_inds, 0]
-    #y_observ_slice = y_observ[x_observ_inds]
+    #get_1d_slice(x_domain, y_test, x_observ, y_observ)
 
     plot_error(errors, 'RMSE')
 
@@ -405,7 +566,7 @@ def surrogate_loop(pardim):
     y_observ_clean, _ = white_out_linear_trend(x_observ, y_observ_clean)
     y_pred_clean = np.apply_along_axis(y_test_scaling, 0, y_pred)
     y_pred_clean, _ = white_out_linear_trend(x_domain, y_pred_clean)
-    plot_histograms(y_observ, y_observ_clean, y_pred, y_pred_clean)
+    #plot_histograms(y_observ, y_observ_clean, y_pred, y_pred_clean)
 
 def surrogate_utility(x_train_data, y_train_data, x_roi_data, original_model):
     utility = []

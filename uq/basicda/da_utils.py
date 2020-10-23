@@ -326,7 +326,7 @@ def plot_prediction_variance_2d(x_observ, y_observ, x_domain, y_test, y_pred, si
     plt.ylabel("gradTe") #(r'$\nabla Te$')
     ax2.set_aspect('equal')
     if len(newpoints) != 0: #TODO fix two differen scatter one plot
-        ax2.scatter(newpoints[0][0], newpoints[0][1], c=newpoints[1][0], edgecolors='g', s=8) #, label='new samples')
+        ax2.scatter(newpoints[0][:,0], newpoints[0][:,1], c=newpoints[1], edgecolors='g', s=8) #, label='new samples')
 
     ### --- Third plot for the neg-utility (GPR STD)
     #ax2.tricontour(x1i, x2i, sigma, levels=14, linewidths=0.5, colors='k')
@@ -352,7 +352,8 @@ def plot_prediction_variance_2d(x_observ, y_observ, x_domain, y_test, y_pred, si
 def plot_error(err, name):
     wrt_dir = os.path.join(os.environ['SCRATCH'], 'outputs/plots/res128') # wrt_dir = ''
     #wrt_dir = os.environ['PWD']
-    plt.plot(range(1, len(err) + 1), err, label=name)
+    plt.semilogy(range(1, len(err) + 1), err, label=name)
+    #plt.yscale("log")
     plt.xlabel('n. interations')
     plt.ylabel('error')
     plt.title('Error of GPR surrogate predictions at function evaluations')
