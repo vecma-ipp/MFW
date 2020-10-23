@@ -88,6 +88,35 @@ def get_localmax_brut(utility):
     loc_maxs = [el for ind, el in enumerate(loc_maxs) if el not in loc_maxs[:ind]]
     return loc_maxs
 
+def get_max_decomp(utility, n_batch=4):
+        loc_loc_maxs = []
+        #n_batch = 9
+        n_batch_pd = int(math.pow(n_batch, 1/len(utility.shape)))
+        subd_size1 = utility.shape[0] // n_batch_pd
+        subd_size2 = utility.shape[1] // n_batch_pd
+
+        for i in range(n_batch_pd - 1):
+            for j in range(n_batch_pd - 1):
+                #x_mesh_subd = x_mesh[0][i*subd_size1:(i+1)*subd_size1, j*subd_size2:(j+1)*subd_size2]
+                utility_subd = utility[i*subd_size1:(i+1)*subd_size1, j*subd_size2:(j+1)*subd_size2]
+                loc_loc_maxs.append( [sum(x) for x in zip( list( np.unravel_index(utility_subd.argmax(), utility_subd.shape)),
+                                                           [i*subd_size1, j*subd_size2]) ])
+            utility_subd = utility[i*subd_size1:(i+1)*subd_size1, (n_batch_pd-1)*subd_size2:]
+            loc_loc_maxs.append( [sum(x) for x in zip( list( np.unravel_index(utility_subd.argmax(), utility_subd.shape)),
+                                                       [i*subd_size1, (n_batch_pd-1)*subd_size2]) ])
+            
+        for j in range(n_batch_pd - 1):
+            utility_subd = utility[(n_batch_pd-1)*subd_size1:, j*subd_size2:(j+1)*subd_size2]
+            loc_loc_maxs.append( [sum(x) for x in zip( list( np.unravel_index(utility_subd.argmax(), utility_subd.shape)),
+                                                       [(n_batch_pd-1)*subd_size1, j*subd_size2]) ])
+
+        utility_subd = utility[(n_batch_pd-1)*subd_size1:, (n_batch_pd-1)*subd_size2:]
+        loc_loc_maxs.append( [sum(x) for x in zip( list( np.unravel_index(utility_subd.argmax(), utility_subd.shape)), 
+                                                   [(n_batch_pd-1)*subd_size1, (n_batch_pd-1)*subd_size2]) ])
+        #print(utility_subd)                             
+        #print(loc_loc_maxs)
+        return loc_loc_maxs
+
 def get_new_sample(x, utility):
     return x[utility.argmax()]
 
@@ -112,50 +141,22 @@ def get_new_candidates(x_mesh, utility): # TODO: get an array of candidates, for
     # cands = x[peaks1 and peaks2]
 
     ### brute force local maxima search:
-    all_localmax = 0
+    all_localmax = True
     if all_localmax:
         loc_maxs = get_localmax_brut(utility)
-
         if len(loc_maxs) == 0:
             loc_maxs = [ list( np.unravel_index(utility.argmax(), utility.shape) ) ]
         #print(loc_maxs)
-        for lm in loc_maxs:
-            cands.append([ x_mesh[0][lm[0], lm[1]], x_mesh[1][lm[0], lm[1]] ])
-        #print(cands)
 
     ### --- easy option 1: split domain in fixes subdomains and find local max for every each
-    ### --- make adaptive decomposition accroding to number of new points
-    domain_split = True
+    ### --- make adaptive decomposition according to number of new points
+    domain_split = False
     if domain_split:
-        loc_loc_maxs = []
-        n_batch = 4
-        n_batch_pd = int(math.pow(n_batch, 1/len(x_mesh)))
-        subd_size1 = x_mesh[0].shape[0] // n_batch_pd
-        subd_size2 = x_mesh[0].shape[1] // n_batch_pd
+        loc_maxs = get_max_decomp(utility, n_batch=9)
 
-        for i in range(n_batch_pd - 1):
-            for j in range(n_batch_pd - 1):
-                #x_mesh_subd = x_mesh[0][i*subd_size1:(i+1)*subd_size1, j*subd_size2:(j+1)*subd_size2]
-                utility_subd = utility[i*subd_size1:(i+1)*subd_size1, j*subd_size2:(j+1)*subd_size2]
-                loc_loc_maxs.append( [sum(x) for x in zip( list( np.unravel_index(utility_subd.argmax(), utility_subd.shape)),
-                                                           [i*subd_size1, j*subd_size2]) ])
-            utility_subd = utility[i*subd_size1:(i+1)*subd_size1, (n_batch_pd-1)*subd_size2:]
-            loc_loc_maxs.append( [sum(x) for x in zip( list( np.unravel_index(utility_subd.argmax(), utility_subd.shape)),
-                                                       [i*subd_size1, (n_batch_pd-1)*subd_size2]) ])
-            
-        for j in range(n_batch_pd - 1):
-            utility_subd = utility[(n_batch_pd-1)*subd_size1:, j*subd_size2:(j+1)*subd_size2]
-            loc_loc_maxs.append( [sum(x) for x in zip( list( np.unravel_index(utility_subd.argmax(), utility_subd.shape)),
-                                                       [(n_batch_pd-1)*subd_size1, j*subd_size2]) ])
-
-        utility_subd = utility[(n_batch_pd-1)*subd_size1:, (n_batch_pd-1)*subd_size2:]
-        loc_loc_maxs.append( [sum(x) for x in zip( list( np.unravel_index(utility_subd.argmax(), utility_subd.shape)), 
-                                                   [(n_batch_pd-1)*subd_size1, (n_batch_pd-1)*subd_size2]) ])
-        #print(utility_subd)                             
-        #print(loc_loc_maxs)
-
-        for lm in loc_loc_maxs:
-            cands.append([ x_mesh[0][lm[0], lm[1]], x_mesh[1][lm[0], lm[1]] ])
+    for lm in loc_maxs:
+        cands.append([ x_mesh[0][lm[0], lm[1]], x_mesh[1][lm[0], lm[1]] ])
+    #print(cands)
 
     ### --- easy option 2: apply a mask for neighbours of the known points/ or threshold for too bad utility
     ### --- apply both and domain decompositions

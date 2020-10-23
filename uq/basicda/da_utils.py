@@ -292,8 +292,8 @@ def plot_prediction_variance(x_observ, y_observ, x_domain, y_test, y_pred, sigma
 
 def plot_prediction_variance_2d(x_observ, y_observ, x_domain, y_test, y_pred, sigma, newpoints, funcname):
 
-    wrt_dir = os.path.join(os.environ['SCRATCH'], 'outputs/plots/res128')
-    #wrt_dir = os.environ['PWD']
+    wrt_dir = os.path.join(os.environ['SCRATCH'], 'outputs/plots/res_debug')
+    wrt_dir = os.environ['PWD']
 
     # Plot function,prediction and 95% confidence interval
     x1o = x_observ[:,0]
@@ -350,8 +350,8 @@ def plot_prediction_variance_2d(x_observ, y_observ, x_domain, y_test, y_pred, si
     plt.close()
 
 def plot_error(err, name):
-    wrt_dir = os.path.join(os.environ['SCRATCH'], 'outputs/plots/res128') # wrt_dir = ''
-    #wrt_dir = os.environ['PWD']
+    #wrt_dir = os.path.join(os.environ['SCRATCH'], 'outputs/plots/res128') # wrt_dir = ''
+    wrt_dir = os.environ['PWD']
     plt.semilogy(range(1, len(err) + 1), err, label=name)
     #plt.yscale("log")
     plt.xlabel('n. interations')
@@ -361,7 +361,8 @@ def plot_error(err, name):
     plt.close()
 
 def plot_histograms(y_orig, y_orig_clean, y_pred, y_pred_clean):
-    wrt_dir = os.path.join(os.environ['SCRATCH'], 'outputs/plots/res128')
+    wrt_dir = os.path.join(os.environ['SCRATCH'], 'outputs/plots/res_debug')
+    wrt_dir = os.environ['PWD']
     
     plt.hist(y_orig, bins=len(y_orig)//10)
     plt.savefig(os.path.join(wrt_dir, 'y_orig.png'))
