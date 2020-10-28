@@ -26,6 +26,11 @@ gem0_singleton = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(gem0_singleton)
 from gem0_singleton import GEM0Singleton
 
+def grad_utility(y_observ, sigma):
+    
+    utility = []
+
+    return utility
 
 def get_domain_grid(self, x_domain_params, mode='LHS'):
     """
@@ -64,25 +69,25 @@ def get_localmax_brut(utility):
             if   utility[i,j] > utility[i,j+1] and \
                  utility[i,j] > utility[i,j-1] and \
                  utility[i,j] > utility[i+1,j] and \
-                 utility[i,j] < utility[i-1,j]:
-               loc_maxs.append((i,j))
+                 utility[i,j] > utility[i-1,j]:
+               loc_maxs.append([i,j])
 
-        if utility[i,size2-1] > utility[i,size2-2] and utility[i,size2-1] > utility[i,size2-2] and utility[i,j] > utility[i-1,size2-1]:
-            loc_maxs.append([i,j])
+        if utility[i,size2-1] > utility[i,size2-2] and utility[i,size2-1] > utility[i+1,size2-1] and utility[i,size2-1] > utility[i-1,size2-1]:
+            loc_maxs.append([i,size2-1])
 
     for j in range(1, size2-1):
-        if utility[0,j] > utility[1,j] and utility[0,j] > utility[0,j-1] and utility[i,0] > utility[0,j+1]:
-            loc_maxs.append([i,0])
-        if utility[size1-1,j] > utility[size1-1,j] and utility[size1-1,j] > utility[size1-1,j] and utility[size1-1,j] > utility[size1-1,j]:
+        if utility[0,j] > utility[1,j] and utility[0,j] > utility[0,j-1] and utility[0,j] > utility[0,j+1]:
+            loc_maxs.append([0,j])
+        if utility[size1-1,j] > utility[size1-2,j] and utility[size1-1,j] > utility[size1-1,j-1] and utility[size1-1,j] > utility[size1-1,j+1]:
             loc_maxs.append([size1-1,j])
 
     if utility[0,0] > utility[0,1] and utility[0,0] > utility[1,0]:
         loc_maxs.append([0,0])
-    if utility[0,size2-1] > utility[0,size2-2] and utility[0,0] > utility[1,size2-2]:
-        loc_maxs.append([0,0])
+    if utility[0,size2-1] > utility[0,size2-2] and utility[0,size2-1] > utility[1,size2-1]:
+        loc_maxs.append([0,size2-1])
     if utility[size1-1,0] > utility[size1-1,1] and utility[size1-1,0] > utility[size1-2,0]:
-        loc_maxs.append([0,0])
-    if utility[size1-1,size2-1] > utility[size1-1,size2-2] and utility[0,0] > utility[size1-2,size2-1]:
+        loc_maxs.append([size1-1,0])
+    if utility[size1-1,size2-1] > utility[size1-1,size2-2] and utility[size1-1,size2-1] > utility[size1-2,size2-1]:
         loc_maxs.append([size1-1,size2-1])
     
     loc_maxs = [el for ind, el in enumerate(loc_maxs) if el not in loc_maxs[:ind]]
