@@ -18,6 +18,8 @@ from da_utils import *
 import sys
 import os
 
+from joblib import dump, load
+
 #TODO: make a new package + install / or get relative paths consistent
 sys.path.append(os.path.abspath("../../standalone/src/custom_codes/gem0"))
 import importlib.util
@@ -283,7 +285,7 @@ def GPR_analysis_2d(x_observ, y_observ, x_domain, x_par=[[0.,1.,8],[0.,1.,8]]):
 
     y_pred_new = white_reverse_linear_trend(x_domain, y_pred, reg)
 
-    return x_observ, y_observ, y_pred_new, sigma
+    return x_observ, y_observ, y_pred_new, sigma, gp
     #return x_observ * x_sc_factor, y_observ * y_sc_factor, y_pred * y_sc_factor, sigma * y_sc_factor
 
 def GPR_analysis(dim=2, xdomain_par=[[-1.,1.,8],[-1.,1.,8]], func=exponential_model): #TODO arbitrary dimension, print resuluts in a clear way
@@ -509,7 +511,7 @@ def surrogate_loop(pardim):
 
         ##print("y_test: "); print(y_test)
 
-        for i in range(12):
+        for i in range(5):
             print("iteration nu {}".format(i))
             start_ts = time.time()
 
@@ -521,11 +523,11 @@ def surrogate_loop(pardim):
             #y_observ_rev_scaling = lambda y: y_observ_min + y *  (y_observ_max - y_observ_min)
 
             # --- fit the regeresson and chose a new sample
-            x_observ, y_observ, y_pred, sigma = GPR_analysis_2d(
+            x_observ, y_observ, y_pred, sigma, model = GPR_analysis_2d(
                                                  np.apply_along_axis(x_scaling, 1, x_data), 
                                                  np.apply_along_axis(y_test_scaling, 0, y_observ),
                                                  np.apply_along_axis(x_scaling, 1, x_domain),
-                                                 x_par=x_param)
+                                                 x_par=x_param) # TODO: use GPflow implementation, reuse intermediate data (older covariance)
 
             x_observ = np.apply_along_axis(x_rev_scaling, 1, x_observ)
             y_observ = np.apply_along_axis(y_test_rev_scaling, 0, y_observ)
@@ -557,7 +559,16 @@ def surrogate_loop(pardim):
             if stop_crit:
                 print("Reached stopping criterium!")
                 break
+
     
+    #TODO: utilize the model: save a model file, use in a UQ loop
+    fin_mod_path = os.path.join(os.path.abspath('../data/models'), 'gpr_mod_gem.joblib')
+    dump(model, fin_mod_path)
+
+    pd.DataFrame(np.concatenate((x_domain, y_pred.reshape(-1,1)), axis=1), columns={'te.value', 'te.ddrho', 'te.flux'}) \
+                 .to_csv(os.path.join(os.path.join('../data'), 'surrogate_results.csv'))
+
+
     #get_1d_slice(x_domain, y_test, x_observ, y_observ)
 
     plot_error(errors, 'RMSE')
