@@ -111,15 +111,16 @@ SHARED_O = ${OBJDIR}/linterp.o ${OBJDIR}/string_binding.o \
 
 ETS_O = ${OBJDIR}/ets_standalone.o 
 EQUILUPDATE_O = ${OBJDIR}/equilupdate_standalone.o  
-CHEASE_O = ${SHARED_O} ${OBJDIR}/chease_standalone.o 
-IMP4DV_O = ${SHARED_O} ${OBJDIR}/imp4dv_standalone.o
-SOURCES_O = ${SHARED_O} ${OBJDIR}/sources_standalone.o
-BOHMGB_O = ${SHARED_O} ${OBJDIR}/bohmgb_standalone.o
-GEM0_O = ${SHARED_O} ${OBJDIR}/gem0_standalone.o
-GEM_O = ${SHARED_O} ${OBJDIR}/gem_standalone.o
+CHEASE_O = ${OBJDIR}/chease_standalone.o 
+IMP4DV_O = ${OBJDIR}/imp4dv_standalone.o
+SOURCES_O = ${OBJDIR}/sources_standalone.o
+BOHMGB_O = ${OBJDIR}/bohmgb_standalone.o
+GEM0_O = ${OBJDIR}/gem0_standalone.o
+GEM_O = ${OBJDIR}/gem_standalone.o
 
 TESTS =  ETS_TEST EQUILUPDATE_TEST CHEASE_TEST EQ_TEST IMP4DV_TEST SOURCES_TEST BOHMGB_TEST GEM0_TEST GEM_TEST 
-LOOP_TEST = LOOP_BGB LOOP_GEM0 LOOP_GEM ETS_CHEASE ETS_SRC 
+#LOOP_TEST = LOOP_BGB LOOP_GEM0 LOOP_GEM ETS_CHEASE ETS_SRC ETS_EQUILUPDATE
+LOOP_TEST = LOOP_GEM
 
 ETS_EXE = ${BINDIR}/ets_test
 ETS_SRC_EXE = ${BINDIR}/ets_src
@@ -135,13 +136,15 @@ LOOP_BGB_EXE = ${BINDIR}/loop_bgb
 LOOP_GEM0_EXE = ${BINDIR}/loop_gem0
 LOOP_GEM_EXE = ${BINDIR}/loop_gem
 ETS_CHEASE_EXE = ${BINDIR}/ets_chease
+ETS_EQUILUPDATE_EXE = ${BINDIR}/ets_equilupdate
 
 # ROLAND CODE
 ROP_EXE = ${BINDIR}/rop_test
 
 
 ### Rules ######################################################################
-all: ${SYS} ${TESTS} ${LOOP_TEST}
+#all: ${SYS} ${TESTS} ${LOOP_TEST}
+all: ${SYS} ${LOOP_TEST}
 
 ${OBJDIR}/%.o: %.f90
 	${FC90} -o $@ -c $< $(FC90FLAGS)
@@ -190,11 +193,14 @@ LOOP_BGB: ${SHARED_O} ${ETS_O} ${EQUILUPDATE_O} ${CHEASE_O} ${BOHMGB_O} ${SOURCE
 LOOP_GEM0: ${SHARED_O} ${ETS_O} ${EQUILUPDATE_O} ${CHEASE_O} ${GEM0_O} ${IMP4DV_O} ${SOURCES_O} ${OBJDIR}/loop_gem0.o
 	$(LD) -o ${LOOP_GEM0_EXE} $^ -L${ETS} -L${CHEASE} -L${GEM0} -L${IMP4DV} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_XML} -L${LIB_UAL} -lets -lchease_muscle -lgem0 -limp4dv -lbds -litmconstants -litmtypes -lual -lxmllib -lxml2 ${LDFLAGS} ${LIBLAPACK}
 
-LOOP_GEM: ${SHARED_O} ${ETS_O} ${EQUILUPDATE_O} ${CHEASE_O} ${GEM_O} ${IMP4DV_O} ${SOURCES_O} ${OBJDIR}/loop_gem.o
-	$(MPIF90) -o ${LOOP_GEM_EXE} $^ -L${ETS} -L${CHEASE} -L${GEM} -L${IMP4DV} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_XML} -L${LIB_UAL} -lets -lchease_muscle -lgem -limp4dv -lbds -litmconstants -litmtypes -lual -lxmllib -lxml2 ${LDFLAGS} ${LIBLAPACK} ${FFTW_LIB}
-	
+LOOP_GEM:  ${SHARED_O} ${ETS_O} ${EQUILUPDATE_O} ${CHEASE_O} ${GEM_O} ${OBJDIR}/loop_gem.o
+	$(MPIF90) -o ${LOOP_GEM_EXE} $^ -L${ETS} -L${CHEASE} -L${GEM} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_UAL} -L${LIB_XML} -lets -lchease_muscle -lgem -lbds -litmconstants -litmtypes -lual -lxmllib -lxml2  ${LDFLAGS} ${FFTW_LIB} ${LIBLAPACK}
+
 ETS_CHEASE: ${SHARED_O} ${ETS_O} ${EQUILUPDATE_O} ${CHEASE_O} ${SOURCES_O} ${OBJDIR}/ets_chease.o
 	$(LD) -o ${ETS_CHEASE_EXE} $^ -L${ETS} -L${CHEASE} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_XML} -L${LIB_UAL} -lets -lchease_muscle -lbds -litmconstants -litmtypes -lual -lxmllib -lxml2 ${LDFLAGS} ${LIBLAPACK}
+
+ETS_EQUILUPDATE: ${SHARED_O} ${ETS_O} ${EQUILUPDATE_O} ${SOURCES_O} ${OBJDIR}/ets_equilupdate.o
+	$(LD) -o ${ETS_EQUILUPDATE_EXE} $^ -L${ETS} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_XML} -L${LIB_UAL} -lets -lbds -litmconstants -litmtypes -lual -lxmllib ${LDFLAGS} ${LIBLAPACK}
 
 #ROP_TEST: ${OBJDIR}/uq_modules.o ${OBJDIR}/rop_test.o
 #	$(FC90) -o  ${ROP_EXE} $^  -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_XML} -L${LIB_UAL} -lbds -lxmllib -litmconstants -litmtypes -lual ${LDFLAGS} ${LIBLAPACK}
@@ -279,9 +285,12 @@ ${OBJDIR}/loop_gem0.o: src/loop_gem0.f90
 	${FC90} -o $@ -c $< $(FC90FLAGS) -I${INC_TYPES} 
 
 ${OBJDIR}/loop_gem.o: src/loop_gem.f90 
-	${MPIF90} -o $@ -c $< $(MPIFLAGS) -I${INC_TYPES} 
+	${MPIF90} -o $@ -c $< $(MPIFLAGS) -I${INC_TYPES}
 
 ${OBJDIR}/ets_chease.o: src/ets_chease.f90 
+	${FC90} -o $@ -c $< $(FC90FLAGS) -I${INC_TYPES} 
+
+${OBJDIR}/ets_equilupdate.o: src/ets_equilupdate.f90 
 	${FC90} -o $@ -c $< $(FC90FLAGS) -I${INC_TYPES} 
 
 #########
