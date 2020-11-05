@@ -17,7 +17,7 @@ def get_dist(name, value, err):
     value : float, int or list
         The mean value(s) of the dist.
     err  : float
-        The error marging, % of the mean that gives the sdtv.
+        The error margin, % of the mean that gives the sdtv.
         if name is Uniform, err must be < 0.57
         if name is Normal,
 
@@ -71,7 +71,7 @@ def get_dist(name, value, err):
 
     return dist
 
-class Assymetric_Normal():
+class Asymmetric_Normal():
     """
     The two pieces normal distribution is a result from joining halves of
     two normal distributions with the same mean but two different variances.
@@ -99,7 +99,7 @@ class Assymetric_Normal():
         y = np.concatenate((y1, y2))
         return y
 
-    # Cummulative distribution function
+    # Cumulative distribution function
     def cdf(self, x):
         x = np.asfarray(x)
         x = np.sort(x)
@@ -127,7 +127,7 @@ class Split_Normal():
 
         pi = np.pi
 
-        # Mode and STD
+        # Mean, Std. Dev, Skewness
         self.mu = mode + np.sqrt(2/pi) * (sig2 - sig1)
         self.sigma = np.sqrt((1. -2/pi) * (sig2 - sig1)**2 + sig1 * sig2)
         self.skew = np.sqrt(2/pi)*(sig2 - sig1)*((4/pi - 1)*(sig2 - sig1)**2 + sig1*sig2)
@@ -153,7 +153,7 @@ class Split_Normal():
         y = np.concatenate((y1, y2))
         return y
 
-    # Cummulative distribution function
+    # Cumulative distribution function
     def cdf(self, x):
         x = np.asfarray(x)
         x = np.sort(x)
@@ -171,10 +171,10 @@ class Split_Normal():
 # to EasyVVUQ with doc
 class ValidateCompatibility():
     def __init__(self, weight_factor=0.5):
-        """Measure compatability between two QoI distributions.
+        """Measure compatibility between two QoI distributions.
         Each distribution is characterized by three moments:
         Mean, variance and skewness.
-        Lower metric means hight compatability.
+        Lower metric means higher compatibility.
 
         Parameters
         ----------
@@ -184,12 +184,12 @@ class ValidateCompatibility():
         """
 
         if weight_factor < 0. or weight_factor > 1.:
-            raise RuntimeError("Validate_Compatability: Wrong parameter value.")
+            raise RuntimeError("Validate_Compatibility: Wrong parameter value.")
 
         self._weight_factor = weight_factor
 
     def element_name(self):
-        return "Validate_Compatability"
+        return "Validate_Compatibility"
 
     def element_version(self):
         return "0.1"
@@ -235,3 +235,38 @@ class ValidateCompatibility():
         term1 = (m2 - m1)**2 / (2 * (v1 + v2) + (m2 - m1)**2)
         term2 = (s2 - s1)**2 / (2 * (v1 + v2) + (m2 - m1)**2 + (abs(s1) + abs(s2))**2)
         return (1 - self._weight_factor) * term1 + self._weight_factor * term2
+
+
+class Ztest():
+
+    def __init__(self, mu1, mu2, sig1, sig2, n1, n2):
+    "
+    Compare 2 distributions using the Z-test
+
+    Parameters
+    ----------
+    where mu  = mean
+	  sig = standard deviation
+	  n   = number of data points
+    from a distribution
+    "
+	self.mu1 = mu1
+	self.mu2 = mu2
+	self.sig1= sig1
+	self.sig2= sig2
+	self.n1  = n1
+	self.n2  = n2
+
+    def element_name(self):
+	return "Z-test"
+
+    def element_version(self):
+	return "0.1"
+
+    def score(self)
+	"
+	compute the z-score between two distributions
+	"
+	numerator = abs(self.mu1 - self.mu2)
+	denominator = np.sqrt(self.sig1**2 / self.n1 + self.sig2**2 / self.n2)
+	return numerator / max(denominator, 1.e-20)
