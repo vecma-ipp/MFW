@@ -118,9 +118,9 @@ BOHMGB_O = ${OBJDIR}/bohmgb_standalone.o
 GEM0_O = ${OBJDIR}/gem0_standalone.o
 GEM_O = ${OBJDIR}/gem_standalone.o
 
-TESTS =  ETS_TEST EQUILUPDATE_TEST CHEASE_TEST EQ_TEST IMP4DV_TEST SOURCES_TEST BOHMGB_TEST GEM0_TEST GEM_TEST 
+#TESTS =  ETS_TEST EQUILUPDATE_TEST CHEASE_TEST EQ_TEST IMP4DV_TEST SOURCES_TEST BOHMGB_TEST GEM0_TEST GEM_TEST 
 #LOOP_TEST = LOOP_BGB LOOP_GEM0 LOOP_GEM ETS_CHEASE ETS_SRC ETS_EQUILUPDATE
-LOOP_TEST = LOOP_GEM
+TESTS = GEM_TEST1 GEM_TEST2
 
 ETS_EXE = ${BINDIR}/ets_test
 ETS_SRC_EXE = ${BINDIR}/ets_src
@@ -138,13 +138,16 @@ LOOP_GEM_EXE = ${BINDIR}/loop_gem
 ETS_CHEASE_EXE = ${BINDIR}/ets_chease
 ETS_EQUILUPDATE_EXE = ${BINDIR}/ets_equilupdate
 
+GEM_EXE1 = ${BINDIR}/gem_test1
+GEM_EXE2 = ${BINDIR}/gem_test2
+
 # ROLAND CODE
 ROP_EXE = ${BINDIR}/rop_test
 
 
 ### Rules ######################################################################
 #all: ${SYS} ${TESTS} ${LOOP_TEST}
-all: ${SYS} ${LOOP_TEST}
+all: ${SYS} ${TESTS}
 
 ${OBJDIR}/%.o: %.f90
 	${FC90} -o $@ -c $< $(FC90FLAGS)
@@ -205,6 +208,12 @@ ETS_EQUILUPDATE: ${SHARED_O} ${ETS_O} ${EQUILUPDATE_O} ${SOURCES_O} ${OBJDIR}/et
 #ROP_TEST: ${OBJDIR}/uq_modules.o ${OBJDIR}/rop_test.o
 #	$(FC90) -o  ${ROP_EXE} $^  -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_XML} -L${LIB_UAL} -lbds -lxmllib -litmconstants -litmtypes -lual ${LDFLAGS} ${LIBLAPACK}
 
+GEM_TEST1:  ${SHARED_O} ${GEM_O} ${OBJDIR}/gem_test1.o
+	$(MPIF90) -o ${GEM_EXE1} $^ -L${GEM} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_XML} -L${LIB_UAL} -lgem -lbds -litmconstants -litmtypes -lxmllib -lual ${LDFLAGS} ${FFTW_LIB}
+
+GEM_TEST2:  ${SHARED_O} ${CHEASE_O} ${GEM_O} ${OBJDIR}/gem_test2.o
+	$(MPIF90) -o ${GEM_EXE2} $^ -L${CHEASE} -L${GEM} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_UAL} -L${LIB_XML} -lchease_muscle -lgem -lbds -litmconstants -litmtypes -lual -lxmllib -lxml2  ${LDFLAGS} ${FFTW_LIB} ${LIBLAPACK}
+	
 ##################################################################################
 
 ${SYS}: 
@@ -292,6 +301,13 @@ ${OBJDIR}/ets_chease.o: src/ets_chease.f90
 
 ${OBJDIR}/ets_equilupdate.o: src/ets_equilupdate.f90 
 	${FC90} -o $@ -c $< $(FC90FLAGS) -I${INC_TYPES} 
+
+
+${OBJDIR}/gem_test1.o: src/gem_test1.f90
+	${MPIF90} -o $@ -c $< $(MPIFLAGS)
+
+${OBJDIR}/gem_test2.o: src/gem_test2.f90
+	${MPIF90} -o $@ -c $< $(MPIFLAGS) -I${INC_TYPES}
 
 #########
 #${OBJDIR}/uq_modules.o: src/rop/uq_modules.f90
