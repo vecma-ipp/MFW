@@ -1,4 +1,4 @@
-!> ETS + Update EQ + CHEASE
+!> Test of: ETS + Update Equilibrium + CHEASE
 !
 !> Inputs:  
 !     ets_coreprof_in.cpo
@@ -8,11 +8,11 @@
 !     ets_toroidfield_in.cpo
 !     ets_coresource_in.cpo (if not given gaussian_source will be used)
 !
-!> Output: 
+!> Outputs: 
 !     chease_equilibrium_out.cpo 
 
 
-program ets_chease
+program ets_chease_test
 
   use euitm_schemas,   only: type_coreprof,    & 
                           &  type_equilibrium, &
@@ -45,7 +45,7 @@ implicit none
   character(len=*), parameter :: corei_file_in   = "ets_coreimpur_in.cpo"
   character(len=*), parameter :: coret_file_in   = "ets_coretransp_in.cpo"
   character(len=*), parameter :: toroidf_file_in = "ets_toroidfield_in.cpo"
-  character(len=*), parameter :: equil_file_out = "chease_equilibrium_out.cpo"
+  character(len=*), parameter :: equil_file_out  = "chease_equilibrium_out.cpo"
 
   type(type_coreprof),    pointer :: corep_in(:)     => null()
   type(type_coreprof),    pointer :: corep_ets(:)    => null()
@@ -154,5 +154,4 @@ implicit none
   call deallocate_cpo(corei_in)
   call deallocate_cpo(toroidf_in)
 
-end program ets_chease
-
+end program ets_chease_test
