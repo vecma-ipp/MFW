@@ -1,7 +1,6 @@
-! -*- coding: UTF-8 -*-
-program ets_src
+program ets_equilupdate
 
-  use ets_standalone,         only: ets_cpo
+  use ets_standalone,     only: ets_cpo
   use sources_standalone, only: gaussian_source_cpo
   use equilupdate_standalone, only: equilupdate2cpo
 
@@ -25,11 +24,11 @@ implicit none
   ! CPO files
   character(len=*), parameter :: corep_file_in   = "ets_coreprof_in.cpo"
   character(len=*), parameter :: equil_file_in   = "ets_equilibrium_in.cpo"
-  !character(len=*), parameter :: cores_file_in   = "ets_coresource_in.cpo"
+  character(len=*), parameter :: cores_file_in   = "ets_coresource_in.cpo"
   character(len=*), parameter :: corei_file_in   = "ets_coreimpur_in.cpo"
   character(len=*), parameter :: coret_file_in   = "ets_coretransp_in.cpo"
   character(len=*), parameter :: toroidf_file_in = "ets_toroidfield_in.cpo"
-  !character(len=*), parameter :: corep_file_out  = "ets_coreprof_out.cpo"
+  character(len=*), parameter :: corep_file_out  = "ets_coreprof_out.cpo"
   character(len=*), parameter :: equil_out_file  = "ets_equilibrium_out.cpo"
 
   ! CPO structures 
@@ -93,25 +92,12 @@ implicit none
      STOP
   end if
   
-!  open (unit = 13, file = cores_file_in, &
-!       status = 'old', form = 'formatted', &
-!       action = 'read', iostat = ios)
-!  if (ios == 0) then
-!     close (13)
-!     call open_read_file(13, cores_file_in )
-!     call read_cpo(cores(1), 'coresource' )
-!     call close_read_file
-!  else
-!      print *,"CPO file not found:",cores_file_in
-!      STOP
-!  end if
-  
-  open (unit = 14, file = corei_file_in, &
+  open (unit = 13, file = corei_file_in, &
        status = 'old', form = 'formatted', &
        action = 'read', iostat = ios)
   if (ios == 0) then
-     close (14)
-     call open_read_file(14, corei_file_in )
+     close (13)
+     call open_read_file(13, corei_file_in )
      call read_cpo(corei(1), 'coreimpur' )
      call close_read_file
   else
@@ -119,12 +105,12 @@ implicit none
      STOP
   end if
   
-  open (unit = 15, file = toroidf_file_in, &
+  open (unit = 14, file = toroidf_file_in, &
        status = 'old', form = 'formatted', &
        action = 'read', iostat = ios)
   if (ios == 0) then
-     close (15)
-     call open_read_file(15, toroidf_file_in )
+     close (14)
+     call open_read_file(14, toroidf_file_in )
      call read_cpo(toroidf(1), 'toroidfield' )
      call close_read_file
   else
@@ -132,9 +118,22 @@ implicit none
      STOP
   end if 
   
-  ! For TEST with PJ:
-  call gaussian_source_cpo(corep, equil, cores)
-  
+  ! Sources
+  open (unit = 15, file = cores_file_in, &
+       status = 'old', form = 'formatted', &
+       action = 'read', iostat = ios)
+  if (ios == 0) then
+     close (15)
+     call open_read_file(15, cores_file_in )
+     call read_cpo(cores(1), 'coresource' )
+     call close_read_file
+  else
+      print *,"CPO file not found:",cores_file_in, 
+      print *,"Gaussian source will be used."
+      call gaussian_source_cpo(corep, equil, cores)
+      
+  end if
+
   ! Call ets_standalone
   call ets_cpo(corep, equil, coret, cores, corei, corep_new)
   
@@ -142,11 +141,11 @@ implicit none
   call equilupdate2cpo(corep_new, toroidf, equil, equil_new)
  
   ! Save the output files 
-!  call open_write_file(20, corep_file_out)
-!  call write_cpo(corep_new(1),'coreprof')
-!  call close_write_file
+  call open_write_file(20, corep_file_out)
+  call write_cpo(corep_new(1),'coreprof')
+  call close_write_file
 
-  call open_write_file(20, equil_out_file)
+  call open_write_file(21, equil_out_file)
   call write_cpo(equil_new(1),'equilibrium')
   call close_write_file
   
@@ -160,4 +159,4 @@ implicit none
   call deallocate_cpo(corep)
   call deallocate_cpo(equil_new)
  
-end program ets_src
+end program ets_equilupdate
