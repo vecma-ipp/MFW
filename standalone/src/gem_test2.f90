@@ -1,5 +1,7 @@
 program gem_test2
   use gem_standalone, only: gem_cpo
+  use chease_standalone, only: chease_cpo
+  
   use euitm_schemas,   only: type_coreprof,    & 
        &  type_equilibrium, &
        &  type_coretransp
@@ -10,6 +12,7 @@ program gem_test2
        &  close_write_file, &
        &  write_cpo
   use deallocate_structures, only: deallocate_cpo
+
   use mpi 
 
   implicit none
@@ -18,16 +21,18 @@ program gem_test2
   character(len=*), parameter :: equil_file_in  = "gem_equilibrium_in.cpo"
   character(len=*), parameter :: corep_file_in  = "gem_coreprof_in.cpo"
   character(len=*), parameter :: coret_file_out = "gem_coretransp_out_2.cpo"
-
+  character(len=*), parameter :: equil_file_out  = "gem_equilibrium_out_2.cpo"
+  
   ! CPO structures 
   type(type_equilibrium), pointer :: equil(:)
   type(type_coreprof), pointer :: corep(:)
   type(type_coretransp), pointer :: coret(:)
+  type (type_equilibrium), pointer :: equil_new(:)
 
   integer :: ierr, npes, irank, ipe
   integer :: ios
 
-  print*, '==== GEM : compile test using chease standalone ===='
+  print*, '==== GEM TEST : lib chease - lib gem ===='
 
   call MPI_Init(ierr)
   call MPI_Comm_size(MPI_COMM_WORLD, npes, ierr)
@@ -35,6 +40,7 @@ program gem_test2
 
   allocate(equil(1))
   allocate(corep(1))
+  allocate(equil_new(1))
   
   ! Read CPO file and write corresponding structures   
   open (unit = 10, file = equil_file_in, &
@@ -62,12 +68,13 @@ program gem_test2
      STOP
   end if
   
-  call gem_cpo(equil, corep, coret)
+  call chease_cpo(equil, equil_new) 
+  !call gem_cpo(equil, corep, coret)
 
   if (irank.eq.0) then
      ! Transfer CPO to file
-     call open_write_file(12, coret_file_out)
-     call write_cpo(coret(1), 'coretransp')
+     call open_write_file(12, equil_file_out)
+     call write_cpo(equil_new(1), 'equilibrium')
      call close_write_file
   end if
 
@@ -75,6 +82,7 @@ program gem_test2
   call deallocate_cpo(corep)
   call deallocate_cpo(coret)
 
+  call deallocate_cpo(equil_new)
   call MPI_Finalize(ierr)
 
 end program gem_test2
