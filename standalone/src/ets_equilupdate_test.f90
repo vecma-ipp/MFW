@@ -128,7 +128,7 @@ implicit none
      call read_cpo(cores(1), 'coresource' )
      call close_read_file
   else
-      print *,"CPO file not found:",cores_file_in, 
+      print *,"CPO file not found:",cores_file_in 
       print *,"Gaussian source will be used."
       call gaussian_source_cpo(corep, equil, cores)
       
