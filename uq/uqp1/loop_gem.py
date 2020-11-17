@@ -3,6 +3,7 @@ import easyvvuq as uq
 from easymfw.templates.cpo_encoder import CPOEncoder
 from easymfw.templates.cpo_decoder import CPODecoder
 from easymfw.templates.xml_encoder import XMLEncoder
+from easymfw.templates.xml_element import XMLElement
 from easymfw.utils.io_tools import get_cpo_inputs, get_xml_inputs
 from eqi import TaskRequirements, Executor
 from eqi import Task, TaskType, SubmitOrder
@@ -54,6 +55,10 @@ input_params_src = {
         "err": 0.2,
     },
     "electrons.heating_el.RHEAT_el":{
+        "dist": "Uniform",
+        "err": 0.2,
+    },
+    "electrons.heating_el.FWHEAT_el":{
         "dist": "Uniform",
         "err": 0.2,
     }
@@ -157,7 +162,6 @@ my_sampler = uq.sampling.PCESampler(vary=vary,
 my_campaign.set_sampler(my_sampler)
 
 # Will draw all (of the finite set of samples)
-print('>>> Draw Samples- Ns = ', my_sampler._number_of_samples)
 my_campaign.draw_samples()
 
 print('>>> Populate runs_dir\n')
@@ -172,20 +176,17 @@ ncores = npesx*npess*nftubes
 exec_path = os.path.join(common_dir, exec_code)
 
 print(">>> Starting PJ execution\n")
-qcgpjexec = Executor()
-qcgpjexec.create_manager(dir=my_campaign.campaign_dir, log_level='info')
+qcgpjexec = Executor(my_campaign)
+qcgpjexec.create_manager(log_level='info')
 
 qcgpjexec.add_task(Task(
     TaskType.EXECUTION,
-    TaskRequirements(cores=Resources(exact=ncores)),
+    TaskRequirements(cores=ncores),
     model=mpi_instance,
     application=exec_path
 ))
 
-qcgpjexec.run(
-    campaign=my_campaign,
-    submit_order=SubmitOrder.EXEC_ONLY
-)
+qcgpjexec.run(submit_order=SubmitOrder.EXEC_ONLY)
 
 qcgpjexec.terminate_manager()
 
@@ -225,7 +226,7 @@ for qoi in output_columns:
 
     header = 'RHO_TOR_NORM\tMEAN\tSTD'
     suf = qoi.split('.')[0]
-    np.savetxt('outputs/STATS'+suf+'.csv',
+    np.savetxt('data/outputs/STATS'+suf+'.csv',
                np.c_[rho, mean, std],
                delimiter='\t', comments='', header=header)
 

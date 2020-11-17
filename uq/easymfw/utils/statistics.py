@@ -237,36 +237,36 @@ class ValidateCompatibility():
         return (1 - self._weight_factor) * term1 + self._weight_factor * term2
 
 
-class Ztest():
-
-    def __init__(self, mu1, mu2, sig1, sig2, n1, n2):
-    "
-    Compare 2 distributions using the Z-test
-
-    Parameters
-    ----------
-    where mu  = mean
-	  sig = standard deviation
-	  n   = number of data points
-    from a distribution
-    "
-	self.mu1 = mu1
-	self.mu2 = mu2
-	self.sig1= sig1
-	self.sig2= sig2
-	self.n1  = n1
-	self.n2  = n2
-
-    def element_name(self):
-	return "Z-test"
-
-    def element_version(self):
-	return "0.1"
-
-    def score(self)
-	"
-	compute the z-score between two distributions
-	"
-	numerator = abs(self.mu1 - self.mu2)
-	denominator = np.sqrt(self.sig1**2 / self.n1 + self.sig2**2 / self.n2)
-	return numerator / max(denominator, 1.e-20)
+#class Ztest():
+#
+#    def __init__(self, mu1, mu2, sig1, sig2, n1, n2):
+#    "
+#    Compare 2 distributions using the Z-test
+#
+#    Parameters
+#    ----------
+#    where mu  = mean
+#	  sig = standard deviation
+#	  n   = number of data points
+#    from a distribution
+#    "
+#        self.mu1 = mu1
+#        self.mu2 = mu2
+#        self.sig1= sig1
+#        self.sig2= sig2
+#        self.n1  = n1
+#        self.n2  = n2
+#
+#    def element_name(self):
+#        return "Z-test"
+#
+#    def element_version(self):
+#        return "0.1"
+#
+#    def score(self)
+#	"
+#	compute the z-score between two distributions
+#	"
+#	numerator = abs(self.mu1 - self.mu2)
+#	denominator = np.sqrt(self.sig1**2 / self.n1 + self.sig2**2 / self.n2)
+#	return numerator / max(denominator, 1.e-20)
