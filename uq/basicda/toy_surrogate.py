@@ -20,13 +20,8 @@ import os
 
 from joblib import dump, load
 
-#TODO: make a new package + install / or get relative paths consistent
-sys.path.append(os.path.abspath("../../standalone/src/custom_codes/gem0"))
-import importlib.util
-spec = importlib.util.spec_from_file_location("gem0_singleton", os.path.abspath("../../standalone/src/custom_codes/gem0/gem0_singleton.py"))
-gem0_singleton = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(gem0_singleton)
-from gem0_singleton import GEM0Singleton
+from extcodehelper import ExtCodeHelper
+
 
 def grad_utility(y_observ, sigma):
     
@@ -352,59 +347,15 @@ def get_1d_slice(x_domain, y_test, x_observ, y_observ):
     x_observ_inds = x_observ[:,0]==x1_slice_value
     x_observ_slice = x_observ[x_observ_inds, 0]
     y_observ_slice = y_observ[x_observ_inds]
-
+        
 def surrogate_loop(pardim):
     np.random.seed(int(time.time()))
     errors = []
 
-    gem0obj = GEM0Singleton()
-
-    def gem0_call_tefltevltegrad(x): # TODO np.vectorize?
-        """
-        :param x: x is a 1D array; x[0] is Te, x[1] is gradTe 
-        """
-        return gem0obj.gem0_call({'te.value': x[0], 'te.ddrho': x[1]})[0]
-
-    def gem0_call_teflteval_array(x):
-        res = []
-        for el in x: 
-            res.append([gem0obj.gem0_call({'te.value': el[0]})[0]])
-        return np.array(res)
-
-    def gem0_call_teflteval_log_array(x): 
-        res = []
-        for el in x: 
-            res.append([math.log(gem0obj.gem0_call({'te.value': el[0]})[0])]) #TODO actually negative values
-        return np.array(res)
-
-    def gem0_call_tefltegrad_array(x):
-        res = []
-        for el in x: 
-            res.append([gem0obj.gem0_call({'te.ddrho': el[0]})[0]])
-        return np.array(res)
-
-    def gem0_call_tefltevltegrad_array(x): # TODO np.vectorize?
-        """
-        calls the gem0 code for desired te.valus and te.ddrho
-        :param x: x[0] is desired tevalue, x[1] is desired tegrad
-        """
-        res = []
-        for el in x:
-            res.append(gem0obj.gem0_call({'te.value': el[0], 'te.ddrho': el[1]})[0])
-        return res
-
-    def gem0_call_tefltevltivl_array(x):
-        """
-        calls the gem0 code for desired te.valus and te.ddrho
-        :param x: x[0] is desired tevalue, x[1] is desired tegrad
-        """
-        res = []
-        for el in x:
-            res.append(gem0obj.gem0_call({'te.value': el[0], 'ti.value': el[1]})[0])
-        return res
-
     new_points = []
     n_init = 4
+
+    ext_code_helper = ExtCodeHelper()
 
     if pardim == 1:
         #function = lambda x: x * np.cos(1.0 * x)
@@ -412,10 +363,10 @@ def surrogate_loop(pardim):
         #function = lambda x: np.e**(+1.0*x)
         #x_param = [0., 1.5, 32] for cos 
 
-        function = lambda x: gem0_call_teflteval_array(x)
+        function = lambda x: ext_code_helper.gem0_call_teflteval_array(x)
         x_param = [400., 2000, 32] # for gem in te-val #TODO change the gradient sampling!
         
-        function = lambda x: np.array(gem0_call_tefltegrad_array(x))
+        function = lambda x: np.array(ext_code_helper.gem0_call_tefltegrad_array(x))
         x_param = [-6000., -200., 64] # for gem in te-grad
         
         x_data = np.zeros((n_init, 2))
@@ -452,7 +403,7 @@ def surrogate_loop(pardim):
         #y_scale = 1.
 
         #function = lambda x: np.array(gem0_call_tefltevltivl_array(x)) # TODO double check numpy dimensions
-        function = lambda x: np.array(gem0_call_tefltevltegrad_array(x))
+        function = lambda x: np.array(ext_code_helper.gem0_call_tefltevltegrad_array(x))
         #x_param = [[200., 4800, 128], [-8000, 0., 128]] # square/rectangle in domain in {Te}x{gradTe}
         x_param = [[400., 2400, 16], [-3600., 0., 16]] 
 
@@ -479,7 +430,7 @@ def surrogate_loop(pardim):
 
         #print(x_domain_mesh[0].shape)
         #print(len(x1), len(x2))
-        y_domain = np.zeros(x_domain_mesh[0].shape) # TODO the slowest part of teh initialization
+        y_domain = np.zeros(x_domain_mesh[0].shape) # TODO the slowest part of the initialization
         for i in range(len(x1)): #TODO very very bad, arbitrary dimension as well? vectorize???
             for j in range(len(x2)):
                 y_domain[i,j] = function([ [x_domain_mesh[0][i, j], x_domain_mesh[1][i, j]] ])
@@ -597,9 +548,7 @@ def surrogate_utility(x_train_data, y_train_data, x_roi_data, original_model):
     return -utility.sum()
 
 
-#np.random.seed(2)  # check other random seeds
 plt.ion()
 
-### surrogate loop:
-#surrogate_loop(2)
-surrogate_loop(2)
+### --- Surrogate loop
+#surrogate_loop(1)
