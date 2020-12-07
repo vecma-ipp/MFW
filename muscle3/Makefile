@@ -43,6 +43,7 @@ DFEFI = ../externals/dfefi/${SYS}
 IMP4DV = ../externals/imp4dv/${SYS}
 GEM0 = ../externals/gem0/${SYS}
 ORB5 = ../externals/orb5.git/${SYS}
+GEM = ../externals/gem/${SYS}
 
 # set up the VPATH for searching for source files ##############################
 VPATH = ${SRCDIR} 
@@ -57,6 +58,11 @@ LDFLAGS += $(shell pkg-config --libs libmuscle_fortran)
 
 FC90FLAGS += ${INCLUDES} ${MODSPEC}${INCDIR} 
 
+# use MPI compiler for all Fortran kernel sources (default=no)       #
+ifeq (${MPI},yes) 
+ FC90 = ${MPIF90}
+endif
+
 
 # objects files ################################################################
 STDA_SHARED_O = ${STDA_OBJ}/linterp.o ${STDA_OBJ}/string_binding.o \
@@ -67,11 +73,12 @@ STOP_O = ${STDA_SHARED_O} ${OBJDIR}/stop_M3.o
 ETS_O = ${STDA_SHARED_O} ${STDA_OBJ}/ets_standalone.o ${STDA_OBJ}/equilupdate_standalone.o ${OBJDIR}/ets_M3.o 
 CHEASE_O = ${STDA_SHARED_O} ${STDA_OBJ}/chease_standalone.o ${OBJDIR}/chease_M3.o
 GEM0_O = ${STDA_SHARED_O} ${STDA_OBJ}/gem0_standalone.o ${STDA_OBJ}/imp4dv_standalone.o ${OBJDIR}/gem0_M3.o
+GEM_O = ${STDA_SHARED_O} ${STDA_OBJ}/gem_standalone.o ${STDA_OBJ}/imp4dv_standalone.o ${OBJDIR}/gem_M3.o
 DUPLICATE_O = ${OBJDIR}/duplicate_M3.o
 #EQUILUPDATE_O = ${STDA_SHARED_O} ${STDA_OBJ}/equilupdate_standalone.o ${OBJDIR}/equilupdate_M3.o 
 #IMP4DV_O = ${STDA_SHARED_O} ${STDA_OBJ}/imp4dv_standalone.o ${OBJDIR}/imp4dv_M3.o
 
-MODELS = INIT_M3 STOP_M3 ETS_M3 CHEASE_M3 GEM0_M3 DUPLICATE_M3
+MODELS = INIT_M3 STOP_M3 ETS_M3 CHEASE_M3 GEM0_M3 GEM_M3 DUPLICATE_M3
 #EQUILUPDATE_M3 IMP4DV_M3
 
 INIT_EXE = ${BINDIR}/init_M3
@@ -79,6 +86,7 @@ STOP_EXE = ${BINDIR}/stop_M3
 ETS_EXE = ${BINDIR}/ets_M3
 CHEASE_EXE = ${BINDIR}/chease_M3
 GEM0_EXE = ${BINDIR}/gem0_M3
+GEM_EXE = ${BINDIR}/gem_M3
 DUPLICATE_EXE = ${BINDIR}/duplicate_M3
 #EQUILUPDATE_EXE = ${BINDIR}/equilupdate_M3
 #IMP4DV_EXE = ${BINDIR}/imp4dv_M3
@@ -98,9 +106,6 @@ ${OBJDIR}/%.o: %.c
 	${CC} -o $@ -c $< ${CCFLAGS}
 
 
-#%.f90: %.F90
-#	$(FPP) $(FPPFLAGS) $< $@ 
-
 INIT_M3: ${INIT_O} 
 	$(FC90) -o ${INIT_EXE} $^ -L${LIB_TYPES} -L${LIB_UAL} -litmtypes -lual ${LDFLAGS} 
 
@@ -115,6 +120,9 @@ CHEASE_M3: ${CHEASE_O}
 
 GEM0_M3: ${GEM0_O} 
 	$(FC90) -o ${GEM0_EXE} $^ -L${GEM0} -L${IMP4DV} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_XML} -L${LIB_UAL} -lgem0 -limp4dv -lbds -litmconstants -litmtypes -lxmllib -lual ${LDFLAGS} 
+
+GEM_M3: ${GEM_O} 
+	$(MPIF90) -o ${GEM_EXE} $^ -L${GEM} -L${IMP4DV} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_XML} -L${LIB_UAL} -lgem -limp4dv -lbds -litmconstants -litmtypes -lxmllib -lual ${LDFLAGS} ${FFTW_LIB}
 
 DUPLICATE_M3: ${DUPLICATE_O} 
 	$(FC90) -o ${DUPLICATE_EXE} $^ ${LDFLAGS} 
@@ -132,7 +140,7 @@ ${SYS}:
 
 clean:
 	@rm -f src/*~ *~ 
-	@rm -f ${CHEASE_EXE} ${GEM0_EXE} ${ETS_EXE} ${INIT_EXE} ${STOP_EXE} ${DUPLICATE_EXE}
+	@rm -f ${CHEASE_EXE} ${GEM0_EXE} ${GEM_EXE} ${ETS_EXE} ${INIT_EXE} ${STOP_EXE} ${DUPLICATE_EXE}
 	@rm -rf ${OBJDIR} ${INCDIR} ${BINDIR} 
 
 
