@@ -57,6 +57,8 @@ if __name__ == '__main__':
     gem0_object = GEM0Singleton()
     gem0_object.gem0_test()
 
+    #TODO: add grammar checks to code base
+
     #if it's index 69 for AUG_28906_6/*coreprof.cpo, so:
     #∇Te = -3138.03503336047
     #∇Ti  = -2420.64001419732
