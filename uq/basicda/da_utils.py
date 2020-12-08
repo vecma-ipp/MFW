@@ -277,6 +277,8 @@ def plot_prediction_variance(x_observ, y_observ, x_domain, y_test, y_pred, sigma
     :param f: true function
     """
 
+    wrt_dir = os.path.join(os.environ['PWD'], 'locmaxsamp')
+
     plot_response_1d(x_domain, y_test, f)
 
     plt.errorbar(x_observ.ravel(), y_observ, dy, fmt='r.', markersize=10, label='Observations')
@@ -294,7 +296,7 @@ def plot_prediction_variance(x_observ, y_observ, x_domain, y_test, y_pred, sigma
                # + 'PRediction RMSE is ' + str(rmse))
     plt.legend(loc='upper right')
     #plt.show(block=True)
-    plt.savefig('surr_gem0_Teddrho_' + str(len(y_observ)) + '.pdf')
+    plt.savefig(os.path.join(wrt_dir, 'surr_gem0_Tiddrho_' + str(len(y_observ)) + '.png'))
     plt.close()
     #return y_test.T.reshape(-1)
 

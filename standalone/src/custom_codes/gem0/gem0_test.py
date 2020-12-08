@@ -25,32 +25,44 @@ def run_batch(folder_list):
     # TODO: for every input folder modify/create gem0singleton and run gem0
     # should actually call easyvvuq-qcgpj?!
     return 0
-
+ 
 def plot_gem0_res(x, y):
-    plt.plot(x, y, label='python-gem0 response in ti')
-    plt.savefig('pythongem0_tifl_vs_tival')
+    plt.plot(x, y, label='python-gem0 response in tigr')
+    plt.xlabel('tegr')
+    plr.ylabel('tefl')
+    plt.savefig('pythongem0_tefl_vs_tegr.png')
     plt.close()
 
 def run_mult_ios():
     #TODO should probably use easyvvuq-qcgpj?
     gem0_object = GEM0Singleton()
     tifls = []
-    tidrs = []
+    tigrs = []
+    tefls = []
+    tegrs = []
     tevl, tivl, tegr, tigr = gem0_object.get_curr_params()
-    #tigrs = np.linspace(0.5*tigr, 1.5*tigr, 100)
+    tigrs = np.linspace(0.5*tigr, 1.5*tigr, 100)
     tivls = np.linspace(0.5*tivl, 1.5*tivl, 20)
+    tegrs = np.linspace(0.5*tegr, 1.5*tegr, 100)
+    tevls = np.linspace(0.5*tevl, 1.5*tevl, 20)
     param = {'ti.value': tevl, 'te.value': tivl, 'te.ddrho': tegr, 'ti.ddrho': tigr}
     #for ti_grad_val in tigrs:
-    for ti_val_val in tivls:
+    #for ti_val_val in tivls:
+    for te_grad_val in tegrs:
+    #for te_val_val in tevls:
         #param['ti.ddrho'] = ti_grad_val 
-        param['ti.value'] = ti_val_val
-        _, tifl, _, tidr = gem0_object.gem0_call(param)
+        #param['ti.value'] = ti_val_val
+        param['te.ddrho'] = te_grad_val
+        #param['te.value'] = te_val_val
+        tefl, tifl, tegr, tigr = gem0_object.gem0_call(param)
         tifls.append(tifl)
-        tidrs.append(tidr)
+        tefls.append(tefl)
+        #tigrs.append(tigr)
     
     #plot_res(tigrs, tifls)
-    plot_res(tivls, tifls)
-    return tidrs
+    #plot_gem0_res(tegrs, tifls)
+    plot_gem0_res(tegrs, tefls)
+    return tifls, tigrs
 
 
 if __name__ == '__main__':
@@ -64,4 +76,5 @@ if __name__ == '__main__':
     #∇Ti  = -2420.64001419732
 
 
-    #tifls = run_mult_ios()
+    tidrs = run_mult_ios()
+   

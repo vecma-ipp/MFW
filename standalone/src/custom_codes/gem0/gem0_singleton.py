@@ -110,7 +110,7 @@ class GEM0Singleton():
         #self.corep_elem.set_value(attrib, [new_value], ft)
 
         # TODO: for gradients: read the coreprof cpo-s, get the gradient by interpolation
-        # for new inputs re-wrtie gradeints at cpo, always write the new gradeints?
+        # for new inputs re-wrtie gradients at cpo, always write the new gradients?
         # move to ONLY modifying gradients i.e. temaparature has to be interpolated?
         
         #return self.corep_elem

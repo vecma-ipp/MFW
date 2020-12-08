@@ -1,5 +1,6 @@
 import sys
 import os
+import numpy as np
 #TODO: make a new package + install / or get relative paths consistent
 sys.path.append(os.path.abspath("../../standalone/src/custom_codes/gem0"))
 import importlib.util
@@ -56,3 +57,15 @@ class ExtCodeHelper():
         for el in x:
             res.append(self.gem0obj.gem0_call({'te.value': el[0], 'ti.value': el[1]})[0])
         return res
+
+    def gem0_call_tifltigrad_array(self, x):
+        """
+        calls the gem0 code for desired ti.ddrho
+        :param x: x[0] is ti.ddrho
+        """
+        res = []
+        for el in x:
+            res.append([self.gem0obj.gem0_call({'ti.ddrho:': el[0]})[0]]) #question: why tiddrho is different from teddrho in cpo? is tiddrho is converted to array by acii api?
+        return np.array(res)
+
+

@@ -368,6 +368,9 @@ def surrogate_loop(pardim):
         
         function = lambda x: np.array(ext_code_helper.gem0_call_tefltegrad_array(x))
         x_param = [-6000., -200., 64] # for gem in te-grad
+
+        function = lambda x: np.array(ext_code_helper.gem0_call_tifltigrad_array(x))
+        x_param = [-5000., -500., 45] # for gem in ti-grad # 09.12 plot the reponse. is there a local minimum? equilibrium at -24202420?
         
         x_data = np.zeros((n_init, 2))
         x_domain = np.atleast_2d(np.linspace(*x_param)).T
@@ -383,7 +386,7 @@ def surrogate_loop(pardim):
         for i in range(16):
             x_observ, y_observ, y_pred, sigma = GPR_analysis_toy(x_data, x_domain, y_par=x_param, x_par=x_param, f=function, eps=0.0)
             x_n = get_new_sample(x_domain, sigma)
-            plot_prediction_variance(x_observ, y_observ, x_domain, y_test, y_pred, sigma, function, [x_n], new_points, funcname='gem0, flTe in Te')
+            plot_prediction_variance(x_observ, y_observ, x_domain, y_test, y_pred, sigma, function, [x_n], new_points, rmse=0.0, funcname='gem0, flTi in gradTi')
 
             stop_crit, err = stop_train_criterium_rmse(y_pred, y_test.T.reshape(-1), 1e3) # for normalized problems chooes rmse threshold ~0.05
             errors.append(err)
@@ -551,4 +554,4 @@ def surrogate_utility(x_train_data, y_train_data, x_roi_data, original_model):
 plt.ion()
 
 ### --- Surrogate loop
-#surrogate_loop(1)
+surrogate_loop(1)
