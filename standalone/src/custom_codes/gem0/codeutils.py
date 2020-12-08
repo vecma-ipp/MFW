@@ -1,5 +1,5 @@
 
-def l3interp(y_in, x_in, nr_in, y_out, x_out, nr_out): #TODO currently intepolated values is garbage
+def l3interp(y_in, x_in, nr_in, y_out, x_out, nr_out):
     """
     Interpolation function
     perfroms Lagrange interpolation of degree 3 for values y_in on x_in 

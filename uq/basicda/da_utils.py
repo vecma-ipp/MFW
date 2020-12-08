@@ -256,6 +256,15 @@ def plot_convergence(sample_sizes, errors_mean, errors_variance):
     plt.savefig('toy' + '_gem0' + '_convergence' + '.png')
     plt.close()
 
+def plot_response_1d(x_domain, y_test, f):
+    wrt_dir = os.path.join(os.environ['PWD'])
+    plt.figure()
+    #y_test = f(x_domain)
+    plt.plot(x_domain, y_test, 'r:', label='GEM0') #r'$f(x) = x\,\sin(x)$')
+    plt.ylabel('$Ti flux$')
+    plt.xlabel(r'$\nabla Te$')
+    plt.savefig(os.path.join(wrt_dir, 'response' + str(len(y_test))+'.png')) #TODO save img in current folder
+
 def plot_prediction_variance(x_observ, y_observ, x_domain, y_test, y_pred, sigma, f, x_choice=[], newpoints=[], rmse=0.0, funcname='e^-x cos x', dy=0):
     """ 
     Plots prediction and 95% confidence interval
@@ -268,9 +277,8 @@ def plot_prediction_variance(x_observ, y_observ, x_domain, y_test, y_pred, sigma
     :param f: true function
     """
 
-    plt.figure()
-    #y_test = f(x_domain)
-    plt.plot(x_domain, y_test, 'r:', label=funcname) #r'$f(x) = x\,\sin(x)$')
+    plot_response_1d(x_domain, y_test, f)
+
     plt.errorbar(x_observ.ravel(), y_observ, dy, fmt='r.', markersize=10, label='Observations')
     plt.plot(x_domain, y_pred, 'b-', label='Prediction')
     plt.fill(np.concatenate([x_domain, x_domain[::-1]]),

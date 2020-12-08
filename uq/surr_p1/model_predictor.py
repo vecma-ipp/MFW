@@ -51,8 +51,8 @@ if __name__ == "__main__":
     #WORKDIR = os.environ['WORKDIR']
     #data_dir = WORKDIR + "/Fusion_Inputs/UQ_GEM_Data/runs/"
 
-    flux_tube_index = 69  #TODO has to be read from seomwhere
-    dim_pred_sample = 1 #TODO read number of files/foders in test output, or passed for EasyVVUQ?
+    flux_tube_index = 69  #TODO has to be read from somewhere
+    dim_pred_sample = 1 #TODO read number of files/foders in test output, or passed for EasyVVUQ
 
     input_dim = 4  #TODO read from the model object or from EasyVVUQ
     input_samples = np.zeros((dim_pred_sample, input_dim))
