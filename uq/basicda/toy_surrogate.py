@@ -355,7 +355,8 @@ def surrogate_loop(pardim):
     new_points = []
     n_init = 4
 
-    ext_code_helper = ExtCodeHelper()
+    ext_code_helper_1 = ExtCodeHelper(1)
+    ext_code_helper_4 = ExtCodeHelper(4)
 
     if pardim == 1:
         #function = lambda x: x * np.cos(1.0 * x)
@@ -363,18 +364,23 @@ def surrogate_loop(pardim):
         #function = lambda x: np.e**(+1.0*x)
         #x_param = [0., 1.5, 32] for cos 
 
-        function = lambda x: ext_code_helper.gem0_call_teflteval_array(x)
+        function = lambda x: ext_code_helper_1.gem0_call_teflteval_array(x)
         x_param = [400., 2000, 32] # for gem in te-val #TODO change the gradient sampling!
         
-        function = lambda x: np.array(ext_code_helper.gem0_call_tefltegrad_array(x))
+        function4 = lambda x: np.array(ext_code_helper_4.gem0_call_tefltegrad_array(x))
         x_param = [-6000., -200., 64] # for gem in te-grad
 
-        function = lambda x: np.array(ext_code_helper.gem0_call_tifltigrad_array(x))
-        x_param = [-5000., -500., 45] # for gem in ti-grad # 09.12 plot the reponse. is there a local minimum? equilibrium at -24202420?
+        function1 = lambda x: np.array(ext_code_helper_1.gem0_call_tefltegrad_array(x))
+
+        #function = lambda x: np.array(ext_code_helper.gem0_call_tifltigrad_array(x))
+        #x_param = [-5000., -500., 45] # for gem in ti-grad # 09.12 plot the reponse. is there a local minimum? equilibrium at -24202420?
         
         x_data = np.zeros((n_init, 2))
         x_domain = np.atleast_2d(np.linspace(*x_param)).T
-        y_test = function(x_domain) # TODO: some of the things e.g. x_domain are never changed - should be returned all the time
+        y_test = function4(x_domain) # TODO: some of the things e.g. x_domain are never changed - should be returned all the timei
+
+        y_test1 = function(x_domain)
+        plot_response_1d(x_domain, [y_test, y_test1], ylabels=['chigb4', 'chigb1'])
 
         y_scaling = lambda y: (y - y_test.min()) / (y_test.max() - y_test.min()) # scale to [0;1]
         x_scaling = lambda x: (x - x_domain.min()) / (x_domain.max() - x_domain.min())
@@ -555,3 +561,5 @@ plt.ion()
 
 ### --- Surrogate loop
 surrogate_loop(1)
+
+

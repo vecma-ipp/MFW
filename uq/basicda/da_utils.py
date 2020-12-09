@@ -256,12 +256,14 @@ def plot_convergence(sample_sizes, errors_mean, errors_variance):
     plt.savefig('toy' + '_gem0' + '_convergence' + '.png')
     plt.close()
 
-def plot_response_1d(x_domain, y_test, f):
+def plot_response_1d(x_domain, y_tests, ylabels, f):
     wrt_dir = os.path.join(os.environ['PWD'])
     plt.figure()
     #y_test = f(x_domain)
-    plt.plot(x_domain, y_test, 'r:', label='GEM0') #r'$f(x) = x\,\sin(x)$')
-    plt.ylabel('$Ti flux$')
+    for i in range(len(y_tests)):
+        plt.plot(x_domain, y_tests[i], 'r:', label='GEM0') #r'$f(x) = x\,\sin(x)$')
+        plt.ylabel(y_label[i])
+    plt.legend()
     plt.xlabel(r'$\nabla Te$')
     plt.savefig(os.path.join(wrt_dir, 'response' + str(len(y_test))+'.png')) #TODO save img in current folder
 
