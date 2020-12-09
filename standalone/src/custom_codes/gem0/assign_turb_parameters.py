@@ -63,7 +63,8 @@ def assign_turb_parameters(code_parameters_filename):
     code_parameters = {"flags.write_cpos": write_cpos, "flags.write_diags": write_diags, 
                        "flags.hmode": hmode, 'flags.q_choice': q_choice,
                        "grid.nrho_transp" : nrho_transp, "grid.ra0": ra0, 
-                       "grid.nion": nion, "grid.nion_prof": nion_prof}
+                       "grid.nion": nion, "grid.nion_prof": nion_prof,
+                       "chigb_option": 1}
 
     # initialization
     nparm = 0

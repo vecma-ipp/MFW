@@ -23,7 +23,7 @@ def gem(eq, coreprof, coretransp, code_parameters):
 
     time = 0.
 
-    codename = [] #TODO check if should be wrritten as list/array
+    codename = [] #TODO check if should be written as list/array
     codeversion = []
 
     # XML declarataion
@@ -72,6 +72,7 @@ def gem(eq, coreprof, coretransp, code_parameters):
     chi_d = code_parameters['physical.chi_d'] 
     chiratio_phi = code_parameters['physical.chiratio_phi']
 
+    chigb_option = code_parameters['chigb_option']
 
     #print('> Done assigning GEM0 parameters')
     
@@ -281,11 +282,14 @@ def gem(eq, coreprof, coretransp, code_parameters):
             # Downward correction
 
             if ion == 0:
-                #chigb = rhos * rhos * cs / r00
-                #chigb = chigb * 40.0 / math.sqrt(1.0 + (beta_reduction * beta) ** 2.0)
-                #chigb = chigb * max(0.0, (1.0 - thresh / abs((r00 * rlti))))
-
-                chigb = rhos * rhos * cs / lperp
+                if chigb_option == 1:
+                    chigb = rhos * rhos * cs / r00
+                if chigb_option == 2:
+                    chigb = chigb * 40.0 / math.sqrt(1.0 + (beta_reduction * beta) ** 2.0)
+                if chigb_option == 3:
+                    chigb = chigb * max(0.0, (1.0 - thresh / abs((r00 * rlti))))
+                if chigb_option == 4:
+                    chigb = rhos * rhos * cs / lperp #original code choice 
 
                 #print('SOME COEFS: {} {} {} {}'.format(1/lperp, (1/r00), max(0.0, (1.0 - thresh / abs((r00 * rlti)))), 
                 #      40.0 / math.sqrt(1.0 + (beta_reduction * beta) ** 2.0)))

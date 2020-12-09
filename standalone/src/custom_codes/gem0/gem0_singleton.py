@@ -41,12 +41,13 @@ def get_code_ios(equil_file_in="gem0_equilibrium_in.cpo", corep_file_in="gem0_co
 
 class GEM0Singleton():
 
-    def __init__(self, ):
+    def __init__(self, option=4):
         self.equil_file_in = "gem0_equilibrium_in.cpo"
         self.corep_file_in ="gem0_coreprof_in.cpo"
         self.coret_file_out = "gem0_coretransp_out.cpo"
 
         self.code_parameters = get_code_params()
+        self.code_parameters['chigb_option'] = option
         self.equil, self.corep_elem, self.coret = get_code_ios(self.equil_file_in, self.corep_file_in, self.coret_file_out)
         
         self.code_parameters["grid.nion"] = 1 #TODO: workaround
@@ -155,3 +156,4 @@ class GEM0Singleton():
         # Transfer CPO to buffer / write file
         print("> Writing transport cpo")
         write(coret, self.coret_file_out, 'coretransp')
+
