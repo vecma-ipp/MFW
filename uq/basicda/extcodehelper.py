@@ -14,16 +14,16 @@ class ExtCodeHelper():
     def __init__(self, option=4):
         self.gem0obj = GEM0Singleton(option=4)
 
-    def gem0_call_tefltevltegrad(x): # TODO np.vectorize?
+    def gem0_call_tefltevltegrad(self, x): # TODO np.vectorize?
         """
         :param x: x is a 1D array; x[0] is Te, x[1] is gradTe 
         """
         return gem0obj.gem0_call({'te.value': x[0], 'te.ddrho': x[1]})[0]
 
-    def gem0_call_teflteval_array(x):
+    def gem0_call_teflteval_array(self, x):
         res = []
         for el in x: 
-            res.append([gem0obj.gem0_call({'te.value': el[0]})[0]])
+            res.append([self.gem0obj.gem0_call({'te.value': el[0]})[0]])
         return np.array(res)
 
     def gem0_call_teflteval_log_array(x): 

@@ -193,6 +193,7 @@ def gem(eq, coreprof, coretransp, code_parameters):
     shatx = shatx * rho / qqx
 
     #print('nnex size is {}'.format(nnex.shape))
+    #print(coreprof.te.value)
 
     nnex = l3interp(coreprof.ne.value, rho0, nrho_prof, nnex, rho, nrho_transp)
     ttex = l3interp(coreprof.te.value, rho0, nrho_prof, ttex, rho, nrho_transp)
@@ -254,6 +255,8 @@ def gem(eq, coreprof, coretransp, code_parameters):
             shat = shatx[i]
 
             # Local parameters
+            print(tte) # for last iteration outside gives negative value -> pinpoint
+
 
             rhos = math.sqrt(cc * cc * ionmass * kb * tte / (ee * ee * b00 * b00))
             cs = math.sqrt(kb * tte / ionmass)

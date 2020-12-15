@@ -371,6 +371,7 @@ def surrogate_loop(pardim):
         x_param = [-6000., -200., 64] # for gem in te-grad
 
         function1 = lambda x: np.array(ext_code_helper_1.gem0_call_tefltegrad_array(x))
+        x_param = [-3800., -2000., 32]
 
         #function = lambda x: np.array(ext_code_helper.gem0_call_tifltigrad_array(x))
         #x_param = [-5000., -500., 45] # for gem in ti-grad # 09.12 plot the reponse. is there a local minimum? equilibrium at -24202420?

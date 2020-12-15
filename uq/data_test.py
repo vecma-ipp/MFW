@@ -180,8 +180,21 @@ def plot_prof(prof, rho, name):
     plt.xlabel('rho[m]')
     plt.ylabel('Te[eV]')
     plt.title('Te profile for '+ name)
-    plt.savefig('te_prof' + name + '.png')
+    plt.savefig('prof_' + name + '.png')
     #plt.show()
+    plt.close()
+
+def plot_prof_all(profs, rho, name, proflabels):
+    """
+    Plots a list of profiles of different parameters for the same scenario
+    """
+    fig = plt.figure() 
+    for i in range(len(profs)):
+        plt.plot(rho, profs[i], label=proflabels[i])
+    plt.xlabel('rho[m]')
+    plt.title('Profiles')
+    plt.legend()
+    plt.savefig('profs_' + name + '.png')
     plt.close()
 
 def plot_prof_seq(runfolder, nruns, name, targind=0):
@@ -309,9 +322,11 @@ def get_int_camp_data(basefolder, paramname='te.ddrho'):
     # TODO: same as get_camp_dataframe() but get new get_run_data() has to read profiles or the whole cpo and call interpolation routines
     return df
 
+def deriv(prof, delta):
+    prof_deriv = prof[1:] - prof [0:-1] / delta
+    return prof_deriv
 
-
-###--------------------------------------------------------- 
+###--------------------i------------------------------------- 
 	
 ft1_indx = 69 # 61
 
@@ -360,10 +375,31 @@ gem0data, _, _ = read_sim_csv("campaign_data.csv")
 
 
 # see how profiles are sampled for 2ft
-folder2ftrun = os.path.join(scratch_folder, "gem08ftuq_pce_z85mi86u") # a 2ft gem0 campaing on 13.10.2020
-folder8ftrun = os.path.join(scratch_folder, "gem08ftuq_pce_v0ij1gtr") # a 8ft gem0 campaing on ...10.2020
+#folder2ftrun = os.path.join(scratch_folder, "gem08ftuq_pce_z85mi86u") # a 2ft gem0 campaing on 13.10.2020
+#folder8ftrun = os.path.join(scratch_folder, "gem08ftuq_pce_v0ij1gtr") # a 8ft gem0 campaing on ...10.2020
 
-plot_run_profiles(folder8ftrun, "_gem0_aug_8ft_")
+#plot_run_profiles(folder8ftrun, "_gem0_aug_8ft_")
 
-num = 2047 
-plot_prof(get_te(folder8ftrun+'/runs/Run_'+str(num)+'/gem0_coreprof_in.cpo'), np.linspace(0,1,100), 'prof_8ftrun_at_'+str(8))
+#num = 2047 
+#plot_prof(get_te(folder8ftrun+'/runs/Run_'+str(num)+'/gem0_coreprof_in.cpo'), np.linspace(0,1,100), 'prof_8ftrun_at_'+str(8))
+
+#check current AUG profile steepest points
+exp_folder = "../workflows/AUG_28906_6"
+prof_file = "ets_coreprof_in.cpo"
+prof_file_path = os.path.join(exp_folder, prof_file)
+rho = np.linspace(0, 100, 100)
+prof_te = get_te(prof_file_path)
+#print(rho)
+#plot_prof(prof_te, rho, 'te_aug6')
+prof_ti =  get_ti(prof_file_path)
+prof_gradte = get_tegrad(prof_file_path)
+prof_gradti = get_tigrad(prof_file_path)
+profs = [prof_te, prof_ti, prof_gradte, prof_gradti]
+prlabels = ['te', 'ti', 'gradte', 'gradti']
+#plot_prof_all(profs, rho, 'aug6', prlabels)
+print(prof_gradte[65:73])
+print(prof_gradti[65:73].reshape(1,-1))
+gradgradti = deriv(prof_gradti, 0.1)
+core_gradti_maxloc = np.argmax(gradgradti[:-6])
+print('Steepest gradTi point is {} with gradTi={}'.format(core_gradti_maxloc, prof_gradti[core_gradti_maxloc]))
+
