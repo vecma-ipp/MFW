@@ -34,7 +34,7 @@ xml_dir = os.path.abspath("../workflows")
 
 # The executable code to run
 obj_dir = os.path.abspath("../standalone/bin/"+SYS)
-exec_code = "ets_chease"
+exec_code = "ets_chease_test"
 
 # Define the uncertain parameters
 # Electron boudary condition
@@ -142,15 +142,11 @@ decoder = CPODecoder(target_filename=output_filename,
                      output_columns=output_columns,
                      output_cponame=output_cponame)
 
-# Create a collation element for this campaign
-collater = uq.collate.AggregateSamples(average=False)
-
 # Add the ETS app (automatically set as current app)
 my_campaign.add_app(name=campaign_name,
                     params=params,
                     encoder=encoder,
-                    decoder=decoder,
-                    collater=collater)
+                    decoder=decoder)
 t2 = time.time()
 
 # Create the sampler

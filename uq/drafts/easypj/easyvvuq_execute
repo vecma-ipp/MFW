@@ -1,3 +1,0 @@
-#!/bin/bash
-
-python3 $(pwd)/easypj/easyvvuq_execute.py $@
