@@ -2,6 +2,7 @@ import matplotlib.pylab as plt
 import matplotlib
 import numpy as np
 
+# TODO plot_ stats and sobols for profile, scalar
 
 # Scaling coordianates
 def format_exponent(ax, axis='y'):

@@ -71,7 +71,7 @@ output_filename = "ets_coreprof_out.cpo"
 output_cponame = "coreprof"
 
 # params: the parameter space for campaign object
-# vary: adistributions list for the sampler
+# vary: distributions list for the sampler
 params_cpo, vary_cpo = cpo_inputs(cpo_filename=input_cpo_filename,
                                   cpo_name=input_cponame,
                                   input_dir=cpo_dir,

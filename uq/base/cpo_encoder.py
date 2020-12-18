@@ -60,7 +60,7 @@ class CPOEncoder(BaseEncoder, encoder_name="cpo_encoder"):
 
             if name in ['te.value', 'te.ddrho', 'ti.value', 'ti.ddrho']:
                 # TODO verify if self.ftube_index is not None
-                self._update_gradients(name)
+                self._update_gradients(name, value)
             else:
                 self.cpo.set_value(name, value)
 
@@ -80,24 +80,24 @@ class CPOEncoder(BaseEncoder, encoder_name="cpo_encoder"):
         self.cpo.save_file(target_file_path)
 
 
-    def _update_gradients(self, param_name):
+    def _update_gradients(self, name, value):
         rho = self.cpo.get_value('rho_tor_norm')
         i = self.ftube_index
 
         values = []
         indices = []
-        if param_name == 'te.value':
+        if name == 'te.value':
             dt = self.cpo.get_value('te.ddrho')
             t_i  = value
             dt_i = dt[i]
             values.append(value)
             indices.append(i)
-        if param_name == 'te.ddrho':
+        if name == 'te.ddrho':
             t = self.cpo.get_value('te.value')
             t_i  = t[i]
             dt_i = value
             self.cpo.set_value('te.ddrho', [value], [i])
-        if param_name == 'ti.value':
+        if name == 'ti.value':
             dt = self.cpo.get_value('ti.ddrho')
             t_i  = value
             if self.nion == 1:
@@ -106,7 +106,7 @@ class CPOEncoder(BaseEncoder, encoder_name="cpo_encoder"):
                 dt_i = dt[i][0]
             values.append(value)
             indices.append(i)
-        if param_name == 'ti.ddrho':
+        if name == 'ti.ddrho':
             t = self.cpo.get_value('ti.value')
             if self.nion == 1:
                 t_i  = t[i]
@@ -121,9 +121,9 @@ class CPOEncoder(BaseEncoder, encoder_name="cpo_encoder"):
         values.append(dt_i*(rho[i+1] - rho[i]) + t_i)
         values.append(dt_i*(rho[i+2] - rho[i]) + t_i)
         indices += [i-2, i-1, i+1, i+2]
-        if param_name[0:2] =='te':
+        if name[0:2] =='te':
             self.cpo.set_value('te.value', values, indices)
-        if param_name[0:2] == 'ti':
+        if name[0:2] == 'ti':
             self.cpo.set_value('ti.value', values, indices)
 
 

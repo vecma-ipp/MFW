@@ -1,11 +1,15 @@
 import os
 import time
 import easyvvuq as uq
-from easymfw.templates.cpo_encoder import CPOEncoder
-from easymfw.templates.cpo_decoder import CPODecoder
-from easymfw.templates.xml_encoder import XMLEncoder
-from easymfw.utils.io_tools import get_cpo_inputs
-from easymfw.utils.io_tools import get_xml_inputs
+# EasyVVUQ/QCG-PJ
+import eqi
+# from ual
+from ascii_cpo import read
+# from current package
+from base.cpo_encoder import CPOEncoder
+from base.xml_encoder import XMLEncoder
+from base.cpo_decoder import CPODecoder
+from base.utils import cpo_inputs, xml_inputs
 
 '''
 Perform UQ for the workflow ETS + CHEASE.
@@ -18,6 +22,9 @@ print('UQ ETS-CHEASE: START')
 
 t0 = time.time()
 
+# Eexecution with QCG-PJ
+EXEC_PJ = True
+
 # Machine name
 SYS = os.environ['SYS']
 
@@ -26,8 +33,6 @@ tmp_dir = os.environ['SCRATCH']
 
 # CPO files
 cpo_dir = os.path.abspath("../workflows/AUG_28906_6")
-#cpo_dir = os.path.abspath("../workflows/JET_92436_23066")
-#cpo_dir = os.path.abspath("../workflows/AUG_28906_6_BgB")
 
 # XML and XSD files
 xml_dir = os.path.abspath("../workflows")
@@ -40,67 +45,68 @@ exec_code = "ets_chease_test"
 # Electron boudary condition
 input_params_bc = {
     "te.boundary.value": {
-        "dist": "Uniform",
-        "err": 0.2,
+        "dist_name": "Normal",
+        "var_coeff":  0.2,
     }
 }
 # Electron heating Sources
-input_params_src = {
+input_params_sr = {
     "electrons.heating_el.WTOT_el":{
-        "dist": "Uniform",
-        "err": 0.2,
+        "dist_name": "Uniform",
+        "var_coeff": 0.2,
     },
     "electrons.heating_el.RHEAT_el":{
-        "dist": "Uniform",
-        "err": 0.2,
+        "dist_name": "Uniform",
+        "var_coeff": 0.2,
     },
     "electrons.heating_el.FWHEAT_el":{
-        "dist": "Uniform",
-     "err": 0.2,
+        "dist_name": "Uniform",
+        "var_coeff": 0.2,
     }
 }
 
-input_params = {}
-input_params.update(input_params_bc)
-input_params.update(input_params_src)
-
 # CPO and XML files containg initiail values of uncertain params
-input_cpofilename = "ets_coreprof_in.cpo"
+input_cpo_filename = "ets_coreprof_in.cpo"
 input_cponame = "coreprof"
-input_xmlfilename = "source_dummy.xml"
-input_xsdfilename = "source_dummy.xsd"
+input_xml_filename = "source_dummy.xml"
+input_xsd_filename = "source_dummy.xsd"
 
 # The quantities of intersts and the cpo file to set them
 output_columns = ["profiles_1d.pressure"]
 output_filename = "chease_equilibrium_out.cpo"
 output_cponame = "equilibrium"
 
-# Get input parmeters
 # params: the parameter space for campaign object
-# vary: adistributions list for the sampler
-input_cpofile = os.path.join(cpo_dir, input_cpofilename)
-params_cpo, vary_cpo = get_cpo_inputs(cpo_file=input_cpofile,
-                                      cpo_name=input_cponame,
-                                      input_params=input_params_bc)
+# vary: distributions list for the sampler
+params_cpo, vary_cpo = cpo_inputs(cpo_filename=input_cpo_filename,
+                                  cpo_name=input_cponame,
+                                  input_dir=cpo_dir,
+                                  input_params=input_params_bc)
 
-input_xmlfile = os.path.join(xml_dir, input_xmlfilename)
-input_xsdfile = os.path.join(xml_dir, input_xsdfilename)
-params_xml, vary_xml = get_xml_inputs(xml_file=input_xmlfile,
-                                      xsd_file=input_xsdfile,
-                                      input_params=input_params_src)
+params_xml, vary_xml = xml_inputs(xml_filename=input_xml_filename,
+                                  xsd_filename=input_xsd_filename,
+                                  input_dir=xml_dir,
+                                  input_params=input_params_sr)
 
 # Merge the params dict
 params = {**params_cpo, **params_xml}
 vary = {**vary_cpo, **vary_xml}
 
 # Initialize Campaign object
-campaign_name = "UQ_TrEq_"
+campaign_name = "UQ-BCSR_ETS-CHEASE_"
 my_campaign = uq.Campaign(name=campaign_name, work_dir=tmp_dir)
 
 # Create new directory for inputs
 campaign_dir = my_campaign.campaign_dir
 common_dir = campaign_dir +"/common/"
 os.mkdir(common_dir)
+
+# Copy input CPO files in common directory
+os.system("cp " + cpo_dir + "/ets_coreprof_in.cpo "    + common_dir)
+os.system("cp " + cpo_dir + "/ets_equilibrium_in.cpo " + common_dir)
+os.system("cp " + cpo_dir + "/ets_coreimpur_in.cpo "   + common_dir)
+os.system("cp " + cpo_dir + "/ets_coretransp_in.cpo "  + common_dir)
+os.system("cp " + cpo_dir + "/ets_toroidfield_in.cpo " + common_dir)
 
 # Copy XML and XSD files
 os.system("cp " + xml_dir + "/ets.xml "    + common_dir)
@@ -110,43 +116,38 @@ os.system("cp " + xml_dir + "/chease.xsd " + common_dir)
 os.system("cp " + xml_dir + "/source_dummy.xml " + common_dir)
 os.system("cp " + xml_dir + "/source_dummy.xsd " + common_dir)
 
-# Copy input CPO files in common directory
-os.system("cp " + cpo_dir + "/ets_coreprof_in.cpo "    + common_dir)
-os.system("cp " + cpo_dir + "/ets_equilibrium_in.cpo " + common_dir)
-os.system("cp " + cpo_dir + "/ets_coreimpur_in.cpo "   + common_dir)
-os.system("cp " + cpo_dir + "/ets_coretransp_in.cpo "  + common_dir)
-os.system("cp " + cpo_dir + "/ets_toroidfield_in.cpo " + common_dir)
 
 # Copy  exec file
 os.system("cp " + obj_dir +"/" + exec_code + " " + common_dir)
+exec_path = os.path.join(obj_dir, exec_code)
 
 t1 = time.time()
 
 # Create the encoders
-encoder_cpo = CPOEncoder(template_filename=input_cpofilename,
-                         target_filename=input_cpofilename,
-                         input_cponame=input_cponame,
-                         common_dir=common_dir,
+# params_names dict is given here because we will use MultiEncoder
+encoder_cpo = CPOEncoder(cpo_filename=input_cpo_filename,
+                         cpo_name=input_cponame,
+                         input_dir=common_dir,
                          input_params=input_params_bc)
 
-encoder_xml = XMLEncoder(template_filename = input_xmlfilename,
-                         target_filename = input_xmlfilename,
-                         input_params=input_params_src,
-                         common_dir=common_dir)
+encoder_xml = XMLEncoder(xml_filename=input_xml_filename,
+                         input_dir=common_dir,
+                         input_params=input_params_sr)
 
 # Combine both encoders into a single encoder
 encoder = uq.encoders.MultiEncoder(encoder_cpo, encoder_xml)
 
-# Create the decoder
-decoder = CPODecoder(target_filename=output_filename,
-                     output_columns=output_columns,
-                     output_cponame=output_cponame)
+# Create the encoder
+decoder = CPODecoder(cpo_filename=output_filename,
+                     cpo_name=output_cponame,
+                     output_columns=output_columns)
 
-# Add the ETS app (automatically set as current app)
+# Add the app (automatically set as current app)
 my_campaign.add_app(name=campaign_name,
                     params=params,
                     encoder=encoder,
                     decoder=decoder)
+
 t2 = time.time()
 
 # Create the sampler
@@ -164,12 +165,20 @@ my_campaign.populate_runs_dir()
 t4 = time.time()
 
 # Running
-exec_path = os.path.join(common_dir, exec_code)
-my_campaign.apply_for_each_run_dir(uq.actions.ExecuteLocal(exec_path))
+qcgpjexec = eqi.Executor(my_campaign)
+qcgpjexec.create_manager(log_level='info')
+
+qcgpjexec.add_task(eqi.Task(
+    eqi.TaskType.EXECUTION,
+    eqi.TaskRequirements(cores=1),
+    application=exec_path
+))
+qcgpjexec.run(processing_scheme=eqi.ProcessingScheme.EXEC_ONLY)
+qcgpjexec.terminate_manager()
 
 t5 = time.time()
 
-# Collate
+# Collating
 my_campaign.collate()
 
 t6 = time.time()
@@ -184,42 +193,14 @@ results = my_campaign.get_last_analysis()
 t7 = time.time()
 
 # Get Descriptive Statistics
-stat = {}
-sob1 = {}
-perc = {}
-dist = {}
-for qoi in output_columns:
-    stat[qoi] = results['statistical_moments'][qoi]
-    sob1[qoi] = results['sobols_first'][qoi]
-    perc[qoi] = results['percentiles'][qoi]
-    dist[qoi] = results['output_distributions'][qoi]
-
-# Save graphics
-from easymfw.utils import plots
-from ascii_cpo import read
-
 equil_file = os.path.join(cpo_dir, "ets_equilibrium_in.cpo")
 equil = read(equil_file, "equilibrium")
 rho = equil.profiles_1d.rho_tor
 
 uparams_names = list(params.keys())
 
-#for qoi in output_columns:
-    #q = qoi.split('.')[-1]
-qoi = "profiles_1d.pressure"
-plots.plot_stats_all(rho, stat[qoi], perc[qoi], dist[qoi],
-                 xlabel=r'$\rho_{tor} [m]$', ylabel="P [Pa]",
-                 ftitle='Pressure profile',
-                 fname='data/outputs/STAT_p')
-
-plots.plot_sobols_all(rho, sob1[qoi], uparams_names,
-                  ftitle='1st Sobol indices: '+q,
-                  fname='data/outputs/SA_'+q+"_"+campaign_name)
-
 t8 = time.time()
 
-print("vary = ", vary)
-print('Ns = ', my_sampler.n_samples)
 print('Time for initializing = %.3f' %(t1-t0))
 print('Time for initializing Campaign = %.3f' %(t2-t1))
 print('Time for sampling = %.3f' %(t3-t2))

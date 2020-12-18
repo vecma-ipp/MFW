@@ -192,6 +192,7 @@ def ftube_indices(corep_file, coret_file):
        contain flux tube indices.
     """
 
+    from ascii_cpo import read
     corep = read(corep_file, 'coreprof')
     coret = read(coret_file, 'coretransp')
 
