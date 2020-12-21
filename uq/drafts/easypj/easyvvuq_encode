@@ -1,3 +1,0 @@
-#!/bin/bash
-
-python3 $(pwd)/easypj/external_encoder.py $@

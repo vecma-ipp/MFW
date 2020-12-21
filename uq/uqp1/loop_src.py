@@ -1,22 +1,25 @@
 import os
+import numpy as np
 import easyvvuq as uq
+# from ual
 from ascii_cpo import read
-from easymfw.templates.xml_encoder import XMLEncoder
-from easymfw.templates.cpo_decoder import CPODecoder
-from easymfw.utils.io_tools import get_xml_inputs
+# from current package
+from base.xml_encoder import XMLEncoder
+from base.cpo_decoder import CPODecoder
+from base.utils import xml_inputs
 
 '''
-Perform UQ for the workflow Transport-Equilibrium-Turblence.
+Perform UQ for the workflow Transport-Equilibrium-Turblence:
+    ETS-CHEASE-GEM0.
 Uncertainties are driven by:
     External sources of Electrons or/and Ions heating.
 Method: Non intrusive with PCE.
-Execution with QCG-Pilot Job.
 '''
 
 
-print('>>> UQ Workflow Sources w/PJ: START')
+print('UQSR-loopGem0: START')
 
-# execustion with QCJ-PJ
+# execustion with QCG-PJ
 EXEC_PJ = True
 
 # Machine name
@@ -27,7 +30,6 @@ tmp_dir = os.environ['SCRATCH']
 
 # CPO files location
 cpo_dir = os.path.abspath("../workflows/AUG_28906_6")
-#cpo_dir = os.path.abspath("../workflows/JET_92436_23066")
 
 # XML and XSD files location
 xml_dir = os.path.abspath("../workflows")
@@ -40,30 +42,30 @@ exec_code = "loop_gem0"
 # Amplitude, Position and Width from source_dummy.xml
 elec_heating_params = {
     "electrons.heating_el.WTOT_el":{
-        "dist": "Uniform",
-        "err": 0.2,
-    },
-    "electrons.heating_el.RHEAT_el":{
-        "dist": "Uniform",
-        "err": 0.2,
-    },
-    "electrons.heating_el.FWHEAT_el":{
-        "dist": "Uniform",
-        "err": 0.2,
-    }
+        "dist_name": "Uniform",
+        "var_coeff": 0.2,
+    }#,
+    #"electrons.heating_el.RHEAT_el":{
+    #    "dist_name": "Uniform",
+    #    "var_coeff": 0.2,
+    #},
+    #"electrons.heating_el.FWHEAT_el":{
+    #    "dist_name": "Uniform",
+    #    "var_coeff": 0.2,
+    #}
 }
 ions_heating_params = {
     "ions.heating.WTOT":{
-        "dist": "Uniform",
-        "err": 0.2,
+        "dist_name": "Uniform",
+        "var_coeff": 0.2,
     },
     "ions.heating.RHEAT_el":{
-        "dist": "Uniform",
-        "err": 0.2,
+        "dist_name": "Uniform",
+        "var_coeff": 0.2,
     },
     "ions.heating.FWHEAT":{
-        "dist": "Uniform",
-        "err": 0.2,
+        "dist_name": "Uniform",
+        "var_coeff": 0.2,
     }
 }
 
@@ -82,16 +84,14 @@ output_filename = "ets_coreprof_out.cpo"
 output_cponame = "coreprof"
 
 # Parameter dict for Campaign and distributions list for Sampler
-input_xml_file = os.path.join(xml_dir, input_xml_filename)
-input_xsd_file = os.path.join(xml_dir, input_xsd_filename)
-params, vary = get_xml_inputs(xml_file=input_xml_file,
-                              xsd_file=input_xsd_file,
-                              input_params = input_params)
+params, vary = xml_inputs(xml_filename=input_xml_filename,
+                          xsd_filename=input_xsd_filename,
+                          input_dir=xml_dir,
+                          input_params=input_params)
 
 # Initialize Campaign object
-print('>>> Initialize Campaign object')
 test_case = cpo_dir.split('/')[-1]
-campaign_name = "UQ_SRC_"+test_case
+campaign_name = "UQSR_loopGem0_"+test_case
 my_campaign = uq.Campaign(name=campaign_name, work_dir=tmp_dir)
 
 # Create new directory for inputs
@@ -112,123 +112,78 @@ os.system("cp " + xml_dir + "/chease.x* " + common_dir)
 os.system("cp " + xml_dir + "/gem0.x* " + common_dir)
 os.system("cp " + xml_dir + "/source_dummy.x* " + common_dir)
 
-# Create the encoder and get the app parameters
-print('>>> Create the encoder')
-encoder = XMLEncoder(template_filename=input_xml_filename,
-                     target_filename=input_xml_filename,
-                     input_params=input_params,
-                     common_dir=common_dir)
+# Copy exec file
+os.system("cp " + obj_dir +"/" + exec_code + " " + common_dir)
+exec_path = os.path.join(obj_dir, exec_code)
 
-# Create the encoder
-print('>>> Create the decoder')
-decoder = CPODecoder(target_filename=output_filename,
-                     output_columns=output_columns,
-                     output_cponame=output_cponame)
+# Create the encoder and the decoder
+encoder = XMLEncoder(xml_filename=input_xml_filename,
+                     input_dir=common_dir)
 
-# Create a collation element for this campaign
-print('>>> Create Collater')
-collater = uq.collate.AggregateSamples(average=False)
+decoder = CPODecoder(cpo_filename=output_filename,
+                     cpo_name=output_cponame,
+                     output_columns=output_columns)
 
 # Add the ETS app (automatically set as current app)
-print('>>> Add app to campagn object')
 my_campaign.add_app(name=campaign_name,
                     params=params,
                     encoder=encoder,
-                    decoder=decoder,
-                    collater=collater)
+                    decoder=decoder)
 
 # Create the sampler
-print('>>> Create the sampler')
-my_sampler = uq.sampling.PCESampler(vary=vary, polynomial_order=3,
-                                    regression=False)
+my_sampler = uq.sampling.PCESampler(vary=vary, polynomial_order=3)
 my_campaign.set_sampler(my_sampler)
 
 # Will draw all (of the finite set of samples)
-print('>>> Draw Samples - Ns = ', my_sampler.n_samples)
 my_campaign.draw_samples()
-
-print('>>> Populate runs_dir')
 my_campaign.populate_runs_dir()
 
-exec_path = os.path.join(obj_dir, exec_code)
+# Execution
 if EXEC_PJ:
-    # GCG-PJ wrapper
-    import easypj
-    from easypj import TaskRequirements, Resources
-    from easypj import Task, TaskType, SubmitOrder
+    # With QCG-Pilot Job
+    import eqi
+    qcgpjexec = eqi.Executor(my_campaign)
+    qcgpjexec.create_manager(log_level='info')
 
-    print(">>> Starting PJ execution\n")
-    qcgpjexec = easypj.Executor()
-    qcgpjexec.create_manager(dir=my_campaign.campaign_dir, log_level='info')
-
-    qcgpjexec.add_task(Task(
-        TaskType.EXECUTION,
-        TaskRequirements(cores=Resources(exact=1)),
+    qcgpjexec.add_task(eqi.Task(
+        eqi.TaskType.EXECUTION,
+        eqi.TaskRequirements(cores=1),
         application=exec_path
     ))
-
-    qcgpjexec.run(
-        campaign=my_campaign,
-        submit_order=SubmitOrder.EXEC_ONLY
-    )
-
+    qcgpjexec.run(processing_scheme=eqi.ProcessingScheme.EXEC_ONLY)
     qcgpjexec.terminate_manager()
 else:
-    print('>>> Starting Local execution')
+    #Local execution
     my_campaign.apply_for_each_run_dir(uq.actions.ExecuteLocal(exec_path))
 
-print('>>> Collate')
+# Collection of simulation outputs
 my_campaign.collate()
 
 # Post-processing analysis
-print('>>> Post-processing analysis')
 analysis = uq.analysis.PCEAnalysis(sampler=my_sampler, qoi_cols=output_columns)
 my_campaign.apply_analysis(analysis)
 
-print('>>> Get results')
+# Get results
 results = my_campaign.get_last_analysis()
 
-# Get Descriptive Statistics
-print('>>> Get Descriptive Statistics')
-stat = {}
-sob1 = {}
-dist = {}
-for qoi in output_columns:
-    stat[qoi] = results['statistical_moments'][qoi]
-    sob1[qoi] = results['sobols_first'][qoi]
-    dist[qoi] = results['output_distributions'][qoi]
-
-# Save graphics
-from easymfw.utils import plots
-from ascii_cpo import read
-
+#  Graphics for Descriptive satatistics
 cpo_file = os.path.join(cpo_dir, "ets_coreprof_in.cpo")
 corep = read(cpo_file, "coreprof")
 rho = corep.rho_tor_norm
 
-uparams_names = list(params.keys())
-
-for qoi in output_columns:
-    fig = campaign_name + qoi.split('.')[0]
-    plots.plot_stats(rho, stat[qoi],
-                     xlabel=r'$\rho_{tor}$', ylabel=qoi,
-                     ftitle=qoi+' profile',
-                     fname='data/outputs/STAT_'+fig)
-
-    plots.plot_sobols_all(rho, sob1[qoi], uparams_names,
-                      ftitle='1st Sobol indices: '+qoi,
-                      fname='data/outputs/SA_'+fig)
 
 # Save STATS into the csv file
-#    import numpy as np
-#    header = 'rho_tor\t'
-#    values = [rho]
-#    for qoi in output_columns:
-#        values.append(list(stat[qoi]['mean']))
-#        values.append(list(stat[qoi]['std']))
-#        header = header + '\tmean_'+qoi + '\tstd_'+qoi
-#
-#    np.savetxt('data/outputs/'+campaign_name+'STATS.csv',
-#               np.c_[values].T, delimiter='\t', header=header)
-#
-print('>>> UQ Workflow Sources: END')
+header = 'rho_tor\t'
+values = [rho]
+for qoi in output_columns:
+
+    mean = results.describe(qoi, 'mean')
+    std = results.describe(qoi, 'std')
+    values.append(list(mean))
+    values.append(list(std))
+    header = header + '\tmean_'+qoi + '\tstd_'+qoi
+
+    np.savetxt('data/outputs/'+campaign_name+'STATS.csv',
+               np.c_[values].T, delimiter='\t', header=header)
+
+print('UQSR-loopGem0: END')

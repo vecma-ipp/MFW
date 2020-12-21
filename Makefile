@@ -338,14 +338,20 @@ strip-chease:
 	externals/chease/src-f90/string_manipulation_tools.f90 \
 	externals/chease/src-f90/xml2eg.f90 \
 	externals/chease/src-f90/xml2eg_c.c \
-	externals/chease/src-f90/xml_file_reader.f90 \
+	externals/chease/src-f90/xml_file_reader.f90;	\
+	mv externals/chease/src-f90/energy.f90 externals/chease/src-f90/energy_chease.f90; \
+	sed -i "s/ENERGY/ENERGY_CHEASE/g" externals/chease/src-f90/energy_chease.f90; \
+	sed -i "s/ENERGY/ENERGY_CHEASE/g" externals/chease/src-f90/stepon.f90;\
+	sed -i "s/energy/energy_chease/g" externals/chease/src-f90/Makefile \
 	&& echo -e "\033[32m\033[1m -- OK -- \033[0m") \
 	|| echo -e "\033[31m\033[1m -- FAIL -- \033[0m") \
 	|| echo -e "\033[32m\033[1m -- ALREADY STRIPPED -- \033[0m" 
 
 revert-chease:
 	@echo -e "\033[36m\033[1m ++++ Revert CHEASE makefiles ++++ \033[0m"; \
-	(svn revert externals/chease/src-f90/Make* \
+	(svn revert externals/chease/src-f90/Make*; \
+	svn revert externals/chease/src-f90/energy.f90; \
+ 	svn revert externals/chease/src-f90/stepon.f90 \
 	&& echo -e "\033[32m\033[1m -- OK -- \033[0m") \
 	|| echo -e "\033[31m\033[1m -- FAIL -- \033[0m"
 

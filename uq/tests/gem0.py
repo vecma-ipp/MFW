@@ -1,26 +1,28 @@
 import os
 import easyvvuq as uq
+# EasyVVUQ/QCG-PJ
+import eqi
+# from ual
 from ascii_cpo import read
-from easymfw.templates.cpo_encoder import CPOEncoder
-from easymfw.templates.cpo_decoder import CPODecoder
-from easymfw.utils.io_tools import get_cpo_inputs
+# from current package
+from base.cpo_encoder import CPOEncoder
+from base.cpo_decoder import CPODecoder
+from base.utils import cpo_inputs
 
 '''
-Perform UQ for the Turblence code GEM
-Uncertainties are driven by: The electon and ion temperatur and
-their gradient localisd by a Flux tube position.
-IMPORTANT CHECK: in gem0.xml, nrho_transp = 1
+Perform UQ for the Turblence code GEM0.
+Uncertainties are driven by:
+The electon and ion temperatur and their gradient localisd on the Flux tube position.
+IMPORTANT CHECK: in gem0.xml, nrho_transp = 1.
 '''
 
 
 print('TEST GEM0-UQ: START')
 
 # We test 1 flux tube
-#flux_indices = [15, 31, 44, 55, 66, 76, 85, 94]
-ft_index = 61
-
-# execustion with QCJ-PJ
-EXEC_PJ = True
+# run gem0_test in strandalone and use:
+# base.utils.ftube_indices('gem0_coreprof_in.cpo','gem0_coretransp_out.cpo') to get the index
+ftube_index = 61
 
 # Machine name
 SYS = os.environ['SYS']
@@ -29,9 +31,7 @@ SYS = os.environ['SYS']
 tmp_dir = os.environ['SCRATCH']
 
 # CPO files location
-cpo_dir = os.path.abspath("../workflows/AUG_28906_6_1ft_restart")
-#cpo_dir = os.path.abspath("../workflows/AUG_28906_6_8ft_restart")
-#cpo_dir = os.path.abspath("../workflows/JET_92436_23066")
+cpo_dir = os.path.abspath("../workflows/AUG_28906_6")
 
 # XML and XSD files location
 xml_dir = os.path.abspath("../workflows")
@@ -42,27 +42,13 @@ exec_code = "gem0_test"
 
 # Define the uncertain parameters
 # Electron temperature and its gradient
+
+dist ={ "dist_name": "Normal", "var_coeff":  0.2}
 input_params = {
-    "te.value": {
-        "dist": "Normal",
-        "err":  0.2,
-        "ft_index": ft_index,
-    },
-    "te.ddrho": {
-        "dist": "Normal",
-        "err": 0.2,
-        "ft_index": ft_index,
-    },
-    "ti.value": {
-        "dist": "Normal",
-        "err":  0.2,
-        "ft_index": ft_index,
-    },
-    "ti.ddrho": {
-        "dist": "Normal",
-        "err": 0.2,
-        "ft_index": ft_index,
-    }
+    "te.value": dist,
+    "te.ddrho": dist,
+    "ti.value": dist,
+    "ti.ddrho": dist
 }
 
 # CPO file containg initial values of uncertain params
@@ -70,19 +56,18 @@ input_filename = "ets_coreprof_in.cpo"
 input_cponame = "coreprof"
 
 # The quantities of intersts and the cpo file to set them
-output_columns = ["te_transp.flux"] #, "ti_transp.flux"]
+output_columns = ["te_transp.flux", "ti_transp.flux"]
 output_filename = "gem0_coretransp_out.cpo"
 output_cponame = "coretransp"
 
 # parameter space for campaign and the distributions list for the sampler
-input_cpo_file = os.path.join(cpo_dir, input_filename)
-print("input file: " + input_cpo_file + "\n")
-params, vary = get_cpo_inputs(cpo_file=input_cpo_file,
-                              cpo_name=input_cponame,
-                              input_params=input_params)
+params, vary = cpo_inputs(cpo_filename=input_filename,
+                          cpo_name=input_cponame,
+                          input_dir=cpo_dir,
+                          input_params=input_params,
+                          ftube_index=ftube_index)
 
 # Initialize Campaign object
-print('>>> Initialize Campaign object')
 campaign_name = "UQ_GEM0_"
 my_campaign = uq.Campaign(name=campaign_name, work_dir=tmp_dir)
 
@@ -103,97 +88,56 @@ os.system("cp " + xml_dir + "/gem0.xsd " + common_dir)
 
 # Copy  exec file
 os.system("cp " + obj_dir +"/"+ exec_code + " " + common_dir)
+exec_path = os.path.join(common_dir, exec_code)
 
-# Create the encoder
-print('>>> Create the encoder')
+# Create the encoder and the decoder
 input_filename = "gem0_coreprof_in.cpo"
-encoder = CPOEncoder(template_filename=input_filename,
-                     target_filename=input_filename,
-                     input_cponame=input_cponame,
-                     input_params=input_params,
-                     common_dir=common_dir)
+encoder = CPOEncoder(cpo_filename=input_filename,
+                     cpo_name=input_cponame,
+                     input_dir=common_dir,
+                     ftube_index=ftube_index)
 
-# Create the decoder
-print('>>> Create the decoder')
-decoder = CPODecoder(target_filename=output_filename,
-                     output_columns=output_columns,
-                     output_cponame=output_cponame)
-
-# Create a collation element for this campaign
-print('>>> Create Collater')
-collater = uq.collate.AggregateSamples(average=False)
+decoder = CPODecoder(cpo_filename=output_filename,
+                     cpo_name=output_cponame,
+                     output_columns=output_columns)
 
 # Add the app (automatically set as current app)
-print('>>> Add app to campaign object')
 my_campaign.add_app(name=campaign_name,
                     params=params,
                     encoder=encoder,
-                    decoder=decoder,
-                    collater=collater)
+                    decoder=decoder)
 
 # Create the sampler
-print('>>> Create the sampler')
 my_sampler = uq.sampling.PCESampler(vary=vary, polynomial_order=3)
-#my_sampler = uq.sampling.QMCSampler(vary=vary, n_mc_samples=10)
 my_campaign.set_sampler(my_sampler)
 
 # Will draw all (of the finite set of samples)
-print('>>> Draw Samples - Ns = ', my_sampler.n_samples)
 my_campaign.draw_samples()
-
-print('>>> Populate runs_dir')
 my_campaign.populate_runs_dir()
 
-exec_path = os.path.join(common_dir, exec_code)
-if EXEC_PJ:
-    # GCG-PJ wrapper
-    import easypj
-    from easypj import TaskRequirements, Resources
-    from easypj import Task, TaskType, SubmitOrder
+# Execution
+qcgpjexec = eqi.Executor(my_campaign)
+qcgpjexec.create_manager(log_level='info')
 
-    print(">>> Starting PJ execution\n")
-    qcgpjexec = easypj.Executor()
-    qcgpjexec.create_manager(dir=my_campaign.campaign_dir, log_level='debug')
+qcgpjexec.add_task(eqi.Task(
+    eqi.TaskType.EXECUTION,
+    eqi.TaskRequirements(cores=1),
+    application=exec_path
+))
+qcgpjexec.run(processing_scheme=eqi.ProcessingScheme.EXEC_ONLY)
+qcgpjexec.terminate_manager()
 
-    qcgpjexec.add_task(Task(
-        TaskType.EXECUTION,
-        TaskRequirements(cores=Resources(exact=1)),
-        application=exec_path
-    ))
-
-    qcgpjexec.run(
-        campaign=my_campaign,
-        submit_order=SubmitOrder.EXEC_ONLY
-    )
-
-    qcgpjexec.terminate_manager()
-else:
-    print('>>> Starting Local execution')
-    my_campaign.apply_for_each_run_dir(uq.actions.ExecuteLocal(exec_path))
-
-print('>>> Collate')
+# Collection of simulation outputs
 my_campaign.collate()
 
 # Post-processing analysis
-print('>>> Post-processing analysis')
 analysis = uq.analysis.PCEAnalysis(sampler=my_sampler, qoi_cols=output_columns)
-#analysis = uq.analysis.QMCAnalysis(sampler=my_sampler, qoi_cols=output_columns)
 my_campaign.apply_analysis(analysis)
 
-print('>>> Get results')
+# Get results
 results = my_campaign.get_last_analysis()
 
 # Get Descriptive Statistics
-print('>>> Get Descriptive Statistics: \n')
-stat = {}
-sob1 = {}
-dist = {}
-for qoi in output_columns:
-    stat[qoi] = results['statistical_moments'][qoi]
-    sob1[qoi] = results['sobols_first'][qoi]
 
-    print(qoi)
-    print('Stats: \n', stat[qoi] )
-    print('Sobol 1st: \n',sob1[qoi])
 
 print('>>> TEST GEM0-UQ: END')
