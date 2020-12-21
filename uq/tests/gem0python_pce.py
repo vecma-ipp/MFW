@@ -12,8 +12,8 @@ from easymfw.utils.io_tools import get_cpo_inputs
 # Global params
 SYS = os.environ['SYS']
 tmp_dir = os.environ['SCRATCH']
-cpo_dir = os.path.abspath("../workflows/AUG_28906_6_8ft_restart")
-#cpo_dir = os.path.abspath("../workflows/AUG_28906_6")
+#cpo_dir = os.path.abspath("../workflows/AUG_28906_6_8ft_restart")
+cpo_dir = os.path.abspath("../workflows/AUG_28906_6_1ft_restart")
 xml_dir = os.path.abspath("../workflows")
 obj_dir = os.path.abspath("../standalone/bin/"+SYS)
 
@@ -125,8 +125,8 @@ if __name__ == "__main__":
     exec_path = os.path.join(common_dir, exec_code)
 
     n_polyn = 3
-    ft_indices = [15, 31, 44, 55, 66, 76, 85, 94] # cheick if 94 is correct index for coords [0.1435, 0.3098, 0.4429, 0.5606, 0.6684, 0.7692, 0.8647, 0.9558]
-    #ft_indices = [69]    
+    #ft_indices = [15, 31, 44, 55, 66, 76, 85, 94] # cheick if 94 is correct index for coords [0.1435, 0.3098, 0.4429, 0.5606, 0.6684, 0.7692, 0.8647, 0.9558]
+    ft_indices = [69]    
 
     # Get setup for the 1st Flux tube and set it to the campaign
     results = []
