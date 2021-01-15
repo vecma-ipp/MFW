@@ -57,3 +57,5 @@ uq/data/outputs/*.db
 uq/data/outputs/*.csv
 uq/run-*.sh
 uq/log-*
+
+__pycache__

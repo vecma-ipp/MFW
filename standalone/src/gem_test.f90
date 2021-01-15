@@ -27,7 +27,7 @@ program gem_test
 !!$  integer(kind=c_signed_char), pointer :: equilbuf(:), corepbuf(:), totbuf(:)
 !!$  integer :: equilsize, corepsize, totsize
 !!$  character(128) :: username, tmpdir
-  integer :: ierr, npes, irank, ipe
+  integer :: ierr, npes, irank
   integer :: ios
 
   call MPI_Init(ierr)

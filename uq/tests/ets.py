@@ -3,13 +3,9 @@ import easyvvuq as uq
 from easymfw.templates.cpo_encoder import CPOEncoder
 from easymfw.templates.cpo_decoder import CPODecoder
 from easymfw.utils.io_tools import get_cpo_inputs
-# GCG-PJ wrapper
-#import easypj
-#from easypj import TaskRequirements, Resources
-#from easypj import Task, TaskType, SubmitOrder
 
 '''
-Perform UQ for the workflow Transport-Equilibrium-Turblence.
+Perform UQ for the Transport: ETS
 Uncertainties are driven by:
     Boundary conditions (Plasma Edge) of electrons and ions tempurature.
 Method: Non intrusive with PCE.
@@ -18,7 +14,7 @@ Method: Non intrusive with PCE.
 print('>>> test ETS: START')
 
 # execustion with QCJ-PJ
-EXEC_PJ = False
+EXEC_PJ = True
 
 # Machine name
 SYS = os.environ['SYS']
@@ -27,7 +23,8 @@ SYS = os.environ['SYS']
 tmp_dir = os.environ['SCRATCH']
 
 # CPO files location
-cpo_dir = os.path.abspath("../workflows/AUG_28906_6")
+#cpo_dir = os.path.abspath("../workflows/AUG_28906_6")
+cpo_dir = os.path.abspath("../workflows/AUG_28906_6_1ft_restart")
 #cpo_dir = os.path.abspath("../workflows/JET_92436_23066")
 
 # XML and XSD files
@@ -43,12 +40,13 @@ input_params = {
         "dist": "Normal",
         "err":  0.2,
     }
-    #,
-    #"ti.boundary.value": {
-    #    "dist": "Normal",
-    #    "err": 0.2,
-    #}
+    ,
+    "ti.boundary.value": {
+        "dist": "Normal",
+        "err": 0.2,
+    }
 }
+
 # CPO file containg initial values of uncertain params
 input_filename = "ets_coreprof_in.cpo"
 input_cponame = "coreprof"
@@ -114,8 +112,7 @@ my_campaign.add_app(name=campaign_name,
 # Create the sampler
 print('>>> Create the sampler')
 my_sampler = uq.sampling.PCESampler(vary=vary,
-                                    polynomial_order=3,
-                                    regression=True)
+                                    polynomial_order=3)
 my_campaign.set_sampler(my_sampler)
 
 # Will draw all (of the finite set of samples)
@@ -127,24 +124,20 @@ my_campaign.populate_runs_dir()
 exec_path = os.path.join(common_dir, exec_code)
 if EXEC_PJ:
     # GCG-PJ wrapper
-    import easypj
-    from easypj import TaskRequirements, Resources
-    from easypj import Task, TaskType, SubmitOrder
+    from eqi import TaskRequirements, Executor
+    from eqi import Task, TaskType, SubmitOrder
 
     print(">>> Starting PJ execution\n")
-    qcgpjexec = easypj.Executor()
-    qcgpjexec.create_manager(dir=my_campaign.campaign_dir, log_level='info')
+    qcgpjexec = Executor(my_campaign)
+    qcgpjexec.create_manager(log_level='info')
 
     qcgpjexec.add_task(Task(
         TaskType.EXECUTION,
-        TaskRequirements(cores=Resources(exact=1)),
+        TaskRequirements(cores=1),
         application=exec_path
     ))
 
-    qcgpjexec.run(
-        campaign=my_campaign,
-        submit_order=SubmitOrder.EXEC_ONLY
-    )
+    qcgpjexec.run(submit_order=SubmitOrder.EXEC_ONLY)
 
     qcgpjexec.terminate_manager()
 else:
@@ -190,4 +183,4 @@ for qoi in output_columns:
     #                  ftitle='1st Sobol indices: '+qoi,
     #                  fname='data/outputs/SA_'+fig)
 
-print('>>> test ETS PJ : END')
+print('>>> test ETS: END')
