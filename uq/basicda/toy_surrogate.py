@@ -347,7 +347,64 @@ def get_1d_slice(x_domain, y_test, x_observ, y_observ):
     x_observ_inds = x_observ[:,0]==x1_slice_value
     x_observ_slice = x_observ[x_observ_inds, 0]
     y_observ_slice = y_observ[x_observ_inds]
+
+def decompose_domain_binary(x_domain, x_split_ind):
+    """
+     for now 1D array split into two
+    :param x_domain: numpy array of 1d, every point is and obsereved x
+    """
+    x_domains_new = [ x_domain[0:x_split_ind], x_domain[x_split_ind+1,-1] ]
+    # TODO: x_split = *[0, xsplit, -1]; x_domains_new = [for x_split in x_split_ind x[x_split-1:x_split]]  
+    
+    return x_domains_new
+
+def test_gp_domain_decomposition(x_domain, y_test, x_observ, y_observ):
+    # Runs through a 1D array, splits it into 2 parts and trains a pair or models for 2 subdomains
+    # checks which binary domain decompostion leads to a better fit
+    kernal = kernel = ConstantKernel() + ConstantKernel() * Matern()
+    gp = GaussianProcessRegressor(kernel=kernel, n_restart_optimizer=9)
+    errs = []
+
+    for ind in range(len(x_domain)):
+        models = []
+        thetas = []
+        errloc = 0.
+        x_domains = decompose_domain_binary(x_domain)
+        y_preds = decompose_domain_binary(y_pred)
+        y_tests = decompose_domain_binary(y_test)
+        for i in range(len(x_domains)-1):
+            models.append(gp.fit(x_domains[i], y_observ))
+            thetas.append(gp.kernel.theta)
+            _, err = stop_train_criterium_rmse(y_pred, y_test.T.reshape(-1))
+            errloc = err + errloc
+            print(thetas)
+        errs.append(errloc)
+    
+    plt.plot(range(len(x_domain)), errs, label='error of the splitting')
+    return 0
+
+def prep_1d_gem_data():
+
+    function = lambda x: ext_code_helper_1.gem0_call_teflteval_array(x)
+    x_param = [400., 2000, 32] # for gem in te-val #TODO change the gradient sampling!
         
+    x_obs = np.zeros((n_init, 2))
+    x_domain = np.atleast_2d(np.linspace(*x_param)).T
+    y_test = function(x_domain) # TODO: some of the things e.g. x_domain are never changed - should be returned all the timei
+
+    plot_response_1d(x_domain, y_test)
+
+    #y_scaling = lambda y: (y - y_test.min()) / (y_test.max() - y_test.min()) # scale to [0;1]
+    #x_scaling = lambda x: (x - x_domain.min()) / (x_domain.max() - x_domain.min())
+    #simple_nonstationary = lambda x, y: y - y_test.min() + (x - x_domain.min())*(y_test.max() - y_test.min())/(x_domain.max() - x_domain.min()) # TODO check if intependent calls are comiled out
+        
+    n_init = 6
+    # data[:, 0] = np.linspace(*x_param[:-1], n_init)
+    x_obs[:, 0] = np.random.rand(n_init)*(x_param[1] - x_param[0]) + x_param[0] #TODO either choose among grid points or make grid irregular
+    y_obs = function(x_obs)
+
+    return x_domain, y_test, x_obs, y_obs
+
 def surrogate_loop(pardim):
     np.random.seed(int(time.time()))
     errors = []
@@ -542,6 +599,8 @@ def surrogate_loop(pardim):
     #plot_histograms(y_observ, y_observ_clean, y_pred, y_pred_clean)
 
 def surrogate_utility(x_train_data, y_train_data, x_roi_data, original_model):
+    # Error Reduction Estimation: acquisition function for sampling next point to a surragte based on inferred
+    # variance of the model on current iterations 
     utility = []
     kernel = RBF()
     gpr = GaussianProcessRegressor(kernel=kernel, n_restarts_optimizer=4)
@@ -557,10 +616,13 @@ def surrogate_utility(x_train_data, y_train_data, x_roi_data, original_model):
 
     return -utility.sum()
 
-
 plt.ion()
 
 ### --- Surrogate loop
-surrogate_loop(1)
+#surrogate_loop(1)
+
+#GP split
+x_domain, y_test, x_obs, y_obs = prep_1d_gem_data()
+test_gp_domain_decomposition(x_domain, y_test, x_obs, y_obs)
 
 
