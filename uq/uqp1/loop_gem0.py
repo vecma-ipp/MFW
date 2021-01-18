@@ -1,23 +1,23 @@
 import os
-import numpy as np
 import easyvvuq as uq
 # from ual
 from ascii_cpo import read
 # from current package
+from base.cpo_encoder import CPOEncoder
 from base.xml_encoder import XMLEncoder
 from base.cpo_decoder import CPODecoder
-from base.utils import xml_inputs
+from base.utils import cpo_inputs, xml_inputs
 
 '''
-Perform UQ for the workflow Transport-Equilibrium-Turblence:
-    ETS-CHEASE-GEM0.
+Perform UQ for the workflow Transport-Equilibrium-Turblence: ETS-CHEASE-GEM0.
 Uncertainties are driven by:
-    External sources of Electrons or/and Ions heating.
-Method: Non intrusive with PCE.
+    External sources of Electrons heating.
+    Boundary conditions (Plasma Edge) of electrons tempurature.
+UQ Method: Non intrusive (UQP1) with PCE.
 '''
 
 
-print('UQSR-loopGem0: START')
+print('UQ-Workflow LOOP-GEM0: START')
 
 # execustion with QCG-PJ
 EXEC_PJ = True
@@ -34,92 +34,99 @@ cpo_dir = os.path.abspath("../workflows/AUG_28906_6")
 # XML and XSD files location
 xml_dir = os.path.abspath("../workflows")
 
-# The execuatble code
+# The execuatble code to run
 obj_dir = os.path.abspath("../standalone/bin/"+SYS)
 exec_code = "loop_gem0"
 
 # Define the uncertain parameters
-# Amplitude, Position and Width from source_dummy.xml
-elec_heating_params = {
+# Electrons boudary condition
+input_params_bc = {
+    "te.boundary.value": {
+        "dist_name": "Normal",
+        "var_coeff":  0.2,
+    }
+}
+# Gaussian Sources: Electrons heating
+input_params_sr = {
     "electrons.heating_el.WTOT_el":{
         "dist_name": "Uniform",
         "var_coeff": 0.2,
-    }#,
-    #"electrons.heating_el.RHEAT_el":{
-    #    "dist_name": "Uniform",
-    #    "var_coeff": 0.2,
-    #},
-    #"electrons.heating_el.FWHEAT_el":{
-    #    "dist_name": "Uniform",
-    #    "var_coeff": 0.2,
-    #}
-}
-ions_heating_params = {
-    "ions.heating.WTOT":{
-        "dist_name": "Uniform",
-        "var_coeff": 0.2,
     },
-    "ions.heating.RHEAT_el":{
-        "dist_name": "Uniform",
-        "var_coeff": 0.2,
-    },
-    "ions.heating.FWHEAT":{
+    "electrons.heating_el.RHEAT_el":{
         "dist_name": "Uniform",
         "var_coeff": 0.2,
     }
 }
 
-# Choose one of the uncertain params dict, or merge them using
-input_params = {}
-input_params.update(elec_heating_params)
-#input_params.update(ions_heating_params)
-
-# XML file containg initial values of uncertain params
+# CPO and XML files containg initial values of uncertain params
+input_cpo_filename = "ets_coreprof_in.cpo"
+input_cponame = "coreprof"
 input_xml_filename = "source_dummy.xml"
 input_xsd_filename = "source_dummy.xsd"
 
-# The quantities of intersts and the cpo file to set them
+# The quantities of intersts list and the cpo file to set them
 output_columns = ["te.value"]
 output_filename = "ets_coreprof_out.cpo"
 output_cponame = "coreprof"
 
-# Parameter dict for Campaign and distributions list for Sampler
-params, vary = xml_inputs(xml_filename=input_xml_filename,
-                          xsd_filename=input_xsd_filename,
-                          input_dir=xml_dir,
-                          input_params=input_params)
+# params: the parameter space for campaign object
+# vary: distributions list for the sampler
+params_cpo, vary_cpo = cpo_inputs(cpo_filename=input_cpo_filename,
+                                  cpo_name=input_cponame,
+                                  input_dir=cpo_dir,
+                                  input_params=input_params_bc)
+
+params_xml, vary_xml = xml_inputs(xml_filename=input_xml_filename,
+                                  xsd_filename=input_xsd_filename,
+                                  input_dir=xml_dir,
+                                  input_params=input_params_sr)
+
+# Merge the params and vary
+params = {**params_cpo, **params_xml}
+vary = {**vary_cpo, **vary_xml}
 
 # Initialize Campaign object
-test_case = cpo_dir.split('/')[-1]
-campaign_name = "UQSR_loopGem0_"+test_case
+campaign_name = "UQ-BCSR_loopGem0_"
 my_campaign = uq.Campaign(name=campaign_name, work_dir=tmp_dir)
 
-# Create new directory for inputs
+# Create new directory for commons inputs
 campaign_dir = my_campaign.campaign_dir
 common_dir = campaign_dir +"/common/"
 os.mkdir(common_dir)
 
-# Copy input CPO files
+# Copy input CPO files in common directory
 os.system("cp " + cpo_dir + "/ets_coreprof_in.cpo "    + common_dir)
 os.system("cp " + cpo_dir + "/ets_equilibrium_in.cpo " + common_dir)
 os.system("cp " + cpo_dir + "/ets_coreimpur_in.cpo "   + common_dir)
 os.system("cp " + cpo_dir + "/ets_coretransp_in.cpo "  + common_dir)
 os.system("cp " + cpo_dir + "/ets_toroidfield_in.cpo " + common_dir)
 
-# Copy input XML and XSD files
+# Copy XML and XSD files
 os.system("cp " + xml_dir + "/ets.x* "    + common_dir)
 os.system("cp " + xml_dir + "/chease.x* " + common_dir)
-os.system("cp " + xml_dir + "/gem0.x* " + common_dir)
+os.system("cp " + xml_dir + "/gem0.x* "   + common_dir)
 os.system("cp " + xml_dir + "/source_dummy.x* " + common_dir)
+
 
 # Copy exec file
 os.system("cp " + obj_dir +"/" + exec_code + " " + common_dir)
 exec_path = os.path.join(obj_dir, exec_code)
 
-# Create the encoder and the decoder
-encoder = XMLEncoder(xml_filename=input_xml_filename,
-                     input_dir=common_dir)
+# Create the encoders
+# params_names dict is given here because we will use MultiEncoder
+encoder_cpo = CPOEncoder(cpo_filename=input_cpo_filename,
+                         cpo_name=input_cponame,
+                         input_dir=common_dir,
+                         input_params=input_params_bc)
 
+encoder_xml = XMLEncoder(xml_filename=input_xml_filename,
+                         input_dir=common_dir,
+                         input_params=input_params_sr)
+
+# Combine both encoders into a single encoder
+encoder = uq.encoders.MultiEncoder(encoder_cpo, encoder_xml)
+
+# Create the encoder
 decoder = CPODecoder(cpo_filename=output_filename,
                      cpo_name=output_cponame,
                      output_columns=output_columns)
@@ -166,24 +173,9 @@ my_campaign.apply_analysis(analysis)
 # Get results
 results = my_campaign.get_last_analysis()
 
-#  Graphics for Descriptive satatistics
-cpo_file = os.path.join(cpo_dir, "ets_coreprof_in.cpo")
-corep = read(cpo_file, "coreprof")
+# Get Descriptive Statistics
+input_cpo_file = os.path.join(cpo_dir, input_cpo_filename)
+corep = read(input_cpo_file, "coreprof")
 rho = corep.rho_tor_norm
 
-
-# Save STATS into the csv file
-header = 'rho_tor\t'
-values = [rho]
-for qoi in output_columns:
-
-    mean = results.describe(qoi, 'mean')
-    std = results.describe(qoi, 'std')
-    values.append(list(mean))
-    values.append(list(std))
-    header = header + '\tmean_'+qoi + '\tstd_'+qoi
-
-    np.savetxt('data/outputs/'+campaign_name+'STATS.csv',
-               np.c_[values].T, delimiter='\t', header=header)
-
-print('UQSR-loopGem0: END')
+print('UQ-Workflow LOOP-GEM0: START')

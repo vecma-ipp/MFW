@@ -79,8 +79,7 @@ params, vary = xml_inputs(xml_filename=input_xml_filename,
                           input_params=input_params)
 
 # Initialize Campaign object
-test_case = cpo_dir.split('/')[-1]
-campaign_name = "UQSR_loopGem_"+test_case
+campaign_name = "UQSR_loopGem_"
 my_campaign = uq.Campaign(name=campaign_name, work_dir=tmp_dir)
 
 # Create new directory for inputs

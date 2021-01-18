@@ -9,14 +9,14 @@ from base.utils import cpo_inputs
 
 '''
 Perform UQ for the workflow Transport-Equilibrium-Turblence:
-    ETS-CHEASE-GEM0 (GEM).
+    ETS-CHEASE-GEM0.
 Uncertainties are driven by:
     Boundary conditions in Plasma Edge of electrons and ions tempurature.
 Method: Non intrusive with PCE.
 '''
 
 
-print('UQ-Workflow LOOP-BC: START')
+print('UQ-Workflow LOOP_GEM0-BC: START')
 
 # execution with QCJ-PilotJob
 EXEC_PJ = True
@@ -144,4 +144,4 @@ results = my_campaign.get_last_analysis()
 corep = read(os.path.join(cpo_dir,  "ets_coreprof_in.cpo"), "coreprof")
 rho = corep.rho_tor_norm
 
-print('UQ-Workflow LOOP-BC: END')
+print('UQ-Workflow LOOP_GEM0-BC: END')

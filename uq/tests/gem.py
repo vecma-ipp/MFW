@@ -1,27 +1,27 @@
 import os
 import easyvvuq as uq
+# EasyVVUQ/QCG-PJ
+import eqi
+# from ual
 from ascii_cpo import read
-from easymfw.templates.cpo_encoder import CPOEncoder
-from easymfw.templates.cpo_decoder import CPODecoder
-from easymfw.templates.xml_element import XMLElement
-from easymfw.utils.io_tools import get_cpo_inputs
+# from current package
+from base.cpo_encoder import CPOEncoder
+from base.cpo_decoder import CPODecoder
+from base.utils import cpo_inputs
 
 '''
-Perform UQ for the Turblence code GEM
-Uncertainties are driven by: The electon and ion temperatur and
-their gradient localisd by a Flux tube position.
-IMPORTANT CHECK: in gem.xml, nrho_transp = 1
+Perform UQ for the Turblence code GEM.
+Uncertainties are driven by:
+The electon and ion temperatur and their gradient localisd on the Flux tube position.
 '''
 
+
+print('TEST GEM-UQ: START')
 
 # We test 1 flux tube
-ft_index = 69
-
-# execustion with QCJ-PJ
-EXEC_PJ = True
-
-# From Slurm script
-mpi_instance =  os.environ['MPICMD']
+# run gem_test in strandalone and use:
+# base.utils.ftube_indices('gem_coreprof_in.cpo','gem_coretransp_out.cpo') to get the index
+ftube_index = 69
 
 # Machine name
 SYS = os.environ['SYS']
@@ -29,13 +29,14 @@ SYS = os.environ['SYS']
 # Working directory
 tmp_dir = os.environ['SCRATCH']
 
+# From Slurm script (intelmpi)
+mpi_instance =  os.environ['MPICMD']
+
 # CPO files location
-cpo_dir = os.path.abspath("../workflows/AUG_28906_6_1ft_restart")
-#cpo_dir = os.path.abspath("../workflows/AUG_28906_6")
+cpo_dir = os.path.abspath("../workflows/AUG_28906_6")
 
 # XML and XSD files location
-#xml_dir = os.path.abspath("../workflows")
-xml_dir = cpo_dir
+xml_dir = os.path.abspath("../workflows")
 
 # The executable code to run
 obj_dir = os.path.abspath("../standalone/bin/"+SYS)
@@ -43,28 +44,15 @@ exec_code = "gem_test"
 
 # Define the uncertain parameters
 # Electron temperature and its gradient
+
+dist ={ "dist_name": "Normal", "var_coeff":  0.2}
 input_params = {
-    "te.value": {
-        "dist": "Normal",
-        "err":  0.2,
-        "ft_index": ft_index,
-    },
-    "te.ddrho": {
-        "dist": "Normal",
-        "err": 0.2,
-        "ft_index": ft_index,
-    },
-    "ti.value": {
-        "dist": "Normal",
-        "err":  0.2,
-        "ft_index": ft_index,
-    },
-    "ti.ddrho": {
-        "dist": "Normal",
-        "err": 0.2,
-        "ft_index": ft_index,
-    }
+    "te.value": dist,
+    "te.ddrho": dist,
+    "ti.value": dist,
+    "ti.ddrho": dist
 }
+
 # CPO file containg initial values of uncertain params
 input_filename = "ets_coreprof_in.cpo"
 input_cponame = "coreprof"
@@ -75,13 +63,14 @@ output_filename = "gem_coretransp_out.cpo"
 output_cponame = "coretransp"
 
 # parameter space for campaign and the distributions list for the sampler
-input_cpo_file = os.path.join(cpo_dir, input_filename)
-params, vary = get_cpo_inputs(cpo_file=input_cpo_file,
-                              cpo_name=input_cponame,
-                              input_params=input_params)
+params, vary = cpo_inputs(cpo_filename=input_filename,
+                          cpo_name=input_cponame,
+                          input_dir=cpo_dir,
+                          input_params=input_params,
+                          ftube_index=ftube_index)
 
 # Initialize Campaign object
-campaign_name = "UQ_gem_"
+campaign_name = "UQ_1FTGEM_"
 my_campaign = uq.Campaign(name=campaign_name, work_dir=tmp_dir)
 
 # Create new directory for inputs
@@ -89,13 +78,11 @@ campaign_dir = my_campaign.campaign_dir
 common_dir = campaign_dir +"/common/"
 os.mkdir(common_dir)
 
-# Copy input CPO files (cf. test_gem.f90)
+# Copy input CPO files (cf. test_gem0.f90)
 os.system("cp " + cpo_dir + "/ets_equilibrium_in.cpo "
                 + common_dir + "gem_equilibrium_in.cpo")
 os.system("cp " + cpo_dir + "/ets_coreprof_in.cpo "
                 + common_dir + "/gem_coreprof_in.cpo")
-
-os.system("cp " + cpo_dir + "/t00.dat " + common_dir)
 
 # Copy XML and XSD files
 os.system("cp " + xml_dir + "/gem.xml " + common_dir)
@@ -103,39 +90,31 @@ os.system("cp " + xml_dir + "/gem.xsd " + common_dir)
 
 # Copy  exec file
 os.system("cp " + obj_dir +"/"+ exec_code + " " + common_dir)
+exec_path = os.path.join(common_dir, exec_code)
 
-# Create the encoder
+# Create the encoder and the decoder
 input_filename = "gem_coreprof_in.cpo"
-encoder = CPOEncoder(template_filename=input_filename,
-                     target_filename=input_filename,
-                     input_cponame=input_cponame,
-                     input_params=input_params,
-                     common_dir=common_dir)
+encoder = CPOEncoder(cpo_filename=input_filename,
+                     cpo_name=input_cponame,
+                     input_dir=common_dir,
+                     ftube_index=ftube_index)
 
-# Create the decoder
-decoder = CPODecoder(target_filename=output_filename,
-                     output_columns=output_columns,
-                     output_cponame=output_cponame)
-
-# Create a collation element for this campaign
-collater = uq.collate.AggregateSamples(average=False)
+decoder = CPODecoder(cpo_filename=output_filename,
+                     cpo_name=output_cponame,
+                     output_columns=output_columns)
 
 # Add the app (automatically set as current app)
 my_campaign.add_app(name=campaign_name,
                     params=params,
                     encoder=encoder,
-                    decoder=decoder,
-                    collater=collater)
+                    decoder=decoder)
 
 # Create the sampler
-my_sampler = uq.sampling.PCESampler(vary=vary,
-                                    polynomial_order=3)
+my_sampler = uq.sampling.PCESampler(vary=vary, polynomial_order=3)
 my_campaign.set_sampler(my_sampler)
 
 # Will draw all (of the finite set of samples)
-print('Draw Samples - Ns = ', my_sampler.n_samples)
 my_campaign.draw_samples()
-
 my_campaign.populate_runs_dir()
 
 # get ncores
@@ -145,59 +124,30 @@ npess = gemxml.get_value("cpu_parameters.domain_decomposition.npess")
 nftubes = gemxml.get_value("cpu_parameters.parallel_cases.nftubes")
 ncores = npesx*npess*nftubes
 
-exec_path = os.path.join(common_dir, exec_code)
+# Execution
+qcgpjexec = eqi.Executor(my_campaign)
+qcgpjexec.create_manager(log_level='info')
 
-if EXEC_PJ:
-    # GCG-PJ wrapper
-    import easypj
-    from easypj import TaskRequirements, Resources
-    from easypj import Task, TaskType, SubmitOrder
+qcgpjexec.add_task(eqi.Task(
+    eqi.TaskType.EXECUTION,
+    eqi.TaskRequirements(cores=ncores),
+    model=mpi_instance,
+    application=exec_path
+))
+qcgpjexec.run(processing_scheme=eqi.ProcessingScheme.EXEC_ONLY)
+qcgpjexec.terminate_manager()
 
-    # PJ execution
-    qcgpjexec = easypj.Executor()
-    qcgpjexec.create_manager(dir=my_campaign.campaign_dir,
-                             log_level='info')
-
-    qcgpjexec.add_task(Task(
-        TaskType.EXECUTION,
-        TaskRequirements(cores=Resources(exact=ncores)),
-        model=mpi_instance,
-        application=exec_path
-    ))
-
-    qcgpjexec.run(
-        campaign=my_campaign,
-        submit_order=SubmitOrder.EXEC_ONLY
-    )
-
-    qcgpjexec.terminate_manager()
-else:
-    # Local execution
-    my_campaign.apply_for_each_run_dir(uq.actions.ExecuteLocal(exec_path))
-
+# Collection of simulation outputs
 my_campaign.collate()
 
 # Post-processing analysis
 analysis = uq.analysis.PCEAnalysis(sampler=my_sampler, qoi_cols=output_columns)
 my_campaign.apply_analysis(analysis)
 
+# Get results
 results = my_campaign.get_last_analysis()
 
 # Get Descriptive Statistics
-print('Descriptive Statistics: \n')
-stat = {}
-sob1 = {}
-sob2 = {}
-sobt = {}
-dist = {}
-for qoi in output_columns:
-    stat[qoi] = results['statistical_moments'][qoi]
-    sob1[qoi] = results['sobols_first'][qoi]
-    sob2[qoi] = results['sobols_second'][qoi]
-    sobt[qoi] = results['sobols_total'][qoi]
 
-    print(qoi)
-    print('Stats: \n', stat[qoi] )
-    print('Sobol 1st: \n',sob1[qoi])
-    print('Sobol 2nd: \n',sob2[qoi])
-    print('Sobol tot: \n',sobt[qoi])
+
+print('>>> TEST GEM-UQ: END')
