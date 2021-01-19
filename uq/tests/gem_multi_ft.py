@@ -8,6 +8,7 @@ from ascii_cpo import read
 # from current package
 from base.cpo_encoder import CPOEncoder
 from base.cpo_decoder import CPODecoder
+from base.xml_element import XMLElement
 from base.utils import cpo_inputs
 
 '''
@@ -121,9 +122,6 @@ if __name__ == "__main__":
     os.system("cp " + obj_dir +"/"+ exec_code + " " + common_dir)
     exec_path = os.path.join(common_dir, exec_code)
 
-    # The executable
-    exec_path = os.path.join(common_dir, exec_code)
-
     # get ncores
     gemxml = XMLElement(xml_dir + "/gem.xml")
     npesx = gemxml.get_value("cpu_parameters.domain_decomposition.npesx")
@@ -147,7 +145,7 @@ if __name__ == "__main__":
         campaign.set_sampler(sampler)
         campaign.draw_samples()
         campaign.populate_runs_dir()
-        exec_pj(campaign, exec_path, 1)
+        exec_pj(campaign, exec_path, ncores)
         campaign.collate()
         campaign.apply_analysis(stats)
 
@@ -182,3 +180,16 @@ for i in range(8):
         s1i.update({uparam: results[i].sobols_first('ti_transp.flux')[uparam][i]})
     s1_te_transp_flux.append(s1e)
     s1_ti_transp_flux.append(s1i)
+
+
+print("STATS TE-TRANSP_FLUX:")
+print(stats_te_transp_flux)
+
+print("STATS TI-TRANSP_FLUX:")
+print(stats_ti_transp_flux)
+
+print("SOBOLS TE-TRANSP_FLUX:")
+print(s1_te_transp_flux)
+
+print("SOBOLS TI-TRANSP_FLUX:")
+print(s1_ti_transp_flux)
