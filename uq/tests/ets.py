@@ -135,5 +135,6 @@ results = my_campaign.get_last_analysis()
 #  Graphics for Descriptive satatistics
 corep = read(os.path.join(cpo_dir,  "ets_coreprof_in.cpo"), "coreprof")
 rho = corep.rho_tor_norm
-
-# use results.describes(qoi) and results.sobol_first(qoi)
+for i, qoi in enumerate(output_columns):
+    results.plot_moments(qoi, xlabel="rho", xvalues=rho, filename="stats_"+str(i))
+    results.plot_sobols_first(qoi, ylabel="Sob1 - "+qoi, xlabel="rho", xvalues=rho, filename="sob1_"+str(i))

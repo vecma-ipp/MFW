@@ -173,3 +173,15 @@ for i in range(8):
         s1i.update({uparam: results[i].sobols_first('ti_transp.flux')[uparam][i]})
     s1_te_transp_flux.append(s1e)
     s1_ti_transp_flux.append(s1i)
+
+print("STATS TE-TRANSP_FLUX:")
+print(stats_te_transp_flux)
+
+print("STATS TI-TRANSP_FLUX:")
+print(stats_ti_transp_flux)
+
+print("SOBOLS TE-TRANSP_FLUX:")
+print(s1_te_transp_flux)
+
+print("SOBOLS TI-TRANSP_FLUX:")
+print(s1_ti_transp_flux)

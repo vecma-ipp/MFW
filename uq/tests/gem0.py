@@ -8,7 +8,7 @@ from ascii_cpo import read
 from base.cpo_encoder import CPOEncoder
 from base.cpo_decoder import CPODecoder
 from base.utils import cpo_inputs
-
+import time
 '''
 Perform UQ for the Turblence code GEM0.
 Uncertainties are driven by:
@@ -108,7 +108,7 @@ my_campaign.add_app(name=campaign_name,
                     decoder=decoder)
 
 # Create the sampler
-my_sampler = uq.sampling.PCESampler(vary=vary, polynomial_order=3)
+my_sampler = uq.sampling.PCESampler(vary=vary, polynomial_order=5)
 my_campaign.set_sampler(my_sampler)
 
 # Will draw all (of the finite set of samples)
@@ -130,14 +130,18 @@ qcgpjexec.terminate_manager()
 # Collection of simulation outputs
 my_campaign.collate()
 
+t1 = time.time()
 # Post-processing analysis
 analysis = uq.analysis.PCEAnalysis(sampler=my_sampler, qoi_cols=output_columns)
+t2 = time.time()
 my_campaign.apply_analysis(analysis)
+t3 = time.time()
 
 # Get results
 results = my_campaign.get_last_analysis()
 
 # Get Descriptive Statistics
 
-
+print("t2-t1: ", t2-t1)
+print("t3-t1: ", t3-t1)
 print('>>> TEST GEM0-UQ: END')

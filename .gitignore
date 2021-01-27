@@ -42,9 +42,8 @@ uq/*.out
 uq/*.err
 uq/base/__pycache__
 uq/tuto/__pycache__
-uq/data/outputs/*.png
-uq/data/outputs/*.db
-uq/data/outputs/*.csv
+uq/data/*.png
+uq/data/*.db
 uq/run-*.sh
 uq/log-*
 

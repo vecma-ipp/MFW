@@ -197,8 +197,10 @@ equil_file = os.path.join(cpo_dir, "ets_equilibrium_in.cpo")
 equil = read(equil_file, "equilibrium")
 rho = equil.profiles_1d.rho_tor
 
-uparams_names = list(params.keys())
-
+#for i, qoi in enumerate(output_columns):
+#    results.plot_moments(qoi, xlabel="rho", xvalues=rho, filename="data/stats_"+str(i))
+#    results.plot_sobols_first(qoi, ylabel="Sob1 - "+qoi, xlabel="rho",
+#            xvalues=rho, filename="data/sob1_"+str(i))
 t8 = time.time()
 
 print('Time for initializing = %.3f' %(t1-t0))
