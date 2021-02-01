@@ -133,15 +133,30 @@ my_campaign.collate()
 t1 = time.time()
 # Post-processing analysis
 analysis = uq.analysis.PCEAnalysis(sampler=my_sampler, qoi_cols=output_columns)
-t2 = time.time()
 my_campaign.apply_analysis(analysis)
-t3 = time.time()
+t2 = time.time()
 
 # Get results
 results = my_campaign.get_last_analysis()
 
 # Get Descriptive Statistics
+mean_el = results.describe('te_transp.flux', 'mean')
+std_el = results.describe('te_transp.flux', 'std')
+mean_io = results.describe('ti_transp.flux', 'mean')
+std_io = results.describe('ti_transp.flux', 'std')
 
-print("t2-t1: ", t2-t1)
-print("t3-t1: ", t3-t1)
+s1_el = results.sobols_first('te_transp.flux')
+s1_io = results.sobols_first('ti_transp.flux')
+
+print("TE TRANSP FLUX")
+print("Mean: ", mean_el)
+print("Std: ", std_el)
+print("Sob1: ", s1_el)
+
+print("TI TRANSP FLUX")
+print("Mean: ", mean_io)
+print("Std: ", std_io)
+print("Sob1: ", s1_io)
+
+print("Analysis time: ", t2-t1)
 print('>>> TEST GEM0-UQ: END')
