@@ -27,7 +27,7 @@ include config
 
 export MAINMAKE=yes
 
-SVNURL_GFORGE = https://gforge6.eufus.eu/svn
+SVNURL_GFORGE = https://gforge-next.eufus.eu/svn
 SVNURL_SOLPS  = https://solps-mdsplus.aug.ipp.mpg.de/repos
 
 ################################################################################

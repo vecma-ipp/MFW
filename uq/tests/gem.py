@@ -7,6 +7,7 @@ from ascii_cpo import read
 # from current package
 from base.cpo_encoder import CPOEncoder
 from base.cpo_decoder import CPODecoder
+from base.xml_element import XMLElement
 from base.utils import cpo_inputs
 
 '''
