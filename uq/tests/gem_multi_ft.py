@@ -113,6 +113,9 @@ if __name__ == "__main__":
     os.system("cp " + cpo_dir + "/ets_coreprof_in.cpo "
                     + common_dir + "/gem_coreprof_in.cpo")
 
+    # Copy restart files
+    os.system("cp " + cpo_dir + "/t0?.dat " + common_dir)
+
     # Copy XML and XSD files
     # Check if nrho_transp = 8 in gem.xml
     os.system("cp " + xml_dir + "/gem.xml " + common_dir)

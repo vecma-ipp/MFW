@@ -32,8 +32,10 @@ def get_dist(name, value, err):
     elif name.lower() == "uniform":
         if value == 0.:
             dist = cp.Uniform(0., err)
-        else:
+        elif value > 0.:
             dist = cp.Uniform((1. - err)*value, (1. + err)*value)
+        else :
+            dist = cp.Uniform((1. + err)*value, (1. - err)*value)
 
     # TODO add other distributions
     else:
@@ -67,8 +69,8 @@ def xml_inputs(xml_filename, xsd_filename, input_dir, input_params):
             "param_name": cp.Normal(default_value, err*default).
     """
 
-    xml = XMLElement(xml_filename, xsd_filename, input_dir)
-    params, vary = _input_dicts(input_params, xml)
+    xml_elem = XMLElement(xml_filename, xsd_filename, input_dir)
+    params, vary = _input_dicts(xml_elem, input_params)
     return params, vary
 
 
@@ -104,7 +106,7 @@ def cpo_inputs(cpo_filename, cpo_name, input_dir, input_params, ftube_index=None
     return params, vary
 
 
-def _input_dicts(input_params, elem):
+def _input_dicts(elem, input_params, ftube_index=None):
 
     params = {}
     vary = {}
