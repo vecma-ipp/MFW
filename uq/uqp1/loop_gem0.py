@@ -42,19 +42,19 @@ exec_code = "loop_gem0"
 # Electrons boudary condition
 input_params_bc = {
     "te.boundary.value": {
-        "dist_name": "Normal",
-        "var_coeff":  0.2,
+        "dist": "Uniform",
+        "err":  0.2,
     }
 }
 # Gaussian Sources: Electrons heating
 input_params_sr = {
     "electrons.heating_el.WTOT_el":{
-        "dist_name": "Uniform",
-        "var_coeff": 0.2,
+        "dist": "Uniform",
+        "err": 0.2,
     },
     "electrons.heating_el.RHEAT_el":{
-        "dist_name": "Uniform",
-        "var_coeff": 0.2,
+        "dist": "Uniform",
+        "err": 0.2,
     }
 }
 

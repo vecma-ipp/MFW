@@ -36,13 +36,13 @@ exec_code = "ets_test"
 # Define the uncertain parameters
 input_params = {
     "te.boundary.value": {
-        "dist_name": "Normal",
-        "var_coeff":  0.2,
+        "dist": "Normal",
+        "err":  0.2,
     }
     ,
     "ti.boundary.value": {
-        "dist_name": "Normal",
-        "var_coeff": 0.2,
+        "dist": "Normal",
+        "err": 0.2,
     }
 }
 # CPO file containg initial values of uncertain params

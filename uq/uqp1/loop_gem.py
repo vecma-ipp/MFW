@@ -45,17 +45,17 @@ exec_code = "loop_gem"
 # Amplitude, Position and Width from source_dummy.xml
 elec_heating_params = {
     "electrons.heating_el.WTOT_el":{
-        "dist_name": "Uniform",
-        "var_coeff": 0.2,
-    }#,
-    #"electrons.heating_el.RHEAT_el":{
-    #    "dist_name": "Uniform",
-    #    "var_coeff": 0.2,
-    #},
-    #"electrons.heating_el.FWHEAT_el":{
-    #    "dist_name": "Uniform",
-    #    "var_coeff": 0.2,
-    #}
+        "dist": "Uniform",
+        "err": 0.2,
+    },
+    "electrons.heating_el.RHEAT_el":{
+        "dist": "Uniform",
+        "err": 0.2,
+    },
+    "electrons.heating_el.FWHEAT_el":{
+        "dist": "Uniform",
+        "err": 0.2,
+    }
 }
 
 

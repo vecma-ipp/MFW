@@ -43,7 +43,7 @@ exec_code = "gem0_test"
 # Define the uncertain parameters
 # Electron temperature and its gradient
 
-dist ={ "dist_name": "Normal", "var_coeff":  0.2}
+dist ={ "dist": "Uniform", "err":  0.2}
 input_params = {
     "te.value": dist,
     "te.ddrho": dist,
@@ -108,7 +108,7 @@ my_campaign.add_app(name=campaign_name,
                     decoder=decoder)
 
 # Create the sampler
-my_sampler = uq.sampling.PCESampler(vary=vary, polynomial_order=5)
+my_sampler = uq.sampling.PCESampler(vary=vary, polynomial_order=3)
 my_campaign.set_sampler(my_sampler)
 
 # Will draw all (of the finite set of samples)

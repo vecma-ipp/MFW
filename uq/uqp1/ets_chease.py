@@ -45,23 +45,23 @@ exec_code = "ets_chease_test"
 # Electron boudary condition
 input_params_bc = {
     "te.boundary.value": {
-        "dist_name": "Normal",
-        "var_coeff":  0.2,
+        "name": "Normal",
+        "err":  0.2,
     }
 }
 # Electron heating Sources
 input_params_sr = {
     "electrons.heating_el.WTOT_el":{
-        "dist_name": "Uniform",
-        "var_coeff": 0.2,
+        "dist": "Uniform",
+        "err": 0.2,
     },
     "electrons.heating_el.RHEAT_el":{
-        "dist_name": "Uniform",
-        "var_coeff": 0.2,
+        "dist": "Uniform",
+        "err": 0.2,
     },
     "electrons.heating_el.FWHEAT_el":{
-        "dist_name": "Uniform",
-        "var_coeff": 0.2,
+        "dist": "Uniform",
+        "err": 0.2,
     }
 }
 

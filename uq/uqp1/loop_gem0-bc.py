@@ -41,12 +41,12 @@ exec_code = "loop_gem0"
 # Define the uncertain parameters
 input_params = {
     "te.boundary.value": {
-        "dist_name": "Normal",
-        "var_coeff":  0.2,
+        "dist": "Uniform",
+        "err":  0.2,
     },
     "ti.boundary.value": {
-        "dist_name": "Normal",
-        "var_coeff": 0.2,
+        "dist": "Uniform",
+        "err": 0.2,
     }
 }
 

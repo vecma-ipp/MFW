@@ -47,7 +47,7 @@ def exec_pj(campaign, exec_path, ncores, log_level="info"):
 def setup_gem(ftube_index, common_dir):
 
     # Define the uncertain parameters
-    dist ={ "dist_name": "Normal", "var_coeff":  0.2}
+    dist ={ "dist_name": "Uniform", "err":  0.2}
     input_params = {
         "te.value": dist,
         "te.ddrho": dist,

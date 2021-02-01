@@ -45,7 +45,7 @@ exec_code = "gem_test"
 # Define the uncertain parameters
 # Electron temperature and its gradient
 
-dist ={ "dist_name": "Normal", "var_coeff":  0.2}
+dist ={ "dist": "Uniform", "err":  0.2}
 input_params = {
     "te.value": dist,
     "te.ddrho": dist,

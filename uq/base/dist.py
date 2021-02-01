@@ -8,65 +8,34 @@ __all__ = ['get_dist', 'xml_inputs', 'cpo_inputs', 'ftube_indices']
 
 def get_dist(name, value, err):
     """
-    Return distribition:
-     - Moments: mean = value, sdt = err*value.
-     - Type: given by 'name' (supported: Normal and Uniform).
-     - Dimension: univariate if value is scalar, multivariate if value is a list.
-
     Parameters
     ----------
     name : str
         The distribution name
-    value : float, int or list
-        The mean value(s) of the dist.
+    value : float or int
+        The mean value of the dist.
     err  : float
-        The error margin, % of the mean that gives the sdtv.
-        if name is Uniform, err must be < 0.57
-        if name is Normal,
+        The error margin
 
     Returns
     -------
     chaospy.Dist: the output distribution.
     """
 
-    # TODO add the condition: shift if lower threshlod <= a critical value
-    # => for verification: Values must be > 0
     if name.lower() == "normal":
-            if type(value) == list:
-                d = []
-                for v in value:
-                    if v == 0.:
-                        dv = cp.Normal(v, err)
-                    else:
-                        dv = cp.Normal(v, err*v)
-                    d.append(dv)
-                dist = cp.J(*d)
-            else:
-                if value == 0.:
-                    dist = cp.Normal(value, err)
-                else:
-                    dist = cp.Normal(value, err*value)
+        if value == 0.:
+            dist = cp.Normal(value, err)
+        else:
+            dist = cp.Normal(value, err*np.abs(value))
 
     elif name.lower() == "uniform":
+        lo = (1. - err)*value
+        up = (1. + err)*value
+        if value == 0.:
+            up = err
+        dist = cp.Uniform(lo, up)
 
-        if type(value) == list:
-            d = []
-            for v in value:
-                lo = (1. - np.sqrt(3)*err)*v
-                up = (1. + np.sqrt(3)*err)*v
-                if v == 0.:
-                    up = err
-
-                d.append(cp.Uniform(lo, up))
-            dist = cp.J(*d)
-        else:
-            lo = (1. - np.sqrt(3)*err)*value
-            up = (1. + np.sqrt(3)*err)*value
-            if value == 0.:
-                up = err
-            dist = cp.Uniform(lo, up)
-
-    # TODO add other relevant distributions
+    # TODO add other distributions
     else:
         msg = "Unknown distribution name: " + dist_name
         logging.error(msg)
