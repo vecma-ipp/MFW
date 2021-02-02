@@ -4,6 +4,10 @@
 #spec.loader.exec_module(gem0)
 from gem0 import gem
 
+import numpy as np
+
+import sys
+sys.path.append('c:\\Users\\user\\Documents\\UNI\\MPIPP\\PHD\\code\\MFW\\ual\\')
 from ascii_cpo import read, write
 
 from ual.coreprof import coreprof
@@ -18,7 +22,7 @@ from easymfw.templates.cpo_element import CPOElement
 
 def get_code_params(xml_file_name='gem0.xml'): #TODO check if fill_param() does exactly the same as parsing
 
-    print ("> Get code params")
+    print("> Get code params")
     # fill_param(code_parameters, xml_file_name, '', 'gem0.xsd')
     #code_parameters = XMLElement(xml_file_name)
     code_parameters, _ = assign_turb_parameters(xml_file_name)
@@ -57,39 +61,85 @@ class GEM0Singleton():
         return self.corep_elem.get_value('te.value')[ft], self.corep_elem.get_value('ti.value')[ft], \
                self.corep_elem.get_value('te.ddrho')[ft], self.corep_elem.get_value('ti.ddrho')[ft]
 
-    def modify_code_ios(self, attrib, new_value, ft=[69]):
-        """
-        Modifies a gem0 coreprof cpo object for a single parameter
-        """
-        old_value = self.corep_elem.get_value(attrib)  
+    def update_gradients(self, name, value):
+        rho = self.corep_elem.get_value('rho_tor_norm')
+        i = 69
 
         values = []
         indices = []
-        ind = ft[0] # TODO: workaround for single flux tube
+        if name == 'te.value':
+            dt = self.corep_elem.get_value('te.ddrho')
+            t_i = value
+            dt_i = dt[i]
+            values.append(value)
+            indices.append(i)
+        if name == 'te.ddrho':
+            t = self.corep_elem.get_value('te.value')
+            t_i = t[i]
+            dt_i = value
+            self.corep_elem.set_value('te.ddrho', [value], [i])
+        if name == 'ti.value':
+            dt = self.corep_elem.get_value('ti.ddrho')
+            t_i = value
+            if self.code_parameters['grid.nion'] == 1:
+                dt_i = dt[i]
+            else:
+                dt_i = dt[i][0]
+            values.append(value)
+            indices.append(i)
+        if name == 'ti.ddrho':
+            t = self.corep_elem.get_value('ti.value')
+            if self.code_parameters['grid.nion'] == 1:
+                t_i = t[i]
+            else:
+                t_i = t[i][0]
+            dt_i = value
+            self.corep_elem.set_value('ti.ddrho', [value], [i])
+
+        # neighbors to update
+        values.append(dt_i*(rho[i-2] - rho[i]) + t_i)
+        values.append(dt_i*(rho[i-1] - rho[i]) + t_i)
+        values.append(dt_i*(rho[i+1] - rho[i]) + t_i)
+        values.append(dt_i*(rho[i+2] - rho[i]) + t_i)
+        indices += [i-2, i-1, i+1, i+2]
+        if name[0:2] == 'te':
+            self.corep_elem.set_value('te.value', values, indices)
+        if name[0:2] == 'ti':
+            self.corep_elem.set_value('ti.value', values, indices)
+
+    def update_values_old(self, attrib, new_value, ft=[69]):
+        """
+              Modifies a gem0 coreprof cpo object for a single parameter
+              """
+        old_value = self.corep_elem.get_value(attrib)
+
+        values = []
+        indices = []
+        ind = ft[0]  # TODO: workaround for single flux tube
         if attrib in ['te.value', 'te.ddrho', 'ti.value', 'ti.ddrho']:
             rho = self.corep_elem.get_value('rho_tor_norm')
             if attrib == 'te.ddrho':
                 t = self.corep_elem.get_value('te.value')
-                t_i  = t[ind]
+                t_i = t[ind]
                 dt_i = new_value
                 self.corep_elem.set_value('te.ddrho', [new_value], [ind])
             if attrib == 'te.value':
                 dt = self.corep_elem.get_value('te.ddrho')
-                t_i  = new_value
+                t_i = new_value
                 dt_i = dt[ind]
                 values.append(new_value)
                 indices.append(ind)
             if attrib == 'ti.ddrho':
                 t = self.corep_elem.get_value('te.value')
                 if self.code_parameters["grid.nion"] == 1:
-                    t_i  = t[ind]
+                    t_i = t[ind]
                 else:
-                    t_i  = t[ind][0]
+                    t_i = t[ind][0]
                 dt_i = new_value
                 self.corep_elem.set_value('ti.ddrho', [new_value], [ind])
             if attrib == 'ti.value':
                 dt = self.corep_elem.get_value('ti.ddrho')
-                t_i  = new_value
+                t_i = new_value
                 if self.code_parameters["grid.nion"] == 1:
                     dt_i = dt[ind]
                 else:
@@ -98,26 +148,29 @@ class GEM0Singleton():
                 indices.append(ind)
 
             # if profile: neighbors to update
-            values.append(dt_i*(rho[ind-2] - rho[ind]) + t_i)
-            values.append(dt_i*(rho[ind-1] - rho[ind]) + t_i)
-            values.append(dt_i*(rho[ind+1] - rho[ind]) + t_i)
-            values.append(dt_i*(rho[ind+2] - rho[ind]) + t_i)
-            indices += [ind-2, ind-1, ind+1, ind+2]
+            values.append(dt_i * (rho[ind - 2] - rho[ind]) + t_i)
+            values.append(dt_i * (rho[ind - 1] - rho[ind]) + t_i)
+            values.append(dt_i * (rho[ind + 1] - rho[ind]) + t_i)
+            values.append(dt_i * (rho[ind + 2] - rho[ind]) + t_i)
+            indices += [ind - 2, ind - 1, ind + 1, ind + 2]
             if attrib in ['te.value', 'te.ddrho']:
                 self.corep_elem.set_value('te.value', values, indices)
             if attrib in ['ti.value', 'ti.ddrho']:
                 self.corep_elem.set_value('ti.value', values, indices)
 
-        #self.corep_elem.set_value(attrib, [new_value], ft)
+        # self.corep_elem.set_value(attrib, [new_value], ft)
 
         # TODO: for gradients: read the coreprof cpo-s, get the gradient by interpolation
         # for new inputs re-wrtie gradients at cpo, always write the new gradients?
-        # move to ONLY modifying gradients i.e. temaparature has to be interpolated?
-        
-        #return self.corep_elem
+        # move to ONLY modifying gradients i.e. temperature has to be interpolated?
+
+        # return self.corep_elem
+
+    def modify_code_ios(self, attrib, new_value, ft=[69]):
+        self.update_gradients(attrib, new_value)
 
     def modify_code_params(self, attrib, value):
-        self.code_parameters[attrib] = value
+        self.code_parameters['physical.' + attrib] = value
         #return self.code_parameters
 
     def gem0_call(self, param):
@@ -126,21 +179,44 @@ class GEM0Singleton():
         coret, tefl, tifl, tedr, tidr = gem(self.equil, self.corep_elem.core, self.coret, self.code_parameters)
         return tefl, tifl, tedr, tidr
 
-    def gem0_fit_call(xs, thresh, beta_reduction, etae_pinch, chi_d, chiratio_phi):
+    def gem0_fit_call(self, xs,
+                      thresh,
+                      #beta_reduction,
+                      #etae_pinch,
+                      #chi_d,
+                      #chiratio_phi
+                      ):
 
         # change the (free model) parameters
-        params_new = {'beta_reduction': beta_reduction, 'etae_pinch': etae_pinch, 
-                    'chi_d': etae_pinch, 'chiratio_phi': chiratio_phi}
+        params_new = {
+                      'thresh': thresh,
+                      # 'beta_reduction': beta_reduction,
+                      # 'etae_pinch': etae_pinch,
+                      # 'chi_d': chi_d,
+                      # 'chiratio_phi': chiratio_phi
+                     }
         for k, v in params_new.items():
-            self.code_parameters = modify_code_params(code_parameters, k, v)
+            self.modify_code_params(k, v)
 
-        #change the values at spo (inputs)
-        Xlabels = ['ti.value', 'te.value', 'ti.ddrho', 'ti.ddrho']
-        for xl in Xlabels:
-            self.corep_elem = modify_code_ios(corep_elem, xl, xs)
+        # change the values at cpo (inputs)
+        #Xlabels = ['ti.value', 'te.value', 'ti.ddrho', 'ti.ddrho']
+        y_res = []
 
-        coret, tefl, tifl, tedr, tidr = gem(equil, corep_elem.core, coret, code_parameters)
-        return [tefl, tifl, tedr, tidr]
+        for j in range(xs.shape[0]):
+            x = xs[j, :]
+            x_dict = {
+                #'te.value': x[0],
+                #'ti.value': x[0],
+                #'te.ddrho': x[2],
+                'ti.ddrho': x[0]
+                    }
+            for k, v in x_dict.items():
+                self.modify_code_ios(k, v)
+
+            coret, tefl, tifl, tedr, tidr = gem(self.equil, self.corep_elem.core, self.coret, self.code_parameters)
+            y_res.append(np.array([tefl, tifl]))
+
+        return y_res
 
     def gem0_test(self,):
         """
@@ -149,7 +225,7 @@ class GEM0Singleton():
         """
         #corep_elem = modify_code_ios(corep_elem, 'ti.value', 0)
 
-        print ("> Run gem0 routine")
+        print("> Run gem0 routine")
         coret, tefl, tifl, tedr, tidr = gem(self.equil, self.corep_elem.core, self.coret, self.code_parameters)
         print('ti_transp_flux is: {}'.format(tifl))
 
