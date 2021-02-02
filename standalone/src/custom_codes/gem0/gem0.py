@@ -125,7 +125,7 @@ def gem(eq, coreprof, coretransp, code_parameters):
     if nrho_transp == 1:
         rho = np.array([ra0])
     elif nrho_transp == (nrho_prof-1)/2 :
-            rho = rho0[1:nrho_transp-1:2]
+        rho = rho0[1:nrho_transp-1:2]
     else:
         rho = np.array([((1.0/(2*nrho_transp))*(2*x+1))**0.7 for x in range(nrho_transp)])
 
@@ -255,7 +255,7 @@ def gem(eq, coreprof, coretransp, code_parameters):
             shat = shatx[i]
 
             # Local parameters
-            print(tte) # for last iteration outside gives negative value -> pinpoint
+            # print(tte)  # for last iteration outside gives negative value -> pinpoint
 
 
             rhos = math.sqrt(cc * cc * ionmass * kb * tte / (ee * ee * b00 * b00))
@@ -288,11 +288,13 @@ def gem(eq, coreprof, coretransp, code_parameters):
                 if chigb_option == 1:
                     chigb = rhos * rhos * cs / r00
                 if chigb_option == 2:
+                    chigb = 3.1665651301060183   # assumption from Y, just to run the code
                     chigb = chigb * 40.0 / math.sqrt(1.0 + (beta_reduction * beta) ** 2.0)
                 if chigb_option == 3:
+                    chigb = 3.1665651301060183   # assumption from Y, just to run the code
                     chigb = chigb * max(0.0, (1.0 - thresh / abs((r00 * rlti))))
                 if chigb_option == 4:
-                    chigb = rhos * rhos * cs / lperp #original code choice 
+                    chigb = rhos * rhos * cs / lperp  # original code choice
 
                 #print('SOME COEFS: {} {} {} {}'.format(1/lperp, (1/r00), max(0.0, (1.0 - thresh / abs((r00 * rlti)))), 
                 #      40.0 / math.sqrt(1.0 + (beta_reduction * beta) ** 2.0)))
@@ -350,7 +352,7 @@ def gem(eq, coreprof, coretransp, code_parameters):
                 #print('ne_transp.diff_eff size: {}; diff_eff : {}'
                 #      .format(coretransp.values[0].ne_transp.diff_eff.shape, diffe.shape))
 
-                te_transp_flux = nne * kb * tte * gge * gm3[i] # TODO: check for multiple flu tubes why it is not assigned
+                te_transp_flux = nne * kb * tte * gge * gm3[i]  # TODO: check for multiple flu tubes why it is not assigned
                 
                 coretransp.values[0].ne_transp.diff_eff[i, 1] = diffe
                 coretransp.values[0].te_transp.diff_eff[i] = chie
