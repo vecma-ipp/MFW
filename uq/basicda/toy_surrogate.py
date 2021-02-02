@@ -4,6 +4,8 @@ import math
 import matplotlib.pylab as plt
 import time
 
+import pandas as pd
+import csv
 import itertools
 
 from sklearn.gaussian_process import GaussianProcessRegressor
@@ -383,14 +385,17 @@ def test_gp_domain_decomposition(x_domain, y_test, x_observ, y_observ):
     plt.plot(range(len(x_domain)), errs, label='error of the splitting')
     return 0
 
-def prep_1d_gem_data():
+def prep_1d_gem0_data():
+
+    n_init = 8
+    ext_code_helper_1 = ExtCodeHelper(1)
 
     function = lambda x: ext_code_helper_1.gem0_call_teflteval_array(x)
     x_param = [400., 2000, 32] # for gem in te-val #TODO change the gradient sampling!
         
     x_obs = np.zeros((n_init, 2))
     x_domain = np.atleast_2d(np.linspace(*x_param)).T
-    y_test = function(x_domain) # TODO: some of the things e.g. x_domain are never changed - should be returned all the timei
+    y_test = function(x_domain) # TODO: some of the things e.g. x_domain are never changed - should be returned all the time
 
     plot_response_1d(x_domain, y_test)
 
@@ -622,7 +627,117 @@ plt.ion()
 #surrogate_loop(1)
 
 #GP split
-x_domain, y_test, x_obs, y_obs = prep_1d_gem_data()
-test_gp_domain_decomposition(x_domain, y_test, x_obs, y_obs)
+#x_domain, y_test, x_obs, y_obs = prep_1d_gem0_data()
+#test_gp_domain_decomposition(x_domain, y_test, x_obs, y_obs)
 
+### --- Get data from GEM0 for offline training
+# gem0_helper = ExtCodeHelper(1)
+#
+# function = lambda x: np.array(gem0_helper.gem0_call_tifltegradtigrad_array(x))  # TODO TODO add gem0 check the rho taken and if a range of values around is sampled
+# x_param = [[-5000., -1000., 32], [-5000., -1000., 32]]
+#
+# import lhsmdu
+#
+# x_domain = lhsmdu.sample(2, 50).reshape(-1, 2)
+# for dim in range(len(x_param)):
+#     x_domain[:, dim] = x_param[dim][0] + x_domain[:, dim] * (x_param[dim][1] - x_param[dim][0])
+#
+# x_domain = np.array(x_domain)
+# y_test = function(x_domain)
+#
+# df = pd.DataFrame()
+#
+# df['te.ddrho'] = x_domain[:, 0]
+# df['ti.ddrho'] = x_domain[:, 1]
+# df['ti.flux']  = y_test[:, 0]
+#
+# df.to_csv('gem0_lhc_res.csv')
 
+### --- Produce GEM0 results for coordiantes of paramteric space read from a GEM campaign
+gem0_helper = ExtCodeHelper(3)
+function = lambda x: np.array(gem0_helper.gem0_call_4param2target_array(x))
+
+def load_csv_file(data_dir='', input_file='gem_data_625.txt'):
+    N_runs = 625
+    input_dim = 4
+    output_dim = 2
+
+    input_samples = np.zeros((N_runs, input_dim))
+    output_samples = np.zeros((N_runs, output_dim))
+
+    #nput_file = data_dir + '\\' + input_file
+
+    with open(input_file, 'r') as inputfile:
+        datareader = csv.reader(inputfile, delimiter=',')
+        i = 0
+        for row in datareader:
+            input_samples[i] = row[0:input_dim]
+            output_samples[i] = row[input_dim:input_dim+output_dim]
+            i = i + 1
+
+    return input_samples, output_samples
+
+x_domain, y_gem  = load_csv_file()
+#y_test = function(x_domain)
+#y_test = y_test.reshape(625, 2)
+
+df = pd.DataFrame()
+
+df['te.value'] = x_domain[:, 0]
+df['ti.value'] = x_domain[:, 1]
+df['te.ddrho'] = x_domain[:, 2]
+df['ti.ddrho'] = x_domain[:, 3]
+
+#df['te.flux'] = y_test[:, 0]
+#df['ti.flux'] = y_test[:, 1]
+
+df.to_csv('gem0_625_res.csv')
+
+### --- Try to fit GEM0 for GEM data
+
+from scipy.optimize import curve_fit
+
+def func(x,
+         th,
+         #br,
+         #ep,
+         #cd,
+         #cp
+         ):
+    y_res = gem0_helper.gem0obj.gem0_fit_call(x,
+                                              th,
+                                              # br,
+                                              # ep,
+                                              #cd,
+                                              #cp
+                                              )
+    res = np.array(y_res)
+    return res[:, 1]
+
+function = lambda x: np.array(gem0_helper.gem0_call_tifltigrad_array(x))
+
+inds = grid_slice(x_domain,[3])
+xcur = x_domain[inds, [3]].reshape(-1, 1)
+print(y_gem[inds, 1])
+print(function(xcur).reshape(-1))
+
+#popt, pconv = curve_fit(func, x_domain[:25, [3]], y_gem[:25, 1],
+popt, pconv = curve_fit(func, xcur, y_gem[inds, 1],
+                                                  p0=[
+                                                       6.,
+                                                       # 10.,
+                                                       # 3.5,
+                                                       # 3.,
+                                                       # 0.7
+                                                      ],
+                                                     bounds=(0.01, 1000.0),
+                                                     method='trf',
+                                                     #jac='3-point'
+                        )  # check if should actually be (625,4) + add bounds
+#  OptimizeWarning: Covariance of the parameters could not be estimated
+#   category=OptimizeWarning) ... [[inf ..]]
+
+print(popt)
+print(pconv)
+
+print(func(xcur, *popt))
