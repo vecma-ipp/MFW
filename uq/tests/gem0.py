@@ -42,13 +42,11 @@ exec_code = "gem0_test"
 
 # Define the uncertain parameters
 # Electron temperature and its gradient
-
-dist ={ "dist": "Uniform", "err":  0.2}
 input_params = {
-    "te.value": dist,
-    "te.ddrho": dist,
-    "ti.value": dist,
-    "ti.ddrho": dist
+    "te.value": {"dist": "Uniform", "err":  0.2, "min": 0.},
+    "ti.value": {"dist": "Uniform", "err":  0.2, "min": 0.},
+    "te.ddrho": {"dist": "Uniform", "err":  0.2, "max": 0.},
+    "ti.ddrho": {"dist": "Uniform", "err":  0.2, "max": 0.}
 }
 
 # CPO file containg initial values of uncertain params

@@ -41,21 +41,13 @@ exec_code = "loop_gem0"
 # Define the uncertain parameters
 # Electrons boudary condition
 input_params_bc = {
-    "te.boundary.value": {
-        "dist": "Uniform",
-        "err":  0.2,
-    }
+    "te.boundary.value": {"dist": "Normal", "err": 0.2, "min":0.}
 }
 # Gaussian Sources: Electrons heating
 input_params_sr = {
-    "electrons.heating_el.WTOT_el":{
-        "dist": "Uniform",
-        "err": 0.2,
-    },
-    "electrons.heating_el.RHEAT_el":{
-        "dist": "Uniform",
-        "err": 0.2,
-    }
+    "electrons.heating_el.WTOT_el":  {"dist": "Uniform", "err": 0.2},
+    "electrons.heating_el.RHEAT_el": {"dist": "Uniform", "err": 0.2},
+    "electrons.heating_el.FWHEAT_el":{"dist": "Uniform", "err": 0.2}
 }
 
 # CPO and XML files containg initial values of uncertain params

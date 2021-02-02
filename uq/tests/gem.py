@@ -45,13 +45,11 @@ exec_code = "gem_test"
 
 # Define the uncertain parameters
 # Electron temperature and its gradient
-
-dist ={ "dist": "Uniform", "err":  0.2}
 input_params = {
-    "te.value": dist,
-    "te.ddrho": dist,
-    "ti.value": dist,
-    "ti.ddrho": dist
+    "te.value": {"dist": "Uniform", "err":  0.2, "min": 0.},
+    "ti.value": {"dist": "Uniform", "err":  0.2, "min": 0.},
+    "te.ddrho": {"dist": "Uniform", "err":  0.2, "max": 0.},
+    "ti.ddrho": {"dist": "Uniform", "err":  0.2, "max": 0.}
 }
 
 # CPO file containg initial values of uncertain params
@@ -86,7 +84,7 @@ os.system("cp " + cpo_dir + "/ets_coreprof_in.cpo "
                 + common_dir + "/gem_coreprof_in.cpo")
 
 # Copy restart file
-os.system("cp " + cpo_dir + "/t01.dat " + common_dir)
+os.system("cp " + cpo_dir + "/t00.dat " + common_dir)
 
 # Copy XML and XSD files
 os.system("cp " + xml_dir + "/gem.xml " + common_dir)

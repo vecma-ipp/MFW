@@ -44,25 +44,13 @@ exec_code = "ets_chease_test"
 # Define the uncertain parameters
 # Electron boudary condition
 input_params_bc = {
-    "te.boundary.value": {
-        "name": "Normal",
-        "err":  0.2,
-    }
+    "te.boundary.value": {"dist": "Normal", "err": 0.2, "min":0.}
 }
 # Electron heating Sources
 input_params_sr = {
-    "electrons.heating_el.WTOT_el":{
-        "dist": "Uniform",
-        "err": 0.2,
-    },
-    "electrons.heating_el.RHEAT_el":{
-        "dist": "Uniform",
-        "err": 0.2,
-    },
-    "electrons.heating_el.FWHEAT_el":{
-        "dist": "Uniform",
-        "err": 0.2,
-    }
+    "electrons.heating_el.WTOT_el": {"dist": "Uniform", "err": 0.2},
+    "electrons.heating_el.RHEAT_el": {"dist": "Uniform", "err": 0.2},
+    "electrons.heating_el.FWHEAT_el": {"dist": "Uniform","err": 0.2}
 }
 
 # CPO and XML files containg initiail values of uncertain params

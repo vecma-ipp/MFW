@@ -44,12 +44,11 @@ def exec_pj(campaign, exec_path, ncores, log_level="info"):
 def setup_gem0(ftube_index, common_dir):
 
     # Define the uncertain parameters
-    dist = { "dist": "Uniform", "err":  0.2}
     input_params = {
-        "te.value": dist,
-        "te.ddrho": dist,
-        "ti.value": dist,
-        "ti.ddrho": dist
+        "te.value": {"dist": "Uniform", "err":  0.2, "min": 0.},
+        "ti.value": {"dist": "Uniform", "err":  0.2, "min": 0.},
+        "te.ddrho": {"dist": "Uniform", "err":  0.2, "max": 0.},
+        "ti.ddrho": {"dist": "Uniform", "err":  0.2, "max": 0.}
     }
 
     # CPO file containg initial values of uncertain params

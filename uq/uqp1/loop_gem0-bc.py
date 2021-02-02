@@ -36,18 +36,11 @@ xml_dir = os.path.abspath("../workflows")
 # The executable code to run
 obj_dir = os.path.abspath("../standalone/bin/"+SYS)
 exec_code = "loop_gem0"
-#exec_code = "loop_gem"
 
 # Define the uncertain parameters
 input_params = {
-    "te.boundary.value": {
-        "dist": "Uniform",
-        "err":  0.2,
-    },
-    "ti.boundary.value": {
-        "dist": "Uniform",
-        "err": 0.2,
-    }
+    "te.boundary.value": {"dist": "Normal", "err": 0.2, "min":0.},
+    "ti.boundary.value": {"dist": "Normal", "err": 0.2, "min":0.}
 }
 
 # CPO file containg initial values of uncertain params

@@ -40,16 +40,15 @@ exec_code = "loop_gem0"
 
 # Define the uncertain parameters
 # Amplitude, Position and Width from source_dummy.xml
-dist ={ "dist": "Uniform", "err":  0.2}
 elec_heating_params = {
-    "electrons.heating_el.WTOT_el": dist,
-    "electrons.heating_el.RHEAT_el": dist,
-    "electrons.heating_el.FWHEAT_el": dist
+    "electrons.heating_el.WTOT_el":  {"dist": "Uniform", "err": 0.2},
+    "electrons.heating_el.RHEAT_el": {"dist": "Uniform", "err": 0.2},
+    "electrons.heating_el.FWHEAT_el":{"dist": "Uniform", "err": 0.2}
 }
 ions_heating_params = {
-    "ions.heating.WTOT": dist,
-    "ions.heating.RHEAT": dist,
-    "ions.heating.FWHEAT": dist
+    "ions.heating.WTOT":  {"dist": "Uniform", "err": 0.2},
+    "ions.heating.RHEAT": {"dist": "Uniform", "err": 0.2},
+    "ions.heating.FWHEAT":{"dist": "Uniform", "err": 0.2}
 }
 
 # Choose one of the uncertain params dict, or merge them using
