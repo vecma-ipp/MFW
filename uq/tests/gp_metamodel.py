@@ -141,21 +141,76 @@ def plot_res(prediction, original, name, num, len, out_color, output_folder):
                 bbox_inches='tight', dpi=100)
     plt.clf()
 
-def choose_high_error(y, threshold):
-    #np.where(y>threshold)
-    ind = y > threshold
+def choose_high_error_indices(y, threshold):
     #ind_flat = np.logical_or([ind[:, i] for i in range(ind.shape[1])])
     #ind_flat = np.logical_or(ind[:, 0], ind[:, 1])
     ind_flat = (y > threshold).any(axis=1)
     ind_flat = np.where(ind_flat)[0]
     return ind_flat
 
-def choose_high_value(y, thr):
+def choose_high_value_indices(y, threshold):
     #y_ht = [np.where(abs(y[:,it]) > thr[it]) for it in range(len(thr))]
-    y_ht = np.array([abs(y[:, it]) > thr[it] for it in range(len(thr))]).transpose()
+    y_ht = np.array([abs(y[:, it]) > threshold[it] for it in range(len(threshold))]).transpose()
     y_ht = y_ht.all(axis=1)
     y_ht = np.where(y_ht)
     return y_ht
+
+def analyse_hp_distribution(gpr_gpy):
+    v_min = s_hp.min()
+    v_max = s_hp.max()
+    labels = ['kern_variance', 'kern_lengthscale', 'noise_variance']
+    vs = np.linspace(v_min, v_max, 100)
+    for i in range(s_hp.shape[1]-1):
+        kernel = stats.gaussian_kde(s_hp[:, i])  # numpy.linalg.LinAlgError: singular matrix
+        plt.plot(vs, kernel(vs), label=labels[i])
+    plt.legend()
+    plt.savefig('tr_ds_fl_kernel_LS.png')
+    plt.close()
+
+def high_gradient_dataset(input_samples, output_samples):
+    ### --- train model on high abs gradients only
+    ind_hg = choose_high_value_indices(input_samples, [0., 0., 3200., 3200.])
+    print('number of runs with high gradient values: {} \n'.format(ind_hg))
+    #print('all high gradient samples should be here '.format(input_samples[ind_hg, :]))
+    X_high_g = input_samples[ind_hg]
+    Y_high_g = output_samples[ind_hg]
+    X_high_g_train = input_samples[np.intersect1d(ind_hg, train_n)]
+    Y_high_g_train = output_samples[np.intersect1d(ind_hg, train_n)]
+    X_high_g_test = input_samples[np.intersect1d(ind_hg, test_n)]
+    Y_high_g_test = output_samples[np.intersect1d(ind_hg, test_n)]
+    kernel3 = Matern(length_scale=[25, 25, 15, 15], nu=0.5) + RBF(length_scale=[25, 25, 15, 15])
+    gpr_hg = GaussianProcessRegressor(kernel=kernel3, random_state=0).fit(X_high_g_train, Y_high_g_train)
+    print(gpr_hg.kernel.theta)
+    prediction_y_high_gradient = gpr_hg.predict(X_high_g)
+    return prediction_y_high_gradient
+
+def high_error_model_retrain(input_samples, output_samples, gpr):
+    ### --- Make a separate model on high errors
+    prediction_y_full_set = gpr.predict(input_samples)
+    err_abs_full_set = np.subtract(prediction_y_full_set, output_samples)
+    err_rel_full_set = np.divide(err_abs_full_set, output_samples)
+    ind_high = choose_high_error_indices(err_rel_full_set, 0.5)  # [0]
+    print('runs from training dataset for which model performs poorly: {} \n'.format(np.intersect1d(ind_high, train_n)))
+    print('numbers of runs for which model produces high error: {} \n'.format(ind_high))
+    Y_high = output_samples[ind_high]
+    X_high = input_samples[ind_high]
+    #print(X_high)
+    #kernel2 = Matern(length_scale=[25, 25, 25, 25], nu=0.5) + RBF(length_scale=[25, 25, 25, 25])
+    kernel2 = Matern(length_scale=[1., 1., 1., 1.], nu=0.5)
+    gpr_high = GaussianProcessRegressor(kernel=kernel2, random_state=0).fit(X_high, Y_high)
+    #ls_h = gpr_high.kernel.theta
+    #print(ls_h)
+    prediction_y_high = gpr_high.predict(X_high)
+    return gpr_high
+
+def gpy_ard_training(gpr_gpy):
+    gpr_gpy[".*Gaussian_noise"] = gpr_gpy.Y.var()*0.01
+    gpr_gpy[".*Gaussian_noise"].fix()
+    gpr_gpy.optimize(max_iters=500)
+    gpr_gpy[".*Gaussian_noise"].unfix()
+    gpr_gpy[".*Gaussian_noise"].constrain_positive()
+    gpr_gpy.optimize_restarts(20, optimizer="bfgs", max_iters=1000, verbose=False)
+    return gpr_gpy
 
 # Main
 if __name__ == "__main__":
@@ -203,6 +258,11 @@ if __name__ == "__main__":
     scalerY = preprocessing.StandardScaler().fit(output_samples)
     output_samples = scalerY.transform(output_samples)
 
+    data_sim = pd.DataFrame({Xlabels[0]: input_samples[:, 0], Xlabels[1]: input_samples[:, 1],
+                             Xlabels[2]: input_samples[:, 2], Xlabels[3]: input_samples[:, 3],
+                             Ylabels[0]: output_samples[:, 0], Ylabels[1]: output_samples[:, 1]})
+    plot_camp_vals(data_sim, "gem")
+
     X = input_samples[train_n]
     Y = output_samples[train_n]
 
@@ -221,6 +281,8 @@ if __name__ == "__main__":
     #
     # gpr = GaussianProcessRegressor(kernel=kernel, random_state=0, n_restarts_optimizer=15).fit(X, Y)
     # #print(gpr.kernel_)
+    # ls = gpr_high.kernel.theta
+    # print(ls)
     #
     # prediction_y, prediction_std = gpr.predict(X_test, return_std=True)
     #
@@ -243,52 +305,23 @@ if __name__ == "__main__":
 
     ###prediction_y = gpr_l2.predict(X_test)
 
-    # --- Make a separate model on high errors
-    # prediction_y_full_set = gpr.predict(input_samples)
-    # err_abs_full_set = np.subtract(prediction_y_full_set, output_samples)
-    # err_rel_full_set = np.divide(err_abs_full_set, output_samples)
-    # ind_high = choose_high_error(err_rel_full_set, 0.5)  # [0]
-    # print('runs from training dataset for which model performs poorly: {} \n'.format(np.intersect1d(ind_high, train_n)))
-    # print('numbers of runs for which model produces high error: {} \n'.format(ind_high))
-    # Y_high = output_samples[ind_high]
-    # X_high = input_samples[ind_high]
-    # print(X_high)
-    # #kernel2 = Matern(length_scale=[25, 25, 25, 25], nu=0.5) + RBF(length_scale=[25, 25, 25, 25])
-    # #gpr_high = GaussianProcessRegressor(kernel=kernel2, random_state=0).fit(X_high, Y_high)
-    # #prediction_y_2_high = gpr_high.predict(X_high)
-    # ls = gpr.kernel.theta
-    # print(ls)
-    # #ls_h = gpr_high.kernel.theta
-    # #print(ls_h)
-
     #  --- the leftover data
     #ind_low = np.array([el for el in list(range(0, N_runs)) if el not in ind_high])
     #Y_low = output_samples[ind_low]
 
-    ### --- train model on high abs gradients only
-    # ind_hg = choose_high_value(input_samples, [0., 0., 3200., 3200.])
-    # print('number of runs with high gradient values: {} \n'.format(ind_hg))
-    # #print('all high gradient samples should be here '.format(input_samples[ind_hg, :]))
-    # X_high_g = input_samples[ind_hg]
-    # Y_high_g = output_samples[ind_hg]
-    # X_high_g_train = input_samples[np.intersect1d(ind_hg, train_n)]
-    # Y_high_g_train = output_samples[np.intersect1d(ind_hg, train_n)]
-    # X_high_g_test = input_samples[np.intersect1d(ind_hg, test_n)]
-    # Y_high_g_test = output_samples[np.intersect1d(ind_hg, test_n)]
-    # kernel3 = Matern(length_scale=[25, 25, 15, 15], nu=0.5) + RBF(length_scale=[25, 25, 15, 15])
-    # gpr_hg = GaussianProcessRegressor(kernel=kernel3, random_state=0).fit(X_high_g_train, Y_high_g_train)
-    # print(gpr_hg.kernel.theta)
-    # prediction_y_high_gradient = gpr_hg.predict(X_high_g)
-
     ### --- GPY case
 
-    ker = GPy.kern.RBF(input_dim=1, active_dims=0) * \
-          GPy.kern.RBF(input_dim=1, active_dims=1) * \
-          GPy.kern.RBF(input_dim=1, active_dims=2) * \
-          GPy.kern.RBF(input_dim=1, active_dims=3)  # kernel as product of kernels taking single dimensions, different lenghtscale
+    #ker = GPy.kern.RBF(input_dim=1, active_dims=0) * \
+    #      GPy.kern.RBF(input_dim=1, active_dims=1) * \
+    #      GPy.kern.RBF(input_dim=1, active_dims=2) * \
+    #      GPy.kern.RBF(input_dim=1, active_dims=3)  # kernel as product of kernels taking single dimensions, different lenghtscale
+
+    ker = GPy.kern.Matern32(input_dim=4)
+
     # if 4d is too hard to analyse, use 2d -> to generate use GEM0 data sampled from QMC, or from python version
-    gpr_gpy = GPy.models.GPRegression(X, Y, ker)  # for a vector output try coregionalization B x K
-    labels = ['kern variance', 'kern lengthscale', 'noise variance']
+    gpr_gpy = GPy.models.GPRegression(X, Y, ker, initialize=True)  # for a vector output try coregionalization B x K
+    gpr_gpy = gpy_ard_training(gpr_gpy)
+
     #gpr_gpy.kern.lengthscale.set_prior(GPy.priors.Gamma.from_EV(1., 10.))
     #gpr_gpy.kern.variance.set_prior(GPy.priors.Gamma.from_EV(1., 10.))
     #gpr_gpy.likelihood.variance.set_prior(GPy.priors.Gamma.from_EV(1., 10.))
@@ -299,34 +332,47 @@ if __name__ == "__main__":
     plt.plot(s_hp, '.')  #, labels=labels)
     plt.savefig('gp_hypar_vals.png')
     plt.close()
-    # v_min = s_hp.min()
-    # v_max = s_hp.max()
-    # labels = ['kern_variance', 'kern_lengthscale', 'noise_variance']
-    # vs = np.linspace(v_min, v_max, 100)
-    # for i in range(s_hp.shape[1]-1):
-    #     kernel = stats.gaussian_kde(s_hp[:, i])  # numpy.linalg.LinAlgError: singular matrix
-    #     plt.plot(vs, kernel(vs), label=labels[i])
-    # plt.legend()
-    # plt.savefig('tr_ds_fl_kernel_LS.png')
-    # plt.close()
     print(gpr_gpy)
+    #prediction_y, std = gpr_gpy.predict(X_test)
 
-    prediction_y, std = gpr_gpy.predict(X_test)
+    ### model on high errors test samples
+    prediction_y_full_set, std_first_full = gpr_gpy.predict(input_samples)
+    err_abs_full_set = np.subtract(prediction_y_full_set, output_samples)
+    err_rel_full_set = np.divide(err_abs_full_set, output_samples)
+    ind_high = choose_high_error_indices(err_rel_full_set, 0.5)  # [0]
+    Y_high = output_samples[ind_high]
+    X_high = input_samples[ind_high]
+    print(ind_high)
+    train_n_h = np.random.choice(ind_high, int(len(ind_high)*0.7), replace=False)
+    test_n_h = np.array([el for el in list(range(0, N_runs)) if el not in train_n_h])
+    X_high_train = input_samples[train_n_h]
+    Y_high_train = output_samples[train_n_h]
+    X_high_test = input_samples[test_n_h]
+    Y_high_test = output_samples[test_n_h]
+
+    ker2 = GPy.kern.Matern32(input_dim=4)
+    #ker2 = GPy.kern.Matern32(input_dim=4) + GPy.kern.Bias()
+
+    gpr_gpy_h = GPy.models.GPRegression(X_high_train, Y_high_train, ker2, initialize=True)
+    gpr_gpy_h = gpy_ard_training(gpr_gpy_h)
+    print(gpr_gpy_h)
+    #gpr_gpu_he = GPy.inference.mcmc.HMC(gpr_gpy, stepsize=5e-2)
+    prediction_y_high_grad_set, std = gpr_gpy_h.predict(X_high)
 
     ### --- PLOTTING
     # print results
     color_1 = 'blue'
     color_2 = 'orange'
 
-    plot_res(prediction_y[:, 0], Y_test[:, 0], r'$TFl_e$', '1gpy', len(X), color_1, WORKDIR+'\\')  #+campaign_id)
-    plot_res(prediction_y[:, 1], Y_test[:, 1], r'$TFL_i$', '2gpy', len(X), color_1, WORKDIR+'\\')  #/gem0')
+    #plot_res(prediction_y[:, 0], Y_test[:, 0], r'$TFl_e$', '1gpy', len(X), color_1, WORKDIR+'\\')  #+campaign_id)
+    #plot_res(prediction_y[:, 1], Y_test[:, 1], r'$TFL_i$', '2gpy', len(X), color_1, WORKDIR+'\\')  #/gem0')
 
-    #plot_res(prediction_y_high_gradient[:, 0], Y_high_g[:, 0], r'$TFL_e$', '1', color_1, WORKDIR+'\\highgrad_')
-    #plot_res(prediction_y_high_gradient[:, 1], Y_high_g[:, 1], r'$TFL_e$', '2', color_1, WORKDIR + '\\highgrad_')
+    plot_res(prediction_y_high_grad_set[:, 0], Y_high[:, 0], r'$TFL_e$', '1', len(X), color_1, WORKDIR+'\\highgrad_')
+    plot_res(prediction_y_high_grad_set[:, 1], Y_high[:, 1], r'$TFL_e$', '2', len(X), color_1, WORKDIR + '\\highgrad_')
 
     # plt.plot(prediction_std, '.')
     # plt.savefig('std_for_runs.png')
     # plt.close()
     
-    print('MSE of the GPR prediction is: {0}'.format(mse(Y_test, prediction_y)))
+    print('MSE of the GPR prediction is: {0}'.format(mse(Y_high, prediction_y_high_grad_set))) # other metrics?
 
