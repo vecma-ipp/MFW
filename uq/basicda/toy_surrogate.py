@@ -25,11 +25,32 @@ from joblib import dump, load
 from extcodehelper import ExtCodeHelper
 
 
+def load_csv_file(data_dir='', input_file='gem_data_625.txt'):
+    N_runs = 625
+    input_dim = 4
+    output_dim = 2
+
+    input_samples = np.zeros((N_runs, input_dim))
+    output_samples = np.zeros((N_runs, output_dim))
+
+    # nput_file = data_dir + '\\' + input_file
+
+    with open(input_file, 'r') as inputfile:
+        datareader = csv.reader(inputfile, delimiter=',')
+        i = 0
+        for row in datareader:
+            input_samples[i] = row[0:input_dim]
+            output_samples[i] = row[input_dim:input_dim + output_dim]
+            i = i + 1
+
+    return input_samples, output_samples
+
+
 def grad_utility(y_observ, sigma):
-    
     utility = []
 
     return utility
+
 
 def get_domain_grid(self, x_domain_params, mode='LHS'):
     """
@@ -39,96 +60,104 @@ def get_domain_grid(self, x_domain_params, mode='LHS'):
     nfeat = x_domain_params.shape[0]
     x_domain = np.zeros((nfeat, ndim))
     if mode == 'LHS':
-        x_domain = x_domain # TODO get the LHC set of points
+        x_domain = x_domain  # TODO get the LHC set of points
     return x_domain
+
 
 def get_ongrid(x_mesh, x, y):
     x1_size = x_mesh[0].shape[0]
     x2_size = x_mesh[0].shape[1]
     y_ongrid = np.zeros((x1_size, x2_size))
-    for i in range(x1_size): #TODO very very bad, arbitrary dimension as well? vectorize???
+    for i in range(x1_size):  # TODO very very bad, arbitrary dimension as well? vectorize???
         for j in range(x2_size):
-            for k in range(len(y)): # TODO VERY VERY VERY BAD
-                if  x[k][0] == x_mesh[0][i][j] and x[k][1] == x_mesh[1][i][j]:
-                    y_ongrid[i,j] = y[k]
+            for k in range(len(y)):  # TODO VERY VERY VERY BAD
+                if x[k][0] == x_mesh[0][i][j] and x[k][1] == x_mesh[1][i][j]:
+                    y_ongrid[i, j] = y[k]
 
     return y_ongrid
+
 
 def get_localmax_brut(utility):
     loc_maxs = []
     size1 = utility.shape[0]
     size2 = utility.shape[1]
 
-    for i in range(1, size1-1): #TODO very bad, make with a TF filter?
+    for i in range(1, size1 - 1):  # TODO very bad, make with a TF filter?
 
-        if utility[i,0] > utility[i,1] and utility[i,0] > utility[i-1,0] and utility[i,0] > utility[i+1,0]:
-            loc_maxs.append([i,0])
+        if utility[i, 0] > utility[i, 1] and utility[i, 0] > utility[i - 1, 0] and utility[i, 0] > utility[i + 1, 0]:
+            loc_maxs.append([i, 0])
 
-        for j in range(1, size2-1):
-            if   utility[i,j] > utility[i,j+1] and \
-                 utility[i,j] > utility[i,j-1] and \
-                 utility[i,j] > utility[i+1,j] and \
-                 utility[i,j] > utility[i-1,j]:
-               loc_maxs.append([i,j])
+        for j in range(1, size2 - 1):
+            if utility[i, j] > utility[i, j + 1] and \
+                    utility[i, j] > utility[i, j - 1] and \
+                    utility[i, j] > utility[i + 1, j] and \
+                    utility[i, j] > utility[i - 1, j]:
+                loc_maxs.append([i, j])
 
-        if utility[i,size2-1] > utility[i,size2-2] and utility[i,size2-1] > utility[i+1,size2-1] and utility[i,size2-1] > utility[i-1,size2-1]:
-            loc_maxs.append([i,size2-1])
+        if utility[i, size2 - 1] > utility[i, size2 - 2] and utility[i, size2 - 1] > utility[i + 1, size2 - 1] and \
+                utility[i, size2 - 1] > utility[i - 1, size2 - 1]:
+            loc_maxs.append([i, size2 - 1])
 
-    for j in range(1, size2-1):
-        if utility[0,j] > utility[1,j] and utility[0,j] > utility[0,j-1] and utility[0,j] > utility[0,j+1]:
-            loc_maxs.append([0,j])
-        if utility[size1-1,j] > utility[size1-2,j] and utility[size1-1,j] > utility[size1-1,j-1] and utility[size1-1,j] > utility[size1-1,j+1]:
-            loc_maxs.append([size1-1,j])
+    for j in range(1, size2 - 1):
+        if utility[0, j] > utility[1, j] and utility[0, j] > utility[0, j - 1] and utility[0, j] > utility[0, j + 1]:
+            loc_maxs.append([0, j])
+        if utility[size1 - 1, j] > utility[size1 - 2, j] and utility[size1 - 1, j] > utility[size1 - 1, j - 1] and \
+                utility[size1 - 1, j] > utility[size1 - 1, j + 1]:
+            loc_maxs.append([size1 - 1, j])
 
-    if utility[0,0] > utility[0,1] and utility[0,0] > utility[1,0]:
-        loc_maxs.append([0,0])
-    if utility[0,size2-1] > utility[0,size2-2] and utility[0,size2-1] > utility[1,size2-1]:
-        loc_maxs.append([0,size2-1])
-    if utility[size1-1,0] > utility[size1-1,1] and utility[size1-1,0] > utility[size1-2,0]:
-        loc_maxs.append([size1-1,0])
-    if utility[size1-1,size2-1] > utility[size1-1,size2-2] and utility[size1-1,size2-1] > utility[size1-2,size2-1]:
-        loc_maxs.append([size1-1,size2-1])
-    
+    if utility[0, 0] > utility[0, 1] and utility[0, 0] > utility[1, 0]:
+        loc_maxs.append([0, 0])
+    if utility[0, size2 - 1] > utility[0, size2 - 2] and utility[0, size2 - 1] > utility[1, size2 - 1]:
+        loc_maxs.append([0, size2 - 1])
+    if utility[size1 - 1, 0] > utility[size1 - 1, 1] and utility[size1 - 1, 0] > utility[size1 - 2, 0]:
+        loc_maxs.append([size1 - 1, 0])
+    if utility[size1 - 1, size2 - 1] > utility[size1 - 1, size2 - 2] and utility[size1 - 1, size2 - 1] > utility[
+        size1 - 2, size2 - 1]:
+        loc_maxs.append([size1 - 1, size2 - 1])
+
     loc_maxs = [el for ind, el in enumerate(loc_maxs) if el not in loc_maxs[:ind]]
     return loc_maxs
 
+
 def get_max_decomp(utility, n_batch=4):
-        loc_loc_maxs = []
-        #n_batch = 9
-        n_batch_pd = int(math.pow(n_batch, 1/len(utility.shape)))
-        subd_size1 = utility.shape[0] // n_batch_pd
-        subd_size2 = utility.shape[1] // n_batch_pd
+    loc_loc_maxs = []
+    # n_batch = 9
+    n_batch_pd = int(math.pow(n_batch, 1 / len(utility.shape)))
+    subd_size1 = utility.shape[0] // n_batch_pd
+    subd_size2 = utility.shape[1] // n_batch_pd
 
-        for i in range(n_batch_pd - 1):
-            for j in range(n_batch_pd - 1):
-                #x_mesh_subd = x_mesh[0][i*subd_size1:(i+1)*subd_size1, j*subd_size2:(j+1)*subd_size2]
-                utility_subd = utility[i*subd_size1:(i+1)*subd_size1, j*subd_size2:(j+1)*subd_size2]
-                loc_loc_maxs.append( [sum(x) for x in zip( list( np.unravel_index(utility_subd.argmax(), utility_subd.shape)),
-                                                           [i*subd_size1, j*subd_size2]) ])
-            utility_subd = utility[i*subd_size1:(i+1)*subd_size1, (n_batch_pd-1)*subd_size2:]
-            loc_loc_maxs.append( [sum(x) for x in zip( list( np.unravel_index(utility_subd.argmax(), utility_subd.shape)),
-                                                       [i*subd_size1, (n_batch_pd-1)*subd_size2]) ])
-            
+    for i in range(n_batch_pd - 1):
         for j in range(n_batch_pd - 1):
-            utility_subd = utility[(n_batch_pd-1)*subd_size1:, j*subd_size2:(j+1)*subd_size2]
-            loc_loc_maxs.append( [sum(x) for x in zip( list( np.unravel_index(utility_subd.argmax(), utility_subd.shape)),
-                                                       [(n_batch_pd-1)*subd_size1, j*subd_size2]) ])
+            # x_mesh_subd = x_mesh[0][i*subd_size1:(i+1)*subd_size1, j*subd_size2:(j+1)*subd_size2]
+            utility_subd = utility[i * subd_size1:(i + 1) * subd_size1, j * subd_size2:(j + 1) * subd_size2]
+            loc_loc_maxs.append([sum(x) for x in zip(list(np.unravel_index(utility_subd.argmax(), utility_subd.shape)),
+                                                     [i * subd_size1, j * subd_size2])])
+        utility_subd = utility[i * subd_size1:(i + 1) * subd_size1, (n_batch_pd - 1) * subd_size2:]
+        loc_loc_maxs.append([sum(x) for x in zip(list(np.unravel_index(utility_subd.argmax(), utility_subd.shape)),
+                                                 [i * subd_size1, (n_batch_pd - 1) * subd_size2])])
 
-        utility_subd = utility[(n_batch_pd-1)*subd_size1:, (n_batch_pd-1)*subd_size2:]
-        loc_loc_maxs.append( [sum(x) for x in zip( list( np.unravel_index(utility_subd.argmax(), utility_subd.shape)), 
-                                                   [(n_batch_pd-1)*subd_size1, (n_batch_pd-1)*subd_size2]) ])
-        #print(utility_subd)                             
-        #print(loc_loc_maxs)
-        return loc_loc_maxs
+    for j in range(n_batch_pd - 1):
+        utility_subd = utility[(n_batch_pd - 1) * subd_size1:, j * subd_size2:(j + 1) * subd_size2]
+        loc_loc_maxs.append([sum(x) for x in zip(list(np.unravel_index(utility_subd.argmax(), utility_subd.shape)),
+                                                 [(n_batch_pd - 1) * subd_size1, j * subd_size2])])
+
+    utility_subd = utility[(n_batch_pd - 1) * subd_size1:, (n_batch_pd - 1) * subd_size2:]
+    loc_loc_maxs.append([sum(x) for x in zip(list(np.unravel_index(utility_subd.argmax(), utility_subd.shape)),
+                                             [(n_batch_pd - 1) * subd_size1, (n_batch_pd - 1) * subd_size2])])
+    # print(utility_subd)
+    # print(loc_loc_maxs)
+    return loc_loc_maxs
+
 
 def get_new_sample(x, utility):
     return x[utility.argmax()]
 
-def get_new_candidates(x_mesh, utility): # TODO: get an array of candidates, for each "variance anti-node"
+
+def get_new_candidates(x_mesh, utility):  # TODO: get an array of candidates, for each "variance anti-node"
     cands = []
     ### --- find local maximum of sigma
     # work for 2D only now
-    #print(utility)
+    # print(utility)
     loc_maxs = []
 
     # peaks1 = []
@@ -149,8 +178,8 @@ def get_new_candidates(x_mesh, utility): # TODO: get an array of candidates, for
     if all_localmax:
         loc_maxs = get_localmax_brut(utility)
         if len(loc_maxs) == 0:
-            loc_maxs = [ list( np.unravel_index(utility.argmax(), utility.shape) ) ]
-        #print(loc_maxs)
+            loc_maxs = [list(np.unravel_index(utility.argmax(), utility.shape))]
+        # print(loc_maxs)
 
     ### --- easy option 1: split domain in fixes subdomains and find local max for every each
     ### --- make adaptive decomposition according to number of new points
@@ -159,14 +188,14 @@ def get_new_candidates(x_mesh, utility): # TODO: get an array of candidates, for
         loc_maxs = get_max_decomp(utility, n_batch=9)
 
     for lm in loc_maxs:
-        cands.append([ x_mesh[0][lm[0], lm[1]], x_mesh[1][lm[0], lm[1]] ])
-    #print(cands)
+        cands.append([x_mesh[0][lm[0], lm[1]], x_mesh[1][lm[0], lm[1]]])
+    # print(cands)
 
     ### --- easy option 2: apply a mask for neighbours of the known points/ or threshold for too bad utility
     ### --- apply both and domain decompositions
-    #nodes_inds = utility < 1e-6
+    # nodes_inds = utility < 1e-6
 
-    #for i in range(len(nodes_inds)-1):
+    # for i in range(len(nodes_inds)-1):
     #    cands.append(utility[nodes_inds[i], nodes_inds[i+1]].argmax())
 
     ### --- option 3: make adaptive grid, considering geometrical element around known samples
@@ -178,59 +207,66 @@ def get_new_candidates(x_mesh, utility): # TODO: get an array of candidates, for
 
     return cands
 
+
 def stop_train_criterium_rsd(y_pred, sigma, eps=0.005):
-    rsd_min = (sigma/abs(y_pred)).min()
+    rsd_min = (sigma / abs(y_pred)).min()
     print('rsd : {}'.format(rsd_min))
     return rsd_min < eps
 
-def stop_train_criterium_rmse(y_pred, y, eps=0.05): # TODO: get the reasonable rmse threshold for each given case + check for multivariate f-s
+
+def stop_train_criterium_rmse(y_pred, y,
+                              eps=0.05):  # TODO: get the reasonable rmse threshold for each given case + check for multivariate f-s
     rmse = np.sqrt(((y - y_pred) ** 2).sum() / len(y))
     print('rmse : {}'.format(rmse))
     return rmse < eps, rmse
 
-def white_out_linear_trend(x_observ, y_observ): #TODO use some decomposition / better transfromation/ consider nonlinearity and higher dimensions
-    #TODO: use Cholesky decomposition; consider SVD (may be for higher dimension)
-    #thetas = np.zeros(x_observ.shape[1])
+
+def white_out_linear_trend(x_observ,
+                           y_observ):  # TODO use some decomposition / better transfromation/ consider nonlinearity and higher dimensions
+    # TODO: use Cholesky decomposition; consider SVD (may be for higher dimension)
+    # thetas = np.zeros(x_observ.shape[1])
     reg = LinearRegression().fit(x_observ, y_observ)
-    #thetas = reg.coef_
-    #theta0 = reg.intercept_
+    # thetas = reg.coef_
+    # theta0 = reg.intercept_
     y_observ_trend = reg.predict(x_observ)
     y_whitened = y_observ - y_observ_trend
     return y_whitened, reg
 
+
 def data_preprocessing(x_observ, y_observ):
     return x_observ, y_observ
 
+
 def white_reverse_linear_trend(x_observ, y_observ_white, reg):
-    
     y_observ_trend = reg.predict(x_observ)
     y_observ = y_observ_white + y_observ_trend
 
     return y_observ
 
-def GPR_analysis_toy(x_data, x_domain, y_par=[0.1, 9.9, 20], x_par=[0, 10, 64], f=lambda x: x*np.sin(x), eps=1.0, scale=1e7):
 
+def GPR_analysis_toy(x_data, x_domain, y_par=[0.1, 9.9, 20], x_par=[0, 10, 64], f=lambda x: x * np.sin(x), eps=1.0,
+                     scale=1e7):
     # case: with noise - NO
-    #X = np.atleast_2d(np.linspace(y_par[0], y_par[1], y_par[2])).T
+    # X = np.atleast_2d(np.linspace(y_par[0], y_par[1], y_par[2])).T
 
     x_observ = np.atleast_2d(x_data[:, 0]).T
-    y_observ = f(x_observ).ravel() #TODO reuse the old function evaluations
+    y_observ = f(x_observ).ravel()  # TODO reuse the old function evaluations
 
-    y_observ = y_observ/scale #scale naive-est
+    y_observ = y_observ / scale  # scale naive-est
 
     # add noise - NO
     # dy = 0.5 + eps * np.random.random(y.shape)
-    #noise = np.random.normal(0, dy)
-    #y += noise
+    # noise = np.random.normal(0, dy)
+    # y += noise
 
     # GP model - kernels
     # TODO: compose a suitable kernel/ methods to defince kernel
-    #kernel = ConstantKernel(1.0, (1e-3, 1e3)) * RBF(10, (1e-2, 1e2))
-    kernel = ConstantKernel() + Matern() # + WhiteKernel(1.0)
-    #kernel = ConstantKernel(1e7, (1e-8, 1e+10)) + Matern(length_scale=1e1, length_scale_bounds=(1e-8, 1e+10)) # for GEM in Te/Ti unscaled
+    # kernel = ConstantKernel(1.0, (1e-3, 1e3)) * RBF(10, (1e-2, 1e2))
+    kernel = ConstantKernel() + Matern()  # + WhiteKernel(1.0)
+    # kernel = ConstantKernel(1e7, (1e-8, 1e+10)) + Matern(length_scale=1e1, length_scale_bounds=(1e-8, 1e+10)) # for GEM in Te/Ti unscaled
 
-    #gp = GaussianProcessRegressor(kernel=kernel, alpha=dy**2, n_restarts_optimizer=9)
-    gp = GaussianProcessRegressor(kernel=kernel, n_restarts_optimizer=9) # no noise
+    # gp = GaussianProcessRegressor(kernel=kernel, alpha=dy**2, n_restarts_optimizer=9)
+    gp = GaussianProcessRegressor(kernel=kernel, n_restarts_optimizer=9)  # no noise
 
     start_ts = time.time()
     gp.fit(x_observ, y_observ)
@@ -239,43 +275,43 @@ def GPR_analysis_toy(x_data, x_domain, y_par=[0.1, 9.9, 20], x_par=[0, 10, 64], 
     # predictions + MSE
     y_pred, sigma = gp.predict(x_domain, return_std=True)
 
-    y_observ = y_observ*scale  #scale naive-est
-    y_pred = y_pred*scale
-    sigma = sigma*scale
+    y_observ = y_observ * scale  # scale naive-est
+    y_pred = y_pred * scale
+    sigma = sigma * scale
 
-    #print(sigma)
+    # print(sigma)
     return x_observ, y_observ, y_pred, sigma
 
-def GPR_analysis_2d(x_observ, y_observ, x_domain, x_par=[[0.,1.,8],[0.,1.,8]]):
-    
-    #y_sc_factor = 1e4
-    #x_sc_factor = 1e4
+
+def GPR_analysis_2d(x_observ, y_observ, x_domain, x_par=[[0., 1., 8], [0., 1., 8]]):
+    # y_sc_factor = 1e4
+    # x_sc_factor = 1e4
 
     # --- observation in Y for fitting
-    #y_observ = f(x_observ) # TODO: pass instead of recalcualtion
+    # y_observ = f(x_observ) # TODO: pass instead of recalcualtion
 
     ##print("x_domain: "); print(x_domain)
     ##print("x_observ_sc: "); print(x_observ)
     ##print("y_observ_sc: "); print(y_observ)
 
     # --- domain points for prediction
-    #x1 = np.linspace(*x_par[0]) # TODO use passed domain
-    #x2 = np.linspace(*x_par[1])
-    #x = np.transpose([np.tile(x1, len(x2)), np.repeat(x1, len(x2))])
-    #x = x
+    # x1 = np.linspace(*x_par[0]) # TODO use passed domain
+    # x2 = np.linspace(*x_par[1])
+    # x = np.transpose([np.tile(x1, len(x2)), np.repeat(x1, len(x2))])
+    # x = x
 
     y_observ_new, reg = white_out_linear_trend(x_observ, y_observ)
 
-    #kernel = ConstantKernel() + Matern + WhiteKernel(1e-4) # TODO white kernel has issues with singularities? e.g. gets log(0) somewhere?
-    kernel = ConstantKernel() + ConstantKernel() * Matern() #TODO after preprocessing to white noize at [0;1]^2 (better [-1;1]^2 ?) consider scale limits + get initials from datapoints??? 
+    # kernel = ConstantKernel() + Matern + WhiteKernel(1e-4) # TODO white kernel has issues with singularities? e.g. gets log(0) somewhere?
+    kernel = ConstantKernel() + ConstantKernel() * Matern()  # TODO after preprocessing to white noize at [0;1]^2 (better [-1;1]^2 ?) consider scale limits + get initials from datapoints???
     gp = GaussianProcessRegressor(kernel=kernel, n_restarts_optimizer=9)
 
     start_ts = time.time()
     gp.fit(x_observ, y_observ_new)
     print("time to train GP model: " + str(time.time() - start_ts) + " seconds")
-    #print(gp.get_params(True))
+    # print(gp.get_params(True))
 
-    y_pred, sigma = gp.predict(x_domain, return_std=True) 
+    y_pred, sigma = gp.predict(x_domain, return_std=True)
 
     ##print("sigma: "); print(sigma)
     ##print("y_pred: "); print(y_pred)
@@ -283,18 +319,20 @@ def GPR_analysis_2d(x_observ, y_observ, x_domain, x_par=[[0.,1.,8],[0.,1.,8]]):
     y_pred_new = white_reverse_linear_trend(x_domain, y_pred, reg)
 
     return x_observ, y_observ, y_pred_new, sigma, gp
-    #return x_observ * x_sc_factor, y_observ * y_sc_factor, y_pred * y_sc_factor, sigma * y_sc_factor
+    # return x_observ * x_sc_factor, y_observ * y_sc_factor, y_pred * y_sc_factor, sigma * y_sc_factor
 
-def GPR_analysis(dim=2, xdomain_par=[[-1.,1.,8],[-1.,1.,8]], func=exponential_model): #TODO arbitrary dimension, print resuluts in a clear way
-    xdomain_par =[ 0., 1., 8]**dim # TODO move into initalisation list
-    xdata = np.linspace(xdomain_par) # TODO move inot initialisation list
+
+def GPR_analysis(dim=2, xdomain_par=[[-1., 1., 8], [-1., 1., 8]],
+                 func=exponential_model):  # TODO arbitrary dimension, print resuluts in a clear way
+    xdomain_par = [0., 1., 8] ** dim  # TODO move into initalisation list
+    xdata = np.linspace(xdomain_par)  # TODO move inot initialisation list
 
     X = xdata
-    y = np.array([func(coord, xdomain_par) for coord in X]).reshape(-1,1)
+    y = np.array([func(coord, xdomain_par) for coord in X]).reshape(-1, 1)
 
-    #x0 = np.linspace(domain_par[0], domain_par[1], domain_par[2])
-    #x1 = np.linspace(domain_par[3], domain_par[4], domain_par[5])
-    #x = np.transpose([np.tile(x0, len(x1)), np.repeat(x0, len(x1))])
+    # x0 = np.linspace(domain_par[0], domain_par[1], domain_par[2])
+    # x1 = np.linspace(domain_par[3], domain_par[4], domain_par[5])
+    # x = np.transpose([np.tile(x0, len(x1)), np.repeat(x0, len(x1))])
 
     kernel = C() + Matern() + WhiteKernel()
     gp = GaussianProcessRegressor(kernel=kernel, n_restarts_optimizer=9)
@@ -303,18 +341,18 @@ def GPR_analysis(dim=2, xdomain_par=[[-1.,1.,8],[-1.,1.,8]], func=exponential_mo
     gp.fit(X, y)
     print("time to train GP model: " + str(time.time() - start_ts) + " seconds")
 
-    y_pred, sigma = gp.predict(x, return_std=True) 
+    y_pred, sigma = gp.predict(x, return_std=True)
 
     return y_pred, sigma
 
-def FFNN_Regression_toy(y=0, f=0, n=20, eps=1.0):
 
+def FFNN_Regression_toy(y=0, f=0, n=20, eps=1.0):
     # function to fit
-    if f==0:
-        f = lambda x:  x * np.sin(x)
+    if f == 0:
+        f = lambda x: x * np.sin(x)
 
     # case: noise
-    if y==0:
+    if y == 0:
         X = np.atleast_2d(np.linspace(0.1, 9.9, n)).T
         y = f(X).ravel()
         dy = 0.5 + eps * np.random.random(y.shape)
@@ -344,21 +382,24 @@ def FFNN_Regression_toy(y=0, f=0, n=20, eps=1.0):
     plt.legend(loc='upper left')
     plt.show(block=True)
 
+
 def get_1d_slice(x_domain, y_test, x_observ, y_observ):
-    x1_slice_value = x_observ[32*17, 0]
-    x_observ_inds = x_observ[:,0]==x1_slice_value
+    x1_slice_value = x_observ[32 * 17, 0]
+    x_observ_inds = x_observ[:, 0] == x1_slice_value
     x_observ_slice = x_observ[x_observ_inds, 0]
     y_observ_slice = y_observ[x_observ_inds]
+
 
 def decompose_domain_binary(x_domain, x_split_ind):
     """
      for now 1D array split into two
     :param x_domain: numpy array of 1d, every point is and obsereved x
     """
-    x_domains_new = [ x_domain[0:x_split_ind], x_domain[x_split_ind+1,-1] ]
+    x_domains_new = [x_domain[0:x_split_ind], x_domain[x_split_ind + 1, -1]]
     # TODO: x_split = *[0, xsplit, -1]; x_domains_new = [for x_split in x_split_ind x[x_split-1:x_split]]  
-    
+
     return x_domains_new
+
 
 def test_gp_domain_decomposition(x_domain, y_test, x_observ, y_observ):
     # Runs through a 1D array, splits it into 2 parts and trains a pair or models for 2 subdomains
@@ -374,41 +415,44 @@ def test_gp_domain_decomposition(x_domain, y_test, x_observ, y_observ):
         x_domains = decompose_domain_binary(x_domain)
         y_preds = decompose_domain_binary(y_pred)
         y_tests = decompose_domain_binary(y_test)
-        for i in range(len(x_domains)-1):
+        for i in range(len(x_domains) - 1):
             models.append(gp.fit(x_domains[i], y_observ))
             thetas.append(gp.kernel.theta)
             _, err = stop_train_criterium_rmse(y_pred, y_test.T.reshape(-1))
             errloc = err + errloc
             print(thetas)
         errs.append(errloc)
-    
+
     plt.plot(range(len(x_domain)), errs, label='error of the splitting')
     return 0
 
-def prep_1d_gem0_data():
 
+def prep_1d_gem0_data():
     n_init = 8
     ext_code_helper_1 = ExtCodeHelper(1)
 
     function = lambda x: ext_code_helper_1.gem0_call_teflteval_array(x)
-    x_param = [400., 2000, 32] # for gem in te-val #TODO change the gradient sampling!
-        
+    x_param = [400., 2000, 32]  # for gem in te-val #TODO change the gradient sampling!
+
     x_obs = np.zeros((n_init, 2))
     x_domain = np.atleast_2d(np.linspace(*x_param)).T
-    y_test = function(x_domain) # TODO: some of the things e.g. x_domain are never changed - should be returned all the time
+    y_test = function(
+        x_domain)  # TODO: some of the things e.g. x_domain are never changed - should be returned all the time
 
     plot_response_1d(x_domain, y_test)
 
-    #y_scaling = lambda y: (y - y_test.min()) / (y_test.max() - y_test.min()) # scale to [0;1]
-    #x_scaling = lambda x: (x - x_domain.min()) / (x_domain.max() - x_domain.min())
-    #simple_nonstationary = lambda x, y: y - y_test.min() + (x - x_domain.min())*(y_test.max() - y_test.min())/(x_domain.max() - x_domain.min()) # TODO check if intependent calls are comiled out
-        
+    # y_scaling = lambda y: (y - y_test.min()) / (y_test.max() - y_test.min()) # scale to [0;1]
+    # x_scaling = lambda x: (x - x_domain.min()) / (x_domain.max() - x_domain.min())
+    # simple_nonstationary = lambda x, y: y - y_test.min() + (x - x_domain.min())*(y_test.max() - y_test.min())/(x_domain.max() - x_domain.min()) # TODO check if intependent calls are comiled out
+
     n_init = 6
     # data[:, 0] = np.linspace(*x_param[:-1], n_init)
-    x_obs[:, 0] = np.random.rand(n_init)*(x_param[1] - x_param[0]) + x_param[0] #TODO either choose among grid points or make grid irregular
+    x_obs[:, 0] = np.random.rand(n_init) * (x_param[1] - x_param[0]) + x_param[
+        0]  # TODO either choose among grid points or make grid irregular
     y_obs = function(x_obs)
 
     return x_domain, y_test, x_obs, y_obs
+
 
 def surrogate_loop(pardim):
     np.random.seed(int(time.time()))
@@ -421,48 +465,55 @@ def surrogate_loop(pardim):
     ext_code_helper_4 = ExtCodeHelper(4)
 
     if pardim == 1:
-        #function = lambda x: x * np.cos(1.0 * x)
-        #function = lambda x: (np.e**(-1.0 * x)) * np.cos(2.0 * np.pi * x)
-        #function = lambda x: np.e**(+1.0*x)
-        #x_param = [0., 1.5, 32] for cos 
+        # function = lambda x: x * np.cos(1.0 * x)
+        # function = lambda x: (np.e**(-1.0 * x)) * np.cos(2.0 * np.pi * x)
+        # function = lambda x: np.e**(+1.0*x)
+        # x_param = [0., 1.5, 32] for cos
 
         function = lambda x: ext_code_helper_1.gem0_call_teflteval_array(x)
-        x_param = [400., 2000, 32] # for gem in te-val #TODO change the gradient sampling!
-        
+        x_param = [400., 2000, 32]  # for gem in te-val #TODO change the gradient sampling!
+
         function4 = lambda x: np.array(ext_code_helper_4.gem0_call_tefltegrad_array(x))
-        x_param = [-6000., -200., 64] # for gem in te-grad
+        x_param = [-6000., -200., 64]  # for gem in te-grad
 
         function1 = lambda x: np.array(ext_code_helper_1.gem0_call_tefltegrad_array(x))
         x_param = [-3800., -2000., 32]
 
-        #function = lambda x: np.array(ext_code_helper.gem0_call_tifltigrad_array(x))
-        #x_param = [-5000., -500., 45] # for gem in ti-grad # 09.12 plot the reponse. is there a local minimum? equilibrium at -24202420?
-        
+        # function = lambda x: np.array(ext_code_helper.gem0_call_tifltigrad_array(x))
+        # x_param = [-5000., -500., 45] # for gem in ti-grad # 09.12 plot the reponse. is there a local minimum? equilibrium at -24202420?
+
         x_data = np.zeros((n_init, 2))
         x_domain = np.atleast_2d(np.linspace(*x_param)).T
-        y_test = function4(x_domain) # TODO: some of the things e.g. x_domain are never changed - should be returned all the timei
+        y_test = function4(
+            x_domain)  # TODO: some of the things e.g. x_domain are never changed - should be returned all the timei
 
         y_test1 = function(x_domain)
         plot_response_1d(x_domain, [y_test, y_test1], ylabels=['chigb4', 'chigb1'])
 
-        y_scaling = lambda y: (y - y_test.min()) / (y_test.max() - y_test.min()) # scale to [0;1]
+        y_scaling = lambda y: (y - y_test.min()) / (y_test.max() - y_test.min())  # scale to [0;1]
         x_scaling = lambda x: (x - x_domain.min()) / (x_domain.max() - x_domain.min())
-        simple_nonstationary = lambda x, y: y - y_test.min() + (x - x_domain.min())*(y_test.max() - y_test.min())/(x_domain.max() - x_domain.min()) # TODO check if intependent calls are comiled out
-        
+        simple_nonstationary = lambda x, y: y - y_test.min() + (x - x_domain.min()) * (y_test.max() - y_test.min()) / (
+                x_domain.max() - x_domain.min())  # TODO check if intependent calls are comiled out
+
         # data[:, 0] = np.linspace(*x_param[:-1], n_init)
-        x_data[:, 0] = np.random.rand(n_init)*(x_param[1] - x_param[0]) + x_param[0] #TODO either choose among grid points or make grid irregular
+        x_data[:, 0] = np.random.rand(n_init) * (x_param[1] - x_param[0]) + x_param[
+            0]  # TODO either choose among grid points or make grid irregular
 
         for i in range(16):
-            x_observ, y_observ, y_pred, sigma = GPR_analysis_toy(x_data, x_domain, y_par=x_param, x_par=x_param, f=function, eps=0.0)
+            x_observ, y_observ, y_pred, sigma = GPR_analysis_toy(x_data, x_domain, y_par=x_param, x_par=x_param,
+                                                                 f=function, eps=0.0)
             x_n = get_new_sample(x_domain, sigma)
-            plot_prediction_variance(x_observ, y_observ, x_domain, y_test, y_pred, sigma, function, [x_n], new_points, rmse=0.0, funcname='gem0, flTi in gradTi')
+            plot_prediction_variance(x_observ, y_observ, x_domain, y_test, y_pred, sigma, function, [x_n], new_points,
+                                     rmse=0.0, funcname='gem0, flTi in gradTi')
 
-            stop_crit, err = stop_train_criterium_rmse(y_pred, y_test.T.reshape(-1), 1e3) # for normalized problems chooes rmse threshold ~0.05
+            stop_crit, err = stop_train_criterium_rmse(y_pred, y_test.T.reshape(-1),
+                                                       1e3)  # for normalized problems chooes rmse threshold ~0.05
             errors.append(err)
 
-            new_points = [x_n] #TODO choice is always chosen from grid -> apply simple refinement?
-            x_data = np.concatenate((x_data, np.array([[x_n[0], 0.0]])), axis=0) #TODO adapt grid around new candidates? 
-            #data = np.append(data, x_n.reshape(1,-1), axis=0)
+            new_points = [x_n]  # TODO choice is always chosen from grid -> apply simple refinement?
+            x_data = np.concatenate((x_data, np.array([[x_n[0], 0.0]])),
+                                    axis=0)  # TODO adapt grid around new candidates?
+            # data = np.append(data, x_n.reshape(1,-1), axis=0)
             if stop_crit:
                 print("Reached stopping criterium!")
                 break
@@ -470,25 +521,26 @@ def surrogate_loop(pardim):
     elif pardim == 2:
         # --- Chose the fuction and its domain
 
-        #function = lambda x: (np.e**(-1. * x[:,0] - 1. * x[:,1])) * np.cos(np.pi * (x[:,0]*x[:,0] + x[:,1]*x[:,1]))  
-        #x_param = [[0., 1.5, 8], [0., 1.5, 8]]
-        #y_scale = 1.
+        # function = lambda x: (np.e**(-1. * x[:,0] - 1. * x[:,1])) * np.cos(np.pi * (x[:,0]*x[:,0] + x[:,1]*x[:,1]))
+        # x_param = [[0., 1.5, 8], [0., 1.5, 8]]
+        # y_scale = 1.
 
-        #function = lambda x: np.array(gem0_call_tefltevltivl_array(x)) # TODO double check numpy dimensions
+        # function = lambda x: np.array(gem0_call_tefltevltivl_array(x)) # TODO double check numpy dimensions
         function = lambda x: np.array(ext_code_helper.gem0_call_tefltevltegrad_array(x))
-        #x_param = [[200., 4800, 128], [-8000, 0., 128]] # square/rectangle in domain in {Te}x{gradTe}
-        x_param = [[400., 2400, 16], [-3600., 0., 16]] 
+        # x_param = [[200., 4800, 128], [-8000, 0., 128]] # square/rectangle in domain in {Te}x{gradTe}
+        x_param = [[400., 2400, 16], [-3600., 0., 16]]
 
         # --- Prepare the domain in X and test Y values
         x1 = np.linspace(*x_param[0])
         x2 = np.linspace(*x_param[1])
-        x_domain = np.transpose([np.tile(x1, len(x2)), np.repeat(x2, len(x1))]) #TODO very bulky and ineffective? -> more dims?
+        x_domain = np.transpose(
+            [np.tile(x1, len(x2)), np.repeat(x2, len(x1))])  # TODO very bulky and ineffective? -> more dims?
         y_test = function(x_domain)
 
         ### MESHES FOR TEST SPACE ----------------------------------------------------------
         ### x and y values arranged in a grid now:
         # get dimentionality if parameter space i.e. number of features
-        ndim_domain = 2 # x_domain.shape[0]
+        ndim_domain = 2  # x_domain.shape[0]
         # from X domain paramters get a tuple to descibe number of points along each dimension 
         y_size = (x_param[0][-1],)
         for i in range(1, ndim_domain):
@@ -500,26 +552,26 @@ def surrogate_loop(pardim):
         x_domain_ongrid = np.zeros((x_size))
         x_domain_mesh = np.meshgrid(*x_meshes)
 
-        #print(x_domain_mesh[0].shape)
-        #print(len(x1), len(x2))
-        y_domain = np.zeros(x_domain_mesh[0].shape) # TODO the slowest part of the initialization
-        for i in range(len(x1)): #TODO very very bad, arbitrary dimension as well? vectorize???
+        # print(x_domain_mesh[0].shape)
+        # print(len(x1), len(x2))
+        y_domain = np.zeros(x_domain_mesh[0].shape)  # TODO the slowest part of the initialization
+        for i in range(len(x1)):  # TODO very very bad, arbitrary dimension as well? vectorize???
             for j in range(len(x2)):
-                y_domain[i,j] = function([ [x_domain_mesh[0][i, j], x_domain_mesh[1][i, j]] ])
+                y_domain[i, j] = function([[x_domain_mesh[0][i, j], x_domain_mesh[1][i, j]]])
 
-        #print(y_domain)
-        #print(y_test)
+        # print(y_domain)
+        # print(y_test)
 
         ### INITIAL TRAINING POINTS (RANDOM) ------------------------------------------------
         # --- Chose one/several of the grid point as initial point at random
-        x_data = np.zeros((n_init,2))
-        x_data[:, 0] = x1[np.random.randint(low=0, high=len(x1)-1, size=n_init)]
-        x_data[:, 1] = x2[np.random.randint(low=0, high=len(x2)-1, size=n_init)]
-        #x_data[:,0] = np.random.rand(n_init)*(x_param[0][1] - x_param[0][0]) + x_param[0][0] # chose of rand unmber in domain in 1d
-        #x_data[:,1] = np.random.rand(n_init)*(x_param[1][1] - x_param[1][0]) + x_param[1][0]
+        x_data = np.zeros((n_init, 2))
+        x_data[:, 0] = x1[np.random.randint(low=0, high=len(x1) - 1, size=n_init)]
+        x_data[:, 1] = x2[np.random.randint(low=0, high=len(x2) - 1, size=n_init)]
+        # x_data[:,0] = np.random.rand(n_init)*(x_param[0][1] - x_param[0][0]) + x_param[0][0] # chose of rand unmber in domain in 1d
+        # x_data[:,1] = np.random.rand(n_init)*(x_param[1][1] - x_param[1][0]) + x_param[1][0]
 
         # --- Some data and functions need to preprocessing - for now only done when dealing wiht GPR
-        x_scale = 1. #1e4
+        x_scale = 1.  # 1e4
         x_domain_min = np.amin(x_domain, 0)
         x_domain_max = np.amax(x_domain, 0)
         x_scaling = lambda x: (x - x_domain_min) / (x_domain_max - x_domain_min)
@@ -528,9 +580,10 @@ def surrogate_loop(pardim):
         y_test_min = np.amin(y_test, 0)
         y_test_max = np.amax(y_test, 0)
         y_test_scaling = lambda y: (y - y_test_min) / (y_test_max - y_test_min)
-        y_test_rev_scaling = lambda y: y_test_min + y * (y_test_max - y_test_min) 
+        y_test_rev_scaling = lambda y: y_test_min + y * (y_test_max - y_test_min)
 
-        simple_whitening = lambda x, y: y - y_test_min + (x - x_domain_min)*(y_test_max - y_test_min)/(x_domain_max - x_domain_min) # TODO check if intependent calls are compiled out
+        simple_whitening = lambda x, y: y - y_test_min + (x - x_domain_min) * (y_test_max - y_test_min) / (
+                x_domain_max - x_domain_min)  # TODO check if intependent calls are compiled out
 
         ##print("y_test: "); print(y_test)
 
@@ -540,59 +593,58 @@ def surrogate_loop(pardim):
 
             y_observ = function(x_data)
             # --- some scaling depends on observed data:
-            #y_observ_min = y_observ.min()
-            #y_observ_max = y_observ.max()
-            #y_observ_scaling = lambda y: (y - y_observ_min) / (y_observ_max - y_observ_min)
-            #y_observ_rev_scaling = lambda y: y_observ_min + y *  (y_observ_max - y_observ_min)
+            # y_observ_min = y_observ.min()
+            # y_observ_max = y_observ.max()
+            # y_observ_scaling = lambda y: (y - y_observ_min) / (y_observ_max - y_observ_min)
+            # y_observ_rev_scaling = lambda y: y_observ_min + y *  (y_observ_max - y_observ_min)
 
             # --- fit the regeresson and chose a new sample
             x_observ, y_observ, y_pred, sigma, model = GPR_analysis_2d(
-                                                 np.apply_along_axis(x_scaling, 1, x_data), 
-                                                 np.apply_along_axis(y_test_scaling, 0, y_observ),
-                                                 np.apply_along_axis(x_scaling, 1, x_domain),
-                                                 x_par=x_param) # TODO: use GPflow implementation, reuse intermediate data (older covariance)
+                np.apply_along_axis(x_scaling, 1, x_data),
+                np.apply_along_axis(y_test_scaling, 0, y_observ),
+                np.apply_along_axis(x_scaling, 1, x_domain),
+                x_par=x_param)  # TODO: use GPflow implementation, reuse intermediate data (older covariance)
 
             x_observ = np.apply_along_axis(x_rev_scaling, 1, x_observ)
             y_observ = np.apply_along_axis(y_test_rev_scaling, 0, y_observ)
             y_pred = np.apply_along_axis(y_test_rev_scaling, 0, y_pred)
             sigma = np.apply_along_axis(y_test_rev_scaling, 0, sigma)
 
-            #for datas in y_observ, y_pred, sigma:
+            # for datas in y_observ, y_pred, sigma:
             #    datas = np.apply_along_axis(y_test_rev_scaling, 0, datas)
-            
+
             ### --- Chose samples for the new model
             start_resample_ts = time.time()
-            #x_n = get_new_sample(x_domain, sigma)
+            # x_n = get_new_sample(x_domain, sigma)
             sigma_ongrid = get_ongrid(x_domain_mesh, x_domain, sigma)
             x_new_batch = get_new_candidates(x_domain_mesh, sigma_ongrid)
-            #print('new {} samples: {}'.format(len(x_new_batch), x_new_batch))
+            # print('new {} samples: {}'.format(len(x_new_batch), x_new_batch))
             new_points = (np.array(x_new_batch), function(np.array(x_new_batch)))
             print("Choosing new samples took: " + str(time.time() - start_resample_ts) + " seconds")
 
             # --- Check the error for convergence
-            stop_crit, err = stop_train_criterium_rmse(y_pred, y_test, 1e2) #1e4
+            stop_crit, err = stop_train_criterium_rmse(y_pred, y_test, 1e2)  # 1e4
             errors.append(err)
 
-            if i%1 == 0:
-                plot_prediction_variance_2d(x_observ, y_observ, x_domain, y_test, y_pred, sigma, new_points, funcname='gem0')
+            if i % 1 == 0:
+                plot_prediction_variance_2d(x_observ, y_observ, x_domain, y_test, y_pred, sigma, new_points,
+                                            funcname='gem0')
 
-            #x_data_old = np.append(x_data, x_n.reshape(1, -1), axis=0)
+            # x_data_old = np.append(x_data, x_n.reshape(1, -1), axis=0)
             x_data = np.append(x_data, x_new_batch, axis=0)
             print("Single training iteration took: " + str(time.time() - start_ts) + " seconds")
             if stop_crit:
                 print("Reached stopping criterium!")
                 break
 
-    
-    #TODO: utilize the model: save a model file, use in a UQ loop
+    # TODO: utilize the model: save a model file, use in a UQ loop
     fin_mod_path = os.path.join(os.path.abspath('../data/models'), 'gpr_mod_gem.joblib')
     dump(model, fin_mod_path)
 
-    pd.DataFrame(np.concatenate((x_domain, y_pred.reshape(-1,1)), axis=1), columns={'te.value', 'te.ddrho', 'te.flux'}) \
-                 .to_csv(os.path.join(os.path.join('../data'), 'surrogate_results.csv'))
+    pd.DataFrame(np.concatenate((x_domain, y_pred.reshape(-1, 1)), axis=1), columns={'te.value', 'te.ddrho', 'te.flux'}) \
+        .to_csv(os.path.join(os.path.join('../data'), 'surrogate_results.csv'))
 
-
-    #get_1d_slice(x_domain, y_test, x_observ, y_observ)
+    # get_1d_slice(x_domain, y_test, x_observ, y_observ)
 
     plot_error(errors, 'RMSE')
 
@@ -601,7 +653,8 @@ def surrogate_loop(pardim):
     y_observ_clean, _ = white_out_linear_trend(x_observ, y_observ_clean)
     y_pred_clean = np.apply_along_axis(y_test_scaling, 0, y_pred)
     y_pred_clean, _ = white_out_linear_trend(x_domain, y_pred_clean)
-    #plot_histograms(y_observ, y_observ_clean, y_pred, y_pred_clean)
+    # plot_histograms(y_observ, y_observ_clean, y_pred, y_pred_clean)
+
 
 def surrogate_utility(x_train_data, y_train_data, x_roi_data, original_model):
     # Error Reduction Estimation: acquisition function for sampling next point to a surragte based on inferred
@@ -621,19 +674,19 @@ def surrogate_utility(x_train_data, y_train_data, x_roi_data, original_model):
 
     return -utility.sum()
 
-plt.ion()
 
 ### --- Surrogate loop
-#surrogate_loop(1)
+# surrogate_loop(1)
 
-#GP split
-#x_domain, y_test, x_obs, y_obs = prep_1d_gem0_data()
-#test_gp_domain_decomposition(x_domain, y_test, x_obs, y_obs)
+# GP split
+# x_domain, y_test, x_obs, y_obs = prep_1d_gem0_data()
+# test_gp_domain_decomposition(x_domain, y_test, x_obs, y_obs)
 
 ### --- Get data from GEM0 for offline training
+
 # gem0_helper = ExtCodeHelper(1)
 #
-# function = lambda x: np.array(gem0_helper.gem0_call_tifltegradtigrad_array(x))  # TODO TODO add gem0 check the rho taken and if a range of values around is sampled
+# function = lambda x: np.array(gem0_helper.gem0_call_tifltegradtigrad_array(x))
 # x_param = [[-5000., -1000., 32], [-5000., -1000., 32]]
 #
 # import lhsmdu
@@ -654,90 +707,193 @@ plt.ion()
 # df.to_csv('gem0_lhc_res.csv')
 
 ### --- Produce GEM0 results for coordiantes of paramteric space read from a GEM campaign
-gem0_helper = ExtCodeHelper(3)
-function = lambda x: np.array(gem0_helper.gem0_call_4param2target_array(x))
 
-def load_csv_file(data_dir='', input_file='gem_data_625.txt'):
-    N_runs = 625
-    input_dim = 4
-    output_dim = 2
+# create a caller to gem0 code
+gem0_helper = ExtCodeHelper(1)
 
-    input_samples = np.zeros((N_runs, input_dim))
-    output_samples = np.zeros((N_runs, output_dim))
+# create a function to pass 4 params to gem0 and get 2 targets back
+# function = lambda x: np.array(gem0_helper.gem0_call_4param2target_array(x))
 
-    #nput_file = data_dir + '\\' + input_file
+# function to load a gem campaign data if stored at csv
 
-    with open(input_file, 'r') as inputfile:
-        datareader = csv.reader(inputfile, delimiter=',')
-        i = 0
-        for row in datareader:
-            input_samples[i] = row[0:input_dim]
-            output_samples[i] = row[input_dim:input_dim+output_dim]
-            i = i + 1
+x_domain, y_gem = load_csv_file()
+# y_test = function(x_domain)
+# y_test = y_test.reshape(625, 2)
 
-    return input_samples, output_samples
-
-x_domain, y_gem  = load_csv_file()
-#y_test = function(x_domain)
-#y_test = y_test.reshape(625, 2)
-
-df = pd.DataFrame()
-
-df['te.value'] = x_domain[:, 0]
-df['ti.value'] = x_domain[:, 1]
-df['te.ddrho'] = x_domain[:, 2]
-df['ti.ddrho'] = x_domain[:, 3]
-
-#df['te.flux'] = y_test[:, 0]
-#df['ti.flux'] = y_test[:, 1]
-
-df.to_csv('gem0_625_res.csv')
+# df = pd.DataFrame()
+# df['te.value'] = x_domain[:, 0]
+# df['ti.value'] = x_domain[:, 1]
+# df['te.ddrho'] = x_domain[:, 2]
+# df['ti.ddrho'] = x_domain[:, 3]
+# df['te.flux'] = y_test[:, 0]
+# df['ti.flux'] = y_test[:, 1]
+# df.to_csv('gem0_625_res.csv')
 
 ### --- Try to fit GEM0 for GEM data
 
 from scipy.optimize import curve_fit
+from scipy.stats import pearsonr
 
+np.set_printoptions(precision=2)
+
+
+# function to call gem0 with signature suited for scipy curve_fit
 def func(x,
-         th,
-         #br,
-         #ep,
-         #cd,
-         #cp
+         thresh,
+         beta_reduction,
+         # etae_pinch
+         chi_d,
+         chiratio_phi,
+         x_names=['te.value', 'ti.value', 'te.ddrho', 'ti.ddrho'],
+         y_names=['ti.transp.flux']
          ):
-    y_res = gem0_helper.gem0obj.gem0_fit_call(x,
-                                              th,
-                                              # br,
-                                              # ep,
-                                              #cd,
-                                              #cp
-                                              )
-    res = np.array(y_res)
-    return res[:, 1]
+    x_dicts = []
+    for j in range(x.shape[0]):
+        xrow = x[j, :]
 
-function = lambda x: np.array(gem0_helper.gem0_call_tifltigrad_array(x))
+        dict = {}
+        for i_n in range(len(x_names)):
+            dict[x_names[i_n]] = xrow[i_n]
 
-inds = grid_slice(x_domain,[3])
-xcur = x_domain[inds, [3]].reshape(-1, 1)
-print(y_gem[inds, 1])
-print(function(xcur).reshape(-1))
+        x_dicts.append(dict)
 
-#popt, pconv = curve_fit(func, x_domain[:25, [3]], y_gem[:25, 1],
-popt, pconv = curve_fit(func, xcur, y_gem[inds, 1],
-                                                  p0=[
-                                                       6.,
-                                                       # 10.,
-                                                       # 3.5,
-                                                       # 3.,
-                                                       # 0.7
-                                                      ],
-                                                     bounds=(0.01, 1000.0),
-                                                     method='trf',
-                                                     #jac='3-point'
-                        )  # check if should actually be (625,4) + add bounds
-#  OptimizeWarning: Covariance of the parameters could not be estimated
-#   category=OptimizeWarning) ... [[inf ..]]
+    params = {
+        'thresh': thresh,
+        'beta_reduction': beta_reduction,
+         # 'etae_pinch': etae_pinch,
+        'chi_d': chi_d,  # 60.
+        'chiratio_phi': chiratio_phi  # 1.
+    }
 
-print(popt)
-print(pconv)
+    y_res_list_dicts = gem0_helper.gem0obj.gem0_fit_call(x_dicts, params)
 
-print(func(xcur, *popt))
+    y_result_list = []
+    for y_r in y_res_list_dicts:
+        y_result_list.append(y_r[y_names[0]])
+
+    y_result_return = np.array(y_result_list)  #.reshape(-1, 1)
+    return y_result_return
+
+
+# get a slice of gem data and run gem0 for same values, then compare
+# function = lambda x: np.array(gem0_helper.gem0_call_tefltegrad_array(x))
+# function = lambda x: np.array(gem0_helper.gem0_call_tefltigrad_array(x))
+# function = lambda x: np.array(gem0_helper.gem0_call_tifltegradtigrad_array(x))
+# function = lambda x: np.array(gem0_helper.gem0_call_tefl4params_array(x))
+
+# feat_inds = [3]
+# xinds = grid_slice(x_domain, feat_inds)
+# xcur = x_domain[xinds.tolist()][:, feat_inds]
+# ycur = y_gem[inds, 1]
+# y_curgem0 = function(xcur).reshape(-1)
+
+#fit the free paramters of gem0 with curve_fit
+
+# popt, pconv = curve_fit(func, x_domain, y_gem[:, 1],
+#                         p0=[
+#                             4.,
+#                             1.,
+#                             # 3.5,
+#                             # 100.,  # 3.
+#                             0.1  # 0.7
+#                         ],
+#                         bounds=(0.0001, 100000.0),
+#                         method='trf',
+#                         # jac='3-point'
+#                         )  # check if x should actually be (nsamples, nfeatures)
+#
+# print('optimal free parameter value: {}'.format(popt))
+
+#for te_transp_flux try [5.04 7.61]
+#for ti_transp_flux try [2.53e+01 1.00e-04]
+#4 params for te_transp_flux [2.87e+00 2.50e-03 6.00e+01 1.00e-01]
+#4 params for ti_transp_flux [5.00e-01 1.00e-04 6.00e+01 5.46e-01]
+# print(pconv)
+
+# y_fitted = func(x_domain, *popt)
+# pears, _ = pearsonr(y_gem[:, 0], y_fitted)
+# print('pearson correlation after fitting: {}'.format(pears))
+
+### --- Get plots for different free parameters
+
+from itertools import product
+
+plt.ioff()
+
+# feat_inds = [3]
+# xinds = grid_slice(x_domain, feat_inds)
+# xcur = x_domain[xinds.tolist()][:, feat_inds]
+# xcur_more = np.linspace(xcur.min(), xcur.max(), 10).reshape(-1, 1)
+
+# betars = np.logspace(0, 3, 4)
+# thresholds = np.linspace(1.5, 9.0, 4)
+
+# betars = [1., 5., 10, 15.]
+# thresholds = [1., 4., 6., 10.]
+
+# Plot graphs for single R->R mapping, at each graph multiple combinations of free parameter values
+
+# fig, ax = plt.subplots()
+# for par in product(thresholds, betars):
+#     y_param_st = func(xcur_more, *par)
+#     ax.plot(xcur_more, y_param_st, label='thr: {}; beta_r: {}'.format(par[0], par[1]))
+#
+# plt.xlabel(r'$\nabla Ti$')
+# plt.ylabel(r'Ф_Ti')
+# plt.legend(loc='best')
+# plt.title('Transport fluxes from GEM0 for different beta_reduction and threshold values')
+# plt.savefig('gem0_tigti_thrlin_betarlog_test.png')
+# plt.close()
+
+# Plot for a concrete free parameter values, at each graph all possible R->R mappings
+
+y_names = {'te.transp.flux': (0, 'te'), 'ti.transp.flux': (1, 'ti')}
+x_names = {'te.value': (0, 'te'), 'ti.value': (1, 'ti'), 'te.ddrho': (2, 'gte'), 'ti.ddrho': (3, 'gti')}
+
+# betars = [0.5, 0.7, 0.9, 1., 1.1, 1.5]
+# # NOTE: threshold > 10. lead to indetity dependency for beta_reduction = 1.0 and other values
+# thresholds = [1.0, 2.5, 3., 3.8, 4.0, 4.2, 5.0,]
+
+popt = [2.87, 2.50e-03]
+betars = np.linspace(0.75 * popt[1], 1.25 * popt[1], 3)
+thresholds = np.linspace(0.75 * popt[0], 1.25 * popt[0], 3)
+
+y_lim_gem = [(0., 13000.), (0., 5500.)]
+
+for par in product(thresholds, betars):
+    par = par + (60., 0.546)
+    fig, ax = plt.subplots(2, 4, figsize=(19, 10), sharey='row', gridspec_kw={'wspace': 0})
+    si = 0
+    for y_n, (y_dim_num, y_short_name) in y_names.items():
+        sj = 0
+        for x_n, (x_dim_num, x_short_name) in x_names.items():
+            xinds = grid_slice(x_domain, [x_dim_num])
+
+            xcur = x_domain[xinds.tolist()][:, [x_dim_num]]
+            xcur_more = np.linspace(xcur.min(), xcur.max(), 20).reshape(-1, 1)
+
+            ycur_gem = y_gem[xinds, y_dim_num]
+            y_param_st = func(xcur_more, *par, x_names=[x_n], y_names=[y_n])
+
+            # ax = fig.add_subplot(240 + si, sharey=axo)
+            # ax[si-1].subplot(240 + si, sharey=True)
+
+            #ax[si][sj].set_ylim(y_lim_gem[si])
+
+            ax[si][sj].plot(xcur_more, y_param_st, 'o-', label='gem0 opt for {}->{}'.format(x_short_name, y_short_name))
+            ax[si][sj].plot(xcur, ycur_gem, 'o-', label='gem data for {}->{}'.format(x_short_name, y_short_name))
+
+            ax[si][sj].set_title('{}->{}'.format(x_short_name, y_short_name))
+            ax[si][sj].set_ylabel(r'Ф_{}'.format(y_short_name))
+            ax[si][sj].set_xlabel(r'{}'.format(x_n))
+            plt.legend(loc='best')
+            sj = sj + 1
+        si = si + 1
+
+    # plt.legend(loc='best')
+    fig.tight_layout()
+    fig.suptitle('GEM0 with values of: threshold: {:.4f} ; beta_reduction: {:.4f}'.format(par[0], par[1]))
+    fig.subplots_adjust(top=0.88)
+
+    plt.savefig('gem0_{}{}_thr{:.4f}_betar{:.4f}.png'.format(y_short_name, x_short_name, par[0], par[1]))
+    plt.close()

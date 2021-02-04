@@ -22,9 +22,11 @@ from easymfw.templates.cpo_element import CPOElement
 
 def get_code_params(xml_file_name='gem0.xml'): #TODO check if fill_param() does exactly the same as parsing
 
-    print("> Get code params")
+    #print("> Get code params")
+
     # fill_param(code_parameters, xml_file_name, '', 'gem0.xsd')
     #code_parameters = XMLElement(xml_file_name)
+
     code_parameters, _ = assign_turb_parameters(xml_file_name)
 
     return code_parameters
@@ -177,44 +179,28 @@ class GEM0Singleton():
         for k, v in param.items():
             self.modify_code_ios(k, v)
         coret, tefl, tifl, tedr, tidr = gem(self.equil, self.corep_elem.core, self.coret, self.code_parameters)
-        return tefl, tifl, tedr, tidr
+        return [tefl, tifl]  #, tedr, tidr
 
-    def gem0_fit_call(self, xs,
-                      thresh,
-                      #beta_reduction,
-                      #etae_pinch,
-                      #chi_d,
-                      #chiratio_phi
+    def gem0_fit_call(self,
+                      xs,
+                      params,
                       ):
 
         # change the (free model) parameters
-        params_new = {
-                      'thresh': thresh,
-                      # 'beta_reduction': beta_reduction,
-                      # 'etae_pinch': etae_pinch,
-                      # 'chi_d': chi_d,
-                      # 'chiratio_phi': chiratio_phi
-                     }
-        for k, v in params_new.items():
+        for k, v in params.items():
             self.modify_code_params(k, v)
 
         # change the values at cpo (inputs)
         #Xlabels = ['ti.value', 'te.value', 'ti.ddrho', 'ti.ddrho']
         y_res = []
 
-        for j in range(xs.shape[0]):
-            x = xs[j, :]
-            x_dict = {
-                #'te.value': x[0],
-                #'ti.value': x[0],
-                #'te.ddrho': x[2],
-                'ti.ddrho': x[0]
-                    }
+        for x in xs:
+            x_dict = x
             for k, v in x_dict.items():
                 self.modify_code_ios(k, v)
 
             coret, tefl, tifl, tedr, tidr = gem(self.equil, self.corep_elem.core, self.coret, self.code_parameters)
-            y_res.append(np.array([tefl, tifl]))
+            y_res.append({'te.transp.flux': tefl, 'ti.transp.flux': tifl})
 
         return y_res
 

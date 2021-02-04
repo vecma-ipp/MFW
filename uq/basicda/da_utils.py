@@ -77,8 +77,8 @@ def read_sim_csv(input_filename):
 
 def grid_slice(data, retinds):
     """
-    :param data:
-    :param retinds:
+    :param data: nupy array (n_features, n_samples)
+    :param retinds: features which should vary in a resulting slice
     :return:
         indices of datset which correspond to middle slice along the retinds
     """
@@ -88,18 +88,19 @@ def grid_slice(data, retinds):
     # get the index of the central element of the grid
     midind = xvals.shape[1] // 2 + 1
 
-    # get the indices of dimension that you don't need to return
+    # get the indices of dimensions that you don't need to return
     sliceinds = [x for x in np.arange(data.shape[1]) if x not in retinds]
 
-    # start with all the row of the dataset (all the points at grid)
-    rowinds = np.array([True for x in np.arange(data.shape[0])])  # initialize normally
+    # start with all the rows of the dataset (all the points at grid)
+    rowinds = np.array([True for x in np.arange(data.shape[0])])  # TODO: initialize in a quicker way
 
     # exclude the points that don't lie on the central slices
     for sliceind in sliceinds:
         rowinds = np.logical_and(rowinds,
-                                (abs(data[:, sliceind] - xvals[sliceind, midind]) < 1e-8))
+                                 (abs(data[:, sliceind] - xvals[sliceind, midind]) < 1e-12))
 
     rowinds = np.where(rowinds)[0]
+
     return rowinds
 
 def plot_2d_map(df, X, Y, inds=[2,3]):

@@ -11,7 +11,7 @@ from gem0_singleton import GEM0Singleton
 
 class ExtCodeHelper():
 
-    def __init__(self, option=4):
+    def __init__(self, option=2):
         self.gem0obj = GEM0Singleton(option)
 
     def gem0_call_tefltevltegrad(self, x): # TODO np.vectorize?
@@ -34,8 +34,14 @@ class ExtCodeHelper():
 
     def gem0_call_tefltegrad_array(self, x):
         res = []
-        for el in x: 
-            res.append([self.gem0obj.gem0_call({'te.ddrho': el[0]})[0]])
+        for el in x:
+            res.append([self.gem0obj.gem0_call({'te.ddrho': el})[0]])
+        return np.array(res)
+
+    def gem0_call_tefltigrad_array(self, x):
+        res = []
+        for el in x:
+            res.append([self.gem0obj.gem0_call({'ti.ddrho': el})[0]])
         return np.array(res)
 
     def gem0_call_tifltigrad_array(self, x):
@@ -71,13 +77,23 @@ class ExtCodeHelper():
         """
         res = []
         for el in x:
-            res.append([self.gem0obj.gem0_call({'ti.ddrho': el})[0]])  #question: why tiddrho is different from teddrho in cpo? is tiddrho is converted to array by acii api?
+            res.append([self.gem0obj.gem0_call({'ti.ddrho': el})[1]])  #question: why tiddrho is different from teddrho in cpo? is tiddrho is converted to array by acii api?
+        return np.array(res)
+
+    def gem0_call_tefltegradtigrad_array(self, x):
+        """
+        calls the gem0 code for desired te.ddrho and ti.ddrho
+        :param x: x[0] is te.ddrho, x[1] is ti.ddrho
+        """
+        res = []
+        for el in x:
+            res.append([self.gem0obj.gem0_call({'te.ddrho': el[0], 'ti.ddrho': el[1]})[0]])
         return np.array(res)
 
     def gem0_call_tifltegradtigrad_array(self, x):
         """
-        calls the gem0 code for desired ti.ddrho
-        :param x: x[0] is ti.ddrho
+        alls the gem0 code for desired te.ddrho and ti.ddrho
+        :param x: x[0] is te.ddrho, x[1] is ti.ddrho
         """
         res = []
         for el in x:
@@ -104,6 +120,17 @@ class ExtCodeHelper():
         for el in x:
             res.append([self.gem0obj.gem0_call({'te.value': el[0], 'ti.value': el[1],
                                                 'te.ddrho': el[2], 'ti.ddrho': el[3]})[0:2]])
+        return np.array(res)
+
+    def gem0_call_tefl4params_array(self, x):
+        """
+        calls the gem0 code for desired ti.ddrho
+        :param x: x[0] is te.value
+        """
+        res = []
+        for el in x:
+            res.append([self.gem0obj.gem0_call({'te.value': el[0], 'ti.value': el[1],
+                                                'te.ddrho': el[2], 'ti.ddrho': el[3]})[0]])
         return np.array(res)
 
 

@@ -118,13 +118,13 @@ def gem(eq, coreprof, coretransp, code_parameters):
 
     rho0 = coreprof.rho_tor
     # use to compare gradient values from code and from cpo file 
-    rho0_bound = max(rho0) # correction for gradient calculation (rho_tor_norm/ rho_tor = 1.43840892 for AUG)
+    rho0_bound = max(rho0)  # correction for gradient calculation (rho_tor_norm/ rho_tor = 1.43840892 for AUG)
     rho0 = rho0/rho0_bound
     rho_eq = eq.profiles_1d.rho_tor / rho_tor_max
 
     if nrho_transp == 1:
         rho = np.array([ra0])
-    elif nrho_transp == (nrho_prof-1)/2 :
+    elif nrho_transp == (nrho_prof-1)/2:
         rho = rho0[1:nrho_transp-1:2]
     else:
         rho = np.array([((1.0/(2*nrho_transp))*(2*x+1))**0.7 for x in range(nrho_transp)])
@@ -172,15 +172,15 @@ def gem(eq, coreprof, coretransp, code_parameters):
         qqx = l3interp(eq.profiles_1d.q, rho_eq, npsi, qqx, rho, nrho_transp)
         shatx = l3deriv( eq.profiles_1d.q, rho_eq, npsi, shatx, rho, nrho_transp)
     if q_choice == "coreprof":
-        qqx = l3interp( coreprof.profiles1d.q.value, rho0, nrho_prof, qqx, rho, nrho_transp)
-        shatx = l3deriv( coreprof.profiles1d.q.value, rho0, nrho_prof, shatx, rho, nrho_transp)
+        qqx = l3interp(coreprof.profiles1d.q.value, rho0, nrho_prof, qqx, rho, nrho_transp)
+        shatx = l3deriv(coreprof.profiles1d.q.value, rho0, nrho_prof, shatx, rho, nrho_transp)
     if q_choice == "jtot":
         if coreprof.profiles1d.q.value is None:
             coreprof.profiles1d.q.value[nrho_prof] = np.zeros((1))
             qq0 = coreprof.profiles1d.q.value
             jj0 = coreprof.profiles1d.jtot.value
             qq0[0] = 0.0
-            for i in range(0,nrho_prof):
+            for i in range(0, nrho_prof):
                 qq0[i] = qq0[i-1] + 0.5*(rho0[i]*rho0[i-1] - rho0[i-1]) * (jj0[i]+jj0[i-1])
             qq0 = mu_0 * qq0 * r00 / (2.0 * b00)
             qq0[0] = 1.0
@@ -287,13 +287,9 @@ def gem(eq, coreprof, coretransp, code_parameters):
             if ion == 0:
                 if chigb_option == 1:
                     chigb = rhos * rhos * cs / r00
-                if chigb_option == 2:
-                    chigb = 3.1665651301060183   # assumption from Y, just to run the code
                     chigb = chigb * 40.0 / math.sqrt(1.0 + (beta_reduction * beta) ** 2.0)
-                if chigb_option == 3:
-                    chigb = 3.1665651301060183   # assumption from Y, just to run the code
                     chigb = chigb * max(0.0, (1.0 - thresh / abs((r00 * rlti))))
-                if chigb_option == 4:
+                if chigb_option == 2:
                     chigb = rhos * rhos * cs / lperp  # original code choice
 
                 #print('SOME COEFS: {} {} {} {}'.format(1/lperp, (1/r00), max(0.0, (1.0 - thresh / abs((r00 * rlti)))), 
@@ -318,8 +314,9 @@ def gem(eq, coreprof, coretransp, code_parameters):
 
             diffe = chigb / chi_d
             chie = chigb
+            chie = chie / chi_d  # DANGER: modification by Y
             diffi = diffe
-            chii = chigb
+            chii = chiratio_phi * chigb / chi_d  # DANGER: modification by Y
 
             # Basic pinch dynamics
             # Ions set via ambipolarity
@@ -352,7 +349,7 @@ def gem(eq, coreprof, coretransp, code_parameters):
                 #print('ne_transp.diff_eff size: {}; diff_eff : {}'
                 #      .format(coretransp.values[0].ne_transp.diff_eff.shape, diffe.shape))
 
-                te_transp_flux = nne * kb * tte * gge * gm3[i]  # TODO: check for multiple flu tubes why it is not assigned
+                te_transp_flux = nne * kb * tte * gge * gm3[i]  # TODO: check for multiple flux tubes if it is assigned
                 
                 coretransp.values[0].ne_transp.diff_eff[i, 1] = diffe
                 coretransp.values[0].te_transp.diff_eff[i] = chie
