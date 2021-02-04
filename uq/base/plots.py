@@ -2,7 +2,6 @@ import matplotlib.pylab as plt
 import matplotlib
 import numpy as np
 
-# TODO plot_ stats and sobols for profile, scalar
 
 # Scaling coordianates
 def format_exponent(ax, axis='y'):
@@ -24,96 +23,28 @@ def format_exponent(ax, axis='y'):
         verticalalignment='top'
 
 
-# Statistical Moments (mean +- sdtv)
-def plot_stats(x, stats, xlabel, ylabel, ftitle, fname):
-
-    mean = stat[0]
-    std = stat[1]
-    lo  = stat[2]
-    up  = stat[2]
-
-    plt.switch_backend('agg')
-    fig = plt.figure(figsize=(12,9))
-
-    ax1 = fig.add_subplot(111)
-    ax1.plot(x, mean, 'b-', alpha=0.6, label='Mean')
-    ax1.plot(x, mean-std, 'b-', alpha=0.25)
-    ax1.plot(x, mean+std, 'b-', alpha=0.25)
-    ax1.fill_between(x, mean-std, mean+std, alpha=0.2, label=r'Mean $\pm$ deviation')
-    ax1.set_xlabel(xlabel)
-    ax1.set_ylabel(ylabel, color='b')
-    ax1.tick_params('y', colors='b')
-    ax1.grid()
-    ax1.legend()
-
-    ax2 = ax1.twinx()
-    ax2.plot(x, var, 'r-', alpha=0.6)
-    ax2.set_ylabel('Variance', color='r')
-    ax2.tick_params('y', colors='r')
-    ax2 = format_exponent(ax2, axis='y')
-
-    plt.title(ftitle)
-    fig.savefig(fname)
-    plt.close(fig)
-
-
-# Statistical Moments (using 90% percentils)
-def plot_stats_pctl(x, stat, pctl, xlabel, ylabel, ftitle, fname):
-    mean = stat["mean"]
-    std  = stat["std"]
-    p10 = pctl['p10']
-    p90 = pctl['p90']
-
-    plt.switch_backend('agg')
-    fig = plt.figure(figsize=(16,9))
-
-    ax1 = fig.add_subplot(111)
-    ax1.plot(x, mean, 'b-', alpha=0.6, label='Mean')
-    ax1.plot(x, p10, 'b-', alpha=0.2)
-    ax1.plot(x, p90, 'b-', alpha=0.2)
-    ax1.fill_between(x, p10, p90, alpha=0.15, label='90% prediction interval')
-    ax1.set_xlabel(xlabel)
-    ax1.set_ylabel(ylabel, color='b')
-    ax1.tick_params('y', colors='b')
-    ax1.grid()
-    ax1.legend()
-
-    ax2 = ax1.twinx()
-    ax2.plot(x, std, 'r-', alpha=0.6)
-    ax2.set_ylabel('Standard deviation', color='r')
-    ax2.tick_params('y', colors='r')
-    ax2 = format_exponent(ax2, axis='y')
-
-    plt.title(ftitle)
-    fig.savefig(fname)
-    plt.close(fig)
-
-# Statistical Moments (mean +- sdtv) and p90, p10
-def plot_stats_all(x, stat, perc, dist, xlabel, ylabel, ftitle, fname):
+# Statistical Moments (mean +- std)
+# TODO add min and max
+def plot_moments(x, mean, std, xlabel, ylabel, ftitle, fname=None):
     matplotlib.rcParams.update({'font.size': 12})
-    mean = np.array(stat["mean"])
-    std = np.array(stat['std'])
-    p10 = perc['p10']
-    p90 = perc['p90']
 
     plt.switch_backend('agg')
     fig = plt.figure(figsize=(12,9))
 
-    plt.plot(x, mean, 'b-', label='Mean')
+    plt.plot(x, mean, 'r-', label='Mean')
     plt.plot(x, mean-std, 'b--', label=r'Mean $\pm$1 std')
     plt.plot(x, mean+std, 'b--')
-    plt.fill_between(x, mean-std, mean+std, color='b', alpha=0.2)
-    plt.plot(x, p10, 'b:', label='10 and 90 percentiles')
-    plt.plot(x, p90, 'b:')
-    plt.fill_between(x, p10, p90, color='b', alpha=0.1)
-    plt.fill_between(x, [r.lower[0] for r in dist], [r.upper[0] for r in dist], color='b', alpha=0.05)
+    plt.fill_between(x, mean-std, mean+std, color='b', alpha=0.25)
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
     plt.grid()
     plt.legend()
 
     plt.title(ftitle)
-    fig.savefig(fname)
+    if filename is None:
+        fig.show()
+    else:
+        fig.savefig(fname)
     plt.close(fig)
 
 # Plot Sobols indices for 2, 4 or 6 params
@@ -187,20 +118,3 @@ def plot_sobols_all(x, sobols, params, ftitle, fname):
     fig.savefig(fname)
     plt.close(fig)
 
-# Spline
-def plot_spl(x, y, cx, cy, xlabel, ylabel, ftitle, fname):
-
-    plt.switch_backend('agg')
-    fig = plt.figure(figsize=(12,9))
-
-    ax1 = fig.add_subplot(111)
-    ax1.plot(x, y, 'b-', label='Mean')
-    ax1.plot(cx, cy, 'ro', label='CP')
-    ax1.set_xlabel(xlabel)
-    ax1.set_ylabel(ylabel)
-    ax1.grid()
-    ax1.legend()
-
-    plt.title(ftitle)
-    fig.savefig(fname)
-    plt.close(fig)

@@ -6,6 +6,7 @@ from ascii_cpo import read
 from base.cpo_encoder import CPOEncoder
 from base.cpo_decoder import CPODecoder
 from base.utils import cpo_inputs
+from base.plots import plot_moments
 
 '''
 Perform UQ for the Transport: ETS
@@ -137,4 +138,3 @@ corep = read(os.path.join(cpo_dir,  "ets_coreprof_in.cpo"), "coreprof")
 rho = corep.rho_tor_norm
 for i, qoi in enumerate(output_columns):
     results.plot_moments(qoi, xlabel="rho", xvalues=rho, filename="stats_"+str(i))
-    results.plot_sobols_first(qoi, ylabel="Sob1 - "+qoi, xlabel="rho", xvalues=rho, filename="sob1_"+str(i))

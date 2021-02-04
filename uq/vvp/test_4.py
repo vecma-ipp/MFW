@@ -4,8 +4,9 @@ import matplotlib.pylab as plt
 from pandas import read_csv
 from ascii_cpo import read
 from scipy.interpolate import interp1d
-from easymfw.utils.statistics import Split_Normal
+from base.validation import Split_Normal
 
+#TODO reorganize
 # Experimental data in csv format containing:
 # rho_toroidal,Data,Lower,Upper
 f = []
@@ -78,7 +79,7 @@ def exp_dist(mid, lo, up):
             mj = mid[j][i]
             lj = lo[j][i]
             uj = up[j][i]
-            dj = Split_Normal(mode=mj, sig1=mj-lj, sig2=uj-mj)
+            dj = Split_Normal(mean=mj, sig1=mj-lj, sig2=uj-mj)
             m[j].append(mj)
             v[j].append(dj.sigma**2)
             s[j].append(dj.skew)
@@ -149,16 +150,11 @@ def plot_dd(d, m, l, u, i, j):
     fig.savefig("exp_dist"+str(i)+str(j)+".png")
     plt.close(fig)
 
+
 def plot_dd1(p, c, m, l, u, i, j):
     d1 = v1.compare(p[i], p[j])
     d2 = v2.compare(c[i], c[j])
     x = rho[:-1]
-#    dn = []
-#    for k in range(len(d)):
-#            s = np.sqrt((l[i][k]+u[i][k])**2+(l[j][k]+u[j][k])**2)
-#            diff = abs(m[i][k]-m[j][k])/s
-#            dn.append(2*np.sqrt(2)* d[k]*diff)
-
     fig, axs = plt.subplots(2, 1, figsize=(16,9))
 
     axs[0].plot(x, m[i], 'b-')
@@ -194,6 +190,7 @@ def plot_dd1(p, c, m, l, u, i, j):
     fig.savefig("exp_dist"+str(i)+str(j)+".png")
     plt.close(fig)
 
+## Plots
 plot_dd(d[0], mid, lo, up, i=0, j=1)
 plot_dd(d[1], mid, lo, up, i=0, j=2)
 plot_dd(d[2], mid, lo, up, i=0, j=3)
