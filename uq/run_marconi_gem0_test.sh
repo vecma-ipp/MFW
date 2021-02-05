@@ -8,7 +8,7 @@
 #SBATCH --error=test-err.%j.pce
 
 ## wall time in format MINUTES:SECONDS
-#SBATCH --time=1:00:00
+#SBATCH --time=0:30:00
 
 ## number of nodes and tasks per node
 #SBATCH --nodes=1
