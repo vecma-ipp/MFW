@@ -75,6 +75,34 @@ def read_sim_csv(input_filename):
     #return X, Y
     return df, X, Y
 
+def grid_slice(data, retinds):
+    """
+    :param data: nupy array (n_features, n_samples)
+    :param retinds: features which should vary in a resulting slice
+    :return:
+        indices of datset which correspond to middle slice along the retinds
+    """
+    # get the unique values of the datapoints at grid
+    xvals = np.array([np.unique(data[:, i]) for i in range(data.shape[1])])
+
+    # get the index of the central element of the grid
+    midind = xvals.shape[1] // 2 + 1
+
+    # get the indices of dimensions that you don't need to return
+    sliceinds = [x for x in np.arange(data.shape[1]) if x not in retinds]
+
+    # start with all the rows of the dataset (all the points at grid)
+    rowinds = np.array([True for x in np.arange(data.shape[0])])  # TODO: initialize in a quicker way
+
+    # exclude the points that don't lie on the central slices
+    for sliceind in sliceinds:
+        rowinds = np.logical_and(rowinds,
+                                 (abs(data[:, sliceind] - xvals[sliceind, midind]) < 1e-12))
+
+    rowinds = np.where(rowinds)[0]
+
+    return rowinds
+
 def plot_2d_map(df, X, Y, inds=[2,3]):
     Xlabels = ['te_value', 'ti_value', 'te_ddrho', 'ti_ddrho']
     Ylabels = ['te_transp_flux', 'te_transp_flux']
@@ -133,7 +161,7 @@ def plot_3d_suraface(x ,y, z, name):
     Prints a surface for function f:X*Y->Z arbitrary list of coordinates
     i.e. f(x[i],y[i])=z[i] using triangulated mesh at X*Y
     :param x: list of coordinates in X
-    :param y: list of cordinates in Y
+    :param y: list of coordinates in Y
     :param z: list of results f(x, y) in Z
     :param name: name of function, to be used in plot file name
     :return:
@@ -256,16 +284,16 @@ def plot_convergence(sample_sizes, errors_mean, errors_variance):
     plt.savefig('toy' + '_gem0' + '_convergence' + '.png')
     plt.close()
 
-def plot_response_1d(x_domain, y_tests, ylabels, f):
+def plot_response_1d(x_domain, y_tests, ylabels=['1'], f = lambda x : x):
     wrt_dir = os.path.join(os.environ['PWD'])
     plt.figure()
     #y_test = f(x_domain)
     for i in range(len(y_tests)):
         plt.plot(x_domain, y_tests[i], 'r:', label='GEM0') #r'$f(x) = x\,\sin(x)$')
-        plt.ylabel(y_label[i])
+        plt.ylabel(ylabels[i])
     plt.legend()
     plt.xlabel(r'$\nabla Te$')
-    plt.savefig(os.path.join(wrt_dir, 'response' + str(len(y_test))+'.png')) #TODO save img in current folder
+    plt.savefig(os.path.join(wrt_dir, 'response' + str(len(y_tests))+'.png')) #TODO save img in current folder
 
 def plot_prediction_variance(x_observ, y_observ, x_domain, y_test, y_pred, sigma, f, x_choice=[], newpoints=[], rmse=0.0, funcname='e^-x cos x', dy=0):
     """ 
@@ -337,7 +365,7 @@ def plot_prediction_variance_2d(x_observ, y_observ, x_domain, y_test, y_pred, si
     plt.xlabel("Te") #(r'$Te$')
     plt.ylabel("gradTe") #(r'$\nabla Te$')
     ax2.set_aspect('equal')
-    if len(newpoints) != 0: #TODO fix two differen scatter one plot
+    if len(newpoints) != 0: #TODO fix two different scatter one plot (what did I mean?)
         ax2.scatter(newpoints[0][:,0], newpoints[0][:,1], c=newpoints[1], edgecolors='g', s=8) #, label='new samples')
 
     ### --- Third plot for the neg-utility (GPR STD)

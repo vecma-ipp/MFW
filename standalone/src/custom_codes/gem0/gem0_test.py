@@ -29,7 +29,7 @@ def run_batch(folder_list):
 def plot_gem0_res(x, y):
     plt.plot(x, y, label='python-gem0 response in tigr')
     plt.xlabel('tegr')
-    plr.ylabel('tefl')
+    plt.ylabel('tefl')
     plt.savefig('pythongem0_tefl_vs_tegr.png')
     plt.close()
 

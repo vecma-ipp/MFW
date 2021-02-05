@@ -2,6 +2,7 @@ import os
 import numpy as np
 import pandas as pd
 
+
 from ascii_cpo import read
 import easymfw.utils.io_tools
 
@@ -60,14 +61,14 @@ def check_equal(prof1, prof2, esp=1e-10):
         return False
     return True
 
-def get_run_data(foldname, input_index=[61]):
+def get_run_data(foldname, codename='gem0', input_index=[61]):
     """
     Gets input and output values for a single simulation run
     """
     Xlabels = ['te_value', 'ti_value', 'te_ddrho', 'ti_ddrho']
     Ylabels = ['te_transp_flux', 'ti_transp_flux']
-    input_filename = "gem0_coreprof_in.cpo"
-    output_filename = "gem0_coretransp_out.cpo"
+    input_filename = codename + "_coreprof_in.cpo"
+    output_filename = codename + "_coretransp_out.cpo"
     coretransp = read(os.path.join(foldname, output_filename), "coretransp")
     tiflux = coretransp.values[0].ti_transp.flux[0]
     teflux = coretransp.values[0].te_transp.flux
@@ -77,11 +78,12 @@ def get_run_data(foldname, input_index=[61]):
     teddrho = coreprof.te.ddrho[input_index]    
     tiddrho = coreprof.ti.ddrho[input_index][0]
     
-    return pd.DataFrame([[teval[0], tival[0], teddrho[0], tiddrho[0], teflux[0], tiflux[0]]], columns = Xlabels + Ylabels)
+    return pd.DataFrame([[teval[0], tival[0], teddrho[0], tiddrho[0], teflux[0], tiflux[0]]], columns=Xlabels + Ylabels)
 
 def plot_camp_vals(data, name='gem0'):
     """
     Plots input and output values against run number
+    :argument data: pandas dataframe with features and results of the campaign
     """
     Xlabels = ['te_value', 'ti_value', 'te_ddrho', 'ti_ddrho']
     Ylabels = ['te_transp_flux', 'ti_transp_flux']
@@ -89,32 +91,32 @@ def plot_camp_vals(data, name='gem0'):
     data.reset_index()
     
     data[Xlabels].plot(style='o')
-    plt.savefig(name + '_camp_par_vals.pdf')
-    #plt.close()
+    plt.savefig(name + '_camp_par_vals.png')
+    plt.close()
     
-    data[Ylabels].plot(style='o')
-    plt.savefig(name + '_camp_res_vals.pdf')
+    data[Ylabels].plot(style='o', logy=True)
+    plt.savefig(name + '_camp_res_vals.png')
     plt.close()
 
-def get_camp_dataframe(foldname, input_index=[61]):
+def get_camp_dataframe(foldname, codename='gem0', input_index=[61]):
     """
     Get set of input-outputs for a campaign of simualtion runs
     as a pandas dataframe
     """
     Xlabels = ['te_value', 'ti_value', 'te_ddrho', 'ti_ddrho']
     Ylabels = ['te_transp_flux', 'ti_transp_flux']
-    simdata = pd.DataFrame(columns = Xlabels + Ylabels)
+    simdata = pd.DataFrame(columns=Xlabels + Ylabels)
 
     for _,runs,_ in walklevel(os.path.join(foldname, 'runs/')):
         for run in runs:
             runfolder = os.path.join(foldname, 'runs/', run)
-            runres = get_run_data(runfolder, input_index)
+            runres = get_run_data(runfolder, codename, input_index)
             #print(runres)
             simdata = pd.concat([simdata, runres], ignore_index=True)
             #simdata = simdata.append(runres, ignore_index=True)
     
     #print(simdata)
-    simdata.to_csv('campaign_data.csv',index=False)
+    simdata.to_csv('campaign_data.csv', index=False)
     return simdata
             
 def get_camp_data(foldname, input_index=[61]):
@@ -326,41 +328,41 @@ def deriv(prof, delta):
     prof_deriv = prof[1:] - prof [0:-1] / delta
     return prof_deriv
 
-###--------------------i------------------------------------- 
+###---------------------------------------------------------
 	
-ft1_indx = 69 # 61
-
-scratch_folder = "/marconi_scratch/userexternal/yyudin00/"
-#basefolder = "/ptmp/yyudin/UQ_GEM0_wvkryt88_sequential/runs/"
-#basefolder = "/ptmp/yyudin/UQ_GEM0_jh2q6ts1/runs/"
-basefolder = "/u/yyudin/codes/MFW/workflows/AUG_28906_6/"
-basefolder = "/u/yyudin00/code/MFW/workflow/AUG_28906_6_1ft_restart/"
-#basefolder = "/ptmp/yyudin/Fusion_Inputs/UQ_GEM_Data/runs/"
-#basefolder = "/ptmp/yyudin/single_tries/gem0/b9e9pzco/"
-#basefolder = "/marconi_scratch/userexternal/yyudin00/Fusion_Inputs/UQ_GEM_Data/"
-#basefolder = "/marconi_scratch/userexternal/yyudin00/UQ_GEM0_LHC_hafbz8o3/"
-#basefolder = "/marconi_scratch/userexternal/yyudin00/UQ_GEM0_QMC_dbg7gjbl/"
-#basefolder = "/marconi_scratch/userexternal/yyudin00/UQ_GEM0_186yhlbk/"
-#basefolder = scratch_folder + "UQ_GEM0_LVR_m9qiu5tm/"
-#basefolder = scratch_folder + "UQ_GEM0_LVR_37os6gq0/"
-basefolder = scratch_folder + "UQ_GEM0_61_e9zvw66q/"
-basefolder = scratch_folder + "gemuq_qmc_tjpqqq_4/" 
-
-basefolder = os.path.join(scratch_folder,"gemuq_qmc_hjwchjla") # gem0 campaign run with 3e+3 samples (QMC, 1ft @69) on 21.09.2020
-
-basefolder = os.path.join(scratch_folder, "gem0uq_pce_i67og8gy") # gem0 campaign run with 625 runs (PCE, const gradients, 1ft @69) on 22.09.2020
-basefolder = os.path.join(scratch_folder, "gem0uq_pce_gbw0uhl3") # gem0 campaing with 625 runc (PCE, const gradients, 1dt @69) on 25.09.2020
+# ft1_indx = 69 # 61
+#
+# scratch_folder = "/marconi_scratch/userexternal/yyudin00/"
+# #basefolder = "/ptmp/yyudin/UQ_GEM0_wvkryt88_sequential/runs/"
+# #basefolder = "/ptmp/yyudin/UQ_GEM0_jh2q6ts1/runs/"
+# basefolder = "/u/yyudin/codes/MFW/workflows/AUG_28906_6/"
+# basefolder = "/u/yyudin00/code/MFW/workflow/AUG_28906_6_1ft_restart/"
+# #basefolder = "/ptmp/yyudin/Fusion_Inputs/UQ_GEM_Data/runs/"
+# #basefolder = "/ptmp/yyudin/single_tries/gem0/b9e9pzco/"
+# #basefolder = "/marconi_scratch/userexternal/yyudin00/Fusion_Inputs/UQ_GEM_Data/"
+# #basefolder = "/marconi_scratch/userexternal/yyudin00/UQ_GEM0_LHC_hafbz8o3/"
+# #basefolder = "/marconi_scratch/userexternal/yyudin00/UQ_GEM0_QMC_dbg7gjbl/"
+# #basefolder = "/marconi_scratch/userexternal/yyudin00/UQ_GEM0_186yhlbk/"
+# #basefolder = scratch_folder + "UQ_GEM0_LVR_m9qiu5tm/"
+# #basefolder = scratch_folder + "UQ_GEM0_LVR_37os6gq0/"
+# basefolder = scratch_folder + "UQ_GEM0_61_e9zvw66q/"
+# basefolder = scratch_folder + "gemuq_qmc_tjpqqq_4/"
+#
+# basefolder = os.path.join(scratch_folder,"gemuq_qmc_hjwchjla") # gem0 campaign run with 3e+3 samples (QMC, 1ft @69) on 21.09.2020
+#
+# basefolder = os.path.join(scratch_folder, "gem0uq_pce_i67og8gy") # gem0 campaign run with 625 runs (PCE, const gradients, 1ft @69) on 22.09.2020
+# basefolder = os.path.join(scratch_folder, "gem0uq_pce_gbw0uhl3") # gem0 campaing with 625 runc (PCE, const gradients, 1dt @69) on 25.09.2020
 
 #filename = "Run_1/gem0_coreprof_in.cpo" 
 #filename = "ets_coreprof_in.cpo"
 
-runfold1 = "Run_1"
-runfold2 = "Run_15"
-filename = "gem0_coreprof_in.cpo"
-filename_res = "gem0_coretransp_out.cpo"
-
-
-gem0data, _, _ = read_sim_csv("campaign_data.csv")
+# runfold1 = "Run_1"
+# runfold2 = "Run_15"
+# filename = "gem0_coreprof_in.cpo"
+# filename_res = "gem0_coretransp_out.cpo"
+#
+#
+# gem0data, _, _ = read_sim_csv("campaign_data.csv")
 #plot_camp_vals(gem0data, 'gem0')
 
 
@@ -384,22 +386,24 @@ gem0data, _, _ = read_sim_csv("campaign_data.csv")
 #plot_prof(get_te(folder8ftrun+'/runs/Run_'+str(num)+'/gem0_coreprof_in.cpo'), np.linspace(0,1,100), 'prof_8ftrun_at_'+str(8))
 
 #check current AUG profile steepest points
-exp_folder = "../workflows/AUG_28906_6"
-prof_file = "ets_coreprof_in.cpo"
-prof_file_path = os.path.join(exp_folder, prof_file)
-rho = np.linspace(0, 100, 100)
-prof_te = get_te(prof_file_path)
-#print(rho)
-#plot_prof(prof_te, rho, 'te_aug6')
-prof_ti =  get_ti(prof_file_path)
-prof_gradte = get_tegrad(prof_file_path)
-prof_gradti = get_tigrad(prof_file_path)
-profs = [prof_te, prof_ti, prof_gradte, prof_gradti]
-prlabels = ['te', 'ti', 'gradte', 'gradti']
-#plot_prof_all(profs, rho, 'aug6', prlabels)
-print(prof_gradte[65:73])
-print(prof_gradti[65:73].reshape(1,-1))
-gradgradti = deriv(prof_gradti, 0.1)
-core_gradti_maxloc = np.argmax(gradgradti[:-6])
-print('Steepest gradTi point is {} with gradTi={}'.format(core_gradti_maxloc, prof_gradti[core_gradti_maxloc]))
+# exp_folder = "../workflows/AUG_28906_6"
+# prof_file = "ets_coreprof_in.cpo"
+# prof_file_path = os.path.join(exp_folder, prof_file)
+# rho = np.linspace(0, 100, 100)
+# prof_te = get_te(prof_file_path)
+# #print(rho)
+# #plot_prof(prof_te, rho, 'te_aug6')
+# prof_ti =  get_ti(prof_file_path)
+# prof_gradte = get_tegrad(prof_file_path)
+# prof_gradti = get_tigrad(prof_file_path)
+# profs = [prof_te, prof_ti, prof_gradte, prof_gradti]
+# prlabels = ['te', 'ti', 'gradte', 'gradti']
+# #plot_prof_all(profs, rho, 'aug6', prlabels)
+# print(prof_gradte[65:73])
+# print(prof_gradti[65:73].reshape(1,-1))
+# gradgradti = deriv(prof_gradti, 0.1)
+# core_gradti_maxloc = np.argmax(gradgradti[:-6])
+# print('Steepest gradTi point is {} with gradTi={}'.format(core_gradti_maxloc, prof_gradti[core_gradti_maxloc]))
+#
+# two_camp_compare()
 
