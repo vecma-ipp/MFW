@@ -191,13 +191,15 @@ class GEM0Singleton():
             self.modify_code_params(k, v)
 
         # change the values at cpo (inputs)
-        #Xlabels = ['ti.value', 'te.value', 'ti.ddrho', 'ti.ddrho']
+        Xlabels = ['te.ddrho', 'te.value', 'ti.ddrho', 'ti.value']
         y_res = []
 
         for x in xs:
             x_dict = x
-            for k, v in x_dict.items():
-                self.modify_code_ios(k, v)
+            for feat in [feat for feat in Xlabels if feat in x_dict.keys()]:
+            #for k, v in x_dict.items():
+                #self.modify_code_ios(k, v)
+                self.modify_code_ios(feat, x_dict[feat])
 
             coret, tefl, tifl, tedr, tidr = gem(self.equil, self.corep_elem.core, self.coret, self.code_parameters)
             y_res.append({'te.transp.flux': tefl, 'ti.transp.flux': tifl})

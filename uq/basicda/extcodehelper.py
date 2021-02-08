@@ -12,6 +12,8 @@ from gem0_singleton import GEM0Singleton
 class ExtCodeHelper():
 
     def __init__(self, option=2):
+        if option not in [1, 2]:
+            option = 2
         self.gem0obj = GEM0Singleton(option)
 
     def gem0_call_tefltevltegrad(self, x): # TODO np.vectorize?

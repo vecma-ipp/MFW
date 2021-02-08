@@ -429,7 +429,7 @@ def test_gp_domain_decomposition(x_domain, y_test, x_observ, y_observ):
 
 def prep_1d_gem0_data():
     n_init = 8
-    ext_code_helper_1 = ExtCodeHelper(1)
+    ext_code_helper_1 = ExtCodeHelper(2)
 
     function = lambda x: ext_code_helper_1.gem0_call_teflteval_array(x)
     x_param = [400., 2000, 32]  # for gem in te-val #TODO change the gradient sampling!
@@ -709,7 +709,7 @@ def surrogate_utility(x_train_data, y_train_data, x_roi_data, original_model):
 ### --- Produce GEM0 results for coordiantes of paramteric space read from a GEM campaign
 
 # create a caller to gem0 code
-gem0_helper = ExtCodeHelper(1)
+gem0_helper = ExtCodeHelper(0)
 
 # create a function to pass 4 params to gem0 and get 2 targets back
 # function = lambda x: np.array(gem0_helper.gem0_call_4param2target_array(x))
@@ -745,7 +745,7 @@ def func(x,
          chi_d,
          chiratio_phi,
          x_names=['te.value', 'ti.value', 'te.ddrho', 'ti.ddrho'],
-         y_names=['ti.transp.flux']
+         y_names=['te.transp.flux']
          ):
     x_dicts = []
     for j in range(x.shape[0]):
@@ -789,13 +789,13 @@ def func(x,
 
 #fit the free paramters of gem0 with curve_fit
 
-# popt, pconv = curve_fit(func, x_domain, y_gem[:, 1],
+# popt, pconv = curve_fit(func, x_domain, y_gem[:, 0],
 #                         p0=[
 #                             4.,
 #                             1.,
 #                             # 3.5,
-#                             # 100.,  # 3.
-#                             0.1  # 0.7
+#                             3.,  # 100.
+#                             0.7  # 0.1
 #                         ],
 #                         bounds=(0.0001, 100000.0),
 #                         method='trf',
@@ -851,37 +851,42 @@ y_names = {'te.transp.flux': (0, 'te'), 'ti.transp.flux': (1, 'ti')}
 x_names = {'te.value': (0, 'te'), 'ti.value': (1, 'ti'), 'te.ddrho': (2, 'gte'), 'ti.ddrho': (3, 'gti')}
 
 # betars = [0.5, 0.7, 0.9, 1., 1.1, 1.5]
-# # NOTE: threshold > 10. lead to indetity dependency for beta_reduction = 1.0 and other values
 # thresholds = [1.0, 2.5, 3., 3.8, 4.0, 4.2, 5.0,]
 
-popt = [2.87, 2.50e-03]
-betars = np.linspace(0.75 * popt[1], 1.25 * popt[1], 3)
-thresholds = np.linspace(0.75 * popt[0], 1.25 * popt[0], 3)
+popt = {'threshold': 2.87, 'beta_reduction': 2.50e-03, 'chi_d': 60., 'chiratio_phi': 0.546}
+#popt = {'threshold': .5, 'beta_reduction': 1e-4, 'chi_d': 76.7, 'chiratio_phi': 0.7}
+#popt = {'threshold': 4.0, 'beta_reduction': 1.0, 'chi_d': 3., 'chiratio_phi': 0.7}
+
+betars = np.linspace(0.75 * popt['beta_reduction'], 1.25 * popt['beta_reduction'], 1)
+thresholds = np.linspace(0.75 * popt['threshold'], 1.25 * popt['threshold'], 1)
 
 y_lim_gem = [(0., 13000.), (0., 5500.)]
 
 for par in product(thresholds, betars):
-    par = par + (60., 0.546)
-    fig, ax = plt.subplots(2, 4, figsize=(19, 10), sharey='row', gridspec_kw={'wspace': 0})
+    par = par + (popt["chi_d"], popt["chiratio_phi"])
+    fig, ax = plt.subplots(2, 4, figsize=(19, 10))  #, gridspec_kw={'wspace': 0}), sharey='row')
     si = 0
     for y_n, (y_dim_num, y_short_name) in y_names.items():
         sj = 0
         for x_n, (x_dim_num, x_short_name) in x_names.items():
-            xinds = grid_slice(x_domain, [x_dim_num])
+            xinds = grid_slice(x_domain, [x_dim_num]).tolist()
 
-            xcur = x_domain[xinds.tolist()][:, [x_dim_num]]
-            xcur_more = np.linspace(xcur.min(), xcur.max(), 20).reshape(-1, 1)
+            xcur = x_domain[xinds][:, [x_dim_num]]
+            xcur_more = x_domain[xinds]
+
+            xcur_long = np.linspace(xcur.min(), xcur.max(), 20)
+            xcur_more_long = np.zeros((20, xcur_more.shape[1]))
+            xcur_more_long[:, x_dim_num] = xcur_long
+            for dim in [dim for dim in range(xcur_more.shape[1]) if dim != x_dim_num]:
+                xcur_more_long[:, dim] = xcur_more[0, dim]
 
             ycur_gem = y_gem[xinds, y_dim_num]
-            y_param_st = func(xcur_more, *par, x_names=[x_n], y_names=[y_n])
-
-            # ax = fig.add_subplot(240 + si, sharey=axo)
-            # ax[si-1].subplot(240 + si, sharey=True)
+            y_param_st = func(xcur_more_long, *par, y_names=[y_n])  #, x_names=[x_n],)
 
             #ax[si][sj].set_ylim(y_lim_gem[si])
 
-            ax[si][sj].plot(xcur_more, y_param_st, 'o-', label='gem0 opt for {}->{}'.format(x_short_name, y_short_name))
-            ax[si][sj].plot(xcur, ycur_gem, 'o-', label='gem data for {}->{}'.format(x_short_name, y_short_name))
+            ax[si][sj].plot(xcur_long, y_param_st, 'o-', label='gem0 opt for {}->{}'.format(x_short_name, y_short_name))
+            #ax[si][sj].plot(xcur, ycur_gem, 'o-', label='gem data for {}->{}'.format(x_short_name, y_short_name))
 
             ax[si][sj].set_title('{}->{}'.format(x_short_name, y_short_name))
             ax[si][sj].set_ylabel(r'Ф_{}'.format(y_short_name))
@@ -892,8 +897,8 @@ for par in product(thresholds, betars):
 
     # plt.legend(loc='best')
     fig.tight_layout()
-    fig.suptitle('GEM0 with values of: threshold: {:.4f} ; beta_reduction: {:.4f}'.format(par[0], par[1]))
+    fig.suptitle('GEM0 with values of: threshold: {:.4f} ; beta_reduction: {:.7f}'.format(par[0], par[1]))
     fig.subplots_adjust(top=0.88)
 
-    plt.savefig('gem0_{}{}_thr{:.4f}_betar{:.4f}.png'.format(y_short_name, x_short_name, par[0], par[1]))
+    plt.savefig('gem00_{}{}_thr{:.4f}_betar{:.7f}_сlear.png'.format(y_short_name, x_short_name, par[0], par[1]))
     plt.close()
