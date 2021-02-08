@@ -1,4 +1,5 @@
 import os
+import numpy as np
 import easyvvuq as uq
 # from ual
 from ascii_cpo import read
@@ -36,16 +37,10 @@ exec_code = "ets_test"
 
 # Define the uncertain parameters
 input_params = {
-    "te.boundary.value": {
-        "dist": "Normal",
-        "err":  0.2,
-    }
-    ,
-    "ti.boundary.value": {
-        "dist": "Normal",
-        "err": 0.2,
-    }
+    "te.boundary.value": {"dist": "uniform", "err":  0.2},
+    "ti.boundary.value": {"dist": "uniform", "err": 0.2}
 }
+
 # CPO file containg initial values of uncertain params
 input_filename = "ets_coreprof_in.cpo"
 input_cponame = "coreprof"
@@ -133,8 +128,20 @@ my_campaign.apply_analysis(analysis)
 # Get results
 results = my_campaign.get_last_analysis()
 
-#  Graphics for Descriptive satatistics
+# Save results on csv file and get graphics for Descriptive satatistics
 corep = read(os.path.join(cpo_dir,  "ets_coreprof_in.cpo"), "coreprof")
 rho = corep.rho_tor_norm
+
+header = 'rho_tor_norm'
+cols = [rho]
 for i, qoi in enumerate(output_columns):
-    results.plot_moments(qoi, xlabel="rho", xvalues=rho, filename="stats_"+str(i))
+    header = header + '\tmean_' + qoi + '\tstd_'+qoi
+    mean =  results.describe(qoi, 'mean')
+    std = results.describe(qoi, 'std')
+    cols.append(mean)
+    cols.append(std)
+    plot_moments(rho, mean, std, xlabel='rho', ylabel=qoi,
+            ftitle='Descprive statistics for ETS UQ',
+            fname='stats_'+qoi.split('.')[0])
+
+np.savetxt(campaign_name+'stats.csv', np.c_[cols], delimiter='\t',header=header)
