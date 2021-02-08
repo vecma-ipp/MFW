@@ -170,7 +170,7 @@ def gem(eq, coreprof, coretransp, code_parameters):
 
     if q_choice == "equilibrium":
         qqx = l3interp(eq.profiles_1d.q, rho_eq, npsi, qqx, rho, nrho_transp)
-        shatx = l3deriv( eq.profiles_1d.q, rho_eq, npsi, shatx, rho, nrho_transp)
+        shatx = l3deriv(eq.profiles_1d.q, rho_eq, npsi, shatx, rho, nrho_transp)
     if q_choice == "coreprof":
         qqx = l3interp(coreprof.profiles1d.q.value, rho0, nrho_prof, qqx, rho, nrho_transp)
         shatx = l3deriv(coreprof.profiles1d.q.value, rho0, nrho_prof, shatx, rho, nrho_transp)
@@ -313,10 +313,9 @@ def gem(eq, coreprof, coretransp, code_parameters):
             # Coefficient is 3/2 due to Poynting flux cancelation
 
             diffe = chigb / chi_d
-            chie = chigb
-            chie = chie / chi_d  # DANGER: modification by Y
+            chie = chigb / chi_d  # DANGER: modification by Y
             diffi = diffe
-            chii = chiratio_phi * chigb / chi_d  # DANGER: modification by Y
+            chii = chigb * chiratio_phi / chi_d  # DANGER: modification by Y
 
             # Basic pinch dynamics
             # Ions set via ambipolarity
