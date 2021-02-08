@@ -37,6 +37,10 @@ def AUG_GM_date_explore(filename='AUG_gem_inoutput.txt'):
     #GP_analysis_toy(X=AUG_gem['time'], y=y1)
 
 def SA_exploite(analysis, qoi):
+    # Function to analyses the SVD decomposition of the Sobol indices matrix and find largest eigenvaules among
+    # linear combinations of Sobol indices of different order.
+    # Further should use the eigen vectors as "directions" for new resampling for UQ quadratures
+
     #stat = {}
     sob1 = {}
     sob2 = {}

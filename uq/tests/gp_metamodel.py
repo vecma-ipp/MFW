@@ -161,7 +161,7 @@ def analyse_hp_distribution(gpr_gpy):
     labels = ['kern_variance', 'kern_lengthscale', 'noise_variance']
     vs = np.linspace(v_min, v_max, 100)
     for i in range(s_hp.shape[1]-1):
-        kernel = stats.gaussian_kde(s_hp[:, i])  # numpy.linalg.LinAlgError: singular matrix
+        kernel = stats.gaussian_kde(s_hp[:, i])  # numpy.linalg.LinAlgError: singular matrix -> x values are repeated
         plt.plot(vs, kernel(vs), label=labels[i])
     plt.legend()
     plt.savefig('tr_ds_fl_kernel_LS.png')
@@ -374,5 +374,4 @@ if __name__ == "__main__":
     # plt.savefig('std_for_runs.png')
     # plt.close()
     
-    print('MSE of the GPR prediction is: {0}'.format(mse(Y_high, prediction_y_high_grad_set))) # other metrics?
-
+    print('MSE of the GPR prediction is: {0}'.format(mse(Y_high, prediction_y_high_grad_set)))  # other metrics?
