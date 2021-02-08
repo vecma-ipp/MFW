@@ -3,25 +3,6 @@ import matplotlib
 import numpy as np
 
 
-# Scaling coordianates
-def format_exponent(ax, axis='y'):
-    # Change the ticklabel format to scientific format
-    ax.ticklabel_format(axis=axis, style='sci', scilimits=(-2, 2))
-
-    # Get the appropriate axis
-    if axis == 'y':
-        ax_axis = ax.yaxis
-        x_pos = 0.0
-        y_pos = 1.0
-        horizontalalignment='left'
-        verticalalignment='bottom'
-    else:
-        ax_axis = ax.xaxis
-        x_pos = 1.0
-        y_pos = -0.05
-        horizontalalignment='right'
-        verticalalignment='top'
-
 # Statistical Moments (mean +- std)
 # TODO add mins and maxs
 def plot_moments(x, mean, std, xlabel, ylabel, ftitle, fname):
@@ -44,7 +25,7 @@ def plot_moments(x, mean, std, xlabel, ylabel, ftitle, fname):
     plt.close(fig)
 
 # Plot Sobols indices
-def plot_sobols(x, xlabel, sobols, ylabel,  params, ftitle, fname, subplot=False):
+def plot_sobols(x, xlabel, sobols, ylabel, params, ftitle, fname, subplot=False):
     plt.switch_backend('agg')
     npar = len(params)
 

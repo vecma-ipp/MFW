@@ -10,6 +10,7 @@ from base.cpo_encoder import CPOEncoder
 from base.xml_encoder import XMLEncoder
 from base.cpo_decoder import CPODecoder
 from base.utils import cpo_inputs, xml_inputs
+from base.plots import plot_moments, plot_sobols
 
 '''
 Perform UQ for the workflow ETS + CHEASE.
@@ -44,7 +45,7 @@ exec_code = "ets_chease_test"
 # Define the uncertain parameters
 # Electron boudary condition
 input_params_bc = {
-    "te.boundary.value": {"dist": "Normal", "err": 0.2, "min":0.}
+    "te.boundary.value": {"dist": "Uniform", "err": 0.2, "min":0.}
 }
 # Electron heating Sources
 input_params_sr = {
@@ -60,7 +61,11 @@ input_xml_filename = "source_dummy.xml"
 input_xsd_filename = "source_dummy.xsd"
 
 # The quantities of intersts and the cpo file to set them
-output_columns = ["profiles_1d.pressure"]
+output_columns = ["profiles_1d.pressure", "profiles_1d.q", "profiles_1d.jphi",
+                  "profiles_1d.jparallel", "profiles_1d.gm1", "profiles_1d.gm2",
+                  "profiles_1d.gm3", "profiles_1d.gm4", "profiles_1d.gm5",
+                  "profiles_1d.gm6", "profiles_1d.gm7", "profiles_1d.gm8",
+                  "profiles_1d.gm9"]
 output_filename = "chease_equilibrium_out.cpo"
 output_cponame = "equilibrium"
 
@@ -189,6 +194,16 @@ rho = equil.profiles_1d.rho_tor
 #    results.plot_moments(qoi, xlabel="rho", xvalues=rho, filename="data/stats_"+str(i))
 #    results.plot_sobols_first(qoi, ylabel="Sob1 - "+qoi, xlabel="rho",
 #            xvalues=rho, filename="data/sob1_"+str(i))
+for i, qoi in enumerate(output_columns):
+    mean =  results.describe(qoi, 'mean')
+    std = results.describe(qoi, 'std')
+    qoi_label = qoi.split('.')[1]
+    plot_moments(rho, mean, std, xlabel='rho', ylabel=qoi_label,
+            ftitle='Descprive statistics for ETS+GEM',
+            fname='stats_'+qoi_label)
+    sobols = results.sobols_first(qoi)
+    param_names = list(params.keys())
+    plot_sobols(rho, 'rho', sobols, '1st sobols', param_names, 'SA for '+qoi_label, 'sob1'+qoi_label)
 t8 = time.time()
 
 print('Time for initializing = %.3f' %(t1-t0))
