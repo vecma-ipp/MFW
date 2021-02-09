@@ -12,6 +12,9 @@ from base.cpo_decoder import CPODecoder
 from base.utils import cpo_inputs, xml_inputs
 from base.plots import plot_moments, plot_sobols
 
+import csv
+from itertools import zip_longest
+
 '''
 Perform UQ for the workflow ETS + CHEASE.
 Uncertainties are driven by:
@@ -194,16 +197,36 @@ rho = equil.profiles_1d.rho_tor
 #    results.plot_moments(qoi, xlabel="rho", xvalues=rho, filename="data/stats_"+str(i))
 #    results.plot_sobols_first(qoi, ylabel="Sob1 - "+qoi, xlabel="rho",
 #            xvalues=rho, filename="data/sob1_"+str(i))
+
+header = ['rho_tor_norm']
+cols = [list(rho)]
+
 for i, qoi in enumerate(output_columns):
     mean =  results.describe(qoi, 'mean')
     std = results.describe(qoi, 'std')
+
     qoi_label = qoi.split('.')[1]
+    header.append('mean_'+qoi_label)
+    header.append('std_'+qoi_label)
+
+    cols.append(list(mean))
+    cols.append(list(std))
+
+    # save plots
     plot_moments(rho, mean, std, xlabel='rho', ylabel=qoi_label,
             ftitle='Descprive statistics for ETS+GEM',
             fname='stats_'+qoi_label)
     sobols = results.sobols_first(qoi)
     param_names = list(params.keys())
     plot_sobols(rho, 'rho', sobols, '1st sobols', param_names, 'SA for '+qoi_label, 'sob1'+qoi_label)
+
+export_data = zip_longest(*cols, fillvalue='')
+with open(campaign_name+'stats.csv', 'w', newline='') as csv_file:
+    wr = csv.writer(csv_file)
+    wr.writerow(header)
+    wr.writerows(export_data)
+csv_file.close()
+
 t8 = time.time()
 
 print('Time for initializing = %.3f' %(t1-t0))
