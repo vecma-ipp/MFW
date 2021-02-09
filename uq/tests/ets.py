@@ -1,5 +1,5 @@
 import os
-import numpy as np
+import csv
 import easyvvuq as uq
 # from ual
 from ascii_cpo import read
@@ -8,6 +8,8 @@ from base.cpo_encoder import CPOEncoder
 from base.cpo_decoder import CPODecoder
 from base.utils import cpo_inputs
 from base.plots import plot_moments
+
+from itertools import zip_longest
 
 '''
 Perform UQ for the Transport: ETS
@@ -132,16 +134,25 @@ results = my_campaign.get_last_analysis()
 corep = read(os.path.join(cpo_dir,  "ets_coreprof_in.cpo"), "coreprof")
 rho = corep.rho_tor_norm
 
-header = 'rho_tor_norm'
-cols = [rho]
+header = ['rho_tor_norm']
+cols = [list(rho)]
 for i, qoi in enumerate(output_columns):
-    header = header + '\tmean_' + qoi + '\tstd_'+qoi
     mean =  results.describe(qoi, 'mean')
     std = results.describe(qoi, 'std')
-    cols.append(mean)
-    cols.append(std)
+
+    header.append('mean_'+qoi)
+    header.append('std_'+qoi)
+
+    cols.append(list(mean))
+    cols.append(list(std))
+
     plot_moments(rho, mean, std, xlabel='rho', ylabel=qoi,
             ftitle='Descprive statistics for ETS UQ',
             fname='stats_'+qoi.split('.')[0])
 
-np.savetxt(campaign_name+'stats.csv', np.c_[cols], delimiter='\t',header=header)
+export_data = zip_longest(*cols, fillvalue='')
+with open(campaign_name+'stats.csv', 'w', newline='') as csv_file:
+    wr = csv.writer(csv_file)
+    wr.writerow(header)
+    wr.writerows(export_data)
+csv_file.close()
