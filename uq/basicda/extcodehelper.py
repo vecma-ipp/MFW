@@ -59,7 +59,7 @@ class ExtCodeHelper():
         """
         res = []
         for el in x:
-            res.append(self.gem0obj.gem0_call({'te.value': el[0], 'te.ddrho': el[1]})[0])
+            res.append([self.gem0obj.gem0_call({'te.value': el[0], 'te.ddrho': el[1]})[0]])
         return res
 
     def gem0_call_tefltevltivl_array(self, x):
@@ -69,7 +69,7 @@ class ExtCodeHelper():
         """
         res = []
         for el in x:
-            res.append(self.gem0obj.gem0_call({'te.value': el[0], 'ti.value': el[1]})[0])
+            res.append([self.gem0obj.gem0_call({'te.value': el[0], 'ti.value': el[1]})[0]])
         return res
 
     def gem0_call_tifltigrad_array(self, x):
