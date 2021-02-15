@@ -22,7 +22,7 @@ print('TEST GEM-UQ: START')
 # We test 1 flux tube
 # run gem_test in strandalone and use:
 # base.utils.ftube_indices('gem_coreprof_in.cpo','gem_coretransp_out.cpo') to get the index
-ftube_index = 69
+ftube_index = 44
 
 # Machine name
 SYS = os.environ['SYS']
@@ -34,7 +34,7 @@ tmp_dir = os.environ['SCRATCH']
 mpi_instance =  os.environ['MPICMD']
 
 # CPO files location
-cpo_dir = os.path.abspath("../workflows/AUG_28906_6")
+cpo_dir = os.path.abspath("../workflows/AUG_28906_6_8ft_restart")
 
 # XML and XSD files location
 xml_dir = os.path.abspath("../workflows")

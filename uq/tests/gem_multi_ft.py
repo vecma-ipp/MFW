@@ -18,35 +18,16 @@ Uncertainties are driven by:
 The electon and ion temperature and their gradient localisd on flux tube positions.
 '''
 
+# UQ app
+def setup_gem(ftube_index, common_dir, input_params, output_columns):
+    # CPO file containg initial values of uncertain params
+    input_filename = "ets_coreprof_in.cpo"
+    input_cponame = "coreprof"
 
-# Global params
-SYS = os.environ['SYS']
-tmp_dir = os.environ['SCRATCH']
-mpi_instance =  os.environ['MPICMD']
-cpo_dir = os.path.abspath("../workflows/AUG_28906_6")
-xml_dir = os.path.abspath("../workflows")
-obj_dir = os.path.abspath("../standalone/bin/"+SYS)
-exec_code = "gem_test"
+    # CPO file containing the quantities of intersts
+    output_filename = "gem_coretransp_out.cpo"
+    output_cponame = "coretransp"
 
-# Define the uncertain parameters
-input_params = {
-    "te.value": {"dist": "Uniform", "err":  0.2, "min": 0.},
-    "ti.value": {"dist": "Uniform", "err":  0.2, "min": 0.},
-    "te.ddrho": {"dist": "Uniform", "err":  0.2, "max": 0.},
-    "ti.ddrho": {"dist": "Uniform", "err":  0.2, "max": 0.}
-}
-
-# CPO file containg initial values of uncertain params
-input_filename = "ets_coreprof_in.cpo"
-input_cponame = "coreprof"
-
-# The quantities of intersts and the cpo file to set them
-output_columns = ["te_transp.flux", "ti_transp.flux"]
-output_filename = "gem_coretransp_out.cpo"
-output_cponame = "coretransp"
-
-# To use in mutliapp Campaign
-def setup_gem(ftube_index, common_dir):
     # Parameter space for campaign and the distributions list for the sampler
     params, vary = cpo_inputs(cpo_filename=input_filename,
                               cpo_name=input_cponame,
@@ -74,7 +55,6 @@ def setup_gem(ftube_index, common_dir):
 
     return params, encoder, decoder, sampler, stats
 
-
 # Execution using QCG Pilot-Job
 def exec_pj(campaign, exec_path, ncores, log_level="info"):
     qcgpjexec = eqi.Executor(campaign)
@@ -92,6 +72,25 @@ def exec_pj(campaign, exec_path, ncores, log_level="info"):
 
 # Main
 if __name__ == "__main__":
+    # Global params
+    SYS = os.environ['SYS']
+    tmp_dir = os.environ['SCRATCH']
+    mpi_instance =  os.environ['MPICMD']
+    cpo_dir = os.path.abspath("../workflows/AUG_28906_6_8ft_restart")
+    xml_dir = cpo_dir
+    obj_dir = os.path.abspath("../standalone/bin/"+SYS)
+    exec_code = "gem_test"
+
+    # Define the uncertain parameters (UQ inputs)
+    input_params = {
+        "te.value": {"dist": "Uniform", "err":  0.2, "min": 0.},
+        "ti.value": {"dist": "Uniform", "err":  0.2, "min": 0.},
+        "te.ddrho": {"dist": "Uniform", "err":  0.2, "max": 0.},
+        "ti.ddrho": {"dist": "Uniform", "err":  0.2, "max": 0.}
+    }
+
+    # The quantities of intersts (UQ outputs)
+    output_columns = ["te_transp.flux", "ti_transp.flux"]
 
     # Flux Tubes position indices. Run gem_test in strandalone and use:
     # base.utils.ftube_indices('gem_coreprof_in.cpo','gem_coretransp_out.cpo')
@@ -138,7 +137,7 @@ if __name__ == "__main__":
 
     # Run Mutliapp
     for i, ft_index in enumerate(ftube_indices):
-        params, encoder, decoder, sampler, stats = setup_gem(ft_index, common_dir)
+        params, encoder, decoder, sampler, stats = setup_gem(ft_index, common_dir, input_params, output_columns)
 
         camp_name =  "gem_FT"+str(i+1)
         campaign.add_app(name=camp_name,
