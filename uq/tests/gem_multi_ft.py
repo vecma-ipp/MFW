@@ -10,6 +10,7 @@ from base.cpo_encoder import CPOEncoder
 from base.cpo_decoder import CPODecoder
 from base.xml_element import XMLElement
 from base.utils import cpo_inputs
+from base.plots import plot_moments, plot_sobols
 
 '''
 Perform UQ for the Turblence code gem (using 8 flux tubes).
@@ -27,42 +28,25 @@ xml_dir = os.path.abspath("../workflows")
 obj_dir = os.path.abspath("../standalone/bin/"+SYS)
 exec_code = "gem_test"
 
+# Define the uncertain parameters
+input_params = {
+    "te.value": {"dist": "Uniform", "err":  0.2, "min": 0.},
+    "ti.value": {"dist": "Uniform", "err":  0.2, "min": 0.},
+    "te.ddrho": {"dist": "Uniform", "err":  0.2, "max": 0.},
+    "ti.ddrho": {"dist": "Uniform", "err":  0.2, "max": 0.}
+}
 
-# Execution using QCG Pilot-Job
-def exec_pj(campaign, exec_path, ncores, log_level="info"):
-    qcgpjexec = eqi.Executor(campaign)
-    qcgpjexec.create_manager(log_level=log_level)
+# CPO file containg initial values of uncertain params
+input_filename = "ets_coreprof_in.cpo"
+input_cponame = "coreprof"
 
-    qcgpjexec.add_task(eqi.Task(
-        eqi.TaskType.EXECUTION,
-        eqi.TaskRequirements(cores=ncores),
-        model=mpi_instance,
-        application=exec_path
-    ))
-    qcgpjexec.run(processing_scheme=eqi.ProcessingScheme.EXEC_ONLY)
-    qcgpjexec.terminate_manager()
-
+# The quantities of intersts and the cpo file to set them
+output_columns = ["te_transp.flux", "ti_transp.flux"]
+output_filename = "gem_coretransp_out.cpo"
+output_cponame = "coretransp"
 
 # To use in mutliapp Campaign
 def setup_gem(ftube_index, common_dir):
-
-    # Define the uncertain parameters
-    input_params = {
-        "te.value": {"dist": "Uniform", "err":  0.2, "min": 0.},
-        "ti.value": {"dist": "Uniform", "err":  0.2, "min": 0.},
-        "te.ddrho": {"dist": "Uniform", "err":  0.2, "max": 0.},
-        "ti.ddrho": {"dist": "Uniform", "err":  0.2, "max": 0.}
-    }
-
-    # CPO file containg initial values of uncertain params
-    input_filename = "ets_coreprof_in.cpo"
-    input_cponame = "coreprof"
-
-    # The quantities of intersts and the cpo file to set them
-    output_columns = ["te_transp.flux", "ti_transp.flux"]
-    output_filename = "gem_coretransp_out.cpo"
-    output_cponame = "coretransp"
-
     # Parameter space for campaign and the distributions list for the sampler
     params, vary = cpo_inputs(cpo_filename=input_filename,
                               cpo_name=input_cponame,
@@ -89,6 +73,21 @@ def setup_gem(ftube_index, common_dir):
     stats = uq.analysis.PCEAnalysis(sampler=sampler, qoi_cols=output_columns)
 
     return params, encoder, decoder, sampler, stats
+
+
+# Execution using QCG Pilot-Job
+def exec_pj(campaign, exec_path, ncores, log_level="info"):
+    qcgpjexec = eqi.Executor(campaign)
+    qcgpjexec.create_manager(log_level=log_level)
+
+    qcgpjexec.add_task(eqi.Task(
+        eqi.TaskType.EXECUTION,
+        eqi.TaskRequirements(cores=ncores),
+        model=mpi_instance,
+        application=exec_path
+    ))
+    qcgpjexec.run(processing_scheme=eqi.ProcessingScheme.EXEC_ONLY)
+    qcgpjexec.terminate_manager()
 
 
 # Main
@@ -131,12 +130,17 @@ if __name__ == "__main__":
     nftubes = gemxml.get_value("cpu_parameters.parallel_cases.nftubes")
     ncores = npesx*npess*nftubes
 
-    # Run Mutliapp
-    results = []
-    for i, j in enumerate(ftube_indices):
-        params, encoder, decoder, sampler, stats = setup_gem(j, common_dir)
+    # To store Statistics and Sobols
+    means = {qoi: [] for qoi in output_columns}
+    stds = {qoi: [] for qoi in output_columns}
+    sob1 = {qoi: [] for qoi in output_columns}
+    sobt = {qoi: [] for qoi in output_columns}
 
-        camp_name =  "gem_FT"+str(i)
+    # Run Mutliapp
+    for i, ft_index in enumerate(ftube_indices):
+        params, encoder, decoder, sampler, stats = setup_gem(ft_index, common_dir)
+
+        camp_name =  "gem_FT"+str(i+1)
         campaign.add_app(name=camp_name,
                          params=params,
                          encoder=encoder,
@@ -150,48 +154,33 @@ if __name__ == "__main__":
         exec_pj(campaign, exec_path, ncores)
         campaign.collate()
         campaign.apply_analysis(stats)
-
         result = campaign.get_last_analysis()
-        results.append(result)
 
+        # Sore results
+        for qoi in output_columns:
+            means[qoi].append(result.describe(qoi, 'mean')[i])
+            stds[qoi].append(result.describe(qoi, 'std')[i])
+            s1 = {}
+            st = {}
+            for par in list(input_params.keys()):
+                s1.update({par: result.sobols_first(qoi)[par][i]})
+                st.update({par: result.sobols_total(qoi)[par][i]})
+            sob1[qoi].append(s1)
+            sobt[qoi].append(st)
 
-# Descrtiptive Statistics
-#  stats_te_transp_flux[i]['mean'] = mean value of te_transp.flux in  the FluxTube i+1
-#  stats_te_transp_flux[i]['std'] = std of te_transp.flux in the FluxTube i+1
-stats_te_transp_flux  = []
-stats_ti_transp_flux  = []
-# Eg. s1_te_transp_flux[i] = Sobols 1st indices for te_transp.flux in  the FluxTube i+1
-s1_te_transp_flux  = []
-s1_ti_transp_flux  = []
-for i in range(8):
-    # Means and stds
-    ste = {}
-    sti = {}
-    ste.update({'mean': results[i].describe()['te_transp.flux', i]['mean']})
-    ste.update({'std': results[i].describe()['te_transp.flux', i]['std']})
-    sti.update({'mean': results[i].describe()['ti_transp.flux', i]['mean']})
-    sti.update({'std': results[i].describe()['ti_transp.flux', i]['std']})
-    stats_te_transp_flux.append(ste)
-    stats_ti_transp_flux.append(sti)
+    # Plot descrtiptive statistics and sensitivity analysis
+    for i, qoi in enumerate(output_columns):
+        plot_moments(means[qoi], stds[qoi],
+                     xlabel="Flux tubes", ylabel=qoi,
+                     ftitle="GEM: descriptive statistics for "+qoi,
+                     fname="gem_stats"+str(i)+".png")
 
-    # Sobols
-    s1e = {}
-    s1i = {}
-    for uparam in list(params.keys()):
-        s1e.update({uparam: results[i].sobols_first('te_transp.flux')[uparam][i]})
-        s1i.update({uparam: results[i].sobols_first('ti_transp.flux')[uparam][i]})
-    s1_te_transp_flux.append(s1e)
-    s1_ti_transp_flux.append(s1i)
-
-
-print("STATS TE-TRANSP_FLUX:")
-print(stats_te_transp_flux)
-
-print("STATS TI-TRANSP_FLUX:")
-print(stats_ti_transp_flux)
-
-print("SOBOLS TE-TRANSP_FLUX:")
-print(s1_te_transp_flux)
-
-print("SOBOLS TI-TRANSP_FLUX:")
-print(s1_ti_transp_flux)
+        for j in range(8):
+                plot_sobols(sob1[qoi][j],
+                            xlabel="Uncertain parameters", ylabel="First sobol",
+                            ftitle='GEM: First sobol indices \n Flux tube: '+str(j+1)+' - QoI: '+qoi,
+                            fname='gem_sob1_'+str(i)+str(j)+'.png')
+                plot_sobols(sobt[qoi][j],
+                            xlabel="Uncertain parameters", ylabel="Total sobol",
+                            ftitle='GEM: Total sobol indices \n Flux tube: '+str(j+1)+' - QoI: '+qoi,
+                            fname='gem_sobt_'+str(i)+str(j)+'.png')

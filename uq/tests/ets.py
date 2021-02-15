@@ -7,9 +7,8 @@ from ascii_cpo import read
 from base.cpo_encoder import CPOEncoder
 from base.cpo_decoder import CPODecoder
 from base.utils import cpo_inputs
-from base.plots import plot_moments
+from base.plots import plot_moments, plot_sobols
 
-from itertools import zip_longest
 
 '''
 Perform UQ for the Transport: ETS
@@ -139,20 +138,26 @@ cols = [list(rho)]
 for i, qoi in enumerate(output_columns):
     mean =  results.describe(qoi, 'mean')
     std = results.describe(qoi, 'std')
+    sob1 = results.sobols_first(qoi)
+    sobt = results.sobols_total(qoi)
 
     header.append('mean_'+qoi)
     header.append('std_'+qoi)
 
-    cols.append(list(mean))
-    cols.append(list(std))
-
-    plot_moments(rho, mean, std, xlabel='rho', ylabel=qoi,
+    plot_moments(mean, std, x=rho, xlabel='rho', ylabel=qoi,
             ftitle='Descprive statistics for ETS UQ',
             fname='stats_'+qoi.split('.')[0])
 
-export_data = zip_longest(*cols, fillvalue='')
-with open(campaign_name+'stats.csv', 'w', newline='') as csv_file:
-    wr = csv.writer(csv_file)
-    wr.writerow(header)
-    wr.writerows(export_data)
-csv_file.close()
+    plot_sobols(sob1, x=rho, xlabel='rho_tor', ylabel='1st SI',
+                ftitle='Fisrt sobol indices for ETS UQ', fname='sob1_'+qoi.split('.')[0])
+
+    plot_sobols(sobt, x=rho, xlabel='rho_tor', ylabel='1st SI',
+                ftitle='Total sobol indices for ETS UQ', fname='sobt_'+qoi.split('.')[0])
+
+#from itertools import zip_longest
+#export_data = zip_longest(*cols, fillvalue='')
+#with open(campaign_name+'stats.csv', 'w', newline='') as csv_file:
+#    wr = csv.writer(csv_file)
+#    wr.writerow(header)
+#    wr.writerows(export_data)
+#csv_file.close()
