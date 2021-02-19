@@ -3,8 +3,8 @@ import matplotlib
 import numpy as np
 
 
-# TODO add mins and maxs
-def plot_moments(mean, std, x=None, xlabel=None, ylabel=None,
+# TODO add mins and maxs instead of 1% and 99%
+def plot_moments(mean, std, per=None, x=None, xlabel=None, ylabel=None,
                  ftitle=None, fname=None, dpi=128, fsize=11):
     matplotlib.rcParams.update({'font.size': fsize})
 
@@ -19,10 +19,13 @@ def plot_moments(mean, std, x=None, xlabel=None, ylabel=None,
         ax.grid(True, axis='y')
     # qoi is a vector: profile with mean +- std
     else:
-        ax.plot(x, mean, 'r-', label='Mean')
-        ax.plot(x, mean-std, 'b-', label=r'Mean $\pm$1 std')
-        ax.plot(x, mean+std, 'b-')
-        ax.fill_between(x, mean-std, mean+std, color='b', alpha=0.25)
+        ax.plot(x, mean, 'b-', label='Mean')
+        ax.plot(x, mean-std, 'b--', alpha=0.2, label=r'Mean $\pm$1 std')
+        ax.plot(x, mean+std, 'b--', alpha=0.2)
+        if per is not None:
+            ax.plot(x, per[0], 'k--', alpha=0.4, label='1% and 99%')
+            ax.plot(x, per[1], 'k--', alpha=0.4)
+        ax.fill_between(x, mean-std, mean+std, color='blue', alpha=0.2)
         ax.grid()
         ax.legend()
 
@@ -35,7 +38,6 @@ def plot_moments(mean, std, x=None, xlabel=None, ylabel=None,
     plt.savefig(fname, dpi=dpi)
     plt.close(fig)
 
-# TODO add multiple subplots (for 5+ params for eg.)
 def plot_sobols(sobols, params=None, x=None, xlabel=None, ylabel=None,
                 ftitle=None, fname=None, dpi=128, fsize=11):
     matplotlib.rcParams.update({'font.size': fsize})
@@ -62,6 +64,30 @@ def plot_sobols(sobols, params=None, x=None, xlabel=None, ylabel=None,
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
     ax.grid(True, axis='y')
+    fig.suptitle(ftitle)
+
+    if fname is None:
+        fname = 'fig_sobols.png'
+    plt.savefig(fname, dpi=dpi)
+    plt.close(fig)
+
+def plot_sobols_8(sobols, params=None, x=None, xlabel=None, ylabel=None,
+                ftitle=None, fname=None, dpi=128, fsize=11):
+    matplotlib.rcParams.update({'font.size': fsize})
+
+    plt.switch_backend('agg')
+    fig, axs = plt.subplots(nrows=2, ncols=4, sharex=True, sharey=True)
+
+    if params is None:
+        params = list(sobols.keys())
+
+    for i, par in enumerate(params):
+        s = sobols[par]
+        ax = axs[i//4, i%4]
+        ax.plot(x, s)
+        ax.set_title(par)
+        ax.grid()
+
     fig.suptitle(ftitle)
 
     if fname is None:

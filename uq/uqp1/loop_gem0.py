@@ -7,6 +7,8 @@ from base.cpo_encoder import CPOEncoder
 from base.xml_encoder import XMLEncoder
 from base.cpo_decoder import CPODecoder
 from base.utils import cpo_inputs, xml_inputs
+from base.plots import plot_moments, plot_sobols_8
+
 
 '''
 Perform UQ for the workflow Transport-Equilibrium-Turblence: ETS-CHEASE-GEM0.
@@ -29,7 +31,8 @@ SYS = os.environ['SYS']
 tmp_dir = os.environ['SCRATCH']
 
 # CPO files location
-cpo_dir = os.path.abspath("../workflows/AUG_28906_6")
+#cpo_dir = os.path.abspath("../workflows/AUG_28906_6")
+cpo_dir = os.path.abspath("../workflows/AUG_28906_6_8ft_restart")
 
 # XML and XSD files location
 xml_dir = os.path.abspath("../workflows")
@@ -41,13 +44,17 @@ exec_code = "loop_gem0"
 # Define the uncertain parameters
 # Electrons boudary condition
 input_params_bc = {
-    "te.boundary.value": {"dist": "Normal", "err": 0.2, "min":0.}
+    "te.boundary.value": {"dist": "Normal", "err": 0.2, "min":0.},
+    "ti.boundary.value": {"dist": "Normal", "err": 0.2, "min":0.}
 }
 # Gaussian Sources: Electrons heating
 input_params_sr = {
     "electrons.heating_el.WTOT_el":  {"dist": "Uniform", "err": 0.2},
     "electrons.heating_el.RHEAT_el": {"dist": "Uniform", "err": 0.2},
-    "electrons.heating_el.FWHEAT_el":{"dist": "Uniform", "err": 0.2}
+    "electrons.heating_el.FWHEAT_el":{"dist": "Uniform", "err": 0.2},
+    "ions.heating.WTOT":  {"dist": "Uniform", "err": 0.2},
+    "ions.heating.RHEAT": {"dist": "Uniform", "err": 0.2},
+    "ions.heating.FWHEAT":{"dist": "Uniform", "err": 0.2}
 }
 
 # CPO and XML files containg initial values of uncertain params
@@ -57,7 +64,7 @@ input_xml_filename = "source_dummy.xml"
 input_xsd_filename = "source_dummy.xsd"
 
 # The quantities of intersts list and the cpo file to set them
-output_columns = ["te.value"]
+output_columns = ["te.value", "ti.value"]
 output_filename = "ets_coreprof_out.cpo"
 output_cponame = "coreprof"
 
@@ -78,7 +85,7 @@ params = {**params_cpo, **params_xml}
 vary = {**vary_cpo, **vary_xml}
 
 # Initialize Campaign object
-campaign_name = "UQ-BCSR_loopGem0_"
+campaign_name = "UQ-LoopGem0_"
 my_campaign = uq.Campaign(name=campaign_name, work_dir=tmp_dir)
 
 # Create new directory for commons inputs
@@ -130,7 +137,7 @@ my_campaign.add_app(name=campaign_name,
                     decoder=decoder)
 
 # Create the sampler
-my_sampler = uq.sampling.PCESampler(vary=vary, polynomial_order=3)
+my_sampler = uq.sampling.PCESampler(vary=vary, polynomial_order=3, sparse=True)
 my_campaign.set_sampler(my_sampler)
 
 # Will draw all (of the finite set of samples)
@@ -165,9 +172,33 @@ my_campaign.apply_analysis(analysis)
 # Get results
 results = my_campaign.get_last_analysis()
 
-# Get Descriptive Statistics
+# The x-axis for graphics
 input_cpo_file = os.path.join(cpo_dir, input_cpo_filename)
 corep = read(input_cpo_file, "coreprof")
 rho = corep.rho_tor_norm
+
+# TODO store Statistics and Sobols in csv files and save them
+
+# Plot Statistics and Sobols
+for i, qoi in enumerate(output_columns):
+    mean = results.describe(qoi, 'mean')
+    std = results.describe(qoi, 'std')
+    p1 = results.describe(qoi, '1%')
+    p99 = results.describe(qoi, '99%')
+    sob1 = results.sobols_first(qoi)
+    sobt = results.sobols_total(qoi)
+
+    plot_moments(mean, std, per=[p1, p99], x=rho, xlabel="rho_tor", ylabel=qoi,
+                 ftitle="WF (w/ GEM0): \n Descriptive statistics - QoI: "+qoi,
+                 fname="wf-gem0_stats_"+str(i)+".png")
+
+    plot_sobols_8(sob1, x=rho,
+                ftitle='WF (w/ GEM0): \n First Sobol indices - QoI: '+qoi,
+                fname='wf-gem0_sob1_'+str(i)+'.png')
+
+    plot_sobols_8(sobt, x=rho,
+                ftitle='WF (w/ GEM0): \n Total Sobol indices - QoI: '+qoi,
+                fname='wf-gem0_sobt_'+str(i)+'.png')
+
 
 print('UQ-Workflow LOOP-GEM0: START')

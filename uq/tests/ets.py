@@ -38,8 +38,8 @@ exec_code = "ets_test"
 
 # Define the uncertain parameters
 input_params = {
-    "te.boundary.value": {"dist": "uniform", "err":  0.2},
-    "ti.boundary.value": {"dist": "uniform", "err": 0.2}
+    "te.boundary.value": {"dist": "Normal", "err":  0.2},
+    "ti.boundary.value": {"dist": "Normal", "err": 0.2}
 }
 
 # CPO file containg initial values of uncertain params
