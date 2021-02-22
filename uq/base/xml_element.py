@@ -57,14 +57,23 @@ class XMLElement():
         elem_name = param_name.split(".")[-1]
         path = tag + "[@name='" + elem_name + "']"
         node = xsd_root.find(path)
-
         if node is None:
             msg = "Wrong element name"
             logging.error(msg)
             raise RuntimeError(msg)
 
         attr = node.attrib
-        elem_type = attr["type"].split(":")[1]
+        if attr["type"] == "FloatList":
+            elem_val = elem.text
+            list_val = list(set(elem_val.split(" ")) - set([""]))
+            if len(list_val) == 1:
+                elem_type = "float"
+            else:
+                msg = "FloatList is not yet treated."
+                logging.error(msg)
+                raise RuntimeError(msg)
+        else:
+            elem_type = attr["type"].split(":")[1]
 
         # The element value
         if elem_type == "float":
