@@ -2,14 +2,14 @@
 ymmsl_version: v0.1
 
 model:
-  name: fusion_gem0
+  name: fusion_gem
 
 #  compute_elements:
   components:
     init:        init_M3
     stop:        stop_M3
     transport:   ets_M3
-    turbulence:  gem0_M3
+    turbulence:  gem_M3
     equilibrium: chease_M3
     duplicate:   duplicate_M3
 
@@ -32,7 +32,7 @@ model:
     transport.toroidfield_final: stop.toroidfield_in
 
 settings:
-  transport.duration: 0.5
+  transport.duration: 0.05
   transport.dt: 0.01
   init_cpo_dir: "../../workflows/AUG_28906_6"
   final_cpo_dir: "./"
