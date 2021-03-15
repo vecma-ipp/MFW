@@ -1,7 +1,7 @@
 #!/bin/bash
-#SBATCH --time=00:10:00         	# time limits
+#SBATCH --time=01:00:00         	# time limits
 #SBATCH --nodes=1 			# nodes
-#SBATCH --ntasks-per-node=2		# tasks per node
+#SBATCH --ntasks-per-node=8		# tasks per node
 ###SBATCH --cpus-per-task=1		# CPU per task
 ###SBATCH --mem=118GB			# memory (max 180GB/node in skl_fua)
 #SBATCH --partition=skl_fua_dbg		# partition to be used (max. 2hr for dbg)
@@ -9,7 +9,7 @@
 #SBATCH --job-name=gem_M3		# job name
 #SBATCH --err=test-%j.err			# std-error file
 #SBATCH --out=test-%j.out			# std-output file
-#SBATCH --account=FUA34_UQMWA2 			# account number
+#SBATCH --account=FUA35_UQMWA3 			# account number
 #SBATCH --mail-type=END				# specify email notification
 #SBATCH --mail-user=onnie.luk@ipp.mpg.de	# e-mail address
 

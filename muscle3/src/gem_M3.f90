@@ -1,6 +1,5 @@
 program gem_M3
   use gem_standalone
-  use imp4dv_standalone
   use ymmsl
   use libmuscle_mpi
   use mpi
@@ -26,7 +25,6 @@ program gem_M3
   ! code specific
   character(kind=c_char), pointer :: coreprof_in_buf(:)
   character(kind=c_char), pointer :: equilibrium_in_buf(:)
-  character(kind=c_char), pointer :: coretransp_flux_buf(:)
   character(kind=c_char), pointer :: coretransp_out_buf(:)
 
   call MPI_Init(ierr)
@@ -87,25 +85,22 @@ program gem_M3
      call gem2buf( &
           equilibrium_in_buf, &
           coreprof_in_buf, &
-          coretransp_flux_buf)
-
-     print *,"calling imp4dv"
-
-     call imp4dv2buf( &
-          equilibrium_in_buf, &
-          coreprof_in_buf, &
-          coretransp_flux_buf, &
           coretransp_out_buf)
 
-     sdata = LIBMUSCLE_Data_create_byte_array(coretransp_out_buf)
-     smsg = LIBMUSCLE_Message_create(t_cur, sdata)
-     call LIBMUSCLE_Instance_send(instance, 'coretransp_out', smsg)
-     call LIBMUSCLE_Message_free(smsg)
-     call LIBMUSCLE_Data_free(sdata)
+     call MPI_Barrier(MPI_COMM_WORLD, ierr)
+
+     if (irank == root_rank) then
+
+        sdata = LIBMUSCLE_Data_create_byte_array(coretransp_out_buf)
+        smsg = LIBMUSCLE_Message_create(t_cur, sdata)
+        call LIBMUSCLE_Instance_send(instance, 'coretransp_out', smsg)
+        call LIBMUSCLE_Message_free(smsg)
+        call LIBMUSCLE_Data_free(sdata)
+
+     end if
      
      deallocate(equilibrium_in_buf)
      deallocate(coreprof_in_buf)
-     deallocate(coretransp_flux_buf)
      deallocate(coretransp_out_buf)
 
   end do
