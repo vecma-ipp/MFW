@@ -137,7 +137,7 @@ my_campaign.add_app(name=campaign_name,
                     decoder=decoder)
 
 # Create the sampler
-my_sampler = uq.sampling.PCESampler(vary=vary, polynomial_order=3, sparse=True)
+my_sampler = uq.sampling.PCESampler(vary=vary, polynomial_order=4, sparse=True)
 my_campaign.set_sampler(my_sampler)
 
 # Will draw all (of the finite set of samples)
@@ -180,6 +180,17 @@ rho = corep.rho_tor_norm
 # TODO store Statistics and Sobols in csv files and save them
 
 # Plot Statistics and Sobols
+param_names = {
+    "te.boundary.value": "te.boundary",
+    "ti.boundary.value": "ti.boundary",
+    "electrons.heating_el.WTOT_el":   "WTOT_el" ,
+    "electrons.heating_el.RHEAT_el":  "RHEAT_el" ,
+    "electrons.heating_el.FWHEAT_el": "FWHEAT_el",
+    "ions.heating.WTOT":  "WTOT_ion" ,
+    "ions.heating.RHEAT": "RHEAT_ion" ,
+    "ions.heating.FWHEAT":"FWHEAT_ion"
+}
+
 for i, qoi in enumerate(output_columns):
     mean = results.describe(qoi, 'mean')
     std = results.describe(qoi, 'std')
@@ -189,15 +200,15 @@ for i, qoi in enumerate(output_columns):
     sobt = results.sobols_total(qoi)
 
     plot_moments(mean, std, per=[p1, p99], x=rho, xlabel="rho_tor", ylabel=qoi,
-                 ftitle="WF (w/ GEM0): \n Descriptive statistics - QoI: "+qoi,
+                 ftitle="WF w/ GEM0.  Descriptive statistics - QoI: "+qoi,
                  fname="wf-gem0_stats_"+str(i)+".png")
 
-    plot_sobols_8(sob1, x=rho,
-                ftitle='WF (w/ GEM0): \n First Sobol indices - QoI: '+qoi,
+    plot_sobols_8(sob1, params=param_names, x=rho,
+                ftitle='WF w/ GEM0. First Sobol indices - QoI: '+qoi,
                 fname='wf-gem0_sob1_'+str(i)+'.png')
 
-    plot_sobols_8(sobt, x=rho,
-                ftitle='WF (w/ GEM0): \n Total Sobol indices - QoI: '+qoi,
+    plot_sobols_8(sobt, params=param_names, x=rho,
+                ftitle='WF w/ GEM0. Total Sobol indices - QoI: '+qoi,
                 fname='wf-gem0_sobt_'+str(i)+'.png')
 
 

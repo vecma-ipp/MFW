@@ -5,7 +5,7 @@ import numpy as np
 
 # TODO add mins and maxs instead of 1% and 99%
 def plot_moments(mean, std, per=None, x=None, xlabel=None, ylabel=None,
-                 ftitle=None, fname=None, dpi=128, fsize=11):
+                 ftitle=None, fname=None, dpi=200, fsize=11):
     matplotlib.rcParams.update({'font.size': fsize})
 
     plt.switch_backend('agg')
@@ -39,7 +39,7 @@ def plot_moments(mean, std, per=None, x=None, xlabel=None, ylabel=None,
     plt.close(fig)
 
 def plot_sobols(sobols, params=None, x=None, xlabel=None, ylabel=None,
-                ftitle=None, fname=None, dpi=128, fsize=11):
+                ftitle=None, fname=None, dpi=200, fsize=11):
     matplotlib.rcParams.update({'font.size': fsize})
 
     plt.switch_backend('agg')
@@ -72,20 +72,20 @@ def plot_sobols(sobols, params=None, x=None, xlabel=None, ylabel=None,
     plt.close(fig)
 
 def plot_sobols_8(sobols, params=None, x=None, xlabel=None, ylabel=None,
-                ftitle=None, fname=None, dpi=128, fsize=11):
+                ftitle=None, fname=None, dpi=200, fsize=10):
     matplotlib.rcParams.update({'font.size': fsize})
 
     plt.switch_backend('agg')
     fig, axs = plt.subplots(nrows=2, ncols=4, sharex=True, sharey=True)
 
     if params is None:
-        params = list(sobols.keys())
+        params = {p:p for p in sobols.keys()}
 
-    for i, par in enumerate(params):
+    for i, par in enumerate(sobols.keys()):
         s = sobols[par]
         ax = axs[i//4, i%4]
         ax.plot(x, s)
-        ax.set_title(par)
+        ax.set_title(params[par])
         ax.grid()
 
     fig.suptitle(ftitle)

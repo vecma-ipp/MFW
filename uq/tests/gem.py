@@ -84,7 +84,7 @@ os.system("cp " + cpo_dir + "/ets_coreprof_in.cpo "
                 + common_dir + "/gem_coreprof_in.cpo")
 
 # Copy restart file
-os.system("cp " + cpo_dir + "/t00.dat " + common_dir)
+os.system("cp " + cpo_dir + "/t0?.dat " + common_dir)
 
 # Copy XML and XSD files
 os.system("cp " + xml_dir + "/gem.xml " + common_dir)
