@@ -23,29 +23,24 @@ class Integrator:
 
         integration_result = 0.
 
+        h_s = X_domain[1:] - X_domain[:-1]
+        x_mids = 0.5 * (X_domain[:-1] + X_domain[1:])
+
         if rule == "trapezoidal":
-            # i = 0
-            # for (x_a, x_b) in zip(X_domain[:-1], X_domain[1:]):
-            #     integration_result += 0.5 * (x_b - x_a) * (f(x_a) + f(x_b)) * dpx[i]
-            #     i += 1
 
             #for i in range(len(dpx)):  # different from midpoint, the extremes are re-weighted
             #    integration_result += 0.5 * (X_domain[i+1] - X_domain[i]) * (f(X_domain[i]) + f(X_domain[i+1])) * dpx[i]
 
-            h_s = (X_domain[1:] - X_domain[:-1])
             f_w_s = 0.5 * (f(X_domain[1:]) + f(X_domain[:-1]))
-            integration_result = sum(h_s * f_w_s * dpx)  #TODO Why pdf is not == 0.0, but accumulates in the begining?
+            integration_result = sum(h_s * f_w_s * dpx)
 
         if rule == "simpson_1_3":  # RETHINK! Applicable if f(.) and pdx(.) could be defined for any x e X
 
-            h_s = (X_domain[1:] - X_domain[:-1])
             f_w_s = f(X_domain[:-2]) + 4*f(X_domain[1:-1]) + f(X_domain[2:]) / 6.
             integration_result = h_s * f_w_s * dpx
 
         if rule == "riemann":
 
-            h_s = (X_domain[1:] - X_domain[:-1])
-            x_mids = 0.5*(X_domain[:-1] + X_domain[1:])
             f_w_s = f(x_mids)
             integration_result = sum(h_s * f_w_s * dpx)
 
@@ -63,10 +58,8 @@ class Integrator:
             # Could the posterior computation be performed easily, for example by multiplication of
             # matrix and vector of corresponding weights?
 
-            h_s = (X_domain[1:] - X_domain[:-1])
-            x_mids = 0.5 * (X_domain[:-1] + X_domain[1:])
             f_w_s = f(x_mids)
-            pdf_vals = np.exp(dpx.score_samples(0.5*(X_domain[:-1] + X_domain[1:]).reshape(-1, 1)))
+            pdf_vals = np.exp(dpx.score_samples(x_mids.reshape(-1, 1)))
             integration_result = sum(h_s * f_w_s * pdf_vals)
 
         if rule == "b_quad":
@@ -76,3 +69,28 @@ class Integrator:
 
         return integration_result
 
+    def integrate_with_measure_2D(self, X_domain, dpx, f=(lambda x1, x2: x1+x2), rule="trapezoidal"): # DOES NOT MAKE SENSE TO IMPLEMENT IF WE CONSIDER A SINGLE DEPENDENT VARIABLE
+        """
+        Calculated an integral Int_{X_domain[:, 0] x X_domain[:, 1]}_(f(x)dp(x))
+        Accepts X_domain c R^2
+        Performs computation assuming dp(x) is a p.w.c pdf over X_domain
+        applies a simplest trapezoidal integration
+        :param X_domain: edges of bins of the integration domain X
+        :param dpx: p.w.c. measure dp(x) on X
+        :param f: function  f(x):R^2->R which we integrate
+        :return: integral value, a scalar
+        """
+
+        integration_result = 0.
+
+        if rule == "trapezoidal":
+
+            h_s = np.tensordot((X_domain[1:, 0] - X_domain[:-1, 0]), (X_domain[1:, 1] - X_domain[:-1, 1]), axes=0)
+            f_w_s = 0.25 * (f(X_domain[1:, 0], X_domain[1:,  1]) + f(X_domain[:-1, 0], X_domain[:-1, 1]) +
+                            f(X_domain[1:, 0], X_domain[:-1, 1]) + f(X_domain[:-1, 0], X_domain[1:,  1]))
+            integration_result = sum(h_s * f_w_s * dpx)
+
+        if rule == "b_quad":
+            raise RuntimeError("Integration rule {} is not implemented yet.".format(rule))
+
+        return integration_result
