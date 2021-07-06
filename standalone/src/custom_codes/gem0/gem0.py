@@ -2,9 +2,10 @@ import numpy as np
 import math
 import copy
 
-#import sys
-#import os
-#sys.path.append(os.path.abspath("/marconi/home/userexternal/yyudin00/code/MFW/standalone/src/custom_codes/gem0/"))
+import sys
+import os
+sys.path.append(os.path.abspath("/marconi/home/userexternal/yyudin00/code/MFW/standalone/src/custom_codes/gem0/"))
+sys.path.append(os.path.abspath("C:/Users/user/Documents/UNI/MPIPP/PHD/code/MFW/standalone/src/custom_codes/gem0/"))
 
 from turb_constructor import turb_constructor
 import assign_turb_parameters

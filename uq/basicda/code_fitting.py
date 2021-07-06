@@ -188,7 +188,8 @@ thresholds = np.logspace(-1, +1, 3) * popt['threshold']
 
 
 # Plot graphs for single R->R mapping, at each graph multiple combinations of free parameter values
-def plot_diff_freparams(thresholds, betars):
+
+def plot_diff_freeparams(thresholds, betars):
     for y_n, (y_dim_num, y_short_name) in y_names.items():
         for x_n, (x_dim_num, x_short_name) in x_names.items():
             xinds = grid_slice(x_domain, [x_dim_num]).tolist()
@@ -210,7 +211,7 @@ def plot_diff_freparams(thresholds, betars):
             plt.savefig('gem0_{}_{}_thrlin_betarlin.png'.format(y_short_name, x_short_name))
             plt.close()
 
-plot_diff_freparams(thresholds, betars)
+#plot_diff_freeparams(thresholds, betars)
 
 # Plot for a concrete free parameter values, at each graph all possible R->R mappings
 
@@ -262,4 +263,4 @@ def plot_diff_response(thresholds, betars):
         plt.savefig('gem0_thr{:.4f}_betar{:.7f}.png'.format(par[0], par[1]))
         plt.close()
 
-plot_diff_response(thresholds, betars)
+#plot_diff_response(thresholds, betars)

@@ -273,7 +273,6 @@ def test_gpr_exp_mean(name, x_domain, func, func_mean, func_var, params):
 
     assert abs(y_mean_an - E_y) < 1e-7
 
-@pytest.mark.skip()
 @pytest.mark.parametrize("name, x_domain, func, prior_name, func_mean, func_var, params", [
                              ('exp', [0.8, 1.2], exponent, 'uniform', exp_mean, exp_var, {'r': np.logspace(-1, 1, 3).tolist()}),
                              ('exp', [0.8, 1.2], exponent, 'normal', exp_norm_mean, exp_norm_var, {'r': np.logspace(-1, 1, 3).tolist()}),
@@ -364,7 +363,6 @@ def test_gpr_var(name, x_domain, func, prior_name, func_mean, func_var, params):
                     # assert abs((y_mean_an - E_y_kde) / y_mean_an) < 1e-2  # Calculate how much error is acceptable due to uncertain model
                     # assert abs((y_var_an - Var_y_kde) / y_var_an) < 1e-2
 
-@pytest.mark.skip()
 def test_GPR_vs_PCE():
     # --- Training data
     x_domain = [0.0, 1.5]
@@ -377,7 +375,7 @@ def test_GPR_vs_PCE():
     #X_train = X_train[np.argsort(X_train)] # if random-> ON
 
     # !!! for testing
-    noize_level = 1e-2
+    noize_level = 5e-2
     y_train = np.array([exponent(x, eps=noize_level) for x in X_train]) + np.random.normal(0, noize_level, len(X_train)).reshape(-1, 1)
     #y_train = exponent(X_train, eps=noize_level)  # will not work with noize due to no vectorisation
 
@@ -394,8 +392,8 @@ def test_GPR_vs_PCE():
 
     # --- Prepare a model
     kernel = ConstantKernel(constant_value_bounds=[1e-5, 1e+3]) * Matern() + WhiteKernel(
-        noise_level_bounds=[1e-6, 1e+2])
-    kernel = ConstantKernel() * Matern() + WhiteKernel()
+        noise_level_bounds=[1e-4, 1e+3])
+    #kernel = ConstantKernel() * Matern() + WhiteKernel()
     surrogate = GPR(kernel=kernel).fit(X_train, y_train)
 
     # --- Model training results
@@ -407,7 +405,11 @@ def test_GPR_vs_PCE():
 
     # --- Prior believe on x distribution
     p_x_prior = cp.Uniform(x_domain[0], x_domain[1])
-    p_x_prior = cp.Normal(0.5*(x_domain[0]+x_domain[-1]), (x_domain[-1]-x_domain[0])/6.)
+    sigma_factor = 6.
+    sigma_factor = 12.
+    m_shift_const = 0.
+    m_shift_const = +0.35
+    p_x_prior = cp.Normal(0.5*(x_domain[0]+x_domain[-1]) + m_shift_const, (x_domain[-1]-x_domain[0])/sigma_factor)
 
     # --- Distribution of y for given x-prior
 
@@ -563,6 +565,7 @@ def test_GPR_vs_PCE():
         #assert abs((x_true - x_map)/x_true) < 1e-2
         # TODO think of cases where moments of p(x) can be calculated analytically
 
+@pytest.mark.skip()
 def test_GPR_vs_PCE_2D():
     np.set_printoptions(precision=3)
     g_a = [0.5, 3.0]
@@ -613,7 +616,7 @@ def test_GPR_vs_PCE_2D():
     print(surrogate.kernel_)
     print(surrogate.kernel_.k2.anisotropic)
     print('Testing R2 score {}'.format(surrogate.score(X_test, y_test)))
-    re = (y_test - y_mean_test) / y_test
+    re = abs(y_test - y_mean_test) / y_test
     print('Testing RE avg {}'.format(re.sum()/x_ts_n))
 
     print(f'\navg GPR std on a test set {np.mean(y_std_test)}')
@@ -665,11 +668,13 @@ def test_GPR_vs_PCE_2D():
     n_dim_out = (1, )
     n_dim_stay = 0
     p_y_x1_x2 = bayes.compute_p_y_x_part(p_x_prior, ndim_active=n_dim_out)  # dp(y,x1|x2)
+    p_y_x1x2 = bayes.p_y_x_surrogate_likelihood  # TODO has to be dp(y|x1,x2) , as 3D array
     # Next two object should represent functions over X1 domain
     E_y_x1_gp = np.zeros(x_bins[n_dim_stay])
     Var_y_x1_gp = np.zeros(x_bins[n_dim_stay])
     for x1 in range(x_bins[n_dim_stay]):   # TODO rewrite the underlying formula for E_X-1_Y|X1
         E_y_x1_gp[x1] = bayes.integrator.integrate_with_measure(y_bin_edges, p_y_x1_x2[:, x1], rule="riemann")
+        E_y_x1_gp[x1] = bayes.integrator.integrate_with_measure(x_bin_edges[n_dim_out[0]], p_y_x1x2[:, x1, :], rule="riemann") # TODO: has to be integral over X2 here (for every values of Y, X1)
         Var_y_x1_gp[x1] = bayes.integrator.integrate_with_measure(y_bin_edges, p_y_x1_x2[:, x1],
                                         lambda x: x*x, rule="riemann") - E_y_x1_gp[x1] * E_y_x1_gp[x1]
     p_x1 = p_x_prior[n_dim_stay].pdf(x_mid_vals[n_dim_stay]).reshape(-1)
@@ -679,29 +684,57 @@ def test_GPR_vs_PCE_2D():
     S_1_gp = (Var_y_gp - E_Var_y_x1_gp) / Var_y_gp
 
     ####################
-    # dimension to analyse 1 - alternative calculation
+    # dimension to analyse 1 - alternative calculation: Var_i (E_-i(y|x_i))
     n_dim_out = (1, )
     n_dim_stay = 0
 
     p_y_x1 = bayes.compute_p_y_x_part(p_x_prior, ndim_active=n_dim_out)  # dp(y|x1)
-    p_y_x2 = bayes.compute_p_y_x_part(p_x_prior, ndim_active=(n_dim_stay,))  # dp(y|x2)
+    #p_y_x2 = bayes.compute_p_y_x_part(p_x_prior, ndim_active=(n_dim_stay,))  # dp(y|x2)
 
     E_x2_y_x1_gp = np.zeros(x_bins[n_dim_stay])
     for x1 in range(x_bins[n_dim_stay]):
-        E_x2_y_x1_gp[x1] = bayes.integrator.integrate_with_measure(y_bin_edges, p_y_x2[:, x1], rule="riemann")
+        E_x2_y_x1_gp[x1] = bayes.integrator.integrate_with_measure(y_bin_edges, p_y_x1[:, x1], rule="riemann")
 
     p_x1 = p_x_prior[n_dim_stay].pdf(x_mid_vals[n_dim_stay]).reshape(-1)
 
     E_x2_y_x1_gp_func = lambda x: E_x2_y_x1_gp[bayes.walk_bins(x, x_bin_edges[n_dim_stay])[-1]]
 
-    E_E_x2_y_x1_gp =  bayes.integrator.integrate_with_measure(x_bin_edges[n_dim_stay],
+    E_E_x2_y_x1_gp_2 =  bayes.integrator.integrate_with_measure(x_bin_edges[n_dim_stay],
                                                             p_x1, lambda x: E_x2_y_x1_gp_func(x), rule='riemann')
-    Var_E_x2_y_x1_gp = bayes.integrator.integrate_with_measure(x_bin_edges[n_dim_stay],
+    Var_E_x2_y_x1_gp_2 = bayes.integrator.integrate_with_measure(x_bin_edges[n_dim_stay],
                                                             p_x1, lambda x: np.power(E_x2_y_x1_gp_func(x), 2), rule='riemann')\
-                       - E_E_x2_y_x1_gp * E_E_x2_y_x1_gp
+                         - E_E_x2_y_x1_gp_2 * E_E_x2_y_x1_gp_2
 
-    S_1_gp = Var_E_x2_y_x1_gp / Var_y_gp
+    S_1_gp_2 = Var_E_x2_y_x1_gp_2 / Var_y_gp
     ##################
+
+    ##################
+    # dimension to analyse 1 - alternative calculation: considering GP mean value only
+    n_dim_out = (1, )
+    n_dim_stay = 0
+    x1_mids = 0.5*(x_bin_edges[0][1:] - x_bin_edges[0][:-1])
+
+    p_x2 = p_x_prior[n_dim_out[0]].pdf(x_mid_vals[n_dim_stay]).reshape(-1)
+    p_x1 = p_x_prior[n_dim_stay].pdf(x_mid_vals[n_dim_stay]).reshape(-1)
+
+    E_x2_y_x1_gp = np.zeros(x_bins[n_dim_stay])
+    for x1 in range(x_bins[n_dim_stay]):
+        #x1_coord = bayes.walk_bins([x1], x_bin_edges[n_dim_stay])[-1]
+        x1_coord = x1_mids[x1]
+        y_func = lambda x: bayes.p_y_x_surrogate_likelihood.predict(np.vstack([x1_coord*np.ones(len(x)), x]).transpose())
+        E_x2_y_x1_gp[x1] = bayes.integrator.integrate_with_measure(x_bin_edges[n_dim_out[0]], p_x2, y_func, rule="riemann")
+
+    E_x2_y_x1_gp_func = lambda x: E_x2_y_x1_gp[bayes.walk_bins(x, x_bin_edges[n_dim_stay])[-1]]
+
+    E_E_x2_y_x1_gp_3 = bayes.integrator.integrate_with_measure(x_bin_edges[n_dim_stay],
+                                                            p_x1, E_x2_y_x1_gp_func, rule='riemann')
+    Var_E_x2_y_x1_gp_3 = bayes.integrator.integrate_with_measure(x_bin_edges[n_dim_stay],
+                                                            p_x1, lambda x: np.power(E_x2_y_x1_gp_func(x), 2), rule='riemann')\
+                       - E_E_x2_y_x1_gp_3 * E_E_x2_y_x1_gp_3
+
+    S_1_gp_3 = Var_E_x2_y_x1_gp_3 / Var_y_gp
+    ################
+
 
     # dimension to analyse 2
     n_dim_out = (0, )
@@ -725,7 +758,7 @@ def test_GPR_vs_PCE_2D():
                      abs((S_2_gp - S_i_an[1]) / S_i_an[1])]
 
     print("GPR S_{} = {:.4} ; number of samples: {}. Relative errors are {}"
-          .format(1, S_1_gp, len(X_train), rel_error_s_i[0]))
+          .format(1, S_1_gp_3, len(X_train), rel_error_s_i[0]))
     print("GPR S_{} = {:.4} ; number of samples: {}. Relative errors are {}"
           .format(2, S_2_gp, len(X_train), rel_error_s_i[1]))
 
@@ -737,8 +770,11 @@ def test_GPR_vs_PCE_2D():
     evaluations = [g_function(x_pce, a=g_a, d=2) for x_pce in x_pce_s.T]
     pce_approx = cp.fit_quadrature(polynomial_expansion, x_pce_s, w_pce_s, evaluations)
     S_i_pce = cp.Sens_m(pce_approx, p_x_prior)
+    Var_pce = cp.Var(pce_approx, p_x_prior)
     rel_error_mean_pce = abs((S_i_an - S_i_pce) / S_i_an)
     print("\n")
+    print("PCE Var = {}"
+          .format(1, Var_pce))
     print("PCE S_{} = {:.4} ; number of samples: {}. Relative errors are {}"
           .format(1, S_i_pce[0], (polynomial_order+1)**2, rel_error_mean_pce[0]))
     print("PCE S_{} = {:.4} ; number of samples: {}. Relative errors are {}"

@@ -80,24 +80,6 @@ def get_run_data(foldname, codename='gem0', input_index=[61]):
     
     return pd.DataFrame([[teval[0], tival[0], teddrho[0], tiddrho[0], teflux[0], tiflux[0]]], columns=Xlabels + Ylabels)
 
-def plot_camp_vals(data, name='gem0'):
-    """
-    Plots input and output values against run number
-    :argument data: pandas dataframe with features and results of the campaign
-    """
-    Xlabels = ['te_value', 'ti_value', 'te_ddrho', 'ti_ddrho']
-    Ylabels = ['te_transp_flux', 'ti_transp_flux']
-    #Ylabels = ['te_transp_flux']
-    data.reset_index()
-    
-    data[Xlabels].plot(style='o')
-    plt.savefig(name + '_camp_par_vals.png')
-    plt.close()
-    
-    data[Ylabels].plot(style='o', logy=True)
-    plt.savefig(name + '_camp_res_vals.png')
-    plt.close()
-
 def get_camp_dataframe(foldname, codename='gem0', input_index=[61]):
     """
     Get set of input-outputs for a campaign of simualtion runs
@@ -325,7 +307,7 @@ def get_int_camp_data(basefolder, paramname='te.ddrho'):
     return df
 
 def deriv(prof, delta):
-    prof_deriv = prof[1:] - prof [0:-1] / delta
+    prof_deriv = prof[1:] - prof[0:-1] / delta
     return prof_deriv
 
 ###---------------------------------------------------------

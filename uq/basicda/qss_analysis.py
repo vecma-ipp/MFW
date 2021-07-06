@@ -3,6 +3,10 @@ from toy_surrogate import ExtCodeHelper
 from da_utils import read_sim_csv
 from joblib import load
 
+import pandas as pd
+import numpy as np
+import os
+
 from extcodehelper import ExtCodeHelper
 
 #steps: 
@@ -22,7 +26,7 @@ def target_distribution(source, target_names=["ti_flux"]):
 
     # dictionary of densities
     for target_name in target_names:
-        target_distributions[target_name] = simdata[[target_name]] # TODO: denisity in a separate data structure 
+        target_distributions[target_name] = simdata[[target_name]]  # TODO: denisity in a separate data structure
     return target_distributions
 
 def target_expectation(target_distribution):
@@ -45,7 +49,7 @@ def qss_input(function, input_domain, input_distribution, output_distribution, o
     for index in range(len(input_domain)):
         # TODO: better search - N-trees + marching hypercubes ?
         #if abs( function(np.array([input_point])) - targ ) < 1e-4:
-        if abs (output_predicted[index] - targ ) < 1e-3:
+        if abs(output_predicted[index] - targ ) < 1e-3:
             optinput.append(input_domain[index])
 
     return optinput
@@ -71,7 +75,7 @@ mod_folder = '../data/models/'
 mod_filename = 'gpr_mod_gem.joblib' # surrogate from GEM0
 model_path = os.path.join(mod_folder, mod_filename)
 surrogate = load(model_path)
-output_predicted = surrogate.predict(input_domain).reshape(-1,1) # TODO: outputs the same
+output_predicted = surrogate.predict(input_domain).reshape(-1,1)  # TODO: outputs the same
 
 opt_input = qss_input(function, input_domain, input_distributions, output_distributions["flux-Ti-ft5"], output_predicted)
 

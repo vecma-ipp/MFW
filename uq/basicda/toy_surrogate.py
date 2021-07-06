@@ -125,7 +125,7 @@ def get_max_decomp(utility, n_batch=4):
 def get_new_sample(x, utility):
     return x[utility.argmax()]
 
-def get_new_candidates(x_mesh, utility):  # TODO: get an array of candidates, for each "variance anti-node"
+def get_new_candidates(x_mesh, utility):  # TODO: get an array of candidatesutility, for each "variance anti-node"
     cands = []
     ### --- find local maximum of sigma
     # work for 2D only now
@@ -177,7 +177,7 @@ def get_new_candidates(x_mesh, utility):  # TODO: get an array of candidates, fo
 
     ### --- option 5: iterative optimiser started from several point in paramter space
 
-    return cands
+    return candsutility
 
 def stop_train_criterium_rsd(y_pred, sigma, eps=0.005):
     rsd_min = (sigma / abs(y_pred)).min()
@@ -210,15 +210,15 @@ def white_reverse_linear_trend(x_observ, y_observ_white, reg):
 
     return y_observ
 
-def GPR_analysis_1d(x_data, x_domain, y_par=[0.1, 9.9, 20], x_par=[0, 10, 64], f=lambda x: x * np.sin(x), eps=1.0,
+def GPR_analysis_1d(x_data, x_domain, y_observ, y_par=[0.1, 9.9, 20], x_par=[0, 10, 64], f=lambda x: x * np.sin(x), eps=1.0,
                      scale=1e7):
     # case: with noise - NO
     # X = np.atleast_2d(np.linspace(y_par[0], y_par[1], y_par[2])).T
 
     x_observ = np.atleast_2d(x_data[:, 0]).T
-    y_observ = f(x_observ).ravel()  # TODO reuse the old function evaluations
 
-    y_observ = y_observ / scale  # scale naive-est
+    # y_observ = f(x_observ)
+    # y_observ = y_observ / scale  # scale naive-est
 
     # add noise - NO
     # dy = 0.5 + eps * np.random.random(y.shape)
@@ -229,7 +229,7 @@ def GPR_analysis_1d(x_data, x_domain, y_par=[0.1, 9.9, 20], x_par=[0, 10, 64], f
     # TODO: compose a suitable kernel/ methods to define kernel
     # kernel = ConstantKernel(1.0, (1e-3, 1e3)) * RBF(10, (1e-2, 1e2))
     kernel = Matern() + \
-             WhiteKernel(1e-6, noise_level_bounds=[1e-7, 1e-5])
+             WhiteKernel(1e-6, noise_level_bounds=[1e-7, 1e-4])
            # ConstantKernel() +
 
     # kernel = ConstantKernel(1e7, (1e-8, 1e+10)) + Matern(length_scale=1e1, length_scale_bounds=(1e-8, 1e+10)) # for GEM in Te/Ti unscaled
@@ -244,12 +244,11 @@ def GPR_analysis_1d(x_data, x_domain, y_par=[0.1, 9.9, 20], x_par=[0, 10, 64], f
     # predictions + MSE
     y_pred, sigma = gp.predict(x_domain, return_std=True)
 
-    y_observ = y_observ * scale  # scale naive-est
-    y_pred = y_pred * scale
-    sigma = sigma * scale
+    #y_observ = y_observ * scale  # scale naive-est
+    #y_pred = y_pred * scale
+    #sigma = sigma * scale
 
-    # print(sigma)
-    return x_observ, y_observ, y_pred, sigma, gp
+    return x_observ, y_pred, sigma, gp
 
 def GPR_analysis_2d(x_observ, y_observ, x_domain, x_par=[[0., 1., 8], [0., 1., 8]]):
     # y_sc_factor = 1e4
@@ -382,7 +381,7 @@ def test_gp_domain_decomposition(x_domain, y_test, x_observ, y_observ):
         for i in range(len(x_domains) - 1):
             models.append(gp.fit(x_domains[i], y_observ))
             thetas.append(gp.kernel.theta)
-            _, err = stop_train_criterium_rmse(y_pred, y_test.T.reshape(-1))
+            _, err = stop_train_criterium_rmse(y_pred, y_test.T)
             errloc = err + errloc
             print(thetas)
         errs.append(errloc)
@@ -423,7 +422,9 @@ def surrogate_loop(pardim):
     new_points = []
     n_init = 4
 
-    flux_noize = 1e4
+    #flux_noize = 7e3
+    flux_noize = 3e3
+    scale = 1e7
 
     #ext_code_helper_1 = ExtCodeHelper(1)
     ext_code_helper = ExtCodeHelper(2)
@@ -443,24 +444,18 @@ def surrogate_loop(pardim):
         #function = lambda x: np.array(ext_code_helper_4.gem0_call_tefltegrad_array(x))
         #x_param = [-6000., -200., 64]  # for gem in te-grad
 
-        funcname = 'GEM0, Ti_flux of gradTi,'
+        funcname = 'GEM0, Te flux of Te gradient,'
         function = lambda x: np.array(ext_code_helper.gem0_call_tefltegrad_array(x)) +\
-                np.random.normal(0, flux_noize, x.shape[0])  # GEM0 with noize
+                       np.random.normal(0, flux_noize, len(x)).reshape(-1, 1)  # GEM0 with noize
         x_param = [-6000., -200., 64]
+        # for gem in ti-grad # 09.12 plot the response. is there a local minimum? equilibrium at -24202420?
+        # observation: even a visially low noize lead to found optimal h-parameter to prefer high noize kernel
 
-        #function: lambda x: np.array(ext_code_helper.gem0_call_tifltigrad_array(x))
-        #x_param = [-4500., -1000., 32]
-
-        # function = lambda x: np.array(ext_code_helper.gem0_call_tifltigrad_array(x))
-        # x_param = [-5000., -500., 45] # for gem in ti-grad # 09.12 plot the reponse. is there a local minimum? equilibrium at -24202420?
 
         x_data = np.zeros((n_init, 2))
         x_domain = np.atleast_2d(np.linspace(*x_param)).T
         y_test = function(
-            x_domain)  # TODO: some of the things e.g. x_domain are never changed - should be returned all the timei
-
-        y_test1 = function(x_domain)
-        #plot_response_1d(x_domain, [y_test, y_test1], ylabels=['chigb4', 'chigb1'])
+            x_domain) / scale  # TODO: some of the things e.g. x_domain are never changed - should be returned all the timei
 
         y_scaling = lambda y: (y - y_test.min()) / (y_test.max() - y_test.min())  # scale to [0;1]
         x_scaling = lambda x: (x - x_domain.min()) / (x_domain.max() - x_domain.min())
@@ -468,8 +463,8 @@ def surrogate_loop(pardim):
                 x_domain.max() - x_domain.min())  # TODO check if intependent calls are comiled out
 
         # data[:, 0] = np.linspace(*x_param[:-1], n_init)
-        x_data[:, 0] = np.random.rand(n_init) * (x_param[1] - x_param[0]) + x_param[
-            0]  # TODO either choose among grid points or make grid irregular
+        x_data[:, 0] = np.random.rand(n_init) * (x_param[1] - x_param[0]) + x_param[0]  # TODO either choose among grid points or make grid irregular
+        y_observ = function(np.atleast_2d(x_data[:, 0]).T) / scale
 
         x_observe_withtime = []
         y_observe_withtime = []
@@ -479,28 +474,33 @@ def surrogate_loop(pardim):
         y_new_withtime = []
 
         for i in range(8):
-            x_observ, y_observ, y_pred, sigma, model = GPR_analysis_1d(x_data, x_domain, y_par=x_param, x_par=x_param,
-                                                                 f=function, eps=0.0)
-            x_n = get_new_sample(x_domain, sigma)
-            y_n = function(x_n)
+            x_observ, y_pred, sigma, model = GPR_analysis_1d(x_data,
+                                                            x_domain,
+                                                            y_observ,
+                                                            y_par=x_param,
+                                                            x_par=x_param,
+                                                            eps=0.0)
+            x_n = [get_new_sample(x_domain, sigma)]  # TODO choice is always chosen from grid -> apply simple refinement?
+            y_n = function(x_n) / scale  # should be the only place in code to call the function
 
             x_observe_withtime.append(x_observ)
-            y_observe_withtime.append(y_observ)
-            y_pred_withtime.append(y_pred)
-            sigma_withtime.append(sigma)
+            y_observe_withtime.append(y_observ * scale)
+            y_pred_withtime.append(y_pred * scale)
+            sigma_withtime.append(sigma * scale)
             x_new_withtime.append(x_n)
-            y_new_withtime.append(y_n)
+            y_new_withtime.append(y_n * scale)
 
-            plot_prediction_variance(x_observ, y_observ, x_domain, y_test, y_pred, sigma, new_points,
-                                     rmse=0.0, funcname=funcname)
+            #plot_prediction_variance(x_observ, y_observ, x_domain, y_test, y_pred, sigma,
+            #                         x_newpoints=[x_n], y_newpoints=y_n,
+            #                         rmse=0.0, funcname=funcname)
 
-            stop_crit, err = stop_train_criterium_rmse(y_pred, y_test.T.reshape(-1),
-                                                       1e2)  # for normalized problems chose rmse threshold ~0.05
+            stop_crit, err = stop_train_criterium_rmse(y_pred, y_test.T,
+                                                       1e-3)  # for normalized problems chose rmse threshold ~0.05
             errors.append(err)
 
-            new_points = [x_n]  # TODO choice is always chosen from grid -> apply simple refinement?
-            x_data = np.concatenate((x_data, np.array([[x_n[0], 0.0]])),
+            x_data = np.concatenate([x_data, np.array([[x_n[0], 0.0]])],
                                     axis=0)  # TODO adapt grid around new candidates?
+            y_observ = np.concatenate([y_observ, np.array(y_n)], axis=0)
 
             print("R2_score: {}".format(model.score(x_domain, y_test)))
 
@@ -510,7 +510,7 @@ def surrogate_loop(pardim):
                 break
 
         plot_error(errors, 'RMSE_1d')
-        plot_prediction_withtime(x_observe_withtime, y_observe_withtime, x_domain, y_test, y_pred_withtime, sigma_withtime,
+        plot_prediction_withtime(x_observe_withtime, y_observe_withtime, x_domain, y_test * scale, y_pred_withtime, sigma_withtime,
                                  x_newpoints=x_new_withtime, y_newpoints=y_new_withtime, funcname=funcname)
 
     elif pardim == 2:
@@ -560,10 +560,21 @@ def surrogate_loop(pardim):
         ### INITIAL TRAINING POINTS (RANDOM) ------------------------------------------------
         # --- Chose one/several of the grid point as initial point at random
         x_data = np.zeros((n_init, 2))
-        x_data[:, 0] = x1[np.random.randint(low=0, high=len(x1) - 1, size=n_init)]
-        x_data[:, 1] = x2[np.random.randint(low=0, high=len(x2) - 1, size=n_init)]
+        #x_data[:, 0] = x1[np.random.randint(low=0, high=len(x1) - 1, size=n_init)]
+        #x_data[:, 1] = x2[np.random.randint(low=0, high=len(x2) - 1, size=n_init)]
+
         # x_data[:,0] = np.random.rand(n_init)*(x_param[0][1] - x_param[0][0]) + x_param[0][0] # chose of rand unmber in domain in 1d
         # x_data[:,1] = np.random.rand(n_init)*(x_param[1][1] - x_param[1][0]) + x_param[1][0]
+
+        # initial points (corners)
+        x_data[0, 0] = x1[0]
+        x_data[0, 1] = x2[0]
+        x_data[1, 0] = x1[-1]
+        x_data[1, 1] = x2[-1]
+        x_data[2, 0] = x1[0]
+        x_data[2, 1] = x2[-1]
+        x_data[3, 0] = x1[-1]
+        x_data[3, 1] = x2[0]
 
         # --- Some data and functions needed to preprocessing - for now only done when dealing wiht GPR
         x_scale = 1.  # 1e4
@@ -607,10 +618,16 @@ def surrogate_loop(pardim):
             start_resample_ts = time.time()
             # option 1: choose single point of max utility
             x_new_batch = [get_new_sample(x_domain, sigma)]
+
             # option 2: choose a set of point (for all local utility maxima)
             #sigma_ongrid = get_ongrid(x_domain_mesh, x_domain, sigma)
             #x_new_batch = get_new_candidates(x_domain_mesh, sigma_ongrid)
             # print('new {} samples: {}'.format(len(x_new_batch), x_new_batch))
+
+            # option 3: choose as probability of improvement
+            poi_utility = poi_acquisition(y_pred, sigma, y_observ, y_targ=100000)
+            x_new_batch = [get_new_sample(x_domain, poi_utility)]
+
             new_points = (np.array(x_new_batch), function(np.array(x_new_batch)))
 
             print("Choosing new samples took: " + str(time.time() - start_resample_ts) + " seconds")
@@ -620,7 +637,7 @@ def surrogate_loop(pardim):
             errors.append(err)
 
             if i % 1 == 0:
-                plot_prediction_variance_2d(x_observ, y_observ, x_domain, y_test, y_pred, sigma, new_points,
+                plot_prediction_variance_2d(x_observ, y_observ, x_domain, y_test, y_pred, poi_utility.reshape(-1), new_points,
                                             funcname='gem0')
 
             # x_data_old = np.append(x_data, x_n.reshape(1, -1), axis=0)
@@ -656,7 +673,7 @@ def surrogate_loop(pardim):
     # plot_histograms(y_observ, y_observ_clean, y_pred, y_pred_clean)
 
 def surrogate_utility(x_train_data, y_train_data, x_roi_data, original_model):
-    # Error Reduction Estimation: acquisition function for sampling next point to a surragte based on inferred
+    # Error Reduction Estimation: acquisition function for sampling next point to a surrogtae based on inferred
     # variance of the model on current iterations 
     utility = []
     kernel = RBF()
@@ -673,39 +690,42 @@ def surrogate_utility(x_train_data, y_train_data, x_roi_data, original_model):
 
     return -utility.sum()
 
+def poi_acquisition(y_pred, sigma, y_obs, y_targ=None, optfunc=lambda x, y: (x-y)**2):
+
+    jitter = 1e+2
+
+    ind_obs_x_star = optfunc(y_obs, y_targ).argmin()
+    f_star = y_obs[ind_obs_x_star]
+    f_star_ar = np.ones(y_pred.shape) * f_star
+
+    sigma = sigma.reshape(-1, 1)
+
+    poi = np.divide(- optfunc(y_pred, y_targ) + f_star + jitter, sigma)
+
+    return poi
+
+def ei_acquisition(y_pred, sigma, y_targ):
+
+    jitter = 1e-9
+    f_star = y_pred.mean()
+    f_star_ar = np.ones(y_pred.shape) * f_star
+    sigma = sigma.reshape(-1, 1)
+
+    poi = np.divide(abs(y_pred - f_star_ar), sigma + jitter)
+
+    return poi
+
 
 #in_wf, out_wf, time = load_wf_csv_file()
 #add_density_x(in_wf)
 
 ### --- Surrogate loop
-surrogate_loop(1)
+#surrogate_loop(1)
 
-#surrogate_loop(2)
+surrogate_loop(2)
 
 # GP split
 # x_domain, y_test, x_obs, y_obs = prep_1d_gem0_data()
 # test_gp_domain_decomposition(x_domain, y_test, x_obs, y_obs)
 
-### --- Get data from GEM0 for offline training
-
-# gem0_helper = ExtCodeHelper(1)
-#
-# function = lambda x: np.array(gem0_helper.gem0_call_tifltegradtigrad_array(x))
-# x_param = [[-5000., -1000., 32], [-5000., -1000., 32]]
-#
-# import lhsmdu
-#
-# x_domain = lhsmdu.sample(2, 50).reshape(-1, 2)
-# for dim in range(len(x_param)):
-#     x_domain[:, dim] = x_param[dim][0] + x_domain[:, dim] * (x_param[dim][1] - x_param[dim][0])
-#
-# x_domain = np.array(x_domain)
-# y_test = function(x_domain)
-#
-# df = pd.DataFrame()
-#
-# df['te.ddrho'] = x_domain[:, 0]
-# df['ti.ddrho'] = x_domain[:, 1]
-# df['ti.flux']  = y_test[:, 0]
-#
-# df.to_csv('gem0_lhc_res.csv')
+#write_gem0_offline(256, 2, 'gem0_lhc_256.csv')

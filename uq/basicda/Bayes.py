@@ -47,9 +47,9 @@ class Bayes:
 
         self.y_mids = 0.5 * (self.y_bin_edges[:-1] + self.y_bin_edges[1:])
 
-        if n_dim == 0:
+        if n_dim == 1:
             self.x_bins_hs = self.x_bin_edges[1:] - self.x_bin_edges[:-1]
-        elif n_dim == 1:
+        elif n_dim == 2:
             self.x_bins_hs = [self.x_bin_edges[0][1:] - self.x_bin_edges[0][:-1],
                               self.x_bin_edges[1][1:] - self.x_bin_edges[1][:-1]]
         self.y_bins_hs = self.y_bin_edges[1:] - self.y_bin_edges[:-1]

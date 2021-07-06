@@ -6,9 +6,9 @@ from easymfw.templates.cpo_decoder import CPODecoder
 from easymfw.utils.io_tools import get_cpo_inputs
 
 '''
-Perform UQ for the Turblence code GEM
-Uncertainties are driven by: The electon and ion temperatur and
-their gradient localisd by a Flux tube position.
+Perform UQ for the Turbulence code GEM
+Uncertainties are driven by: The electon and ion temperature and
+their gradient localised by a Flux tube position.
 IMPORTANT CHECK: in gem0.xml, nrho_transp = 1
 '''
 

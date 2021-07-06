@@ -212,6 +212,17 @@ def gpy_ard_training(gpr_gpy):
     gpr_gpy.optimize_restarts(20, optimizer="bfgs", max_iters=1000, verbose=False)
     return gpr_gpy
 
+def calculate_p_y(gpr, X, n=500):
+    # get a distribution for x
+    x_dist = X.hist()
+    y_pred = []
+    # sample from p(x) and p(y|x)
+    for i in range(n):
+        x = x_dist.sample()
+        y.append(gpr.sample_y(x))
+    p_y = y_pred ### change everything
+    return p_y
+
 # Main
 if __name__ == "__main__":
 

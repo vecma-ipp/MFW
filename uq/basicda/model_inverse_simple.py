@@ -1,3 +1,4 @@
+
 import numpy as np
 import chaospy as cp
 
@@ -8,14 +9,7 @@ from sklearn.gaussian_process.kernels import DotProduct, Matern, RBF, WhiteKerne
 
 from matplotlib import pyplot as plt
 
-def exp_deterministic_mean(x_domain, a=1., r=2.):
-    return a * (np.exp(-r * x_domain[0]) - np.exp(-r * x_domain[1])) / (r * (x_domain[1] - x_domain[0]))
-
-def exp_deterministic_var(x_domain, a=1., r=2.):
-    exp_mean = exp_deterministic_mean(x_domain, a, r)
-    return a*a*(np.exp(-2*r*x_domain[0])-np.exp(-2*r*x_domain[1]))/(2*r*(x_domain[1]-x_domain[0]))-exp_mean*exp_mean
-
-def plot_model_function(x_train, y_train, x_test, y_pr_mean, y_pr_std,
+def plot_model_function(x_train, y_train, x_test, y_pr_mean, y_pr_std, y_test=None,
                         x_int=None, y_int=None, x_prior=None, ax=None, fig=None):
     """
     Plots a graph of model y(x) for surrogate points, training and testing values of x,y
@@ -35,8 +29,8 @@ def plot_model_function(x_train, y_train, x_test, y_pr_mean, y_pr_std,
     if ax == None and fig == None:
         fig, ax = plt.subplots(figsize=(10, 6))
 
-    ax.plot(x_train, y_train, 'ro-', label='training  func. values')
-    ax.plot(x_test, y_pr_mean, 'b-', label='prediction mean')
+    ax.plot(x_train, y_train, 'go', label='training  func. values')
+    ax.plot(x_test, y_pr_mean, 'b-', label='prediction mean', markersize=4)
     ax.fill_between(x_test, y_pr_mean - 1.9600 * y_pr_std,
                             y_pr_mean + 1.9600 * y_pr_std,
                     alpha=.3, fc='b', label='95% conf. int.')
@@ -51,6 +45,9 @@ def plot_model_function(x_train, y_train, x_test, y_pr_mean, y_pr_std,
     if x_int is not None and y_int is not None:
         ax.plot(x_int, y_int, 'ko', markersize=8.5, label='true point')
 
+    if y_test is not None:
+        ax.plot(x_test, y_test, 'ro-', label='true response curve', markersize=7)
+
     ax.grid(True, which='both')
     ax.legend(loc='best')
     #plt.show()
@@ -61,12 +58,14 @@ def plot_1d_distrib(y_bin_edges, p_y, names={'y': 'y', 'x': 'x'},
     if ax == None and fig == None:
         fig, ax = plt.subplots(figsize=(10, 6))
 
-    im = ax.step(0.5 * (y_bin_edges[:-1] + y_bin_edges[1:]), p_y, 'o-', where='mid')
+    #im = ax.step(0.5 * (y_bin_edges[:-1] + y_bin_edges[1:]), p_y, 'o-', where='mid')
+    im = ax.plot(0.5 * (y_bin_edges[:-1] + y_bin_edges[1:]), p_y, '-')
 
-    # area_under_curve = np.trapz(np.multiply(p_y, y_bin_edges[1:] - y_bin_edges[:-1]))
+    # debug: Check for normalization of distribution density
+    #area_under_curve = np.trapz(np.multiply(p_y, y_bin_edges[1:] - y_bin_edges[:-1]))
     # MC did not calculate integrals considering trapezoidal rule
     # could re-weight extremal points of domain and result will be smaller
-    area_under_curve = np.sum(np.multiply(p_y, y_bin_edges[1:] - y_bin_edges[:-1]))
+    #area_under_curve = np.sum(np.multiply(p_y, y_bin_edges[1:] - y_bin_edges[:-1]))
 
 
     ax.set_title('Prob. for {}; prior {}'.
@@ -114,17 +113,20 @@ def plot_2d_distrib(x_bin_edges, y_bin_edges, p_x_y, names={'x':'x', 'y':'y', 'l
     ax.set_title("Prob. for {}".format(names['label']))
     return ax
 
-def combined_plot(x_bin_edges, y_bin_edges, p_x_y, p_y_x, p_x_prior, p_x, c_y, p_y,
+def combined_plot(x_bin_edges, y_bin_edges, p_x_y, p_y_x, p_x_prior, p_x, c_y, p_y_prior,
                   X_train, y_train, x_true, y_true, y_s):
+
+    x_mid_vals = 0.5*(x_bin_edges[1:] + x_bin_edges[:-1])
+    y_mid_vals = 0.5*(y_bin_edges[1:] + y_bin_edges[:-1])
 
     fig, axs = plt.subplots(nrows=3, ncols=3, figsize=(16, 9))
     #fig.tight_layout()
     fig.subplots_adjust(wspace=0.32, hspace=0.4)
 
     # the prior p(x) density
-    p_x_prior_array = p_x_prior.pdf(0.5*(x_bin_edges[1:] + x_bin_edges[:-1]))
+    p_x_prior_array = p_x_prior.pdf(x_mid_vals)
     plot_1d_distrib(x_bin_edges, p_x_prior_array, ax=axs[0][1], fig=fig,
-                    names={'y': 'x', 'x': 'x~U({x_bin_edges.min():1.2}, {x_bin_edges.max():1.2})'})
+                    names={'y': 'x', 'x': 'x~U({:1.2}, {:1.2})'.format(x_bin_edges.min(), x_bin_edges.max())})
 
     # the conditional likelihood p(x|y) density
     plot_2d_distrib(x_bin_edges, y_bin_edges, np.log2(p_x_y),  # TODO mask probabilities equal 0.0
@@ -137,7 +139,7 @@ def combined_plot(x_bin_edges, y_bin_edges, p_x_y, p_y_x, p_x_prior, p_x, c_y, p
     #axs[1][0].view_init(30, 90)
 
     # the prior p(y) density
-    p_y_prior_array = p_y.pdf(0.5*(y_bin_edges[1:] + y_bin_edges[:-1]))
+    p_y_prior_array = p_y_prior.pdf(y_mid_vals)
     plot_1d_distrib(y_bin_edges, p_y_prior_array, ax=axs[1][2], fig=fig,
                     names={'y': 'y~N({:1.2}, {:1.2})'.format(y_true, y_s), 'x': 'x'})
 
@@ -151,7 +153,7 @@ def combined_plot(x_bin_edges, y_bin_edges, p_x_y, p_y_x, p_x_prior, p_x, c_y, p
     y_pr_means = []
     y_pr_stds = []
     for x_i in range(len(x_bin_edges) - 1):
-        x_val = (0.5*(x_bin_edges[1:] + x_bin_edges[:-1]))[x_i]
+        x_val = x_mid_vals[x_i]
         y_mean, y_std = p_y_x.predict(x_val.reshape(-1, 1), return_std=True)
 
         x_tests.append(x_val)
@@ -159,7 +161,7 @@ def combined_plot(x_bin_edges, y_bin_edges, p_x_y, p_y_x, p_x_prior, p_x, c_y, p
         y_pr_stds.append(y_std)
 
         y_pdf = cp.Normal(y_mean, y_std)
-        p_y_x_array[x_i, :] = y_pdf.pdf(0.5*(y_bin_edges[1:] + y_bin_edges[:-1]))
+        p_y_x_array[x_i, :] = y_pdf.pdf(y_mid_vals)
 
     plot_2d_distrib(x_bin_edges, y_bin_edges, p_y_x_array,
                     names={'x': 'x', 'y': 'y', 'label': 'p(y|x)'},
@@ -169,7 +171,8 @@ def combined_plot(x_bin_edges, y_bin_edges, p_x_y, p_y_x, p_x_prior, p_x, c_y, p
     plot_model_function(X_train, y_train, np.array(x_tests).reshape(-1),
                                           np.array(y_pr_means).reshape(-1),
                                           np.array(y_pr_stds).reshape(-1),
-                                          x_int=x_true, y_int=y_true,
+                                          #x_int=x_true, y_int=y_true,
                                           ax=axs[2][2], fig=fig)
 
-    fig.savefig('BI_MC_plots\ibp_mc_gp_n0025_r_2_y_m_{:1.3}_y_s_{:1.3}.png'.format(y_true, y_s))
+    #fig.savefig('BI_MC_plots\ibp_kde_gp_n0_expr_1_xnorm_y_m_{:1.3}_y_s_{:1.3}.png'.format(y_true, y_s))
+    fig.savefig('BI_MC_plots\hepp_pres\ibp_kde_gp_n0_expr_1_xnorm_y_m_{:1.3}_y_s_{:1.3}.png'.format(y_true, y_s))
