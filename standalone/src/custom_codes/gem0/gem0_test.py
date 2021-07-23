@@ -76,4 +76,3 @@ if __name__ == '__main__':
     #∇Ti  = -2420.64001419732
 
     tidrs = run_mult_ios()
-   

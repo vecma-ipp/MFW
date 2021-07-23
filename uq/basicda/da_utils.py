@@ -2,24 +2,32 @@ import os
 import numpy as np
 import pandas as pd
 import chaospy as cp
+import time as t
 
 import matplotlib
 #matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 params = { #"text.usetex": True,
-          'axes.labelsize': 6,
-          'axes.titlesize':5,
-          'xtick.labelsize':5,
-          'ytick.labelsize':5,
-          'axes.titlepad': 1,
-          'axes.labelpad': 1,
-          'legend.fontsize': 7, 
-          'legend.handlelength': 1}
+          'axes.labelsize': 10,
+          'axes.titlesize': 11.0,
+          'xtick.labelsize': 8,
+          'ytick.labelsize': 8,
+          'axes.titlepad': 3,
+          'axes.labelpad': .7,
+          'legend.fontsize': 9,
+          'legend.handlelength': 1.2}
 plt.rcParams.update(params)
 import matplotlib.tri as mtri
 
 from mpl_toolkits.mplot3d import Axes3D
 from mpl_toolkits.axes_grid1 import make_axes_locatable
+
+from sklearn.neighbors import KernelDensity
+
+from extcodehelper import ExtCodeHelper
+import lhsmdu
+from shutil import copyfileobj
+import re
 
 def exponential_model(x, theta=[1.0, 1.0, 1.0]):
     """
@@ -56,6 +64,77 @@ def walklevel(some_dir, level=1):
         num_sep_this = root.count(os.path.sep)
         if num_sep + level <= num_sep_this:
             del dirs[:]
+
+def write_gem0_offline(n_samples=1000, n_dim=4, filename='gem0_lhc_res.csv'):
+    # Get data from GEM0 for offline training
+
+    st = t.time()
+    gem0_helper = ExtCodeHelper(1)
+    print(f'time to create extcodehelper: {t.time()-st}')
+
+    if n_dim == 4:
+        function = lambda x: np.array(gem0_helper.gem0_call_4param2target_array(x))
+        x_param = [[500., 2400, 16], [500., 2400, 16], [-5000., -1000., 16], [-5000., -1000., 16]]
+    elif n_dim == 2:
+        function = lambda x: np.array(gem0_helper.gem0_call_tefltegradtigrad_array(x))
+        x_param = [[-5000., -1000., 16], [-5000., -1000., 16]]
+
+    st = t.time()
+    x_domain = lhsmdu.sample(n_dim, n_samples).reshape(-1, n_dim)
+    for dim in range(len(x_param)):
+        x_domain[:, dim] = x_param[dim][0] + x_domain[:, dim] * (x_param[dim][1] - x_param[dim][0])
+    print(f'time to create LHC-S: {t.time() - st}')
+
+    x_domain = np.array(x_domain)
+
+    y_test = function(x_domain)
+    y_test = y_test.reshape(y_test.shape[0], y_test.shape[-1])
+
+    df = pd.DataFrame()
+
+    if n_dim == 4:
+        df['te.value'] = x_domain[:, 0]
+        df['ti.value'] = x_domain[:, 1]
+        df['te.ddrho'] = x_domain[:, 2]
+        df['ti.ddrho'] = x_domain[:, 3]
+        df['te.flux'] = y_test[:, 0]
+        df['ti.flux'] = y_test[:, 1]
+    elif n_dim == 2:
+        df['te.ddrho'] = x_domain[:, 0]
+        df['ti.ddrho'] = x_domain[:, 1]
+        df['ti.flux'] = y_test[:, 0]
+
+    df.to_csv(filename)
+
+def remove_header_spaces_csv(filename='AUG_gem0_inoutput_v3.txt', DATADIR='MFW"\\uq\\data\\', WORKDIR="c:\\Users\\user\\Documents\\UNI\\MPIPP\\PHD\\code\\"):
+    with open(WORKDIR + DATADIR + filename, 'r', newline='') as inputfile:
+        with open(WORKDIR + DATADIR + filename + '.tmp', 'w', newline='') as outputfile:
+            firstline = inputfile.readline()
+            newfirstline = ' '.join(firstline.split())
+            outputfile.write(newfirstline)
+            copyfileobj(inputfile, outputfile)
+
+def load_wf_csv_file(data_dir = "c:\\Users\\user\\Documents\\UNI\\MPIPP\\PHD\\cod\\Fusion_Inputs\\UQ_GEM_Data\\runs\\",
+                     input_file='AUG_gem_inoutput.txt',
+                     Xlabels = ['Te-ft5', 'Ti-ft5', 'dTe-ft5', 'dTi-ft5'],
+                     Ylabels = ['flux-Te-ft5', 'flux-Ti-ft5']
+                     ):
+
+    # Xlabels = ['Unnamed: 5', 'Unnamed: 13', 'Unnamed: 21', 'Unnamed: 29']
+    # Ylabels = ['Unnamed: 62', 'Unnamed: 70']
+
+    df = pd.read_csv(data_dir + '\\' + input_file, delimiter=' ', header='infer')
+
+    input_samples = df[Xlabels]
+    output_samples = df[Ylabels]
+
+    time = df['time']
+
+    # print(input_samples.head())
+    # print(output_samples.head())
+
+    # return input_samples.to_numpy()[:, 1:], output_samples.to_numpy()[:]
+    return input_samples, output_samples, time
 
 def read_data_totensor(folder):
     Tes, Tis, Tegs, Tigs, Tefs, Tifs = get_camp_data(folder)
@@ -102,6 +181,24 @@ def grid_slice(data, retinds):
     rowinds = np.where(rowinds)[0]
 
     return rowinds
+
+def plot_camp_vals(data, name='gem0'):
+    """
+    Plots input and output values against run number
+    :argument data: pandas dataframe with features and results of the campaign, result of read_sim_csv()
+    """
+    Xlabels = ['te_value', 'ti_value', 'te_ddrho', 'ti_ddrho']
+    Ylabels = ['te_transp_flux', 'ti_transp_flux']
+    # Ylabels = ['te_transp_flux']
+    data.reset_index()
+
+    data[Xlabels].plot(style='o')
+    plt.savefig(name + '_camp_par_vals.png')
+    plt.close()
+
+    data[Ylabels].plot(style='o', logy=True)
+    plt.savefig(name + '_camp_res_vals.png')
+    plt.close()
 
 def plot_2d_map(df, X, Y, inds=[2,3]):
     Xlabels = ['te_value', 'ti_value', 'te_ddrho', 'ti_ddrho']
@@ -238,7 +335,9 @@ def plot_mult_lines(x, y, params, name):
     plt.close()
 
 def plot_distr(dist=cp.J(cp.Uniform(0.8, 1.2), cp.Uniform(0.8, 1.2))):
-    # Create contour plot for the probability density function
+    """
+    Create contour plot for the probability density function f: X1xX2->[0;1]
+    """
     grid_init, grid_rate = grid = np.meshgrid(np.linspace(0.8, 1.2, 32), np.linspace(0.8, 1.2, 32))
     contour = plt.contourf(grid_init, grid_rate, dist.pdf(grid), levels=20, cmap="gray", alpha=0.3)
     colorbar = plt.colorbar(contour)
@@ -256,6 +355,8 @@ def plot_distr(dist=cp.J(cp.Uniform(0.8, 1.2), cp.Uniform(0.8, 1.2))):
 
 def plot_uncertainties(f, E, Std, X, K, N):
     """
+    Plots a mean and shaded 1-sigma interval fun a f(X)
+    # TODO reduce, this is a simpler version of function of plot_prediction_variance()
     :param f: function object
     :param E: expectation for function value
     :param Std: standart deviation of function value
@@ -273,6 +374,14 @@ def plot_uncertainties(f, E, Std, X, K, N):
     plt.close()
 
 def plot_convergence(sample_sizes, errors_mean, errors_variance):
+    """
+    Plots a dependency of UQ error in E and Var from the size of training dataset
+    # TODO do not need it
+    :param sample_sizes:
+    :param errors_mean:
+    :param errors_variance:
+    :return:
+    """
     # Error plot for mean
     plt.loglog(sample_sizes, errors_mean, "ko-", label="mean")
     # Error plot for variance
@@ -285,6 +394,15 @@ def plot_convergence(sample_sizes, errors_mean, errors_variance):
     plt.close()
 
 def plot_response_1d(x_domain, y_tests, ylabels=['1'], f = lambda x : x):
+    """
+    Plot a function y(x) for any R->R response for a code
+    # TODO simple, may be just delete
+    :param x_domain:
+    :param y_tests:
+    :param ylabels:
+    :param f:
+    :return:
+    """
     wrt_dir = os.path.join(os.environ['PWD'])
     plt.figure()
     #y_test = f(x_domain)
@@ -293,11 +411,11 @@ def plot_response_1d(x_domain, y_tests, ylabels=['1'], f = lambda x : x):
         plt.ylabel(ylabels[i])
     plt.legend()
     plt.xlabel(r'$\nabla Te$')
-    plt.savefig(os.path.join(wrt_dir, 'response' + str(len(y_tests))+'.png')) #TODO save img in current folder
+    plt.savefig(os.path.join(wrt_dir, 'response' + str(len(y_tests))+'.png'))  #TODO save img in current folder
 
-def plot_prediction_variance(x_observ, y_observ, x_domain, y_test, y_pred, sigma, f, x_choice=[], newpoints=[], rmse=0.0, funcname='e^-x cos x', dy=0):
+def plot_prediction_variance(x_observ, y_observ, x_domain, y_test, y_pred, sigma, x_newpoints=[], y_newpoints=[], rmse=0.0, funcname='e^-x cos x', dy=0):
     """ 
-    Plots prediction and 95% confidence interval
+    Plots prediction and 95% confidence interval for a R->R responce and its model
     :param x_observ: domain values for function evaluations
     :param y_observ: function evaluation values
     :param x_domain: values of domain (RoI)
@@ -305,79 +423,177 @@ def plot_prediction_variance(x_observ, y_observ, x_domain, y_test, y_pred, sigma
     :param y_pred: function values prediceted by model
     :param sigma: std for model predictions
     :param f: true function
+    :param: x_newpoints: a point in space domain that would be added to training set in the NEXT optimisation iteration
     """
 
-    wrt_dir = os.path.join(os.environ['PWD'], 'locmaxsamp')
+    #wrt_dir = os.path.join(os.environ['PWD'], 'locmaxsamp')
+    wrt_dir = ''
 
-    plot_response_1d(x_domain, y_test, f)
+    #plot_response_1d(x_domain, y_test, f)
 
-    plt.errorbar(x_observ.ravel(), y_observ, dy, fmt='r.', markersize=10, label='Observations')
+    plt.errorbar(x_observ, y_observ, dy, fmt='r.', markersize=10, label='Simulation')
     plt.plot(x_domain, y_pred, 'b-', label='Prediction')
     plt.fill(np.concatenate([x_domain, x_domain[::-1]]),
              np.concatenate([y_pred - 1.9600 * sigma,
                              (y_pred + 1.9600 * sigma)[::-1]]),
              alpha=.5, fc='b', ec='None', label='95% confidence interval')
-    plt.vlines(x_choice, -1, 1, colors='k', alpha=0.5, linestyles='dashed', label='new opt choice')
-    if len(newpoints) != 0:
-        plt.plot(newpoints, f(np.array(newpoints)), 'go', markersize=12, label='new samples')
-    plt.xlabel(r'$\nabla Te$')
-    plt.ylabel('$Te flux$')
-    plt.title('GPR results for f=(' + funcname + ') with ' + str(len(y_observ)) + ' number of function evaluations') 
+    #plt.vlines(x_choice, -1, 1, colors='k', alpha=0.5, linestyles='dashed', label='new opt choice')
+    if len(x_newpoints) != 0:
+        plt.plot(x_newpoints, y_newpoints, 'go', markersize=12, label='new samples')
+    plt.xlabel(r'$\nabla Ti$')
+    plt.ylabel('$Ti\_flux$')
+    plt.title('GPR results for ' + funcname + ' for ' + str(len(y_observ)) + ' number of function evaluations')
                # + 'PRediction RMSE is ' + str(rmse))
     plt.legend(loc='upper right')
     #plt.show(block=True)
-    plt.savefig(os.path.join(wrt_dir, 'surr_gem0_Tiddrho_' + str(len(y_observ)) + '.png'))
+    plt.savefig(os.path.join(wrt_dir, 'surr_gem0_tfluxtiddrho_' + str(len(y_observ)) + '.png'))
     plt.close()
     #return y_test.T.reshape(-1)
 
+def plot_prediction_withtime(x_observ, y_observ, x_domain, y_test, y_pred, sigma, x_newpoints=[], y_newpoints=[],  rmse=0.0, funcname='e^-x cos x', dy=0):
+    """
+    Plots prediction and 95% confidence interval for multiple, gradually improving, model versions
+    :param x_observ: list of domain values for function evaluations
+    :param y_observ: list of function evaluation values
+    :param x_domain: values of domain (RoI)
+    :param y_test: function values for points at x_domain
+    :param y_pred: list of function values predicted by model
+    :param sigma: list of std for model predictions
+    :param f: true function
+    :param x_newpoints: a point in space domain that would be added to training set in the NEXT optimisation iteration
+    """
+
+    wrt_dir = ''
+    n = len(y_pred)
+    xscale = float(1000)
+    yscale = float(1000)
+    #yax_lims = np.array([-7e+3, 2.4e+5])/yscale
+    yax_lims = np.array([-7e+3, 2.4e+5]) / yscale
+
+    plt.close()
+    plt.clf()
+    fig, ax = plt.subplots()
+
+    cmap_newpoints = plt.get_cmap('Greens')
+    cmpap_sims = plt.get_cmap('Blues')
+    cmap_test = plt.get_cmap('Reds')
+
+    ax.scatter(x_observ[0]/xscale, y_observ[0]/yscale, c='g', s=8)
+
+    for i in range(0, n-1):
+
+        #ax.errorbar(x_observ[i].ravel(), y_observ[i], dy, fmt='.', c='r', markersize=10)  #label='Simulation')
+
+        #ax.plot(x_domain, y_pred[i], 'b-', alpha=((i+1)/float(n)))  #, label='Prediction')
+
+        ax.fill(np.concatenate([x_domain/xscale, x_domain[::-1]/xscale]),
+                np.concatenate([y_pred[i]/yscale - (1.9600/yscale) * sigma[i].reshape(-1,1),
+                               (y_pred[i]/yscale + (1.9600/yscale) * sigma[i].reshape(-1,1))[::-1]]),
+                alpha=.07, fc='b', ec='None', label="_nolegend_")  #, label='95% confidence interval')
+
+        if i > 0:
+            if len(x_newpoints[i-1]) != 0:
+                ax.plot(np.array(x_newpoints[i-1])/xscale, y_newpoints[i-1]/yscale,
+                        'o', c='g', markersize=9*(i+6)/float(n+6), alpha=1.0)  # label='order of sampling')
+            #ax.annotate('{}'.format(i+len(y_observ[0])), (np.array(x_newpoints[i-1])/xscale, y_newpoints[i-1]))
+
+    # plot training points and confidence interval for last optimization iteration
+    #ax.errorbar(x_observ[n-1], y_observ[n-1], dy, fmt='g.', markersize=5)  # label='Simulations')
+
+    ax.plot(x_domain/xscale, y_pred[n-1]/yscale, 'b-', alpha=(n/float(n)), label='Prediction Mean')
+
+    ax.fill(np.concatenate([x_domain/xscale, x_domain[::-1]/xscale]),
+            np.concatenate([y_pred[n-1]/yscale - (1.9600/yscale) * sigma[n-1].reshape(-1,1),
+                           (y_pred[n-1]/yscale + (1.9600/yscale) * sigma[n-1].reshape(-1,1))[::-1]]),
+            alpha=.07, fc='b', ec='None', label='95% confidence interval')
+
+    # plot the last training point of optimization, add plot labels
+    if len(x_newpoints[n-2]) != 0:
+        ax.plot(np.array(x_newpoints[n-2])/xscale, y_newpoints[n-2]/yscale, 'o', c='g', markersize=9,
+                alpha=1.0, label='Training Simulations')
+        #ax.annotate('{}'.format(n+len(y_observ[0]), (np.array(x_newpoints[i-1])/xscale, y_newpoints[i-1]))
+
+    ax.plot(x_domain/xscale, y_test/yscale, 'r.', label='Testing Simulations')
+
+    ax.set_xlabel(r'$ \nabla Te \; [keV/m] $')
+    ax.set_ylabel('$ Te\_flux \; [kW/m^{2}] $')
+    ax.set_title('GPR results for ' + funcname + ' for ' + str(len(y_observ[-2])) + ' training simulations', pad=10)
+    # + 'PRediction RMSE is ' + str(rmse))
+    ax.legend(loc='upper right')
+    ax.set_ylim(yax_lims)
+    ax.ticklabel_format(style='sci', useMathText=True)
+    plt.savefig(os.path.join(wrt_dir, 'TE_surrogate_gem0_teflux_teddrho_total_' + str(len(y_observ[-2])) + '.pdf'))
+    plt.close()
+
+def add_density_x(x, range=[200, 400]):
+    """
+    Gets a sample of x_vec (x e X) calculates it KDE density at the domain and add it to the plot of response X->Y
+    :param x:
+    :param range:
+    :return:
+    """
+    xinds = np.arange(200, 400)
+    dat = x[xinds, np.newaxis]
+    x_domain = np.linspace(dat.min(), dat.max(), 1000)[:, np.newaxis]
+
+    kde = KernelDensity(kernel='gaussian', bandwidth=150.).fit(dat)
+    log_dens = kde.score_samples(x_domain[:, 0].reshape(-1, 1))
+
+    plt.fill(np.concatenate([x_domain, x_domain[::-1]]),
+              np.concatenate([np.zeros(len(log_dens)), 100*np.exp(log_dens)[::-1]]))
+
 def plot_prediction_variance_2d(x_observ, y_observ, x_domain, y_test, y_pred, sigma, newpoints, funcname):
 
-    wrt_dir = os.path.join(os.environ['SCRATCH'], 'outputs/plots/res_debug')
-    wrt_dir = os.path.join(os.environ['PWD'], 'locmaxsamp')
+    #wrt_dir = os.path.join(os.environ['SCRATCH'], 'outputs/plots/res_debug')
+    #wrt_dir = os.path.join(os.environ['PWD'], 'locmaxsamp')
+    wrt_dir = "surr2d"
 
     # Plot function,prediction and 95% confidence interval
     x1o = x_observ[:,0]
     x2o = x_observ[:,1]
     x1i = x_domain[:,0]
     x2i = x_domain[:,1]
+
+    y_test = y_test.reshape(-1,)
+    y_pred = y_pred.reshape(-1,)
+    y_observ = y_observ.reshape(-1,)
     
-    fig, (ax1, ax2, ax3) = plt.subplots(nrows=1, ncols=3)
+    fig, (ax1, ax2, ax3) = plt.subplots(nrows=1, ncols=3, figsize=(9, 3.7))
 
     ### --- First plot for response function
-    #ax1.contour(x1, x2, y1, levels=14, linewidths=0.5, colors='k')
     cntr1 = ax1.tricontourf(x1i, x2i, y_test, levels=12, cmap="RdBu_r")
     divider1 = make_axes_locatable(ax1)
-    cax1 = divider1.append_axes("right", size="8%", pad=0.08)
-    plt.colorbar(cntr1, cax=cax1)
-    ax1.set_title('Ground truth Te flux response')
-    plt.xlabel("Te") #(r'$Te$')
-    plt.ylabel("gradTe") #(r'$\nabla Te$')
+    cax1 = divider1.append_axes("right", size="8%", pad=0.1)
+    cbar1 = fig.colorbar(cntr1, cax1)
+    ax1.set_title('Ground truth Te flux response', pad=10.0)
+    ax1.set_xlabel(r'$T_{e}$')   #(r'$Te$')
+    ax1.set_ylabel(r'$ \nabla T_{e}$')   #(r'$\nabla Te$')
+    #cbar1.set_label(r'$\Phi_{T_{e}}$')
     ax1.set_aspect('equal')
 
     ### --- Second plot for GPR mean
     cntr2 = ax2.tricontourf(x1i, x2i, y_pred, levels=12, cmap="RdBu_r")
-    ax2.scatter(x1o, x2o, c=y_observ, cmap='RdBu_r', edgecolors='k', s=6)
+    ax2.scatter(x1o, x2o, c=y_observ, cmap='RdBu_r', edgecolors='k', s=12)
     divider2 = make_axes_locatable(ax2)
-    cax2 = divider2.append_axes("right", size="8%", pad=0.08)
-    plt.colorbar(cntr2, cax=cax2)
+    cax2 = divider2.append_axes("right", size="8%", pad=0.1)
+    cbar2 = fig.colorbar(cntr2, cax2, boundaries=[0, 180000])
     #ax2.set_title('GPR results for f=(' + funcname + ') with ' + str(len(y_observ)) + ' # func. eval-s')
-    ax2.set_title('Te flux prediction for {} evaluations'.format(len(y_observ)))
-    plt.xlabel("Te") #(r'$Te$')
-    plt.ylabel("gradTe") #(r'$\nabla Te$')
+    ax2.set_title('Te flux prediction for training set of {} '.format(len(y_observ)), pad=10.0)
+    ax2.set_xlabel(r'$T_{e}$')   #(r'$Te$')
+    ax2.set_ylabel(r'$ \nabla T_{e}$')   #(r'$\nabla Te$')
     ax2.set_aspect('equal')
-    if len(newpoints) != 0: #TODO fix two different scatter one plot (what did I mean?)
-        ax2.scatter(newpoints[0][:,0], newpoints[0][:,1], c=newpoints[1], edgecolors='g', s=8) #, label='new samples')
+    if len(newpoints) != 0:  #TODO fix two different scatter plots ; fix scatter plots margin iside the figure box
+        ax2.scatter(newpoints[0][:,0], newpoints[0][:,1], c=newpoints[1][:,0], edgecolors='g', s=14) #, label='new samples')
 
     ### --- Third plot for the neg-utility (GPR STD)
-    #ax2.tricontour(x1i, x2i, sigma, levels=14, linewidths=0.5, colors='k')
     cntr3 = ax3.tricontourf(x1i, x2i, sigma, levels=14, cmap="RdBu_r")
     divider3 = make_axes_locatable(ax3)
-    cax3 = divider3.append_axes("right", size="8%", pad=0.08)
-    plt.colorbar(cntr3, cax=cax3)
+    cax3 = divider3.append_axes("right", size="8%", pad=0.1)
+    cbar3 = fig.colorbar(cntr3, cax3, boundaries=[0, 20000])
     #ax2.plot(x, y, 'ko', ms=3)
-    ax3.set_title('GPR sigma') #(r'GPR $\sigma$')
-    plt.xlabel("Te") #(r'$Te$')
-    plt.ylabel("gradTe") #(r'$\nabla Te$')
+    ax3.set_title('Surrogate uncertainty (st.dev.)', pad=10.0)  #(r'GPR $\sigma$')
+    ax3.set_xlabel(r'$T_{e}$')  #(r'$Te$')
+    ax3.set_ylabel(r'$ \nabla T_{e}$')  #(r'$\nabla Te$')
     ax3.set_aspect('equal')
 
     ################################
@@ -385,19 +601,20 @@ def plot_prediction_variance_2d(x_observ, y_observ, x_domain, y_test, y_pred, si
     #plt.legend(loc='upper right')
 
     plt.tight_layout()
-    plt.subplots_adjust() # TODO should have less margin at saved figure
-    plt.savefig(os.path.join(wrt_dir, 'surr2d_gem0_' + str(len(y_observ))+'.png'))
+    plt.subplots_adjust()  # TODO should have less margin at saved figure
+    plt.savefig(os.path.join(wrt_dir, 'TE_surr2d_gem0_' + str(len(y_observ))+'.png'))
     plt.close()
 
 def plot_error(err, name):
     #wrt_dir = os.path.join(os.environ['SCRATCH'], 'outputs/plots/res128') # wrt_dir = ''
-    wrt_dir = os.path.join(os.environ['PWD'] , 'locmaxsamp')
+    #wrt_dir = os.path.join(os.environ['PWD'] , 'locmaxsamp')
+    wrt_dir = ""
     plt.semilogy(range(1, len(err) + 1), err, label=name)
     #plt.yscale("log")
     plt.xlabel('n. interations')
     plt.ylabel('error')
     plt.title('Error of GPR surrogate predictions at function evaluations')
-    plt.savefig(os.path.join(wrt_dir, 'surr_gem0_err_' + name + '.png'))
+    plt.savefig(os.path.join(wrt_dir, 'TEsurr_gem0_err_' + name + '.png'))
     plt.close()
 
 def plot_histograms(y_orig, y_orig_clean, y_pred, y_pred_clean):

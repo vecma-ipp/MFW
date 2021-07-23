@@ -2,9 +2,10 @@ import sys
 import os
 import numpy as np
 #TODO: make a new package + install / or get relative paths consistent
-sys.path.append(os.path.abspath("../../standalone/src/custom_codes/gem0"))
-import importlib.util
-spec = importlib.util.spec_from_file_location("gem0_singleton", os.path.abspath("../../standalone/src/custom_codes/gem0/gem0_singleton.py"))
+sys.path.append(os.path.join(os.getcwd(), "standalone/src/custom_codes/gem0"))
+import importlib.util  # TODO windows path does not understand '..' notation
+#spec = importlib.util.spec_from_file_location("gem0_singleton", os.path.abspath("../MFW/standalone/src/custom_codes/gem0/gem0_singleton.py"))
+spec = importlib.util.spec_from_file_location("gem0_singleton", os.path.abspath("C:/Users/user/Documents/UNI/MPIPP/PHD/code/MFW/standalone/src/custom_codes/gem0/gem0_singleton.py"))
 gem0_singleton = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(gem0_singleton)
 from gem0_singleton import GEM0Singleton
@@ -12,6 +13,8 @@ from gem0_singleton import GEM0Singleton
 class ExtCodeHelper():
 
     def __init__(self, option=2):
+        if option not in [1, 2]:
+            option = 2
         self.gem0obj = GEM0Singleton(option)
 
     def gem0_call_tefltevltegrad(self, x): # TODO np.vectorize?
@@ -57,7 +60,7 @@ class ExtCodeHelper():
         """
         res = []
         for el in x:
-            res.append(self.gem0obj.gem0_call({'te.value': el[0], 'te.ddrho': el[1]})[0])
+            res.append([self.gem0obj.gem0_call({'te.value': el[0], 'te.ddrho': el[1]})[0]])
         return res
 
     def gem0_call_tefltevltivl_array(self, x):
@@ -67,7 +70,7 @@ class ExtCodeHelper():
         """
         res = []
         for el in x:
-            res.append(self.gem0obj.gem0_call({'te.value': el[0], 'ti.value': el[1]})[0])
+            res.append([self.gem0obj.gem0_call({'te.value': el[0], 'ti.value': el[1]})[0]])
         return res
 
     def gem0_call_tifltigrad_array(self, x):

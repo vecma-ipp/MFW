@@ -8,7 +8,7 @@ from ascii_cpo import read
 from base.cpo_encoder import CPOEncoder
 from base.cpo_decoder import CPODecoder
 from base.utils import cpo_inputs
-
+import time
 '''
 Perform UQ for the Turblence code GEM0.
 Uncertainties are driven by:
@@ -42,13 +42,11 @@ exec_code = "gem0_test"
 
 # Define the uncertain parameters
 # Electron temperature and its gradient
-
-dist ={ "dist_name": "Normal", "var_coeff":  0.2}
 input_params = {
-    "te.value": dist,
-    "te.ddrho": dist,
-    "ti.value": dist,
-    "ti.ddrho": dist
+    "te.value": {"dist": "Uniform", "err":  0.2, "min": 0.},
+    "ti.value": {"dist": "Uniform", "err":  0.2, "min": 0.},
+    "te.ddrho": {"dist": "Uniform", "err":  0.2, "max": 0.},
+    "ti.ddrho": {"dist": "Uniform", "err":  0.2, "max": 0.}
 }
 
 # CPO file containg initial values of uncertain params
@@ -130,14 +128,33 @@ qcgpjexec.terminate_manager()
 # Collection of simulation outputs
 my_campaign.collate()
 
+t1 = time.time()
 # Post-processing analysis
 analysis = uq.analysis.PCEAnalysis(sampler=my_sampler, qoi_cols=output_columns)
 my_campaign.apply_analysis(analysis)
+t2 = time.time()
 
 # Get results
 results = my_campaign.get_last_analysis()
 
 # Get Descriptive Statistics
+mean_el = results.describe('te_transp.flux', 'mean')
+std_el = results.describe('te_transp.flux', 'std')
+mean_io = results.describe('ti_transp.flux', 'mean')
+std_io = results.describe('ti_transp.flux', 'std')
 
+s1_el = results.sobols_first('te_transp.flux')
+s1_io = results.sobols_first('ti_transp.flux')
 
+print("TE TRANSP FLUX")
+print("Mean: ", mean_el)
+print("Std: ", std_el)
+print("Sob1: ", s1_el)
+
+print("TI TRANSP FLUX")
+print("Mean: ", mean_io)
+print("Std: ", std_io)
+print("Sob1: ", s1_io)
+
+print("Analysis time: ", t2-t1)
 print('>>> TEST GEM0-UQ: END')

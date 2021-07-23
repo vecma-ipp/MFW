@@ -9,64 +9,37 @@ __all__ = ['get_dist', 'xml_inputs', 'cpo_inputs', 'ftube_indices']
 
 def get_dist(name, value, err):
     """
-    Return distribition:
-     - Moments: mean = value, sdt = err*value.
-     - Type: given by 'name' (supported: Normal and Uniform).
-     - Dimension: univariate if value is scalar, multivariate if value is a list.
-
     Parameters
     ----------
     name : str
         The distribution name
-    value : float, int or list
-        The mean value of the distribution.
+    value : float or int
+        The mean value of the dist.
     err  : float
+        The variation error (>0 and <=1)
 
     Returns
     -------
     chaospy.Dist: the output distribution.
     """
 
-    # TODO add the condition: shift if lower threshlod <= a critical value
-    # => for verification: Values must be > 0
     if name.lower() == "normal":
-            if type(value) == list:
-                d = []
-                for v in value:
-                    if v == 0.:
-                        dv = cp.Normal(v, err)
-                    else:
-                        dv = cp.Normal(v, err*v)
-                    d.append(dv)
-                dist = cp.J(*d)
-            else:
-                if value == 0.:
-                    dist = cp.Normal(value, err)
-                else:
-                    dist = cp.Normal(value, err*value)
+        if value == 0.:
+            dist = cp.Normal(value, err/3.)
+        else:
+            dist = cp.Normal(value, err*np.abs(value)/3.)
 
     elif name.lower() == "uniform":
+        if value == 0.:
+            dist = cp.Uniform(0., err)
+        elif value > 0.:
+            dist = cp.Uniform((1. - err)*value, (1. + err)*value)
+        else :
+            dist = cp.Uniform((1. + err)*value, (1. - err)*value)
 
-        if type(value) == list:
-            d = []
-            for v in value:
-                lo = (1. - np.sqrt(3)*err)*v
-                up = (1. + np.sqrt(3)*err)*v
-                if v == 0.:
-                    up = err
-
-                d.append(cp.Uniform(lo, up))
-            dist = cp.J(*d)
-        else:
-            lo = (1. - np.sqrt(3)*err)*value
-            up = (1. + np.sqrt(3)*err)*value
-            if value == 0.:
-                up = err
-            dist = cp.Uniform(lo, up)
-
-    # TODO add other relevant distributions
+    # TODO add other distributions
     else:
-        msg = "Unknown distribution name: " + dist_name
+        msg = "Unknown distribution name: " + name
         logging.error(msg)
         raise Exception(msg)
 
@@ -83,7 +56,8 @@ def xml_inputs(xml_filename, xsd_filename, input_dir, input_params):
         directory containing xml and xsd files.
     input_params : dict
         containing: {key: value} like:
-        {"param_name": {"dist_name":"Normal", "var_coeff":0.2}}
+        {"param_name": {"dist":"Normal", "err":0.2}, "min":100., "max":2000}
+        (min and max are optional)
 
     Returns
     -------
@@ -92,33 +66,11 @@ def xml_inputs(xml_filename, xsd_filename, input_dir, input_params):
         "param_name": {"type": float, "default":100.}.
     dict
         vary (distributions list) for the Sampler, containg for exmaple:
-            "param_name": cp.Normal(default_value, var_coeff*default).
+            "param_name": cp.Normal(default_value, err*default).
     """
 
-    xml = XMLElement(xml_filename, xsd_filename, input_dir)
-    params = {}
-    vary = {}
-
-    for name, attr in input_params.items():
-        # get inital value and update params
-        value = xml.get_value(name)
-
-        attr_type = type(value)
-        if attr_type == float:
-            attr_type = "float"
-        elif attr_type == int:
-            attr_type = "integer"
-        else:
-            raise RuntimeError('Unexpected parameter type.')
-
-        params.update({name: {"type": attr_type, "default": value}})
-
-        # get the probability distribution and update vary
-        dist_name = attr["dist_name"]
-        var_coeff = attr["var_coeff"]
-        dist = get_dist(dist_name, value, var_coeff)
-        vary.update({name: dist})
-
+    xml_elem = XMLElement(xml_filename, xsd_filename, input_dir)
+    params, vary = _input_dicts(xml_elem, input_params)
     return params, vary
 
 
@@ -127,9 +79,15 @@ def cpo_inputs(cpo_filename, cpo_name, input_dir, input_params, ftube_index=None
     Parameters
     ----------
     cpo_filename : str
+        the cpo filename
     cpo_name : str
+        the cpo name, from the following list:
+            'coreprof', 'coretransp','equilibrium', 'coresource',
+            'coreimpur', 'toroidfield' and 'coreneutrals'.
     input_params : dict
-        containting: "param_name": {"dist_name":"Normal", "var_coeff":0.2}.
+        containnig {key: value} like:
+        {"param_name": {"dist":"Normal", "err":0.2}, "min":100., "max":2000}
+        (min and max are optional)
     ftube_index : int
         the index of the position of a flux tube (optional)
 
@@ -140,36 +98,46 @@ def cpo_inputs(cpo_filename, cpo_name, input_dir, input_params, ftube_index=None
         "param_name": {"type": float, "default":100.}.
     dict
         vary (distributions list) for the Sampler, containg for exmaple:
-            "param_name": cp.Normal(default_value, var_coeff*default).
+            "param_name": cp.Normal(default_value, err*default).
     """
 
-    cpo = CPOElement(cpo_filename, cpo_name, input_dir)
+    cpo_elem = CPOElement(cpo_filename, cpo_name, input_dir)
+    params, vary = _input_dicts(cpo_elem, input_params, ftube_index)
+    return params, vary
+
+
+def _input_dicts(elem, input_params, ftube_index=None):
+
     params = {}
     vary = {}
 
     for name, attr in input_params.items():
-        # Get inital value and update params
-        value = cpo.get_value(name)
+        # get inital value (default) and update params
+        value = elem.get_value(name)
 
         # Particular case, the flux tube index is given
         if ftube_index is not None:
             value = value[ftube_index]
 
         attr_type = type(value)
-
-        if attr_type in [float, np.float64]:
+        if attr_type in [np.float64,  float]:
             attr_type = "float"
-        elif attr_type == int:
+        elif attr_type in [np.int, int]:
             attr_type = "integer"
         else:
             raise RuntimeError('Unexpected parameter type.')
 
-        params.update({name: {"type": attr_type, "default": value}})
+        d = {"type": attr_type, "default": value}
+        if 'min' in attr:
+            d.update({'min': attr['min']})
+        if 'max' in attr:
+            d.update({'max': attr['max']})
+        params.update({name: d})
 
         # get the probability distribution and update vary
-        dist_name = attr["dist_name"]
-        var_coeff = attr["var_coeff"]
-        dist = get_dist(dist_name, value, var_coeff)
+        dist_name = attr["dist"]
+        err = attr["err"]
+        dist = get_dist(dist_name, value, err)
         vary.update({name: dist})
 
     return params, vary
