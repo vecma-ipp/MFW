@@ -3,10 +3,12 @@ import numpy as np
 import matplotlib.pylab as plt
 import os
 
+import itertools
+
 from sklearn.neighbors import KernelDensity as KDE
 from scipy.stats import moment
 
-from da_utils import *
+#from da_utils import 
 
 from ascii_cpo import read
 
@@ -66,10 +68,10 @@ def SA_exploite(analysis, qoi):
 
 #AUG_GM_date_explore(filename='../data/AUG_gem_inoutput.txt')
 
-def profile_evol_load(rho=0.69, folder_name='../gem_data/cpo5/', attrib_name = ['flux'], file_code_name = 'gem'):
+def profile_evol_load(rho=0.69, folder_name='../gem_data/cpo5/', prof_names=['ti_transp', 'te_transp'], attrib_names = ['flux'], file_code_name = 'gem'):
     
     #prof_names = ['ti_transp.flux', 'te_transp.flux']
-    prof_names = ['ti_transp', 'te_transp']
+    #prof_names = ['ti_transp', 'te_transp']
     file_base_name = 'gem_coretransp'
     file_ext = '.cpo'
 
@@ -78,19 +80,28 @@ def profile_evol_load(rho=0.69, folder_name='../gem_data/cpo5/', attrib_name = [
                              f.endswith(file_ext) and
                              f.startswith(file_code_name)
                 ]
-    value_s = [[] for _ in prof_names]
+
+    n = len(prof_names)
+    m = len(attrib_names)
+    value_s = [[] for _ in itertools.product(prof_names, attrib_names)]
 
     for file_name in file_names:
         coretransp = read(os.path.join(folder_name, file_name), 'coretransp')
-        for i, prof in enumerate(prof_names):
-            prof = getattr(coretransp.values[0], prof)
-            for attrib in attrib_name:
-                value_s[i].append(getattr(prof, attrib)[0])
+        for i, profname in enumerate(prof_names):
+            prof = getattr(coretransp.values[0], profname)
+            for j, attrib in enumerate(attrib_names):
+                if profname[1] == 'i':
+                     value_s[i*m+j].append(getattr(prof, attrib)[0])
+                elif profname[1] == 'e':
+                     value_s[i*m+j].append(getattr(prof, attrib)) 
+                else:
+                     print('attributes have to belong either to ions or electrons')
     
-    for prof in prof_names:
-        np.savetxt(file_code_name + '_' + prof + '_evol.csv', value_s, delimiter =", ", fmt ='% s')
+    for i,(prof,attrib) in enumerate(itertools.product(prof_names, attrib_names)):
+        np.savetxt(file_code_name + '_' + prof + '_' + attrib  + '_evol300.csv', value_s[i], delimiter =", ", fmt ='% s')
 
-    return value_s[0], file_names
+    #return [value[0] for value in value_s], file_names
+    return value_s, file_names
 
 def profile_evol_plot(value_s, file_names=[], name='gem_ti_flux'):
 
@@ -105,12 +116,14 @@ def profile_evol_plot(value_s, file_names=[], name='gem_ti_flux'):
     # plt.savefig(name + '.png')
     # plt.close()
 
+    print(value_s_pointwise)
+
     fig, ax = plt.subplots()
     ax.plot(ts, value_s_pointwise, 'bo-')
-    plt.savefig(name + '_t.png')
+    plt.savefig(name + '_t300.png')
     plt.close()
 
-    np.savetxt(name + '.csv', value_s_pointwise, delimiter =", ", fmt ='% s')
+    np.savetxt(name + '300.csv', value_s_pointwise, delimiter =", ", fmt ='% s')
 
     return value_s_pointwise
 
@@ -119,7 +132,7 @@ def plot_coreprofval_dist(value_spw, name='ti'):
     # plot historgrams
     fig, ax = plt.subplots()
     ax.hist(value_spw, bins=len(value_spw)//4)
-    plt.savefig('hist_' + name + '_flux.png')
+    plt.savefig('hist_' + name + '_300.png')
 
     # get and plot KDE fit
     kde = KDE(kernel='gaussian', bandwidth=(value_spw.max()-value_spw.min())/10.).fit(value_spw[:, np.newaxis])
@@ -131,7 +144,7 @@ def plot_coreprofval_dist(value_spw, name='ti'):
     fig, ax = plt.subplots()
     ax.plot(x[:, 0], np.exp(log_pdf), label='density of core transport values')
     ax.plot(value_spw, (-0.01*np.random.rand(log_pdf_orig.shape[0])) * np.exp(log_pdf_orig).min(),'+k')
-    plt.savefig('pdf_' + name + '_flux.png')
+    plt.savefig('pdf_' + name + '_300.png')
     plt.close()
 
     # print main moments
@@ -146,10 +159,26 @@ def plot_coreprofval_dist(value_spw, name='ti'):
     
     return moments
 
+def get_coreprof_ev_acf(value_ev, name='ti', lags=[1,2,3,4,5,6,7,8,9,10]):
+    
+    res = [1. if l==0 else np.corrcoef(value_ev[l:], value_ev[:-l])[0][1] for l in lags]
+    #res = res[res.size//2:]
+    res = np.array(res)
+    print('ACF :')
+    print(res)
+    return res
+
 ###########################################
 
-val_ev, file_names = profile_evol_load(attrib_name = ['flux'], file_code_name='gem')
-val = profile_evol_plot(val_ev, file_names, name='tiflux')
-val = np.array(val).squeeze()
-#ti_flux = np.genfromtxt('gem_ti_flux.csv', delimiter =", ")
-plot_coreprofval_dist(val, name='ti')
+profiles = ['ti_transp', 'te_transp']
+attributes = ['diff_eff','vconv_eff']
+
+val_ev_s, file_names = profile_evol_load(prof_names=profiles, attrib_names=attributes, folder_name='../gem_data/cpo6/', file_code_name='imp4dv')
+
+for i,(p,a) in enumerate(itertools.product(profiles, attributes)):
+    val = profile_evol_plot(val_ev_s[i], file_names, name=p+'_'+a)
+    val = np.array(val).squeeze()
+    ##ti_flux = np.genfromtxt('gem_ti_flux.csv', delimiter =", ")
+    get_coreprof_ev_acf(val)
+    plot_coreprofval_dist(val, name=p+'_'+a)
+
