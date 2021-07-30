@@ -119,7 +119,7 @@ GEM0_O = ${OBJDIR}/gem0_standalone.o
 GEM_O = ${OBJDIR}/gem_standalone.o
 
 UNIT_TESTS = ETS_TEST SOURCES_TEST EQUILUPDATE_TEST CHEASE_TEST IMP4DV_TEST BOHMGB_TEST GEM0_TEST GEM_TEST
-LOOP_TESTS = LOOP_BGB LOOP_GEM0 LOOP_GEM ETS_CHEASE ETS_EQUILUPDATE
+LOOP_TESTS = LOOP_BGB LOOP_GEM0 LOOP_GEM ETS_CHEASE ETS_EQUILUPDATE LOOP_GEM_NOTRANSP
 
 ETS_EXE = ${BINDIR}/ets_test
 SOURCES_EXE = ${BINDIR}/sources_test
@@ -135,6 +135,7 @@ LOOP_GEM0_EXE = ${BINDIR}/loop_gem0
 LOOP_GEM_EXE = ${BINDIR}/loop_gem
 ETS_CHEASE_EXE = ${BINDIR}/ets_chease_test
 ETS_EQUILUPDATE_EXE = ${BINDIR}/ets_equilupdate_test
+LOOP_GEM_NOTRANSP_EXE = ${BINDIR}/loop_gem_notransp
 
 # ROLAND CODE
 ROP_EXE = ${BINDIR}/rop_test
@@ -195,6 +196,9 @@ ETS_EQUILUPDATE: ${SHARED_O} ${ETS_O} ${EQUILUPDATE_O} ${SOURCES_O} ${OBJDIR}/et
 
 #ROP_TEST: ${OBJDIR}/uq_modules.o ${OBJDIR}/rop_test.o
 #	$(FC90) -o  ${ROP_EXE} $^  -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_XML} -L${LIB_UAL} -lbds -lxmllib -litmconstants -litmtypes -lual ${LDFLAGS} ${LIBLAPACK}
+
+LOOP_GEM_NOTRANSP: ${SHARED_O} ${ETS_O} ${EQUILUPDATE_O} ${CHEASE_O} ${GEM_O} ${IMP4DV_O} ${SOURCES_O} ${OBJDIR}/loop_gem_notransp.o
+	$(MPIF90) -o ${LOOP_GEM_NOTRANSP_EXE} $^ -L${ETS} -L${CHEASE} -L${GEM} -L${IMP4DV} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_UAL} -L${LIB_XML} -lets -lchease_muscle -lgem -limp4dv -lbds -litmconstants -litmtypes -lual -lxmllib -lxml2  ${LDFLAGS} ${FFTW_LIB} ${LIBLAPACK}
 
 ##################################################################################
 
@@ -279,4 +283,8 @@ ${OBJDIR}/ets_equilupdate_test.o: src/ets_equilupdate_test.f90
 	${FC90} -o $@ -c $< $(FC90FLAGS) -I${INC_TYPES} 
 
 #${OBJDIR}/rop_test.o: src/rop/rop_test.f90
-#	${FC90} -o $@ -c $< $(FC90FLAGS) -I${INC_CONSTANTS} -I${INC_TYPES} -I${INC_XML} 
+#	${FC90} -o $@ -c $< $(FC90FLAGS) -I${INC_CONSTANTS} -I${INC_TYPES} -I${INC_XML}
+ 
+${OBJDIR}/loop_gem_notransp.o: src/loop_gem_notransp.f90
+	${MPIF90} -o $@ -c $< $(MPIFLAGS) -I${INC_TYPES}
+

@@ -9,17 +9,17 @@
 #SBATCH --job-name=MFW		# job name
 #SBATCH --err=test-%j.err			# std-error file
 #SBATCH --out=test-%j.out			# std-output file
-#SBATCH --account=FUA33_UQMWA 			# account number
+#SBATCH --account=FUA35_UQMWA3 			# account number
 #SBATCH --mail-type=END				# specify email notification
 #SBATCH --mail-user=onnie.luk@ipp.mpg.de	# e-mail address
 
 export QCG_KERNEL_turb=${QCG_KERNEL_turb:-128}
-export CPO_INPUT_DIR=AUG_28906_4/
+export CPO_INPUT_DIR=AUG_28906_6/
 
 cd $PWD
 
 module load intel intelmpi mkl fftw jre
-source /marconi_work/FUA33_UQMWA/MUSCLE/compat-1.1/etc/muscle.profile
+source /marconi_work/FUA35_UQMWA3/MUSCLE/compat-1.1/etc/muscle.profile
 
 export MUSCLE_TMP_DIR=/tmp/
 
