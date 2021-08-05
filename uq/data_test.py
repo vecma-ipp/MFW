@@ -2,7 +2,6 @@ import os
 import numpy as np
 import pandas as pd
 
-
 from ascii_cpo import read
 import easymfw.utils.io_tools
 
@@ -10,8 +9,10 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
-#from basicda.toy_uq import walklevel
-from basicda.da_utils import read_sim_csv, walklevel
+#from mpl_toolkits.axes_grid1 import host_subplot
+#import mpl_toolkits.axisartist as AA
+
+#from basicda.da_utils import read_sim_csv, walklevel
 
 #from utils import l3interp, l3deriv
 
@@ -172,12 +173,30 @@ def plot_prof_all(profs, rho, name, proflabels):
     """
     Plots a list of profiles of different parameters for the same scenario
     """
-    fig = plt.figure() 
-    for i in range(len(profs)):
-        plt.plot(rho, profs[i], label=proflabels[i])
-    plt.xlabel('rho[m]')
+
+    colorchoice = ['b','g','r','c','m','y','k',]
+           
+    fig, ax1 = plt.subplots()
+    ax1.set_ylabel('T')
+
+    ax2 = ax1.twinx()    
+    ax2.set_label('gradT')
+
+    for i, (prof, label) in enumerate(zip(profs, proflabels)):
+        if label.startswith('grad'):
+            ax2.plot(rho, prof, label=label, color=colorchoice[i])
+        else:
+            ax1.plot(rho, prof, label=label, color=colorchoice[i])
+
+    ax1.tick_params(axis='y', labelcolor='tab:red')
+    ax2.tick_params(axis='y', labelcolor='tab:blue')
+
+    ax1.set_xlabel('rho[m]i')
+
+    ax1.legend(loc=0)
+    ax2.legend(loc=3)
+
     plt.title('Profiles')
-    plt.legend()
     plt.savefig('profs_' + name + '.png')
     plt.close()
 
@@ -368,19 +387,19 @@ def deriv(prof, delta):
 #plot_prof(get_te(folder8ftrun+'/runs/Run_'+str(num)+'/gem0_coreprof_in.cpo'), np.linspace(0,1,100), 'prof_8ftrun_at_'+str(8))
 
 #check current AUG profile steepest points
-# exp_folder = "../workflows/AUG_28906_6"
-# prof_file = "ets_coreprof_in.cpo"
-# prof_file_path = os.path.join(exp_folder, prof_file)
-# rho = np.linspace(0, 100, 100)
-# prof_te = get_te(prof_file_path)
+exp_folder = "../workflows/AUG_28906_6_1ft_restart"
+prof_file = "ets_coreprof_in.cpo"
+prof_file_path = os.path.join(exp_folder, prof_file)
+rho = np.linspace(0, 100, 100)
+prof_te = get_te(prof_file_path)
 # #print(rho)
-# #plot_prof(prof_te, rho, 'te_aug6')
-# prof_ti =  get_ti(prof_file_path)
-# prof_gradte = get_tegrad(prof_file_path)
-# prof_gradti = get_tigrad(prof_file_path)
-# profs = [prof_te, prof_ti, prof_gradte, prof_gradti]
-# prlabels = ['te', 'ti', 'gradte', 'gradti']
-# #plot_prof_all(profs, rho, 'aug6', prlabels)
+# plot_prof(prof_te, rho, 'te_aug6')
+prof_ti =  get_ti(prof_file_path)
+prof_gradte = get_tegrad(prof_file_path)
+prof_gradti = get_tigrad(prof_file_path)
+profs = [prof_te, prof_ti, prof_gradte, prof_gradti]
+prlabels = ['te', 'ti', 'gradte', 'gradti']
+plot_prof_all(profs, rho, 'aug6_r', prlabels)
 # print(prof_gradte[65:73])
 # print(prof_gradti[65:73].reshape(1,-1))
 # gradgradti = deriv(prof_gradti, 0.1)
