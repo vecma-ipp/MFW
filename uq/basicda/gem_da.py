@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pylab as plt
 import os
+import sys
 
 import itertools
 
@@ -68,7 +69,7 @@ def SA_exploite(analysis, qoi):
 
 #AUG_GM_date_explore(filename='../data/AUG_gem_inoutput.txt')
 
-def profile_evol_load(rho=0.69, folder_name='../gem_data/cpo5/', prof_names=['ti_transp', 'te_transp'], attrib_names = ['flux'], file_code_name = 'gem', name_postfix=''):
+def profile_evol_load(rho=0.69, folder_name='../gem_data/cpo5/', prof_names=['ti_transp', 'te_transp'], attrib_names=['flux'], file_code_name='gem', name_postfix=''):
     
     #prof_names = ['ti_transp.flux', 'te_transp.flux']
     #prof_names = ['ti_transp', 'te_transp']
@@ -82,6 +83,7 @@ def profile_evol_load(rho=0.69, folder_name='../gem_data/cpo5/', prof_names=['ti
                 ]
 
     file_names.sort()
+    #print('filenames'); print(file_names) ### DEBUG
     
     n = len(prof_names)
     m = len(attrib_names)
@@ -89,7 +91,12 @@ def profile_evol_load(rho=0.69, folder_name='../gem_data/cpo5/', prof_names=['ti
 
     for file_name in file_names:
         coretransp = read(os.path.join(folder_name, file_name), 'coretransp')
+        #print('coretransp'); print(coretransp) ### DEBUG
         for i, profname in enumerate(prof_names):
+            #print('profname'); print(profname) ### DEBUG
+            #print('values'); print(coretransp.values) ### DEBUG
+            #print('values dict'); print(coretransp.values.__dict__) ### DEBUG          
+            #print('values[0]'); print(coretransp.values[0]) ### DEBUG
             prof = getattr(coretransp.values[0], profname)
             for j, attrib in enumerate(attrib_names):
                 if profname[1] == 'i':
@@ -154,15 +161,23 @@ def plot_coreprofval_dist(value_spw, name='ti'):
     # print main moments
     mom_len = 5
     moments = []
-    print(value_spw.mean())
+    print('mean value is: ' + str(value_spw.mean()))
     #print(((value_spw*value_spw).mean() - value_spw.mean()*value_spw.mean())/1.)
     
     with open('stats_' + name + '.txt', 'w') as wfile:
         for n in range(mom_len):
-            m = moment(value_spw, moment=n)
+            if n == 1:
+                m = value_spw.mean()
+            else:
+                m = moment(value_spw, moment=n)
+            moments.append(m)
             line = '{0}-th moment is: {1:.3e}'.format(n, m)
             print(line)
             wfile.write(line+'\n')
+
+    # check the normality of distribution function
+    kld = compare_gaussian(np.exp(log_pdf), x, moments)
+    print('KL-d is: ' + str(kld))
 
     return moments
 
@@ -178,54 +193,73 @@ def get_coreprof_ev_acf(value_ev, name='ti', lags=[1,2,3,4,5,6,7,8,9,10]):
 
     return res
 
-def compare_gaussian(pdf, moments):
+def compare_gaussian(pdf, domain, moments):
     # ***
     # takes pdf as f(x) e [0,1], x e {range of quantity values}
     # checks if central moments of order > 2 are neglegible
     # calculates KL of given pdf and pdf of a Gaussian with with given first two moments, E and sigma
     # ***
-    
-    eps = 0.
 
-    x = 1. # np.arange(len(pdf))
+    for i, mom in enumerate(moments[2:]):
+        if mom > 1e-2*np.power(moments[0], i+2):
+            print('moment num '+str(i+2)+' is large')    
 
-    pref = 1./(2.*np.pi*np.sqrt(moments[1]))
-    determ = moments[1]*moments[1]
+    delta = (domain[-1] - domain[0])/len(domain)
+
+    x = 1. # np.arange(len(pdf)) # np.linspace(valmin, valmax, valres)
+    x = domain
+
+    pref = 1./(np.sqrt(2.*np.pi)*moments[1])
+    determ = 2.*moments[1]*moments[1]
     
     pdf_gauss = pref*np.exp((moments[0]-x)*(moments[0]-x)/determ)
 
-    returns eps
+    kl_div = delta*np.multiply(pdf, np.log(np.divide(pdf, pdf_gauss))).sum()
+
+    return kl_div
 
 ###########################################
 
-workdir = os.path.join(os.getenv('SCRATCH'), 'MFW_runs')
+def main(foldername='17'):
 
-code_names = ['gem',
-              #'imp4dv',
-             ]
-profiles = ['ti_transp', 
-#            'te_transp',
-#            'ni_transp',
-#            'ne_transp'
-           ]
+    mainfoldernum = foldername
 
-for code_name in code_names:
-    if code_name == 'imp4dv':
-        attributes = ['diff_eff','vconv_eff']
-    if code_name == 'gem':
-        attributes = ['flux']
+    workdir = os.path.join(os.getenv('SCRATCH'), 'MFW_runs')
 
-    #val_ev_s, file_names = profile_evol_load(prof_names=profiles, attrib_names=attributes, folder_name=os.path.join(workdir, 'cpo16'), file_code_name=code_name, name_postfix='_16')
-    val_ev_s = []
+    code_names = ['gem',
+                 #'imp4dv',
+           	 ]
+    profiles = ['ti_transp', 
+               #'te_transp',
+               #'ni_transp',
+               #'ne_transp'
+               ]
 
-    for i,(p,a) in enumerate(itertools.product(profiles, attributes)):
-        val_ev_s.append(np.genfromtxt(code_name+'_'+p+'_'+a+'_evol_all3.csv', delimiter=", "))     
+    for code_name in code_names:
+        if code_name == 'imp4dv':
+       	    attributes = ['diff_eff','vconv_eff']
+        if code_name == 'gem':
+       	    attributes = ['flux']
+
+        #val_ev_s, file_names = profile_evol_load(prof_names=profiles, attrib_names=attributes, folder_name=os.path.join(workdir, 'cpo'+mainfoldernum), file_code_name=code_name, name_postfix='_'+mainfoldernum)
+        val_ev_s = []
+
+        for i,(p,a) in enumerate(itertools.product(profiles, attributes)):
+            val_ev_s.append(np.genfromtxt(code_name+'_'+p+'_'+a+'_evol_'+mainfoldernum+'.csv', delimiter=", "))     
  
-        val = profile_evol_plot(val_ev_s[i], name=p+'_'+a+'_all3')
-        val = np.array(val).squeeze()
+            val = profile_evol_plot(val_ev_s[i], name=p+'_'+a+'_'+mainfoldernum)
+            val = np.array(val).squeeze()
         
-        ##ti_flux = np.genfromtxt('gem_ti_flux.csv', delimiter =", ")
+            ##ti_flux = np.genfromtxt('gem_ti_flux.csv', delimiter =", ")
         
-        get_coreprof_ev_acf(val)
-        plot_coreprofval_dist(val, name=p+'_'+a+'_all3')
+            get_coreprof_ev_acf(val)
+            plot_coreprofval_dist(val, name=p+'_'+a+'_'+mainfoldernum)
+
+
+if __name__ == '__main__':
+
+    if len(sys.argv) == 2:
+        main(foldername=sys.argv[1])
+    else:
+        main()
 
