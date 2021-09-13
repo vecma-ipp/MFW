@@ -1,5 +1,8 @@
 
-DIR='/marconi_scratch/userexternal/yyudin00/MFW_runs/cpo17/'
+CPONUM=18
+
+DIR='/marconi_scratch/userexternal/yyudin00/MFW_runs/cpo'$CPONUM'/'
+
 mkdir $DIR
 
 mv gem-loop*.* $DIR
