@@ -110,6 +110,7 @@ def profile_evol_load(rho=0.69, folder_name='../gem_data/cpo5/', prof_names=['ti
         np.savetxt(file_code_name + '_' + prof + '_' + attrib  + '_evol' + name_postfix +'.csv', value_s[i], delimiter =", ", fmt ='% s')
 
     #return [value[0] for value in value_s], file_names
+    #print(">CPOs loaded, last flux value is: {0}".format(value_s[-1][-1]))
     return value_s, file_names
 
 def profile_evol_plot(value_s, file_names=[], name='gem_ti_flux'):
@@ -220,7 +221,7 @@ def compare_gaussian(pdf, domain, moments):
 
 ###########################################
 
-def main(foldername='17'):
+def main(foldername='17', runforbatch=False):
 
     mainfoldernum = foldername
 
@@ -241,7 +242,8 @@ def main(foldername='17'):
         if code_name == 'gem':
        	    attributes = ['flux']
 
-        #val_ev_s, file_names = profile_evol_load(prof_names=profiles, attrib_names=attributes, folder_name=os.path.join(workdir, 'cpo'+mainfoldernum), file_code_name=code_name, name_postfix='_'+mainfoldernum)
+        if not runforbatch:
+            val_ev_s, file_names = profile_evol_load(prof_names=profiles, attrib_names=attributes, folder_name=os.path.join(workdir, 'cpo'+mainfoldernum), file_code_name=code_name, name_postfix='_'+mainfoldernum)
         val_ev_s = []
 
         for i,(p,a) in enumerate(itertools.product(profiles, attributes)):
@@ -260,6 +262,8 @@ if __name__ == '__main__':
 
     if len(sys.argv) == 2:
         main(foldername=sys.argv[1])
+    elif len(sys.argv) == 3:
+        main(foldername=sys.argv[1], runforbatch=int(sys.argv[2]))
     else:
         main()
 
