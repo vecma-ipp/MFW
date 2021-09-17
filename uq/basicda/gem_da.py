@@ -9,6 +9,8 @@ import itertools
 from sklearn.neighbors import KernelDensity as KDE
 from scipy.stats import moment
 
+import statsmodels.api as sm
+
 #from da_utils import 
 
 from ascii_cpo import read
@@ -108,6 +110,7 @@ def profile_evol_load(rho=0.69, folder_name='../gem_data/cpo5/', prof_names=['ti
     
     for i,(prof,attrib) in enumerate(itertools.product(prof_names, attrib_names)):
         np.savetxt(file_code_name + '_' + prof + '_' + attrib  + '_evol' + name_postfix +'.csv', value_s[i], delimiter =", ", fmt ='% s')
+        print('Last value is: {0}'.format(value_s[i][-1]))        
 
     #return [value[0] for value in value_s], file_names
     #print(">CPOs loaded, last flux value is: {0}".format(value_s[-1][-1]))
@@ -189,10 +192,23 @@ def get_coreprof_ev_acf(value_ev, name='ti', lags=[1,2,3,4,5,6,7,8,9,10]):
     res = np.array(res)
     line = 'ACF :' + str(res)
     print(line)
-    with open('acf.txt', 'w') as wfile:
+    with open(name+'_acf.txt', 'w') as wfile:
         wfile.write(line)
 
     return res
+
+def filter_trend(values, method='hpf' ):
+    """
+    Applies filter to split every time series into stationary and non-stationary part
+    
+    returns two data structure of same dimension and type as input, one corresponds to trend, another to fluctuations
+    """
+    
+    if method == 'hpf':
+        valpd = pd.DataFrame(values, columns=["ti_transp_flux"])
+        val_cycle, val_trend = sm.tsa.filters.hpfilter(valpd.ti_transp_flux)
+
+    return np.array(val_trend), val_cycle 
 
 def compare_gaussian(pdf, domain, moments):
     # ***
@@ -202,7 +218,7 @@ def compare_gaussian(pdf, domain, moments):
     # ***
 
     for i, mom in enumerate(moments[2:]):
-        if mom > 1e-2*np.power(moments[0], i+2):
+        if abs(mom) > 1e-2*np.power(moments[0], i+2):
             print('moment num '+str(i+2)+' is large')    
 
     delta = (domain[-1] - domain[0])/len(domain)
@@ -228,12 +244,12 @@ def main(foldername='17', runforbatch=False):
     workdir = os.path.join(os.getenv('SCRATCH'), 'MFW_runs')
 
     code_names = ['gem',
-                 #'imp4dv',
+#                 'imp4dv',
            	 ]
     profiles = ['ti_transp', 
-               #'te_transp',
-               #'ni_transp',
-               #'ne_transp'
+#                'te_transp',
+#                'ni_transp',
+#                'ne_transp'
                ]
 
     for code_name in code_names:
@@ -249,13 +265,16 @@ def main(foldername='17', runforbatch=False):
         for i,(p,a) in enumerate(itertools.product(profiles, attributes)):
             val_ev_s.append(np.genfromtxt(code_name+'_'+p+'_'+a+'_evol_'+mainfoldernum+'.csv', delimiter=", "))     
  
-            val = profile_evol_plot(val_ev_s[i], name=p+'_'+a+'_'+mainfoldernum)
+            val = profile_evol_plot(val_ev_s[i], name=code_name+'_'+p+'_'+a+'_'+mainfoldernum)
             val = np.array(val).squeeze()
         
             ##ti_flux = np.genfromtxt('gem_ti_flux.csv', delimiter =", ")
         
-            get_coreprof_ev_acf(val)
+            get_coreprof_ev_acf(val, name=code_name+'_'+p+'_'+a+'stats', lags =[1,2,4,8,16,32,64,128])
             plot_coreprofval_dist(val, name=p+'_'+a+'_'+mainfoldernum)
+
+            val_trend, val_fluct = filter_trend(val)
+            profile_evol_plot(val_trend, name='trend1_'+p+'_'+a+'_'+mainfoldernum)
 
 
 if __name__ == '__main__':
