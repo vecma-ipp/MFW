@@ -113,44 +113,41 @@ def profile_evol_load(rho=0.69, folder_name='../gem_data/cpo5/', prof_names=['ti
         print('Last value is: {0}'.format(value_s[i][-1]))        
 
     #return [value[0] for value in value_s], file_names
-    #print(">CPOs loaded, last flux value is: {0}".format(value_s[-1][-1]))
     return value_s, file_names
 
 def profile_evol_plot(value_s, file_names=[], name='gem_ti_flux'):
-
-    value_s_pointwise = []
     
     #ts = np.arange(len(file_names))
-    ts = np.arange(value_s.shape[0])
+    ts = np.arange(value_s[0].shape[0])
 
-    # fig, ax = plt.subplots()
-    # rhos = np.arange(len(value_s))
-    for num, value in enumerate(value_s):
-    #     ax.plot(rhos, value, label=num)
-         value_s_pointwise.append(value)
-    # plt.savefig(name + '.png')
-    # plt.close()
+    ## rhos = np.arange(len(value_s))
+    #for num, value in enumerate(value_s):
+    ##     ax.plot(rhos, value, label=num)
+    #     value_s_pointwise.append(value)
+    ## plt.savefig(name + '.png')
+    ## plt.close()
 
     ##print(value_s_pointwise)
 
     fig, ax = plt.subplots(figsize=(24.,8.))
-    ax.plot(ts, value_s_pointwise, 'bo-')
+    for value in value_s:
+        ax.plot(ts, value, 'o-')
     plt.savefig(name + '.png')
     plt.close()
 
-    np.savetxt(name + '.csv', value_s_pointwise, delimiter =", ", fmt ='% s')
+    np.savetxt(name + '.csv', value_s, delimiter =", ", fmt ='% s')
 
-    return value_s_pointwise
+    return value_s
 
-def plot_coreprofval_dist(value_spw, name='ti'):
+def plot_coreprofval_dist(value_spw, name='ti', discr_level=16):
 
     # plot historgrams
     fig, ax = plt.subplots()
-    ax.hist(value_spw, bins=len(value_spw)//4)
+    ax.hist(value_spw, bins=len(value_spw)//discr_level)
     plt.savefig('hist_' + name + '.png')
 
     # get and plot KDE fit
-    kde = KDE(kernel='gaussian', bandwidth=(value_spw.max()-value_spw.min())/10.).fit(value_spw[:, np.newaxis])
+    kde = KDE(kernel='gaussian', bandwidth=(value_spw.max()-value_spw.min())/discr_level).fit(value_spw[:, np.newaxis])
 
     x = np.linspace(0.9*value_spw.min(), 1.1*value_spw.max(), 100)[:, np.newaxis]
     log_pdf = kde.score_samples(x)
@@ -205,10 +202,14 @@ def filter_trend(values, method='hpf' ):
     """
     
     if method == 'hpf':
+        lam = 1e9
         valpd = pd.DataFrame(values, columns=["ti_transp_flux"])
-        val_cycle, val_trend = sm.tsa.filters.hpfilter(valpd.ti_transp_flux)
+        val_cycle, val_trend = sm.tsa.filters.hpfilter(valpd.ti_transp_flux, lam)
+    elif method == 'exp':
+        val_trend = values
+        val_cycle = np.array(val_trend.shape)
 
-    return np.array(val_trend), val_cycle 
+    return np.array(val_trend), np.array(val_cycle)
 
 def compare_gaussian(pdf, domain, moments):
     # ***
@@ -265,16 +266,22 @@ def main(foldername='17', runforbatch=False):
         for i,(p,a) in enumerate(itertools.product(profiles, attributes)):
             val_ev_s.append(np.genfromtxt(code_name+'_'+p+'_'+a+'_evol_'+mainfoldernum+'.csv', delimiter=", "))     
  
-            val = profile_evol_plot(val_ev_s[i], name=code_name+'_'+p+'_'+a+'_'+mainfoldernum)
-            val = np.array(val).squeeze()
-        
+            profile_evol_plot([val_ev_s[i]], name=code_name+'_'+p+'_'+a+'_'+mainfoldernum)
+            val = np.array(val_ev_s[i]).squeeze()
+       
+            ### print(val_ev_s[i].shape); print(val.shape) ### DEBUG 
             ##ti_flux = np.genfromtxt('gem_ti_flux.csv', delimiter =", ")
         
             get_coreprof_ev_acf(val, name=code_name+'_'+p+'_'+a+'stats', lags =[1,2,4,8,16,32,64,128])
             plot_coreprofval_dist(val, name=p+'_'+a+'_'+mainfoldernum)
 
             val_trend, val_fluct = filter_trend(val)
-            profile_evol_plot(val_trend, name='trend1_'+p+'_'+a+'_'+mainfoldernum)
+            profile_evol_plot([val, val_trend], name='trend_'+p+'_'+a+'_'+mainfoldernum)
+            
+            # histogram for the last alpha_window values
+            alpha_wind = 0.25
+            val_wind = val[:-int(alpha_wind*len(val))]
+            plot_coreprofval_dist(val_wind, name='wind'+code_name+p+'_'+a+'_'+mainfoldernum)
 
 
 if __name__ == '__main__':
