@@ -110,12 +110,12 @@ def profile_evol_load(rho=0.69, folder_name='../gem_data/cpo5/', prof_names=['ti
     
     for i,(prof,attrib) in enumerate(itertools.product(prof_names, attrib_names)):
         np.savetxt(file_code_name + '_' + prof + '_' + attrib  + '_evol' + name_postfix +'.csv', value_s[i], delimiter =", ", fmt ='% s')
-        print('Last value is: {0}'.format(value_s[i][-1]))        
+        print('Last value (num. {1}) is: {0}'.format(value_s[i][-1], len(value_s[i])))        
 
     #return [value[0] for value in value_s], file_names
     return value_s, file_names
 
-def profile_evol_plot(value_s, file_names=[], name='gem_ti_flux'):
+def profile_evol_plot(value_s, labels=[], file_names=[], name='gem_ti_flux'):
     
     #ts = np.arange(len(file_names))
     ts = np.arange(value_s[0].shape[0])
@@ -130,8 +130,9 @@ def profile_evol_plot(value_s, file_names=[], name='gem_ti_flux'):
     ##print(value_s_pointwise)
 
     fig, ax = plt.subplots(figsize=(24.,8.))
-    for value in value_s:
-        ax.plot(ts, value, 'o-')
+    for value, lab in zip(value_s, labels):
+        ax.plot(ts, value, '-', label=lab)
+    plt.legend(loc='best')
     plt.savefig(name + '.png')
     plt.close()
 
@@ -139,7 +140,7 @@ def profile_evol_plot(value_s, file_names=[], name='gem_ti_flux'):
 
     return value_s
 
-def plot_coreprofval_dist(value_spw, name='ti', discr_level=16):
+def plot_coreprofval_dist(value_spw, name='ti', discr_level=64):
 
     # plot historgrams
     fig, ax = plt.subplots()
@@ -202,13 +203,22 @@ def filter_trend(values, method='hpf' ):
     """
     
     if method == 'hpf':
-        lam = 1e9
+        lam = 0.5*1e9
         valpd = pd.DataFrame(values, columns=["ti_transp_flux"])
         val_cycle, val_trend = sm.tsa.filters.hpfilter(valpd.ti_transp_flux, lam)
     elif method == 'exp':
-        val_trend = values
-        val_cycle = np.array(val_trend.shape)
-
+        alpha = 0.01
+        valpd = pd.DataFrame(values, columns=["ti_transp_flux"])
+        #smoothing_model = sm.tsa.ExponentialSmoothing(values).fit()
+        smoothing_model = sm.tsa.SimpleExpSmoothing(valpd, initialization_method="heuristic").fit(smoothing_level=alpha, optimized=False)
+        val_trend = smoothing_model.fittedvalues
+        val_cycle = valpd - val_trend
+        print('smoothing of value: the found alpha= {}'.format(smoothing_model.model.params["smoothing_level"]))
+        print(val_trend)
+    elif method == 'mean':
+        val_trend = values.mean()*np.ones(values.shape)
+        val_cycle = values - val_trend   
+ 
     return np.array(val_trend), np.array(val_cycle)
 
 def compare_gaussian(pdf, domain, moments):
@@ -275,14 +285,24 @@ def main(foldername='17', runforbatch=False):
             get_coreprof_ev_acf(val, name=code_name+'_'+p+'_'+a+'stats', lags =[1,2,4,8,16,32,64,128])
             plot_coreprofval_dist(val, name=p+'_'+a+'_'+mainfoldernum)
 
-            val_trend, val_fluct = filter_trend(val)
-            profile_evol_plot([val, val_trend], name='trend_'+p+'_'+a+'_'+mainfoldernum)
+            # plot different averagings
+            alpha_wind = 0.33
+            val_wind = val[:-int(alpha_wind*len(val))]            
+            val_trend_avg, val_fluct_avg = filter_trend(val_wind, "mean")
             
+            val_trend_hp, val_flux_exp = filter_trend(val, "hpf")
+            val_trend_exp, val_fluct_exp = filter_trend(val, "exp")
+            profile_evol_plot([val, val_trend_hp, val_trend_exp, np.ones(val.shape)*val_trend_avg[0]], 
+                              labels=['original','hpf', 'exponential(alpha=0.01)', 'mean(of {:.2e} after {} steps)'.format(val_trend_avg[0], int(alpha_wind*len(val)))],
+                              name='trend_'+p+'_'+a+'_'+mainfoldernum)
+             
             # histogram for the last alpha_window values
-            alpha_wind = 0.25
-            val_wind = val[:-int(alpha_wind*len(val))]
-            plot_coreprofval_dist(val_wind, name='wind'+code_name+p+'_'+a+'_'+mainfoldernum)
+            plot_coreprofval_dist(val_fluct_avg, name='wind'+code_name+p+'_'+a+'_'+mainfoldernum)
 
+            #TODO get exponential average of the values: standard packaged optimize for alpha -- why it is so high? is composition of exponential avaraging is another exponential averagin -- if so, what is alpha_comp?
+            #TODO get the trend as average after lamb=0.2-0.4 steps 
+            #TODO plot three trends against the valeus, and the histograms of residuals for all averagings
+            #TODO make FFT of series and split in Fourier space by thresholding
 
 if __name__ == '__main__':
 
