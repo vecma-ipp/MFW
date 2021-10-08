@@ -39,6 +39,7 @@ def AUG_GM_date_explore(filename='AUG_gem_inoutput.txt'):
     flti1_plot_time = AUG_gem.plot('time', ['flux-Ti-ft3'])
     flti1_plot_time.figure.savefig('fluxTi3_wtime.pdf')
     plt.show(block=True)
+    plt.close()
 
     y1 = AUG_gem['dTe-ft1']
     print('[' + str(y1.min()) + ';' + str(y1.max()))
@@ -146,6 +147,7 @@ def plot_coreprofval_dist(value_spw, name='ti', discr_level=64):
     fig, ax = plt.subplots()
     ax.hist(value_spw, bins=len(value_spw)//discr_level)
     plt.savefig('hist_' + name + '.png')
+    plt.close()
 
     # get and plot KDE fit
     kde = KDE(kernel='gaussian', bandwidth=(value_spw.max()-value_spw.min())/discr_level).fit(value_spw[:, np.newaxis])
@@ -202,10 +204,43 @@ def filter_trend(values, method='hpf' ):
     returns two data structure of same dimension and type as input, one corresponds to trend, another to fluctuations
     """
     
-    if method == 'hpf':
+    if method =='fft':
+        thr = 10.
+        thr_frac = 0.5
+
+        val_spectrum = np.fft.fft(values)
+        freq = np.fft.fftfreq(values.shape[0], 1.)
+
+        val_slow_spectrum = val_spectrum.copy()
+        val_fast_spectrum = val_spectrum.copy()
+
+        #val_slow_spectrum[int(thr_frac*val_spectrum.shape[0]):] = 0.
+        #val_fast_spectrum[:int(thr_frac*val_spectrum.shape[0])] = 0.
+
+        val_slow_spectrum[np.abs(freq) > thr] = 0.
+        val_fast_spectrum[np.abs(freq) < thr] = 0.
+
+        val_trend = np.fft.ifft(val_slow_spectrum)
+        val_cycle = np.fft.ifft(val_fast_spectrum)
+
+        # DEBUGING part of block
+        # why the ifft is sclaed down around the average?
+        # what is the median of frequencies?
+        plt.plot(np.arange(values.shape[0]), val_trend)
+        plt.savefig('debug_fft_trend.png')
+        plt.close()
+        plt.plot(freq[:10], np.abs(val_spectrum[:10])**2)
+        plt.savefig('debug_fft_spec.png')
+        plt.close()
+        plt.plot(freq, np.abs(val_fast_spectrum)**2)
+        plt.savefig('debug_fft_spec_f.png')
+        plt.close()
+
+    elif method == 'hpf':
         lam = 0.5*1e9
         valpd = pd.DataFrame(values, columns=["ti_transp_flux"])
         val_cycle, val_trend = sm.tsa.filters.hpfilter(valpd.ti_transp_flux, lam)
+
     elif method == 'exp':
         alpha = 0.01
         valpd = pd.DataFrame(values, columns=["ti_transp_flux"])
@@ -215,6 +250,7 @@ def filter_trend(values, method='hpf' ):
         val_cycle = valpd - val_trend
         print('smoothing of value: the found alpha= {}'.format(smoothing_model.model.params["smoothing_level"]))
         print(val_trend)
+
     elif method == 'mean':
         val_trend = values.mean()*np.ones(values.shape)
         val_cycle = values - val_trend   
@@ -290,19 +326,21 @@ def main(foldername='17', runforbatch=False):
             val_wind = val[:-int(alpha_wind*len(val))]            
             val_trend_avg, val_fluct_avg = filter_trend(val_wind, "mean")
             
-            val_trend_hp, val_flux_exp = filter_trend(val, "hpf")
+            #val_trend_hp, val_fluct_exp = filter_trend(val, "hpf")
+            
+            val_trend_fft, val_fluct_fft = filter_trend(val, "fft")
+
             val_trend_exp, val_fluct_exp = filter_trend(val, "exp")
-            profile_evol_plot([val, val_trend_hp, val_trend_exp, np.ones(val.shape)*val_trend_avg[0]], 
-                              labels=['original','hpf', 'exponential(alpha=0.01)', 'mean(of {:.2e} after {} steps)'.format(val_trend_avg[0], int(alpha_wind*len(val)))],
+           
+            profile_evol_plot([val, val_trend_fft, val_trend_exp, np.ones(val.shape)*val_trend_avg[0]], 
+                              labels=['original', 'fft', 'exponential(alpha=0.01)', 'mean(of {:.2e} after {} steps)'.
+                                                                                     format(val_trend_avg[0], int(alpha_wind*len(val)))],
                               name='trend_'+p+'_'+a+'_'+mainfoldernum)
              
             # histogram for the last alpha_window values
             plot_coreprofval_dist(val_fluct_avg, name='wind'+code_name+p+'_'+a+'_'+mainfoldernum)
 
             #TODO get exponential average of the values: standard packaged optimize for alpha -- why it is so high? is composition of exponential avaraging is another exponential averagin -- if so, what is alpha_comp?
-            #TODO get the trend as average after lamb=0.2-0.4 steps 
-            #TODO plot three trends against the valeus, and the histograms of residuals for all averagings
-            #TODO make FFT of series and split in Fourier space by thresholding
 
 if __name__ == '__main__':
 
