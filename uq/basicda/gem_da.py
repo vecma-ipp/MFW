@@ -205,7 +205,7 @@ def filter_trend(values, method='hpf' ):
     """
     
     if method =='fft':
-        thr = 10.
+        thr = 2**(-8)
         thr_frac = 0.5
 
         val_spectrum = np.fft.fft(values)
@@ -229,12 +229,14 @@ def filter_trend(values, method='hpf' ):
         plt.plot(np.arange(values.shape[0]), val_trend)
         plt.savefig('debug_fft_trend.png')
         plt.close()
-        plt.plot(freq[:10], np.abs(val_spectrum[:10])**2)
+        plt.loglog(freq, np.abs(val_slow_spectrum)**2), '.'
+        plt.savefig('debug_fft_spec_s.png')
+        plt.close()
+        plt.loglog(freq, np.abs(val_spectrum)**2,'.')
         plt.savefig('debug_fft_spec.png')
         plt.close()
-        plt.plot(freq, np.abs(val_fast_spectrum)**2)
-        plt.savefig('debug_fft_spec_f.png')
-        plt.close()
+        print('which frequencies have high contribution')
+        print(np.argwhere(val_spectrum>10000.))
 
     elif method == 'hpf':
         lam = 0.5*1e9
@@ -242,19 +244,18 @@ def filter_trend(values, method='hpf' ):
         val_cycle, val_trend = sm.tsa.filters.hpfilter(valpd.ti_transp_flux, lam)
 
     elif method == 'exp':
-        alpha = 0.01
+        alpha = 0.005
         valpd = pd.DataFrame(values, columns=["ti_transp_flux"])
         #smoothing_model = sm.tsa.ExponentialSmoothing(values).fit()
         smoothing_model = sm.tsa.SimpleExpSmoothing(valpd, initialization_method="heuristic").fit(smoothing_level=alpha, optimized=False)
         val_trend = smoothing_model.fittedvalues
         val_cycle = valpd - val_trend
         print('smoothing of value: the found alpha= {}'.format(smoothing_model.model.params["smoothing_level"]))
-        print(val_trend)
 
     elif method == 'mean':
         val_trend = values.mean()*np.ones(values.shape)
         val_cycle = values - val_trend   
- 
+   
     return np.array(val_trend), np.array(val_cycle)
 
 def compare_gaussian(pdf, domain, moments):
@@ -322,7 +323,7 @@ def main(foldername='17', runforbatch=False):
             plot_coreprofval_dist(val, name=p+'_'+a+'_'+mainfoldernum)
 
             # plot different averagings
-            alpha_wind = 0.33
+            alpha_wind = 0.4
             val_wind = val[:-int(alpha_wind*len(val))]            
             val_trend_avg, val_fluct_avg = filter_trend(val_wind, "mean")
             
@@ -333,14 +334,15 @@ def main(foldername='17', runforbatch=False):
             val_trend_exp, val_fluct_exp = filter_trend(val, "exp")
            
             profile_evol_plot([val, val_trend_fft, val_trend_exp, np.ones(val.shape)*val_trend_avg[0]], 
-                              labels=['original', 'fft', 'exponential(alpha=0.01)', 'mean(of {:.2e} after {} steps)'.
-                                                                                     format(val_trend_avg[0], int(alpha_wind*len(val)))],
+                              labels=['original', 'fft(f<2^-8)', 'exponential(alpha=0.005)', 'mean(of {:.2e} after {} steps)'.
+                                                                                                format(val_trend_avg[0], int(alpha_wind*len(val)))],
                               name='trend_'+p+'_'+a+'_'+mainfoldernum)
              
             # histogram for the last alpha_window values
             plot_coreprofval_dist(val_fluct_avg, name='wind'+code_name+p+'_'+a+'_'+mainfoldernum)
 
             #TODO get exponential average of the values: standard packaged optimize for alpha -- why it is so high? is composition of exponential avaraging is another exponential averagin -- if so, what is alpha_comp?
+            #TODO make FFT of series and split in Fourier space by thresholding
 
 if __name__ == '__main__':
 
