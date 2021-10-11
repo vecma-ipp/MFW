@@ -119,7 +119,7 @@ def profile_evol_load(rho=0.69, folder_name='../gem_data/cpo5/', prof_names=['ti
 def profile_evol_plot(value_s, labels=[], file_names=[], name='gem_ti_flux'):
     
     #ts = np.arange(len(file_names))
-    ts = np.arange(value_s[0].shape[0])
+    n = max([len(v) for v in value_s])
 
     ## rhos = np.arange(len(value_s))
     #for num, value in enumerate(value_s):
@@ -132,6 +132,7 @@ def profile_evol_plot(value_s, labels=[], file_names=[], name='gem_ti_flux'):
 
     fig, ax = plt.subplots(figsize=(24.,8.))
     for value, lab in zip(value_s, labels):
+        ts = np.arange(n-value.shape[0], n)
         ax.plot(ts, value, '-', label=lab)
     plt.legend(loc='best')
     plt.savefig(name + '.png')
@@ -205,7 +206,7 @@ def filter_trend(values, method='hpf' ):
     """
     
     if method =='fft':
-        thr = 2**(-8)
+        thr = 2**(-10)
         thr_frac = 0.5
 
         val_spectrum = np.fft.fft(values)
@@ -223,21 +224,29 @@ def filter_trend(values, method='hpf' ):
         val_trend = np.fft.ifft(val_slow_spectrum)
         val_cycle = np.fft.ifft(val_fast_spectrum)
 
+        en_ap_sl = (np.abs(val_slow_spectrum)**2).sum()
+        en_ap_fs = (np.abs(val_fast_spectrum)**2).sum()
+        en_ap_tot = en_ap_sl + en_ap_fs
+        en_frac = en_ap_sl/en_ap_tot
+        print("Approximation of spectra energy totally: {0} ; low frequencies: {1} ; high frequencies : {2} ; and fraction of it for low frequencies: {3}"
+              .format(en_ap_tot, en_ap_sl, en_ap_fs, en_frac))
+
         # DEBUGING part of block
         # why the ifft is sclaed down around the average?
         # what is the median of frequencies?
-        plt.plot(np.arange(values.shape[0]), val_trend)
-        plt.savefig('debug_fft_trend.png')
-        plt.close()
-        plt.loglog(freq, np.abs(val_slow_spectrum)**2), '.'
-        plt.savefig('debug_fft_spec_s.png')
-        plt.close()
-        plt.loglog(freq, np.abs(val_spectrum)**2,'.')
+        #plt.plot(np.arange(values.shape[0]), val_trend)
+        #plt.savefig('debug_fft_trend.png')
+        #plt.close()
+        #plt.loglog(freq, np.abs(val_slow_spectrum)**2), '.'
+        #plt.savefig('debug_fft_spec_s.png')
+        #plt.close()
+        plt.loglog(freq, np.abs(val_spectrum)**2,'')
+        plt.axvline(thr, alpha=0.5, color='r', linestyle='--')
         plt.savefig('debug_fft_spec.png')
         plt.close()
-        print('which frequencies have high contribution')
-        print(np.argwhere(val_spectrum>10000.))
-
+        #print('which frequencies have high contribution')
+        #print(np.argwhere(val_spectrum>10000.))
+      
     elif method == 'hpf':
         lam = 0.5*1e9
         valpd = pd.DataFrame(values, columns=["ti_transp_flux"])
@@ -265,9 +274,9 @@ def compare_gaussian(pdf, domain, moments):
     # calculates KL of given pdf and pdf of a Gaussian with with given first two moments, E and sigma
     # ***
 
-    for i, mom in enumerate(moments[2:]):
+    for i, mom in enumerate(moments[3:]):
         if abs(mom) > 1e-2*np.power(moments[0], i+2):
-            print('moment num '+str(i+2)+' is large')    
+            print('moment num '+str(i+3)+' is large')    
 
     delta = (domain[-1] - domain[0])/len(domain)
 
@@ -319,8 +328,8 @@ def main(foldername='17', runforbatch=False):
             ### print(val_ev_s[i].shape); print(val.shape) ### DEBUG 
             ##ti_flux = np.genfromtxt('gem_ti_flux.csv', delimiter =", ")
         
-            get_coreprof_ev_acf(val, name=code_name+'_'+p+'_'+a+'stats', lags =[1,2,4,8,16,32,64,128])
-            plot_coreprofval_dist(val, name=p+'_'+a+'_'+mainfoldernum)
+            get_coreprof_ev_acf(val, name=code_name+'_'+p+'_'+a+'stats', lags =[1,4,16,64,256])
+            plot_coreprofval_dist(val, name=p+'_'+a+'_'+mainfoldernum, discr_level=32)
 
             # plot different averagings
             alpha_wind = 0.4
@@ -333,13 +342,13 @@ def main(foldername='17', runforbatch=False):
 
             val_trend_exp, val_fluct_exp = filter_trend(val, "exp")
            
-            profile_evol_plot([val, val_trend_fft, val_trend_exp, np.ones(val.shape)*val_trend_avg[0]], 
-                              labels=['original', 'fft(f<2^-8)', 'exponential(alpha=0.005)', 'mean(of {:.2e} after {} steps)'.
-                                                                                                format(val_trend_avg[0], int(alpha_wind*len(val)))],
+            profile_evol_plot([val, val_trend_fft, val_trend_exp, val_trend_avg], # np.ones(val.shape)*val_trend_avg[0]], 
+                              labels=['original', 'fft(f<2^-10)', 'exponential(alpha=0.005)', 'mean(of {:.2e} after {} steps)'.
+                                                                                               format(val_trend_avg[0], int(alpha_wind*len(val)))],
                               name='trend_'+p+'_'+a+'_'+mainfoldernum)
              
             # histogram for the last alpha_window values
-            plot_coreprofval_dist(val_fluct_avg, name='wind'+code_name+p+'_'+a+'_'+mainfoldernum)
+            plot_coreprofval_dist(val_fluct_avg, name='wind'+code_name+p+'_'+a+'_'+mainfoldernum, discr_level=128)
 
             #TODO get exponential average of the values: standard packaged optimize for alpha -- why it is so high? is composition of exponential avaraging is another exponential averagin -- if so, what is alpha_comp?
             #TODO make FFT of series and split in Fourier space by thresholding
