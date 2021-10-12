@@ -4,7 +4,8 @@ ymmsl_version: v0.1
 model:
   name: fusion_gem0
 
-  compute_elements:
+#  compute_elements:
+  components:
     init:        init_M3
     stop:        stop_M3
     transport:   ets_M3

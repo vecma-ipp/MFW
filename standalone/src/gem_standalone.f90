@@ -47,6 +47,8 @@ contains
     use c_tools
     implicit none
 
+    include "mpif.h"    !OL keep or not?
+
     character(kind=c_char), pointer :: equil_in_buf(:)
     character(kind=c_char), pointer :: corep_in_buf(:)
     character(kind=c_char), pointer :: coret_out_buf(:)
@@ -59,6 +61,10 @@ contains
     character(F_STR_SIZE) :: equil_in_file, corep_in_file, coret_out_file
     character(F_STR_SIZE) :: username, tmpdir
     integer :: tmpsize, ios
+
+    integer :: ierr, npes, irank
+    call MPI_Comm_size(MPI_COMM_WORLD, npes, ierr)
+    call MPI_Comm_rank(MPI_COMM_WORLD, irank, ierr)
 
     allocate(equil_in(1))
     allocate(corep_in(1))
@@ -74,6 +80,12 @@ contains
 
     equil_in_file = TRIM(tmpdir)//TRIM(username)//'_gem_equilibrium_in.cpo'
     call byte2file(equil_in_file, equil_in_buf, size(equil_in_buf))
+
+    corep_in_file = TRIM(tmpdir)//TRIM(username)//'_gem_coreprof_in.cpo'
+    call byte2file(corep_in_file, corep_in_buf, size(corep_in_buf))
+
+    call MPI_Barrier(MPI_COMM_WORLD, ierr)
+
     open (unit = 10, file = equil_in_file, &
          status = 'old', form = 'formatted', &
          action = 'read', iostat = ios)
@@ -87,8 +99,6 @@ contains
        STOP
     end if
 
-    corep_in_file = TRIM(tmpdir)//TRIM(username)//'_gem_coreprof_in.cpo'
-    call byte2file(corep_in_file, corep_in_buf, size(corep_in_buf))
     open (unit = 10, file = corep_in_file, &
          status = 'old', form = 'formatted', &
          action = 'read', iostat = ios)
@@ -104,17 +114,21 @@ contains
 
     call gem_cpo(equil_in, corep_in, coret_out)
 
-    ! transfer CPO to buf
-    !...  write the results
-    coret_out_file = 'gem_coretransp_out.cpo'
-    call open_write_file(11,coret_out_file)
-    call write_cpo(coret_out(1),'coretransp')
-    call close_write_file
+    call MPI_Barrier(MPI_COMM_WORLD, ierr)
 
-    call file2byte(coret_out_file, tmpbuf, tmpsize)
-    allocate(coret_out_buf(tmpsize))
-    coret_out_buf(1:tmpsize) = tmpbuf(1:tmpsize)
-    call dealloc_cbytebuf(tmpbuf)
+    if (irank.eq.0) then
+       ! transfer CPO to buf
+       !...  write the results
+       coret_out_file = 'gem_coretransp_out.cpo'
+       call open_write_file(11,coret_out_file)
+       call write_cpo(coret_out(1),'coretransp')
+       call close_write_file
+
+       call file2byte(coret_out_file, tmpbuf, tmpsize)
+       allocate(coret_out_buf(tmpsize))
+       coret_out_buf(1:tmpsize) = tmpbuf(1:tmpsize)
+       call dealloc_cbytebuf(tmpbuf)
+    endif
 
     call deallocate_cpo(equil_in)
     call deallocate_cpo(corep_in)

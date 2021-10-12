@@ -33,8 +33,8 @@
 
    <step_parameters>
      <step_counts>
-       <nstep> 50 </nstep>
-       <ndg> 25 </ndg>
+       <nstep> 100 </nstep>
+       <ndg> 50 </ndg>
        <nplot> 1 </nplot>
      </step_counts>
      <time_step>
@@ -44,11 +44,11 @@
 
    <cpu_parameters>
      <domain_decomposition>
-       <npesx>4</npesx>
-       <npess>32</npess>
+       <npesx> 4 </npesx>
+       <npess> 32 </npess>
      </domain_decomposition>
      <parallel_cases>
-       <nftubes> 1 </nftubes>
+       <nftubes> 8 </nftubes>
        <grid_type> spread </grid_type>	
      </parallel_cases>
    </cpu_parameters>

@@ -1,4 +1,5 @@
 import os
+import csv
 import easyvvuq as uq
 # from ual
 from ascii_cpo import read
@@ -6,6 +7,8 @@ from ascii_cpo import read
 from base.cpo_encoder import CPOEncoder
 from base.cpo_decoder import CPODecoder
 from base.utils import cpo_inputs
+from base.plots import plot_moments, plot_sobols
+
 
 '''
 Perform UQ for the Transport: ETS
@@ -35,16 +38,10 @@ exec_code = "ets_test"
 
 # Define the uncertain parameters
 input_params = {
-    "te.boundary.value": {
-        "dist_name": "Normal",
-        "var_coeff":  0.2,
-    }
-    ,
-    "ti.boundary.value": {
-        "dist_name": "Normal",
-        "var_coeff": 0.2,
-    }
+    "te.boundary.value": {"dist": "Normal", "err":  0.2},
+    "ti.boundary.value": {"dist": "Normal", "err": 0.2}
 }
+
 # CPO file containg initial values of uncertain params
 input_filename = "ets_coreprof_in.cpo"
 input_cponame = "coreprof"
@@ -132,8 +129,35 @@ my_campaign.apply_analysis(analysis)
 # Get results
 results = my_campaign.get_last_analysis()
 
-#  Graphics for Descriptive satatistics
+# Save results on csv file and get graphics for Descriptive satatistics
 corep = read(os.path.join(cpo_dir,  "ets_coreprof_in.cpo"), "coreprof")
 rho = corep.rho_tor_norm
 
-# use results.describes(qoi) and results.sobol_first(qoi)
+header = ['rho_tor_norm']
+cols = [list(rho)]
+for i, qoi in enumerate(output_columns):
+    mean =  results.describe(qoi, 'mean')
+    std = results.describe(qoi, 'std')
+    sob1 = results.sobols_first(qoi)
+    sobt = results.sobols_total(qoi)
+
+    header.append('mean_'+qoi)
+    header.append('std_'+qoi)
+
+    plot_moments(mean, std, x=rho, xlabel='rho', ylabel=qoi,
+            ftitle='Descprive statistics for ETS UQ',
+            fname='stats_'+qoi.split('.')[0])
+
+    plot_sobols(sob1, x=rho, xlabel='rho_tor', ylabel='1st SI',
+                ftitle='Fisrt sobol indices for ETS UQ', fname='sob1_'+qoi.split('.')[0])
+
+    plot_sobols(sobt, x=rho, xlabel='rho_tor', ylabel='1st SI',
+                ftitle='Total sobol indices for ETS UQ', fname='sobt_'+qoi.split('.')[0])
+
+#from itertools import zip_longest
+#export_data = zip_longest(*cols, fillvalue='')
+#with open(campaign_name+'stats.csv', 'w', newline='') as csv_file:
+#    wr = csv.writer(csv_file)
+#    wr.writerow(header)
+#    wr.writerows(export_data)
+#csv_file.close()

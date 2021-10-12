@@ -14,6 +14,7 @@ program duplicate_M3
   call LIBMUSCLE_PortsDescription_add(ports, YMMSL_Operator_F_INIT, 'input')
   call LIBMUSCLE_PortsDescription_add(ports, YMMSL_Operator_O_F, 'copy_A')
   call LIBMUSCLE_PortsDescription_add(ports, YMMSL_Operator_O_F, 'copy_B')
+  call LIBMUSCLE_PortsDescription_add(ports, YMMSL_Operator_O_F, 'copy_C')
   instance = LIBMUSCLE_Instance_create(ports)
   call LIBMUSCLE_PortsDescription_free(ports)
   
@@ -26,6 +27,7 @@ program duplicate_M3
      ! send data
      call LIBMUSCLE_Instance_send(instance, 'copy_A', rmsg)
      call LIBMUSCLE_Instance_send(instance, 'copy_B', rmsg)
+     call LIBMUSCLE_Instance_send(instance, 'copy_C', rmsg)
 
      call LIBMUSCLE_Message_free(rmsg)
      

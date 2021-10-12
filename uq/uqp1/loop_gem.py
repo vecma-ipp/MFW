@@ -44,20 +44,10 @@ exec_code = "loop_gem"
 # Define the uncertain parameters
 # Amplitude, Position and Width from source_dummy.xml
 elec_heating_params = {
-    "electrons.heating_el.WTOT_el":{
-        "dist_name": "Uniform",
-        "var_coeff": 0.2,
-    }#,
-    #"electrons.heating_el.RHEAT_el":{
-    #    "dist_name": "Uniform",
-    #    "var_coeff": 0.2,
-    #},
-    #"electrons.heating_el.FWHEAT_el":{
-    #    "dist_name": "Uniform",
-    #    "var_coeff": 0.2,
-    #}
+    "electrons.heating_el.WTOT_el":  {"dist": "Uniform", "err": 0.2},
+    "electrons.heating_el.RHEAT_el": {"dist": "Uniform", "err": 0.2},
+    "electrons.heating_el.FWHEAT_el":{"dist": "Uniform", "err": 0.2}
 }
-
 
 # Choose one of the uncertain params dict, or merge them using
 input_params = {}
@@ -79,8 +69,7 @@ params, vary = xml_inputs(xml_filename=input_xml_filename,
                           input_params=input_params)
 
 # Initialize Campaign object
-test_case = cpo_dir.split('/')[-1]
-campaign_name = "UQSR_loopGem_"+test_case
+campaign_name = "UQSR_loopGem_"
 my_campaign = uq.Campaign(name=campaign_name, work_dir=tmp_dir)
 
 # Create new directory for inputs

@@ -1,0 +1,47 @@
+#/* -*- yaml -*- */
+ymmsl_version: v0.1
+
+model:
+  name: fusion_gem
+
+#  compute_elements:
+  components:
+    init:        init_M3
+    stop:        stop_M3
+    transport:   ets_M3
+    turbulence:  gem_M3
+    f2dv:        imp4dv_M3
+    equilibrium: chease_M3
+    duplicate:   duplicate_M3
+    cpdup:       cpdup_M3
+
+  conduits:
+    init.equilibrium_init:       transport.equilibrium_init
+    init.coreprof_init:          transport.coreprof_init
+    init.coresource_init:        transport.coresource_init
+    init.coreimpur_init:         transport.coreimpur_init
+    init.toroidfield_init:       transport.toroidfield_init
+    transport.equilibrium_out:   equilibrium.equilibrium_in
+    transport.coreprof_out:      cpdup.input
+    equilibrium.equilibrium_out: duplicate.input
+    duplicate.copy_A:            turbulence.equilibrium_in
+    duplicate.copy_B:            transport.equilibrium_in
+    duplicate.copy_C:            f2dv.equilibrium_in
+    cpdup.copy_A:                turbulence.coreprof_in
+    cpdup.copy_B:                f2dv.coreprof_in
+    turbulence.coretransp_out:   f2dv.coretransp_in
+    f2dv.coretransp_out:         transport.coretransp_in
+    transport.equilibrium_final: stop.equilibrium_in
+    transport.coreprof_final:    stop.coreprof_in
+    transport.coresource_final:  stop.coresource_in
+    transport.coreimpur_final:   stop.coreimpur_in
+    transport.toroidfield_final: stop.toroidfield_in
+
+settings:
+  transport.duration: 0.05
+  transport.dt: 0.01
+  init_cpo_dir: "../../workflows/AUG_28906_6"
+  final_cpo_dir: "./"
+  muscle_remote_log_level: "DEBUG"  
+  slice_initial_number: 0
+  save_slice: True

@@ -51,7 +51,8 @@ class Split_Normal():
 # TODO to EasyVVUQ with doc (Onnies paper)
 class ValidateCompatibility():
     def __init__(self, weight_factor=0.5):
-        """Measure compatibility between two QoI distributions.
+        """
+        Measure compatibility between two QoI distributions.
         Each distribution is characterized by three moments:
         Mean, variance and skewness.
         Lower metric means higher compatibility.
@@ -91,8 +92,8 @@ class ValidateCompatibility():
         self._weight_factor = weight_factor
 
     def dist(self, mom1, mom2):
-        """ Compute distance between
-
+        """ 
+        Compute distance between distributions
         Parameters
         ----------
         mom1: list
@@ -120,7 +121,7 @@ class ValidateCompatibility():
 class Ztest():
 
     def __init__(self, mu1, mu2, sig1, sig2, n1, n2):
-    "
+    """
     Compare 2 distributions using the Z-test
 
     Parameters
@@ -128,8 +129,8 @@ class Ztest():
     where mu  = mean
 	  sig = standard deviation
 	  n   = number of data points
-    from a distribution
-    "
+                from a distribution
+    """
         self.mu1 = mu1
         self.mu2 = mu2
         self.sig1= sig1
@@ -143,10 +144,11 @@ class Ztest():
     def element_version(self):
         return "0.1"
 
-    def score(self)
-	"
-	compute the z-score between two distributions
-	"
-	numerator = abs(self.mu1 - self.mu2)
-	denominator = np.sqrt(self.sig1**2 / self.n1 + self.sig2**2 / self.n2)
-	return numerator / max(denominator, 1.e-20)
+    def score(self):
+        """
+        Compute the z-score between two distributions.
+	"""
+        numerator = abs(self.mu1 - self.mu2)
+        denominator = np.sqrt(self.sig1**2 / self.n1 + self.sig2**2 / self.n2)
+        return numerator / max(denominator, 1.e-20)
+
