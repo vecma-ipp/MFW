@@ -1,5 +1,5 @@
 
-CPONUM=31
+CPONUM=32
 
 DIR='/marconi_scratch/userexternal/yyudin00/MFW_runs/cpo'$CPONUM'/'
 

@@ -88,3 +88,24 @@ at main/psnaps.F90
      END DO
   END DO
 
+---------------------
+### Snapshot file
+
+look '/actor/tsnaps.f90'
+written in 'tdw.dat' file (TFILE), same as 't00.dat' file
+
+----------------------
+### Flux averaging
+
+look for 'avgen' value
+
+energy fluxes are calculated from
+
+en()
+
+at ITMFluxes all the energy values are avaraged as:
+
+avgen = (1 - alpha) * avgen + alpha * en
+
+alpha = 0.005
+ 

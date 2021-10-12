@@ -177,7 +177,7 @@ def plot_prof_all(profs, rho, name, proflabels):
     colorchoice = ['b','g','r','c','m','y','k',]
            
     fig, ax1 = plt.subplots()
-    ax1.set_ylabel('T')
+    ax1.set_ylabel('T[keV]')
 
     ax2 = ax1.twinx()    
     ax2.set_label('gradT')
@@ -191,7 +191,7 @@ def plot_prof_all(profs, rho, name, proflabels):
     ax1.tick_params(axis='y', labelcolor='tab:red')
     ax2.tick_params(axis='y', labelcolor='tab:blue')
 
-    ax1.set_xlabel('rho[m]i')
+    ax1.set_xlabel('rho [1..100 units]')
 
     ax1.legend(loc=0)
     ax2.legend(loc=3)
@@ -399,7 +399,17 @@ prof_gradte = get_tegrad(prof_file_path)
 prof_gradti = get_tigrad(prof_file_path)
 profs = [prof_te, prof_ti, prof_gradte, prof_gradti]
 prlabels = ['te', 'ti', 'gradte', 'gradti']
-plot_prof_all(profs, rho, 'aug6_r', prlabels)
+#plot_prof_all(profs, rho, 'aug6_r', prlabels)
+
+exp_folder1 = "../workflows/AUG_28906_5"
+prof_file_path2 = os.path.join(exp_folder1, prof_file)
+prof_te2 = get_te(prof_file_path2)
+prof_ti2 = get_ti(prof_file_path2)
+profs2 = [prof_te, prof_ti, prof_te2, prof_ti2]
+prlabels2 = ['te_rst', 'ti_rst', 'te_org', 'ti_org']
+plot_prof_all(profs2, rho, 'core6vs5', prlabels2)
+
+
 # print(prof_gradte[65:73])
 # print(prof_gradti[65:73].reshape(1,-1))
 # gradgradti = deriv(prof_gradti, 0.1)

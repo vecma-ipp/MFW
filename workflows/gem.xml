@@ -1,7 +1,4 @@
- <?xml-stylesheet type="text/xsl" href="./input_gem.xsl"
- charset="ISO-8859-1"?>
- 
- <parameters>
+<parameters>
 
    <write_cpos> false </write_cpos>
 
@@ -47,8 +44,8 @@
 
    <cpu_parameters>
      <domain_decomposition>
-       <npesx> 1 </npesx>
-       <npess> 8 </npess>
+       <npesx>4</npesx>
+       <npess>32</npess>
      </domain_decomposition>
      <parallel_cases>
        <nftubes> 1 </nftubes>
@@ -65,4 +62,3 @@
    </switches>
 
  </parameters>
- 

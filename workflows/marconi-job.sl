@@ -6,12 +6,12 @@
 ###SBATCH --mem=118GB			# memory (max 180GB/node in skl_fua)
 #SBATCH --partition=skl_fua_dbg		# partition to be used
 ###SBATCH --qos=			# quality of service
-#SBATCH --job-name=MFW		# job name
+#SBATCH --job-name=MFW_MUS2		# job name
 #SBATCH --err=test-%j.err			# std-error file
 #SBATCH --out=test-%j.out			# std-output file
 #SBATCH --account=FUA35_UQMWA3 			# account number
 #SBATCH --mail-type=END				# specify email notification
-#SBATCH --mail-user=onnie.luk@ipp.mpg.de	# e-mail address
+#SBATCH --mail-user=yehor.yudin@ipp.mpg.de	# e-mail address
 
 export QCG_KERNEL_turb=${QCG_KERNEL_turb:-128}
 export CPO_INPUT_DIR=AUG_28906_6/
