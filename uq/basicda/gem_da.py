@@ -10,6 +10,11 @@ from sklearn.neighbors import KernelDensity as KDE
 from scipy.stats import moment
 
 import statsmodels.api as sm
+from statsmodels.tsa.api import acf, pacf, graphics
+from statsmodels.tsa.api import SimpleExpSmoothing, ExponentialSmoothing  
+from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
+from statsmodels.tsa.ar_model import AutoReg
+from statsmodels.tsa.arima.model import ARIMA
 
 #from da_utils import 
 
@@ -188,15 +193,49 @@ def plot_coreprofval_dist(value_spw, name='ti', discr_level=64):
 
 def get_coreprof_ev_acf(value_ev, name='ti', lags=[1,2,3,4,5,6,7,8,9,10]):
     
-    res = [1. if l==0 else np.corrcoef(value_ev[l:], value_ev[:-l])[0][1] for l in lags]
-    #res = res[res.size//2:]
-    res = np.array(res)
-    line = 'ACF :' + str(res)
+    #acf = [1. if l==0 else np.corrcoef(value_ev[l:], value_ev[:-l])[0][1] for l in lags]
+    
+    acf_res = acf(value_ev, nlags=64, fft=True) 
+  
+    acf_res = np.array(acf_res)
+    line = 'ACF :' + str(acf_res)
     print(line)
     with open(name+'_acf.txt', 'w') as wfile:
         wfile.write(line)
+    
+    val_df = pd.DataFrame(value_ev)
+    plot_acf(val_df, lags=lags)
+    plt.savefig('acf.png')
+    plt.close()
 
-    return res
+    plot_pacf(val_df, lags= lags)
+    plt.savefig('pacf.png')
+    plt.close()
+
+    # DEBUG AND PLOTTING
+    """
+    plt.plot( acf, '.', label='ACF')
+    plt.xlabel('lags')
+    plt.ylabel('ACF')
+    plt.title('Autocorrelation function')
+    plt.ylim([-1., 1.])
+    plt.savefig('debug_acf.png')
+    plt.close()
+    """
+
+    return acf
+
+def apply_arma(values):
+    
+    val_pd = pd.Series(values)
+
+    mod = ARIMA(values)
+    res = mod.fit()
+
+    #DEBUG and printing
+    print(res.summary())
+
+    return values
 
 def filter_trend(values, method='hpf' ):
     """
@@ -221,14 +260,14 @@ def filter_trend(values, method='hpf' ):
         val_slow_spectrum[np.abs(freq) > thr] = 0.
         val_fast_spectrum[np.abs(freq) < thr] = 0.
 
-        val_trend = np.fft.ifft(val_slow_spectrum)
-        val_cycle = np.fft.ifft(val_fast_spectrum)
+        val_trend = np.abs(np.fft.ifft(val_slow_spectrum))
+        val_cycle = np.abs(np.fft.ifft(val_fast_spectrum))
 
         en_ap_sl = (np.abs(val_slow_spectrum)**2).sum()
         en_ap_fs = (np.abs(val_fast_spectrum)**2).sum()
         en_ap_tot = en_ap_sl + en_ap_fs
         en_frac = en_ap_sl/en_ap_tot
-        print("Approximation of spectra energy totally: {0} ; low frequencies: {1} ; high frequencies : {2} ; and fraction of it for low frequencies: {3}"
+        print("Approximation of spectra energy totally: {0:.4e} ; low frequencies: {1:.4e} ; high frequencies : {2:.4e} ; and fraction of it for low frequencies: {3:.4e}"
               .format(en_ap_tot, en_ap_sl, en_ap_fs, en_frac))
 
         # DEBUGING part of block
@@ -255,8 +294,8 @@ def filter_trend(values, method='hpf' ):
     elif method == 'exp':
         alpha = 0.005
         valpd = pd.DataFrame(values, columns=["ti_transp_flux"])
-        #smoothing_model = sm.tsa.ExponentialSmoothing(values).fit()
-        smoothing_model = sm.tsa.SimpleExpSmoothing(valpd, initialization_method="heuristic").fit(smoothing_level=alpha, optimized=False)
+        #smoothing_model = ExponentialSmoothing(values).fit()
+        smoothing_model = SimpleExpSmoothing(valpd, initialization_method="heuristic").fit(smoothing_level=alpha, optimized=False)
         val_trend = smoothing_model.fittedvalues
         val_cycle = valpd - val_trend
         print('smoothing of value: the found alpha= {}'.format(smoothing_model.model.params["smoothing_level"]))
@@ -283,10 +322,10 @@ def compare_gaussian(pdf, domain, moments):
     x = 1. # np.arange(len(pdf)) # np.linspace(valmin, valmax, valres)
     x = domain
 
-    pref = 1./(np.sqrt(2.*np.pi)*moments[1])
-    determ = 2.*moments[1]*moments[1]
+    pref = 1./(np.sqrt(2.*np.pi)*moments[2])
+    determ = 2.*moments[2]*moments[2]
     
-    pdf_gauss = pref*np.exp((moments[0]-x)*(moments[0]-x)/determ)
+    pdf_gauss = pref*np.exp((moments[1]-x)*(moments[1]-x)/determ)
 
     kl_div = delta*np.multiply(pdf, np.log(np.divide(pdf, pdf_gauss))).sum()
 
@@ -328,10 +367,14 @@ def main(foldername='17', runforbatch=False):
             ### print(val_ev_s[i].shape); print(val.shape) ### DEBUG 
             ##ti_flux = np.genfromtxt('gem_ti_flux.csv', delimiter =", ")
         
-            get_coreprof_ev_acf(val, name=code_name+'_'+p+'_'+a+'stats', lags =[1,4,16,64,256])
+            get_coreprof_ev_acf(val, name=code_name+'_'+p+'_'+a+'stats', lags =[1,2,3,4,5,6,7,8,9,10,16,32,64,128,256,512])
             plot_coreprofval_dist(val, name=p+'_'+a+'_'+mainfoldernum, discr_level=32)
 
+            # try ARMA model
+            apply_arma(val)
+
             # plot different averagings
+            """
             alpha_wind = 0.4
             val_wind = val[:-int(alpha_wind*len(val))]            
             val_trend_avg, val_fluct_avg = filter_trend(val_wind, "mean")
@@ -349,9 +392,9 @@ def main(foldername='17', runforbatch=False):
              
             # histogram for the last alpha_window values
             plot_coreprofval_dist(val_fluct_avg, name='wind'+code_name+p+'_'+a+'_'+mainfoldernum, discr_level=128)
-
+            """
             #TODO get exponential average of the values: standard packaged optimize for alpha -- why it is so high? is composition of exponential avaraging is another exponential averagin -- if so, what is alpha_comp?
-            #TODO make FFT of series and split in Fourier space by thresholding
+
 
 if __name__ == '__main__':
 
