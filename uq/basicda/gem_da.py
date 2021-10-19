@@ -13,8 +13,9 @@ import statsmodels.api as sm
 from statsmodels.tsa.api import acf, pacf, graphics
 from statsmodels.tsa.api import SimpleExpSmoothing, ExponentialSmoothing  
 from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
+from statsmodels.graphics.api import qqplot
 from statsmodels.tsa.ar_model import AutoReg
-from statsmodels.tsa.arima.model import ARIMA
+from statsmodels.tsa.arima.model import ARIMA, ARIMAResults
 
 #from da_utils import 
 
@@ -77,9 +78,8 @@ def SA_exploite(analysis, qoi):
 
 #AUG_GM_date_explore(filename='../data/AUG_gem_inoutput.txt')
 
-def profile_evol_load(rho=0.69, folder_name='../gem_data/cpo5/', prof_names=['ti_transp', 'te_transp'], attrib_names=['flux'], file_code_name='gem', name_postfix=''):
+def profile_evol_load(rho=0.69, folder_name='../gem_data/cpo5/', prof_names=['ti_transp', 'te_transp'], attrib_names=['flux'], coord_len=1, file_code_name='gem', name_postfix=''):
     
-    #prof_names = ['ti_transp.flux', 'te_transp.flux']
     #prof_names = ['ti_transp', 'te_transp']
     file_base_name = 'gem_coretransp'
     file_ext = '.cpo'
@@ -95,7 +95,12 @@ def profile_evol_load(rho=0.69, folder_name='../gem_data/cpo5/', prof_names=['ti
     
     n = len(prof_names)
     m = len(attrib_names)
+    d = coord_len
+    coords = np.arange(d)
+
     value_s = [[] for _ in itertools.product(prof_names, attrib_names)]
+    value_s = [[[]]*d for _ in value_s]
+    #print(value_s); print(coords) ### DEBUG
 
     for file_name in file_names:
         coretransp = read(os.path.join(folder_name, file_name), 'coretransp')
@@ -108,13 +113,20 @@ def profile_evol_load(rho=0.69, folder_name='../gem_data/cpo5/', prof_names=['ti
             prof = getattr(coretransp.values[0], profname)
             for j, attrib in enumerate(attrib_names):
                 if profname[1] == 'i':
-                     value_s[i*m+j].append(getattr(prof, attrib)[0])
+                     val_reading = getattr(prof, attrib)
+                     #print(val_reading) ### DEBUG
+                     for coord in range(d):
+                         value_s[i*m+j][coord].append(val_reading[coord][0])
                 elif profname[1] == 'e':
-                     value_s[i*m+j].append(getattr(prof, attrib)) 
+                     val_reading = getattr(prof, attrib)
+                     for coord in range(d):
+                         #print(coord) ###DEBUG
+                         value_s[i*m+j][coord].append(val_reading[coord])
                 else:
                      print('attributes have to belong either to ions or electrons')
     
     for i,(prof,attrib) in enumerate(itertools.product(prof_names, attrib_names)):
+        value_arr = np.array(value_s[i])
         np.savetxt(file_code_name + '_' + prof + '_' + attrib  + '_evol' + name_postfix +'.csv', value_s[i], delimiter =", ", fmt ='% s')
         print('Last value (num. {1}) is: {0}'.format(value_s[i][-1], len(value_s[i])))        
 
@@ -133,12 +145,13 @@ def profile_evol_plot(value_s, labels=[], file_names=[], name='gem_ti_flux'):
     ## plt.savefig(name + '.png')
     ## plt.close()
 
-    ##print(value_s_pointwise)
+    print(value_s)  ### DEBUG
 
     fig, ax = plt.subplots(figsize=(24.,8.))
     for value, lab in zip(value_s, labels):
         ts = np.arange(n-value.shape[0], n)
-        ax.plot(ts, value, '-', label=lab)
+        for i in range(value.shape[0]):
+             ax.plot(ts, value[i,:], '-', label=lab)
     plt.legend(loc='best')
     plt.savefig(name + '.png')
     plt.close()
@@ -195,23 +208,35 @@ def get_coreprof_ev_acf(value_ev, name='ti', lags=[1,2,3,4,5,6,7,8,9,10]):
     
     #acf = [1. if l==0 else np.corrcoef(value_ev[l:], value_ev[:-l])[0][1] for l in lags]
     
-    acf_res = acf(value_ev, nlags=64, fft=True) 
+    nl = 64    
+
+    r,q,p  = acf(value_ev, nlags=nl, fft=True, qstat=True) 
+ 
+    acf_data = np.c_[np.arange(1, nl+1), r[1:], q, p]
   
-    acf_res = np.array(acf_res)
-    line = 'ACF :' + str(acf_res)
-    print(line)
-    with open(name+'_acf.txt', 'w') as wfile:
-        wfile.write(line)
+    acf_data_pd = pd.DataFrame(acf_data, columns=['lags', 'AC', 'Q', 'P(>Q)']) 
+    acf_data_pd.set_index('lags')
+ 
+    #acf_res = np.array(acf_res)
+
+    #line = 'ACF :' + str(acf_res)
+    
+    print(acf_data_pd)
+
+    #with open(name+'_acf.txt', 'w') as wfile:
+    #    wfile.write(line)
     
     val_df = pd.DataFrame(value_ev)
+   
+    """ 
     plot_acf(val_df, lags=lags)
     plt.savefig('acf.png')
     plt.close()
-
-    plot_pacf(val_df, lags= lags)
+    
+    plot_pacf(val_df, lags=lags)
     plt.savefig('pacf.png')
     plt.close()
-
+    """
     # DEBUG AND PLOTTING
     """
     plt.plot( acf, '.', label='ACF')
@@ -228,12 +253,21 @@ def get_coreprof_ev_acf(value_ev, name='ti', lags=[1,2,3,4,5,6,7,8,9,10]):
 def apply_arma(values):
     
     val_pd = pd.Series(values)
-
-    mod = ARIMA(values)
+    
+    mod = ARIMA(val_pd, order=(1,0,1))
+    
     res = mod.fit()
 
-    #DEBUG and printing
     print(res.summary())
+
+    resid = res.resid
+
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    qqplot(resid, line='q', ax=ax, fit=True)
+    ax.set_ylim([-5,5])
+    plt.savefig('qq.png')
+    plt.close()
 
     return values
 
@@ -333,7 +367,7 @@ def compare_gaussian(pdf, domain, moments):
 
 ###########################################
 
-def main(foldername='17', runforbatch=False):
+def main(foldername=False, runforbatch=False):
 
     mainfoldernum = foldername
 
@@ -355,26 +389,36 @@ def main(foldername='17', runforbatch=False):
        	    attributes = ['flux']
 
         if not runforbatch:
-            val_ev_s, file_names = profile_evol_load(prof_names=profiles, attrib_names=attributes, folder_name=os.path.join(workdir, 'cpo'+mainfoldernum), file_code_name=code_name, name_postfix='_'+mainfoldernum)
+            if not foldername:
+                mainfoldernum = 'mft'
+                val_ev_s, file_names = profile_evol_load(prof_names=profiles, attrib_names=attributes, coord_len=8, folder_name=os.path.join(workdir, 'mft/cpo'), file_code_name=code_name, name_postfix='_mft')
+            else:
+                mainfoldernum = foldername
+                val_ev_s, file_names = profile_evol_load(prof_names=profiles, attrib_names=attributes, folder_name=os.path.join(workdir, 'cpo'+mainfoldernum), file_code_name=code_name, name_postfix='_'+mainfoldernum)
         val_ev_s = []
 
         for i,(p,a) in enumerate(itertools.product(profiles, attributes)):
+
             val_ev_s.append(np.genfromtxt(code_name+'_'+p+'_'+a+'_evol_'+mainfoldernum+'.csv', delimiter=", "))     
- 
+            print(val_ev_s) ###DEBUG
+            
             profile_evol_plot([val_ev_s[i]], name=code_name+'_'+p+'_'+a+'_'+mainfoldernum)
+            
             val = np.array(val_ev_s[i]).squeeze()
-       
-            ### print(val_ev_s[i].shape); print(val.shape) ### DEBUG 
+            print(val) ## DEBUG            
+
             ##ti_flux = np.genfromtxt('gem_ti_flux.csv', delimiter =", ")
-        
-            get_coreprof_ev_acf(val, name=code_name+'_'+p+'_'+a+'stats', lags =[1,2,3,4,5,6,7,8,9,10,16,32,64,128,256,512])
-            plot_coreprofval_dist(val, name=p+'_'+a+'_'+mainfoldernum, discr_level=32)
-
-            # try ARMA model
-            apply_arma(val)
-
-            # plot different averagings
             """
+            get_coreprof_ev_acf(val, name=code_name+'_'+p+'_'+a+'stats', lags =[1,2,4,8,16,32,64,128,256,512])
+            """
+            plot_coreprofval_dist(val, name=p+'_'+a+'_'+mainfoldernum, discr_level=32)
+            
+            # try ARMA model
+            """
+            apply_arma(val)
+            """
+            # plot different averagings
+            """         
             alpha_wind = 0.4
             val_wind = val[:-int(alpha_wind*len(val))]            
             val_trend_avg, val_fluct_avg = filter_trend(val_wind, "mean")
@@ -389,10 +433,12 @@ def main(foldername='17', runforbatch=False):
                               labels=['original', 'fft(f<2^-10)', 'exponential(alpha=0.005)', 'mean(of {:.2e} after {} steps)'.
                                                                                                format(val_trend_avg[0], int(alpha_wind*len(val)))],
                               name='trend_'+p+'_'+a+'_'+mainfoldernum)
-             
+            """
             # histogram for the last alpha_window values
+            """
             plot_coreprofval_dist(val_fluct_avg, name='wind'+code_name+p+'_'+a+'_'+mainfoldernum, discr_level=128)
             """
+
             #TODO get exponential average of the values: standard packaged optimize for alpha -- why it is so high? is composition of exponential avaraging is another exponential averagin -- if so, what is alpha_comp?
 
 
