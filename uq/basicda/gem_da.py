@@ -91,18 +91,21 @@ def profile_evol_load(rho=0.69, folder_name='../gem_data/cpo5/', prof_names=['ti
                 ]
 
     file_names.sort()
-    #print('filenames'); print(file_names) ### DEBUG
-    
+    #print('filenames'); print(len(file_names)); #print(file_names) ### DEBUG
+
     n = len(prof_names)
     m = len(attrib_names)
+    f = len(file_names)
     d = coord_len
     coords = np.arange(d)
 
-    value_s = [[] for _ in itertools.product(prof_names, attrib_names)]
-    value_s = [[[]]*d for _ in value_s]
-    #print(value_s); print(coords) ### DEBUG
+    #value_s = [[] for _ in itertools.product(prof_names, attrib_names)]
+    #value_s = [[[]]*d for _ in value_s]
+    value_s = np.zeros((n*m,d,f))
+    
+    #print('len of value_s and value_s[0]'); print(len(value_s)); print(len(value_s[0]))#print(value_s); print(coords) ### DEBUG
 
-    for file_name in file_names:
+    for k, file_name in enumerate(file_names):
         coretransp = read(os.path.join(folder_name, file_name), 'coretransp')
         #print('coretransp'); print(coretransp) ### DEBUG
         for i, profname in enumerate(prof_names):
@@ -114,29 +117,36 @@ def profile_evol_load(rho=0.69, folder_name='../gem_data/cpo5/', prof_names=['ti
             for j, attrib in enumerate(attrib_names):
                 if profname[1] == 'i':
                      val_reading = getattr(prof, attrib)
-                     #print(val_reading) ### DEBUG
+                     #print('val_reading'); print(val_reading) ### DEBUG
                      for coord in range(d):
-                         value_s[i*m+j][coord].append(val_reading[coord][0])
+                         #print('before v[a][c]'); print(coord); print(value_s[i*m+j][coord]); print(val_reading[coord][0]) ### DEBUG
+                         #value_s[i*m+j][coord].append(val_reading[coord][0])
+                         value_s[i*m+j][coord][k] = val_reading[coord][0]
+                         #print('after v[a][c]'); print(value_s[i*m+j]) ### DEBUG
                 elif profname[1] == 'e':
                      val_reading = getattr(prof, attrib)
                      for coord in range(d):
                          #print(coord) ###DEBUG
-                         value_s[i*m+j][coord].append(val_reading[coord])
+                         #value_s[i*m+j][coord].append(val_reading[coord])
+                         value_s[i*m+j][coord][k] = val_reading[coord]
                 else:
                      print('attributes have to belong either to ions or electrons')
-    
+                #print(len(value_s[i*m+j][0])) ### DEBUG   
+ 
     for i,(prof,attrib) in enumerate(itertools.product(prof_names, attrib_names)):
         value_arr = np.array(value_s[i])
         np.savetxt(file_code_name + '_' + prof + '_' + attrib  + '_evol' + name_postfix +'.csv', value_s[i], delimiter =", ", fmt ='% s')
-        print('Last value (num. {1}) is: {0}'.format(value_s[i][-1], len(value_s[i])))        
+        print('Last value (num. {1}) is: {0}'.format(value_s[i,:,-1], value_s.shape[2]))        
 
+    #print('check size of read structure = {}'.format(value_s.shape)) ### DEBUG
     #return [value[0] for value in value_s], file_names
     return value_s, file_names
 
-def profile_evol_plot(value_s, labels=[], file_names=[], name='gem_ti_flux'):
+def profile_evol_plot(value_s, labels=['orig'], file_names=[], name='gem_ti_flux'):
     
     #ts = np.arange(len(file_names))
-    n = max([len(v) for v in value_s])
+    n = max([v.shape[-1] for v in value_s])
+    print('n = {}, len(v) = {}, v[0].shape = {}'.format(n, len(value_s), value_s[0].shape)) ### DEBUG
 
     ## rhos = np.arange(len(value_s))
     #for num, value in enumerate(value_s):
@@ -145,61 +155,70 @@ def profile_evol_plot(value_s, labels=[], file_names=[], name='gem_ti_flux'):
     ## plt.savefig(name + '.png')
     ## plt.close()
 
-    print(value_s)  ### DEBUG
+    #print('value_s'); print(value_s) ### DEBUG
 
     fig, ax = plt.subplots(figsize=(24.,8.))
     for value, lab in zip(value_s, labels):
-        ts = np.arange(n-value.shape[0], n)
+        #print('value.shape = {}'.format(value.shape)) ###DEBUG
+        ts = np.arange(n - value.shape[-1], n)
         for i in range(value.shape[0]):
-             ax.plot(ts, value[i,:], '-', label=lab)
+             #print('value[{0},:]'.format(i)); print(value[i,:]) ### DEBUG
+             ax.semilogy(ts, value[i,:], '-', label=lab+'_'+str(i))
     plt.legend(loc='best')
     plt.savefig(name + '.png')
     plt.close()
 
-    np.savetxt(name + '.csv', value_s, delimiter =", ", fmt ='% s')
+    np.savetxt(name + '.csv', np.squeeze(value_s, 0), delimiter =", ", fmt ='% s')
 
     return value_s
 
 def plot_coreprofval_dist(value_spw, name='ti', discr_level=64):
 
+    #print('value_spw'); print(value_spw) ### DEBUG
     # plot historgrams
+    nft = value_spw.shape[0]
+
     fig, ax = plt.subplots()
-    ax.hist(value_spw, bins=len(value_spw)//discr_level)
+    for i in range(nft):
+        ax.hist(value_spw[i, :], bins=len(value_spw[i, :])//discr_level)
     plt.savefig('hist_' + name + '.png')
     plt.close()
 
     # get and plot KDE fit
-    kde = KDE(kernel='gaussian', bandwidth=(value_spw.max()-value_spw.min())/discr_level).fit(value_spw[:, np.newaxis])
-
+    # TODO: KDE does not handle 3-D arrays
     x = np.linspace(0.9*value_spw.min(), 1.1*value_spw.max(), 100)[:, np.newaxis]
-    log_pdf = kde.score_samples(x)
-    log_pdf_orig = kde.score_samples(value_spw[:, np.newaxis])
-
     fig, ax = plt.subplots()
-    ax.plot(x[:, 0], np.exp(log_pdf), label='density of core transport values')
-    ax.plot(value_spw, (-0.01*np.random.rand(log_pdf_orig.shape[0])) * np.exp(log_pdf_orig).min(),'+k')
+    for i in range(nft):
+        kde = KDE(kernel='gaussian', bandwidth=(value_spw[i].max() - value_spw[i].min()) / discr_level).fit(value_spw[i, :, np.newaxis])
+        log_pdf = kde.score_samples(x)
+        log_pdf_orig = kde.score_samples(value_spw[i, :, np.newaxis])
+
+        ax.plot(x[:, 0], np.exp(log_pdf), label='density of core transport values')
+        ax.plot(value_spw[i], (-0.01*np.random.rand(log_pdf_orig.shape[0])) * np.exp(log_pdf_orig).min(), '+k')
+    
     plt.savefig('pdf_' + name + '.png')
     plt.close()
 
     # print main moments
+    # TODO check moments for all flux tubes
     mom_len = 5
     moments = []
-    print('mean value is: ' + str(value_spw.mean()))
+    print('mean value is: ' + str(value_spw[0].mean()))
     #print(((value_spw*value_spw).mean() - value_spw.mean()*value_spw.mean())/1.)
     
     with open('stats_' + name + '.txt', 'w') as wfile:
         for n in range(mom_len):
             if n == 1:
-                m = value_spw.mean()
+                m = value_spw[0].mean()
             else:
-                m = moment(value_spw, moment=n)
+                m = moment(value_spw[0], moment=n)
             moments.append(m)
             line = '{0}-th moment is: {1:.3e}'.format(n, m)
             print(line)
             wfile.write(line+'\n')
 
     # check the normality of distribution function
-    kld = compare_gaussian(np.exp(log_pdf), x, moments)
+    kld = compare_gaussian(np.exp(log_pdf[0]), x, moments)
     print('KL-d is: ' + str(kld))
 
     return moments
@@ -209,8 +228,9 @@ def get_coreprof_ev_acf(value_ev, name='ti', lags=[1,2,3,4,5,6,7,8,9,10]):
     #acf = [1. if l==0 else np.corrcoef(value_ev[l:], value_ev[:-l])[0][1] for l in lags]
     
     nl = 64    
-
-    r,q,p  = acf(value_ev, nlags=nl, fft=True, qstat=True) 
+    
+    #TODO read mft data here
+    r,q,p  = acf(value_ev[0], nlags=nl, fft=True, qstat=True) 
  
     acf_data = np.c_[np.arange(1, nl+1), r[1:], q, p]
   
@@ -226,7 +246,7 @@ def get_coreprof_ev_acf(value_ev, name='ti', lags=[1,2,3,4,5,6,7,8,9,10]):
     #with open(name+'_acf.txt', 'w') as wfile:
     #    wfile.write(line)
     
-    val_df = pd.DataFrame(value_ev)
+    val_df = pd.DataFrame(value_ev[0])
    
     """ 
     plot_acf(val_df, lags=lags)
@@ -395,24 +415,28 @@ def main(foldername=False, runforbatch=False):
             else:
                 mainfoldernum = foldername
                 val_ev_s, file_names = profile_evol_load(prof_names=profiles, attrib_names=attributes, folder_name=os.path.join(workdir, 'cpo'+mainfoldernum), file_code_name=code_name, name_postfix='_'+mainfoldernum)
+        #print(len(val_ev_s[0])); #print(val_ev_s) ### DEBUG
         val_ev_s = []
 
         for i,(p,a) in enumerate(itertools.product(profiles, attributes)):
 
-            val_ev_s.append(np.genfromtxt(code_name+'_'+p+'_'+a+'_evol_'+mainfoldernum+'.csv', delimiter=", "))     
-            print(val_ev_s) ###DEBUG
+            val_ev_s.append(np.atleast_2d(np.genfromtxt(code_name+'_'+p+'_'+a+'_evol_'+mainfoldernum+'.csv', delimiter=", ")))     
+            #print('val_ev_s[{}]).shape={}'.format(i, val_ev_s[i].shape)); #print(val_ev_s) ###DEBUG
             
             profile_evol_plot([val_ev_s[i]], name=code_name+'_'+p+'_'+a+'_'+mainfoldernum)
             
-            val = np.array(val_ev_s[i]).squeeze()
-            print(val) ## DEBUG            
+            #print('before shape {}'.format(val_ev_s[i].shape)) ## DEBUG
+            #val = np.array(val_ev_s[i]).squeeze()
+            #print('after shape {}'.format(val.shape)) ### DEBUG            
 
             ##ti_flux = np.genfromtxt('gem_ti_flux.csv', delimiter =", ")
-            """
-            get_coreprof_ev_acf(val, name=code_name+'_'+p+'_'+a+'stats', lags =[1,2,4,8,16,32,64,128,256,512])
-            """
-            plot_coreprofval_dist(val, name=p+'_'+a+'_'+mainfoldernum, discr_level=32)
             
+            get_coreprof_ev_acf(val_ev_s[i], name=code_name+'_'+p+'_'+a+'stats', lags =[1,2,4,8,16,32,64,128,256,512])
+            
+            plot_coreprofval_dist(val_ev_s[i], name=p+'_'+a+'_'+mainfoldernum, discr_level=32)
+           
+            # TODO create '*all23.csv' file with new format!!!
+ 
             # try ARMA model
             """
             apply_arma(val)
