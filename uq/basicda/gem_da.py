@@ -253,13 +253,12 @@ def get_coreprof_ev_acf(value_ev, name='ti', lags=[1,2,3,4,5,6,7,8,9,10]):
         #with open(name+'_acf.txt', 'w') as wfile:
         #    wfile.write(line)
     
-        #val_df = pd.DataFrame(value_ev[i])
+        val_df = pd.DataFrame(value_ev[i])
    
-    """ 
-    plot_acf(val_df, lags=lags)
-    plt.savefig('acf.png')
-    plt.close()
-    
+        plot_acf(val_df, lags=lags)
+        plt.savefig(str(i)+'acf.png')
+        plt.close()
+    """
     plot_pacf(val_df, lags=lags)
     plt.savefig('pacf.png')
     plt.close()
@@ -441,8 +440,8 @@ def main(foldername=False, runforbatch=False):
 
         if not runforbatch:
             if not foldername:
-                mainfoldernum = 'mft2'
-                val_ev_s, file_names = profile_evol_load(prof_names=profiles, attrib_names=attributes, coord_len=8, folder_name=os.path.join(workdir, 'mft/run2/cpo'), file_code_name=code_name, name_postfix='_'+mainfoldernum)
+                mainfoldernum = 'mft4'
+                val_ev_s, file_names = profile_evol_load(prof_names=profiles, attrib_names=attributes, coord_len=8, folder_name=os.path.join(workdir, 'mft/run4/cpo'), file_code_name=code_name, name_postfix='_'+mainfoldernum)
             else:
                 mainfoldernum = foldername
                 val_ev_s, file_names = profile_evol_load(prof_names=profiles, attrib_names=attributes, folder_name=os.path.join(workdir, 'cpo'+mainfoldernum), file_code_name=code_name, name_postfix='_'+mainfoldernum)
@@ -461,8 +460,11 @@ def main(foldername=False, runforbatch=False):
             #print('after shape {}'.format(val.shape)) ### DEBUG            
 
             ##ti_flux = np.genfromtxt('gem_ti_flux.csv', delimiter =", ")
-                      
-            get_coreprof_ev_acf(val_ev_s[i], name=code_name+'_'+p+'_'+a+'stats', lags =[1,4,16,64,256,512,1024,2048,4096]) 
+  
+            lags_list = [1,4,16,64,256,256,1024,2048,4096]            
+            lags_list = [l for l in lags_list if l < val_ev_s[i].shape[-1]]
+          
+            get_coreprof_ev_acf(val_ev_s[i], name=code_name+'_'+p+'_'+a+'stats', lags=lags_list) 
             #NB: uncertainty of the acf computation ~ Var(X)/sqrt(n) , where n=N_samples/N_lags
             
             plot_coreprofval_dist(val_ev_s[i], name=p+'_'+a+'_'+mainfoldernum, discr_level=32)
