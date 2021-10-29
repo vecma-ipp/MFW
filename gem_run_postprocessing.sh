@@ -1,11 +1,17 @@
 
-CPONUM=32
+CPONUM=41
 
 DIR='/marconi_scratch/userexternal/yyudin00/MFW_runs/cpo'$CPONUM'/'
 
+#DIR_SCR='standalone/bin/'
+DIR_SRC='/marconi_scratch/userexternal/yyudin00/MFW_runs/1ft_stprof/'
+
+DIR_CODE=$HOME'/code/MFW/uq/basicda/'
+
+# transfer output files from the run directory
 mkdir $DIR
 
-cd standalone/bin/
+cd $DIR_SRC
 
 mv gem-loop*.* $DIR
 mv imp4dv_coretransp_0*.cpo $DIR
@@ -15,8 +21,8 @@ mv stopped $DIR
 mv *.dat $DIR
 cp $DIR/t00.dat ./
 
-cd  ../../uq/basicda/
-
+# run prosprocessing scripts
+cd $DIR_CODE
 
 NUM=$(($CPONUM-13))
 NUMPR=$(($NUM-1))
