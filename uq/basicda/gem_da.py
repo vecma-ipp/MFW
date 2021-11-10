@@ -236,7 +236,7 @@ def get_coreprof_ev_acf(value_ev, name='ti', lags=[1,2,3,4,5,6,7,8,9,10]):
 
     for i in range(nft):
         
-        print('Consideting flux tube #{0}'.format(i))
+        print('Considering flux tube #{0}'.format(i))
 
         r,q,p  = acf(value_ev[i], nlags=nl, fft=True, qstat=True) 
  
@@ -417,9 +417,10 @@ def compare_gaussian(pdf, domain, moments):
 
 ###########################################
 
-def main(foldername=False, runforbatch=False):
+def main(foldername=False, runforbatch=False, coordnum=1, mainfoldernum='false'):
 
-    mainfoldernum = foldername
+    if mainfoldernum == 'false':
+        mainfoldernum = foldername # rather bad
 
     workdir = os.path.join(os.getenv('SCRATCH'), 'MFW_runs')
 
@@ -439,13 +440,18 @@ def main(foldername=False, runforbatch=False):
        	    attributes = ['flux']
 
         if not runforbatch:
-            if not foldername:
-                mainfoldernum = 'mft4'
-                val_ev_s, file_names = profile_evol_load(prof_names=profiles, attrib_names=attributes, coord_len=8, folder_name=os.path.join(workdir, 'mft/run4/cpo'), file_code_name=code_name, name_postfix='_'+mainfoldernum)
-            else:
-                mainfoldernum = foldername
-                val_ev_s, file_names = profile_evol_load(prof_names=profiles, attrib_names=attributes, folder_name=os.path.join(workdir, 'cpo'+mainfoldernum), file_code_name=code_name, name_postfix='_'+mainfoldernum)
-        #print(len(val_ev_s[0])); #print(val_ev_s) ### DEBUG
+            # then alway specify folders with original cpo files
+            # Here are the possibilities where to look for the cpo containing folder:
+            # mainfoldernum = 'mft4' # old default
+            # 'mft/run4/cpo' # one option
+            # 'cpo'+mainfoldernum # other option, if mainfoldernum=='20' etc.
+
+            #mainfoldernum = foldername
+
+            val_ev_s, file_names = profile_evol_load(prof_names=profiles, attrib_names=attributes, coord_len=coordnum, folder_name=os.path.join(workdir, foldername), file_code_name=code_name, name_postfix='_'+mainfoldernum)
+            #val_ev_s, file_names = profile_evol_load(prof_names=profiles, attrib_names=attributes, coord_len=coordnum, folder_name=os.path.join(workdir, 'cpo'+mainfoldernum), file_code_name=code_name, name_postfix='_'+mainfoldernum)
+        
+#print(len(val_ev_s[0])); #print(val_ev_s) ### DEBUG
         val_ev_s = []
 
         for i,(p,a) in enumerate(itertools.product(profiles, attributes)):
@@ -507,6 +513,10 @@ if __name__ == '__main__':
         main(foldername=sys.argv[1])
     elif len(sys.argv) == 3:
         main(foldername=sys.argv[1], runforbatch=int(sys.argv[2]))
+    elif len(sys.argv) == 4:
+        main(foldername=sys.argv[1], runforbatch=int(sys.argv[2]), coordnum=int(sys.argv[3]))
+    elif len(sys.argv) == 5:
+        main(foldername=sys.argv[1], runforbatch=int(sys.argv[2]), coordnum=int(sys.argv[3]), mainfoldernum=sys.argv[4])
     else:
         main()
 
