@@ -10,7 +10,10 @@ from base.cpo_decoder import CPODecoder
 from base.xml_element import XMLElement
 from base.utils import cpo_inputs
 # fro easyvvuq1.1
-from easyvvuq.actions import Encode, Decode, Actions, CreateRunDirectory, ExecuteQCGPJ, ExecuteLocal, QCGPJPool
+from easyvvuq.actions import Encode, Decode, Actions, CreateRunDirectory, ExecuteQCGPJ, ExecuteLocal, ExecuteSLURM, QCGPJPool
+from easyvvuq.actions.execute_qcgpj import EasyVVUQParallelTemplate
+
+from qcg.pilotjob.executor_api.qcgpj_executor import QCGPJExecutor
 
 '''
 Perform UQ for the Turblence code GEM run for ~750 consecutive iterations.
@@ -153,8 +156,14 @@ my_campaign.set_sampler(my_sampler)
 
 ### TODO check how to launch executtion suing QCGPJ in the release version - in this version no even number of processes are passed
 #qcgpjexec.run(processing_scheme=eqi.ProcessingScheme.EXEC_ONLY)
-with QCGPJPool() as qcgpj:
-    my_campaign.execute(pool=qcgpj).collate()
+try:
+    with QCGPJPool(
+                  template=EasyVVUQParallelTemplate(),
+                  template_params={'numCores': ncores},
+                  ) as qcgpj:
+        my_campaign.execute(pool=qcgpj).collate()
+except Exception as e:
+    print(e)
 
 #qcgpjexec.terminate_manager()
 
