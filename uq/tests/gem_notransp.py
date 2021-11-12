@@ -37,12 +37,16 @@ tmp_dir = os.environ['SCRATCH']
 
 # From Slurm script (intelmpi)
 mpi_instance =  os.environ['MPICMD']
+#mpi_instance = 'mpirun'
+mpi_model = 'srunmpi'
 
 # CPO files location
 cpo_dir = os.path.abspath("../workflows/AUG_28906_6") 
+#cpo_dir = os.path.abspath("../standalone/bin")
 
 # XML and XSD files location
-xml_dir = os.path.abspath("../workflows")
+#xml_dir = os.path.abspath("../workflows")
+xml_dir = os.path.abspath("../standalone/bin")
 
 # The executable code to run
 obj_dir = os.path.abspath("../standalone/bin/"+SYS)
@@ -56,6 +60,8 @@ input_params = {
     "te.ddrho": {"dist": "Uniform", "err":  0.1, "max": 0.},
     "ti.ddrho": {"dist": "Uniform", "err":  0.1, "max": 0.}
 }
+
+nparams = len(input_params)
 
 # CPO file containg initial values of uncertain params
 input_filename = "ets_coreprof_in.cpo"
@@ -120,8 +126,11 @@ npess = gemxml.get_value("cpu_parameters.domain_decomposition.npess")
 nftubes = gemxml.get_value("cpu_parameters.parallel_cases.nftubes")
 ncores = npesx*npess*nftubes
 
+print('Number of cores required for single code instance computed: {0}'.format(ncores))
+
 execute = ExecuteQCGPJ(
                       ExecuteLocal(exec_path)
+                      #ExecuteSLURM(exec_path)
                       ) # TODO find an example from after EQI end
 
 # Execution
@@ -134,7 +143,7 @@ execute = ExecuteQCGPJ(
 #    eqi.TaskRequirements(cores=ncores),
 #    model=mpi_instance,
 #    application=exec_path
-#))
+#))/
 
 actions = Actions(CreateRunDirectory('/run'), 
                   Encode(encoder), 
@@ -147,8 +156,11 @@ my_campaign.add_app(name=campaign_name,
                     actions=actions)
 
 # Create the sampler
-my_sampler = uq.sampling.PCESampler(vary=vary, polynomial_order=1)
+pol_order = 1
+my_sampler = uq.sampling.PCESampler(vary=vary, polynomial_order=pol_order)
 my_campaign.set_sampler(my_sampler)
+
+nruns = (pol_order + 1)**nparams
 
 # Will draw all (of the finite set of samples)
 #my_campaign.draw_samples()
@@ -156,10 +168,18 @@ my_campaign.set_sampler(my_sampler)
 
 ### TODO check how to launch executtion suing QCGPJ in the release version - in this version no even number of processes are passed
 #qcgpjexec.run(processing_scheme=eqi.ProcessingScheme.EXEC_ONLY)
+executor=QCGPJExecutor()
+executor.create_manager(log_level='debug')
+
 try:
     with QCGPJPool(
+                  qcgpj_executor=executor,
                   template=EasyVVUQParallelTemplate(),
-                  template_params={'numCores': ncores},
+                  template_params={'model': mpi_model,
+                                   #'venv'='/marconi/home/userexternal/yyudin00/python394/', 
+                                   'numNodes': 4, 
+                                   'numCores': ncores,
+                                  },
                   ) as qcgpj:
         my_campaign.execute(pool=qcgpj).collate()
 except Exception as e:
