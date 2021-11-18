@@ -38,7 +38,7 @@ tmp_dir = os.environ['SCRATCH']
 # From Slurm script (intelmpi)
 mpi_instance =  os.environ['MPICMD']
 #mpi_instance = 'mpirun'
-mpi_model = 'srunmpi'
+mpi_model = 'intelmpi' #'srunmpi'
 
 # CPO files location
 cpo_dir = os.path.abspath("../workflows/AUG_28906_6") 
@@ -128,6 +128,7 @@ ncores = npesx*npess*nftubes
 
 print('Number of cores required for single code instance computed: {0}'.format(ncores))
 
+print('Creating an ExecuteQCGPJ')
 execute = ExecuteQCGPJ(
                       ExecuteLocal(exec_path)
                       #ExecuteSLURM(exec_path)
@@ -145,10 +146,12 @@ execute = ExecuteQCGPJ(
 #    application=exec_path
 #))/
 
-actions = Actions(CreateRunDirectory('/run'), 
+actions = Actions(
+                  CreateRunDirectory('/run'), 
                   Encode(encoder), 
                   execute,
-                  Decode(decoder)) # does CreateRunDirectory also set ups the dir? (for us the dir's themselves are already created)
+                  Decode(decoder)
+                 ) # does CreateRunDirectory also set ups the dir? (for us the dir's themselves are already created)
 
 # Add the app (automatically set as current app)
 my_campaign.add_app(name=campaign_name,
@@ -168,10 +171,13 @@ nruns = (pol_order + 1)**nparams
 
 ### TODO check how to launch executtion suing QCGPJ in the release version - in this version no even number of processes are passed
 #qcgpjexec.run(processing_scheme=eqi.ProcessingScheme.EXEC_ONLY)
+
+print('Creating an Executor')
 executor=QCGPJExecutor()
-executor.create_manager(log_level='debug')
+#executor.create_manager(log_level='debug')
 
 try:
+    print('Creating resource pool')
     with QCGPJPool(
                   qcgpj_executor=executor,
                   template=EasyVVUQParallelTemplate(),
@@ -181,6 +187,7 @@ try:
                                    'numCores': ncores,
                                   },
                   ) as qcgpj:
+        print('Executing jobs an collating results')
         my_campaign.execute(pool=qcgpj).collate()
 except Exception as e:
     print(e)
@@ -195,6 +202,7 @@ except Exception as e:
 ### --- Old part ---
 
 # Post-processing analysis
+print('Now finally analysing results')
 analysis = uq.analysis.PCEAnalysis(sampler=my_sampler, qoi_cols=output_columns)
 my_campaign.apply_analysis(analysis)
 
