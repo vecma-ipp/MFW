@@ -1,5 +1,5 @@
 
-NUM=7
+NUM=9
 
 DIR_FILE=$SCRATCH'/MFW_runs/mft/'
 DIR_CODE=$HOME'/code/MFW/uq/basicda/'
