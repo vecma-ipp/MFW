@@ -15,6 +15,8 @@ from easyvvuq.actions.execute_qcgpj import EasyVVUQParallelTemplate
 
 from qcg.pilotjob.executor_api.qcgpj_executor import QCGPJExecutor
 
+from math import ceil
+
 '''
 Perform UQ for the Turblence code GEM run for ~750 consecutive iterations.
 Uncertainties are driven by:
@@ -38,7 +40,7 @@ tmp_dir = os.environ['SCRATCH']
 # From Slurm script (intelmpi)
 mpi_instance =  os.environ['MPICMD']
 #mpi_instance = 'mpirun'
-mpi_model = 'intelmpi' #'srunmpi'
+mpi_model = 'srunmpi' #'intelmpi'
 
 # CPO files location
 cpo_dir = os.path.abspath("../workflows/AUG_28906_6") 
@@ -131,8 +133,11 @@ print('Number of cores required for single code instance computed: {0}'.format(n
 print('Creating an ExecuteQCGPJ')
 execute = ExecuteQCGPJ(
                       ExecuteLocal(exec_path)
-                      #ExecuteSLURM(exec_path)
-                      ) # TODO find an example from after EQI end
+                      #ExecuteSLURM(
+                      #             template_script=exec_path,
+                      #             variable='runs/'
+                      #            )
+                      )
 
 # Execution
 # TODO how to rewrite w/o EQI: look into latest EVVUQ tutorials
@@ -147,7 +152,7 @@ execute = ExecuteQCGPJ(
 #))/
 
 actions = Actions(
-                  CreateRunDirectory('/run'), 
+                  CreateRunDirectory('/runs'), 
                   Encode(encoder), 
                   execute,
                   Decode(decoder)
@@ -164,6 +169,14 @@ my_sampler = uq.sampling.PCESampler(vary=vary, polynomial_order=pol_order)
 my_campaign.set_sampler(my_sampler)
 
 nruns = (pol_order + 1)**nparams
+ncores_tot = ncores * nruns
+
+n_cores_p_node = 48
+if SYS == 'MARCONI':
+    n_cores_p_node = 48
+
+nnodes = ceil(1.*ncores/n_cores_p_node)
+nnodes_tot = ceil(1.*ncores_tot/n_cores_p_node) # not entirely correct due to an 'overkill' problem i.e. residual cores at one/more nodes may not be able to allocate any jobs, but here everything is devisible; also an import from 'math'
 
 # Will draw all (of the finite set of samples)
 #my_campaign.draw_samples()
@@ -172,9 +185,27 @@ nruns = (pol_order + 1)**nparams
 ### TODO check how to launch executtion suing QCGPJ in the release version - in this version no even number of processes are passed
 #qcgpjexec.run(processing_scheme=eqi.ProcessingScheme.EXEC_ONLY)
 
+# custome template for parallel job exectution
+template_par_cust = {
+                      'name': 'gem_long_varied',
+                      'execution': {
+                                     'exec': exec_path, # TODO check examples, may be parameters has to be passed here
+                                     'model': mpi_model,
+                                     'model_options': {
+                                                        'mpirun': '',
+                                                        'mpirun_args' : ''
+                                                      },
+                                      'modules': ['impi']             
+                                   },
+                      'resources': {
+                                     'numcores': { 
+                                                   'exact': ncores
+                                                 }
+                                   }  
+                    }
+
 print('Creating an Executor')
-executor=QCGPJExecutor()
-#executor.create_manager(log_level='debug')
+executor=QCGPJExecutor(log_level='debug')
 
 try:
     print('Creating resource pool')
@@ -183,7 +214,7 @@ try:
                   template=EasyVVUQParallelTemplate(),
                   template_params={'model': mpi_model,
                                    #'venv'='/marconi/home/userexternal/yyudin00/python394/', 
-                                   'numNodes': 4, 
+                                   #'numNodes': nnodes, 
                                    'numCores': ncores,
                                   },
                   ) as qcgpj:
@@ -191,12 +222,6 @@ try:
         my_campaign.execute(pool=qcgpj).collate()
 except Exception as e:
     print(e)
-
-#qcgpjexec.terminate_manager()
-
-
-# Collection of simulation outputs
-#my_campaign.collate()
 
 #################################
 ### --- Old part ---
