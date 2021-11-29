@@ -40,7 +40,8 @@ tmp_dir = os.environ['SCRATCH']
 # From Slurm script (intelmpi)
 mpi_instance =  os.environ['MPICMD']
 #mpi_instance = 'mpirun'
-mpi_model = 'srunmpi' #'intelmpi'
+# do not use intelmpi+MARCONI+QCG !
+mpi_model = 'srunmpi' #'openmpi'
 
 # CPO files location
 cpo_dir = os.path.abspath("../workflows/AUG_28906_6") 
@@ -57,9 +58,9 @@ exec_code = "loop_gem_notransp"
 # Define the uncertain parameters
 # Electron temperature and its gradient
 input_params = {
-    "te.value": {"dist": "Uniform", "err":  0.1, "min": 0.},
-    "ti.value": {"dist": "Uniform", "err":  0.1, "min": 0.},
-    "te.ddrho": {"dist": "Uniform", "err":  0.1, "max": 0.},
+#    "te.value": {"dist": "Uniform", "err":  0.1, "min": 0.},
+#    "ti.value": {"dist": "Uniform", "err":  0.1, "min": 0.},
+#    "te.ddrho": {"dist": "Uniform", "err":  0.1, "max": 0.},
     "ti.ddrho": {"dist": "Uniform", "err":  0.1, "max": 0.}
 }
 
@@ -70,7 +71,10 @@ input_filename = "ets_coreprof_in.cpo"
 input_cponame = "coreprof"
 
 # The quantities of intersts and the cpo file to set them
-output_columns = ["te_transp.flux", "ti_transp.flux"]
+output_columns = [
+#                 "te_transp.flux",
+                 "ti_transp.flux"
+                 ]
 output_filename = "gem_coretransp_out.cpo"
 output_cponame = "coretransp"
 
@@ -128,11 +132,26 @@ npess = gemxml.get_value("cpu_parameters.domain_decomposition.npess")
 nftubes = gemxml.get_value("cpu_parameters.parallel_cases.nftubes")
 ncores = npesx*npess*nftubes
 
+pol_order = 1
+nruns = (pol_order + 1)**nparams
+ncores_tot = ncores * nruns
+
+n_cores_p_node = 48
+if SYS == 'MARCONI':
+    n_cores_p_node = 48
+
+nnodes = ceil(1.*ncores/n_cores_p_node)
+nnodes_tot = ceil(1.*ncores_tot/n_cores_p_node) # not entirely correct due to an 'overkill' problem i.e. residual cores at one/more nodes may not be able to allocate any jobs, but here everything is devisible; also an import from 'math'
+
+exec_path_comm = mpi_instance + ' -n '+ str(ncores) + ' ' + exec_path
+
 print('Number of cores required for single code instance computed: {0}'.format(ncores))
+print('Executing turbulence code with the line: ' + exec_path)
 
 print('Creating an ExecuteQCGPJ')
 execute = ExecuteQCGPJ(
                       ExecuteLocal(exec_path)
+                      #ExecuteLocal(exec_path_comm)
                       #ExecuteSLURM(
                       #             template_script=exec_path,
                       #             variable='runs/'
@@ -151,6 +170,49 @@ execute = ExecuteQCGPJ(
 #    application=exec_path
 #))/
 
+# Will draw all (of the finite set of samples)
+#my_campaign.draw_samples()
+#my_campaign.populate_runs_dir()
+
+### TODO check how to launch executtion suing QCGPJ in the release version - in this version no even number of processes are passed
+#qcgpjexec.run(processing_scheme=eqi.ProcessingScheme.EXEC_ONLY)
+
+# custome template for parallel job exectution
+
+template_par_simple = {
+                       'name': 'gem_long_var_simp',
+                       #'exec': exec_path,
+                       'model': mpi_model,
+                       #'model': 'default',
+                      ###'venv'='/marconi/home/userexternal/yyudin00/python394/', 
+                      ##'numNodes': nnodes, 
+                       'numCores': ncores,
+                       'numNode': nnodes,
+                      }
+
+template_par_cust = {
+                      'name': 'gem_long_varied',
+                      'execution': {
+                                     'exec': exec_path, # TODO check examples, may be parameters has to be passed here
+                                     'model': mpi_model,
+                                      #'model_options': {
+                                                        #'mpirun': '',
+                                                        #'mpirun_args' : ''
+                                      #                },
+                                      #'modules': ['impi']
+                                      #'venv' : ''             
+                                   },
+                      'resources': {
+                                     'numCores': { 
+                                                   'exact': ncores
+                                                 },
+                                     'numNodes': {
+                                                   'exact': nnodes # Mind if it occupies a single node entirely
+                                                 }
+                                   }  
+                    }
+
+# create list of actions in the campaign
 actions = Actions(
                   CreateRunDirectory('/runs'), 
                   Encode(encoder), 
@@ -163,47 +225,9 @@ my_campaign.add_app(name=campaign_name,
                     params=params,
                     actions=actions)
 
-# Create the sampler
-pol_order = 1
+# Create the samples
 my_sampler = uq.sampling.PCESampler(vary=vary, polynomial_order=pol_order)
 my_campaign.set_sampler(my_sampler)
-
-nruns = (pol_order + 1)**nparams
-ncores_tot = ncores * nruns
-
-n_cores_p_node = 48
-if SYS == 'MARCONI':
-    n_cores_p_node = 48
-
-nnodes = ceil(1.*ncores/n_cores_p_node)
-nnodes_tot = ceil(1.*ncores_tot/n_cores_p_node) # not entirely correct due to an 'overkill' problem i.e. residual cores at one/more nodes may not be able to allocate any jobs, but here everything is devisible; also an import from 'math'
-
-# Will draw all (of the finite set of samples)
-#my_campaign.draw_samples()
-#my_campaign.populate_runs_dir()
-
-### TODO check how to launch executtion suing QCGPJ in the release version - in this version no even number of processes are passed
-#qcgpjexec.run(processing_scheme=eqi.ProcessingScheme.EXEC_ONLY)
-
-# custome template for parallel job exectution
-template_par_cust = {
-                      'name': 'gem_long_varied',
-                      'execution': {
-                                     'exec': exec_path, # TODO check examples, may be parameters has to be passed here
-                                     'model': mpi_model,
-                                     'model_options': {
-                                                        'mpirun': '',
-                                                        'mpirun_args' : ''
-                                                      },
-                                      'modules': ['impi']             
-                                   },
-                      'resources': {
-                                     'numcores': { 
-                                                   'exact': ncores
-                                                 }
-                                   }  
-                    }
-
 print('Creating an Executor')
 executor=QCGPJExecutor(log_level='debug')
 
@@ -212,15 +236,12 @@ try:
     with QCGPJPool(
                   qcgpj_executor=executor,
                   template=EasyVVUQParallelTemplate(),
-                  template_params={'model': mpi_model,
-                                   #'venv'='/marconi/home/userexternal/yyudin00/python394/', 
-                                   #'numNodes': nnodes, 
-                                   'numCores': ncores,
-                                  },
+                  template_params=template_par_cust,
                   ) as qcgpj:
-        print('Executing jobs an collating results')
+        print('Executing jobs and collating results')
         my_campaign.execute(pool=qcgpj).collate()
 except Exception as e:
+    print('Exeption during batch execution! :')
     print(e)
 
 #################################
