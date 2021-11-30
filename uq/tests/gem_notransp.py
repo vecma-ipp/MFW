@@ -1,21 +1,29 @@
 import os
+
+from math import ceil
+
 import easyvvuq as uq
+
 # EasyVVUQ/QCG-PJ
 #import eqi
+
 # from ual
 from ascii_cpo import read
+
 # from current package
 from base.cpo_encoder import CPOEncoder
 from base.cpo_decoder import CPODecoder
 from base.xml_element import XMLElement
 from base.utils import cpo_inputs
-# fro easyvvuq1.1
+
+# from easyvvuq1.1
 from easyvvuq.actions import Encode, Decode, Actions, CreateRunDirectory, ExecuteQCGPJ, ExecuteLocal, ExecuteSLURM, QCGPJPool
 from easyvvuq.actions.execute_qcgpj import EasyVVUQParallelTemplate
 
+# form qcg-pj
 from qcg.pilotjob.executor_api.qcgpj_executor import QCGPJExecutor
+from qcg.pilotjob.api.manager import LocalManager
 
-from math import ceil
 
 '''
 Perform UQ for the Turblence code GEM run for ~750 consecutive iterations.
@@ -133,7 +141,7 @@ nftubes = gemxml.get_value("cpu_parameters.parallel_cases.nftubes")
 ncores = npesx*npess*nftubes
 
 pol_order = 1
-nruns = (pol_order + 1)**nparams
+nruns = (pol_order + 1)**nparams # Nr=(Np+Nd, Nd)^T=(Np+Nd)!/(Np!*Nd!)  |=(3+4)!/3!4! = 5*6*7/6 = 35 => instead 3^4=81 ?
 ncores_tot = ncores * nruns
 
 n_cores_p_node = 48
@@ -159,7 +167,6 @@ execute = ExecuteQCGPJ(
                       )
 
 # Execution
-# TODO how to rewrite w/o EQI: look into latest EVVUQ tutorials
 #qcgpjexec = eqi.Executor(my_campaign)
 #qcgpjexec.create_manager(log_level='info')
 
@@ -174,31 +181,28 @@ execute = ExecuteQCGPJ(
 #my_campaign.draw_samples()
 #my_campaign.populate_runs_dir()
 
-### TODO check how to launch executtion suing QCGPJ in the release version - in this version no even number of processes are passed
 #qcgpjexec.run(processing_scheme=eqi.ProcessingScheme.EXEC_ONLY)
 
 # custome template for parallel job exectution
 
 template_par_simple = {
-                       'name': 'gem_long_var_simp',
+                       ###'name': 'gem_long_var_simp',
                        #'exec': exec_path,
-                       'model': mpi_model,
-                       #'model': 'default',
+                       'model': 'default', # mpi_model
                       ###'venv'='/marconi/home/userexternal/yyudin00/python394/', 
-                      ##'numNodes': nnodes, 
                        'numCores': ncores,
-                       'numNode': nnodes,
+                       'numNodes': nnodes,
                       }
 
 template_par_cust = {
                       'name': 'gem_long_varied',
                       'execution': {
-                                     'exec': exec_path, # TODO check examples, may be parameters has to be passed here
+                                     #'exec': exec_path, # TODO check examples, may be parameters has to be passed here
                                      'model': mpi_model,
-                                      #'model_options': {
+                                     'model_options': {
                                                         #'mpirun': '',
                                                         #'mpirun_args' : ''
-                                      #                },
+                                                      },
                                       #'modules': ['impi']
                                       #'venv' : ''             
                                    },
@@ -208,8 +212,8 @@ template_par_cust = {
                                                  },
                                      'numNodes': {
                                                    'exact': nnodes # Mind if it occupies a single node entirely
-                                                 }
-                                   }  
+                                                 },
+                                   },  
                     }
 
 # create list of actions in the campaign
@@ -236,12 +240,13 @@ try:
     with QCGPJPool(
                   qcgpj_executor=executor,
                   template=EasyVVUQParallelTemplate(),
-                  template_params=template_par_cust,
+                  template_params=template_par_cust,  #_simple
                   ) as qcgpj:
-        print('Executing jobs and collating results')
+        print('> Executing jobs and collating results')
+        print(os.environ['QCG_PM_CPU_SET'])
         my_campaign.execute(pool=qcgpj).collate()
 except Exception as e:
-    print('Exeption during batch execution! :')
+    print('!>> Exeption during batch execution! :')
     print(e)
 
 #################################
@@ -273,6 +278,8 @@ print("TI TRANSP FLUX")
 print("Mean: ", mean_io)
 print("Std: ", std_io)
 print("Sob1: ", s1_io)
+
+results.to_scv('UQGEMCAMP_' + os.environ('SLURM_JOBID') + '_results.csv')
 
 print('>>> TEST GEM-NT-VARY: END')
 

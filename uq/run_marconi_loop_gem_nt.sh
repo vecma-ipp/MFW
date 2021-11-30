@@ -11,10 +11,10 @@
 #SBATCH --time=22:00:00
 
 ## number of nodes and tasks per node
-#SBATCH --nodes=4
+#SBATCH --nodes=1
 #SBATCH --ntasks-per-node=48
 ###SBATCH --ntasks-per-core=1
-###SBATCH --cpus-per-task=1
+###SBATCH --cpus-per-task=8
 
 ###SBATCH --partition=medium
 #SBATCH --partition=skl_fua_prod
@@ -27,7 +27,7 @@
 
 export SYS=MARCONI
 export SCRATCH=$CINECA_SCRATCH
-export PYTHONPATH=$HOME/.local/lib/python3.6/site-packages/easyvvuq:$PYTHONPATH
+#export PYTHONPATH=$HOME/.local/lib/python3.6/site-packages/easyvvuq:$PYTHONPATH
 
 #export MPICMD=mpiexec
 export MPICMD=srun
@@ -38,9 +38,13 @@ ENCODER_MODULES="mfw.templates.cpo_encoder;mfw.templates.xml_encoder"
 export ENCODER_MODULES
 export EASYPJ_CONFIG=conf.sh
 
+echo $SLURM_NODELIST
+echo $SLURM_TASKS_PER_NODE
+
 # Run the UQ code
-scontrol show --detail job $SLURM_JOBIDi
-scontrol show hostname $SLURM_JOB_NODELIST
+scontrol show --detail job $SLURM_JOBID 
+###scontrol show hostname $SLURM_JOB_NODELIST
+lscpu -p
 
 python3 tests/gem_notransp.py > test-loopntuq-log.${SLURM_JOBID}
 
