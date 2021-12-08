@@ -163,7 +163,9 @@ def profile_evol_plot(value_s, labels=['orig'], file_names=[], name='gem_ti_flux
         ts = np.arange(n - value.shape[-1], n)
         for i in range(value.shape[0]):
              #print('value[{0},:]'.format(i)); print(value[i,:]) ### DEBUG
+             ## !!! TODO temporary changes !!!
              ax.semilogy(ts, value[i,:], '-', label=lab+'_'+str(i))
+             #ax.plot(ts, value[i,:], '-', label=lab+'_'+str(i))
     plt.legend(loc='best')
     plt.savefig(name + '.png')
     plt.close()
@@ -350,7 +352,7 @@ def filter_trend(values, method='hpf' ):
         #plt.close()
             plt.loglog(freq, np.abs(val_spectrum)**2,'')
             plt.axvline(thr, alpha=0.5, color='r', linestyle='--')
-            plt.savefig('debug_fft_spec'+str(i)+'.png')
+            plt.savefig('fft_spec'+str(i)+'.png')
             plt.close()
         #print('which frequencies have high contribution')
         #print(np.argwhere(val_spectrum>10000.))
@@ -422,7 +424,9 @@ def main(foldername=False, runforbatch=False, coordnum=1, mainfoldernum='false')
     if mainfoldernum == 'false':
         mainfoldernum = foldername # rather bad
 
-    workdir = os.path.join(os.getenv('SCRATCH'), 'MFW_runs')
+    #workdir = os.path.join(os.getenv('SCRATCH'), 'MFW_runs')
+    #!!! TODO temporary chenges - introduce new argument for main? !!!
+    workdir = os.path.join(os.getenv('SCRATCH'), 'VARY_1FT_GEM_NT_test')
 
     code_names = ['gem',
 #                 'imp4dv',
@@ -493,11 +497,17 @@ def main(foldername=False, runforbatch=False, coordnum=1, mainfoldernum='false')
             val_trend_fft, val_fluct_fft = filter_trend(val, "fft")
 
             val_trend_exp, val_fluct_exp = filter_trend(val, "exp")
-           
+
+            ##!!! TODO temorarily changes!!!           
             profile_evol_plot([val, val_trend_fft, val_trend_exp, val_trend_avg], # np.ones(val.shape)*val_trend_avg[0]], 
                               labels=['original', 'fft(f<2^-10)', 'exponential(alpha=0.005)', 'mean(of {:.2e} after {} steps)'.
                                                                                                format(val_trend_avg[0,0], int(alpha_wind*val.shape[-1]))],
                               name='trend_'+p+'_'+a+'_'+mainfoldernum)
+           
+            #profile_evol_plot([val, val_trend_exp, val_trend_avg], # np.ones(val.shape)*val_trend_avg[0]], 
+            #                  labels=['original', 'exponential(alpha=0.005)', 'mean(of {:.2e} after {} steps)'.
+            #                                                                                   format(val_trend_avg[0,0], int(alpha_wind*val.shape[-1]))],
+            #                  name='trend_'+p+'_'+a+'_'+mainfoldernum)
            
             # histogram for the last alpha_window values
             """
@@ -509,6 +519,8 @@ def main(foldername=False, runforbatch=False, coordnum=1, mainfoldernum='false')
 
 if __name__ == '__main__':
 
+    # TODO : add argument to specify original run directory location
+    # TOOD : add functionality to comapare different runs i.e. usign different profiles
     if len(sys.argv) == 2:
         main(foldername=sys.argv[1])
     elif len(sys.argv) == 3:
