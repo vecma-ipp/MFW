@@ -40,6 +40,7 @@ DFEFI = ../externals/dfefi/${SYS}
 IMP4DV = ../externals/imp4dv/${SYS}
 GEM0 = ../externals/gem0/${SYS}
 ORB5 = ../externals/orb5.git/${SYS}
+GEMSUR = ../surrogate/gem/
 
 # set up the VPATH for searching for source files ##############################
 VPATH = ${SRCDIR} ${SRCDIR}/tools ${SRCDIR}/tests
@@ -146,13 +147,14 @@ BYPASS_O = ${SHARED_O} ${OBJDIR}/bypass_kernelB.o
 DV2FLUX_O = ${SHARED_O} ${OBJDIR}/dv2flux_wrapper.o ${OBJDIR}/dv2flux_kernelB.o
 ORB5_O = ${SHARED_O} ${OBJDIR}/orb5_wrapper.o ${OBJDIR}/orb5_kernelB.o
 PARTIAL_INIT_O = ${SHARED_O} ${OBJDIR}/partial_init_wrapper.o ${OBJDIR}/partial_init_kernelB.o
+GEMSUR_O = ${SHARED_O} ${OBJDIR}/gemsur_wrapper.o ${OBJDIR}/gemsur_kernelB.o
 ifdef UAL
   INIT_UAL_O = ${SHARED_O} ${OBJDIR}/init_ual_wrapper.o ${OBJDIR}/init_ual_kernelB.o
   WRITE_UAL_O = ${SHARED_O} ${OBJDIR}/write_ual_wrapper.o ${OBJDIR}/write_ual_kernelB.o
 endif
 
 KERNELS = INIT_CPO_K CONTINUE_K BDSEQ_K BOHMGB_K ETS_K CHEASE_K GEM_K \
-	DFEFI_K IMP4DV_K GEM0_K DV2FLUX_K BYPASS_K PARTIAL_INIT_K
+	DFEFI_K IMP4DV_K GEM0_K DV2FLUX_K BYPASS_K PARTIAL_INIT_K GEMSUR_K
 #ORB5_K
 #NOTRANSP_K 
 #ifeq (${TEST},yes)
@@ -180,6 +182,7 @@ DV2FLUX_EXE = ${BINDIR}/dv2flux_kernelB
 BYPASS_EXE = ${BINDIR}/bypass_kernelB
 ORB5_EXE = ${BINDIR}/orb5_kernelB
 PARTIAL_INIT_EXE = ${BINDIR}/partial_init_kernelB
+GEMSUR_EXE = ${BINDIR}/gemsur_kernelB
 ifdef UAL
   INIT_UAL_EXE = ${BINDIR}/init_ual_kernelB
   WRITE_UAL_EXE = ${BINDIR}/write_ual_kernelB
@@ -262,6 +265,9 @@ ORB5_TEST: ${OBJDIR}/orb5_test.o
 
 PARTIAL_INIT_K: ${PARTIAL_INIT_O}
 	$(LD) -o ${PARTIAL_INIT_EXE} $^ -L${LIB_UAL} -L${LIB_CONSTANTS} -L${LIB_TYPES} -lmuscle2 -litmconstants -litmtypes -lual ${LDFLAGS}
+
+#GEMSUR_K: ${GEMSUR_O}
+#	$(LD)
 
 ${SYS}: 
 	@mkdir -p ${OBJDIR}

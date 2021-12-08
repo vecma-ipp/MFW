@@ -120,6 +120,8 @@ if not CONST_TURB
     end
   when "DFEFI"
     turb = MPIInstance.new('turb', KDIR+'/dfefi_kernelB', mpiexec_args: '-np '+ENV["QCG_KERNEL_turb"])
+  when "GEMSUR"
+    turb = NativeInstance.new('turb', KDIR+'/gemsur_kernelB')
   else
     abort "Unknown turbulence kernel"
   end
