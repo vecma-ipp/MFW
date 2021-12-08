@@ -49,7 +49,7 @@ tmp_dir = os.environ['SCRATCH']
 mpi_instance =  os.environ['MPICMD']
 #mpi_instance = 'mpirun'
 # do not use intelmpi+MARCONI+QCG !
-mpi_model = 'srunmpi' #'openmpi'
+mpi_model = 'srunmpi' #'intelmpi'  #'openmpi'
 
 # CPO files location
 cpo_dir = os.path.abspath("../workflows/AUG_28906_6") 
@@ -188,10 +188,10 @@ execute = ExecuteQCGPJ(
 template_par_simple = {
                        ###'name': 'gem_long_var_simp',
                        #'exec': exec_path,
-                       'model': 'default', # mpi_model
                       ###'venv'='/marconi/home/userexternal/yyudin00/python394/', 
                        'numCores': ncores,
                        'numNodes': nnodes,
+                       'model': mpi_model, # 'default'
                       }
 
 template_par_cust = {
@@ -233,19 +233,25 @@ my_campaign.add_app(name=campaign_name,
 my_sampler = uq.sampling.PCESampler(vary=vary, polynomial_order=pol_order)
 my_campaign.set_sampler(my_sampler)
 print('Creating an Executor')
-executor=QCGPJExecutor(log_level='debug')
+#executor=QCGPJExecutor(log_level='debug')
 
 try:
     print('Creating resource pool')
+
     with QCGPJPool(
-                  qcgpj_executor=executor,
+                  qcgpj_executor=QCGPJExecutor(log_level='debug'), # =executor,
                   template=EasyVVUQParallelTemplate(),
-                  template_params=template_par_cust,  #_simple
+                  template_params=template_par_simple,  #_cust
                   ) as qcgpj:
+
         print('> Executing jobs and collating results')
-        print(os.environ['QCG_PM_CPU_SET'])
         my_campaign.execute(pool=qcgpj).collate()
+       
+        print(os.environ['QCG_PM_CPU_SET'])
+        print(qcgpj.template.template()[0])
+    
 except Exception as e:
+
     print('!>> Exeption during batch execution! :')
     print(e)
 
@@ -261,25 +267,25 @@ my_campaign.apply_analysis(analysis)
 results = my_campaign.get_last_analysis()
 
 # Get Descriptive Statistics
-mean_el = results.describe('te_transp.flux', 'mean')
-std_el = results.describe('te_transp.flux', 'std')
+##mean_el = results.describe('te_transp.flux', 'mean')
+##std_el = results.describe('te_transp.flux', 'std')
 mean_io = results.describe('ti_transp.flux', 'mean')
 std_io = results.describe('ti_transp.flux', 'std')
 
-s1_el = results.sobols_first('te_transp.flux')
+##s1_el = results.sobols_first('te_transp.flux')
 s1_io = results.sobols_first('ti_transp.flux')
 
 print("TE TRANSP FLUX")
-print("Mean: ", mean_el)
-print("Std: ", std_el)
-print("Sob1: ", s1_el)
+##print("Mean: ", mean_el)
+##print("Std: ", std_el)
+##print("Sob1: ", s1_el)
 
 print("TI TRANSP FLUX")
 print("Mean: ", mean_io)
 print("Std: ", std_io)
 print("Sob1: ", s1_io)
 
-results.to_scv('UQGEMCAMP_' + os.environ('SLURM_JOBID') + '_results.csv')
+results.to_scv('UQGEMCAMP_' + os.environ['SLURM_JOBID'] + '_results.csv')
 
 print('>>> TEST GEM-NT-VARY: END')
 
