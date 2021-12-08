@@ -31,7 +31,7 @@ export EASYPJ_CONFIG=conf.sh
 #make standalone
 #cd standalone/bin
 
-echo '> Running 1ft original AUG case with 50 internasl tst; TFILE and other files from cpo48, after totally '$((24671+2250))' calls; starting ti_transp.flux should be 2.??e6'
+echo '> Running 1ft original AUG case with 50 internasl tst; TFILE and other files from cpo53, after totally '$((24671+5250))' calls; starting ti_transp.flux should be 2.??e6'
 
 srun -n 8 MARCONI/loop_gem_notransp > gem-loop-log.${SLURM_JOBID}
 

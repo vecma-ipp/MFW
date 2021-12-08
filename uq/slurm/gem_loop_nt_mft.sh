@@ -31,7 +31,7 @@ export EASYPJ_CONFIG=conf.sh
 #make standalone
 #cd standalone/bin
 
-echo '> Running 8ft original AUG case with 50 internasl tst; using t0*.dat files after 9 run of '$((3988+500))'? calls'
+echo '> Running 8ft original AUG case with 50 internasl tst; using t0*.dat files after 13 run of '$((3988+2500))'? calls'
 
 srun -n 64 -N 2 MARCONI/loop_gem_notransp > gem-loop-log.${SLURM_JOBID}
 
