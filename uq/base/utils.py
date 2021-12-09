@@ -143,7 +143,7 @@ def _input_dicts(elem, input_params, ftube_index=None):
     return params, vary
 
 
-def ftube_indices(corep_file, coret_file):
+def ftube_indices(corep_file, coret_file, norm=True):
     """ Get a list of indices in rho_tor_norm grid (from coreprof) which
     correspond to the closest rho_thor_norm of flux tubes (in coretransp).
 
@@ -153,6 +153,8 @@ def ftube_indices(corep_file, coret_file):
         coreprof file.
     coret_file : str
         coretransp file.
+    norm: bool
+        flag if normalized rho_tor is to be used
 
     Returns
     -------
@@ -165,12 +167,19 @@ def ftube_indices(corep_file, coret_file):
     coret = read(coret_file, 'coretransp')
 
     # rho_tor_norm_transp_flux
-    rt = coret.values[0].rho_tor_norm
+    if norm:
+        rt = coret.values[0].rho_tor_norm
+    else:
+        rt = coret.values[0].rho_tor
+    
     n_flux = len(rt)
     print('rho_cores = ', rt)
 
     # rho_tor_norm vector in coreprof
-    r = corep.rho_tor_norm
+    if norm:
+        r = corep.rho_tor_norm
+    else:
+        r = corep.rho_tor    
 
     # the closest rho_tor in coreprof
     rp = [r.flat[np.abs(r - rt[i]).argmin()] for i in range(n_flux)]
@@ -179,3 +188,4 @@ def ftube_indices(corep_file, coret_file):
     # the corresponding indices
     ind = [list(r).index(rp[i]) for i in range(n_flux)]
     return ind
+
