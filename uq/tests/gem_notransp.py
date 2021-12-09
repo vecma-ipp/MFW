@@ -14,7 +14,7 @@ from ascii_cpo import read
 from base.cpo_encoder import CPOEncoder
 from base.cpo_decoder import CPODecoder
 from base.xml_element import XMLElement
-from base.utils import cpo_inputs
+from base.utils import cpo_inputs, ftube_indices
 
 # from easyvvuq1.1
 from easyvvuq.actions import Encode, Decode, Actions, CreateRunDirectory, ExecuteQCGPJ, ExecuteLocal, ExecuteSLURM, QCGPJPool
@@ -36,11 +36,16 @@ print('TEST GEM-NT-VARY: START')
 
 # We test 1 flux tube
 # run gem_test in strandalone and use:
-# base.utils.ftube_indices('gem_coreprof_in.cpo','gem_coretransp_out.cpo') to get the index
-ftube_index = 67 #TODO double check from XML, alternatively simply read from xml
+#base.utils.ftube_indices('gem_coreprof_in.cpo','gem_coretransp_out.cpo') to get the index
+#TODO double check from XML, alternatively simply read from xml
+ftube_index = 66 # 67 would not consider python/fortran numeration difference and apparently would result in variation differenct in an off place of a profile
+ftube_index = 94
 
 # Machine name
 SYS = os.environ['SYS']
+
+# home directory, for venv
+HOME = os.environ['HOME']
 
 # Working directory
 tmp_dir = os.environ['SCRATCH']
@@ -49,7 +54,7 @@ tmp_dir = os.environ['SCRATCH']
 mpi_instance =  os.environ['MPICMD']
 #mpi_instance = 'mpirun'
 # do not use intelmpi+MARCONI+QCG !
-mpi_model = 'srunmpi' #'intelmpi'  #'openmpi'
+mpi_model = 'intelmpi' #'srunmpi'  #'openmpi'
 
 # CPO files location
 cpo_dir = os.path.abspath("../workflows/AUG_28906_6") 
@@ -119,6 +124,12 @@ os.system("cp " + xml_dir + "/gem.xsd " + common_dir)
 os.system("cp " + obj_dir +"/"+ exec_code + " " + common_dir)
 exec_path = os.path.join(common_dir, exec_code)
 
+# TODO check if this index is read correctly
+ftube_index_test = ftube_indices(common_dir + '/gem_coreprof_in.cpo', 
+        '/marconi/home/userexternal/yyudin00/code/MFW/standalone/bin/gem_coretransp_out.cpo',
+         False) # TODO : where to get hte output file and should it be in common folder?
+print('The flux tube location defined from the cpo files is: {}'.format(ftube_index_test))
+
 # Create the encoder and the decoder
 input_filename = "gem_coreprof_in.cpo"
 encoder = CPOEncoder(cpo_filename=input_filename,
@@ -159,7 +170,6 @@ print('Executing turbulence code with the line: ' + exec_path)
 print('Creating an ExecuteQCGPJ')
 execute = ExecuteQCGPJ(
                       ExecuteLocal(exec_path)
-                      #ExecuteLocal(exec_path_comm)
                       #ExecuteSLURM(
                       #             template_script=exec_path,
                       #             variable='runs/'
@@ -188,7 +198,7 @@ execute = ExecuteQCGPJ(
 template_par_simple = {
                        ###'name': 'gem_long_var_simp',
                        #'exec': exec_path,
-                      ###'venv'='/marconi/home/userexternal/yyudin00/python394/', 
+                       'venv' : os.path.join(HOME, 'python394'), 
                        'numCores': ncores,
                        'numNodes': nnodes,
                        'model': mpi_model, # 'default'
@@ -197,14 +207,14 @@ template_par_simple = {
 template_par_cust = {
                       'name': 'gem_long_varied',
                       'execution': {
-                                     #'exec': exec_path, # TODO check examples, may be parameters has to be passed here
+                                     #'exec': exec_path,
                                      'model': mpi_model,
                                      'model_options': {
                                                         #'mpirun': '',
                                                         #'mpirun_args' : ''
                                                       },
                                       #'modules': ['impi']
-                                      #'venv' : ''             
+                                      #'venv' : os.path.join(HOME, 'python394')             
                                    },
                       'resources': {
                                      'numCores': { 
@@ -222,7 +232,7 @@ actions = Actions(
                   Encode(encoder), 
                   execute,
                   Decode(decoder)
-                 ) # does CreateRunDirectory also set ups the dir? (for us the dir's themselves are already created)
+                 ) # does CreateRunDirectory also set ups the dir? (for us the dir's themselves might be already created)
 
 # Add the app (automatically set as current app)
 my_campaign.add_app(name=campaign_name,
@@ -245,7 +255,8 @@ try:
                   ) as qcgpj:
 
         print('> Executing jobs and collating results')
-        my_campaign.execute(pool=qcgpj).collate()
+        aaa = my_campaign.execute(pool=qcgpj)
+        aaa.collate()
        
         print(os.environ['QCG_PM_CPU_SET'])
         print(qcgpj.template.template()[0])
