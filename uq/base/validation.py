@@ -121,16 +121,16 @@ class ValidateCompatibility():
 class Ztest():
 
     def __init__(self, mu1, mu2, sig1, sig2, n1, n2):
-    """
-    Compare 2 distributions using the Z-test
+        """
+        Compare 2 distributions using the Z-test
 
-    Parameters
-    ----------
-    where mu  = mean
+        Parameters
+        ----------
+        where mu  = mean
 	  sig = standard deviation
 	  n   = number of data points
                 from a distribution
-    """
+        """
         self.mu1 = mu1
         self.mu2 = mu2
         self.sig1= sig1

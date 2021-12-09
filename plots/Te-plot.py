@@ -4,8 +4,11 @@ import gathercpos as gc
 equil_code = "chease"
 do_equil = False
 
-paths = ["/pfs/scratch/g2oluk/Garching/git-c3f14881_25062019/GEM0r117-IMP4DVr119/ndg50_spread_t21-12000_GEM0_20steps_AUG6_Te0.1_dTe0.05_tau1e-2",
-         "/pfs/scratch/g2oluk/Garching/git-c3f14881_25062019/GEM0r117-IMP4DVr119/ndg50_spread_t21-12000_GEM0_20steps_AUG6_Te0.1_dTe0.05_tau1e-2/t1e4"]
+paths = [
+        # "/pfs/scratch/g2oluk/Garching/git-c3f14881_25062019/GEM0r117-IMP4DVr119/ndg50_spread_t21-12000_GEM0_20steps_AUG6_Te0.1_dTe0.05_tau1e-2",
+        # "/pfs/scratch/g2oluk/Garching/git-c3f14881_25062019/GEM0r117-IMP4DVr119/ndg50_spread_t21-12000_GEM0_20steps_AUG6_Te0.1_dTe0.05_tau1e-2/t1e4",
+          "",
+        ]
 
 cpo_producer = [('ets','coreprof'),('imp4dv','coretransp')]
 cpo = gc.build_time_trace(paths,cpo_producer)
