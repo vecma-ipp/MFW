@@ -78,7 +78,7 @@ def SA_exploite(analysis, qoi):
 
 #AUG_GM_date_explore(filename='../data/AUG_gem_inoutput.txt')
 
-def profile_evol_load(rho=0.69, folder_name='../gem_data/cpo5/', prof_names=['ti_transp', 'te_transp'], attrib_names=['flux'], coord_len=1, file_code_name='gem', name_postfix=''):
+def profile_evol_load(rho=0.69, folder_name='../gem_data/cpo5/', prof_names=['ti_transp', 'te_transp'], attrib_names=['flux'], coord_len=1, var_num=1, file_code_name='gem', name_postfix=''):
     
     #prof_names = ['ti_transp', 'te_transp']
     file_base_name = 'gem_coretransp'
@@ -136,7 +136,8 @@ def profile_evol_load(rho=0.69, folder_name='../gem_data/cpo5/', prof_names=['ti
     for i,(prof,attrib) in enumerate(itertools.product(prof_names, attrib_names)):
         value_arr = np.array(value_s[i])
         np.savetxt(file_code_name + '_' + prof + '_' + attrib  + '_evol' + name_postfix +'.csv', value_s[i].T, delimiter =", ", fmt ='% s')
-        print('Last value (num. {1}) is: {0}'.format(value_s[i,:,-1], value_s.shape[2]))        
+        if len(value_s.shape) == 3 and value_s.shape[2] > 0: # fallable, better need to check for emptines etc
+            print('Last value (num. {1}) is: {0}'.format(value_s[i,:,-1], value_s.shape[2]))        
 
     #print('check size of read structure = {}'.format(value_s.shape)) ### DEBUG
     #return [value[0] for value in value_s], file_names
@@ -419,14 +420,25 @@ def compare_gaussian(pdf, domain, moments):
 
 ###########################################
 
-def main(foldername=False, runforbatch=False, coordnum=1, mainfoldernum='false'):
+def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernum='false'):
+    """
+    parms:
+      foldername: relative path to folder where to read cpo files from
+      runforbatch: if False then first read values from cpo files, if True then look for a csv file
+      coordnum: number of coordinate values (flux tubes) to consider
+      runnum: number of different variants of run (e.g. profile shapes) to consider
+      manfoldernum: for naming, if false then use cpo folder
+    """
 
     if mainfoldernum == 'false':
         mainfoldernum = foldername # rather bad
 
+    #!!! TODO introduce new argument for main: read all run files, all cpo-s, then all flux tubes and put into the right data structures
     #workdir = os.path.join(os.getenv('SCRATCH'), 'MFW_runs')
-    #!!! TODO temporary chenges - introduce new argument for main? !!!
-    workdir = os.path.join(os.getenv('SCRATCH'), 'VARY_1FT_GEM_NT_test')
+    #workdir = os.path.join(os.getenv('SCRATCH'), 'VARY_1FT_GEM_NT_test')
+    workdir = os.path.join(os.getenv('SCRATCH'),)
+
+    runnum_list = [r+1 for r in range(runnum)]
 
     code_names = ['gem',
 #                 'imp4dv',
@@ -452,19 +464,31 @@ def main(foldername=False, runforbatch=False, coordnum=1, mainfoldernum='false')
 
             #mainfoldernum = foldername
 
-            val_ev_s, file_names = profile_evol_load(prof_names=profiles, attrib_names=attributes, coord_len=coordnum, folder_name=os.path.join(workdir, foldername), file_code_name=code_name, name_postfix='_'+mainfoldernum)
-            #val_ev_s, file_names = profile_evol_load(prof_names=profiles, attrib_names=attributes, coord_len=coordnum, folder_name=os.path.join(workdir, 'cpo'+mainfoldernum), file_code_name=code_name, name_postfix='_'+mainfoldernum)
+            #TODO: get list of directories for runs of profile variation; read them separetely in a loop (now there are different number of iterations), then load and pass to a new (TODO) plotting function with chosen profile/attribute/coordinate/etc 
+            for runn in runnum_list: 
+                #TODO: check cpo creation, print folder names used
+                folder_name_curr = os.path.join(workdir, foldername+'/run_'+str(runn))
+                print('Going over CPO-s in the folder: {}'.format(folder_name_curr))
+                val_ev_s, file_names = profile_evol_load(prof_names=profiles, attrib_names=attributes, coord_len=coordnum, folder_name=folder_name_curr, file_code_name=code_name, name_postfix='_'+mainfoldernum+'_'+str(runn))
+                #val_ev_s, file_names = profile_evol_load(prof_names=profiles, attrib_names=attributes, coord_len=coordnum, folder_name=os.path.join(workdir, 'cpo'+mainfoldernum), file_code_name=code_name, name_postfix='_'+mainfoldernum)
         
 #print(len(val_ev_s[0])); #print(val_ev_s) ### DEBUG
         val_ev_s = []
 
         for i,(p,a) in enumerate(itertools.product(profiles, attributes)):
 
-            val_ev_s.append(np.atleast_2d(np.genfromtxt(code_name+'_'+p+'_'+a+'_evol_'+mainfoldernum+'.csv', delimiter=", ").T))     
+            #csv_file_name = code_name+'_'+p+'_'+a+'_evol_'+mainfoldernum+'.csv'
+            for runn in runnum_list:
+                csv_file_name = code_name + '_' + p + '_' + a + '_evol_' + mainfoldernum + '_' + str(runn) + '.csv'
+                val_ev_s.append(np.atleast_2d(np.genfromtxt(csv_file_name, delimiter=", ").T))     
             #print('val_ev_s[{}]).shape={}'.format(i, val_ev_s[i].shape)); #print(val_ev_s) ###DEBUG
             
-            profile_evol_plot([val_ev_s[i]], name=code_name+'_'+p+'_'+a+'_'+mainfoldernum)
-            
+            #1. Plot the read values, pass a list of array
+            #profile_evol_plot([val_ev_s[i]], name=code_name+'_'+p+'_'+a+'_'+mainfoldernum)
+            # modification: list of arrays is for different profile variations
+            #TODO: pass info to start plotting from iteration-0
+            profile_evol_plot(val_ev_s, labels=[str(r) for r in runnum_list], name=code_name+'_'+p+'_'+a+'_'+mainfoldernum)            
+
             #print('before shape {}'.format(val_ev_s[i].shape)) ## DEBUG
             #val = np.array(val_ev_s[i]).squeeze()
             #print('after shape {}'.format(val.shape)) ### DEBUG            
@@ -529,6 +553,8 @@ if __name__ == '__main__':
         main(foldername=sys.argv[1], runforbatch=int(sys.argv[2]), coordnum=int(sys.argv[3]))
     elif len(sys.argv) == 5:
         main(foldername=sys.argv[1], runforbatch=int(sys.argv[2]), coordnum=int(sys.argv[3]), mainfoldernum=sys.argv[4])
+    elif len(sys.argv) == 6:
+        main(foldername=sys.argv[1], runforbatch=int(sys.argv[2]), coordnum=int(sys.argv[3]), runnum=int(sys.argv[4]), mainfoldernum=sys.argv[5])
     else:
         main()
 
