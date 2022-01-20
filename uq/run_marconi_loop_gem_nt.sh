@@ -8,10 +8,10 @@
 #SBATCH --error=test-loopntuq-err.%j
 
 ## wall time in format MINUTES:SECONDS
-#SBATCH --time=22:00:00
+#SBATCH --time=23:30:00
 
 ## number of nodes and tasks per node
-#SBATCH --nodes=1
+#SBATCH --nodes=2 # MIND number of parameters in variation in the script
 #SBATCH --ntasks-per-node=48
 ###SBATCH --ntasks-per-core=1
 ###SBATCH --cpus-per-task=8
@@ -25,26 +25,39 @@
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=yyudin@ipp.mpg.de
 
+module load intel/pe-xe-2017--binary intelmpi/2017--binary
+
+source $HOME/python394/bin/activate
+
 export SYS=MARCONI
 export SCRATCH=$CINECA_SCRATCH
-#export PYTHONPATH=$HOME/.local/lib/python3.6/site-packages/easyvvuq:$PYTHONPATH
+export PYTHONPATH=/marconi/home/userexternal/yyudin00/code/ual_python_interface:$PYTHONPATH
 
 #export MPICMD=mpiexec
-export MPICMD=srun
-###export LD_LIBRARY_PATH=${FFTW_HOME}/lib:${LD_LIBRARY_PATH}
+export MPICMD=mpirun #mpiexec #intelmpi #srun
+export LD_LIBRARY_PATH=${FFTW_HOME}/lib:${LD_LIBRARY_PATH}
 
 # For QCG-PilotJob usage
 ENCODER_MODULES="mfw.templates.cpo_encoder;mfw.templates.xml_encoder"
 export ENCODER_MODULES
 export EASYPJ_CONFIG=conf.sh
 
+#try out for script with 'mpirun' execution model
+export I_MPI_HYDRA_BOOTSTRAP_EXEC_EXTRA_ARGS="--exclusive"
+
+echo '> In this run: use ExecuteLocal only + QCGPJ pool + mpirun exec mode + 3 nodes + 2 params + mpiexec '
+echo '' # \n should work?
+
 echo $SLURM_NODELIST
 echo $SLURM_TASKS_PER_NODE
+
+# writing a file with description of used modules
+module list > module-used.${SLURM_JOBID}
 
 # Run the UQ code
 scontrol show --detail job $SLURM_JOBID 
 ###scontrol show hostname $SLURM_JOB_NODELIST
-lscpu -p
+#lscpu -p
 
 python3 tests/gem_notransp.py > test-loopntuq-log.${SLURM_JOBID}
 

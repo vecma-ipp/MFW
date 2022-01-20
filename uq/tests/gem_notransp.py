@@ -34,6 +34,8 @@ The electon and ion temperature and their gradient localised on the Flux tube po
 
 print('TEST GEM-NT-VARY: START')
 
+print('Version of EasyVVUQ: '.format(uq.__version__))
+
 # We test 1 flux tube
 # run gem_test in strandalone and use:
 #base.utils.ftube_indices('gem_coreprof_in.cpo','gem_coretransp_out.cpo') to get the index
@@ -54,7 +56,8 @@ tmp_dir = os.environ['SCRATCH']
 mpi_instance =  os.environ['MPICMD']
 #mpi_instance = 'mpirun'
 # do not use intelmpi+MARCONI+QCG !
-mpi_model = 'intelmpi' #'srunmpi'  #'openmpi'
+mpi_model = 'default' #'srunmpi' #'intelmpi' #'openmpi'
+# works with 'default'
 
 # CPO files location
 cpo_dir = os.path.abspath("../workflows/AUG_28906_6") 
@@ -66,7 +69,7 @@ xml_dir = os.path.abspath("../standalone/bin")
 
 # The executable code to run
 obj_dir = os.path.abspath("../standalone/bin/"+SYS)
-exec_code = "loop_gem_notransp" 
+exec_code = "loop_gem_notransp"  #"loop_gem_notransp" 
 
 # Define the uncertain parameters
 # Electron temperature and its gradient
@@ -85,7 +88,7 @@ input_cponame = "coreprof"
 
 # The quantities of intersts and the cpo file to set them
 output_columns = [
-#                 "te_transp.flux",
+                 "te_transp.flux",
                  "ti_transp.flux"
                  ]
 output_filename = "gem_coretransp_out.cpo"
@@ -162,19 +165,22 @@ if SYS == 'MARCONI':
 nnodes = ceil(1.*ncores/n_cores_p_node)
 nnodes_tot = ceil(1.*ncores_tot/n_cores_p_node) # not entirely correct due to an 'overkill' problem i.e. residual cores at one/more nodes may not be able to allocate any jobs, but here everything is devisible; also an import from 'math'
 
+#exec_path_comm = mpi_instance + ' -n '+ str(ncores) + ' -N '+ str(nnodes) + ' ' + exec_path
 exec_path_comm = mpi_instance + ' -n '+ str(ncores) + ' ' + exec_path
 
+print('Total number ofr nodes requires for all jobs: {0}'.format(nnodes_tot))
 print('Number of cores required for single code instance computed: {0}'.format(ncores))
-print('Executing turbulence code with the line: ' + exec_path)
+print('Executing turbulence code with the line: ' + exec_path_comm) 
 
 print('Creating an ExecuteQCGPJ')
-execute = ExecuteQCGPJ(
-                      ExecuteLocal(exec_path)
+#execute = ExecuteQCGPJ(
+#                      ExecuteLocal(exec_path_comm)
                       #ExecuteSLURM(
                       #             template_script=exec_path,
                       #             variable='runs/'
                       #            )
-                      )
+#                      )
+execute=ExecuteLocal(exec_path_comm) # when execution model is 'default': 'execute'  should be set to exec_path_comm
 
 # Execution
 #qcgpjexec = eqi.Executor(my_campaign)
@@ -193,7 +199,7 @@ execute = ExecuteQCGPJ(
 
 #qcgpjexec.run(processing_scheme=eqi.ProcessingScheme.EXEC_ONLY)
 
-# custome template for parallel job exectution
+# custom template for parallel job exectution
 
 template_par_simple = {
                        ###'name': 'gem_long_var_simp',
@@ -201,7 +207,7 @@ template_par_simple = {
                        'venv' : os.path.join(HOME, 'python394'), 
                        'numCores': ncores,
                        'numNodes': nnodes,
-                       'model': mpi_model, # 'default'
+                       'model': mpi_model, # 'default' -- should work with 'default'
                       }
 
 template_par_cust = {
@@ -271,6 +277,7 @@ except Exception as e:
 
 # Post-processing analysis
 print('Now finally analysing results')
+#TODO: make sure decoder reads the right file, which might be numbered; make sure this file exist -> reduce number of steps in the Fortran main function
 analysis = uq.analysis.PCEAnalysis(sampler=my_sampler, qoi_cols=output_columns)
 my_campaign.apply_analysis(analysis)
 
@@ -278,18 +285,18 @@ my_campaign.apply_analysis(analysis)
 results = my_campaign.get_last_analysis()
 
 # Get Descriptive Statistics
-##mean_el = results.describe('te_transp.flux', 'mean')
-##std_el = results.describe('te_transp.flux', 'std')
+mean_el = results.describe('te_transp.flux', 'mean')
+std_el = results.describe('te_transp.flux', 'std')
 mean_io = results.describe('ti_transp.flux', 'mean')
 std_io = results.describe('ti_transp.flux', 'std')
 
-##s1_el = results.sobols_first('te_transp.flux')
+s1_el = results.sobols_first('te_transp.flux')
 s1_io = results.sobols_first('ti_transp.flux')
 
 print("TE TRANSP FLUX")
-##print("Mean: ", mean_el)
-##print("Std: ", std_el)
-##print("Sob1: ", s1_el)
+print("Mean: ", mean_el)
+print("Std: ", std_el)
+print("Sob1: ", s1_el)
 
 print("TI TRANSP FLUX")
 print("Mean: ", mean_io)
