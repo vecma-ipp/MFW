@@ -37,6 +37,8 @@ class CPODecoder(BaseDecoder, decoder_name="cpo_decoder"):
 
         self.output_type = OutputType('sample')
 
+        self.target_filename = cpo_filename
+
     @staticmethod
     def _get_output_path(run_info=None, outfile=None):
         run_path = run_info['run_dir']
@@ -79,7 +81,8 @@ class CPODecoder(BaseDecoder, decoder_name="cpo_decoder"):
     def get_restart_dict(self):
         return {"cpo_filename": self.cpo_filename,
                 "cpo_name": self.cpo_name,
-                "output_columns": self.output_columns}
+                "output_columns": self.output_columns,
+                "target_filename": self.target_filename,}
 
     def element_version(self):
         return "0.5"
