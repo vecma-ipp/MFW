@@ -1,5 +1,7 @@
 import os
 
+import pickle
+
 from math import ceil
 
 import easyvvuq as uq
@@ -74,9 +76,9 @@ exec_code = "loop_gem_notransp"  #"loop_gem_notransp"
 # Define the uncertain parameters
 # Electron temperature and its gradient
 input_params = {
-#    "te.value": {"dist": "Uniform", "err":  0.1, "min": 0.},
-#    "ti.value": {"dist": "Uniform", "err":  0.1, "min": 0.},
-#    "te.ddrho": {"dist": "Uniform", "err":  0.1, "max": 0.},
+    "te.value": {"dist": "Uniform", "err":  0.1, "min": 0.},
+    "ti.value": {"dist": "Uniform", "err":  0.1, "min": 0.},
+    "te.ddrho": {"dist": "Uniform", "err":  0.1, "max": 0.},
     "ti.ddrho": {"dist": "Uniform", "err":  0.1, "max": 0.}
 }
 
@@ -91,7 +93,9 @@ output_columns = [
                  "te_transp.flux",
                  "ti_transp.flux"
                  ]
-output_filename = "gem_coretransp_out.cpo"
+#output_filename = "gem_coretransp_out.cpo"
+#workaround: read 5th iteration file
+output_filename = "gem_coretransp_0100.cpo" # TODO either read from folder, or make the set-up more flexible
 output_cponame = "coretransp"
 
 # parameter space for campaign and the distributions list for the sampler
@@ -130,7 +134,7 @@ exec_path = os.path.join(common_dir, exec_code)
 # TODO check if this index is read correctly
 ftube_index_test = ftube_indices(common_dir + '/gem_coreprof_in.cpo', 
         '/marconi/home/userexternal/yyudin00/code/MFW/standalone/bin/gem_coretransp_out.cpo',
-         False) # TODO : where to get hte output file and should it be in common folder?
+         False) # TODO : where to get the output file and should it be in common folder?
 print('The flux tube location defined from the cpo files is: {}'.format(ftube_index_test))
 
 # Create the encoder and the decoder
@@ -140,6 +144,7 @@ encoder = CPOEncoder(cpo_filename=input_filename,
                      input_dir=common_dir,
                      ftube_index=ftube_index)
 
+#TODO: decoder has to read the last spawned coretransp cpo file
 decoder = CPODecoder(cpo_filename=output_filename,
                      cpo_name=output_cponame,
                      output_columns=output_columns)
@@ -277,9 +282,18 @@ except Exception as e:
 
 # Post-processing analysis
 print('Now finally analysing results')
-#TODO: make sure decoder reads the right file, which might be numbered; make sure this file exist -> reduce number of steps in the Fortran main function
+#TODO: make sure decoder reads the file that exists, this may be a numbered file; current workaround: read a file from a fixed number of iteration
+#TODO: make a decoder that check the results folder and using a regex finds the latest number of iteration or the oldest file
 analysis = uq.analysis.PCEAnalysis(sampler=my_sampler, qoi_cols=output_columns)
 my_campaign.apply_analysis(analysis)
+
+# TODO: make a restart version of the workflow
+# 1. get exisiting profile shapes and their description as a varied parameter
+# 2. for the _coreprofile.cpo get the snapshot files for GEM (TFILE)
+# 3. get the same xml and equilibium files that were used for previus batch of iterations
+#      as well as info on flux tube coodinate, and parallel processing info 
+# 5. run the campaign
+# TODO: reuse functionality from the campaign restart (resume?) functionality
 
 # Get results
 results = my_campaign.get_last_analysis()
@@ -303,7 +317,18 @@ print("Mean: ", mean_io)
 print("Std: ", std_io)
 print("Sob1: ", s1_io)
 
-results.to_scv('UQGEMCAMP_' + os.environ['SLURM_JOBID'] + '_results.csv')
+pickle_filename = 'gem_notransp_results_' + os.environ['SLURM_JOBID']  + '.pickle'
+with open(pickle_filename, "bw") as file_pickle:
+    pickle.dump(results, file_pickle)
+
+csv_filename = 'gem_notransp_results_' + es.environ['SLURM_JOBID'] + '.csv'
+with open(csv_filename, "w") as file_csv:
+    w = csv.DictWriter(file_csv, results.raw_data.keys())
+    w.writeheader()
+    for r in results.raw_data:
+        w.writerow(r)
+
+#results.raw_data.to_scv('UQGEMCAMP_' + os.environ['SLURM_JOBID'] + '_results.csv', index=False)
 
 print('>>> TEST GEM-NT-VARY: END')
 

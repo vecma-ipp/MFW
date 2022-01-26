@@ -34,7 +34,7 @@ export SCRATCH=$CINECA_SCRATCH
 export PYTHONPATH=/marconi/home/userexternal/yyudin00/code/ual_python_interface:$PYTHONPATH
 
 #export MPICMD=mpiexec
-export MPICMD=mpirun #mpiexec #intelmpi #srun
+export MPICMD=mpiexec #mpirun #intelmpi #srun
 export LD_LIBRARY_PATH=${FFTW_HOME}/lib:${LD_LIBRARY_PATH}
 
 # For QCG-PilotJob usage
@@ -45,13 +45,14 @@ export EASYPJ_CONFIG=conf.sh
 #try out for script with 'mpirun' execution model
 export I_MPI_HYDRA_BOOTSTRAP_EXEC_EXTRA_ARGS="--exclusive"
 
-echo '> In this run: use ExecuteLocal only + QCGPJ pool + mpirun exec mode + 3 nodes + 2 params + mpiexec '
+echo '> In this run: use ExecuteLocal only + QCGPJ pool + default exec mode + commandline passed + 3 nodes + 4 params + mpiexec '
 echo '' # \n should work?
 
 echo $SLURM_NODELIST
 echo $SLURM_TASKS_PER_NODE
 
 # writing a file with description of used modules
+#TODO: this works from CLI on login node, but not from SLURM while on a working one; figure out why
 module list > module-used.${SLURM_JOBID}
 
 # Run the UQ code
