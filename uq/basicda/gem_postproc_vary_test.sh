@@ -47,12 +47,13 @@ cd $DIR_CODE
 #NUMPR=$(($NUM-1))
 #CPONUM=$(($NUM+13))
 
-#TODO : doesn't read the new cpo-s correctly, probably wrong folder
 #TODO: make sure the script reads right things: gem_*.cpo -s from 'cpo' in run folder, for all runs (mofify structure of scrip), all flux tubes 
+
+# command line arguments for main: folder with cpo-s; to read from original files or from csv; number of flux tubes; number of profile variants; file name to save
 
 #python3 gem_da.py 'run'$RUNNUM'/cpo'$CPONUM'/cpo' 0 1 'new_'$RUNNUM'_'$CPONUM  #TODO: change gem_da.py input attributes to read new cpo-s from different locations
 #python3 gem_da.py $DIR_SRC'/cpo' 0 1 'new_'$RUNNUM'_'$CPONUM
-python3 gem_da.py $DIR_SRC'/cpo' 0 1 16 'new_'$CPONUM
+python3 gem_da.py $DIR_SRC'/cpo' 1 1 16 'new_'$CPONUM
 
 #cp GEM_plots/gem_??_transp_flux_evol_all${NUMPR}.csv ./
 #cat gem_ti_transp_flux_evol_all${NUMPR}.csv gem_ti_transp_flux_evol_${CPONUM}.csv > gem_ti_transp_flux_evol_all${NUM}.csv

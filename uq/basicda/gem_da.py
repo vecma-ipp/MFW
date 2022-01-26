@@ -79,7 +79,9 @@ def SA_exploite(analysis, qoi):
 #AUG_GM_date_explore(filename='../data/AUG_gem_inoutput.txt')
 
 def profile_evol_load(rho=0.69, folder_name='../gem_data/cpo5/', prof_names=['ti_transp', 'te_transp'], attrib_names=['flux'], coord_len=1, var_num=1, file_code_name='gem', name_postfix=''):
-    
+    """
+    Loads the quantitiy values from all CPO files with a specific type of name in the folder, then saves in a CSV file
+    """ 
     #prof_names = ['ti_transp', 'te_transp']
     file_base_name = 'gem_coretransp'
     file_ext = '.cpo'
@@ -143,8 +145,10 @@ def profile_evol_load(rho=0.69, folder_name='../gem_data/cpo5/', prof_names=['ti
     #return [value[0] for value in value_s], file_names
     return value_s, file_names
 
-def profile_evol_plot(value_s, labels=['orig'], file_names=[], name='gem_ti_flux'):
-    
+def profile_evol_plot(value_s, labels=['orig'], file_names=[], name='gem_ti_flux', alignment='end'):
+    """
+    Saves a PNG of a Matplotlib plot for a quantity agains index/time; reads values from a list of numpy arrays passed
+    """
     #ts = np.arange(len(file_names))
     n = max([v.shape[-1] for v in value_s])
     #print('n = {}, len(v) = {}, v[0].shape = {}'.format(n, len(value_s), value_s[0].shape)) ### DEBUG
@@ -161,12 +165,17 @@ def profile_evol_plot(value_s, labels=['orig'], file_names=[], name='gem_ti_flux
     fig, ax = plt.subplots(figsize=(24.,8.))
     for value, lab in zip(value_s, labels):
         #print('value.shape = {}'.format(value.shape)) ###DEBUG
-        ts = np.arange(n - value.shape[-1], n)
+        if alignment == 'end':
+            ts = np.arange(n - value.shape[-1], n)
+        elif alignment == 'start':
+            ts = np.arange(value.shape[-1])
+        else:
+            ts = np.arange(value.shape[-1])
         for i in range(value.shape[0]):
              #print('value[{0},:]'.format(i)); print(value[i,:]) ### DEBUG
              ## !!! TODO temporary changes !!!
-             ax.semilogy(ts, value[i,:], '-', label=lab+'_'+str(i))
-             #ax.plot(ts, value[i,:], '-', label=lab+'_'+str(i))
+             #ax.semilogy(ts, value[i,:], '-', label=lab+'_'+str(i))
+             ax.plot(ts, value[i,:], '-', label=lab+'_'+str(i))
     plt.legend(loc='best')
     plt.savefig(name + '.png')
     plt.close()
@@ -433,7 +442,6 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
     if mainfoldernum == 'false':
         mainfoldernum = foldername # rather bad
 
-    #!!! TODO introduce new argument for main: read all run files, all cpo-s, then all flux tubes and put into the right data structures
     #workdir = os.path.join(os.getenv('SCRATCH'), 'MFW_runs')
     #workdir = os.path.join(os.getenv('SCRATCH'), 'VARY_1FT_GEM_NT_test')
     workdir = os.path.join(os.getenv('SCRATCH'),)
@@ -466,7 +474,7 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
 
             #TODO: get list of directories for runs of profile variation; read them separetely in a loop (now there are different number of iterations), then load and pass to a new (TODO) plotting function with chosen profile/attribute/coordinate/etc 
             for runn in runnum_list: 
-                #TODO: check cpo creation, print folder names used
+                
                 folder_name_curr = os.path.join(workdir, foldername+'/run_'+str(runn))
                 print('Going over CPO-s in the folder: {}'.format(folder_name_curr))
                 val_ev_s, file_names = profile_evol_load(prof_names=profiles, attrib_names=attributes, coord_len=coordnum, folder_name=folder_name_curr, file_code_name=code_name, name_postfix='_'+mainfoldernum+'_'+str(runn))
@@ -486,8 +494,7 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
             #1. Plot the read values, pass a list of array
             #profile_evol_plot([val_ev_s[i]], name=code_name+'_'+p+'_'+a+'_'+mainfoldernum)
             # modification: list of arrays is for different profile variations
-            #TODO: pass info to start plotting from iteration-0
-            profile_evol_plot(val_ev_s, labels=[str(r) for r in runnum_list], name=code_name+'_'+p+'_'+a+'_'+mainfoldernum)            
+            profile_evol_plot(val_ev_s, labels=[str(r) for r in runnum_list], name=code_name+'_'+p+'_'+a+'_'+mainfoldernum, alignment='start')            
 
             #print('before shape {}'.format(val_ev_s[i].shape)) ## DEBUG
             #val = np.array(val_ev_s[i]).squeeze()
@@ -539,12 +546,10 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
             """
 
             #TODO get exponential average of the values: standard packaged optimize for alpha -- why it is so high? is composition of exponential avaraging is another exponential averagin -- if so, what is alpha_comp?
-            #TODO exponential avraging with a symmetric window -> apply padding
+            #TODO exponential averaging with a symmetric window -> apply padding
 
 if __name__ == '__main__':
 
-    # TODO : add argument to specify original run directory location
-    # TOOD : add functionality to comapare different runs i.e. usign different profiles
     if len(sys.argv) == 2:
         main(foldername=sys.argv[1])
     elif len(sys.argv) == 3:
