@@ -3,8 +3,11 @@
 CPONUM=1
 RUNNUM=2
 
-DIR='/marconi_scratch/userexternal/yyudin00/VARY_1FT_GEM_NT_qairnbbz'
-#DIR='/marconi_scratch/userexternal/yyudin00/VARY_1FT_GEM_NT_qpyxg3bb'
+UQCAMPDIR='dy6n5hp9'
+
+DIR='/marconi_scratch/userexternal/yyudin00/VARY_1FT_GEM_NT_qairnbbz' # first run of 16 GEM caes in a script, n_it<=500
+#DIR='/marconi_scratch/userexternal/yyudin00/VARY_1FT_GEM_NT_qpyxg3bb' # first dir with 2 GEM runs
+DIR=$SCRATCH'/VARY_1FT_GEM_NT_'$UQCAMPDIR
 
 #DIR='/marconi_scratch/userexternal/yyudin00/MFW_runs/cpo'$CPONUM'/'
 #DIR='/marconi_scratch/userexternal/yyudin00/GEM_NT_test/run'$RUNNUM'/cpo'$CPONUM'/cpo'
@@ -53,7 +56,7 @@ cd $DIR_CODE
 
 #python3 gem_da.py 'run'$RUNNUM'/cpo'$CPONUM'/cpo' 0 1 'new_'$RUNNUM'_'$CPONUM  #TODO: change gem_da.py input attributes to read new cpo-s from different locations
 #python3 gem_da.py $DIR_SRC'/cpo' 0 1 'new_'$RUNNUM'_'$CPONUM
-python3 gem_da.py $DIR_SRC'/cpo' 1 1 16 'new_'$CPONUM
+python3 gem_da.py $DIR_SRC'/cpo' 0 1 16 'new_'$UQCAMPDIR'_'$CPONUM
 
 #cp GEM_plots/gem_??_transp_flux_evol_all${NUMPR}.csv ./
 #cat gem_ti_transp_flux_evol_all${NUMPR}.csv gem_ti_transp_flux_evol_${CPONUM}.csv > gem_ti_transp_flux_evol_all${NUM}.csv
