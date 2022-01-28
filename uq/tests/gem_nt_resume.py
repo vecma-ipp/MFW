@@ -3,6 +3,7 @@ import sys
 
 import pickle
 import csv
+import pprint # just for debugging
 
 from math import ceil
 
@@ -42,13 +43,12 @@ print('Version of EasyVVUQ: '.format(uq.__version__))
 
 # We test 1 flux tube
 # run gem_test in strandalone and use:
-#base.utils.ftube_indices('gem_coreprof_in.cpo','gem_coretransp_out.cpo') to get the index
-#TODO double check from XML, alternatively simply read from xml
+#base.utils.ftube_indices('gem_coreprof_in.cpo','gem_coretransp_out.cpo') to get the index - currently it is only a check
 ftube_index = 66 # 67 would not consider python/fortran numeration difference and apparently would result in variation differenct in an off place of a profile
 ftube_index = 94
 
 # Previus campaign ID
-campaign_id = 'dy6n5hp9' # read from the calling batch script: can it be passed without main()?
+campaign_id = 'dy6n5hp9' # read from the calling batch script
 campaign_id = str(sys.argv[1])
 
 # Machine name
@@ -110,12 +110,12 @@ params, vary = cpo_inputs(cpo_filename=input_filename,
                           input_params=input_params,
                           ftube_index=ftube_index)
 
-# Initialize Campaign objecti
-#TODO !!! reuse last campaign's dir, DB, etc
-# look for:
+# Initialize Campaign object
+# Reusing last campaign's dir, DB, etc.
+# options:
 #   campaign.rerun()
 #   campaigne.db.resume()
-#   campaign(db_location=...)
+#   campaign(db_location=...) - currently used
 #   campaign(state_file=...)
 
 campaign_name = "VARY_1FT_GEM_NT_"
@@ -154,11 +154,14 @@ os.system("cp " + obj_dir +"/"+ exec_code + " " + common_dir)
 
 exec_path = os.path.join(common_dir, exec_code)
 
-# TODO check if this index is read correctly
+# check if this index is read correctly
 ftube_index_test = ftube_indices(common_dir + '/gem_coreprof_in.cpo', 
         '/marconi/home/userexternal/yyudin00/code/MFW/standalone/bin/gem_coretransp_out.cpo',
          False)
 print('The flux tube location defined from the cpo files is: {}'.format(ftube_index_test))
+
+if ftube_index != ftube_index_test[0]:
+    print("Different flux tube coordinate is used") # could be assert, might rewrite or through away if script is run for more flux tubes
 
 # FOR THE RESTART CAMPAIGN, EVERYTHING (ENCODER, DECODER, ACTIONS, VARY, etc.) SHOULD BE ALREADY THERE
 # Create the encoder and the decoder
@@ -199,7 +202,7 @@ nnodes_tot = ceil(1.*ncores_tot/n_cores_p_node) # not entirely correct due to an
 #exec_path_comm = mpi_instance + ' -n '+ str(ncores) + ' -N '+ str(nnodes) + ' ' + exec_path
 exec_path_comm = mpi_instance + ' -n '+ str(ncores) + ' ' + exec_path
 
-print('Total number ofr nodes requires for all jobs: {0}'.format(nnodes_tot))
+print('Total number of nodes requires for all jobs: {0}'.format(nnodes_tot))
 print('Number of cores required for single code instance computed: {0}'.format(ncores))
 print('Executing turbulence code with the line: ' + exec_path_comm) 
 
@@ -213,21 +216,22 @@ template_par_simple = {
                        'venv' : os.path.join(HOME, 'python394'), 
                        'numCores': ncores,
                        'numNodes': nnodes,
-                       'model': mpi_model, # 'default' -- should work with 'default'
+                       'model': mpi_model, # 'default' - QCG-PJ pool should work with 'default'
                       }
 
 # create list of actions in the campaign
-actions = Actions(
-                  CreateRunDirectory('/runs'), 
-                  Encode(encoder), 
-                  execute,
-                  Decode(decoder)
-                 ) # does CreateRunDirectory also set ups the dir? (for us the dir's themselves might be already created)
 
-actions = Actions(execute)
+#actions = Actions(
+#                  CreateRunDirectory('/runs'), 
+#                  Encode(encoder), 
+#                  execute,
+#                  Decode(decoder)
+#                 ) # does CreateRunDirectory also set ups the dir? (for us the dir's themselves might be already created)
+
+#actions = Actions(execute)
 
 # Add the app (automatically set as current app)
-# FOR THE RESTART SHOULD BE THERE
+# FOR THE RESTART, ACTIONS SHOULD BE ALREADY THERE
 """
 my_campaign.add_app(name=campaign_name,
                     params=params,
@@ -235,12 +239,33 @@ my_campaign.add_app(name=campaign_name,
 """
 
 # Create the samples
-my_sampler = uq.sampling.PCESampler(vary=vary, polynomial_order=pol_order)
 """
+my_sampler = uq.sampling.PCESampler(vary=vary, polynomial_order=pol_order)
 my_campaign.set_sampler(my_sampler)
 """
+my_sample = my_campaign.get_active_sampler()
 
-my_campaign.rerun() # findign all runs and setting them as ENCODED i.e. before to-be-executed
+run_ids = [str(x+1) for x in range(nruns)] # just numbers are correce id-s
+print('Number of runs is {} and passed list of run id-s is: {}'.format(nruns, run_ids))
+
+# getting run list from the DB, should remove the previous one
+run_ids_db = [x for x in my_campaign.campaign_db.run_ids()]
+#print('run id-s from the DB: {}'.format(run_ids_db)) # run_{d} is a name but not id
+
+#checking the content of the read campaign DB
+db_json = my_campaign.campaign_db.dump()
+pprint.pprint(db_json)
+
+# finding all runs and setting them as ENCODED i.e. before to-be-executed
+my_campaign.rerun(run_ids) 
+
+# TODO !!! some aditional set up is needed to execute code only: currently no jobs are stated
+# probably need to change actions: only the 'execute' has to be perfromed
+my_app = my_campaign.get_active_app()
+print(my_app)
+print(my_sampler)
+
+my_campaign.set_sampler(my_sampler, update=True)
 
 # ONLY AFTER HERE WE NEED AGAIN TO CHANGE SOMETHING i.e. CREATE RESOURCE POOL; BY THIS TIME OTHER THINGS HAVE TO BE READY
 print('Creating an Executor')
@@ -254,8 +279,8 @@ try:
                   ) as qcgpj:
 
         print('> Executing jobs and collating results')
-        aaa = my_campaign.execute(pool=qcgpj)
-        aaa.collate()
+        exec_res = my_campaign.execute(pool=qcgpj)
+        exec_res.collate()
        
         print(os.environ['QCG_PM_CPU_SET'])
         print(qcgpj.template.template()[0])
@@ -281,7 +306,7 @@ my_campaign.apply_analysis(analysis)
 # 3. get the same xml and equilibium files that were used for previus batch of iterations
 #      as well as info on flux tube coodinate, and parallel processing info 
 # 5. run the campaign
-# TODO: reuse functionality from the campaign restart (resume?)
+# reuse functionality from the campaign restart (resume?)
 
 # Get results
 results = my_campaign.get_last_analysis()

@@ -11,7 +11,7 @@
 #SBATCH --time=23:30:00
 
 ## number of nodes and tasks per node
-#SBATCH --nodes=2 # MIND number of parameters in variation in the script
+#SBATCH --nodes=3 # MIND number of parameters in variation in the script
 #SBATCH --ntasks-per-node=48
 ###SBATCH --ntasks-per-core=1
 ###SBATCH --cpus-per-task=8
@@ -42,14 +42,15 @@ export ENCODER_MODULES
 export EASYPJ_CONFIG=conf.sh
 
 #try out for script with 'mpirun' execution model
-export I_MPI_HYDRA_BOOTSTRAP_EXEC_EXTRA_ARGS="--exclusive"
+#export I_MPI_HYDRA_BOOTSTRAP_EXEC_EXTRA_ARGS="--exclusive"
 
 echo '> In this run: use ExecuteLocal only + QCGPJ pool + default exec mode + commandline passed + 3 nodes + 4 params + mpiexec '
-echo '' # \n should work?
+echo ''
 
 # Run the UQ code
 scontrol show --detail job $SLURM_JOBID 
 
 python3 tests/gem_nt_resume.py dy6n5hp9 > test-loopntuq-log.${SLURM_JOBID}
 
+echo "finished the UQ script"
 
