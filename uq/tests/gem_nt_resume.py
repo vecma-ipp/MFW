@@ -48,7 +48,7 @@ ftube_index = 66 # 67 would not consider python/fortran numeration difference an
 ftube_index = 94
 
 # Previus campaign ID
-campaign_id = 'dy6n5hp9' # read from the calling batch script
+#campaign_id = 'dy6n5hp9' # read from the calling batch script
 campaign_id = str(sys.argv[1])
 
 # Machine name
@@ -109,6 +109,14 @@ params, vary = cpo_inputs(cpo_filename=input_filename,
                           input_dir=cpo_dir,
                           input_params=input_params,
                           ftube_index=ftube_index)
+
+# Make a restart version of the workflow
+# 1. get exisiting profile shapes and their description as a varied parameter
+# 2. for the _coreprofile.cpo get the snapshot files for GEM (TFILE)
+# 3. get the same xml and equilibium files that were used for previus batch of iterations
+#      as well as info on flux tube coodinate, and parallel processing info 
+# 5. run the campaign
+# TODO: reuse functionality from the campaign restart (resume?) functionality
 
 # Initialize Campaign object
 # Reusing last campaign's dir, DB, etc.
@@ -171,12 +179,11 @@ encoder = CPOEncoder(cpo_filename=input_filename,
                      cpo_name=input_cponame,
                      input_dir=common_dir,
                      ftube_index=ftube_index)
-
+"""
 #TODO: decoder has to read the last spawned coretransp cpo file
 decoder = CPODecoder(cpo_filename=output_filename,
                      cpo_name=output_cponame,
                      output_columns=output_columns)
-"""
 
 #####################################################
 ### --- Post EasyVVUQ release modifications ---
@@ -228,7 +235,12 @@ template_par_simple = {
 #                  Decode(decoder)
 #                 ) # does CreateRunDirectory also set ups the dir? (for us the dir's themselves might be already created)
 
-#actions = Actions(execute)
+rerun_actions = Actions(execute)
+
+resume_actions = Actions(
+                         execute,
+                         Decode(decoder),
+                        )
 
 # Add the app (automatically set as current app)
 # FOR THE RESTART, ACTIONS SHOULD BE ALREADY THERE
@@ -243,27 +255,36 @@ my_campaign.add_app(name=campaign_name,
 my_sampler = uq.sampling.PCESampler(vary=vary, polynomial_order=pol_order)
 my_campaign.set_sampler(my_sampler)
 """
-my_sample = my_campaign.get_active_sampler()
+my_sampler = my_campaign.get_active_sampler()
 
-run_ids = [str(x+1) for x in range(nruns)] # just numbers are correce id-s
+run_ids = [str(x+1) for x in range(nruns)] # just numbers are correct id-s
 print('Number of runs is {} and passed list of run id-s is: {}'.format(nruns, run_ids))
 
-# getting run list from the DB, should remove the previous one
+# getting run list from the DB, better strip 'run_' from elements and use further
 run_ids_db = [x for x in my_campaign.campaign_db.run_ids()]
 #print('run id-s from the DB: {}'.format(run_ids_db)) # run_{d} is a name but not id
 
 #checking the content of the read campaign DB
 db_json = my_campaign.campaign_db.dump()
-pprint.pprint(db_json)
+#pprint.pprint(db_json)
 
 # finding all runs and setting them as ENCODED i.e. before to-be-executed
 my_campaign.rerun(run_ids) 
 
 # TODO !!! some aditional set up is needed to execute code only: currently no jobs are stated
-# probably need to change actions: only the 'execute' has to be perfromed
+# probably need to change actions: only the 'execute' has to be performed
+# Try:
+#  a. replace_actions() for 'execute' only
+#  a'. replace_actions() for 'execute' and 'Decode' - currently using
+#  b. apply_to_each_sample() 'execute' only - doesn't work as ActionPool has to be difined beforehand
+#  c. use recolate() ?
+
 my_app = my_campaign.get_active_app()
 print(my_app)
 print(my_sampler)
+
+my_campaign.replace_actions(app_name=campaign_name, 
+                            actions=resume_actions)
 
 my_campaign.set_sampler(my_sampler, update=True)
 
@@ -273,17 +294,18 @@ try:
     print('Creating resource pool')
 
     with QCGPJPool(
-                  qcgpj_executor=QCGPJExecutor(log_level='debug'), # =executor,
+                  qcgpj_executor=QCGPJExecutor(log_level='debug'), 
                   template=EasyVVUQParallelTemplate(),
                   template_params=template_par_simple,
                   ) as qcgpj:
 
         print('> Executing jobs and collating results')
+        
         exec_res = my_campaign.execute(pool=qcgpj)
         exec_res.collate()
        
-        print(os.environ['QCG_PM_CPU_SET'])
-        print(qcgpj.template.template()[0])
+        #print(os.environ['QCG_PM_CPU_SET'])
+        #print(qcgpj.template.template()[0]) ###DEBUG
     
 except Exception as e:
 

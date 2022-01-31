@@ -44,13 +44,15 @@ export EASYPJ_CONFIG=conf.sh
 #try out for script with 'mpirun' execution model
 #export I_MPI_HYDRA_BOOTSTRAP_EXEC_EXTRA_ARGS="--exclusive"
 
-echo '> In this run: use ExecuteLocal only + QCGPJ pool + default exec mode + commandline passed + 3 nodes + 4 params + mpiexec '
+export OLDCAMP='dy6n5hp9'
+
+echo '> In this run: use ExecuteLocal only + QCGPJ pool + default exec mode + commandline passed + 3 nodes + 4 params + mpiexec . Using to resume an old campaign at '$OLDCAMP
 echo ''
 
 # Run the UQ code
 scontrol show --detail job $SLURM_JOBID 
 
-python3 tests/gem_nt_resume.py dy6n5hp9 > test-loopntuq-log.${SLURM_JOBID}
+python3 tests/gem_nt_resume.py $OLDCAMP > test-loopntuq-log.${SLURM_JOBID}
 
 echo "finished the UQ script"
 
