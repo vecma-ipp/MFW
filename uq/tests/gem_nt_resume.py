@@ -256,37 +256,45 @@ my_sampler = uq.sampling.PCESampler(vary=vary, polynomial_order=pol_order)
 my_campaign.set_sampler(my_sampler)
 """
 my_sampler = my_campaign.get_active_sampler()
-
-run_ids = [str(x+1) for x in range(nruns)] # just numbers are correct id-s
-print('Number of runs is {} and passed list of run id-s is: {}'.format(nruns, run_ids))
-
-# getting run list from the DB, better strip 'run_' from elements and use further
-run_ids_db = [x for x in my_campaign.campaign_db.run_ids()]
-#print('run id-s from the DB: {}'.format(run_ids_db)) # run_{d} is a name but not id
-
-#checking the content of the read campaign DB
-db_json = my_campaign.campaign_db.dump()
-#pprint.pprint(db_json)
-
-# finding all runs and setting them as ENCODED i.e. before to-be-executed
-my_campaign.rerun(run_ids) 
-
 # TODO !!! some aditional set up is needed to execute code only: currently no jobs are stated
 # probably need to change actions: only the 'execute' has to be performed
 # Try:
 #  a. replace_actions() for 'execute' only
 #  a'. replace_actions() for 'execute' and 'Decode' - currently using
 #  b. apply_to_each_sample() 'execute' only - doesn't work as ActionPool has to be difined beforehand
-#  c. use recolate() ?
+#  c. use recolate() ?i
+#  d. set_active_app() to the app with replaced actions - currently in use
+#  f. resurrect_app()
 
-my_app = my_campaign.get_active_app()
-print(my_app)
-print(my_sampler)
+my_old_app = my_campaign.get_active_app()
+#print(my_old_app)
+#print(my_sampler)
+
+my_campaign.set_sampler(my_sampler, update=True)
 
 my_campaign.replace_actions(app_name=campaign_name, 
                             actions=resume_actions)
 
-my_campaign.set_sampler(my_sampler, update=True)
+# list of run existing run numbers to be executed again (continued)
+run_ids = [str(x+1) for x in range(nruns)] # just numbers are correct id-s
+print('Number of runs is {} and passed list of run id-s is: {}'.format(nruns, run_ids))
+
+# getting run list from the DB, better strip 'run_' from elements and use further instead of run_ids
+run_ids_db = [x for x in my_campaign.campaign_db.run_ids()]
+print('run names from the DB: {}'.format(run_ids_db)) # run_{d} is a name but not id
+
+# finding all runs and setting them as ENCODED i.e. before to-be-executed
+my_campaign.rerun(run_ids) 
+
+# checking the content of the read campaign DB
+db_json = my_campaign.campaign_db.dump()
+pprint.pprint(db_json)
+
+#checking the list of runs adn their satus before the resume
+pprint.pprint(my_campaign.list_runs()) ###DEBUG
+#pprint.pprint(my_campaign.get_run_status(run_ids)) ###DEBUG
+
+my_campaign.set_active_app(campaign_name)
 
 # ONLY AFTER HERE WE NEED AGAIN TO CHANGE SOMETHING i.e. CREATE RESOURCE POOL; BY THIS TIME OTHER THINGS HAVE TO BE READY
 print('Creating an Executor')
