@@ -117,15 +117,14 @@ params, vary = cpo_inputs(cpo_filename=input_filename,
 # 3. get the same xml and equilibium files that were used for previus batch of iterations
 #      as well as info on flux tube coodinate, and parallel processing info 
 # 5. run the campaign
-# TODO: reuse functionality from the campaign restart (resume?) functionality
 
 # Initialize Campaign object
 # Reusing last campaign's dir, DB, etc.
 # options:
-#   campaign.rerun()
-#   campaigne.db.resume()
+#   campaign.rerun() - currently used
+#   campaigne.db.resume() - not necessary?
 #   campaign(db_location=...) - currently used
-#   campaign(state_file=...)
+#   campaign(state_file=...) - not necessary?
 
 campaign_name = "VARY_1FT_GEM_NT_"
 db_location = 'sqlite:///' + tmp_dir + '/' + campaign_name + campaign_id + '/campaign.db'
@@ -225,17 +224,18 @@ template_par_simple = {
                        'venv' : os.path.join(HOME, 'python394'), 
                        'numCores': ncores,
                        'numNodes': nnodes,
-                       'model': mpi_model, # 'default' - QCG-PJ pool should work with 'default'
+                       'model': mpi_model, # 'default' - QCG-PJ pool should work with 'default', as well as a commandline with 'mpiexec'
                       }
 
 # create list of actions in the campaign
+# FOR THE RESTART NEED TO PERFORM NEW ACTIONS (w.o. Encode)
 
 #actions = Actions(
 #                  CreateRunDirectory('/runs'), 
 #                  Encode(encoder), 
 #                  execute,
 #                  Decode(decoder)
-#                 ) # does CreateRunDirectory also set ups the dir? (for us the dir's themselves might be already created)
+#                 )
 
 rerun_actions = Actions(execute)
 
@@ -244,15 +244,13 @@ resume_actions = Actions(
                          Decode(decoder),
                         )
 
-# Add the app (automatically set as current app)
-# FOR THE RESTART, ACTIONS SHOULD BE ALREADY THERE
 """
 my_campaign.add_app(name=campaign_name,
                     params=params,
                     actions=actions)
 """
 
-# Create the samples
+# Restore the sampler: check if needed to track number of runs
 """
 my_sampler = uq.sampling.PCESampler(vary=vary, polynomial_order=pol_order)
 my_campaign.set_sampler(my_sampler)
@@ -260,8 +258,7 @@ my_campaign.set_sampler(my_sampler)
 my_sampler = my_campaign.get_active_sampler()
 my_campaign.set_sampler(my_sampler, update=True)
 
-# TODO !!! some aditional set up is needed to execute code only: currently no jobs are stated
-# probably need to change actions: only the 'execute' has to be performed
+# Probably need to change actions: only the 'execute' has to be performed
 # Try:
 #  a. replace_actions() for 'execute' only
 #  a'. replace_actions() for 'execute' and 'Decode' - currently using
@@ -282,21 +279,21 @@ my_campaign.replace_actions(app_name=campaign_name,
 
 # list of run existing run numbers to be executed again (continued)
 run_ids = [str(x+1) for x in range(nruns)] # just numbers are correct id-s
-print('Number of runs is {} and passed list of run id-s is: {}'.format(nruns, run_ids))
+#print('Number of runs is {} and passed list of run id-s is: {}'.format(nruns, run_ids))
 
 # getting run list from the DB, better strip 'run_' from elements and use further instead of run_ids
 run_ids_db = [x for x in my_campaign.campaign_db.run_ids()]
-print('run names from the DB: {}'.format(run_ids_db)) # run_{d} is a name but not id
+#print('run names from the DB: {}'.format(run_ids_db)) # run_{d} is a name but not id
 
 # finding all runs and setting them as ENCODED i.e. before to-be-executed
 my_campaign.rerun(run_ids) 
 
 # checking the content of the read campaign DB
 #db_json = my_campaign.campaign_db.dump()
-#pprint.pprint(db_json)
+#pprint.pprint(db_json) ###DEBUG
 
 # checking the list of runs adn their satus before the resume
-pprint.pprint(my_campaign.list_runs()) ###DEBUG
+#pprint.pprint(my_campaign.list_runs()) ###DEBUG
 #pprint.pprint(my_campaign.get_run_status(run_ids)) ###DEBUG
 
 my_campaign.set_app(campaign_name)
@@ -341,16 +338,9 @@ except Exception as e:
 print('Now finally analysing results')
 #TODO: make sure decoder reads the file that exists, this may be a numbered file; current workaround: read a file from a fixed number of iteration
 #TODO: make a decoder that check the results folder and using a regex finds the latest number of iteration or the oldest file
+#TODO: make GEM iteration wrapper to continue numeration of GEM calls/macroiterations - currently every restart/slurm-batch will restart numbers from 0
 analysis = uq.analysis.PCEAnalysis(sampler=my_sampler, qoi_cols=output_columns)
 my_campaign.apply_analysis(analysis)
-
-# TODO: make a restart version of the workflow
-# 1. get exisiting profile shapes and their description as a varied parameter
-# 2. for the _coreprofile.cpo get the snapshot files for GEM (TFILE)
-# 3. get the same xml and equilibium files that were used for previus batch of iterations
-#      as well as info on flux tube coodinate, and parallel processing info 
-# 5. run the campaign
-# reuse functionality from the campaign restart (resume?)
 
 # Get results
 results = my_campaign.get_last_analysis()
