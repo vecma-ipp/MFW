@@ -22,8 +22,9 @@ from base.xml_element import XMLElement
 from base.utils import cpo_inputs, ftube_indices
 
 # from easyvvuq1.1
-from easyvvuq.actions import Encode, Decode, Actions, CreateRunDirectory, ExecuteQCGPJ, ExecuteLocal, ExecuteSLURM, QCGPJPool
+from easyvvuq.actions import Encode, Decode, Actions, CreateRunDirectory, ExecuteQCGPJ, ExecuteLocal, ExecuteSLURM, QCGPJPool, ActionPool
 from easyvvuq.actions.execute_qcgpj import EasyVVUQParallelTemplate
+from easyvvuq.constants import Status
 
 # form qcg-pj
 from qcg.pilotjob.executor_api.qcgpj_executor import QCGPJExecutor
@@ -140,6 +141,7 @@ my_campaign = uq.Campaign(
 # Create new directory for inputs
 campaign_dir = my_campaign.campaign_dir
 common_dir = campaign_dir +"/common/"
+
 """
 os.mkdir(common_dir)
 
@@ -256,21 +258,24 @@ my_sampler = uq.sampling.PCESampler(vary=vary, polynomial_order=pol_order)
 my_campaign.set_sampler(my_sampler)
 """
 my_sampler = my_campaign.get_active_sampler()
+my_campaign.set_sampler(my_sampler, update=True)
+
 # TODO !!! some aditional set up is needed to execute code only: currently no jobs are stated
 # probably need to change actions: only the 'execute' has to be performed
 # Try:
 #  a. replace_actions() for 'execute' only
 #  a'. replace_actions() for 'execute' and 'Decode' - currently using
 #  b. apply_to_each_sample() 'execute' only - doesn't work as ActionPool has to be difined beforehand
-#  c. use recolate() ?i
+#  c. use recolate() ?
 #  d. set_active_app() to the app with replaced actions - currently in use
-#  f. resurrect_app()
+#  f. use resurrect_app() ?
+#  g. use .campaign_db.resume_campaign() ?
 
-my_old_app = my_campaign.get_active_app()
+#my_campaign.campaign_db.resume_campaign()
+
+#my_old_app = my_campaign.get_active_app()
 #print(my_old_app)
 #print(my_sampler)
-
-my_campaign.set_sampler(my_sampler, update=True)
 
 my_campaign.replace_actions(app_name=campaign_name, 
                             actions=resume_actions)
@@ -287,16 +292,16 @@ print('run names from the DB: {}'.format(run_ids_db)) # run_{d} is a name but no
 my_campaign.rerun(run_ids) 
 
 # checking the content of the read campaign DB
-db_json = my_campaign.campaign_db.dump()
-pprint.pprint(db_json)
+#db_json = my_campaign.campaign_db.dump()
+#pprint.pprint(db_json)
 
-#checking the list of runs adn their satus before the resume
+# checking the list of runs adn their satus before the resume
 pprint.pprint(my_campaign.list_runs()) ###DEBUG
 #pprint.pprint(my_campaign.get_run_status(run_ids)) ###DEBUG
 
-my_campaign.set_active_app(campaign_name)
+my_campaign.set_app(campaign_name)
 
-# ONLY AFTER HERE WE NEED AGAIN TO CHANGE SOMETHING i.e. CREATE RESOURCE POOL; BY THIS TIME OTHER THINGS HAVE TO BE READY
+# ONLY AFTER HERE WE NEED AGAIN TO CHANGE SOMETHING w.r.t. PAST EXECUTION i.e. CREATE RESOURCE POOL; BY THIS TIME OTHER THINGS HAVE TO BE READY
 print('Creating an Executor')
 try:
     print('Creating resource pool')
@@ -309,7 +314,16 @@ try:
 
         print('> Executing jobs and collating results')
         
-        exec_res = my_campaign.execute(pool=qcgpj)
+        #exec_res = my_campaign.execute(pool=qcgpj)
+        
+        my_action_pool = my_campaign.apply_for_each_sample(
+                                          actions=resume_actions,
+                                          status=Status.ENCODED,
+                                          sequential=False,
+                                                          )
+        
+        exec_res = my_action_pool.start(pool=qcgpj)
+
         exec_res.collate()
        
         #print(os.environ['QCG_PM_CPU_SET'])
