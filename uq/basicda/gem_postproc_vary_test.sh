@@ -1,7 +1,8 @@
 
 #0. set directories
-CPONUM=1
-RUNNUM=2
+CPONUM=2 # Folder of output CPO same, should be same as number of SLURM submissions (macro-macro-iterations)
+#RUNNUM=2
+RUNRANGE=16
 
 UQCAMPDIR='dy6n5hp9'
 
@@ -26,14 +27,15 @@ cd $DIR_SRC
 #mkdir $DIR
 mkdir cpo
 #realpath cpo/
+mkdir cpo/$CPONUM
 
 #mv gem-loop*.* $DIR
 #mv gem_coretransp*.* cpo
 
 for d in run*/ ; do
     echo "$d"
-    mkdir cpo/$d
-    mv $d/gem_coretransp*.cpo cpo/$d/
+    mkdir cpo/$CPONUM/$d
+    mv $d/gem_coretransp*.cpo cpo/$CPONUM/$d/
 done
 
 #mv imp4dv_coretransp_0*.cpo $DIR
@@ -47,24 +49,34 @@ done
 cd $DIR_CODE
 
 #NUM=$(($CPONUM-13))
-#NUMPR=$(($NUM-1))
+#NUMPR=$((NUM-1))
 #CPONUM=$(($NUM+13))
+CPONUMPR=$((CPONUM-1))
 
-#TODO: make sure the script reads right things: gem_*.cpo -s from 'cpo' in run folder, for all runs (mofify structure of scrip), all flux tubes 
+#TODO: make sure the script reads right things: gem_*.cpo -s from 'cpo' in run folder, for all runs (mofify structure of script), all flux tubes 
 
 # command line arguments for main: folder with cpo-s; to read from original files or from csv; number of flux tubes; number of profile variants; file name to save
 
-#python3 gem_da.py 'run'$RUNNUM'/cpo'$CPONUM'/cpo' 0 1 'new_'$RUNNUM'_'$CPONUM  #TODO: change gem_da.py input attributes to read new cpo-s from different locations
+#python3 gem_da.py 'run'$RUNNUM'/cpo'$CPONUM'/cpo' 0 1 'new_'$RUNNUM'_'$CPONUM
 #python3 gem_da.py $DIR_SRC'/cpo' 0 1 'new_'$RUNNUM'_'$CPONUM
-python3 gem_da.py $DIR_SRC'/cpo' 0 1 16 'new_'$UQCAMPDIR'_'$CPONUM
 
+python3 gem_da.py ${DIR_SRC}/cpo/${CPONUM} 0 1 ${RUNRANGE} 'new_'${UQCAMPDIR}'_'${CPONUM} #latest
+
+#3. prepare combined files for analysis of series across long-term runs
 #cp GEM_plots/gem_??_transp_flux_evol_all${NUMPR}.csv ./
+
+for r in `seq 1 $RUNRANGE`; do #latest
+    cp GEM_plots/gem_??_transp_flux_evol_all_${UQCAMPDIR}_${CPONUMPR}_${r}.csv ./
+    cat gem_ti_transp_flux_evol_all_${UQCAMPDIR}_${CPONUMPR}_${r}.csv gem_ti_transp_flux_evol_new_${UQCAMPDIR}_${CPONUM}_${r}.csv > gem_ti_transp_flux_evol_all_${UQCAMPDIR}_${CPONUM}_${r}.csv
+done
+
 #cat gem_ti_transp_flux_evol_all${NUMPR}.csv gem_ti_transp_flux_evol_${CPONUM}.csv > gem_ti_transp_flux_evol_all${NUM}.csv
 
 #python3 gem_da.py 'all'$NUM 1
 
-#mv *.txt GEM_plots/
-#mv *.csv GEM_plots/
-#mv *.png GEM_plots/
+python3 gem_da.py all_${UQCAMPDIR}_${CPONUM} 1 1 ${RUNRANGE} all_${UQCAMPDIR}_${CPONUM} #latest
 
+mv *.txt GEM_plots/
+mv *.csv GEM_plots/
+mv *.png GEM_plots/
 

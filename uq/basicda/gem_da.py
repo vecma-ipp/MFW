@@ -440,7 +440,7 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
     """
 
     if mainfoldernum == 'false':
-        mainfoldernum = foldername # rather bad
+        mainfoldernum = foldername # rather bad, fails if foldername is composed
 
     #workdir = os.path.join(os.getenv('SCRATCH'), 'MFW_runs')
     #workdir = os.path.join(os.getenv('SCRATCH'), 'VARY_1FT_GEM_NT_test')
@@ -475,7 +475,7 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
             #TODO: get list of directories for runs of profile variation; read them separetely in a loop (now there are different number of iterations), then load and pass to a new (TODO) plotting function with chosen profile/attribute/coordinate/etc 
             for runn in runnum_list: 
                 
-                folder_name_curr = os.path.join(workdir, foldername+'/run_'+str(runn))
+                folder_name_curr = os.path.join(workdir, foldername+'/run_'+str(runn)) # TODO make more flexible for different existing cases?
                 print('Going over CPO-s in the folder: {}'.format(folder_name_curr))
                 val_ev_s, file_names = profile_evol_load(prof_names=profiles, attrib_names=attributes, coord_len=coordnum, folder_name=folder_name_curr, file_code_name=code_name, name_postfix='_'+mainfoldernum+'_'+str(runn))
                 #val_ev_s, file_names = profile_evol_load(prof_names=profiles, attrib_names=attributes, coord_len=coordnum, folder_name=os.path.join(workdir, 'cpo'+mainfoldernum), file_code_name=code_name, name_postfix='_'+mainfoldernum)
