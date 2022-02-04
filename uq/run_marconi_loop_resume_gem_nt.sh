@@ -8,7 +8,7 @@
 #SBATCH --error=test-loopntuq-err.%j
 
 ## wall time in format MINUTES:SECONDS
-#SBATCH --time=23:30:00
+#SBATCH --time=6:00:00
 
 ## number of nodes and tasks per node
 #SBATCH --nodes=3 # MIND number of parameters in variation in the script
@@ -45,8 +45,9 @@ export EASYPJ_CONFIG=conf.sh
 #export I_MPI_HYDRA_BOOTSTRAP_EXEC_EXTRA_ARGS="--exclusive"
 
 export OLDCAMP='dy6n5hp9'
+CPONUM=${1:-3}
 
-echo '> In this run: use ExecuteLocal only + QCGPJ pool + default exec mode + commandline passed + 3 nodes + 4 params + mpiexec . Using to resume an old campaign at '$OLDCAMP
+echo '> In this run: use ExecuteLocal only + QCGPJ pool + default exec mode + commandline passed + 3 nodes + 4 params + mpiexec . Using to resume an old campaign at '${OLDCAMP}' and number of run '${CPONUM}
 echo ''
 
 # Run the UQ code
@@ -54,5 +55,11 @@ scontrol show --detail job $SLURM_JOBID
 
 python3 tests/gem_nt_resume.py $OLDCAMP > test-loopntuq-log.${SLURM_JOBID}
 
-echo "finished the UQ script"
+echo "finished the UQ script" #TODO: check if this is printed actually after UQ campaign end
+
+#TODO: autoamitaclly call analysis script here
+cd basicda
+#./gem_postproc_vary_test.sh ${CPONUM} > test-loopntuq-log.${SLURM_JOBID}
+
+echo "finished submission"
 

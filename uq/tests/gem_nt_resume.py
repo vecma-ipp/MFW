@@ -3,7 +3,8 @@ import sys
 
 import pickle
 import csv
-import pprint # just for debugging
+import json
+import pprint # for debugging
 
 from math import ceil
 
@@ -113,9 +114,9 @@ params, vary = cpo_inputs(cpo_filename=input_filename,
 
 # Make a restart version of the workflow
 # 1. get exisiting profile shapes and their description as a varied parameter
-# 2. for the _coreprofile.cpo get the snapshot files for GEM (TFILE)
-# 3. get the same xml and equilibium files that were used for previus batch of iterations
-#      as well as info on flux tube coodinate, and parallel processing info 
+# 2. for the *_coreprofile.cpo get the snapshot files for GEM (TFILE)
+# 3. get the same xml and equilibium files that were used for previous batch of iterations
+#      as well as info on flux tube coordinate, and parallel processing info 
 # 5. run the campaign
 
 # Initialize Campaign object
@@ -258,15 +259,15 @@ my_campaign.set_sampler(my_sampler)
 my_sampler = my_campaign.get_active_sampler()
 my_campaign.set_sampler(my_sampler, update=True)
 
-# Probably need to change actions: only the 'execute' has to be performed
+# Need to change actions: only the 'execute' has to be performed
 # Try:
-#  a. replace_actions() for 'execute' only
+#  a. replace_actions() for 'execute' only - should not work
 #  a'. replace_actions() for 'execute' and 'Decode' - currently using
 #  b. apply_to_each_sample() 'execute' only - doesn't work as ActionPool has to be difined beforehand
-#  c. use recolate() ?
+#  c. use recolate() - not necessary?
 #  d. set_active_app() to the app with replaced actions - currently in use
-#  f. use resurrect_app() ?
-#  g. use .campaign_db.resume_campaign() ?
+#  f. use resurrect_app() - not necessary?
+#  g. use .campaign_db.resume_campaign() - not necessary?
 
 #my_campaign.campaign_db.resume_campaign()
 
@@ -368,9 +369,16 @@ pickle_filename = 'gem_notransp_results_' + os.environ['SLURM_JOBID']  + '.pickl
 with open(pickle_filename, "bw") as file_pickle:
     pickle.dump(results, file_pickle)
 
+json_filename = 'gem_notransp_results_' + os.environ['SLURM_JOBID']  + '.json'
+with open(json_filename, "w") as json_file:
+    json.dump(results, json_file)
+
+
+pprint.print(results.raw_data) ###DEBUG
+
 csv_filename = 'gem_notransp_results_' + os.environ['SLURM_JOBID'] + '.csv'
 with open(csv_filename, "w") as file_csv:
-    w = csv.DictWriter(file_csv, results.raw_data.keys())
+    w = csv.DictWriter(file_csv, results.raw_data.keys()) # TODO: check what is .raw_data, could be str not dict
     w.writeheader()
     for r in results.raw_data:
         w.writerow(r)
