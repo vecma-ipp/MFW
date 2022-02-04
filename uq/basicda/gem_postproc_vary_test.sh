@@ -1,12 +1,19 @@
+#!/bin/sh
 
-#0. set directories
-CPONUM=2 # Folder of output CPO same, should be same as number of SLURM submissions (macro-macro-iterations)
+# Bash script to run pos-processing routines from gem_da.py on outputs of a code, here on transport CPO files from GEM
+
+#0. Set directories
+# folder of output CPO files, should be same as number of SLURM submissions (macro-macro-iterations)
+#CPONUM=2
+CPONUM=${1:-2}
+
 #RUNNUM=2
+# number of runs in current UQ campaign
 RUNRANGE=16
 
-UQCAMPDIR='dy6n5hp9'
+UQCAMPDIR='dy6n5hp9' # folder id of a completed run with 100 GEM calls
 
-DIR='/marconi_scratch/userexternal/yyudin00/VARY_1FT_GEM_NT_qairnbbz' # first run of 16 GEM caes in a script, n_it<=500
+DIR='/marconi_scratch/userexternal/yyudin00/VARY_1FT_GEM_NT_qairnbbz' # first run of 16 GEM cases in a script, n_it<=500
 #DIR='/marconi_scratch/userexternal/yyudin00/VARY_1FT_GEM_NT_qpyxg3bb' # first dir with 2 GEM runs
 DIR=$SCRATCH'/VARY_1FT_GEM_NT_'$UQCAMPDIR
 
@@ -21,8 +28,8 @@ DIR_SRC=$DIR'/runs/runs_0-100000000/runs_0-1000000/runs_0-10000/runs_0-100/'
 
 DIR_CODE=$HOME'/code/MFW/uq/basicda/'
 
-#1. transfer output files from the run directory
-#echo "$DIR_SRC"
+#1. Transfer output files from the run directories to a separete cpo dir
+
 cd $DIR_SRC
 #mkdir $DIR
 mkdir cpo
@@ -32,7 +39,7 @@ mkdir cpo/$CPONUM
 #mv gem-loop*.* $DIR
 #mv gem_coretransp*.* cpo
 
-for d in run*/ ; do
+for d in run*/ ; do #latest
     echo "$d"
     mkdir cpo/$CPONUM/$d
     mv $d/gem_coretransp*.cpo cpo/$CPONUM/$d/
@@ -45,7 +52,7 @@ done
 #mv *.dat $DIR
 #cp $DIR/t00.dat ./
 
-#2. run prosprocessing scripts
+#2. Run prosprocessing scripts
 cd $DIR_CODE
 
 #NUM=$(($CPONUM-13))
@@ -62,7 +69,7 @@ CPONUMPR=$((CPONUM-1))
 
 python3 gem_da.py ${DIR_SRC}/cpo/${CPONUM} 0 1 ${RUNRANGE} 'new_'${UQCAMPDIR}'_'${CPONUM} #latest
 
-#3. prepare combined files for analysis of series across long-term runs
+#3. Prepare combined files for analysis of series across long-term runs
 #cp GEM_plots/gem_??_transp_flux_evol_all${NUMPR}.csv ./
 
 for r in `seq 1 $RUNRANGE`; do #latest
@@ -72,10 +79,12 @@ done
 
 #cat gem_ti_transp_flux_evol_all${NUMPR}.csv gem_ti_transp_flux_evol_${CPONUM}.csv > gem_ti_transp_flux_evol_all${NUM}.csv
 
+#4. Run the post-processing Python script
 #python3 gem_da.py 'all'$NUM 1
 
 python3 gem_da.py all_${UQCAMPDIR}_${CPONUM} 1 1 ${RUNRANGE} all_${UQCAMPDIR}_${CPONUM} #latest
 
+#5. Put the resulting output files in a separat directory
 mv *.txt GEM_plots/
 mv *.csv GEM_plots/
 mv *.png GEM_plots/

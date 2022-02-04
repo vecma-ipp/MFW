@@ -431,7 +431,7 @@ def compare_gaussian(pdf, domain, moments):
 
 def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernum='false'):
     """
-    parms:
+    params:
       foldername: relative path to folder where to read cpo files from
       runforbatch: if False then first read values from cpo files, if True then look for a csv file
       coordnum: number of coordinate values (flux tubes) to consider
@@ -506,7 +506,7 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
             lags_list = [l for l in lags_list if l < val_ev_s[i].shape[-1]]
           
             get_coreprof_ev_acf(val_ev_s[i], name=code_name+'_'+p+'_'+a+'stats', lags=lags_list) 
-            #NB: uncertainty of the acf computation ~ Var(X)/sqrt(n) , where n=N_samples/N_lags
+            #NB: uncertainty of the ACF computation ~ Var(X)/sqrt(n) , where n=N_samples/N_lags
             
             plot_coreprofval_dist(val_ev_s[i], name=p+'_'+a+'_'+mainfoldernum, discr_level=32)
  
