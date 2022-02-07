@@ -371,7 +371,7 @@ with open(pickle_filename, "bw") as file_pickle:
 
 json_filename = 'gem_notransp_results_' + os.environ['SLURM_JOBID']  + '.json'
 with open(json_filename, "w") as json_file:
-    json.dump(results, json_file)
+    json.dump(results.raw_data, json_file)
 
 
 pprint.print(results.raw_data) ###DEBUG
