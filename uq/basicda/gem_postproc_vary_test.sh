@@ -4,6 +4,7 @@
 
 #0. Set directories
 # folder of output CPO files, should be same as number of SLURM submissions (macro-macro-iterations)
+#should be the same as number of MMit TO process
 #CPONUM=2
 CPONUM=${1:-2}
 
@@ -30,19 +31,26 @@ DIR_CODE=$HOME'/code/MFW/uq/basicda/'
 
 #1. Transfer output files from the run directories to a separete cpo dir
 
-cd $DIR_SRC
+cd ${DIR_SRC}
 #mkdir $DIR
 mkdir cpo
-#realpath cpo/
-mkdir cpo/$CPONUM
+mkdir dat
+
+mkdir cpo/${CPONUM}
+mkdir cpo/${CPONUM}
 
 #mv gem-loop*.* $DIR
 #mv gem_coretransp*.* cpo
 
 for d in run*/ ; do #latest
-    echo "$d"
-    mkdir cpo/$CPONUM/$d
-    mv $d/gem_coretransp*.cpo cpo/$CPONUM/$d/
+    echo "${d}"
+
+    mkdir cpo/${CPONUM}/${d}
+    mv ${d}/gem_coretransp*.cpo cpo/${CPONUM}/${d}/
+
+    mkdir dat/${CPONUM}/${d}
+    cp ${d}/*.dat dat/${CPONUM}/${d}/
+    cp ${d}/fout_* dat/${CPONUM}/${d}/
 done
 
 #mv imp4dv_coretransp_0*.cpo $DIR
@@ -53,7 +61,7 @@ done
 #cp $DIR/t00.dat ./
 
 #2. Run prosprocessing scripts
-cd $DIR_CODE
+cd ${DIR_CODE}
 
 #NUM=$(($CPONUM-13))
 #NUMPR=$((NUM-1))

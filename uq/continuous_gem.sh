@@ -8,7 +8,7 @@ echo "STARTING THE WORKFLOW"
 # number of runs
 NUMRUNS=3 
 # no of last/current run
-CURRUN=${1:-4}
+CURRUN=${1:-7}
 # no of the first run in the new sequence
 FRUN=$((${CURRUN}+1))
 # no of the last run in the new sequence
@@ -28,7 +28,7 @@ echo "Number of last run in this submission: "$LASTRUN
 echo "Starting the very first SLURM submission with UQ campaign"
 
 #PREVID=$(sbatch --parsable --wait ${COM} 2>&1 | sed 's/[S,a-z]* //g')
-PREVID=$(sbatch --parsable --wait ${COM})
+PREVID=$(sbatch --export=ALL,CPONUM=${FRUN}  --parsable --wait ${COM})
 
 #1'. Save and process the outputs after the finish of the submission
 echo "Finished first new UQ campaign, now postprocessing for campaign "${PREVID}
@@ -43,7 +43,8 @@ for n in `seq ${FRUN} ${LASTRUN}`; do
     #TODO: make while loop, or rather do-until loop
     
     echo "Starting next submission after "${PREVID}" , no "${n} 
-    CURID=$(sbatch --parsable --dependency=afterany:${PREVID}:+3 --wait ${COM} 2>&1 | sed 's/[S,a-z]* //g')
+    #CURID=$(sbatch --export=ALL,CPONUM=${n} --parsable --dependency=afterany:${PREVID}:+3 --wait ${COM}  2>&1 | sed 's/[S,a-z]* //g')
+    CURID=$(sbatch --export=ALL,CPONUM=${n} --parsable --dependency=afterany:${PREVID}:+3 --wait ${COM})
     #TODO: ideally use =afterok and make sure there are no errors in the UQ script
     #TODO make sure that the output files either have continius numerations or stored separately
     
