@@ -479,7 +479,10 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
                 print('Going over CPO-s in the folder: {}'.format(folder_name_curr))
                 val_ev_s, file_names = profile_evol_load(prof_names=profiles, attrib_names=attributes, coord_len=coordnum, folder_name=folder_name_curr, file_code_name=code_name, name_postfix='_'+mainfoldernum+'_'+str(runn))
                 #val_ev_s, file_names = profile_evol_load(prof_names=profiles, attrib_names=attributes, coord_len=coordnum, folder_name=os.path.join(workdir, 'cpo'+mainfoldernum), file_code_name=code_name, name_postfix='_'+mainfoldernum)
-        
+                
+                # Getting the input profiles values, primarily for the plot labels
+                file_runs_db = "../gem_notransp_results_"+str(9981977)+".pickle" #CHECK!  
+ 
 #print(len(val_ev_s[0])); #print(val_ev_s) ### DEBUG
         val_ev_s = []
 

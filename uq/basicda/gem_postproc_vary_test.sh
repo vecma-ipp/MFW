@@ -4,9 +4,9 @@
 
 #0. Set directories
 # folder of output CPO files, should be same as number of SLURM submissions (macro-macro-iterations)
-#should be the same as number of MMit TO process
+# should be the same as number of MMit TO process
 #CPONUM=2
-CPONUM=${1:-2}
+CPONUM=${1:-9}
 
 #RUNNUM=2
 # number of runs in current UQ campaign
@@ -37,7 +37,7 @@ mkdir cpo
 mkdir dat
 
 mkdir cpo/${CPONUM}
-mkdir cpo/${CPONUM}
+mkdir dat/${CPONUM}
 
 #mv gem-loop*.* $DIR
 #mv gem_coretransp*.* cpo

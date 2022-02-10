@@ -26,11 +26,11 @@
 
 module load intel/pe-xe-2017--binary intelmpi/2017--binary
 
-source $HOME/python394/bin/activate
+source ${HOME}/python394/bin/activate
 
 export SYS=MARCONI
-export SCRATCH=$CINECA_SCRATCH
-export PYTHONPATH=/marconi/home/userexternal/yyudin00/code/ual_python_interface:$PYTHONPATH
+export SCRATCH=${CINECA_SCRATCH}
+export PYTHONPATH=/marconi/home/userexternal/yyudin00/code/ual_python_interface:${PYTHONPATH}
 
 #export MPICMD=mpiexec
 export MPICMD=mpiexec #mpirun #intelmpi #srun
@@ -45,21 +45,24 @@ export EASYPJ_CONFIG=conf.sh
 #export I_MPI_HYDRA_BOOTSTRAP_EXEC_EXTRA_ARGS="--exclusive"
 
 export OLDCAMP='dy6n5hp9'
-CPONUM=${1:-3}
+CPONUM=${1:-9}
 
 echo '> In this run: use ExecuteLocal only + QCGPJ pool + default exec mode + commandline passed + 3 nodes + 4 params + mpiexec . Using to resume an old campaign at '${OLDCAMP}' and number of run '${CPONUM}
 echo ''
 
 # Run the UQ code
-scontrol show --detail job $SLURM_JOBID 
+scontrol show --detail job ${SLURM_JOBID} 
 
-python3 tests/gem_nt_resume.py $OLDCAMP > test-loopntuq-log.${SLURM_JOBID}
+python3 tests/gem_nt_resume.py ${OLDCAMP} > test-loopntuq-log.${SLURM_JOBID}
 
-echo "finished the UQ script" #TODO: check if this is printed actually after UQ campaign end
+echo "finished the UQ script"
 
-#TODO: autoamitaclly call analysis script here
+echo"starting postprocessing"
+#NOTE: now automatically call analysis and postprocessing script here
 cd basicda
-#./gem_postproc_vary_test.sh ${CPONUM} > test-loopntuq-log.${SLURM_JOBID}
+./gem_postproc_vary_test.sh ${CPONUM} > test-loopntuq-log.${SLURM_JOBID}
+cd ..
+echo "finished postprocessing"
 
 echo "finished submission"
 

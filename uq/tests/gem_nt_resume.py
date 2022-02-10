@@ -378,7 +378,7 @@ pprint.print(results.raw_data) ###DEBUG
 
 csv_filename = 'gem_notransp_results_' + os.environ['SLURM_JOBID'] + '.csv'
 with open(csv_filename, "w") as file_csv:
-    w = csv.DictWriter(file_csv, results.raw_data.keys()) # TODO: check what is .raw_data, could be str not dict
+    w = csv.DictWriter(file_csv, results.raw_data.keys()) # TODO: check what is .raw_data, apparently ndarray appears
     w.writeheader()
     for r in results.raw_data:
         w.writerow(r)

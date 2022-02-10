@@ -7,7 +7,7 @@
 echo "STARTING THE WORKFLOW"
 # number of runs
 NUMRUNS=3 
-# no of last/current run
+# no of current run, which is the last finished submission
 CURRUN=${1:-7}
 # no of the first run in the new sequence
 FRUN=$((${CURRUN}+1))
@@ -31,10 +31,14 @@ echo "Starting the very first SLURM submission with UQ campaign"
 PREVID=$(sbatch --export=ALL,CPONUM=${FRUN}  --parsable --wait ${COM})
 
 #1'. Save and process the outputs after the finish of the submission
-echo "Finished first new UQ campaign, now postprocessing for campaign "${PREVID}
-cd basicda
-./gem_postproc_vary_test.sh ${FRUN}
-cd ..
+echo "Finished the first new UQ campaign"
+
+#NOTE: the call of postrpocessing scripts is moved to the SLURM submission
+#echo "Now postprocessing for campaign "${PREVID}
+#cd basicda
+#./gem_postproc_vary_test.sh ${FRUN}
+#cd ..
+
 FRUN=$((${FRUN}+1))
 echo "Finished prostprocessing, next run number: "$FRUN
 
@@ -48,13 +52,15 @@ for n in `seq ${FRUN} ${LASTRUN}`; do
     #TODO: ideally use =afterok and make sure there are no errors in the UQ script
     #TODO make sure that the output files either have continius numerations or stored separately
     
-    echo "Finished UQ campaign, starting postprocessing"
-    cd basicda
-    ./gem_postproc_vary_test.sh ${n}
-    cd ..
+    echo "Finished UQ campaign no "${n}
+
+    #echo "Now postprocessing for campaign "${PREVID}
+    #cd basicda
+    #./gem_postproc_vary_test.sh ${n}
+    #cd ..
 
     PREVID=${CURID}
-    echo "Finished postprocessing"
+    echo "Finished postprocessing fot campaing no "${n}
 done
 
 echo "FINISHED THE WORKFLOW"
