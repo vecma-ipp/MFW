@@ -472,22 +472,25 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
 
             #mainfoldernum = foldername
 
+            # Getting the input profiles values, primarily for the plot labels
+            file_runs_db = "../gem_notransp_db_"+str(9981977)+".json" #CHECK! 
+                 
             #TODO: get list of directories for runs of profile variation; read them separetely in a loop (now there are different number of iterations), then load and pass to a new (TODO) plotting function with chosen profile/attribute/coordinate/etc 
             for runn in runnum_list: 
                 
                 folder_name_curr = os.path.join(workdir, foldername+'/run_'+str(runn)) # TODO make more flexible for different existing cases?
                 print('Going over CPO-s in the folder: {}'.format(folder_name_curr))
                 val_ev_s, file_names = profile_evol_load(prof_names=profiles, attrib_names=attributes, coord_len=coordnum, folder_name=folder_name_curr, file_code_name=code_name, name_postfix='_'+mainfoldernum+'_'+str(runn))
-                #val_ev_s, file_names = profile_evol_load(prof_names=profiles, attrib_names=attributes, coord_len=coordnum, folder_name=os.path.join(workdir, 'cpo'+mainfoldernum), file_code_name=code_name, name_postfix='_'+mainfoldernum)
-                
-                # Getting the input profiles values, primarily for the plot labels
-                file_runs_db = "../gem_notransp_results_"+str(9981977)+".pickle" #CHECK!  
+                #val_ev_s, file_names = profile_evol_load(prof_names=profiles, attrib_names=attributes, coord_len=coordnum, folder_name=os.path.join(workdir, 'cpo'+mainfoldernum), file_code_name=code_name, name_postfix='_'+mainfoldernum       
  
 #print(len(val_ev_s[0])); #print(val_ev_s) ### DEBUG
+
+        # By default, create new list for readings and read them from file, even if they are in programm memory already
         val_ev_s = []
 
         for i,(p,a) in enumerate(itertools.product(profiles, attributes)):
 
+            # 4.1) Assuming there are multiple ensembles of runs for this sumission (corresponding to a global iteration of UQ campaigns) read all the 'runs' of an ensemble in a single list of arrays
             #csv_file_name = code_name+'_'+p+'_'+a+'_evol_'+mainfoldernum+'.csv'
             for runn in runnum_list:
                 csv_file_name = code_name + '_' + p + '_' + a + '_evol_' + mainfoldernum + '_' + str(runn) + '.csv'

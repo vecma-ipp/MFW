@@ -369,16 +369,20 @@ pickle_filename = 'gem_notransp_results_' + os.environ['SLURM_JOBID']  + '.pickl
 with open(pickle_filename, "bw") as file_pickle:
     pickle.dump(results, file_pickle)
 
-json_filename = 'gem_notransp_results_' + os.environ['SLURM_JOBID']  + '.json'
-with open(json_filename, "w") as json_file:
-    json.dump(results.raw_data, json_file)
-
+db_json_filename = 'gem_notransp_db_' + os.environ['SLURM_JOBID'] + '.json'
+db_json = my_campaign.campaign_db.dump()
+with open(db_json_filename, "w") as db_file_json:
+    json.dump(db_json, db_file_json)
 
 pprint.print(results.raw_data) ###DEBUG
 
+json_filename = 'gem_notransp_results_' + os.environ['SLURM_JOBID']  + '.json'
+with open(json_filename, "w") as json_file:
+    json.dump(results.raw_data, json_file)  # TODO: save ndarrays
+
 csv_filename = 'gem_notransp_results_' + os.environ['SLURM_JOBID'] + '.csv'
 with open(csv_filename, "w") as file_csv:
-    w = csv.DictWriter(file_csv, results.raw_data.keys()) # TODO: check what is .raw_data, apparently ndarray appears
+    w = csv.DictWriter(file_csv, results.raw_data.keys()) 
     w.writeheader()
     for r in results.raw_data:
         w.writerow(r)
