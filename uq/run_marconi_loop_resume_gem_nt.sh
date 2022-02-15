@@ -11,7 +11,7 @@
 #SBATCH --time=6:00:00
 
 ## number of nodes and tasks per node
-#SBATCH --nodes=3 # MIND number of parameters in variation in the script
+#SBATCH --nodes=4 # MIND number of parameters in variation in the script
 #SBATCH --ntasks-per-node=48
 ###SBATCH --ntasks-per-core=1
 ###SBATCH --cpus-per-task=8
@@ -44,10 +44,12 @@ export EASYPJ_CONFIG=conf.sh
 #try out for script with 'mpirun' execution model
 #export I_MPI_HYDRA_BOOTSTRAP_EXEC_EXTRA_ARGS="--exclusive"
 
-export OLDCAMP='dy6n5hp9'
+#export OLDCAMP='dy6n5hp9'
+export OLDCAMP='moj202gj'
+
 #CPONUM=${1:-9}
 
-echo '> In this run: use ExecuteLocal only + QCGPJ pool + default exec mode + commandline passed + 3 nodes + 4 params + mpiexec . Using to resume an old campaign at '${OLDCAMP}' and number of run '${CPONUM}
+echo '> In this run: use ExecuteLocal only + QCGPJ pool + default exec mode + commandline passed + 4 nodes + 4 params + mpiexec . Using to resume an old campaign at '${OLDCAMP}' and number of run '${CPONUM}
 echo ''
 
 # Run the UQ code

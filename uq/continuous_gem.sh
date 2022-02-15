@@ -6,9 +6,9 @@
 #0. State the total number of campaigns to run, and ordinal number of the last campaign in previous sequence
 echo "STARTING THE WORKFLOW"
 # number of runs
-NUMRUNS=2 
+NUMRUNS=5 
 # no of current run, which is the last finished submission
-CURRUN=${1:-9}
+CURRUN=${1:-1}
 # no of the first run in the new sequence
 FRUN=$((${CURRUN}+1))
 # no of the last run in the new sequence
@@ -16,7 +16,11 @@ LASTRUN=$((${CURRUN}+${NUMRUNS}))
 
 # batch script to submit a single UQ campaign
 COM=run_marconi_loop_resume_gem_nt.sh
-#TODO: reduce submision time in $COM SLURM script and number of code calls in GEM iterator
+
+# TODO: add a first campaign, probably started with a different SLURM script using different non-restart python UQ script, and extract the folder name
+ROOTCAMPDIR='moj202gj'
+
+# directory ID of an original UQ campaign
 
 echo "Before first submission, here are the numbers"
 echo "Total number of new runs: "$NUMRUNS

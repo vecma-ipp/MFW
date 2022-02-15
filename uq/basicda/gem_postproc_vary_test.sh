@@ -6,13 +6,15 @@
 # folder of output CPO files, should be same as number of SLURM submissions (macro-macro-iterations)
 # should be the same as number of MMit TO process
 #CPONUM=2
-CPONUM=${1:-9}
+CPONUM=${1:-1}
 
 #RUNNUM=2
 # number of runs in current UQ campaign
 RUNRANGE=16
 
-UQCAMPDIR='dy6n5hp9' # folder id of a completed run with 100 GEM calls
+#UQCAMPDIR='dy6n5hp9' # folder id of a completed run with 100 GEM calls, and 11 series of runs 100 calls each
+# TODO new workflow with all the snapshot solved will have a different directory!
+UQCAMPDIR='moj202gj' #folder ID of a completed run with 450 GEM calls
 
 DIR='/marconi_scratch/userexternal/yyudin00/VARY_1FT_GEM_NT_qairnbbz' # first run of 16 GEM cases in a script, n_it<=500
 #DIR='/marconi_scratch/userexternal/yyudin00/VARY_1FT_GEM_NT_qpyxg3bb' # first dir with 2 GEM runs

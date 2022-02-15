@@ -11,7 +11,7 @@
 #SBATCH --time=23:30:00
 
 ## number of nodes and tasks per node
-#SBATCH --nodes=2 # MIND number of parameters in variation in the script
+#SBATCH --nodes=4 # MIND number of parameters in variation in the script
 #SBATCH --ntasks-per-node=48
 ###SBATCH --ntasks-per-core=1
 ###SBATCH --cpus-per-task=8
@@ -43,17 +43,17 @@ export ENCODER_MODULES
 export EASYPJ_CONFIG=conf.sh
 
 #try out for script with 'mpirun' execution model
-export I_MPI_HYDRA_BOOTSTRAP_EXEC_EXTRA_ARGS="--exclusive"
+#export I_MPI_HYDRA_BOOTSTRAP_EXEC_EXTRA_ARGS="--exclusive"
 
-echo '> In this run: use ExecuteLocal only + QCGPJ pool + default exec mode + commandline passed + 3 nodes + 4 params + mpiexec '
+echo '> In this run: use ExecuteLocal only + QCGPJ pool + default exec mode + commandline passed + 4 nodes + 4 params + mpiexec '
 echo '' # \n should work?
 
-echo $SLURM_NODELIST
-echo $SLURM_TASKS_PER_NODE
+#echo $SLURM_NODELIST
+#echo $SLURM_TASKS_PER_NODE
 
 # writing a file with description of used modules
 #TODO: this works from CLI on login node, but not from SLURM while on a working one; figure out why
-module list > module-used.${SLURM_JOBID}
+#module list > module-used.${SLURM_JOBID}
 
 # Run the UQ code
 scontrol show --detail job $SLURM_JOBID 
@@ -61,4 +61,6 @@ scontrol show --detail job $SLURM_JOBID
 #lscpu -p
 
 python3 tests/gem_notransp.py > test-loopntuq-log.${SLURM_JOBID}
+
+echo "finished an UQ SLURM job"
 

@@ -35,7 +35,7 @@ from qcg.pilotjob.api.manager import LocalManager
 '''
 Perform UQ for the Turblence code GEM run for ~750 consecutive iterations.
 Uncertainties are driven by:
-The electon and ion temperature and their gradient localised on the Flux tube position.
+The electron and ion temperature and their gradient localised on the Flux tube position.
 '''
 
 
@@ -46,7 +46,7 @@ print('Version of EasyVVUQ: '.format(uq.__version__))
 # We test 1 flux tube
 # run gem_test in strandalone and use:
 #base.utils.ftube_indices('gem_coreprof_in.cpo','gem_coretransp_out.cpo') to get the index - currently it is only a check
-ftube_index = 66 # 67 would not consider python/fortran numeration difference and apparently would result in variation differenct in an off place of a profile
+ftube_index = 66 # 67 would not consider python/fortran numeration difference and apparently would result in variation difference in an off place of a profile
 ftube_index = 94
 
 # Previus campaign ID
@@ -198,8 +198,9 @@ nftubes = gemxml.get_value("cpu_parameters.parallel_cases.nftubes")
 ncores = npesx*npess*nftubes
 
 pol_order = 1
-nruns = (pol_order + 1)**nparams # Nr=(Np+Nd, Nd)^T=(Np+Nd)!/(Np!*Nd!)  |=(3+4)!/3!4! = 5*6*7/6 = 35 => instead 3^4=81 ?
+nruns = (pol_order + 1)**nparams # Nr=(Np+Nd, Nd)^T=(Np+Nd)!/(Np!*Nd!) |E.G.|=(3+4)!/3!4! = 5*6*7/6 = 35 => instead 3^4=81?
 ncores_tot = ncores * nruns
+# current case: nruns=(5, 1)^T=5 not 16 ; achieved if using Point Collocation with regression via constructing PCESampler(regression=True)
 
 n_cores_p_node = 48
 if SYS == 'MARCONI':
@@ -319,13 +320,16 @@ try:
                                           status=Status.ENCODED,
                                           sequential=False,
                                                           )
-        
+    
+        print('> Actions defined, now executing')    
         exec_res = my_action_pool.start(pool=qcgpj)
 
+        print('> Execution completed, now collating')
         exec_res.collate()
        
         #print(os.environ['QCG_PM_CPU_SET'])
         #print(qcgpj.template.template()[0]) ###DEBUG
+        print('> Now leaving (and destructing?) the execution resource pool')
     
 except Exception as e:
 
@@ -365,6 +369,8 @@ print("Mean: ", mean_io)
 print("Std: ", std_io)
 print("Sob1: ", s1_io)
 
+### NEW PART: saving results and serialising DB
+
 pickle_filename = 'gem_notransp_results_' + os.environ['SLURM_JOBID']  + '.pickle'
 with open(pickle_filename, "bw") as file_pickle:
     pickle.dump(results, file_pickle)
@@ -374,7 +380,7 @@ db_json = my_campaign.campaign_db.dump()
 with open(db_json_filename, "w") as db_file_json:
     json.dump(db_json, db_file_json)
 
-pprint.print(results.raw_data) ###DEBUG
+pprint.pprint(results.raw_data) ###DEBUG
 
 json_filename = 'gem_notransp_results_' + os.environ['SLURM_JOBID']  + '.json'
 with open(json_filename, "w") as json_file:

@@ -1,6 +1,7 @@
 import os
 
 import pickle
+import csv
 
 from math import ceil
 
@@ -94,8 +95,9 @@ output_columns = [
                  "ti_transp.flux"
                  ]
 #output_filename = "gem_coretransp_out.cpo"
-#workaround: read 5th iteration file
-output_filename = "gem_coretransp_0100.cpo" # TODO either read from folder, or make the set-up more flexible
+#workaround: read 450th iteration file
+#output_filename = "gem_coretransp_0100.cpo" # TODO either read from folder, or make the set-up more flexible
+output_filename = "gem_coretransp_0450.cpo"
 output_cponame = "coretransp"
 
 # parameter space for campaign and the distributions list for the sampler
@@ -173,7 +175,7 @@ nnodes_tot = ceil(1.*ncores_tot/n_cores_p_node) # not entirely correct due to an
 #exec_path_comm = mpi_instance + ' -n '+ str(ncores) + ' -N '+ str(nnodes) + ' ' + exec_path
 exec_path_comm = mpi_instance + ' -n '+ str(ncores) + ' ' + exec_path
 
-print('Total number ofr nodes requires for all jobs: {0}'.format(nnodes_tot))
+print('Total number of nodes required for all jobs: {0}'.format(nnodes_tot))
 print('Number of cores required for single code instance computed: {0}'.format(ncores))
 print('Executing turbulence code with the line: ' + exec_path_comm) 
 
@@ -266,8 +268,8 @@ try:
                   ) as qcgpj:
 
         print('> Executing jobs and collating results')
-        aaa = my_campaign.execute(pool=qcgpj)
-        aaa.collate()
+        exec_res = my_campaign.execute(pool=qcgpj)
+        exec_res.collate()
        
         print(os.environ['QCG_PM_CPU_SET'])
         print(qcgpj.template.template()[0])
@@ -317,16 +319,27 @@ print("Mean: ", mean_io)
 print("Std: ", std_io)
 print("Sob1: ", s1_io)
 
+### NEW PART: saving results and serialising DB
+
 pickle_filename = 'gem_notransp_results_' + os.environ['SLURM_JOBID']  + '.pickle'
 with open(pickle_filename, "bw") as file_pickle:
     pickle.dump(results, file_pickle)
 
-csv_filename = 'gem_notransp_results_' + es.environ['SLURM_JOBID'] + '.csv'
+db_json_filename = 'gem_notransp_db_' + os.environ['SLURM_JOBID'] + '.json'
+db_json = my_campaign.campaign_db.dump()
+with open(db_json_filename, "w") as db_file_json:
+    json.dump(db_json, db_file_json)
+
+pprint.pprint(results.raw_data)
+
+"""
+csv_filename = 'gem_notransp_results_' + os.environ['SLURM_JOBID'] + '.csv'
 with open(csv_filename, "w") as file_csv:
     w = csv.DictWriter(file_csv, results.raw_data.keys())
     w.writeheader()
     for r in results.raw_data:
         w.writerow(r)
+"""
 
 #results.raw_data.to_scv('UQGEMCAMP_' + os.environ['SLURM_JOBID'] + '_results.csv', index=False)
 
