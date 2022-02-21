@@ -8,7 +8,7 @@
 #SBATCH --error=test-loopntuq-err.%j
 
 ## wall time in format MINUTES:SECONDS
-#SBATCH --time=6:00:00
+#SBATCH --time=23:00:00
 
 ## number of nodes and tasks per node
 #SBATCH --nodes=4 # MIND number of parameters in variation in the script

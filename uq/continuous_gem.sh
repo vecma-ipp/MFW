@@ -6,9 +6,9 @@
 #0. State the total number of campaigns to run, and ordinal number of the last campaign in previous sequence
 echo "STARTING THE WORKFLOW"
 # number of runs
-NUMRUNS=5 
+NUMRUNS=2 
 # no of current run, which is the last finished submission
-CURRUN=${1:-1}
+CURRUN=${1:-6}
 # no of the first run in the new sequence
 FRUN=$((${CURRUN}+1))
 # no of the last run in the new sequence

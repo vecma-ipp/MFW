@@ -102,7 +102,7 @@ output_columns = [
                  ]
 #output_filename = "gem_coretransp_out.cpo"
 #workaround: read i-th iteration file
-output_filename = "gem_coretransp_0100.cpo" # TODO either read from folder, or make the set-up more flexible
+output_filename = "gem_coretransp_0450.cpo" # TODO either read from folder, or make the set-up more flexible
 output_cponame = "coretransp"
 
 # parameter space for campaign and the distributions list for the sampler
@@ -333,7 +333,7 @@ try:
     
 except Exception as e:
 
-    print('!>> Exeption during batch execution! :')
+    print('!>> Exception during batch execution! :')
     print(e)
 
 #################################
