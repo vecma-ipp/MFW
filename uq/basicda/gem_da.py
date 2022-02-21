@@ -6,6 +6,8 @@ import sys
 
 import itertools
 
+import pprint
+
 from sklearn.neighbors import KernelDensity as KDE
 from scipy.stats import moment
 
@@ -20,6 +22,8 @@ from statsmodels.tsa.arima.model import ARIMA, ARIMAResults
 #from da_utils import 
 
 from ascii_cpo import read
+
+import easyvvuq as uq
 
 def func_from_data(x, data):
     return data[1, (np.abs(data[0,:] - x)).argmin()]
@@ -427,6 +431,24 @@ def compare_gaussian(pdf, domain, moments):
 
     return kl_div
 
+def read_run_uq(db_path):
+    """
+    Reads information on code runs that was recorded into an EasyVVUQ campaign DB
+    params:
+        :db_path: a full path to location of a DB inside an UQ campiang directory
+    Returns:
+        a dictionary with run IDs and input values
+    """
+    
+    my_campaign = uq.Campaign(name="campaign_1", db_location=db_path) #TODO import EasyVVUQ and check constructor parameters
+    #runs = my_campaign.campaign_db.runs() #TODO check the EasyVVUQ DB API
+
+    input_values = []
+    #input_values = [r["params"] for r in runs]
+    #pprint.pprint(input_values)
+
+    return input_values #TODO return a subsection of the full disctionary - look Python docs
+
 ###########################################
 
 def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernum='false'):
@@ -473,8 +495,16 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
             #mainfoldernum = foldername
 
             # Getting the input profiles values, primarily for the plot labels
-            file_runs_db = "../gem_notransp_db_"+str(9981977)+".json" #CHECK! 
-                 
+            db_id = 10002794
+            camp_id = 'moj202gj' 
+            file_runs_db = "../gem_notransp_db_"+str(db_id)+".json" #TODO: take the internal campaign folder ID as input, and then load the SLURM id -> probably for that it is better to import EasyVVUQ and intilalise the campaign with the location of DB, then use the [my_]campaign.cmapaign_db.[func-s]() to read stuff about runs
+            
+            file_runs_db = "sqlite:///" + foldername + "/.."*7 + "/campaign.db"          
+     
+            #runs_db_loc = 'sqlite:///' + tmp_dir + '/' + campaign_name + campaign_id + '/campaign.db'
+            runs_uq_data = read_run_uq(file_runs_db) # test function, at least manually    
+            
+
             #TODO: get list of directories for runs of profile variation; read them separetely in a loop (now there are different number of iterations), then load and pass to a new (TODO) plotting function with chosen profile/attribute/coordinate/etc 
             for runn in runnum_list: 
                 
@@ -490,7 +520,7 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
 
         for i,(p,a) in enumerate(itertools.product(profiles, attributes)):
 
-            # 4.1) Assuming there are multiple ensembles of runs for this sumission (corresponding to a global iteration of UQ campaigns) read all the 'runs' of an ensemble in a single list of arrays
+            # 4.1) Assuming there are multiple ensembles of runs for this submission (corresponding to a global iteration of UQ campaigns) read all the 'runs' of an ensemble in a single list of arrays
             #csv_file_name = code_name+'_'+p+'_'+a+'_evol_'+mainfoldernum+'.csv'
             for runn in runnum_list:
                 csv_file_name = code_name + '_' + p + '_' + a + '_evol_' + mainfoldernum + '_' + str(runn) + '.csv'

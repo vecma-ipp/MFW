@@ -77,6 +77,9 @@ CPONUMPR=$((CPONUM-1))
 #python3 gem_da.py 'run'$RUNNUM'/cpo'$CPONUM'/cpo' 0 1 'new_'$RUNNUM'_'$CPONUM
 #python3 gem_da.py $DIR_SRC'/cpo' 0 1 'new_'$RUNNUM'_'$CPONUM
 
+### NEXT LINE IS FOR DEBUG
+python3 gem_da.py ${DIR_SRC}/cpo/${CPONUM} 0 1 ${RUNRANGE} 'debug_'${UQCAMPDIR}'_'${CPONUM}
+
 python3 gem_da.py ${DIR_SRC}/cpo/${CPONUM} 0 1 ${RUNRANGE} 'new_'${UQCAMPDIR}'_'${CPONUM} #latest
 
 #3. Prepare combined files for analysis of series across long-term runs
