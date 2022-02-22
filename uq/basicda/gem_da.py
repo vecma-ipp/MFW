@@ -6,8 +6,6 @@ import sys
 
 import itertools
 
-import pprint
-
 from sklearn.neighbors import KernelDensity as KDE
 from scipy.stats import moment
 
@@ -19,11 +17,18 @@ from statsmodels.graphics.api import qqplot
 from statsmodels.tsa.ar_model import AutoReg
 from statsmodels.tsa.arima.model import ARIMA, ARIMAResults
 
-#from da_utils import 
-
-from ascii_cpo import read
-
 import easyvvuq as uq
+
+#from da_utils import *
+from ascii_cpo import read
+sys.path.append('..')
+import base
+
+# imports (and set-up) for debugging
+import pprint
+from IPython.core import ultratb
+sys.excepthook = ultratb.FormattedTB(mode='Verbose', color_scheme='Linux', call_pdb=False)
+
 
 def func_from_data(x, data):
     return data[1, (np.abs(data[0,:] - x)).argmin()]
@@ -85,8 +90,20 @@ def SA_exploite(analysis, qoi):
 def profile_evol_load(rho=0.69, folder_name='../gem_data/cpo5/', prof_names=['ti_transp', 'te_transp'], attrib_names=['flux'], coord_len=1, var_num=1, file_code_name='gem', name_postfix=''):
     """
     Loads the quantitiy values from all CPO files with a specific type of name in the folder, then saves in a CSV file
+    
+        Parameters:
+             rho (double): radial coordinate rho of flux tube modeled in the code
+             folder_name: folder location for the CPO files
+             prof_names (list): list of strings with names of profile names in a CPO
+             attib_names (list): list of strings with names of parameters, which should be an attribute of a profile 
+             coord_len (int): number of flux tubes considered
+             var_num (int): number of variables to read (? number of file)
+             file_code (str): name of the code for which postprocessing is, same as prefic for CPO file names
+             name_postfix (str): (? postfix for CPO file names)
+        Returns:
+             nested list of values: profiles&attributes -> flux-tubes -> values(time) 
     """ 
-    #prof_names = ['ti_transp', 'te_transp']
+
     file_base_name = 'gem_coretransp'
     file_ext = '.cpo'
 
@@ -94,7 +111,7 @@ def profile_evol_load(rho=0.69, folder_name='../gem_data/cpo5/', prof_names=['ti
                              os.path.isfile(os.path.join(folder_name, f)) and 
                              f.endswith(file_ext) and
                              f.startswith(file_code_name)
-                ]
+                  ]
 
     file_names.sort()
     #print('filenames'); print(len(file_names)); #print(file_names) ### DEBUG
@@ -111,37 +128,54 @@ def profile_evol_load(rho=0.69, folder_name='../gem_data/cpo5/', prof_names=['ti
     
     #print('len of value_s and value_s[0]'); print(len(value_s)); print(len(value_s[0]))#print(value_s); print(coords) ### DEBUG
 
+    # Iterate over passed list of file names
     for k, file_name in enumerate(file_names):
+        
         coretransp = read(os.path.join(folder_name, file_name), 'coretransp')
         #print('coretransp'); print(coretransp) ### DEBUG
+       
+        # Iterate over speicified profiles in each CPO file
         for i, profname in enumerate(prof_names):
             #print('profname'); print(profname) ### DEBUG
             #print('values'); print(coretransp.values) ### DEBUG
             #print('values dict'); print(coretransp.values.__dict__) ### DEBUG          
             #print('values[0]'); print(coretransp.values[0]) ### DEBUG
             prof = getattr(coretransp.values[0], profname)
+
+            # Iterate over each chosen attibute of each profile
             for j, attrib in enumerate(attrib_names):
+
+                # Chose profiles for ions, it is possible to have many species, so profiles are always are list
                 if profname[1] == 'i':
                      val_reading = getattr(prof, attrib)
                      #print('val_reading'); print(val_reading) ### DEBUG
+ 
+                     # Iterate over flux-tubes at different rho coordinates
                      for coord in range(d):
                          #print('before v[a][c]'); print(coord); print(value_s[i*m+j][coord]); print(val_reading[coord][0]) ### DEBUG
                          #value_s[i*m+j][coord].append(val_reading[coord][0])
                          value_s[i*m+j][coord][k] = val_reading[coord][0]
                          #print('after v[a][c]'); print(value_s[i*m+j]) ### DEBUG
+
+                # Choose profiles for electrons, it is always a single species, and one fewer level of list nestedness than for ions
                 elif profname[1] == 'e':
                      val_reading = getattr(prof, attrib)
+
+                     # Iterate over flux-tubes at different rho coordinates
                      for coord in range(d):
                          #print(coord) ###DEBUG
                          #value_s[i*m+j][coord].append(val_reading[coord])
                          value_s[i*m+j][coord][k] = val_reading[coord]
                 else:
-                     print('attributes have to belong either to ions or electrons')
+                     print('Error: Attributes have to belong either to ions or electrons')
                 #print(len(value_s[i*m+j][0])) ### DEBUG   
- 
+    
+    # Iterate over the carthesian product of all profiles and their attributes, for each save a csv with the value list
     for i,(prof,attrib) in enumerate(itertools.product(prof_names, attrib_names)):
         value_arr = np.array(value_s[i])
+        
         np.savetxt(file_code_name + '_' + prof + '_' + attrib  + '_evol' + name_postfix +'.csv', value_s[i].T, delimiter =", ", fmt ='% s')
+       
         if len(value_s.shape) == 3 and value_s.shape[2] > 0: # fallable, better need to check for emptines etc
             print('Last value (num. {1}) is: {0}'.format(value_s[i,:,-1], value_s.shape[2]))        
 
@@ -152,7 +186,14 @@ def profile_evol_load(rho=0.69, folder_name='../gem_data/cpo5/', prof_names=['ti
 def profile_evol_plot(value_s, labels=['orig'], file_names=[], name='gem_ti_flux', alignment='end'):
     """
     Saves a PNG of a Matplotlib plot for a quantity agains index/time; reads values from a list of numpy arrays passed
+        Parameters:
+            values_s (list): nested list of profile values (agains time) to be plotted
+            labels (list): strings of labels for each values, should be the same length as inner list of value_s
+            file_names: list of original CPO files, obsolete
+            name (str): prefix of file names for the saved graphs
+            alignment: where to add the graph and how to create the abcissa scale, if 'end' consider that the  different lists last readings end at the same time, if 'start' - that their firs reading are alligned 
     """
+
     #ts = np.arange(len(file_names))
     n = max([v.shape[-1] for v in value_s])
     #print('n = {}, len(v) = {}, v[0].shape = {}'.format(n, len(value_s), value_s[0].shape)) ### DEBUG
@@ -166,20 +207,31 @@ def profile_evol_plot(value_s, labels=['orig'], file_names=[], name='gem_ti_flux
 
     #print('value_s'); print(value_s) ### DEBUG
 
+    # Define a set of styles for different lists plotted
+    color_list = ['b', 'g', 'r', 'y']
+    line_list = ['-', '--', '-.', ':']
+    marker_list = ['.', 'o', 'v', '^']
+    style_lists = [line_list, color_list] # NB!: can be modified to include marker style
+    fmt_list = ["".join(map(str, style)) for style in itertools.product(*style_lists)]
+
     fig, ax = plt.subplots(figsize=(24.,8.))
-    for value, lab in zip(value_s, labels):
+
+    for inum, (value, lab) in enumerate(zip(value_s, labels)):
         #print('value.shape = {}'.format(value.shape)) ###DEBUG
+
         if alignment == 'end':
             ts = np.arange(n - value.shape[-1], n)
         elif alignment == 'start':
             ts = np.arange(value.shape[-1])
         else:
             ts = np.arange(value.shape[-1])
+
         for i in range(value.shape[0]):
              #print('value[{0},:]'.format(i)); print(value[i,:]) ### DEBUG
              ## !!! TODO temporary changes !!!
              #ax.semilogy(ts, value[i,:], '-', label=lab+'_'+str(i))
-             ax.plot(ts, value[i,:], '-', label=lab+'_'+str(i))
+             ax.plot(ts, value[i,:], fmt_list[inum], label=lab+'_'+str(i))
+
     plt.legend(loc='best')
     plt.savefig(name + '.png')
     plt.close()
@@ -243,7 +295,9 @@ def plot_coreprofval_dist(value_spw, name='ti', discr_level=64):
     return moments
 
 def get_coreprof_ev_acf(value_ev, name='ti', lags=[1,2,3,4,5,6,7,8,9,10]):
-    
+    """
+    Calculate autocorrelation function of the sequence of profile values
+    """ 
     #acf = [1. if l==0 else np.corrcoef(value_ev[l:], value_ev[:-l])[0][1] for l in lags]
     
     nl = 64    
@@ -293,6 +347,9 @@ def get_coreprof_ev_acf(value_ev, name='ti', lags=[1,2,3,4,5,6,7,8,9,10]):
     return acf
 
 def apply_arma(values):
+    """
+    Calculate autoregressive moving average model for profile values
+    """
     
     val_pd = pd.Series(values)
     
@@ -402,11 +459,11 @@ def filter_trend(values, method='hpf' ):
     return np.array(val_trend), np.array(val_cycle)
 
 def compare_gaussian(pdf, domain, moments):
-    # ***
-    # takes pdf as f(x) e [0,1], x e {range of quantity values}
-    # checks if central moments of order > 2 are neglegible
-    # calculates KL of given pdf and pdf of a Gaussian with with given first two moments, E and sigma
-    # ***
+    """
+    Takes pdf as f(x) e [0,1], x e {range of quantity values}
+    Checks if central moments of order > 2 are neglegible
+    Calculates KL of given pdf and pdf of a Gaussian with with given first two moments, E and sigma
+    """
     
     nft = moments.shape[0]
      
@@ -434,26 +491,27 @@ def compare_gaussian(pdf, domain, moments):
 def read_run_uq(db_path):
     """
     Reads information on code runs that was recorded into an EasyVVUQ campaign DB
-    params:
-        :db_path: a full path to location of a DB inside an UQ campiang directory
-    Returns:
-        a dictionary with run IDs and input values
+         Parameters:
+             db_path: a full path to location of a DB inside an UQ campiang directory
+         Returns:
+             a list with dictionaries of run input values (consider keeping explicit run IDs)
     """
     
-    my_campaign = uq.Campaign(name="campaign_1", db_location=db_path) #TODO import EasyVVUQ and check constructor parameters
-    #runs = my_campaign.campaign_db.runs() #TODO check the EasyVVUQ DB API
+    my_campaign = uq.Campaign(name="campaign_1", db_location=db_path)
 
-    input_values = []
-    #input_values = [r["params"] for r in runs]
-    #pprint.pprint(input_values)
+    runs = my_campaign.campaign_db.runs()
+    input_values = [r[1]['params'] for r in runs]
 
-    return input_values #TODO return a subsection of the full disctionary - look Python docs
+    run1 = my_campaign.campaign_db.run("run_1")
+    input_names = list(run1['params'].keys())
+
+    return input_values, input_names
 
 ###########################################
 
 def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernum='false'):
     """
-    params:
+    Parameters:
       foldername: relative path to folder where to read cpo files from
       runforbatch: if False then first read values from cpo files, if True then look for a csv file
       coordnum: number of coordinate values (flux tubes) to consider
@@ -485,8 +543,9 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
         if code_name == 'gem':
        	    attributes = ['flux']
 
+        # 1) If runforbatch, then csv are already in the folder, otherwise have to read CPO-s
         if not runforbatch:
-            # then alway specify folders with original cpo files
+            # If asserets, then alway specify folders with original cpo files
             # Here are the possibilities where to look for the cpo containing folder:
             # mainfoldernum = 'mft4' # old default
             # 'mft/run4/cpo' # one option
@@ -494,50 +553,55 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
 
             #mainfoldernum = foldername
 
-            # Getting the input profiles values, primarily for the plot labels
-            db_id = 10002794
-            camp_id = 'moj202gj' 
-            file_runs_db = "../gem_notransp_db_"+str(db_id)+".json" #TODO: take the internal campaign folder ID as input, and then load the SLURM id -> probably for that it is better to import EasyVVUQ and intilalise the campaign with the location of DB, then use the [my_]campaign.cmapaign_db.[func-s]() to read stuff about runs
+            # Get list of directories for runs of profile variation; read them separetely in a loop (now there are different number of iterations), then load and pass to a new (TODO) plotting function with chosen profile/attribute/coordinate/etc 
             
-            file_runs_db = "sqlite:///" + foldername + "/.."*7 + "/campaign.db"          
-     
-            #runs_db_loc = 'sqlite:///' + tmp_dir + '/' + campaign_name + campaign_id + '/campaign.db'
-            runs_uq_data = read_run_uq(file_runs_db) # test function, at least manually    
-            
-
-            #TODO: get list of directories for runs of profile variation; read them separetely in a loop (now there are different number of iterations), then load and pass to a new (TODO) plotting function with chosen profile/attribute/coordinate/etc 
+            # 2) Iterate over all runs, meaning for same scenario but with a different transport profile variation
             for runn in runnum_list: 
                 
                 folder_name_curr = os.path.join(workdir, foldername+'/run_'+str(runn)) # TODO make more flexible for different existing cases?
                 print('Going over CPO-s in the folder: {}'.format(folder_name_curr))
+                
                 val_ev_s, file_names = profile_evol_load(prof_names=profiles, attrib_names=attributes, coord_len=coordnum, folder_name=folder_name_curr, file_code_name=code_name, name_postfix='_'+mainfoldernum+'_'+str(runn))
                 #val_ev_s, file_names = profile_evol_load(prof_names=profiles, attrib_names=attributes, coord_len=coordnum, folder_name=os.path.join(workdir, 'cpo'+mainfoldernum), file_code_name=code_name, name_postfix='_'+mainfoldernum       
  
 #print(len(val_ev_s[0])); #print(val_ev_s) ### DEBUG
 
-        # By default, create new list for readings and read them from file, even if they are in programm memory already
+        # 3) Getting the input profiles values, primarily for the plot labels
+        db_id = 10002794
+        camp_id = 'moj202gj'
+        mmiter_num = 6 
+        file_runs_db = "../gem_notransp_db_"+str(db_id)+".json" #TODO: take the internal campaign folder ID as input, and then load the SLURM id -> probably for that it is better to import EasyVVUQ and intilalise the campaign with the location of DB, then use the [my_]campaign.cmapaign_db.[func-s]() to read stuff about runs
+        #runs_db_loc = "sqlite:///" + foldername + "/.."*7 + "/campaign.db"
+        runs_db_loc = "sqlite:///" + "../campaign_" + camp_id + "_" + str(mmiter_num) + ".db"           
+        runs_uq_data, runs_input_names = read_run_uq(runs_db_loc) # test function, at least manually    
+           
+         # 3') By default, create new list for readings and read them from file, even if they are in programm memory already      
         val_ev_s = []
 
+        # 4) Iterate over cartesian product of all profiles and their attributes
         for i,(p,a) in enumerate(itertools.product(profiles, attributes)):
 
-            # 4.1) Assuming there are multiple ensembles of runs for this submission (corresponding to a global iteration of UQ campaigns) read all the 'runs' of an ensemble in a single list of arrays
+            # 4.0) Assuming there are multiple ensembles of runs for this submission (corresponding to a global iteration of UQ campaigns) read all the 'runs' of an ensemble in a single list of arrays
             #csv_file_name = code_name+'_'+p+'_'+a+'_evol_'+mainfoldernum+'.csv'
             for runn in runnum_list:
                 csv_file_name = code_name + '_' + p + '_' + a + '_evol_' + mainfoldernum + '_' + str(runn) + '.csv'
                 val_ev_s.append(np.atleast_2d(np.genfromtxt(csv_file_name, delimiter=", ").T))     
             #print('val_ev_s[{}]).shape={}'.format(i, val_ev_s[i].shape)); #print(val_ev_s) ###DEBUG
             
-            #1. Plot the read values, pass a list of array
+            # 4.1) Plot the read values, pass a list of array
             #profile_evol_plot([val_ev_s[i]], name=code_name+'_'+p+'_'+a+'_'+mainfoldernum)
             # modification: list of arrays is for different profile variations
-            profile_evol_plot(val_ev_s, labels=[str(r) for r in runnum_list], name=code_name+'_'+p+'_'+a+'_'+mainfoldernum, alignment='start')            
+            labels = [str(r) for r in runnum_list]
+            labels = ["".join([str(round(r[rin], 1)) + "_" for rin in runs_input_names]) for r in runs_uq_data]
+            profile_evol_plot(val_ev_s, labels=labels, name=code_name+'_'+p+'_'+a+'_'+mainfoldernum, alignment='start')            
 
             #print('before shape {}'.format(val_ev_s[i].shape)) ## DEBUG
             #val = np.array(val_ev_s[i]).squeeze()
             #print('after shape {}'.format(val.shape)) ### DEBUG            
 
             ##ti_flux = np.genfromtxt('gem_ti_flux.csv', delimiter =", ")
-  
+   
+            # 4.2) Calculate ACF for the values
             lags_list = [1,4,16,64,256,256,1024,2048,4096]            
             lags_list = [l for l in lags_list if l < val_ev_s[i].shape[-1]]
           

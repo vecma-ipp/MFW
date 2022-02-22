@@ -6,7 +6,7 @@
 # folder of output CPO files, should be same as number of SLURM submissions (macro-macro-iterations)
 # should be the same as number of MMit TO process
 #CPONUM=2
-CPONUM=${1:-1}
+CPONUM=${1:-6}
 
 #RUNNUM=2
 # number of runs in current UQ campaign
@@ -92,7 +92,7 @@ done
 
 #cat gem_ti_transp_flux_evol_all${NUMPR}.csv gem_ti_transp_flux_evol_${CPONUM}.csv > gem_ti_transp_flux_evol_all${NUM}.csv
 
-#4. Run the post-processing Python script
+#4. Run the post-processing Python script for combined csv files
 #python3 gem_da.py 'all'$NUM 1
 
 python3 gem_da.py all_${UQCAMPDIR}_${CPONUM} 1 1 ${RUNRANGE} all_${UQCAMPDIR}_${CPONUM} #latest
