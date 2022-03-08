@@ -87,7 +87,8 @@ def SA_exploite(analysis, qoi):
 
 #AUG_GM_date_explore(filename='../data/AUG_gem_inoutput.txt')
 
-def profile_evol_load(rho=0.69, folder_name='../gem_data/cpo5/', prof_names=['ti_transp', 'te_transp'], attrib_names=['flux'], coord_len=1, var_num=1, file_code_name='gem', name_postfix=''):
+def profile_evol_load(rho=0.69, folder_name='../gem_data/cpo5/', prof_names=['ti_transp', 'te_transp'], attrib_names=['flux'], 
+                      coord_len=1, var_num=1, file_code_name='gem', name_postfix=''):
     """
     Loads the quantitiy values from all CPO files with a specific type of name in the folder, then saves in a CSV file
     
@@ -174,7 +175,8 @@ def profile_evol_load(rho=0.69, folder_name='../gem_data/cpo5/', prof_names=['ti
     for i,(prof,attrib) in enumerate(itertools.product(prof_names, attrib_names)):
         value_arr = np.array(value_s[i])
         
-        np.savetxt(file_code_name + '_' + prof + '_' + attrib  + '_evol' + name_postfix +'.csv', value_s[i].T, delimiter =", ", fmt ='% s')
+        np.savetxt(file_code_name + '_' + prof + '_' + attrib  + '_evol' + name_postfix +'.csv', 
+                   value_s[i].T, delimiter =", ", fmt ='% s')
        
         if len(value_s.shape) == 3 and value_s.shape[2] > 0: # fallable, better need to check for emptines etc
             print('Last value (num. {1}) is: {0}'.format(value_s[i,:,-1], value_s.shape[2]))        
@@ -514,41 +516,62 @@ def filter_trend(values, method='hpf'):
         val_cycle = []
 
         for i in range(nftc):
-            print('>array size of single sample: {}'.format(values[i].shape)) ###DEBUG
-		    
+            #print('>array size of single sample: {}'.format(values[i].shape)) ###DEBUG
+            
+            n = values[i].shape[0]		   
+ 
             # (Possible) sample thinning (reduction/subsampling)
             delta = 1
             #wind_int = delta * acl
             #wind_int = 10
             #values = values[::wind_int]       
  
-            x_c = np.linspace(1, values[i].shape)
+            #x_c = np.linspace(1, n, n).reshape(n, 1)
+            x_c = np.arange(n).reshape(n, 1)
             i_c = np.ones_like(x_c)
-            x_c_lr = np.hstack([i_c, x_c])
+            x_c_lr = np.append(x_c, i_c, axis=1)
+            y_c_lr = np.array(values[i]).reshape(n, 1)
             
+            """
+            print('''
+                  >size of sample matrix for LR: {} 
+                           values[i]: {}
+                           x_c: {}  
+                           i_c: {} 
+                           y vector: {}  
+                  '''. format(x_c_lr.shape, values[i].shape, x_c.shape, i_c.shape, y_c_lr.shape)) ###DEBUG       
+            """
+ 
             # Find LR parameters
             # (Currently considering 1D series separately)
-            theta = np.dot( np.linalg.inv(np.dot(x_c_lr.T, x_c_lr)) , np.dot(x_c_lr.T, values[i]) )
-            # TODO: !!! CHECK WHY ARRAYS GET CLIPPED AT LENGTH=50
-            #original sample too large for this?
+            
+            theta = np.dot( np.linalg.inv(np.dot(x_c_lr.T, x_c_lr)) , np.dot(x_c_lr.T, y_c_lr) )
+            
+            #original sample too large for this? - measure time or have an addtional sample length check
             b = theta[0]
             a = theta[1:]
 
+            #print('Normal equation produces b = {0} ; a = {1}'.format(b, a)) ### DEBUG
+
             # Compare with (at least one) ready LR method from a package 
-            a_sp, b_sp, r_sp, p_sp, stderr_sp = linregress(x_c, values[i])
-            print(a_sp, b_sp, r_sp, p_sp, stderr_sp) ###DEBUG
-                 
+            res_lr_sp = linregress(x_c.reshape(-1), y_c_lr.reshape(-1))
+            a_sp = res_lr_sp.slope
+            b_sp = res_lr_sp.intercept
+            #print(a_sp, b_sp) ###DEBUG
+                
             # Find points (x,y) exactly satisfying y=ax+b; could be done with a method from an LR package
-            val_trend.append(np.dot(theta, x_c_lr))
+            val_trend.append(np.dot(x_c_lr, theta))
             #val_trend.append(np.dot(a, x_c) + np.dot(b, i_c))
         
             val_cycle.append(values[i] - val_trend[i])
         
             # TODO Move check for approximate stationarity to a different function
-            a_tol = 1e-2
-            print('''Linear Regression: for case #{0} the slope parameter value is {1:.4f} and it is {2} 
-                   than {3:.4f} threshold'''.
-                      format(i, a, 'SMALLER' if a < a_tol else 'LARGER', a_tol))
+            alpha_tol = 1e-2
+            a_tol = alpha_tol * (np.max(y_c_lr) - np.min(y_c_lr)) / float(n)
+            
+            print('''Linear Regression: for case #{0} the slope parameter value is {1:.3f} 
+                                        and it is {2} than {3:.3f} threshold'''.
+                      format(i, a[0][0], 'SMALLER' if a[0][0] < a_tol else 'LARGER', a_tol))
 
     else:
         print('>Error in filtering: no such method')
@@ -652,7 +675,9 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
 
             #mainfoldernum = foldername
 
-            # Get list of directories for runs of profile variation; read them separetely in a loop (now there are different number of iterations), then load and pass to a new (TODO) plotting function with chosen profile/attribute/coordinate/etc 
+            # Get list of directories for runs of profile variation; read them separetely in a loop 
+            # (now there are different number of iterations), then load and pass to a new 
+            # (TODO) plotting function with chosen profile/attribute/coordinate/etc 
             
             # 2) Iterate over all runs, meaning for same scenario but with a different transport profile variation
             for runn in runnum_list: 
@@ -660,27 +685,36 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
                 folder_name_curr = os.path.join(workdir, foldername+'/run_'+str(runn)) # TODO make more flexible for different existing cases?
                 print('Going over CPO-s in the folder: {}'.format(folder_name_curr))
                 
-                val_ev_s, file_names = profile_evol_load(prof_names=profiles, attrib_names=attributes, coord_len=coordnum, folder_name=folder_name_curr, file_code_name=code_name, name_postfix='_'+mainfoldernum+'_'+str(runn))
-                #val_ev_s, file_names = profile_evol_load(prof_names=profiles, attrib_names=attributes, coord_len=coordnum, folder_name=os.path.join(workdir, 'cpo'+mainfoldernum), file_code_name=code_name, name_postfix='_'+mainfoldernum       
- 
-#print(len(val_ev_s[0])); #print(val_ev_s) ### DEBUG
+                val_ev_s, file_names = profile_evol_load(prof_names=profiles, attrib_names=attributes, coord_len=coordnum, 
+                                                         folder_name=folder_name_curr, file_code_name=code_name, 
+                                                         name_postfix='_'+mainfoldernum+'_'+str(runn))
+                #val_ev_s, file_names = profile_evol_load(prof_names=profiles, attrib_names=attributes, coord_len=coordnum, 
+                #                                         folder_name=os.path.join(workdir, 'cpo'+mainfoldernum), file_code_name=code_name, 
+                #                                         name_postfix='_'+mainfoldernum       
 
         # 3) Getting the input profiles values, primarily for the plot labels
         db_id = 10002794
         camp_id = 'moj202gj'
         mmiter_num = 6 
-        file_runs_db = "../gem_notransp_db_"+str(db_id)+".json" #TODO: take the internal campaign folder ID as input, and then load the SLURM id -> probably for that it is better to import EasyVVUQ and intilalise the campaign with the location of DB, then use the [my_]campaign.campaign_db.[func-s]() to read stuff about runs
+        file_runs_db = "../gem_notransp_db_"+str(db_id)+".json" 
+        #TODO: take the internal campaign folder ID as input, and then load the SLURM id -> 
+        # -> probably for that it is better to import EasyVVUQ and intilalise the campaign with the location of DB, 
+        # then use the [my_]campaign.campaign_db.[func-s]() to read stuff about runs
+        
         #runs_db_loc = "sqlite:///" + foldername + "/.."*7 + "/campaign.db"
         runs_db_loc = "sqlite:///" + "campaign_" + camp_id + "_" + str(mmiter_num) + ".db"           
         runs_uq_data, runs_input_names = read_run_uq(runs_db_loc) # test function, at least manually    
            
-         # 3') By default, create new list for readings and read them from file, even if they are in programm memory already      
+        # 3') By default, create new list for readings and read them from file, even if they are in programm memory already      
         val_ev_s = []
 
         # 4) Iterate over cartesian product of all profiles and their attributes
         for i,(p,a) in enumerate(itertools.product(profiles, attributes)):
 
-            # 4.0) Assuming there are multiple ensembles of runs for this submission (corresponding to a global iteration of UQ campaigns) read all the 'runs' of an ensemble in a single list of arrays
+            # 4.0) Assuming there are multiple ensembles of runs for this submission 
+            #     (corresponding to a global iteration of UQ campaigns) read all the 'runs' of an ensemble 
+            #     in a single list of arrays
+            
             #csv_file_name = code_name+'_'+p+'_'+a+'_evol_'+mainfoldernum+'.csv'
             for runn in runnum_list:
                 csv_file_name = code_name + '_' + p + '_' + a + '_evol_' + mainfoldernum + '_' + str(runn) + '.csv'
@@ -688,12 +722,14 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
             #print('val_ev_s[{}]).shape={}'.format(i, val_ev_s[i].shape)); #print(val_ev_s) ###DEBUG
             
             # 4.1) Plot the read values, pass a list of array
+            
             #profile_evol_plot([val_ev_s[i]], name=code_name+'_'+p+'_'+a+'_'+mainfoldernum)
             # modification: list of arrays is for different profile variations
             labels = [str(r) for r in runnum_list]
             labels = ["".join([rin+'='+str(round(r[rin], 1))+"; " for rin in runs_input_names]) for r in runs_uq_data]
             """
-            profile_evol_plot(val_ev_s, labels=labels, name=code_name+'_'+p+'_'+a+'_'+mainfoldernum, alignment='start')                """
+            profile_evol_plot(val_ev_s, labels=labels, name=code_name+'_'+p+'_'+a+'_'+mainfoldernum, alignment='start') 
+            """
 
             #print('before shape {}'.format(val_ev_s[i].shape)) ###DEBUG
             #val = np.array(val_ev_s[i]).squeeze()
@@ -731,7 +767,8 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
 
             # 4.3.1) Plotting single plot with histograms, KDEs and distribution means
             """ 
-            plot_coreprofval_dist(np.vstack([np.squeeze(v, 0) for v in val_wind_s]), labels=labels, name='tot_'+p+'_'+a+'_'+str(runn)+'_'+mainfoldernum, discr_level=32)
+            plot_coreprofval_dist(np.vstack([np.squeeze(v, 0) for v in val_wind_s]), labels=labels, 
+                                  name='tot_'+p+'_'+a+'_'+str(runn)+'_'+mainfoldernum, discr_level=32)
             """
 
             # 4.4) Apply ARMA model
@@ -754,25 +791,33 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
             # 4.5.2) Calcualting linear regression againt time fit for the last window:
             # Apply LSE to get form of Q=a*t+b  
             for runn in runnum_list:
-                val_lr_trend, val_lr_residue = filter_trend(val_wind_s[runn], "linear_regression")
+                val_lr_trend, val_lr_residue = filter_trend(val_wind_s[runn-1], "linear_regression")
         
-            # 4.5.3) Applyign HP-filter    
+            # 4.5.3) Applying HP-filter    
             #val_trend_hp, val_fluct_exp = filter_trend(val, "hpf")
             
-            val_trend_fft, val_fluct_fft = filter_trend(val, "fft")
+            # 4.5.4) Applying Fast Fourier Transform
+            val_trend_fft_s = []
+            for runn in runnum_list:
+                val_trend_fft, val_fluct_fft = filter_trend(val_wind_s[runn-1], "fft")
+                val_trend_fft_s.append(val_trend_fft)            
 
-            #TODO: introduce 0-padding as an option to avoid lag effect of exp-avg
-            val_trend_exp, val_fluct_exp = filter_trend(val, "exp")
+            # 4.5.5) Applying Exponential Averaging:
+            val_trend_exp_s = []
+            for runn in runnum_list:
+                #TODO: introduce 0-padding as an option to avoid lag effect of exp-avg
+                val_trend_exp, val_fluct_exp = filter_trend(val_wind_s[runn-1], "exp")
+                val_trend_exp_s.append(val_trend_exp)
 
             ##!!! TODO temorarily changes!!!           
             profile_evol_plot([val, val_trend_fft, val_trend_exp, val_trend_avg], # np.ones(val.shape)*val_trend_avg[0]], 
-                              labels=['original', 'fft(f<2^-10)', 'exponential(alpha=0.005)', 'mean(of {:.2e} after {} steps)'.
-                                                                                               format(val_trend_avg[0,0], int(alpha_wind*val.shape[-1]))],
+                              labels=['original', 'fft(f<2^-10)', 'exponential(alpha=0.005)', 
+                              'mean(of {:.2e} after {} steps)'.format(val_trend_avg[0,0], int(alpha_wind*val.shape[-1]))],
                               name='trend_'+p+'_'+a+'_'+mainfoldernum)
            
             #profile_evol_plot([val, val_trend_exp, val_trend_avg], # np.ones(val.shape)*val_trend_avg[0]], 
-            #                  labels=['original', 'exponential(alpha=0.005)', 'mean(of {:.2e} after {} steps)'.
-            #                                                                                   format(val_trend_avg[0,0], int(alpha_wind*val.shape[-1]))],
+            #                  labels=['original', 'exponential(alpha=0.005)', 
+            #                  'mean(of {:.2e} after {} steps)'.format(val_trend_avg[0,0], int(alpha_wind*val.shape[-1]))],
             #                  name='trend_'+p+'_'+a+'_'+mainfoldernum)
            
             # 4.6) Histogram for the last alpha_window values
@@ -780,7 +825,8 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
             plot_coreprofval_dist(val_fluct_avg, name='wind'+code_name+p+'_'+a+'_'+mainfoldernum, discr_level=128)
             """
 
-            #TODO get exponential average of the values: standard packaged optimize for alpha -- why it is so high? is composition of exponential avaraging is another exponential averagin -- if so, what is alpha_comp?
+            #TODO get exponential average of the values: standard packaged optimize for alpha -
+            # - why it is so high? is composition of exponential avaraging is another exponential averagin -- if so, what is alpha_comp?
             #TODO exponential averaging with a symmetric window -> apply padding
 
 if __name__ == '__main__':
@@ -795,10 +841,12 @@ if __name__ == '__main__':
         # Run main for all files in the folder, either read values from csv (runfirbatch), and for  multiple flux tubes (coord)
         main(foldername=sys.argv[1], runforbatch=int(sys.argv[2]), coordnum=int(sys.argv[3]))
     elif len(sys.argv) == 5:
-        # Run main for all files in the folder, either read values from csv (runfirbatch), for possible multiple flux tubes (coord), and specifying how to save files
+        # Run main for all files in the folder, either read values from csv (runfirbatch), for possible multiple flux tubes (coord), 
+        # and specifying how to save files
         main(foldername=sys.argv[1], runforbatch=int(sys.argv[2]), coordnum=int(sys.argv[3]), mainfoldernum=sys.argv[4])
     elif len(sys.argv) == 6:
-        # Run main for all files in folder, possibly reading values from csv, possibly for multiple flux tubes, and for possibly many cases (e.g. different input profiles) + specify save folder
+        # Run main for all files in folder, possibly reading values from csv, possibly for multiple flux tubes, 
+        # and for possibly many cases (e.g. different input profiles) + specify save folder
         main(foldername=sys.argv[1], runforbatch=int(sys.argv[2]), coordnum=int(sys.argv[3]), runnum=int(sys.argv[4]), mainfoldernum=sys.argv[5])
     else:
         # Run main with all defaults

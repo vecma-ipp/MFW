@@ -16,7 +16,7 @@ RUNRANGE=16
 # TODO new workflow with all the snapshot solved will have a different directory!
 UQCAMPDIR='moj202gj' #folder ID of a completed run with 450 GEM calls
 
-DIR='/marconi_scratch/userexternal/yyudin00/VARY_1FT_GEM_NT_qairnbbz' # first run of 16 GEM cases in a script, n_it<=500
+#DIR='/marconi_scratch/userexternal/yyudin00/VARY_1FT_GEM_NT_qairnbbz' # first run of 16 GEM cases in a script, n_it<=500
 #DIR='/marconi_scratch/userexternal/yyudin00/VARY_1FT_GEM_NT_qpyxg3bb' # first dir with 2 GEM runs
 DIR=$SCRATCH'/VARY_1FT_GEM_NT_'$UQCAMPDIR
 
@@ -55,6 +55,9 @@ for d in run*/ ; do #latest
     cp ${d}/fout_* dat/${CPONUM}/${d}/
 done
 
+cd ${DIR}
+cp campaign.db ${DIR_CODE}/campaign_${UQCAMPDIR}_${CPONUM}.db
+
 #mv imp4dv_coretransp_0*.cpo $DIR
 #mv gem_coretransp_0*.cpo $DIR
 #mv fout_0* $DIR
@@ -70,15 +73,14 @@ cd ${DIR_CODE}
 #CPONUM=$(($NUM+13))
 CPONUMPR=$((CPONUM-1))
 
+export PYTHONPATH=/marconi/home/userexternal/yyudin00/code/ual_python_interface:/marconi/home/userexternal/yyudin00/code/MFW/uq/base:${PYTHONPATH}
+
 #TODO: make sure the script reads right things: gem_*.cpo -s from 'cpo' in run folder, for all runs (mofify structure of script), all flux tubes 
 
 # command line arguments for main: folder with cpo-s; to read from original files or from csv; number of flux tubes; number of profile variants; file name to save
 
 #python3 gem_da.py 'run'$RUNNUM'/cpo'$CPONUM'/cpo' 0 1 'new_'$RUNNUM'_'$CPONUM
 #python3 gem_da.py $DIR_SRC'/cpo' 0 1 'new_'$RUNNUM'_'$CPONUM
-
-### NEXT LINE IS FOR DEBUG
-python3 gem_da.py ${DIR_SRC}/cpo/${CPONUM} 0 1 ${RUNRANGE} 'debug_'${UQCAMPDIR}'_'${CPONUM}
 
 python3 gem_da.py ${DIR_SRC}/cpo/${CPONUM} 0 1 ${RUNRANGE} 'new_'${UQCAMPDIR}'_'${CPONUM} #latest
 
