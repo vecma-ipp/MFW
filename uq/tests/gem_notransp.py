@@ -2,6 +2,7 @@ import os
 
 import pickle
 import csv
+import json
 
 from math import ceil
 
@@ -271,12 +272,12 @@ try:
         exec_res = my_campaign.execute(pool=qcgpj)
         exec_res.collate()
        
-        print(os.environ['QCG_PM_CPU_SET'])
-        print(qcgpj.template.template()[0])
+        #print(os.environ['QCG_PM_CPU_SET'])
+        #print(qcgpj.template.template()[0])
     
 except Exception as e:
 
-    print('!>> Exeption during batch execution! :')
+    print('!>> Exception during batch execution! :')
     print(e)
 
 #################################

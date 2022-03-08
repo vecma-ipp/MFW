@@ -1,5 +1,5 @@
 
-NUM=17
+NUM=25
 NUMPR=$(($NUM-1))
 CPONUM=$(($NUM+13))
 
