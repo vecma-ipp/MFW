@@ -127,7 +127,8 @@ def profile_evol_load(rho=0.69, folder_name='../gem_data/cpo5/', prof_names=['ti
     #value_s = [[[]]*d for _ in value_s]
     value_s = np.zeros((n*m,d,f))
     
-    #print('len of value_s and value_s[0]'); print(len(value_s)); print(len(value_s[0]))#print(value_s); print(coords) ### DEBUG
+    #print('len of value_s and value_s[0]'); print(len(value_s)); ###DEBUG
+    #print(len(value_s[0]))#print(value_s); print(coords); ### DEBUG
 
     # Iterate over passed list of file names
     for k, file_name in enumerate(file_names):
@@ -153,12 +154,15 @@ def profile_evol_load(rho=0.69, folder_name='../gem_data/cpo5/', prof_names=['ti
  
                      # Iterate over flux-tubes at different rho coordinates
                      for coord in range(d):
-                         #print('before v[a][c]'); print(coord); print(value_s[i*m+j][coord]); print(val_reading[coord][0]) ### DEBUG
+                         #print('before v[a][c]'); print(coord); print(value_s[i*m+j][coord]); ###DEBUG
+                         #print(val_reading[coord][0]) ### DEBUG
+                         
                          #value_s[i*m+j][coord].append(val_reading[coord][0])
                          value_s[i*m+j][coord][k] = val_reading[coord][0]
                          #print('after v[a][c]'); print(value_s[i*m+j]) ### DEBUG
 
-                # Choose profiles for electrons, it is always a single species, and one fewer level of list nestedness than for ions
+                # Choose profiles for electrons, it is always a single species, 
+                # and one fewer level of list nestedness than for ions
                 elif profname[1] == 'e':
                      val_reading = getattr(prof, attrib)
 
@@ -279,15 +283,16 @@ def plot_coreprofval_dist(value_spw, labels=[], name='ti', discr_level=64):
     x = np.linspace(0.9*value_spw.min(), 1.1*value_spw.max(), 100)[:, np.newaxis]
     fig, ax = plt.subplots()
     for i in range(nftc):
-        kde = KDE(kernel='gaussian', bandwidth=(value_spw[i].max() - value_spw[i].min()) / discr_level).fit(value_spw[i, :, np.newaxis])
+        kde = KDE(kernel='gaussian', bandwidth=(value_spw[i].max() - value_spw[i].min()) / discr_level). \
+                  fit(value_spw[i, :, np.newaxis])
         log_pdf = kde.score_samples(x)
         log_pdf_orig = kde.score_samples(value_spw[i, :, np.newaxis])
 
         ax.plot(x[:, 0], np.exp(log_pdf), fmt_list[i], label='density of core transport values')
         ax.plot(value_spw[i], (-0.01*np.random.rand(log_pdf_orig.shape[0])) * np.exp(log_pdf_orig).min(), '+k')
 
-        ax.axvline(x=val_means[i], ymin=0., ymax=1., linestyle=fmt_list[i][:-1], color=fmt_list[i][-1:]) # change the style specification 
-
+        ax.axvline(x=val_means[i], ymin=0., ymax=1., linestyle=fmt_list[i][:-1], color=fmt_list[i][-1:]) 
+        #TODO: change the style specification 
     
     plt.savefig('pdf_' + name + '.png')
     plt.close()
@@ -502,15 +507,18 @@ def filter_trend(values, method='hpf'):
 
         for i in range(nftc):
             val_trend.append(values[i].mean()*np.ones(values[i].shape))
-            val_cycle.append(values[i] - val_trend[i])   
+            #val_cycle.append(values[i] - val_trend[i])   
+            #TODO: mind the change: the only filtering method that does not return difference for 'cycle' part
+            val_cycle.append(values[i].std()*np.ones(values[i].shape))
 
     # Find Linear Regression parameters (a,b) for Q=a*x+b
     elif method == 'linear_regression':
-        # Options to chose sample for regresion
-        # 1) All reading of the original sample: in normal equtions matrix could be too large
+        # Options to choose sample for regresion
+        # 1) All readings of the original sample: in normal equations matrix could be too large
         # 2) Choose samples for every window: window length to be defined from ACF
         # Options for algorithm:
         # 1) Normal equations for LSE
+        # 2) Gradient Descent for SE
         
         val_trend = []
         val_cycle = []
@@ -542,33 +550,35 @@ def filter_trend(values, method='hpf'):
                   '''. format(x_c_lr.shape, values[i].shape, x_c.shape, i_c.shape, y_c_lr.shape)) ###DEBUG       
             """
  
-            # Find LR parameters
+            # Find LR parameters: for y=theta.T*X
             # (Currently considering 1D series separately)
             
             theta = np.dot( np.linalg.inv(np.dot(x_c_lr.T, x_c_lr)) , np.dot(x_c_lr.T, y_c_lr) )
             
-            #original sample too large for this? - measure time or have an addtional sample length check
+            # original sample too large for this? - measure time or have an addtional sample length check
             b = theta[0]
             a = theta[1:]
 
             #print('Normal equation produces b = {0} ; a = {1}'.format(b, a)) ### DEBUG
 
-            # Compare with (at least one) ready LR method from a package 
+            # Compare with (at least one) ready LR method from a package
+            # This one may use iterative methods for solution, probably some options to regularize 
             res_lr_sp = linregress(x_c.reshape(-1), y_c_lr.reshape(-1))
             a_sp = res_lr_sp.slope
             b_sp = res_lr_sp.intercept
             #print(a_sp, b_sp) ###DEBUG
                 
-            # Find points (x,y) exactly satisfying y=ax+b; could be done with a method from an LR package
+            # Find points (x,y) exactly satisfying y=ax+b; could also be done with a method from an LR package
             val_trend.append(np.dot(x_c_lr, theta))
             #val_trend.append(np.dot(a, x_c) + np.dot(b, i_c))
         
             val_cycle.append(values[i] - val_trend[i])
         
             # TODO Move check for approximate stationarity to a different function
-            alpha_tol = 1e-2
+            alpha_tol = 5e-2
             a_tol = alpha_tol * (np.max(y_c_lr) - np.min(y_c_lr)) / float(n)
             
+            #print('NE give array shapes: {}'.format(val_trend[0].shape)) ###DEBUG 
             print('''Linear Regression: for case #{0} the slope parameter value is {1:.3f} 
                                         and it is {2} than {3:.3f} threshold'''.
                       format(i, a[0][0], 'SMALLER' if a[0][0] < a_tol else 'LARGER', a_tol))
@@ -682,14 +692,19 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
             # 2) Iterate over all runs, meaning for same scenario but with a different transport profile variation
             for runn in runnum_list: 
                 
-                folder_name_curr = os.path.join(workdir, foldername+'/run_'+str(runn)) # TODO make more flexible for different existing cases?
+                folder_name_curr = os.path.join(workdir, foldername+'/run_'+str(runn)) 
+                # TODO make more flexible for different existing cases?
+                
                 print('Going over CPO-s in the folder: {}'.format(folder_name_curr))
                 
                 val_ev_s, file_names = profile_evol_load(prof_names=profiles, attrib_names=attributes, coord_len=coordnum, 
-                                                         folder_name=folder_name_curr, file_code_name=code_name, 
+                                                         folder_name=folder_name_curr, 
+                                                         file_code_name=code_name, 
                                                          name_postfix='_'+mainfoldernum+'_'+str(runn))
+               
                 #val_ev_s, file_names = profile_evol_load(prof_names=profiles, attrib_names=attributes, coord_len=coordnum, 
-                #                                         folder_name=os.path.join(workdir, 'cpo'+mainfoldernum), file_code_name=code_name, 
+                #                                         folder_name=os.path.join(workdir, 'cpo'+mainfoldernum), 
+                #                                         file_code_name=code_name, 
                 #                                         name_postfix='_'+mainfoldernum       
 
         # 3) Getting the input profiles values, primarily for the plot labels
@@ -727,10 +742,10 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
             # modification: list of arrays is for different profile variations
             labels = [str(r) for r in runnum_list]
             labels = ["".join([rin+'='+str(round(r[rin], 1))+"; " for rin in runs_input_names]) for r in runs_uq_data]
-            """
+            """ 
             profile_evol_plot(val_ev_s, labels=labels, name=code_name+'_'+p+'_'+a+'_'+mainfoldernum, alignment='start') 
             """
-
+            print('passes to plot: {}'.format(val_ev_s[0].shape)) ###DEBUG
             #print('before shape {}'.format(val_ev_s[i].shape)) ###DEBUG
             #val = np.array(val_ev_s[i]).squeeze()
             #print('after shape {}'.format(val.shape)) ### DEBUG            
@@ -739,37 +754,41 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
             ##ti_flux = np.genfromtxt('gem_ti_flux.csv', delimiter =", ")
 
             # 4.1') Define the window to discard intial ramp-up and overshooting phase
-            alpha_wind = 0.4
-            val = val_ev_s[i]
+            alpha_wind = 0.3 # how much to discard
+            val = val_ev_s[i] # singel series for a profile+attribute, shouldn't be used for now...
+            #TODO: General series list now iterates with both prof+att and run case!
 
-            val_wind_s = [val[:,:-int(alpha_wind*val.shape[-1])] for val in val_ev_s]
+            val_wind_s = [val[:,int(alpha_wind*val.shape[-1]):] for val in val_ev_s]
+            print('sizes before and after windowing: {} and {} '.format(val_ev_s[0].shape, val_wind_s[0].shape)) ###DEBUG
             #print('val_wind len and element shape are {} and {}'.format(len(val_wind), val_wind[0].shape)) ### DEBUG
    
             # 4.2) Calculate ACF for the values
             lags_list = [1,4,16,64,256,256,1024,2048,4096]            
-            lags_list = [l for l in lags_list if l < val_ev_s[i].shape[-1]]
+            lags_list = [l for l in lags_list if l < val_wind_s[i].shape[-1]]
             
             #get_coreprof_ev_acf(val_ev_s[i], name=code_name+'_'+p+'_'+a+'stats'+'_'+str(runn), lags=lags_list)
             for runn in range(len(runnum_list)):
                 print('ACF for case #{0}'.format(runn))
-                """
+                """ 
                 get_coreprof_ev_acf(val_ev_s[runn], name=code_name+'_'+p+'_'+a+'stats'+'_'+str(runn), lags=lags_list) 
-            #NB!: uncertainty of the ACF computation ~ Var(X)/sqrt(n) , where n=N_samples/N_lags
+                #NB!: uncertainty of the ACF computation ~ Var(X)/sqrt(n) , where n=N_samples/N_lags
                 """
 
             # 4.3) Plotting histograms and KDEs of the profile values evolution
             #plot_coreprofval_dist(val_ev_s[i], name=p+'_'+a+'_'+mainfoldernum, discr_level=32)
             for runn in range(len(runnum_list)):
                 print('KDE for case #{0}'.format(runn)) 
-                """          
-                plot_coreprofval_dist(val_wind_s[runn], name=p+'_'+a+'_'+str(runn)+'_'+mainfoldernum, discr_level=32)
+                """         
+                plot_coreprofval_dist(val_wind_s[runn],
+                                      name=p+'_'+a+'_'+str(runn)+'_'+mainfoldernum, discr_level=32)
                 """
+                #TODO: pass number of case to save different files
 
             # 4.3.1) Plotting single plot with histograms, KDEs and distribution means
-            """ 
+             
             plot_coreprofval_dist(np.vstack([np.squeeze(v, 0) for v in val_wind_s]), labels=labels, 
-                                  name='tot_'+p+'_'+a+'_'+str(runn)+'_'+mainfoldernum, discr_level=32)
-            """
+                                  name='tot_'+p+'_'+a+'_'+mainfoldernum, discr_level=32)
+            
 
             # 4.4) Apply ARMA model
             """
@@ -780,41 +799,66 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
             
             # 4.5.1) Calculating the mean of last *alpha* reads
             #TODO: check if mean actually takes the latest window, resulting values seem to be too low
+            stats_df = pd.DataFrame(columns=['name', 'mean', 'std'])
             val_trend_avg_s = []
-            for runn in range(len(runnum_list)):
-                val_trend_avg, val_fluct_avg = filter_trend(val_wind_s[runn], "mean")
-                val_trend_avg_s.append(val_trend_avg) #TODO: Python to process tuple elements differently
+            val_std_s = []
+            for runn in runnum_list:
+                val_trend_avg, val_fluct_avg = filter_trend(val_wind_s[runn-1], "mean")
+                val_trend_avg_s.append(val_trend_avg)
+                val_std_s.append(val_fluct_avg) 
+                #TODO: look up Python ways to process tuple elements differently
+                stats_df = stats_df.append(pd.Series(
+                               data={'mean': val_trend_avg_s[runn-1][0][0],
+                                     'std': val_std_s[runn-1][0][0]},
+                               name=str(runn-1))) # probably a bad workaround
             
             # 4.5.1') Plotting the means (mapped to the input profile values) 
             profile_evol_plot(val_trend_avg_s, labels=labels, name='means_'+p+'_'+a+'_'+mainfoldernum)      
-           
+            stats_df.to_csv('stats_main_'+p+'_'+a+'_'+mainfoldernum+'.csv')           
+
             # 4.5.2) Calcualting linear regression againt time fit for the last window:
-            # Apply LSE to get form of Q=a*t+b  
+            # Apply LR to get form of Q=a*t+b  
+            val_trend_lr_s = []
             for runn in runnum_list:
-                val_lr_trend, val_lr_residue = filter_trend(val_wind_s[runn-1], "linear_regression")
-        
+                val_trend_lr, val_residue_lr = filter_trend(val_wind_s[runn-1], "linear_regression")
+                val_trend_lr_s.append(val_trend_lr.reshape(val_wind_s[runn-1].shape)) # bad workaround
+                
+                #print('>shapes passed to plot: {} and {}'.
+                #       format(val_wind_s[runn-1].shape, val_trend_lr_s[runn-1].shape)) ###DEBUG
+                
+                profile_evol_plot([val_wind_s[runn-1], val_trend_lr_s[runn-1]],
+                                  labels=['original', 'linear regression with NE'],
+                                  name='lr_'+p+'_'+a+'_'+str(runn-1)+'_'+mainfoldernum) 
+
             # 4.5.3) Applying HP-filter    
             #val_trend_hp, val_fluct_exp = filter_trend(val, "hpf")
             
             # 4.5.4) Applying Fast Fourier Transform
             val_trend_fft_s = []
             for runn in runnum_list:
+                """
                 val_trend_fft, val_fluct_fft = filter_trend(val_wind_s[runn-1], "fft")
                 val_trend_fft_s.append(val_trend_fft)            
+                """
+                #TODO: pass number of case to save different files
 
             # 4.5.5) Applying Exponential Averaging:
             val_trend_exp_s = []
             for runn in runnum_list:
                 #TODO: introduce 0-padding as an option to avoid lag effect of exp-avg
+                """
                 val_trend_exp, val_fluct_exp = filter_trend(val_wind_s[runn-1], "exp")
                 val_trend_exp_s.append(val_trend_exp)
+                """
 
-            ##!!! TODO temorarily changes!!!           
+            ##!!! TODO temorarily changes!!! --- mind what is plotted from continiuous_gem.sh           
+            """
             profile_evol_plot([val, val_trend_fft, val_trend_exp, val_trend_avg], # np.ones(val.shape)*val_trend_avg[0]], 
                               labels=['original', 'fft(f<2^-10)', 'exponential(alpha=0.005)', 
                               'mean(of {:.2e} after {} steps)'.format(val_trend_avg[0,0], int(alpha_wind*val.shape[-1]))],
                               name='trend_'+p+'_'+a+'_'+mainfoldernum)
-           
+            """
+
             #profile_evol_plot([val, val_trend_exp, val_trend_avg], # np.ones(val.shape)*val_trend_avg[0]], 
             #                  labels=['original', 'exponential(alpha=0.005)', 
             #                  'mean(of {:.2e} after {} steps)'.format(val_trend_avg[0,0], int(alpha_wind*val.shape[-1]))],
@@ -826,7 +870,8 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
             """
 
             #TODO get exponential average of the values: standard packaged optimize for alpha -
-            # - why it is so high? is composition of exponential avaraging is another exponential averagin -- if so, what is alpha_comp?
+            # - why it is so high? is composition of exponential avaraging is another exponential averagin -
+            # - if so, what is alpha_comp?
             #TODO exponential averaging with a symmetric window -> apply padding
 
 if __name__ == '__main__':
@@ -841,13 +886,14 @@ if __name__ == '__main__':
         # Run main for all files in the folder, either read values from csv (runfirbatch), and for  multiple flux tubes (coord)
         main(foldername=sys.argv[1], runforbatch=int(sys.argv[2]), coordnum=int(sys.argv[3]))
     elif len(sys.argv) == 5:
-        # Run main for all files in the folder, either read values from csv (runfirbatch), for possible multiple flux tubes (coord), 
-        # and specifying how to save files
+        # Run main for all files in the folder, either read values from csv (runfirbatch), 
+        # for possible multiple flux tubes (coord), and specifying how to save files
         main(foldername=sys.argv[1], runforbatch=int(sys.argv[2]), coordnum=int(sys.argv[3]), mainfoldernum=sys.argv[4])
     elif len(sys.argv) == 6:
         # Run main for all files in folder, possibly reading values from csv, possibly for multiple flux tubes, 
         # and for possibly many cases (e.g. different input profiles) + specify save folder
-        main(foldername=sys.argv[1], runforbatch=int(sys.argv[2]), coordnum=int(sys.argv[3]), runnum=int(sys.argv[4]), mainfoldernum=sys.argv[5])
+        main(foldername=sys.argv[1], runforbatch=int(sys.argv[2]), coordnum=int(sys.argv[3]), 
+             runnum=int(sys.argv[4]), mainfoldernum=sys.argv[5])
     else:
         # Run main with all defaults
         main()
