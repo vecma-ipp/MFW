@@ -1,3 +1,8 @@
+# Some documentation for aspects of code GEM
+
+------------------------------
+Input files used:
+
 hdw.dat is parameter file (xml)
 
 h0?.dat is used for multiple processors
@@ -9,6 +14,7 @@ p0?.dat is a snapshot file
 t0?.dat is a state file
 
 ------------------------------
+DFILE
 
 d1.dat files read in plotting:
  
@@ -89,7 +95,7 @@ at main/psnaps.F90
   END DO
 
 ---------------------
-### Snapshot file
+### Snapshot file or TFILE
 
 look '/actor/tsnaps.f90'
 written in 'tdw.dat' file (TFILE), same as 't00.dat' file
@@ -108,4 +114,19 @@ at ITMFluxes all the energy values are avaraged as:
 avgen = (1 - alpha) * avgen + alpha * en
 
 alpha = 0.005
- 
+
+-----------------------
+### Flux tube initalisation
+
+Check are happening at:
+'/new-imas/itmparams.f90' 
+
+ra0 = (REAL(2*myftube+1)/REAL(2*nftubes))**0.7
+
+  nft=1, mft=1 : ra0 = 1.33
+  nft=1, mft=0 : ra0 = 0.62
+
+  nft=8        : ra0 = [0.14, 0.31, 0.44, 0.56, 0.67, 0.77, 0.86, 0.95]
+
+NB: GEM0 initialises flux tube locations same way, but k e[1,n] and not e[0,n-1]
+
