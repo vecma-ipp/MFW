@@ -626,7 +626,8 @@ def read_run_uq(db_path):
              db_path: a full path to location of a DB inside an UQ campiang directory
          Returns:
              a list with dictionaries of run input values (consider keeping explicit run IDs)
-    """
+             a list of stings with keys/names of input values 
+   """
     
     my_campaign = uq.Campaign(name="campaign_1", db_location=db_path)
 
@@ -638,6 +639,47 @@ def read_run_uq(db_path):
     print(">Names of params: ".format(input_names))
 
     return input_values, input_names
+
+def plot_response_cuts(data, input_names, output_names):
+    """
+    Plot different cuts (fixing all input parameter values but one) of code response for given QoI
+        Parameters:
+            data: pandas dataframe with input and output values of code
+                  note: pass means of the outputs
+            input_names: list of stings with input names, corresponds to dataframe columns, 
+                         also used for plot labels
+            output_names: list of strings with output names, corresponds to dataframe columns,
+                          also used for plot labels
+    """
+    
+    n_inputs = len(input_names)
+    n_points = len(df.index)
+    n_plots = (n_inputs) * (n_points)
+
+    qoi_name = output_names[0] # TODO to be modifyable
+    
+    fig, ax = plt.subplots(n_points, n_inputs, figsize=(20, 10))
+
+    for i_ip in range(n_inputs):
+        running_ip_name = input_names[i_ip]
+        input_names_left = input_names = [n for n in input_names if n!=running_ip_name]
+        fixed_ip_names = ''.join([n+'&' for n in input_names_left])
+               for j_fixval in range(n_points):
+        
+                    fixed_ip_vals  = ''.join([str(v)+';' for v in data[input_names_left].to_list()]) 
+                    # TODO wouldn't work
+
+    
+                    ax[i_ip][j_fixval].plot(x_io, y_qoi, 'o-', 
+                                       label='Response for ({})->({}) for ({})=({})'.
+                               format(running_ip_name, qoi_name, fixed_ip_names, fixed_ip_vals))         
+                    ax[i_ip][j_fixval].set_xlabel(r'{}'.format(running_ip_name))
+                    ax[i_i[][j_fixval].set_ylabel(r'{}'.format(qoi_name))
+        
+    fig.tight_layout()
+    
+    plt.savefig('scan_.png')
+    plt.close()
 
 ###########################################
 
