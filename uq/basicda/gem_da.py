@@ -653,31 +653,59 @@ def plot_response_cuts(data, input_names, output_names):
     """
     
     n_inputs = len(input_names)
-    n_points = len(df.index)
-    n_plots = (n_inputs) * (n_points)
+    n_points = len(data.index)
+    n_points_perdim = int(n_points ** (1./n_inputs))
+    n_fixvals = n_points_perdim ** (n_inputs - 1)
+    n_plots = (n_inputs) * (n_fixvals)
 
     qoi_name = output_names[0] # TODO to be modifyable
+
+    print([n_inputs, n_points, n_points_perdim, n_fixvals, n_plots, qoi_name]) ###DEBUG
     
-    fig, ax = plt.subplots(n_points, n_inputs, figsize=(20, 10))
+    fig, ax = plt.subplots(n_inputs, n_fixvals, figsize=(20, 10))
 
     for i_ip in range(n_inputs):
-        running_ip_name = input_names[i_ip]
-        input_names_left = input_names = [n for n in input_names if n!=running_ip_name]
-        fixed_ip_names = ''.join([n+'&' for n in input_names_left])
-               for j_fixval in range(n_points):
-        
-                    fixed_ip_vals  = ''.join([str(v)+';' for v in data[input_names_left].to_list()]) 
-                    # TODO wouldn't work
 
-    
-                    ax[i_ip][j_fixval].plot(x_io, y_qoi, 'o-', 
-                                       label='Response for ({})->({}) for ({})=({})'.
-                               format(running_ip_name, qoi_name, fixed_ip_names, fixed_ip_vals))         
-                    ax[i_ip][j_fixval].set_xlabel(r'{}'.format(running_ip_name))
-                    ax[i_i[][j_fixval].set_ylabel(r'{}'.format(qoi_name))
-        
+        running_ip_name = input_names[-(i_ip+1)]
+        input_names_left = [n for n in input_names if n != running_ip_name]
+        fixed_ip_names = ''.join([n+'&' for n in input_names_left])
+
+        offset = 1
+
+        for j_fixval in range(n_fixvals):
+            print([i_ip, j_fixval]) ###DEBUG
+       
+            #pivot_fixed_val = data[input_names_left][j_fixval+offset]
+            #tot_ind = data[input_names_left].where() #TODO equal pivot_fixed_val
+
+            tot_ind = np.arange(j_fixval*offset,(
+                                j_fixval+n_points_perdim-1)*offset,
+                                offset).tolist()
+            # TODO  how to save symbolic expression for array cut?
+
+            # TODO: choose one of three ways: 
+            #                      1) offsets - has to be 3 neste loops
+            #                      2) filtering - inside current tow loops, use np.unique()
+            #                      3) transform into ndarray of 4D, the iterate (look tuto notebook)
+ 
+            #fixed_ip_vals      = data[input_names_left][tot_ind[0]] # TODO count tot_ind
+            #fixed_ip_vals_str  = ''.join([str(v)+';' for v in fixed_ip_vals.to_list()]) 
+
+            x_io  = data[running_ip_name].loc(tot_ind) #TODO Error: list is unhashable 
+            y_qoi = data[qoi_name].loc(tot_ind)
+ 
+            ax[i_ip][j_fixval].plot(x_io, y_qoi, 'o-', 
+                               label='Response for ({})->({}) for ({})=({})'.
+                               format(running_ip_name, qoi_name, fixed_ip_names, fixed_ip_vals_str))         
+                    
+            ax[i_ip][j_fixval].set_xlabel(r'{}'.format(running_ip_name))
+            ax[i_ip][j_fixval].set_ylabel(r'{}'.format(qoi_name))
+       
+        offset *= 2 # filter on dataframe could be completely replaces by an offseting for different chosen parameter        
+ 
     fig.tight_layout()
-    
+    fig.suptitle('GEM response in Ti_flux around profile values') #TODO: pass as arguments    
+
     plt.savefig('scan_.png')
     plt.close()
 
@@ -760,7 +788,7 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
         
         #runs_db_loc = "sqlite:///" + foldername + "/.."*7 + "/campaign.db"
         runs_db_loc = "sqlite:///" + "campaign_" + camp_id + "_" + str(mmiter_num) + ".db"           
-        runs_uq_data, runs_input_names = read_run_uq(runs_db_loc) # test function, at least manually    
+        runs_input_vals, runs_input_names = read_run_uq(runs_db_loc) # test function, at least manually    
            
         # 3') By default, create new list for readings and read them from file, even if they are in programm memory already      
         val_ev_s = []
@@ -783,7 +811,7 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
             #profile_evol_plot([val_ev_s[i]], name=code_name+'_'+p+'_'+a+'_'+mainfoldernum)
             # modification: list of arrays is for different profile variations
             labels = [str(r) for r in runnum_list]
-            labels = ["".join([rin+'='+str(round(r[rin], 1))+"; " for rin in runs_input_names]) for r in runs_uq_data]
+            labels = ["".join([rin+'='+str(round(r[rin], 1))+"; " for rin in runs_input_names]) for r in runs_input_vals]
             """ 
             profile_evol_plot(val_ev_s, labels=labels, name=code_name+'_'+p+'_'+a+'_'+mainfoldernum, alignment='start') 
             """
@@ -841,10 +869,18 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
             
             # 4.5.1) Calculating the mean of last *alpha* reads
             #TODO: check if mean actually takes the latest window, resulting values seem to be too low
+            
+            #print('input names : {}'.format(runs_input_names)) ###DEBUG
+            #print('inputs values : {}'.format(runs_input_vals)) ###DEBUG            
+
             stats_df = pd.DataFrame(columns=['name', 'mean', 'std'])
+            scan_df = pd.DataFrame(columns=['name'] + runs_input_names + [p+'.'+a])
+
             val_trend_avg_s = []
             val_std_s = []
+
             for runn in runnum_list:
+
                 val_trend_avg, val_fluct_avg = filter_trend(val_wind_s[runn-1], "mean")
                 val_trend_avg_s.append(val_trend_avg)
                 val_std_s.append(val_fluct_avg) 
@@ -853,10 +889,22 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
                                data={'mean': val_trend_avg_s[runn-1][0][0],
                                      'std': val_std_s[runn-1][0][0]},
                                name=str(runn-1))) # probably a bad workaround
-            
+                
+                scan_data = runs_input_vals[runn-1]
+                scan_data[p+'.'+a] = val_trend_avg_s[runn-1][0][0]
+                scan_df = scan_df.append(pd.Series(
+                              data=scan_data,
+                              name=str(runn-1)))           
+ 
             # 4.5.1') Plotting the means (mapped to the input profile values) 
             profile_evol_plot(val_trend_avg_s, labels=labels, name='means_'+p+'_'+a+'_'+mainfoldernum)      
-            stats_df.to_csv('stats_main_'+p+'_'+a+'_'+mainfoldernum+'.csv')           
+            stats_df.to_csv('stats_main_'+p+'_'+a+'_'+mainfoldernum+'.csv')      
+            scan_df.to_csv('resuq_main_'+p+'_'+a+'_'+mainfoldernum+'.csv')     
+            
+            # 4.5.1'') Plot parameter dependency for single parameters
+            print('plotting cuts')
+            plot_response_cuts(scan_df, runs_input_names, [p+'.'+a])
+            print('plotting done')            
 
             # 4.5.2) Calcualting linear regression againt time fit for the last window:
             # Apply LR to get form of Q=a*t+b  
