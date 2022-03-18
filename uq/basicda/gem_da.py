@@ -732,16 +732,16 @@ def plot_response_cuts(data, input_names, output_names):
                     
             ax[i_ip][j_fixval].set_xlabel(r'{}'.format(running_ip_name))
             ax[i_ip][j_fixval].set_ylabel(r'{}'.format(qoi_name))
-            ax[i_ip][j_fixval].set_title(r'{}'.format(fixed_ip_val_str), fontsize=7)
+            ax[i_ip][j_fixval].set_title(r'{}'.format(fixed_ip_val_str), fontsize=8)
       
-            ax[i_ip][j_fixval].set_ylim(1.8E+6, 3.2E+6) 
+            ax[i_ip][j_fixval].set_ylim(1.8E+6, 3.0E+6) 
             #ax[i_ip][j_fixval].legend(loc='best') 
      
         offset *= 2
         # Filter on dataframe could be completely replaces by an offseting for different chosen parameter        
  
-    #fig.tight_layout()
-    fig.suptitle('GEM response in {} around profile values'.format(qoi_name)) #TODO: pass names as arguments    
+    fig.tight_layout()
+    #fig.suptitle('GEM response in {} around profile values'.format(qoi_name)) #TODO: pass names as arguments    
     #fig.subplots_adjust(top=0.8)
 
     plt.savefig('scan_{}.png'.format(qoi_name))
@@ -878,8 +878,9 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
             
             #get_coreprof_ev_acf(val_ev_s[i], name=code_name+'_'+p+'_'+a+'stats'+'_'+str(runn), lags=lags_list)
             for runn in range(len(runnum_list)):
+                """
                 print('ACF for case #{0}'.format(runn))
-                """ 
+                 
                 get_coreprof_ev_acf(val_ev_s[runn], 
                                     name=code_name+'_'+p+'_'+a+'stats'+'_'+str(runn), 
                                     lags=lags_list) 
@@ -889,8 +890,9 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
             # 4.3) Plotting histograms and KDEs of the profile values evolution
             #plot_coreprofval_dist(val_ev_s[i], name=p+'_'+a+'_'+mainfoldernum, discr_level=32)
             for runn in range(len(runnum_list)):
+                """
                 print('KDE for case #{0}'.format(runn)) 
-                """         
+                         
                 plot_coreprofval_dist(val_wind_s[runn],
                                       name=p+'_'+a+'_'+str(runn)+'_'+mainfoldernum, discr_level=32)
                 """
@@ -949,11 +951,11 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
             scan_df.to_csv('resuq_main_'+p+'_'+a+'_'+mainfoldernum+'.csv')    
             
             # 4.5.1'') Plot parameter dependency for single parameters
-            print('plotting cuts')
+            print('plotting cuts starting')
             plot_response_cuts(scan_df, runs_input_names_new, [p+'_'+a])
-            print('plotting done')
+            print('plotting cuts done')
 
-            # 4.5.2) Calcualting linear regression againt time fit for the last window:
+            # 4.5.2) Calcualting linear regression against time fit for the last window:
             # Apply LR to get form of Q=a*t+b
             val_trend_lr_s = []
             for runn in runnum_list:
@@ -970,8 +972,13 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
                 """
 
             # 4.5.3) Applying HP-filter    
-            #val_trend_hp, val_fluct_exp = filter_trend(val, "hpf")
-            
+            val_trend_hpf_s = []
+            for runn in runnum_list:
+                """
+                val_trend_hpf, val_fluct_hpf = filter_trend(val, "hpf")
+                val_trend_hpf_s.append(val_trend_hpf)
+                """
+         
             # 4.5.4) Applying Fast Fourier Transform
             val_trend_fft_s = []
             for runn in runnum_list:
