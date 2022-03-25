@@ -246,7 +246,7 @@ def profile_evol_plot(value_s, labels=['orig'], file_names=[], name='gem_ti_flux
     ax.legend(loc='lower center',
              #bbox_to_anchor=(0.5, 0.0), 
               ncol=int(np.sqrt(len(labels))),
-              prop={'size':8})
+              prop={'size' : 9})
    
     #plt.legend(loc='best')
     plt.savefig(name + '.png')
@@ -338,18 +338,32 @@ def plot_coreprofval_dist(value_spw, labels=[], name='ti', discr_level=64):
 
 def get_coreprof_ev_acf(value_ev, name='ti', lags=[1,2,3,4,5,6,7,8,9,10]):
     """
-    Calculate autocorrelation function of the sequence of profile values
+    Calculates autocorrelation function of the sequence of profile values
+        Parameters:
+            value_ev: numpy array of length equal to original samle size
+            name    : profile name, used for outputs/plotting/saving
+            lags    : list of sizes of lags to test autocorrelation
+        Returns:
+            autocorrelation lenght
+            number of effective samples (one per ACF window)
+            ACF object
     """ 
     #acf = [1. if l==0 else np.corrcoef(value_ev[l:], value_ev[:-l])[0][1] for l in lags]
     
     nl = 64    
     
-    nftc = value_ev.shape[0]    
+    nftc = value_ev.shape[0]
 
+    ac_len = []
+    ac_num = []   
+     
+    # Iterate over all different passed flux tubes and cases of runs
     print('>Calculating ACF')
     for i in range(nftc):
         
         print('Considering flux tube or case #{}'.format(i))
+
+        n_sample = value_ev.shape[-1]
 
         r,q,p  = acf(value_ev[i], nlags=nl, fft=True, qstat=True) 
  
@@ -369,8 +383,13 @@ def get_coreprof_ev_acf(value_ev, name='ti', lags=[1,2,3,4,5,6,7,8,9,10]):
         val_df = pd.DataFrame(value_ev[i])
    
         plot_acf(val_df, lags=lags)
-        plt.savefig(str(i)+'acf.png')
+        plt.savefig(str(i)+name+'_acf.png')
         plt.close()
+
+        ac_len_cur = 1.
+        ac_len.append(ac_len_cur)
+        ac_num.append(int(n_sample/float(ac_len_cur)))
+
     """
     plot_pacf(val_df, lags=lags)
     plt.savefig('pacf.png')
@@ -387,7 +406,7 @@ def get_coreprof_ev_acf(value_ev, name='ti', lags=[1,2,3,4,5,6,7,8,9,10]):
     plt.close()
     """
 
-    return acf
+    return ac_len, ac_num 
 
 def apply_arma(values):
     """
@@ -742,14 +761,15 @@ def plot_response_cuts(data, input_names, output_names):
             #                   label='Response for ({})->({}) for {}'.
             #                   format(running_ip_name, qoi_name, fixed_ip_val_str))         
              
-            ax[i_ip][j_fixval].errorbar(x_io, y_qoi, yerr=y_stem,
-                                        fmt='-o', uplims=False, lolims=False,
+            ax[i_ip][j_fixval].errorbar(x_io, y_qoi, yerr=1.96*y_stem,
+                                        #fmt='-o', 
+                                        uplims=False, lolims=False,
                                         label='Response for ({})->({}) for {}'.
                                         format(running_ip_name, qoi_name, fixed_ip_val_str))
        
             ax[i_ip][j_fixval].set_xlabel(r'{}'.format(running_ip_name))
             ax[i_ip][j_fixval].set_ylabel(r'{}'.format(qoi_name))
-            ax[i_ip][j_fixval].set_title(r'{}'.format(fixed_ip_val_str), fontsize=9)
+            ax[i_ip][j_fixval].set_title(r'{}'.format(fixed_ip_val_str), fontsize=10)
       
             ax[i_ip][j_fixval].set_ylim(1.5E+6, 3.8E+6) 
             #ax[i_ip][j_fixval].legend(loc='best') 
@@ -763,6 +783,39 @@ def plot_response_cuts(data, input_names, output_names):
 
     plt.savefig('scan_{}.png'.format(qoi_name))
     plt.close()
+
+def produce_stats_dataframes(val_trend_avg, val_std_s):
+    """
+    Composed pandas dataframes with code input/output and its statistics with single entry for a code run
+         Parameters:
+             
+         Returns: 
+             pandas DataFrame with rows - runs for different cases; columns - code io and stats
+    """
+        
+    n_lensample = val_trend_avg.shape[-1]
+   
+    n_lensamle_corr = 1
+
+    stats_df = stats_df.append(pd.Series(
+                               data={'mean': val_trend_avg_s[runn-1][0][0],
+                                     'std': val_std_s[runn-1][0][0]},
+                               name=str(runn-1))) # probably a bad workaround
+
+    scan_data = runs_input_vals[runn-1]
+    scan_data[p+'_'+a] = val_trend_avg_s[runn-1][0][0]
+    scan_data[p+'_'+a+'_std'] = val_std_s[runn-1][0][0]
+    scan_data[p+'_'+a+'_stem'] = scan_data[p+'_'+a+'_std'] / np.sqrt(n_lensample_corr)
+
+    scan_data_new = {}
+    for k,v in scan_data.items():
+        scan_data_new[k.replace('.', '_')] = v
+
+    scan_df = scan_df.append(pd.Series(
+                              data=scan_data_new,
+                              name=str(runn-1)))
+
+    return scan_df, stats_df
 
 ###########################################
 
@@ -869,9 +922,9 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
             # modification: list of arrays is for different profile variations
             labels = [str(r) for r in runnum_list]
             labels = ["".join([rin+'='+str(round(r[rin], 1))+"; " for rin in runs_input_names]) for r in runs_input_vals]
-             
+            """ 
             profile_evol_plot(val_ev_s, labels=labels, name=code_name+'_'+p+'_'+a+'_'+mainfoldernum, alignment='start') 
-            
+            """
             #print('passes to plot: {}'.format(val_ev_s[0].shape)) ###DEBUG
             #print('before shape {}'.format(val_ev_s[i].shape)) ###DEBUG
             #val = np.array(val_ev_s[i]).squeeze()
@@ -890,20 +943,19 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
             #print('val_wind len and element shape are {} and {}'.format(len(val_wind), val_wind[0].shape)) ### DEBUG
    
             # 4.2) Calculate ACF for the values
-            lags_list = [1,4,16,64,256,256,1024,2048,4096]            
+            lags_list = [1,2,3,4,5,6,7,8,16,64,256,256,1024,2048,4096]
             lags_list = [l for l in lags_list if l < val_wind_s[i].shape[-1]]
             
             #get_coreprof_ev_acf(val_ev_s[i], name=code_name+'_'+p+'_'+a+'stats'+'_'+str(runn), lags=lags_list)
             for runn in range(len(runnum_list)):
-                """
+                
                 print('ACF for case #{0}'.format(runn))
                  
-                get_coreprof_ev_acf(val_ev_s[runn], 
+                ac_len, ac_num = get_coreprof_ev_acf(val_ev_s[runn], 
                                     name=code_name+'_'+p+'_'+a+'stats'+'_'+str(runn), 
                                     lags=lags_list) 
                 #NB!: uncertainty of the ACF computation ~ Var(X)/sqrt(n) , where n=N_samples/N_lags
-                """
-
+                
             # 4.3) Plotting histograms and KDEs of the profile values evolution
             #plot_coreprofval_dist(val_ev_s[i], name=p+'_'+a+'_'+mainfoldernum, discr_level=32)
             for runn in range(len(runnum_list)):
@@ -916,10 +968,10 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
                 #TODO: pass number of case to save different files
 
             # 4.3.1) Plotting single plot with histograms, KDEs and distribution means
-             
+            """ 
             plot_coreprofval_dist(np.vstack([np.squeeze(v, 0) for v in val_wind_s]), labels=labels, 
                                   name='tot_'+p+'_'+a+'_'+mainfoldernum, discr_level=32)
-            
+            """
 
             # 4.4) Apply ARMA model
             """
@@ -959,7 +1011,7 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
                 scan_data = runs_input_vals[runn-1]
                 scan_data[p+'_'+a] = val_trend_avg_s[runn-1][0][0]
                 scan_data[p+'_'+a+'_std'] = val_std_s[runn-1][0][0]
-                scan_data[p+'_'+a+'_stem'] = scan_data[p+'_'+a+'_std'] / float(n_lensample)
+                scan_data[p+'_'+a+'_stem'] = scan_data[p+'_'+a+'_std'] / np.sqrt(n_lensample)
 
                 scan_data_new = {}
                 for k,v in scan_data.items():
@@ -968,8 +1020,9 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
                 scan_df = scan_df.append(pd.Series(
                               data=scan_data_new,
                               name=str(runn-1)))
-            
+            """ 
             profile_evol_plot(val_trend_avg_s, labels=labels, name='means_'+p+'_'+a+'_'+mainfoldernum)
+            """
             stats_df.to_csv('stats_main_'+p+'_'+a+'_'+mainfoldernum+'.csv') 
             scan_df.to_csv('resuq_main_'+p+'_'+a+'_'+mainfoldernum+'.csv')    
             
