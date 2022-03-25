@@ -241,9 +241,14 @@ def profile_evol_plot(value_s, labels=['orig'], file_names=[], name='gem_ti_flux
              #print('value[{0},:]'.format(i)); print(value[i,:]) ### DEBUG
              ## !!! TODO temporary changes !!!
              #ax.semilogy(ts, value[i,:], '-', label=lab+'_'+str(i))
-             ax.plot(ts, value[i,:], fmt_list[inum], label=lab+'_'+str(i))
+             ax.plot(ts, value[i,:], fmt_list[inum], label=lab)
 
-    plt.legend(loc='best')
+    ax.legend(loc='lower center',
+             #bbox_to_anchor=(0.5, 0.0), 
+              ncol=int(np.sqrt(len(labels))),
+              prop={'size':8})
+   
+    #plt.legend(loc='best')
     plt.savefig(name + '.png')
     plt.close()
 
@@ -256,7 +261,7 @@ def plot_coreprofval_dist(value_spw, labels=[], name='ti', discr_level=64):
     """
     #print('value_spw'); print(value_spw) ### DEBUG
      
-    # Number of flux tueb or cases
+    # Number of flux tube or case
     nftc = value_spw.shape[0]
 
     # Initialise lables if nothing was passed
@@ -292,8 +297,11 @@ def plot_coreprofval_dist(value_spw, labels=[], name='ti', discr_level=64):
         log_pdf_orig = kde.score_samples(value_spw[i, :, np.newaxis])
 
         ax.plot(x[:, 0], np.exp(log_pdf), fmt_list[i], label='density of core transport values')
-        ax.plot(value_spw[i], (-0.01*np.random.rand(log_pdf_orig.shape[0])) * np.exp(log_pdf_orig).min(), '+k')
+        
+        # Add 'pluses' underneath the plot for each point in the fitted sample
+        #ax.plot(value_spw[i], (-0.01*np.random.rand(log_pdf_orig.shape[0])) * np.exp(log_pdf_orig).min(), '+k')
 
+        # Add vertical lines for mean of the each sample
         ax.axvline(x=val_means[i], ymin=0., ymax=1., linestyle=fmt_list[i][:-1], color=fmt_list[i][-1:]) 
         #TODO: change the style specification 
     
@@ -662,7 +670,9 @@ def plot_response_cuts(data, input_names, output_names):
     n_fixvals = n_points_perdim ** (n_inputs - 1)
     n_plots = (n_inputs) * (n_fixvals)
 
-    qoi_name = output_names[0] # TODO to be modifyable
+    qoi_name = output_names[0] # TODO to make modifyable
+    qoi_std_name = qoi_name + '_std'
+    qoi_stem_name= qoi_name + '_stem'
 
     #print([n_inputs, n_points, n_points_perdim, n_fixvals, n_plots, qoi_name]) ###DEBUG
     
@@ -725,16 +735,23 @@ def plot_response_cuts(data, input_names, output_names):
 
             x_io = data_slice[running_ip_name].to_numpy()
             y_qoi = data_slice[qoi_name].to_numpy()
+            y_std = data_slice[qoi_std_name].to_numpy()
+            y_stem= data_slice[qoi_stem_name].to_numpy()
  
-            ax[i_ip][j_fixval].plot(x_io, y_qoi, 'o-', 
-                               label='Response for ({})->({}) for {}'.
-                               format(running_ip_name, qoi_name, fixed_ip_val_str))         
-                    
+            #ax[i_ip][j_fixval].plot(x_io, y_qoi, 'o-', 
+            #                   label='Response for ({})->({}) for {}'.
+            #                   format(running_ip_name, qoi_name, fixed_ip_val_str))         
+             
+            ax[i_ip][j_fixval].errorbar(x_io, y_qoi, yerr=y_stem,
+                                        fmt='-o', uplims=False, lolims=False,
+                                        label='Response for ({})->({}) for {}'.
+                                        format(running_ip_name, qoi_name, fixed_ip_val_str))
+       
             ax[i_ip][j_fixval].set_xlabel(r'{}'.format(running_ip_name))
             ax[i_ip][j_fixval].set_ylabel(r'{}'.format(qoi_name))
-            ax[i_ip][j_fixval].set_title(r'{}'.format(fixed_ip_val_str), fontsize=8)
+            ax[i_ip][j_fixval].set_title(r'{}'.format(fixed_ip_val_str), fontsize=9)
       
-            ax[i_ip][j_fixval].set_ylim(1.8E+6, 3.0E+6) 
+            ax[i_ip][j_fixval].set_ylim(1.5E+6, 3.8E+6) 
             #ax[i_ip][j_fixval].legend(loc='best') 
      
         offset *= 2
@@ -852,10 +869,10 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
             # modification: list of arrays is for different profile variations
             labels = [str(r) for r in runnum_list]
             labels = ["".join([rin+'='+str(round(r[rin], 1))+"; " for rin in runs_input_names]) for r in runs_input_vals]
-            """ 
+             
             profile_evol_plot(val_ev_s, labels=labels, name=code_name+'_'+p+'_'+a+'_'+mainfoldernum, alignment='start') 
-            """
-            print('passes to plot: {}'.format(val_ev_s[0].shape)) ###DEBUG
+            
+            #print('passes to plot: {}'.format(val_ev_s[0].shape)) ###DEBUG
             #print('before shape {}'.format(val_ev_s[i].shape)) ###DEBUG
             #val = np.array(val_ev_s[i]).squeeze()
             #print('after shape {}'.format(val.shape)) ### DEBUG            
@@ -899,10 +916,10 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
                 #TODO: pass number of case to save different files
 
             # 4.3.1) Plotting single plot with histograms, KDEs and distribution means
-            """ 
+             
             plot_coreprofval_dist(np.vstack([np.squeeze(v, 0) for v in val_wind_s]), labels=labels, 
                                   name='tot_'+p+'_'+a+'_'+mainfoldernum, discr_level=32)
-            """
+            
 
             # 4.4) Apply ARMA model
             """
@@ -912,14 +929,15 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
             # 4.5)  Apply different averaging methods and plot the results
             
             # 4.5.1) Calculating the mean of last *alpha* reads
-            #TODO: check if mean actually takes the latest window, resulting values seem to be too low
             
             #print('input names : {}'.format(runs_input_names)) ###DEBUG
             #print('inputs values : {}'.format(runs_input_vals)) ###DEBUG            
 
             runs_input_names_new = [n.replace('.', '_') for n in runs_input_names]
             stats_df = pd.DataFrame(columns=['name', 'mean', 'std'])
-            scan_df = pd.DataFrame(columns=['name'] + runs_input_names_new + [p+'_'+a])
+            scan_df = pd.DataFrame(columns=['name'] 
+                                         + runs_input_names_new
+                                         + [p+'_'+a, p+'_'+a+'_std', p+'_'+a+'_stem'])
 
             val_trend_avg_s = []
             val_std_s = []
@@ -930,7 +948,9 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
                 val_trend_avg_s.append(val_trend_avg)
                 val_std_s.append(val_fluct_avg) 
                 #TODO: look up Python ways to process tuple elements differently
-                
+
+                n_lensample = val_trend_avg.shape[-1]
+               
                 stats_df = stats_df.append(pd.Series(
                                data={'mean': val_trend_avg_s[runn-1][0][0],
                                      'std': val_std_s[runn-1][0][0]},
@@ -938,14 +958,17 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
                 
                 scan_data = runs_input_vals[runn-1]
                 scan_data[p+'_'+a] = val_trend_avg_s[runn-1][0][0]
+                scan_data[p+'_'+a+'_std'] = val_std_s[runn-1][0][0]
+                scan_data[p+'_'+a+'_stem'] = scan_data[p+'_'+a+'_std'] / float(n_lensample)
+
                 scan_data_new = {}
                 for k,v in scan_data.items():
                     scan_data_new[k.replace('.', '_')] = v
+                
                 scan_df = scan_df.append(pd.Series(
                               data=scan_data_new,
-                              name=str(runn-1)))           
- 
-            # 4.5.1') Plotting the means (mapped to the input profile values) 
+                              name=str(runn-1)))
+            
             profile_evol_plot(val_trend_avg_s, labels=labels, name='means_'+p+'_'+a+'_'+mainfoldernum)
             stats_df.to_csv('stats_main_'+p+'_'+a+'_'+mainfoldernum+'.csv') 
             scan_df.to_csv('resuq_main_'+p+'_'+a+'_'+mainfoldernum+'.csv')    
