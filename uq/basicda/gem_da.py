@@ -348,8 +348,7 @@ def get_coreprof_ev_acf(value_ev, name='ti', lags=[1,2,3,4,5,6,7,8,9,10]):
             number of effective samples (one per ACF window)
             ACF object
     """ 
-    #acf = [1. if l==0 else np.corrcoef(value_ev[l:], value_ev[:-l])[0][1] for l in lags]
-    
+       
     nl = 64    
     
     nftc = value_ev.shape[0]
@@ -364,6 +363,9 @@ def get_coreprof_ev_acf(value_ev, name='ti', lags=[1,2,3,4,5,6,7,8,9,10]):
         print('Considering flux tube or case #{}'.format(i))
 
         n_sample = value_ev.shape[-1]
+
+        acf_manual = [1. if l==0 else np.corrcoef(value_ev[i][l:], value_ev[i][:-l])[0][-1] for l in lags]
+        #print(acf_manual) ###DEBUG
 
         r,q,p  = acf(value_ev[i], nlags=nl, fft=True, qstat=True) 
  
@@ -386,9 +388,28 @@ def get_coreprof_ev_acf(value_ev, name='ti', lags=[1,2,3,4,5,6,7,8,9,10]):
         plt.savefig(str(i)+name+'_acf.png')
         plt.close()
 
-        ac_len_cur = 1.
+        # TODO find ACL, read up methods and implementations for that:
+        # Options
+        # 1) min(n) value for which ACF(n) <= Var(X_1..n)/sqrt(n) 
+        # 2) max value of a_n for an ARMA model
+
+        #acfs = acf_data_pd['AC'].to_numpy()
+        acfs = acf_manual
+        #errors = [np.std(value_ev[i][:l]) / np.mean(value_ev[i][:l]) for l in lags]
+        errors = [1./float(l) for l in lags]
+        #print(errors) ###DEBUG
+
+        acl = lags[0]
+        for l, ac, e in zip(lags, acfs, errors):
+            acl = l
+            if ac < e:
+                break
+
+        ac_len_cur = float(acl)
         ac_len.append(ac_len_cur)
         ac_num.append(int(n_sample/float(ac_len_cur)))
+       
+        #print([acf_manual, acfs, errors, acl, ac_len, ac_num, n_sample]) ###DEBUG
 
     """
     plot_pacf(val_df, lags=lags)
@@ -943,19 +964,35 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
             #print('val_wind len and element shape are {} and {}'.format(len(val_wind), val_wind[0].shape)) ### DEBUG
    
             # 4.2) Calculate ACF for the values
-            lags_list = [1,2,3,4,5,6,7,8,16,64,256,256,1024,2048,4096]
+            lags_list = [2,4,8,16,32,48,64,96,128,160,256,256,1024,2048,4096]
+            #lags_list = [64,128,256] ###DEBUG
             lags_list = [l for l in lags_list if l < val_wind_s[i].shape[-1]]
             
             #get_coreprof_ev_acf(val_ev_s[i], name=code_name+'_'+p+'_'+a+'stats'+'_'+str(runn), lags=lags_list)
+            
+            ac_len_s = []
+            ac_num_s = []
+
+            val_ev_acf_s = []
+            
             for runn in range(len(runnum_list)):
                 
                 print('ACF for case #{0}'.format(runn))
                  
-                ac_len, ac_num = get_coreprof_ev_acf(val_ev_s[runn], 
+                ac_len, ac_num = get_coreprof_ev_acf(val_wind_s[runn], 
                                     name=code_name+'_'+p+'_'+a+'stats'+'_'+str(runn), 
                                     lags=lags_list) 
                 #NB!: uncertainty of the ACF computation ~ Var(X)/sqrt(n) , where n=N_samples/N_lags
-                
+                ac_len_s.append(ac_len)
+                ac_num_s.append(ac_num)
+                #TODO: acf function assumes multiple cases are passed and returns list - ..[0] is a workaround, change
+                print('Approximate ACL: {0}; and effective number size is {1}'.format(ac_len, ac_num))
+                 
+                # populate new array with reading from the code-produces values taken per a ACL window
+                val_ev_acf = np.ones((ac_num[0], 1))
+                val_ev_acf = val_wind_s[runn][::int(ac_len[0])]
+                val_ev_acf_s.append(val_ev_acf)
+
             # 4.3) Plotting histograms and KDEs of the profile values evolution
             #plot_coreprofval_dist(val_ev_s[i], name=p+'_'+a+'_'+mainfoldernum, discr_level=32)
             for runn in range(len(runnum_list)):
@@ -994,6 +1031,9 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
             val_trend_avg_s = []
             val_std_s = []
 
+            val_trend_avg_acf_s = []
+            val_std_acf_s = []
+
             for runn in runnum_list:
 
                 val_trend_avg, val_fluct_avg = filter_trend(val_wind_s[runn-1], "mean")
@@ -1001,16 +1041,22 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
                 val_std_s.append(val_fluct_avg) 
                 #TODO: look up Python ways to process tuple elements differently
 
-                n_lensample = val_trend_avg.shape[-1]
+                # Calculate mean and std using only single point per correlation length
+                # TODO mind that currently all values for slices are taken from acf-thinned data
+                val_trend_avg_acf, val_fluct_avg_acf = filter_trend(val_ev_acf_s[runn-1], "mean")
+                val_trend_avg_acf_s.append(val_trend_avg_acf)
+                val_std_acf_s.append(val_fluct_avg_acf)
+
+                n_lensample = val_trend_avg_acf_s[runn-1].shape[-1]
                
                 stats_df = stats_df.append(pd.Series(
-                               data={'mean': val_trend_avg_s[runn-1][0][0],
-                                     'std': val_std_s[runn-1][0][0]},
+                               data={'mean': val_trend_avg_acf_s[runn-1][0][0],
+                                     'std': val_std_acf_s[runn-1][0][0]},
                                name=str(runn-1))) # probably a bad workaround
                 
                 scan_data = runs_input_vals[runn-1]
-                scan_data[p+'_'+a] = val_trend_avg_s[runn-1][0][0]
-                scan_data[p+'_'+a+'_std'] = val_std_s[runn-1][0][0]
+                scan_data[p+'_'+a] = val_trend_avg_acf_s[runn-1][0][0]
+                scan_data[p+'_'+a+'_std'] = val_std_acf_s[runn-1][0][0]
                 scan_data[p+'_'+a+'_stem'] = scan_data[p+'_'+a+'_std'] / np.sqrt(n_lensample)
 
                 scan_data_new = {}
