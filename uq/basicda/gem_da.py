@@ -989,9 +989,12 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
                 print('Approximate ACL: {0}; and effective number size is {1}'.format(ac_len, ac_num))
                  
                 # populate new array with reading from the code-produces values taken per a ACL window
-                val_ev_acf = np.ones((ac_num[0], 1))
-                val_ev_acf = val_wind_s[runn][::int(ac_len[0])]
+                # take one reading for a miidle of ACL
+                val_ev_acf = np.ones((1, ac_num[0]))
+                val_ev_acf = val_wind_s[runn][0, int(ac_len[0]/2.):-1:int(ac_len[0])]
                 val_ev_acf_s.append(val_ev_acf)
+
+                print([ac_num[0], ac_len[0], val_wind_s[runn].shape, val_ev_acf.shape, val_ev_acf]) ###DEBUG
 
             # 4.3) Plotting histograms and KDEs of the profile values evolution
             #plot_coreprofval_dist(val_ev_s[i], name=p+'_'+a+'_'+mainfoldernum, discr_level=32)
@@ -1048,15 +1051,16 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
                 val_std_acf_s.append(val_fluct_avg_acf)
 
                 n_lensample = val_trend_avg_acf_s[runn-1].shape[-1]
+                print('acf-corrected sample length: {0}'.format(n_lensample)) ###DEBUG
                
                 stats_df = stats_df.append(pd.Series(
-                               data={'mean': val_trend_avg_acf_s[runn-1][0][0],
-                                     'std': val_std_acf_s[runn-1][0][0]},
+                               data={'mean': val_trend_avg_s[runn-1][0][0],
+                                     'std': val_std_s[runn-1][0][0]},
                                name=str(runn-1))) # probably a bad workaround
                 
                 scan_data = runs_input_vals[runn-1]
-                scan_data[p+'_'+a] = val_trend_avg_acf_s[runn-1][0][0]
-                scan_data[p+'_'+a+'_std'] = val_std_acf_s[runn-1][0][0]
+                scan_data[p+'_'+a] = val_trend_avg_s[runn-1][0][0]
+                scan_data[p+'_'+a+'_std'] = val_std_s[runn-1][0][0]
                 scan_data[p+'_'+a+'_stem'] = scan_data[p+'_'+a+'_std'] / np.sqrt(n_lensample)
 
                 scan_data_new = {}
