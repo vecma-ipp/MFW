@@ -1,5 +1,5 @@
 
-CPONUM=53
+CPONUM=54
 
 DIR='/marconi_scratch/userexternal/yyudin00/MFW_runs/cpo'$CPONUM'/'
 
@@ -28,7 +28,7 @@ NUM=$(($CPONUM-13))
 NUMPR=$(($NUM-1))
 #CPONUM=$(($NUM+13))
 
-python3 gem_da.py 'cpo'$CPONUM 0 1 ''$CPONUM  # change gem_da.py input attributes to read new cpo-s from different locations
+python3 gem_da.py 'MFW_runs/''cpo'$CPONUM 0 1 ''$CPONUM  # change gem_da.py input attributes to read new cpo-s from different locations
 
 cp GEM_plots/gem_??_transp_flux_evol_all${NUMPR}.csv ./
 cat gem_ti_transp_flux_evol_all${NUMPR}.csv gem_ti_transp_flux_evol_${CPONUM}.csv > gem_ti_transp_flux_evol_all${NUM}.csv
