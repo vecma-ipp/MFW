@@ -1,4 +1,5 @@
 import os
+import sys
 
 import pickle
 import csv
@@ -77,11 +78,19 @@ exec_code = "loop_gem_notransp"  #"loop_gem_notransp"
 
 # Define the uncertain parameters
 # Electron temperature and its gradient
+
+# Find such a nested set of quadrature abcissas so that coordinates used for U[-0.1,0.1]
+# within a 1st-order Gauss-Legandre are used as smaller (by absolute value) cooridantes for 
+# a 3rd-order G-S for some U[-a,+a]
+# Here only a particular coefficient!
+alpha_q = 1.
+#alpha_q = a = 1./np.sqrt( (9./7.) - 6./7.*np.sqrt(6./5.) ) 
+
 input_params = {
-    "te.value": {"dist": "Uniform", "err":  0.1, "min": 0.},
-    "ti.value": {"dist": "Uniform", "err":  0.1, "min": 0.},
-    "te.ddrho": {"dist": "Uniform", "err":  0.1, "max": 0.},
-    "ti.ddrho": {"dist": "Uniform", "err":  0.1, "max": 0.}
+    "te.value": {"dist": "Uniform", "err":  0.1*alpha_q, "min": 0.},
+    "ti.value": {"dist": "Uniform", "err":  0.1*alpha_q, "min": 0.},
+    "te.ddrho": {"dist": "Uniform", "err":  0.1*alpha_q, "max": 0.},
+    "ti.ddrho": {"dist": "Uniform", "err":  0.1*alpha_q, "max": 0.}
 }
 
 nparams = len(input_params)
@@ -136,8 +145,10 @@ exec_path = os.path.join(common_dir, exec_code)
 
 # TODO check if this index is read correctly
 ftube_index_test = ftube_indices(common_dir + '/gem_coreprof_in.cpo', 
-        '/marconi/home/userexternal/yyudin00/code/MFW/standalone/bin/gem_coretransp_out.cpo',
-         False) # TODO : where to get the output file and should it be in common folder?
+        #'/marconi/home/userexternal/yyudin00/code/MFW/standalone/bin/gem_coretransp_out.cpo',
+          xml_dir + '/gem_coretransp_out.cpo',
+          False) # TODO : where to get the output file and should it be in common folder?
+
 print('The flux tube location defined from the cpo files is: {}'.format(ftube_index_test))
 
 # Create the encoder and the decoder
@@ -163,6 +174,7 @@ nftubes = gemxml.get_value("cpu_parameters.parallel_cases.nftubes")
 ncores = npesx*npess*nftubes
 
 pol_order = 1
+#pol_order = 3
 nruns = (pol_order + 1)**nparams # Nr=(Np+Nd, Nd)^T=(Np+Nd)!/(Np!*Nd!)  |=(3+4)!/3!4! = 5*6*7/6 = 35 => instead 3^4=81 ?
 ncores_tot = ncores * nruns
 
