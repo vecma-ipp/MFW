@@ -47,6 +47,7 @@ print('Version of EasyVVUQ: '.format(uq.__version__))
 #TODO double check from XML, alternatively simply read from xml
 ftube_index = 66 # 67 would not consider python/fortran numeration difference and apparently would result in variation differenct in an off place of a profile
 ftube_index = 94
+ftube_index = 68
 
 # Machine name
 SYS = os.environ['SYS']
@@ -181,6 +182,8 @@ ncores_tot = ncores * nruns
 n_cores_p_node = 48
 if SYS == 'MARCONI':
     n_cores_p_node = 48
+elif SYS == 'COBRA':
+    n_cores_p_node = 40
 
 nnodes = ceil(1.*ncores/n_cores_p_node)
 nnodes_tot = ceil(1.*ncores_tot/n_cores_p_node) # not entirely correct due to an 'overkill' problem i.e. residual cores at one/more nodes may not be able to allocate any jobs, but here everything is devisible; also an import from 'math'
@@ -224,7 +227,10 @@ execute=ExecuteLocal(exec_path_comm) # when execution model is 'default': 'execu
 template_par_simple = {
                        ###'name': 'gem_long_var_simp',
                        #'exec': exec_path,
-                       'venv' : os.path.join(HOME, 'python394'), 
+                       
+                       #'venv' : os.path.join(HOME, 'python394'), 
+                       'venv' : os.path.join(HOME, 'conda-envs/python394/'),
+
                        'numCores': ncores,
                        'numNodes': nnodes,
                        'model': mpi_model, # 'default' -- should work with 'default'
