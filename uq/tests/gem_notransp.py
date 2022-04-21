@@ -45,8 +45,9 @@ print('Version of EasyVVUQ: '.format(uq.__version__))
 # run gem_test in strandalone and use:
 #base.utils.ftube_indices('gem_coreprof_in.cpo','gem_coretransp_out.cpo') to get the index
 #TODO double check from XML, alternatively simply read from xml
-ftube_index = 66 # 67 would not consider python/fortran numeration difference and apparently would result in variation differenct in an off place of a profile
-ftube_index = 94
+
+#ftube_index = 66 # 67 would not consider python/fortran numeration difference and apparently would result in variation differenct in an off place of a profile
+#ftube_index = 94
 ftube_index = 68
 
 # Machine name
@@ -61,9 +62,11 @@ tmp_dir = os.environ['SCRATCH']
 # From Slurm script (intelmpi)
 mpi_instance =  os.environ['MPICMD']
 #mpi_instance = 'mpirun'
+
 # do not use intelmpi+MARCONI+QCG !
-mpi_model = 'default' #'srunmpi' #'intelmpi' #'openmpi'
-# works with 'default'
+#mpi_model = 'default' #'srunmpi' #'intelmpi' #'openmpi'
+# works with 'default' on MARCONI, currently not on COBRA
+mpi_model = os.environ['MPIMOD']
 
 # CPO files location
 cpo_dir = os.path.abspath("../workflows/AUG_28906_6") 
@@ -184,6 +187,7 @@ if SYS == 'MARCONI':
     n_cores_p_node = 48
 elif SYS == 'COBRA':
     n_cores_p_node = 40
+    #n_cores_p_node = 80
 
 nnodes = ceil(1.*ncores/n_cores_p_node)
 nnodes_tot = ceil(1.*ncores_tot/n_cores_p_node) # not entirely correct due to an 'overkill' problem i.e. residual cores at one/more nodes may not be able to allocate any jobs, but here everything is devisible; also an import from 'math'
@@ -203,7 +207,12 @@ print('Creating an ExecuteQCGPJ')
                       #             variable='runs/'
                       #            )
 #                      )
-execute=ExecuteLocal(exec_path_comm) # when execution model is 'default': 'execute'  should be set to exec_path_comm
+
+if mpi_model=='default':
+    # when execution model is 'default': 'execute' should be set to exec_path_comm
+    execute=ExecuteLocal(exec_path_comm)
+else:
+    execute=ExecuteLocal(exec_path)
 
 # Execution
 #qcgpjexec = eqi.Executor(my_campaign)
@@ -229,11 +238,11 @@ template_par_simple = {
                        #'exec': exec_path,
                        
                        #'venv' : os.path.join(HOME, 'python394'), 
-                       'venv' : os.path.join(HOME, 'conda-envs/python394/'),
+                       #'venv' : os.path.join(HOME, 'conda-envs/python394'),
 
                        'numCores': ncores,
                        'numNodes': nnodes,
-                       'model': mpi_model, # 'default' -- should work with 'default'
+                       'model': mpi_model, # 'default' -- should work with 'default' at MARCONI
                       }
 
 template_par_cust = {
