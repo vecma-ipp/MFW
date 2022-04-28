@@ -1,4 +1,5 @@
 import os
+import sys
 
 import pickle
 import csv
@@ -44,8 +45,10 @@ print('Version of EasyVVUQ: '.format(uq.__version__))
 # run gem_test in strandalone and use:
 #base.utils.ftube_indices('gem_coreprof_in.cpo','gem_coretransp_out.cpo') to get the index
 #TODO double check from XML, alternatively simply read from xml
-ftube_index = 66 # 67 would not consider python/fortran numeration difference and apparently would result in variation differenct in an off place of a profile
-ftube_index = 94
+
+#ftube_index = 66 # 67 would not consider python/fortran numeration difference and apparently would result in variation differenct in an off place of a profile
+#ftube_index = 94
+ftube_index = 68
 
 # Machine name
 SYS = os.environ['SYS']
@@ -59,9 +62,11 @@ tmp_dir = os.environ['SCRATCH']
 # From Slurm script (intelmpi)
 mpi_instance =  os.environ['MPICMD']
 #mpi_instance = 'mpirun'
+
 # do not use intelmpi+MARCONI+QCG !
-mpi_model = 'default' #'srunmpi' #'intelmpi' #'openmpi'
-# works with 'default'
+#mpi_model = 'default' #'srunmpi' #'intelmpi' #'openmpi'
+# works with 'default' on MARCONI, currently not on COBRA
+mpi_model = os.environ['MPIMOD']
 
 # CPO files location
 cpo_dir = os.path.abspath("../workflows/AUG_28906_6") 
@@ -77,11 +82,19 @@ exec_code = "loop_gem_notransp"  #"loop_gem_notransp"
 
 # Define the uncertain parameters
 # Electron temperature and its gradient
+
+# Find such a nested set of quadrature abcissas so that coordinates used for U[-0.1,0.1]
+# within a 1st-order Gauss-Legandre are used as smaller (by absolute value) cooridantes for 
+# a 3rd-order G-S for some U[-a,+a]
+# Here only a particular coefficient!
+alpha_q = 1.
+#alpha_q = a = 1./np.sqrt( (9./7.) - 6./7.*np.sqrt(6./5.) ) 
+
 input_params = {
-    "te.value": {"dist": "Uniform", "err":  0.1, "min": 0.},
-    "ti.value": {"dist": "Uniform", "err":  0.1, "min": 0.},
-    "te.ddrho": {"dist": "Uniform", "err":  0.1, "max": 0.},
-    "ti.ddrho": {"dist": "Uniform", "err":  0.1, "max": 0.}
+    "te.value": {"dist": "Uniform", "err":  0.1*alpha_q, "min": 0.},
+    "ti.value": {"dist": "Uniform", "err":  0.1*alpha_q, "min": 0.},
+    "te.ddrho": {"dist": "Uniform", "err":  0.1*alpha_q, "max": 0.},
+    "ti.ddrho": {"dist": "Uniform", "err":  0.1*alpha_q, "max": 0.}
 }
 
 nparams = len(input_params)
@@ -136,8 +149,10 @@ exec_path = os.path.join(common_dir, exec_code)
 
 # TODO check if this index is read correctly
 ftube_index_test = ftube_indices(common_dir + '/gem_coreprof_in.cpo', 
-        '/marconi/home/userexternal/yyudin00/code/MFW/standalone/bin/gem_coretransp_out.cpo',
-         False) # TODO : where to get the output file and should it be in common folder?
+        #'/marconi/home/userexternal/yyudin00/code/MFW/standalone/bin/gem_coretransp_out.cpo',
+          xml_dir + '/gem_coretransp_out.cpo',
+          False) # TODO : where to get the output file and should it be in common folder?
+
 print('The flux tube location defined from the cpo files is: {}'.format(ftube_index_test))
 
 # Create the encoder and the decoder
@@ -163,12 +178,16 @@ nftubes = gemxml.get_value("cpu_parameters.parallel_cases.nftubes")
 ncores = npesx*npess*nftubes
 
 pol_order = 1
+#pol_order = 3
 nruns = (pol_order + 1)**nparams # Nr=(Np+Nd, Nd)^T=(Np+Nd)!/(Np!*Nd!)  |=(3+4)!/3!4! = 5*6*7/6 = 35 => instead 3^4=81 ?
 ncores_tot = ncores * nruns
 
 n_cores_p_node = 48
 if SYS == 'MARCONI':
     n_cores_p_node = 48
+elif SYS == 'COBRA':
+    n_cores_p_node = 40
+    #n_cores_p_node = 80
 
 nnodes = ceil(1.*ncores/n_cores_p_node)
 nnodes_tot = ceil(1.*ncores_tot/n_cores_p_node) # not entirely correct due to an 'overkill' problem i.e. residual cores at one/more nodes may not be able to allocate any jobs, but here everything is devisible; also an import from 'math'
@@ -188,7 +207,12 @@ print('Creating an ExecuteQCGPJ')
                       #             variable='runs/'
                       #            )
 #                      )
-execute=ExecuteLocal(exec_path_comm) # when execution model is 'default': 'execute'  should be set to exec_path_comm
+
+if mpi_model=='default':
+    # when execution model is 'default': 'execute' should be set to exec_path_comm
+    execute=ExecuteLocal(exec_path_comm)
+else:
+    execute=ExecuteLocal(exec_path)
 
 # Execution
 #qcgpjexec = eqi.Executor(my_campaign)
@@ -212,10 +236,13 @@ execute=ExecuteLocal(exec_path_comm) # when execution model is 'default': 'execu
 template_par_simple = {
                        ###'name': 'gem_long_var_simp',
                        #'exec': exec_path,
-                       'venv' : os.path.join(HOME, 'python394'), 
+                       
+                       #'venv' : os.path.join(HOME, 'python394'), 
+                       #'venv' : os.path.join(HOME, 'conda-envs/python394'),
+
                        'numCores': ncores,
                        'numNodes': nnodes,
-                       'model': mpi_model, # 'default' -- should work with 'default'
+                       'model': mpi_model, # 'default' -- should work with 'default' at MARCONI
                       }
 
 template_par_cust = {
