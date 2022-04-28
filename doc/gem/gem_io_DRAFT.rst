@@ -116,14 +116,14 @@ avgen = (1 - alpha) * avgen + alpha * en
 alpha = 0.005
 
 -----------------------
-### Flux tube initalisation
+### Flux tube location initialisation
 
-Check are happening at:
+Checks are happening at:
 '/new-imas/itmparams.f90' 
 
 ra0 = (REAL(2*myftube+1)/REAL(2*nftubes))**0.7
 
-  nft=1, mft=1 : ra0 = 1.33
+  nft=1, mft=1 : ra0 = 1.33 - physically meaningless?
   nft=1, mft=0 : ra0 = 0.62
 
   nft=8        : ra0 = [0.14, 0.31, 0.44, 0.56, 0.67, 0.77, 0.86, 0.95]
