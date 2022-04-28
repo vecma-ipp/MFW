@@ -209,7 +209,7 @@ print('Creating an ExecuteQCGPJ')
 #                      )
 
 if mpi_model=='default':
-    # when execution model is 'default': 'execute' should be set to exec_path_comm
+    # When execution model is 'default': 'execute' should be set to exec_path_comm
     execute=ExecuteLocal(exec_path_comm)
 else:
     execute=ExecuteLocal(exec_path)
