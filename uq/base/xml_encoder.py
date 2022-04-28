@@ -1,12 +1,12 @@
 import os
 import logging
 from easyvvuq import OutputType
-from easyvvuq.encoders.base import BaseEncoder
+#from easyvvuq.encoders.base import BaseEncoder
 from .xml_element import XMLElement
 
-
 # Specific Encoder for XML files
-class XMLEncoder(BaseEncoder, encoder_name="xml_encoder"):
+#class XMLEncoder(BaseEncoder, encoder_name="xml_encoder"):
+class XMLEncoder:
 
     def __init__(self, xml_filename, input_dir,
                  input_params=None, target_filename=None):
