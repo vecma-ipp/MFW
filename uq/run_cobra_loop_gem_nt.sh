@@ -13,7 +13,7 @@
 ## number of nodes and tasks per node
 # order=3, n_params=4, n_subd=8 -> 1024 across 40 (80 for hthreading, not used) cpus -> 27 nodes
 ###SBATCH --nodes=27 # MIND number of parameters in variation in the script
-#SBATCH --nodes=5
+#SBATCH --nodes=4
 #SBATCH --ntasks-per-node=40
 ###SBATCH --ntasks-per-core=1
 ###SBATCH --cpus-per-task=8
@@ -41,7 +41,7 @@ export SCRATCH=$SCRATCH
 #export PYTHONPATH=/u/yyudin/codes/MFW/uq:$PYTHONPATH
 
 # MPI programs starter, MPCDF recommens using 'srun' only at COBRA!
-export MPICMD=srun #mpirun #mpiexec #intelmpi
+export MPICMD=mpirun #srun #mpiexec #intelmpi
 export LD_LIBRARY_PATH=${FFTW_HOME}/lib:${LD_LIBRARY_PATH}
 
 # For QCG-PilotJob usage

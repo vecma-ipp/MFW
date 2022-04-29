@@ -42,11 +42,11 @@ print('TEST GEM-NT-VARY: START')
 print('Version of EasyVVUQ: '.format(uq.__version__))
 
 # We test 1 flux tube
-# run gem_test in strandalone and use:
+# Run gem_test in strandalone and use:
 #base.utils.ftube_indices('gem_coreprof_in.cpo','gem_coretransp_out.cpo') to get the index
 #TODO double check from XML, alternatively simply read from xml
 
-#ftube_index = 66 # 67 would not consider python/fortran numeration difference and apparently would result in variation differenct in an off place of a profile
+#ftube_index = 66 # 67 would not consider python/fortran numeration difference and apparently would result in variation in an off place of a profile
 #ftube_index = 94
 ftube_index = 68
 
@@ -63,9 +63,9 @@ tmp_dir = os.environ['SCRATCH']
 mpi_instance =  os.environ['MPICMD']
 #mpi_instance = 'mpirun'
 
-# do not use intelmpi+MARCONI+QCG !
+# Do not use intelmpi+MARCONI+QCG !
 #mpi_model = 'default' #'srunmpi' #'intelmpi' #'openmpi'
-# works with 'default' on MARCONI, currently not on COBRA
+# Works with 'default' on MARCONI, currently not on COBRA
 mpi_model = os.environ['MPIMOD']
 
 # CPO files location
@@ -78,7 +78,7 @@ xml_dir = os.path.abspath("../standalone/bin")
 
 # The executable code to run
 obj_dir = os.path.abspath("../standalone/bin/"+SYS)
-exec_code = "loop_gem_notransp"  #"loop_gem_notransp" 
+exec_code = "loop_gem_notransp" 
 
 # Define the uncertain parameters
 # Electron temperature and its gradient
@@ -178,7 +178,7 @@ nftubes = gemxml.get_value("cpu_parameters.parallel_cases.nftubes")
 ncores = npesx*npess*nftubes
 
 pol_order = 1
-#pol_order = 3
+
 nruns = (pol_order + 1)**nparams # Nr=(Np+Nd, Nd)^T=(Np+Nd)!/(Np!*Nd!)  |=(3+4)!/3!4! = 5*6*7/6 = 35 => instead 3^4=81 ?
 ncores_tot = ncores * nruns
 
@@ -187,7 +187,7 @@ if SYS == 'MARCONI':
     n_cores_p_node = 48
 elif SYS == 'COBRA':
     n_cores_p_node = 40
-    #n_cores_p_node = 80
+    #n_cores_p_node = 80 # for hyperthreading
 
 nnodes = ceil(1.*ncores/n_cores_p_node)
 nnodes_tot = ceil(1.*ncores_tot/n_cores_p_node) # not entirely correct due to an 'overkill' problem i.e. residual cores at one/more nodes may not be able to allocate any jobs, but here everything is devisible; also an import from 'math'
@@ -238,7 +238,7 @@ template_par_simple = {
                        #'exec': exec_path,
                        
                        #'venv' : os.path.join(HOME, 'python394'), 
-                       #'venv' : os.path.join(HOME, 'conda-envs/python394'),
+                       #'venv' : os.path.join(HOME, 'conda-envs/python394'), # for COBRA where Python is managed through conda, activation with executable does not work
 
                        'numCores': ncores,
                        'numNodes': nnodes,
@@ -273,7 +273,7 @@ actions = Actions(
                   Encode(encoder), 
                   execute,
                   Decode(decoder)
-                 ) # does CreateRunDirectory also set ups the dir? (for us the dir's themselves might be already created)
+                 ) # TODO: create a version w/o CreateDirectory and see where the outputs are spawned
 
 # Add the app (automatically set as current app)
 my_campaign.add_app(name=campaign_name,
@@ -316,14 +316,6 @@ print('Now finally analysing results')
 #TODO: make a decoder that check the results folder and using a regex finds the latest number of iteration or the oldest file
 analysis = uq.analysis.PCEAnalysis(sampler=my_sampler, qoi_cols=output_columns)
 my_campaign.apply_analysis(analysis)
-
-# TODO: make a restart version of the workflow
-# 1. get exisiting profile shapes and their description as a varied parameter
-# 2. for the _coreprofile.cpo get the snapshot files for GEM (TFILE)
-# 3. get the same xml and equilibium files that were used for previus batch of iterations
-#      as well as info on flux tube coodinate, and parallel processing info 
-# 5. run the campaign
-# TODO: reuse functionality from the campaign restart (resume?) functionality
 
 # Get results
 results = my_campaign.get_last_analysis()
