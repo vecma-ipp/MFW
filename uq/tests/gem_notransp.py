@@ -10,7 +10,14 @@ from math import ceil
 import easyvvuq as uq
 
 # EasyVVUQ/QCG-PJ
-#import eqi
+
+# from easyvvuq1.1
+from easyvvuq.actions import Encode, Decode, Actions, CreateRunDirectory, ExecuteQCGPJ, ExecuteLocal, ExecuteSLURM, QCGPJPool
+from easyvvuq.actions.execute_qcgpj import EasyVVUQParallelTemplate
+
+# form qcg-pj
+from qcg.pilotjob.executor_api.qcgpj_executor import QCGPJExecutor
+from qcg.pilotjob.api.manager import LocalManager
 
 # from ual
 from ascii_cpo import read
@@ -20,14 +27,7 @@ from base.cpo_encoder import CPOEncoder
 from base.cpo_decoder import CPODecoder
 from base.xml_element import XMLElement
 from base.utils import cpo_inputs, ftube_indices
-
-# from easyvvuq1.1
-from easyvvuq.actions import Encode, Decode, Actions, CreateRunDirectory, ExecuteQCGPJ, ExecuteLocal, ExecuteSLURM, QCGPJPool
-from easyvvuq.actions.execute_qcgpj import EasyVVUQParallelTemplate
-
-# form qcg-pj
-from qcg.pilotjob.executor_api.qcgpj_executor import QCGPJExecutor
-from qcg.pilotjob.api.manager import LocalManager
+from base.evvuq_partemplate_wenv import EasyVVUQParallelTemplateWithEnv
 
 
 '''
@@ -67,6 +67,7 @@ mpi_instance =  os.environ['MPICMD']
 #mpi_model = 'default' #'srunmpi' #'intelmpi' #'openmpi'
 # Works with 'default' on MARCONI, currently not on COBRA
 mpi_model = os.environ['MPIMOD']
+template_type = os.environ['EXECTEMPL']
 
 # CPO files location
 cpo_dir = os.path.abspath("../workflows/AUG_28906_6") 
@@ -291,7 +292,8 @@ try:
 
     with QCGPJPool(
                   qcgpj_executor=QCGPJExecutor(log_level='debug'), # =executor,
-                  template=EasyVVUQParallelTemplate(),
+                  #template=EasyVVUQParallelTemplate(),
+                  template=EasyVVUQParallelTemplateWithEnv(),
                   template_params=template_par_simple,  #_cust
                   ) as qcgpj:
 

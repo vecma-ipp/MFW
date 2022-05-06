@@ -40,8 +40,8 @@ export SCRATCH=$SCRATCH
 #export PYTHONPATH=/u/yyudin/codes/ual_python_interface:$PYTHONPATH
 #export PYTHONPATH=/u/yyudin/codes/MFW/uq:$PYTHONPATH
 
-# MPI programs starter, MPCDF recommens using 'srun' only at COBRA!
-export MPICMD=mpirun #srun #mpiexec #intelmpi
+# MPI programs starter, MPCDF recommends using 'srun' only at COBRA!
+export MPICMD=mpiexec #mpirun #srun #intelmpi
 export LD_LIBRARY_PATH=${FFTW_HOME}/lib:${LD_LIBRARY_PATH}
 
 # For QCG-PilotJob usage
@@ -53,7 +53,8 @@ export EASYPJ_CONFIG=conf.sh
 export I_MPI_HYDRA_BOOTSTRAP_EXEC_EXTRA_ARGS="--exclusive"
 
 # Define some global variables to configure UQ software
-export MPIMOD=default #srunmpi
+export MPIMOD=srunmpi #default
+export EXECTEMPL=hydra_exclusive #short
 
 export NCORESPTASK=8
 
