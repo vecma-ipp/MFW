@@ -1,3 +1,7 @@
+"""
+Provides functions to work on CPO outputs of turbulence code GEM
+and a pipeline of post-processing
+"""
 import pandas as pd
 import numpy as np
 import matplotlib.pylab as plt
@@ -30,6 +34,9 @@ import pprint
 from IPython.core import ultratb
 sys.excepthook = ultratb.FormattedTB(mode='Verbose', color_scheme='Linux', call_pdb=False)
 
+###################################################
+######### FUNCTIONS DEFINITIONS ###################
+###################################################
 
 def func_from_data(x, data):
     return data[1, (np.abs(data[0,:] - x)).argmin()]
@@ -695,7 +702,7 @@ def read_run_uq(db_path, wd_path='./'):
     input_values = [r[1]['params'] for r in runs]
 
     #run1 = my_campaign.campaign_db.run("run_1")
-    run1 = camp_db.run("run_1")
+    run1 = camp_db.run("run_1", campaign=1)
     input_names = list(run1['params'].keys())
     print(">Names of params: ".format(input_names))
 
@@ -847,7 +854,9 @@ def produce_stats_dataframes(val_trend_avg, val_std_s):
 
     return scan_df, stats_df
 
-###########################################
+#################################################
+#### MAIN FUNCTION: PIPELINE OF PROCESSING ######
+#################################################
 
 def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernum='false'):
     """
@@ -919,7 +928,7 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
         db_id = 10002794
         camp_id = 'moj202gj'
 
-        cpo_num = int(foldername[-1])
+        cpo_num = int(foldername[foldername.rfind('_')+1:])
         mmiter_num = cpo_num #6 -was in file on Marconi 
 
         workdir_camp_db = './' 
@@ -997,7 +1006,7 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
                 ac_len, ac_num = get_coreprof_ev_acf(val_wind_s[runn], 
                                     name=code_name+'_'+p+'_'+a+'stats'+'_'+str(runn), 
                                     lags=lags_list) 
-                #NB!: uncertainty of the ACF computation ~ Var(X)/sqrt(n) , where n=N_samples/N_lags
+                #NB!: uncertainty of the ACF computation ~ Var(X)/sqrt(n) , where n=N_samples/L_lags
                 ac_len_s.append(ac_len)
                 ac_num_s.append(ac_num)
                 #TODO: acf function assumes multiple cases are passed and returns list - ..[0] is a workaround, change
@@ -1010,6 +1019,7 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
                 val_ev_acf_s.append(val_ev_acf)
 
                 print([ac_num[0], ac_len[0], val_wind_s[runn].shape, val_ev_acf.shape, val_ev_acf]) ###DEBUG
+                
 
             # 4.3) Plotting histograms and KDEs of the profile values evolution
             #plot_coreprofval_dist(val_ev_s[i], name=p+'_'+a+'_'+mainfoldernum, discr_level=32)
@@ -1163,6 +1173,10 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
             # - why it is so high? is composition of exponential avaraging is another exponential averagin -
             # - if so, what is alpha_comp?
             #TODO exponential averaging with a symmetric window -> apply padding
+
+#################################
+#### OPTIONS FOR MAIN() CALL ####
+#################################
 
 if __name__ == '__main__':
 
