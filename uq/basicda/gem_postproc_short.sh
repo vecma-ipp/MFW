@@ -5,7 +5,7 @@
 #0. Set directories
 # folder of output CPO files, should be same as number of SLURM submissions (macro-macro-iterations)
 # should be the same as number of MMit TO process
-CPONUM=${1:-12}
+CPONUM=${1:-1}
 
 # number of runs in current UQ campaign
 RUNRANGE=16
@@ -16,7 +16,7 @@ DIR=$SCRATCH'/VARY_1FT_GEM_NT_'$UQCAMPDIR
 
 DIR_SRC=$DIR'/runs/runs_0-100000000/runs_0-1000000/runs_0-10000/runs_0-100/'
 
-DIR_CODE=$HOME'/code/MFW/uq/basicda/'
+DIR_CODE=$HOME'/codes/MFW/uq/basicda/'
 
 #1. Transfer output files from the run directories to a separete cpo dir
 
@@ -47,7 +47,7 @@ CPONUMPR=$((CPONUM-1))
 
 ### NEXT LINES ARE FOR DEBUG
 
-export PYTHONPATH=/marconi/home/userexternal/yyudin00/code/ual_python_interface:/marconi/home/userexternal/yyudin00/code/MFW/uq/base:${PYTHONPATH}
+#export PYTHONPATH=/marconi/home/userexternal/yyudin00/code/ual_python_interface:/marconi/home/userexternal/yyudin00/code/MFW/uq/base:${PYTHONPATH}
 
 #python3 gem_da.py ${DIR_SRC}/cpo/${CPONUM} 0 1 ${RUNRANGE} debug_${UQCAMPDIR}_${CPONUM}
 #python3 gem_da.py debug_${UQCAMPDIR}_${CPONUM} 1 1 ${RUNRANGE} debug_${UQCAMPDIR}_${CPONUM}

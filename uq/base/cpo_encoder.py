@@ -3,13 +3,16 @@ import logging
 import numpy as np
 import scipy.interpolate
 from easyvvuq import OutputType
-from easyvvuq.encoders.base import BaseEncoder
+#from easyvvuq.encoders.base import BaseEncoder
+#from easyvvuq.encoders.generic_template import GenericEncoder
 from ascii_cpo import read, write
 from .cpo_element import CPOElement
 
 
 # Specific Encoder for CPO files
-class CPOEncoder(BaseEncoder, encoder_name="cpo_encoder"):
+#class CPOEncoder(BaseEncoder, encoder_name="cpo_encoder"):
+#class CPOEncoder(GenericEncoder, encoder_name="cpo_encoder"):
+class CPOEncoder:
 
     def __init__(self, cpo_filename, cpo_name, input_dir,
                  input_params=None, target_filename=None, ftube_index=None):
