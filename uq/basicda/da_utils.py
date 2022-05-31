@@ -4,6 +4,9 @@ import pandas as pd
 import chaospy as cp
 import time as t
 
+import glob
+import ast
+
 import matplotlib
 #matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -636,3 +639,59 @@ def plot_histograms(y_orig, y_orig_clean, y_pred, y_pred_clean):
     plt.hist(y_pred_clean, bins=24)
     plt.savefig(os.path.join(wrt_dir, 'y_pred_cl.png'))
     plt.close()
+
+def plot_sobols_pie(sobol_ind_vals, labels, name=''):
+    """
+    Saves PNG pie charts representing Sobol indices as partition of unity 
+    for paramaters names with labels
+    """
+    explode = [.0,]*len(sobol_ind_vals)
+    explode[np.argmax(sobol_ind_vals)] = 0.1
+    
+    fig1, ax1 = plt.subplots()
+    ax1.pie(sobol_ind_vals, explode=explode, labels=labels, 
+            autopct='%.2f', shadow=False, startangle=0)
+
+    plt.savefig('sobols_pie_'+name+'.png')
+    plt.close()
+
+def read_sobols_from_logs(labels=['te_val', 'ti_val', 'te_grad', 'ti_grad']):
+
+    # read sobol values in a dict    
+    list_log_filenames = glob.glob('test*log*')
+    # TODO: actually some log may contain garbage values
+
+    sob_list_list = []
+
+    for log in list_log_filenames:
+        with open(log, 'r') as input:
+
+            sob_dict = {}
+            ti_transp = False
+
+            for line in input:
+
+                # find if in ti_transp
+                if 'TI TRANSP FLUX' in line:
+                    ti_transp = True
+
+                # find Sobols
+                if ti_transp and 'Sob1' in line:
+                    line = line.replace('array([', '')
+                    line = line.replace('])', '')
+                    line = line[7:-1]
+                    #line = "\""+line[7:-1]+"\"" 
+
+                    # read sobol values in a dict
+                    sob_dict = ast.literal_eval(line)
+
+                    # put values in list(of logs) of lists(of values)
+                    sob_list = list(sob_dict.values())
+
+                    break
+
+            if ti_transp:
+                sob_list_list.append(sob_list)
+
+    return sob_list_list
+
