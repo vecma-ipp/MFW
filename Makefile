@@ -274,6 +274,12 @@ clean-gem: revert-gem
 	&& echo -e "\033[32m\033[1m -- OK -- \033[0m") \
 	|| echo -e "\033[31m\033[1m -- FAIL -- \033[0m"
 
+compile-gem: ual libbds clean-gem patch-gem
+	@echo -e "\033[36m\033[1m ++++ Build GEM (w/o getting from a repository) ++++ \033[0m"; \
+        cp mppein.h90.modified externals/gem/include/mppein.h90 ;\
+	($(MAKE) --no-print-directory -C externals -f Makefile.gem \
+	&& echo -e "\033[32m\033[1m -- OK -- \033[0m") \
+	|| echo -e "\033[31m\033[1m -- FAIL -- \033[0m"
 
 # dfefi (version from IPP repos) ###############################################
 dfefi: ual libbds get-dfefi

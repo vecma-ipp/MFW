@@ -1,0 +1,199 @@
+!...  MPP initialisation
+
+#ifdef MPI
+  IF (npes /= npesx*npesy*npess*nftubes) THEN
+     WRITE (0,*) 'PE ',mype,' number of PEs came back as ',npes, &
+          ', should be ',npesx*npesy*npess*nftubes
+     STOP
+  END IF
+
+  dims(1)=nftubes
+  dims(2)=npess
+  dims(3)=npesx
+  dims(4)=npesy
+  periods(1)=.false.
+  periods(2)=.true.
+  periods(3)=.true.
+  periods(4)=.true.
+  reorder=.false.
+
+!... DEBUG
+  WRITE (0,*) 'DEBUG: for MPI_Cart_create, dims=', dims, ' periods=', periods, &
+       ' reorder=', reorder, ' commall=', commall, ' ierr=', ierr
+  WRITE (0,*) ' mype=', mype, ' coords=', coords
+!... END OF DEBUG
+
+  CALL MPI_Cart_create( MPI_COMM_WORLD, 4, dims, periods, reorder, &
+       commall, ierr)
+
+!... DEBUG
+  WRITE (0,*) 'IF SYNCHRONIZING, SHOULD NOT PASS HERE'
+!... END OF DEBUG
+
+  CALL MPI_Comm_rank( commall, mype, ierr )
+
+  CALL MPI_Cart_coords( commall, mype, 4, coords, ierr )
+
+  myftube=coords(1)
+  mypes=coords(2)
+  mypex=coords(3)
+  mypey=coords(4)
+
+  CALL MPI_Cart_sub( commall, periods, commftube, ierr )
+
+  periods(1)=.true.
+  periods(2)=.false.
+  periods(3)=.false.
+  CALL MPI_Cart_sub( commftube, periods, commsdir, ierr )
+
+  periods(1)=.false.
+  periods(2)=.true.
+  periods(3)=.false.
+  CALL MPI_Cart_sub( commftube, periods, commxdir, ierr )
+
+  periods(1)=.false.
+  periods(2)=.false.
+  periods(3)=.true.
+  CALL MPI_Cart_sub( commftube, periods, commydir, ierr )
+
+  periods(1)=.false.
+  periods(2)=.true.
+  periods(3)=.true.
+  CALL MPI_Cart_sub( commftube, periods, commdplane, ierr )
+
+  periods(1)=.true.
+  periods(2)=.false.
+  periods(3)=.true.
+  CALL MPI_Cart_sub( commftube, periods, commfsfc, ierr )
+
+  CALL MPI_Cart_shift( commsdir, 0, 1, mypem, mypep, ierr )
+  CALL MPI_Cart_shift( commxdir, 0, 1, mypew, mypee, ierr )
+  CALL MPI_Cart_shift( commydir, 0, 1, mypel, myper, ierr )
+
+  IF (mypep < 0) mypep = 0
+  IF (mypem < 0) mypem = npess-1
+
+  IF (myper < 0) myper = 0
+  IF (mypel < 0) mypel = npesy-1
+
+  CALL MPI_Comm_rank( commftube, mypeftube, ierr )
+  CALL MPI_Comm_rank( commsdir, mypesdir, ierr )
+  CALL MPI_Comm_rank( commxdir, mypexdir, ierr )
+  CALL MPI_Comm_rank( commydir, mypeydir, ierr )
+  CALL MPI_Comm_rank( commdplane, mypedplane, ierr )
+  CALL MPI_Comm_rank( commfsfc, mypefsfc, ierr )
+
+  CALL MPI_Comm_size( commftube, npesftube, ierr )
+  IF (npesftube /= npess*npesx*npesy) THEN
+     WRITE (0,*) 'PE ',mype,' number of PEs in ftube came back as ',npesftube, &
+          ', should be ',npess*npesx*npesy
+     STOP
+  END IF
+
+  CALL MPI_Comm_size( commsdir, iplt, ierr )
+  IF (iplt /= npess) THEN
+     WRITE (0,*) 'PE ',mype,' number of PEs in s dir came back as ',iplt, &
+          ', should be ',npess
+     STOP
+  END IF
+
+  CALL MPI_Comm_size( commxdir, iplt, ierr )
+  IF (iplt /= npesx) THEN
+     WRITE (0,*) 'PE ',mype,' number of PEs in x dir came back as ',iplt, &
+          ', should be ',npesx
+     STOP
+  END IF
+
+  CALL MPI_Comm_size( commydir, iplt, ierr )
+  IF (iplt /= npesy) THEN
+     WRITE (0,*) 'PE ',mype,' number of PEs in y dir came back as ',iplt, &
+          ', should be ',npesy
+     STOP
+  END IF
+
+!...  find destinations of I/O segments
+
+  ALLOCATE(idest(0:npesy-1,0:npesx-1,0:npess-1))
+
+  IF (npesftube > 1) THEN
+
+     DO ipe=0,npesftube-1
+        IF (ipe == mypeftube) THEN
+           ipey=mypey
+           ipex=mypex
+           ipes=mypes
+        END IF
+        CALL MPI_Bcast(ipey,1,MPI_INTEGER,ipe,commftube,ierr)
+        CALL MPI_Bcast(ipex,1,MPI_INTEGER,ipe,commftube,ierr)
+        CALL MPI_Bcast(ipes,1,MPI_INTEGER,ipe,commftube,ierr)
+        idest(ipey,ipex,ipes)=ipe
+     END DO
+
+  ELSE
+     idest=0
+  END IF
+
+!...  write table
+
+  IF (npes < 150) THEN
+  WRITE (ffile,100) MOD(mype/100,10),MOD(mype/10,10),MOD(mype,10)
+100 FORMAT('fout_',3i1)
+
+  WRITE (0,*) 'PE ',mype,ffile
+  OPEN (10,file=ffile,form='formatted')
+
+  WRITE (10,*) 'PE ',mype,' table (y/x -->) for each s'
+  WRITE (10,*) ' '
+  DO ipes=0,npess-1
+     DO ipey=0,npesy-1
+        WRITE (10,*) idest(ipey,:,ipes)
+     END DO
+     WRITE (10,*) ' '
+  END DO
+  WRITE (10,*) ' neighbors: l ',mypel,'  r ',myper,'  w ',mypew,'  e ',mypee
+  WRITE (10,*) ' neighbors: m ',mypem,'  p ',mypep
+  WRITE (10,*) ' '
+  WRITE (10,*) ' PE in y dir: ',mypeydir
+  WRITE (10,*) ' PE in x dir: ',mypexdir
+  WRITE (10,*) ' PE in s dir: ',mypesdir
+  WRITE (10,*) ' '
+  CLOSE (10)
+  END IF
+
+!...  name I/O files
+
+  WRITE (hfile,115) 'h',MOD(myftube/10,10),MOD(myftube,10)
+  WRITE (dfile,115) 'd',MOD(myftube/10,10),MOD(myftube,10)
+  WRITE (pfile,115) 'p',MOD(myftube/10,10),MOD(myftube,10)
+  WRITE (tfilein,115) 't',MOD(myftube/10,10),MOD(myftube,10)
+  WRITE (tfileout,115) 't',MOD(myftube/10,10),MOD(myftube,10)
+115 FORMAT(a1,2i1,'.dat')
+
+  IF (mypeftube == 0) THEN
+     WRITE (0,*) 'files ',hfile,' ',dfile,' ',pfile,' ',tfilein,' ',tfileout
+     WRITE (0,*) ' '
+!.     CALL flush_file(0)
+  END IF
+
+!...  done MPI stuff
+
+#else
+
+  npesx0=npesx
+  npesy0=npesy
+  npess0=npess
+
+  npesx=1
+  npesy=1
+  npess=1
+  nftubes=1
+
+  hfile='hdw.dat'
+  pfile='pdw.dat'
+  dfile='ddw.dat'
+  tfilein='tdw.dat'
+  tfileout='tdw.dat'
+
+  WRITE (0,*) 'files ',hfile,' ',dfile,' ',pfile,' ',tfilein,' ',tfileout
+#endif
+
