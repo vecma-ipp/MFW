@@ -1,0 +1,466 @@
+SUBROUTINE Gem(eq_in, coreprof_in, coretransp_out, code_parameters)
+
+!...  3D homogeneous electromagnetic gyrofluid model
+
+  USE MPEs
+
+  USE Coeff
+  USE Vars
+  USE Vconv
+
+  USE ITM_CPOs
+
+  IMPLICIT NONE
+
+#ifdef IMAS
+  TYPE (ids_equilibrium) :: eq_in
+  TYPE (ids_core_profiles) :: coreprof_in
+  TYPE (ids_core_transport) :: coretransp_out
+  TYPE (ids_parameters_input) :: code_parameters
+#else
+  TYPE (type_equilibrium), POINTER :: eq_in(:)
+  TYPE (type_coreprof), POINTER :: coreprof_in(:)
+  TYPE (type_coretransp), POINTER :: coretransp_out(:)
+  TYPE (type_param) :: code_parameters
+#endif
+
+  INTEGER :: ieof,iplt,idg,istp
+  REAL, SAVE :: time = -1.0
+  REAL :: tau,taumin,dtime,et,zt0,zt1
+
+  LOGICAL :: write_tests = .false.
+  LOGICAL, SAVE :: first_flag = .true.
+
+!...  XML declarations
+
+#ifdef IMAS
+  integer(ids_int) :: return_status
+#else
+  integer(ITM_I4) :: return_status
+#endif
+
+  character(len = 132), target :: codename(1) = 'GEM'
+  character(len = 132), target :: codeversion(1) = 'Jul 2016'
+
+!...  PE info
+
+#ifdef MPI
+  CALL MPI_Comm_size( MPI_COMM_WORLD, npes, ierr )
+  CALL MPI_Comm_rank( MPI_COMM_WORLD, mype, ierr )
+#endif
+
+!...  check some things
+
+#ifndef IMAS
+  IF (write_tests) THEN
+
+     write (0,*) 'PE ',mype,' enters GEM'
+     write (0,*) 'PE ',mype,' size of CPOs: coreprof ',SIZE(coreprof_in), &
+          ' eq ',SIZE(eq_in)
+     IF (mype == 0) THEN
+        write (0,*) 'PE 0: code parameters '
+        write (0,*) code_parameters%parameters(:)
+     END IF
+
+     WRITE (cpofile,112) MOD(mype/100,10),MOD(mype/10,10),MOD(mype,10)
+112  FORMAT('cpos_',3i1)
+
+     write (0,*) 'PE CPO file ',cpofile
+
+     call open_write_file(12, cpofile )
+     call write_cpo(coreprof_in(1), 'Coreprof' )
+     call write_cpo(eq_in(1), 'Equil' )
+     call close_write_file
+
+  END IF
+
+!...  assign parms
+
+  allocate(coretransp_out(1))
+  allocate(coretransp_out(1)%codeparam%codename(1))
+  allocate(coretransp_out(1)%codeparam%codeversion(1))
+
+  if (.not. associated(code_parameters%parameters)) then
+    write(*,*) 'ERROR: GEM parameters not associated!'
+    stop
+  else
+    allocate(coretransp_out(1)%codeparam%parameters(size( &
+     code_parameters%parameters)))
+  end if
+
+!  write(*,*) 'GEM Parameters : ', code_parameters%parameters
+
+!-- add to coretransp
+  coretransp_out(1)%codeparam%codename = codename
+  coretransp_out(1)%codeparam%codeversion = codeversion
+  coretransp_out(1)%codeparam%parameters = code_parameters%parameters
+
+#else
+
+!...  assign parms
+
+  if (.not. associated(code_parameters%parameters_value)) then
+    write(*,*) 'ERROR: GEM parameters not associated!'
+    stop
+  end if
+
+!-- add to coretransp
+  allocate(coretransp%code%name(1))
+  allocate(coretransp%code%version(1))
+  allocate(coretransp%code%parameters(size(code_parameters%parameters_value)))
+
+  coretransp%code%name = codename
+  coretransp%code%version = codeversion
+  coretransp%code%parameters = code_parameters%parameters_value
+
+#endif
+
+!-- assign code parameters to internal variables
+  call assign_turb_parameters(code_parameters, return_status)
+
+  if (return_status /= 0) then
+    write(*,*) 'ERROR: Could not assign GEM parameters.'
+    return
+  end if
+
+!  write(*,*) 'PE ',mype,' done assigning GEM parameters'
+
+!...  start initialisation
+
+#ifdef PERF
+  CALL PERFINIT
+
+  CALL PERFON('init')
+#endif
+
+!...  system initialisation
+
+  IF (first_flag) THEN
+    
+!... DEBUG
+    WRITE(0,*) 'BEFORE calling MPPEIN, mype=', mype, ' first_flag=', first_flag 
+!... END OF DEBUG  
+
+#include <mppein.h90>
+
+  END IF
+
+!...  incoming CPOs before metric does parms
+
+#ifdef IMAS
+  CALL IDS_Copy(coreprof_in,coreprof)
+  CALL IDS_Copy(eq_in,eq)
+#else
+  CALL Copy_cpo(coreprof_in(1),coreprof)
+  CALL Copy_cpo(eq_in(1),eq)
+
+  IF (write_cpos .AND. (mype == 0)) THEN
+     call open_write_file(12, 'GEMCPOs' )
+     call write_cpo(coreprof, 'Coreprof' )
+     call write_cpo(eq, 'Equil' )
+     call close_write_file
+  END IF
+#endif
+
+!...  geometry
+
+  CALL Metric
+
+!...  allocations
+
+  IF (first_flag) THEN
+
+  INCLUDE 'vset.h90'
+
+  END IF
+
+!...  write h file possibly changed by ITMParms
+
+  IF (mypeftube == 0) THEN
+     IF (npes == 1) hfile='h00.dat'
+     OPEN (15,file=hfile,form='formatted')
+     WRITE (15,parm)
+     CLOSE (15)
+  END IF
+
+!...  initial state
+!...      only on first call in a looped workflow
+
+  IF (first_flag) THEN
+
+!...      snapsin tries to find stashed files
+
+  CALL Snapsin(60+myftube,time,ieof)
+
+  CALL Reduce
+
+  fuu(:,:,:,1,fuu_ind(0))=uu(:,:,:,1)
+  fuu(:,:,:,2,fuu_ind(0))=uu(:,:,:,mupsi)-rmue*uu(:,:,:,2)
+  fuu(:,:,:,3,fuu_ind(0))=0.5*uu(:,:,:,3)
+  fuu(:,:,:,4,fuu_ind(0))=uu(:,:,:,4)
+  fuu(:,:,:,5,fuu_ind(0))=rmue*uu(:,:,:,5)
+  fuu(:,:,:,6,fuu_ind(0))=rmue*uu(:,:,:,6)
+
+  fuu(:,:,:,7,fuu_ind(0))=uu(:,:,:,7)
+  fuu(:,:,:,8,fuu_ind(0))=uu(:,:,:,mupsi)+epss*uu(:,:,:,8)
+  fuu(:,:,:,9,fuu_ind(0))=0.5*uu(:,:,:,9)
+  fuu(:,:,:,10,fuu_ind(0))=uu(:,:,:,10)
+  fuu(:,:,:,11,fuu_ind(0))=epss*uu(:,:,:,11)
+  fuu(:,:,:,12,fuu_ind(0))=epss*uu(:,:,:,12)
+
+  fuu(:,:,:,:,fuu_ind(1))=fuu(:,:,:,:,fuu_ind(0))
+  fuu(:,:,:,:,fuu_ind(2))=fuu(:,:,:,:,fuu_ind(0))
+
+  IF (initsnap == 1 .AND. time > tsnap) CALL Psnaps(40+myftube,time)
+
+!...  done initialisation
+
+     first_flag = .false.
+
+  END IF
+
+!...  stepping
+
+#ifdef PERF
+  CALL PERFOFF
+
+  CALL PERFON('main')
+#endif
+
+#ifdef PERF
+  CALL PERFON('system_1')
+#endif
+
+#ifdef MPI
+  CALL MPI_Barrier(MPI_COMM_WORLD,ierr)
+#endif
+  zt0=sysclock()
+
+#ifdef PERF
+  CALL PERFOFF
+#endif
+
+  DO iplt=1,nplot
+     DO idg=1,ndg
+        dtime=0.
+
+        DO istp=1,nstep
+
+#ifdef PERF
+           CALL PERFON('step')
+#endif
+
+           CALL Step(tau)
+
+#ifdef PERF
+           CALL PERFOFF
+
+           CALL PERFON('system_2')
+#endif
+
+           dtime=dtime+tau
+
+#ifdef MPI
+           IF (nftubes > 1) THEN
+              CALL MPI_Allreduce(tau,taumin,1,MPI_REAL, &
+                   MPI_MIN,commall,ierr)
+           ELSE
+              taumin=tau
+           END IF
+#else
+           taumin=tau
+#endif
+
+           IF (taumin < tkill*tau0) THEN
+              IF (mype == 0) THEN
+                 WRITE (0,310) time+dtime,istp,idg,iplt,taumin
+                 OPEN (19,file='crashed',form='formatted')
+                 WRITE (19,310) time+dtime,istp,idg,iplt,taumin
+                 CLOSE (19)
+              END IF
+#ifdef MPI
+              CALL MPI_Finalize(ierr)
+#endif
+              STOP
+           END IF
+
+#ifdef PERF
+           CALL PERFOFF
+#endif
+
+        END DO
+
+        istp=istp-1
+
+!...  hi-res diagnostics
+
+#ifdef PERF
+        CALL PERFON('diag')
+#endif
+
+        time=time+dtime
+        CALL Energy(20+myftube,time,et)
+        IF (et == 0.) THEN
+           IF (mypeftube == 0) WRITE (0,340) myftube,time
+#ifdef MPI
+           CALL MPI_Finalize(ierr)
+#endif
+           STOP
+        END IF
+        IF (et /= et) THEN
+           IF (mypeftube == 0) WRITE (0,345) myftube,time
+#ifdef MPI
+           CALL MPI_Finalize(ierr)
+#endif
+           STOP
+        END IF
+
+        IF (NINT(100.*time) > NINT(100.*tprobe)) THEN
+#ifdef MPI
+           CALL MPI_Barrier(commftube,ierr)
+#endif
+           CALL Probes(20+myftube)
+#ifdef MPI
+           CALL MPI_Barrier(commftube,ierr)
+#endif
+        END IF
+
+        IF (avgen(1) < xzero) THEN
+           avgen=en
+        ELSE
+!...  set the effective memory time to 200.0 in normalised units
+!           avgen=avgen*0.999+en*0.001
+           avgen=avgen+(en-avgen)*(0.005*tau*nstep)
+        END IF
+
+#ifdef PERF
+        CALL PERFOFF
+#endif
+
+     END DO
+
+     idg=idg-1
+
+!...  lo-res diagnostics
+
+#ifdef PERF
+     CALL PERFON('snap_wr')
+#endif
+
+     IF (mypeftube == 0) WRITE (0,210) myftube,istp,idg,iplt,tau
+
+     IF (time > tsnap) CALL Psnaps(40+myftube,time)
+
+#ifdef PERF
+     CALL PERFOFF
+#endif
+
+  END DO
+
+  iplt=iplt-1
+
+!...  save current state
+
+#ifdef PERF
+  CALL PERFOFF
+
+  CALL PERFON('final_wr')
+#endif
+
+  IF (iptmp == 1) CALL Snaps(60+myftube,time)
+
+!...  do the transport fluxes
+
+  en=avgen
+  CALL ITMFluxes(time)
+
+#ifdef IMAS
+  CALL IDS_Copy(coretransp,coretransp_out)
+#else
+  CALL COPY_cpo(coretransp,coretransp_out(1))
+
+!...  write result
+
+  IF (write_cpos .AND. (mype == 0)) THEN
+     call open_write_file(10, cpofile )
+     call write_cpo(coretransp_out(1), 'Coretransp' )
+     call close_write_file
+  END IF
+#endif
+
+!...  aus
+
+  IF (mypeftube == 0) THEN
+     IF (time <= tstop) THEN
+        WRITE (6,320) myftube,time
+        IF (mype == 0) THEN
+           OPEN (19,file='cascade',form='formatted')
+           WRITE (19,320) myftube,time
+           CLOSE (19)
+        END IF
+     ELSE
+        WRITE (6,330) myftube,time
+        IF (mype == 0) THEN
+           OPEN (19,file='stopped',form='formatted')
+           WRITE (19,330) myftube,time
+           CLOSE (19)
+        END IF
+     END IF
+  END IF
+
+#ifdef PERF
+  CALL PERFOFF
+
+  CALL PERFOUT('main')
+#endif
+
+#ifdef MPI
+  CALL MPI_Barrier(MPI_COMM_WORLD,ierr)
+#endif
+  zt1=sysclock()
+#ifdef MPI
+  IF (mypeftube == 0) THEN
+#endif
+     PRINT *,'Main loop wall clock time:',zt1-zt0
+#ifdef MPI
+  END IF
+#endif
+
+
+  call deallocate_cpo(coreprof)
+  call deallocate_cpo(eq)
+
+
+210 FORMAT('Ftube ',i2,' step ',3i4,' tau = ',g12.4)
+310 FORMAT('run exploded at time = ',g11.5,' step ',3i4,'  taumin = ',g9.3)
+320 FORMAT('Ftube ',i2,' cascade at time = ',g11.5)
+330 FORMAT('Ftube ',i2,' run chain stopped at time = ',g9.3)
+340 FORMAT('Ftube ',i2,' energy is zero at time = ',g9.3)
+345 FORMAT('Ftube ',i2,' energy gave NaNs at time = ',g9.3)
+
+CONTAINS
+!
+!##############################################################################
+!
+  FUNCTION sysclock () 
+!
+! calculate run time in seconds.
+!
+    IMPLICIT NONE
+!-----------------------------------------------
+!   L o c a l   V a r i a b l e s
+!-----------------------------------------------
+    INTEGER :: jcount, jcount_rate
+    REAL :: sysclock
+!-----------------------------------------------
+!
+#ifdef MPI
+    sysclock = MPI_WTIME()
+#else
+    CALL SYSTEM_CLOCK (jcount, jcount_rate) 
+    sysclock = jcount/REAL(jcount_rate) 
+#endif /* mpi */
+!
+  END FUNCTION sysclock
+
+END SUBROUTINE Gem
