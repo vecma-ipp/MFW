@@ -12,10 +12,11 @@
 
 ## number of nodes and tasks per node
 #SBATCH --nodes=1
-#SBATCH --ntasks-per-node=40
+#SBATCH --ntasks-per-node=8
+
+#SBATCH --mem=40000
 
 #SBATCH --partition=medium
-###SBATCH --qos=
 
 ## grant
 #SBATCH --mail-type=ALL
@@ -45,9 +46,14 @@ export EASYPJ_CONFIG=conf.sh
 
 export MPIMOD=default
 
+# ENV VARIABLES REQUIRED FOR THE QCG-PJ JOB
+
 export QCG_PM_STEP_ID=0
+export QCG_PM_EXEC_API_JOB_ID=0
+export QCG_PM_NPROCS=8
 
 ####################################
 
-bash -l -c 'exec python3 -m easyvvuq.actions.execute_qcgpj_task /cobra/ptmp/yyudin/VARY_1FT_GEM_NT_h7khf58u/.qcgpj_in_act_6 /cobra/ptmp/yyudin/VARY_1FT_GEM_NT_h7khf58u/.qcgpj_in_prev_6' > test-qcg-log.${SLURM_JOBID}
+#bash -l -c 'exec python3 -m easyvvuq.actions.execute_qcgpj_task /cobra/ptmp/yyudin/VARY_1FT_GEM_NT_h7khf58u/.qcgpj_in_act_6 /cobra/ptmp/yyudin/VARY_1FT_GEM_NT_h7khf58u/.qcgpj_in_prev_6' > test-qcg-log.${SLURM_JOBID}
 
+bash -l -c 'exec python3 -m easyvvuq.actions.execute_qcgpj_task /cobra/ptmp/yyudin/VARY_1FT_GEM_NT_0v_v6zc7/.qcgpj_in_act_1 /cobra/ptmp/yyudin/VARY_1FT_GEM_NT_0v_v6zc7/.qcgpj_in_prev_1' > test-qcg-log.${SLURM_JOBID}

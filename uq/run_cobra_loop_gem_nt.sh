@@ -19,6 +19,8 @@
 ###SBATCH --ntasks-per-core=1
 ###SBATCH --cpus-per-task=8
 
+#SBATCH --mem=96000
+
 #SBATCH --partition=medium
 ###SBATCH --qos=
 
@@ -70,4 +72,3 @@ echo -e '> In this run: use ExecuteLocal only + QCGPJ pool + '$MPIMOD' exec mode
 python3 tests/gem_notransp.py > test-loopntuq-log.${SLURM_JOBID}
 
 echo "> Finished an UQ SLURM job!"
-
