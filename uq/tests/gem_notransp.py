@@ -1,4 +1,5 @@
 import os
+import pprint
 import sys
 
 import pickle
@@ -195,6 +196,7 @@ nnodes_tot = ceil(1.*ncores_tot/n_cores_p_node) # not entirely correct due to an
 
 #exec_path_comm = mpi_instance + ' -n '+ str(ncores) + ' -N '+ str(nnodes) + ' ' + exec_path
 exec_path_comm = mpi_instance + ' -n '+ str(ncores) + ' ' + exec_path
+exec_path_comm = mpi_instance + ' ' + exec_path # TRY OUT (with new QCG-PJ)
 
 print('Total number of nodes required for all jobs: {0}'.format(nnodes_tot))
 print('Number of cores required for single code instance computed: {0}'.format(ncores))
@@ -236,10 +238,10 @@ else:
 
 template_par_simple = {
                        ###'name': 'gem_long_var_simp',
-                       #'exec': exec_path,
+                       ##'exec': exec_path,
                        
-                       #'venv' : os.path.join(HOME, 'python394'), 
-                       #'venv' : os.path.join(HOME, 'conda-envs/python394'), # for COBRA where Python is managed through conda, activation with executable does not work
+                       ##'venv' : os.path.join(HOME, 'python394'), 
+                       ##'venv' : os.path.join(HOME, 'conda-envs/python394'), # for COBRA where Python is managed through conda, activation with executable does not work
 
                        'numCores': ncores,
                        'numNodes': nnodes,
