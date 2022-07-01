@@ -194,9 +194,12 @@ elif SYS == 'COBRA':
 nnodes = ceil(1.*ncores/n_cores_p_node)
 nnodes_tot = ceil(1.*ncores_tot/n_cores_p_node) # not entirely correct due to an 'overkill' problem i.e. residual cores at one/more nodes may not be able to allocate any jobs, but here everything is devisible; also an import from 'math'
 
+exec_comm_flags = ''
+exec_comm_flags += ' -vvvvv --profile=all --slurmd-debug=3 '
+
 #exec_path_comm = mpi_instance + ' -n '+ str(ncores) + ' -N '+ str(nnodes) + ' ' + exec_path
 exec_path_comm = mpi_instance + ' -n '+ str(ncores) + ' ' + exec_path
-exec_path_comm = mpi_instance + ' ' + exec_path # TRY OUT (with new QCG-PJ)
+exec_path_comm = mpi_instance + exec_comm_flags + ' ' + exec_path # TRY OUT (with new QCG-PJ)
 
 print('Total number of nodes required for all jobs: {0}'.format(nnodes_tot))
 print('Number of cores required for single code instance computed: {0}'.format(ncores))

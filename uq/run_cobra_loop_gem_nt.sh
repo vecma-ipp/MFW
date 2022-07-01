@@ -19,10 +19,17 @@
 ###SBATCH --ntasks-per-core=1
 ###SBATCH --cpus-per-task=8
 
-#SBATCH --mem=96000
+#TODO: look for different mem specs
+#SBATCH --mem=85000
 
+#TODO: look for different qos specs for debugging -> may be some predefined ones...
 #SBATCH --partition=medium
 ###SBATCH --qos=
+
+#SBATCH -vvvvv
+###SBATCH --slurmd-debug=3
+#SBATCH --profile=all
+###SBATCH --oversubscribe
 
 ## grant
 ###SBATCH --account=
@@ -61,14 +68,18 @@ export EXECTEMPL=hydra_exclusive #short
 
 export NCORESPTASK=8
 
-echo -e '> In this run: use ExecuteLocal only + QCGPJ pool + '$MPIMOD' exec mode + '$SLURM_NNODES' nodes + 4 params + commandline passed with '$MPICMD' /n'
+echo -e '> In this run: use ExecuteLocal only + QCGPJ pool + '$MPIMOD' exec mode + '$SLURM_NNODES' nodes + 4 params + commandline passed with '$MPICMD' \n'
 
 ####################################
 # Run the UQ code
 
 # Echo SLURM environmental variables
-#scontrol show --detail job $SLURM_JOBID 
+scontrol show --detail job $SLURM_JOBID
+
+#scontrol setdebug 3
+scontrol schedloglevel 1
 
 python3 tests/gem_notransp.py > test-loopntuq-log.${SLURM_JOBID}
 
 echo "> Finished an UQ SLURM job!"
+scontrol show --detail job $SLURM_JOBID

@@ -131,6 +131,10 @@ SUBROUTINE Gem(eq_in, coreprof_in, coretransp_out, code_parameters)
   CALL PERFINIT
 
   CALL PERFON('init')
+
+  !...DEBUG
+  WRITE(0,*) 'CALLED PERFINIT AND PERFON'
+  !... END OF DEBUG
 #endif
 
 !...  system initialisation
@@ -144,6 +148,10 @@ SUBROUTINE Gem(eq_in, coreprof_in, coretransp_out, code_parameters)
 #include <mppein.h90>
 
   END IF
+
+!... DEBUG
+    WRITE(0,*) 'NOW COPYING CPO-S'
+!... END OF DEBUG  
 
 !...  incoming CPOs before metric does parms
 
