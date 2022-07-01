@@ -889,10 +889,14 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
                ]
 
     for code_name in code_names:
+    
         if code_name == 'imp4dv':
-       	    attributes = ['diff_eff','vconv_eff']
+            attributes = ['diff_eff','vconv_eff']
         elif code_name == 'gem':
-       	    attributes = ['flux']
+            attributes = ['flux']
+        else:
+            print('>Error in start of postprocessing: no such code recognized')
+
 
         # 1) If runforbatch, then csv are already in the folder, otherwise have to read CPO-s
         if not runforbatch:
