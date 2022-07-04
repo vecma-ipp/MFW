@@ -14,7 +14,7 @@
 ## number of nodes and tasks per node
 # order=3, n_params=4, n_subd=8 -> 1024 across 40 (80 for hthreading, not used) cpus -> 27 nodes
 ###SBATCH --nodes=27 # MIND number of parameters in variation in the script
-#SBATCH --nodes=2 #4
+#SBATCH --nodes=8 #4
 #SBATCH --ntasks-per-node=40
 ###SBATCH --ntasks-per-core=1
 ###SBATCH --cpus-per-task=8
@@ -66,7 +66,11 @@ export EASYPJ_CONFIG=conf.sh
 export MPIMOD=default #srunmpi
 export EXECTEMPL=hydra_exclusive #short
 
-export NCORESPTASK=8
+#export NCORESPTASK=2
+
+# TRYING TO DEBUG MPI_Cart_create in GEM called from QCG-PJ job
+export KMP_STACKSIZE=500000000
+ulimit -s unlimited
 
 echo -e '> In this run: use ExecuteLocal only + QCGPJ pool + '$MPIMOD' exec mode + '$SLURM_NNODES' nodes + 4 params + commandline passed with '$MPICMD' \n'
 
@@ -77,7 +81,7 @@ echo -e '> In this run: use ExecuteLocal only + QCGPJ pool + '$MPIMOD' exec mode
 scontrol show --detail job $SLURM_JOBID
 
 #scontrol setdebug 3
-scontrol schedloglevel 1
+#scontrol schedloglevel 1
 
 python3 tests/gem_notransp.py > test-loopntuq-log.${SLURM_JOBID}
 

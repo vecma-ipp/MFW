@@ -18,7 +18,7 @@
   reorder=.false.
 
 !... DEBUG
-  WRITE (0,*) 'DEBUG: for MPI_Cart_create, dims=', dims, ' periods=', periods, &
+  WRITE (0,*) 'DEBUG: for MPI_Cart_create, MPI_COMM_WORLD=', MPI_COMM_WORLD, ' dims=', dims, ' periods=', periods, &
        ' reorder=', reorder, ' commall=', commall, ' ierr=', ierr
   WRITE (0,*) ' mype=', mype, ' coords=', coords
 !... END OF DEBUG
@@ -28,6 +28,7 @@
 
 !... DEBUG
   WRITE (0,*) 'IF SYNCHRONIZING, SHOULD NOT PASS HERE'
+  WRITE (0,*) 'initialised commall=', commall
 !... END OF DEBUG
 
   CALL MPI_Comm_rank( commall, mype, ierr )

@@ -45,6 +45,9 @@ SUBROUTINE Gem(eq_in, coreprof_in, coretransp_out, code_parameters)
 !...  PE info
 
 #ifdef MPI
+  !DEBUG
+  WRITE(0, *) 'MPI is defined for the preprocessor! MPI_COMM_WORLD=', MPI_COMM_WORLD
+  !END OF DEBUG
   CALL MPI_Comm_size( MPI_COMM_WORLD, npes, ierr )
   CALL MPI_Comm_rank( MPI_COMM_WORLD, mype, ierr )
 #endif
