@@ -732,7 +732,7 @@ def plot_response_cuts(data, input_names, output_names):
 
     #print([n_inputs, n_points, n_points_perdim, n_fixvals, n_plots, qoi_name]) ###DEBUG
     
-    # unique values for every input dimension
+    # Get unique values for every input dimension
     input_vals_unique = np.array([np.unique(data[i]) for i in input_names])
     #print(input_vals_unique) ###DEBUG
  
@@ -743,7 +743,7 @@ def plot_response_cuts(data, input_names, output_names):
                            figsize=(40, 20)
                           )
 
-    # iterate over all the input dimensions, selecting single one as a running variable
+    # Iterate over all the input dimensions, selecting single one as a running variable
     for i_ip in range(n_inputs):
 
         running_ip_name = input_names[i_ip]
@@ -759,7 +759,7 @@ def plot_response_cuts(data, input_names, output_names):
         #print([i_ip, running_ip_name, input_names_left, 
         #      input_inds_left, fixed_ip_names, input_fixvals_unique]) ###DEBUG
 
-        # Iterate over the all combinations of input parameters values to be kept const fro a cut
+        # Iterate over the all combinations of input parameters values to be kept const for a cut
         for j_fixval in range(n_fixvals):
             #print([i_ip, j_fixval]) ###DEBUG
        
@@ -777,13 +777,13 @@ def plot_response_cuts(data, input_names, output_names):
  
             #print([tot_ind, input_fixvals, fixval_query]) ###DEBUG            
 
-            data_slice = data.query(fixval_query) 
+            data_slice = data.query(fixval_query)  #TODO FAILS IN THE LATEST PANDAS VERSION
             #TODO: probably a very slow way to access a DataFrame - still think how to offset with 3-nested loop
 
             # TODO: choose one of three ways: 
             #                      1) offsets - has to be 3 nested loops
-            #                      2) filtering - inside current tow loops, use np.unique() -> using
-            #                      3) transform into ndarray of 4D, the iterate (look tuto notebook)
+            #                      2) filtering - inside current two loops, use np.unique() -> using
+            #                      3) transform into ndarray of 4D, the iterate (look tuto notebook) - not gneneral for different number of params
  
             #fixed_ip_vals      = data[input_names_left][tot_ind[0]] # TODO count tot_ind
             #fixed_ip_vals_str  = ''.join([str(v)+';' for v in fixed_ip_vals.to_list()]) 
@@ -821,7 +821,8 @@ def plot_response_cuts(data, input_names, output_names):
     plt.savefig('scan_{}.png'.format(qoi_name))
     plt.close()
 
-def produce_stats_dataframes(val_trend_avg, val_std_s):
+def produce_stats_dataframes(runs_input_vals, val_trend_avg_s, val_std_s, stats_df, scan_df, 
+                             n_lensample=1, runn=0, p='ti_transp', a='flux'):
     """
     Composed pandas dataframes with code input/output and its statistics with single entry for a code run
          Parameters:
@@ -829,10 +830,11 @@ def produce_stats_dataframes(val_trend_avg, val_std_s):
          Returns: 
              pandas DataFrame with rows - runs for different cases; columns - code io and stats
     """
-        
-    n_lensample = val_trend_avg.shape[-1]
+    if n_lensample==1:
+        n_lensample = val_trend_avg_s[runn-1].shape[-1]
    
-    n_lensamle_corr = 1
+    #n_lensample_corr = 1
+    #print('acf-corrected sample length: {0}'.format(n_lensample)) ###DEBUG
 
     stats_df = stats_df.append(pd.Series(
                                data={'mean': val_trend_avg_s[runn-1][0][0],
@@ -842,7 +844,7 @@ def produce_stats_dataframes(val_trend_avg, val_std_s):
     scan_data = runs_input_vals[runn-1]
     scan_data[p+'_'+a] = val_trend_avg_s[runn-1][0][0]
     scan_data[p+'_'+a+'_std'] = val_std_s[runn-1][0][0]
-    scan_data[p+'_'+a+'_stem'] = scan_data[p+'_'+a+'_std'] / np.sqrt(n_lensample_corr)
+    scan_data[p+'_'+a+'_stem'] = scan_data[p+'_'+a+'_std'] / np.sqrt(n_lensample)
 
     scan_data_new = {}
     for k,v in scan_data.items():
@@ -854,7 +856,7 @@ def produce_stats_dataframes(val_trend_avg, val_std_s):
 
     return scan_df, stats_df
 
-#################################################
+#################################################l
 #### MAIN FUNCTION: PIPELINE OF PROCESSING ######
 #################################################
 
@@ -887,10 +889,14 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
                ]
 
     for code_name in code_names:
+    
         if code_name == 'imp4dv':
-       	    attributes = ['diff_eff','vconv_eff']
-        if code_name == 'gem':
-       	    attributes = ['flux']
+            attributes = ['diff_eff','vconv_eff']
+        elif code_name == 'gem':
+            attributes = ['flux']
+        else:
+            print('>Error in start of postprocessing: no such code recognized')
+
 
         # 1) If runforbatch, then csv are already in the folder, otherwise have to read CPO-s
         if not runforbatch:
@@ -959,7 +965,7 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
             for runn in runnum_list:
                 csv_file_name = code_name + '_' + p + '_' + a + '_evol_' + mainfoldernum + '_' + str(runn) + '.csv'
                 val_ev_s.append(np.atleast_2d(np.genfromtxt(csv_file_name, delimiter=", ").T))     
-            #print('val_ev_s[{}]).shape={}'.format(i, val_ev_s[i].shape)); #print(val_ev_s) ###DEBUG
+            print('val_ev_s[{}]).shape={}'.format(i, val_ev_s[i].shape)); #print(val_ev_s) ###DEBUG
             
             # 4.1) Plot the read values, pass a list of array
             
@@ -1074,10 +1080,19 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
                 val_trend_avg_acf, val_fluct_avg_acf = filter_trend(val_ev_acf_s[runn-1], "mean")
                 val_trend_avg_acf_s.append(val_trend_avg_acf)
                 val_std_acf_s.append(val_fluct_avg_acf)
-
+            
                 n_lensample = val_trend_avg_acf_s[runn-1].shape[-1]
                 print('acf-corrected sample length: {0}'.format(n_lensample)) ###DEBUG
-               
+
+                scan_df, stats_df = produce_stats_dataframes(runs_input_vals,
+                                                             val_trend_avg_s,
+                                                             val_std_s,
+                                                             stats_df,
+                                                             scan_df,
+                                                             n_lensample, 
+                                                             runn, p, a)
+                
+                """               
                 stats_df = stats_df.append(pd.Series(
                                data={'mean': val_trend_avg_s[runn-1][0][0],
                                      'std': val_std_s[runn-1][0][0]},
@@ -1095,6 +1110,8 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
                 scan_df = scan_df.append(pd.Series(
                               data=scan_data_new,
                               name=str(runn-1)))
+            """
+
             """ 
             profile_evol_plot(val_trend_avg_s, labels=labels, name='means_'+p+'_'+a+'_'+mainfoldernum)
             """
@@ -1102,6 +1119,10 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
             scan_df.to_csv('resuq_main_'+p+'_'+a+'_'+mainfoldernum+'.csv')    
             
             # 4.5.1'') Plot parameter dependency for single parameters
+            for param in runs_input_names_new:
+                # For Pandas query: make sure input columns are floats
+                scan_df[param] = scan_df[param].astype('float')
+
             print('plotting cuts starting')
             plot_response_cuts(scan_df, runs_input_names_new, [p+'_'+a])
             print('plotting cuts done')
