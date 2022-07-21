@@ -1,13 +1,17 @@
 #!/bin/bash -l
 
-rundate='19072022'
-runtime='1800'
+rundate='21072022'
+runtime='1515'
 
-jobslurmid='5736377'
-jobcampid='4e92_3xx'
-nodenums=('6035')
+jobslurmid='5745295'
+jobcampid='v4b7_ppx'
+nodenums=('3326')
 
-# 19072022 1100 5733612 3qa2cg2a ('6047' '6049')
+# first try: 19072022 1100 5733612 3qa2cg2a ('6047' '6049')
+
+# default+srun+flags: 19072022 1800 5736377 4e92_3xx ('6035')
+# default+srun+no_flags: 21072022 1500 5745061 17bf_svp ('4521')
+# srunmpi+exec+no_flags: 21072022 1515 5745295 v4b7_ppx ('3326')
 
 ### Make directory - copy - archivize
 
