@@ -522,7 +522,7 @@ def filter_trend(values, method='hpf'):
                        format(en_ap_tot, en_ap_sl, en_ap_fs, en_frac))
 
         # DEBUGING part of block
-        # why the ifft is sclaed down around the average?
+        # why the ifft is scaled down around the average?
         # what is the median of frequencies?
         #plt.plot(np.arange(values.shape[0]), val_trend)
         #plt.savefig('debug_fft_trend.png')
@@ -734,7 +734,7 @@ def plot_response_cuts(data, input_names, output_names):
     
     # Get unique values for every input dimension
     input_vals_unique = np.array([np.unique(data[i]) for i in input_names])
-    #print(input_vals_unique) ###DEBUG
+    print("input_vals_unique={}".format(input_vals_unique)) ###DEBUG
  
     # a geneartor for numbers for input dimension numbers
     input_inds = range(n_inputs)
@@ -932,9 +932,11 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
 
         # 3) Getting the input profiles values, primarily for the plot labels
         db_id = 10002794
-        camp_id = 'moj202gj'
+        camp_id = '1wu9k2wa' #'moj202gj'
 
-        cpo_num = int(foldername[foldername.rfind('_')+1:])
+        cpo_num = int(mainfoldernum[mainfoldernum.rfind('_')+1:]) # if the leaf folder is named [a+]_[d+]
+        #cpo_num = int(foldername[foldername.rfind('/')+1:])
+        print('cpo_num={0}'.format(cpo_num)) ###DEBUG
         mmiter_num = cpo_num #6 -was in file on Marconi 
 
         workdir_camp_db = './' 
@@ -948,7 +950,8 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
         #runs_db_loc = "sqlite:///" + foldername + "/.."*7 + "/campaign.db"
         runs_db_loc = "sqlite:///" + "campaign_" + camp_id + "_" + str(mmiter_num) + ".db"
         runs_input_vals, runs_input_names = read_run_uq(runs_db_loc, 
-                                                    workdir_camp_db) # test this function, at least manually    
+                                                    workdir_camp_db) # test this function, at least manually  
+        print('runs_input_names={}'.format(runs_input_names)) ###DEBUG 
            
         # 3') By default, create new list for readings and read them from file, 
         #     even if they are in programm memory already      
@@ -973,9 +976,9 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
             # modification: list of arrays is for different profile variations
             labels = [str(r) for r in runnum_list]
             labels = ["".join([rin+'='+str(round(r[rin], 1))+"; " for rin in runs_input_names]) for r in runs_input_vals]
-            """ 
+             
             profile_evol_plot(val_ev_s, labels=labels, name=code_name+'_'+p+'_'+a+'_'+mainfoldernum, alignment='start') 
-            """
+            
             #print('passes to plot: {}'.format(val_ev_s[0].shape)) ###DEBUG
             #print('before shape {}'.format(val_ev_s[i].shape)) ###DEBUG
             #val = np.array(val_ev_s[i]).squeeze()
@@ -1124,7 +1127,17 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
                 scan_df[param] = scan_df[param].astype('float')
 
             print('plotting cuts starting')
-            plot_response_cuts(scan_df, runs_input_names_new, [p+'_'+a])
+            if len(runs_input_names_new) > 1:
+                plot_response_cuts(scan_df, runs_input_names_new, [p+'_'+a])
+            else:
+                axes = scan_df.plot(x=runs_input_names_new[0], y=p+'_'+a,
+                             yerr=p+'_'+a+'_std',
+                             kind='line', 
+                             title='Response for single a argument',
+                             xlabel=runs_input_names_new[0],
+                             ylabel=p+'_'+a
+                             )
+                axes.get_figure().savefig('scan_'+p+'_'+a+'.png')
             print('plotting cuts done')
 
             # 4.5.2) Calcualting linear regression against time fit for the last window:
@@ -1187,7 +1200,7 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
            
             # 4.6) Histogram for the last alpha_window values
             """
-            plot_coreprofval_dist(val_fluct_avg, name='wind'+code_name+p+'_'+a+'_'+mainfoldernum, discr_level=128)
+            plot_coreprofval_dist(val_fluct_avg, name='wind_'+code_name+p+'_'+a+'_'+mainfoldernum, discr_level=128)
             """
 
             #TODO get exponential average of the values: standard packaged optimize for alpha -
@@ -1208,10 +1221,10 @@ if __name__ == '__main__':
         # Run main with default valuer for all files in the folder, but considering there might be a csv composed already
         main(foldername=sys.argv[1], runforbatch=int(sys.argv[2]))
     elif len(sys.argv) == 4:
-        # Run main for all files in the folder, either read values from csv (runfirbatch), and for  multiple flux tubes (coord)
+        # Run main for all files in the folder, either read values from csv (runforbatch), and for  multiple flux tubes (coord)
         main(foldername=sys.argv[1], runforbatch=int(sys.argv[2]), coordnum=int(sys.argv[3]))
     elif len(sys.argv) == 5:
-        # Run main for all files in the folder, either read values from csv (runfirbatch), 
+        # Run main for all files in the folder, either read values from csv (runforbatch), 
         # for possible multiple flux tubes (coord), and specifying how to save files
         main(foldername=sys.argv[1], runforbatch=int(sys.argv[2]), coordnum=int(sys.argv[3]), mainfoldernum=sys.argv[4])
     elif len(sys.argv) == 6:
