@@ -7,6 +7,7 @@ import csv
 import json
 
 from math import ceil
+import numpy as np
 
 import easyvvuq as uq
 
@@ -89,13 +90,13 @@ exec_code = "loop_gem_notransp"
 # within a 1st-order Gauss-Legandre are used as smaller (by absolute value) cooridantes for 
 # a 3rd-order G-S for some U[-a,+a]
 # Here only a particular coefficient!
-alpha_q = 1.
-#alpha_q = a = 1./np.sqrt( (9./7.) - 6./7.*np.sqrt(6./5.) ) 
+#alpha_q = 1.
+alpha_q = a = 1./np.sqrt( (9./7.) - 6./7.*np.sqrt(6./5.) ) 
 
 input_params = {
-    "te.value": {"dist": "Uniform", "err":  0.1*alpha_q, "min": 0.},
-    "ti.value": {"dist": "Uniform", "err":  0.1*alpha_q, "min": 0.},
-    "te.ddrho": {"dist": "Uniform", "err":  0.1*alpha_q, "max": 0.},
+#    "te.value": {"dist": "Uniform", "err":  0.1*alpha_q, "min": 0.},
+#    "ti.value": {"dist": "Uniform", "err":  0.1*alpha_q, "min": 0.},
+#    "te.ddrho": {"dist": "Uniform", "err":  0.1*alpha_q, "max": 0.},
     "ti.ddrho": {"dist": "Uniform", "err":  0.1*alpha_q, "max": 0.}
 }
 
@@ -179,7 +180,7 @@ npess = gemxml.get_value("cpu_parameters.domain_decomposition.npess")
 nftubes = gemxml.get_value("cpu_parameters.parallel_cases.nftubes")
 ncores = npesx*npess*nftubes
 
-pol_order = 1
+pol_order = 3
 
 nruns = (pol_order + 1)**nparams # Nr=(Np+Nd, Nd)^T=(Np+Nd)!/(Np!*Nd!)  |=(3+4)!/3!4! = 5*6*7/6 = 35 => instead 3^4=81 ?
 ncores_tot = ncores * nruns
@@ -194,8 +195,8 @@ elif SYS == 'COBRA':
 nnodes = ceil(1.*ncores/n_cores_p_node)
 nnodes_tot = ceil(1.*ncores_tot/n_cores_p_node) # not entirely correct due to an 'overkill' problem i.e. residual cores at one/more nodes may not be able to allocate any jobs, but here everything is devisible; also an import from 'math'
 
-exec_comm_flags = ''
-exec_comm_flags += ' -vvvvv --profile=all --slurmd-debug=3 '
+exec_comm_flags = ' '
+#exec_comm_flags += ' -vvvvv --profile=all --slurmd-debug=3 '
 
 #exec_path_comm = mpi_instance + ' -n '+ str(ncores) + ' -N '+ str(nnodes) + ' ' + exec_path
 exec_path_comm = mpi_instance + ' -n '+ str(ncores) + ' ' + exec_path
@@ -217,6 +218,9 @@ print('Creating an ExecuteQCGPJ')
 if mpi_model=='default':
     # When execution model is 'default': 'execute' should be set to exec_path_comm
     execute=ExecuteLocal(exec_path_comm)
+elif mpi_model=='srunmpi':
+    #execute=ExecuteLocal(exec_path)
+    execute=ExecuteLocal(exec_path_comm) #TODO: trying out (srunmpi exec model) + (srun [com] [arg]) cli line
 else:
     execute=ExecuteLocal(exec_path)
 
@@ -237,14 +241,15 @@ else:
 
 #qcgpjexec.run(processing_scheme=eqi.ProcessingScheme.EXEC_ONLY)
 
-# custom template for parallel job exectution
+# custom template for parallel job execution
 
 template_par_simple = {
                        ###'name': 'gem_long_var_simp',
                        ##'exec': exec_path,
                        
                        ##'venv' : os.path.join(HOME, 'python394'), 
-                       ##'venv' : os.path.join(HOME, 'conda-envs/python394'), # for COBRA where Python is managed through conda, activation with executable does not work
+                       ##'venv' : os.path.join(HOME, 'conda-envs/python394'), 
+                           # # for COBRA where Python is managed through conda, activation with executable does not work
 
                        'numCores': ncores,
                        'numNodes': nnodes,

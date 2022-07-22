@@ -1,11 +1,11 @@
 #!/bin/bash -l
 
 rundate='22072022'
-runtime='1045'
+runtime='1115'
 
-jobslurmid='5748887'
-jobcampid='s491vudh'
-nodenums=('3566')
+jobslurmid='5749203'
+jobcampid='1wu9k2wa'
+nodenums=('4540' '4566' '4588' '4625')
 
 ### Recording QCG-PJ issues
 
@@ -21,7 +21,9 @@ nodenums=('3566')
 # default+srun+no_flags: 21972022 1645 5745754 ue1y9103 ('3570') -> SLURM halt
 
 # default+srun+no_flags+npess32(2 independent nodes): 22072022 1030 5748864 sz6hftfj ('4585' '4590') -> 2/2 codes running!
-# default+srun+no_flags+16(1 node): 22072022 1045 5748887 s491vudh ('3566') -> SLURM disables creation
+# default+srun+no_flags+npess16(1 node): 22072022 1045 5748887 s491vudh ('3566') -> SLURM disables creation
+# default+srun+no_flags+npess16(4 ind runs/ 2 nodes): 22072022 1100 5749169 a52yn85j ('3600' '3609' '3619' '3607') -> halt of 2/4 jobs
+# default+srun+no_flags+npess32(4 ind runs/ 4 nodes): 22072022 1115 5749203 1wu9k2wa ('4540' '4566' '4588' '4625') -> 4/4 codes running!
 
 ### Make directory - copy - archivize
 
