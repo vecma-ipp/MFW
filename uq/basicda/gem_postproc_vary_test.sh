@@ -6,15 +6,16 @@
 # folder of output CPO files, should be same as number of SLURM submissions (macro-macro-iterations)
 # should be the same as number of MMit TO process
 #CPONUM=2
-CPONUM=${1:-6}
+CPONUM=${1:-1}
 
 #RUNNUM=2
 # number of runs in current UQ campaign
-RUNRANGE=16
+RUNRANGE=4 #16
 
 #UQCAMPDIR='dy6n5hp9' # folder id of a completed run with 100 GEM calls, and 11 series of runs 100 calls each
 # TODO new workflow with all the snapshot solved will have a different directory!
 UQCAMPDIR='moj202gj' #folder ID of a completed run with 450 GEM calls
+UQCAMPDIR='1wu9k2wa'
 
 #DIR='/marconi_scratch/userexternal/yyudin00/VARY_1FT_GEM_NT_qairnbbz' # first run of 16 GEM cases in a script, n_it<=500
 #DIR='/marconi_scratch/userexternal/yyudin00/VARY_1FT_GEM_NT_qpyxg3bb' # first dir with 2 GEM runs
@@ -29,9 +30,18 @@ DIR=$SCRATCH'/VARY_1FT_GEM_NT_'$UQCAMPDIR
 #DIR_SRC=$DIR'/runs/runs_0-100000000/runs_0-1000000/runs_0-10000/runs_0-100/run_'$RUNNUM
 DIR_SRC=$DIR'/runs/runs_0-100000000/runs_0-1000000/runs_0-10000/runs_0-100/'
 
-DIR_CODE=$HOME'/code/MFW/uq/basicda/'
+CODEMDIR=code
+if [[ "$SYS" =~ ^(DRACO|COBRA|RAVEN)$ ]]; then
+  CODEMDIR=code
+else
+  CODEMDIR=code
+fi
 
-#1. Transfer output files from the run directories to a separete cpo dir
+DIR_CODE=$HOME'/'$CODEMDIR'/MFW/uq/basicda/'
+
+DIR_OUTPUT='gem_data'
+
+#1. Transfer output files from the run directories to a separate cpo dir
 
 cd ${DIR_SRC}
 #mkdir $DIR
@@ -73,7 +83,9 @@ cd ${DIR_CODE}
 #CPONUM=$(($NUM+13))
 CPONUMPR=$((CPONUM-1))
 
-export PYTHONPATH=/marconi/home/userexternal/yyudin00/code/ual_python_interface:/marconi/home/userexternal/yyudin00/code/MFW/uq/base:${PYTHONPATH}
+#export PYTHONPATH=/marconi/home/userexternal/yyudin00/code/ual_python_interface:/marconi/home/userexternal/yyudin00/code/MFW/uq/base:${PYTHONPATH}
+
+export PYTHONPATH=/cobra/u/yyudin/codes/ual_python_interface:/cobra/u/yyudin/codes/MFW/uq:${PYTHONPATH}
 
 #TODO: make sure the script reads right things: gem_*.cpo -s from 'cpo' in run folder, for all runs (mofify structure of script), all flux tubes 
 
@@ -85,10 +97,10 @@ export PYTHONPATH=/marconi/home/userexternal/yyudin00/code/ual_python_interface:
 python3 gem_da.py ${DIR_SRC}/cpo/${CPONUM} 0 1 ${RUNRANGE} 'new_'${UQCAMPDIR}'_'${CPONUM} #latest
 
 #3. Prepare combined files for analysis of series across long-term runs
-#cp GEM_plots/gem_??_transp_flux_evol_all${NUMPR}.csv ./
+#cp ${DIR_OUTPUT}/gem_??_transp_flux_evol_all${NUMPR}.csv ./
 
 for r in `seq 1 $RUNRANGE`; do #latest
-    cp GEM_plots/gem_??_transp_flux_evol_all_${UQCAMPDIR}_${CPONUMPR}_${r}.csv ./
+    cp ${DIR_OUTPUT}/gem_??_transp_flux_evol_all_${UQCAMPDIR}_${CPONUMPR}_${r}.csv ./
     cat gem_ti_transp_flux_evol_all_${UQCAMPDIR}_${CPONUMPR}_${r}.csv gem_ti_transp_flux_evol_new_${UQCAMPDIR}_${CPONUM}_${r}.csv > gem_ti_transp_flux_evol_all_${UQCAMPDIR}_${CPONUM}_${r}.csv
 done
 
@@ -99,8 +111,7 @@ done
 
 python3 gem_da.py all_${UQCAMPDIR}_${CPONUM} 1 1 ${RUNRANGE} all_${UQCAMPDIR}_${CPONUM} #latest
 
-#5. Put the resulting output files in a separat directory
-mv *.txt GEM_plots/
-mv *.csv GEM_plots/
-mv *.png GEM_plots/
-
+#5. Put the resulting output files in a separate directory
+mv *.txt ${DIR_OUTPUT}/
+mv *.csv ${DIR_OUTPUT}/
+mv *.png ${DIR_OUTPUT}/
