@@ -3,22 +3,27 @@
 # File to run a SLURM workflow consisting of several consequtive EasyVVUQ campaigns running a set of continius GEM runs,
 # implemented as chaining of SLURM submissions
 
+# Launch with:
+# nohup ./continuous_gem.sh 1 > script_workflow_new_1.log 2>&1 &
+
 #0. State the total number of campaigns to run, and ordinal number of the last campaign in previous sequence
 echo "STARTING THE WORKFLOW"
 # number of runs
 NUMRUNS=3 
 # no of current run, which is the last finished submission
-CURRUN=${1:-9}
+CURRUN=${1:-1}
 # no of the first run in the new sequence
 FRUN=$((${CURRUN}+1))
 # no of the last run in the new sequence
 LASTRUN=$((${CURRUN}+${NUMRUNS}))
 
 # batch script to submit a single UQ campaign
-COM=run_marconi_loop_resume_gem_nt.sh
+#COM=run_marconi_loop_resume_gem_nt.sh # for MARCONI
+COM=run_cobra_loop_resume_gem_nt.sh # for COBRA
 
 # TODO: add a first campaign, probably started with a different SLURM script using different non-restart python UQ script, and extract the folder name
-ROOTCAMPDIR='moj202gj'
+#ROOTCAMPDIR='moj202gj' # at MARCONI
+ROOTCAMPDIR='1wu9k2wa' # at COBRA
 
 # directory ID of an original UQ campaign
 
