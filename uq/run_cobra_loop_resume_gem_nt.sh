@@ -20,8 +20,8 @@
 #SBATCH --partition=medium
 ###SBATCH --qos=
 
-#SBATCH -vvvvv
-#SBATCH --profile=all
+###SBATCH -vvvvv
+###SBATCH --profile=all
 
 ## grant
 ###SBATCH --account=
@@ -30,14 +30,18 @@
 
 #TODO restore run_marconi_loop_gem_nt.sh from git before 57963b53de11316ac612da84eb37fe977dccf3cc !
 
-module load git anaconda/3/2021.11 intel/21.5.0 mkl cmake impi/2021.5 fftw-mpi/3.3.10
-source activate /u/yyudin/conda-envs/python394
+#module load anaconda/3/2021.11 intel/21.5.0 mkl impi/2021.5 fftw-mpi/3.3.10
+
+source activate ${HOME}/conda-envs/python394
 
 export SYS=COBRA
 export SCRATCH=${SCRATCH}
 
+# PYTHONPATH ?
+
 # MPI programs starter, MPCDF recommends using 'srun' only at COBRA!
 export MPICMD=srun #mpiexec #mpirun #intelmpi
+
 export LD_LIBRARY_PATH=${FFTW_HOME}/lib:${LD_LIBRARY_PATH}
 
 # For QCG-PilotJob usage
@@ -47,7 +51,6 @@ export EASYPJ_CONFIG=conf.sh
 
 # Define some global variables to configure UQ software
 export MPIMOD=default #srunmpi
-#export EXECTEMPL=hydra_exclusive #short
 
 export OLDCAMP='1wu9k2wa'
 

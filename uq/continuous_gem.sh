@@ -23,7 +23,7 @@ COM=run_cobra_loop_resume_gem_nt.sh # for COBRA
 
 # TODO: add a first campaign, probably started with a different SLURM script using different non-restart python UQ script, and extract the folder name
 #ROOTCAMPDIR='moj202gj' # at MARCONI
-export ROOTCAMPDIR='1wu9k2wa' # at COBRA
+export ROOTCAMPDIR=${2:-'1wu9k2wa'} # at COBRA
 
 # directory ID of an original UQ campaign
 
@@ -38,7 +38,7 @@ echo "Starting the very first SLURM submission with UQ campaign"
 
 CPONUM=${FRUN}
 #PREVID=$(sbatch --parsable --wait ${COM} 2>&1 | sed 's/[S,a-z]* //g')
-PREVID=$(sbatch --export=ALL,CPONUM=${FRUN}  --parsable --wait ${COM})
+PREVID=$(sbatch --export=ALL,CPONUM=${FRUN} --parsable --wait ${COM})
 
 #1'. Save and process the outputs after the finish of the submission
 echo "Finished the first new UQ campaign "${PREVID}
@@ -46,7 +46,7 @@ echo "Finished the first new UQ campaign "${PREVID}
 #NOTE: the call of postrpocessing scripts is moved to the SLURM submission
 echo "Now postprocessing for campaign "${PREVID}
 cd basicda
-./gem_postproc_vary_test.sh ${FRUN}
+./gem_postproc_vary_test.sh ${FRUN} ${ROOTCAMPDIR}
 cd ..
 
 FRUN=$((${FRUN}+1))
@@ -69,7 +69,7 @@ for n in `seq ${FRUN} ${LASTRUN}`; do
     #NOTEL in principle the postprocessing script is called in SLURM submission, but if the argument (run number) is correct, postprocessing should be idempotent
     echo "Now postprocessing for campaign "${PREVID}
     cd basicda
-    ./gem_postproc_vary_test.sh ${n}
+    ./gem_postproc_vary_test.sh ${n} ${ROOTCAMPDIR}
     cd ..
 
     PREVID=${CURID}
