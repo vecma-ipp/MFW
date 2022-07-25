@@ -1,4 +1,5 @@
 import os
+from re import M
 import sys
 
 import pickle
@@ -19,10 +20,11 @@ from base.cpo_encoder import CPOEncoder
 from base.cpo_decoder import CPODecoder
 from base.xml_element import XMLElement
 from base.utils import cpo_inputs, ftube_indices
+from base.evvuq_partemplate_wenv import EasyVVUQParallelTemplateWithEnv
 
 # from easyvvuq1.1
 from easyvvuq.actions import Encode, Decode, Actions, CreateRunDirectory, ExecuteQCGPJ, ExecuteLocal, ExecuteSLURM, QCGPJPool, ActionPool
-from easyvvuq.actions.execute_qcgpj import EasyVVUQParallelTemplate, EasyVVUQParallelTemplateWithEnv
+from easyvvuq.actions.execute_qcgpj import EasyVVUQParallelTemplate
 from easyvvuq.constants import Status
 
 # form qcg-pj
@@ -154,8 +156,8 @@ exec_path = os.path.join(common_dir, exec_code)
 
 # Check if this index is read correctly
 ftube_index_test = ftube_indices(common_dir + '/gem_coreprof_in.cpo', 
-        '/marconi/home/userexternal/yyudin00/code/MFW/standalone/bin/gem_coretransp_out.cpo',
-         False)
+        HOME+'/code/MFW/standalone/bin/gem_coretransp_out.cpo',
+        False)
 print('The flux tube location defined from the cpo files is: {}'.format(ftube_index_test))
 
 if ftube_index != ftube_index_test[0]:
@@ -187,7 +189,7 @@ ncores = npesx*npess*nftubes
 
 #pol_order = 3
 pol_order = int(os.environ['POLORDER'])
-nruns = (pol_order + 1)**nparams # Nr=(Np+Nd, Nd)^T=(Np+Nd)!/(Np!*Nd!) |E.G.|=(3+4)!/3!4! = 5*6*7/6 = 35 => instead 3^4=81?
+nruns = (pol_order + 1)**nparams # Nr=(Np+Nd, Nd)^T=(Np+Nd)!/(Np!*Nd!) |E.G.|=(3+4)!/3!4! = 5*6*7/6 = 35 => instead of 3^4=81?
 ncores_tot = ncores * nruns
 # current case: nruns=(5, 1)^T=5 not 16 ; achieved if using Point Collocation with regression via constructing PCESampler(regression=True)
 
@@ -225,7 +227,7 @@ else:
 
 # Custom template for parallel job exectution
 template_par_simple = {
-                       'venv' : os.path.join(HOME, 'python394'), 
+                       #'venv' : os.path.join(HOME, 'python394'), 
                        'numCores': ncores,
                        'numNodes': nnodes,
                        'model': mpi_model, # 'default' - QCG-PJ pool should work with 'default', as well as a commandline with 'mpiexec'
@@ -283,14 +285,19 @@ my_campaign.replace_actions(app_name=campaign_name,
 
 # List of run existing run numbers to be executed again (continued)
 run_ids = [str(x+1) for x in range(nruns)] # just numbers are correct id-s
-#print('Number of runs is {} and passed list of run id-s is: {}'.format(nruns, run_ids))
+print('Number of runs is {} and passed list of run id-s is: {}'.format(nruns, run_ids))
 
 # Getting run list from the DB, better strip 'run_' from elements and use further instead of run_ids
-run_ids_db = [x for x in my_campaign.campaign_db.run_ids()]
-#print('run names from the DB: {}'.format(run_ids_db)) # run_{d} is a name but not id
+run_names = [x for x in my_campaign.campaign_db.run_ids()]
+print('Run names from the DB: {}'.format(run_names)) # run_{d} is a name but not id
+
+# Checking the list of runs and their satus before the reassigning jobs
+#pprint.pprint(my_campaign.list_runs()) ###DEBUG
+#pprint.pprint(my_campaign.campaign_db.get_run_status(run_ids)) ###DEBUG
 
 # Finding all runs and setting them as ENCODED i.e. before to-be-executed
-my_campaign.rerun(run_ids) 
+#my_campaign.rerun(run_ids) # TODO fix error, all runs in '1wu9k2wa' database are marked as NEW 
+my_campaign.campaign_db.set_run_statuses(run_ids, Status.ENCODED)
 
 # Checking the content of the read campaign DB
 #db_json = my_campaign.campaign_db.dump()
@@ -298,7 +305,7 @@ my_campaign.rerun(run_ids)
 
 # Checking the list of runs and their satus before the resume
 #pprint.pprint(my_campaign.list_runs()) ###DEBUG
-#pprint.pprint(my_campaign.get_run_status(run_ids)) ###DEBUG
+#pprint.pprint(my_campaign.campaign_db.get_run_status(run_ids)) ###DEBUG
 
 my_campaign.set_app(campaign_name)
 
@@ -326,6 +333,7 @@ try:
     
         print('> Actions defined, now executing')    
         exec_res = my_action_pool.start(pool=qcgpj)
+        # TODO from this scripts codes still crash with SIGSEGV even if put on a separate node
 
         print('> Execution completed, now collating')
         exec_res.collate()

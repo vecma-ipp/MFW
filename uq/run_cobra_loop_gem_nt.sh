@@ -8,19 +8,19 @@
 #SBATCH --error=test-loopntuq-err.%j
 
 ## wall time in format (HOURS):MINUTES:SECONDS
-#SBATCH --time=0:30:00
+#SBATCH --time=12:00:00
 ###23:30:00 #CHANGED FOR DEBUGGING!
 
 ## number of nodes and tasks per node
 # order=3, n_params=4, n_subd=8 -> 1024 across 40 (80 for hthreading, not used) cpus -> 27 nodes
 ###SBATCH --nodes=27 # MIND number of parameters in variation in the script
-#SBATCH --nodes=8 #4
+#SBATCH --nodes=2
 #SBATCH --ntasks-per-node=40
 ###SBATCH --ntasks-per-core=1
 ###SBATCH --cpus-per-task=8
 
 #TODO: look for different mem specs
-#SBATCH --mem=85000
+###SBATCH --mem=85000
 
 #TODO: look for different qos specs for debugging -> may be some predefined ones...
 #SBATCH --partition=medium
@@ -36,13 +36,7 @@
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=yyudin@ipp.mpg.de
 
-######################################
-# Loading modules
-module load anaconda/3/2021.11 intel/21.5.0 impi/2021.5 mkl/2020.1 fftw-mpi/3.3.10
-
-# Python set-up
-#conda activate python394
-source activate $HOME/conda-envs/python394
+source activate /u/yyudin/conda-envs/python394
 
 export SYS=COBRA
 export SCRATCH=$SCRATCH
@@ -69,10 +63,13 @@ export EXECTEMPL=hydra_exclusive #short
 #export NCORESPTASK=2
 
 # TRYING TO DEBUG MPI_Cart_create in GEM called from QCG-PJ job
-export KMP_STACKSIZE=500000000
-ulimit -s unlimited
+#export KMP_STACKSIZE=500000000
+#ulimit -s unlimited
 
-echo -e '> In this run: use ExecuteLocal only + QCGPJ pool + '$MPIMOD' exec mode + '$SLURM_NNODES' nodes + 4 params + commandline passed with '$MPICMD' \n'
+export POLORDER='3'
+
+echo -e '> In this run: use ExecuteLocal only + QCGPJ pool + '$MPIMOD' exec mode + '${SLURM_NNODES} \
+' nodes + 2 params + pol-order '${POLORDER}' + commandline passed with '$MPICMD' \n'
 
 ####################################
 # Run the UQ code
