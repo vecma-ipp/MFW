@@ -15,7 +15,7 @@ RUNRANGE=4 #16
 #UQCAMPDIR='dy6n5hp9' # folder id of a completed run with 100 GEM calls, and 11 series of runs 100 calls each
 # TODO new workflow with all the snapshot solved will have a different directory!
 UQCAMPDIR='moj202gj' #folder ID of a completed run with 450 GEM calls
-UQCAMPDIR='1wu9k2wa'
+UQCAMPDIR=${2:-'1wu9k2wa'}
 
 #DIR='/marconi_scratch/userexternal/yyudin00/VARY_1FT_GEM_NT_qairnbbz' # first run of 16 GEM cases in a script, n_it<=500
 #DIR='/marconi_scratch/userexternal/yyudin00/VARY_1FT_GEM_NT_qpyxg3bb' # first dir with 2 GEM runs
