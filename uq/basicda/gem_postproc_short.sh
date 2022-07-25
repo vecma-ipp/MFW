@@ -5,7 +5,7 @@
 #0. Set directories
 # folder of output CPO files, should be same as number of SLURM submissions (macro-macro-iterations)
 # should be the same as number of MMit TO process
-CPONUM=${1:-1}
+CPONUM=${1:-}
 
 # number of runs in current UQ campaign
 RUNRANGE=16
@@ -16,7 +16,7 @@ DIR=$SCRATCH'/VARY_1FT_GEM_NT_'$UQCAMPDIR
 
 DIR_SRC=$DIR'/runs/runs_0-100000000/runs_0-1000000/runs_0-10000/runs_0-100/'
 
-DIR_CODE=$HOME'/codes/MFW/uq/basicda/'
+DIR_CODE=$HOME'/code/MFW/uq/basicda/'
 
 #1. Transfer output files from the run directories to a separete cpo dir
 

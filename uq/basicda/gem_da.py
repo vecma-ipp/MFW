@@ -461,7 +461,7 @@ def apply_arma(values):
 
     return values
 
-def filter_trend(values, method='hpf'):
+def filter_trend(values, method='hpf', name=''):
     """
     Applies filter to split every time series into stationary and non-stationary part
     
@@ -530,9 +530,14 @@ def filter_trend(values, method='hpf'):
         #plt.loglog(freq, np.abs(val_slow_spectrum)**2), '.'
         #plt.savefig('debug_fft_spec_s.png')
         #plt.close()
-            plt.loglog(freq, np.abs(val_spectrum)**2,'')
+            slope = -2.
+            plt.loglog(freq[:-1], np.abs(val_spectrum[:-1])**2,'')
             plt.axvline(thr, alpha=0.5, color='r', linestyle='--')
-            plt.savefig('fft_spec'+str(i)+'.png')
+            plt.loglog(freq[:-1], 
+                       np.exp(val_spectrum[:-1].min()*np.power(freq[:-1], slope)), 
+                       color='k', 
+                       linestyle='--')
+            plt.savefig('fft_spec_'+name+'_'+str(i)+'.png')
             plt.close()
         #print('which frequencies have high contribution')
         #print(np.argwhere(val_spectrum>10000.))
@@ -931,13 +936,15 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
                 #                                         name_postfix='_'+mainfoldernum       
 
         # 3) Getting the input profiles values, primarily for the plot labels
-        db_id = 10002794
-        camp_id = '1wu9k2wa' #'moj202gj'
-
-        cpo_num = int(mainfoldernum[mainfoldernum.rfind('_')+1:]) # if the leaf folder is named [a+]_[d+]
+        pos_str_cpo_num = mainfoldernum.rfind('_')+1
+        cpo_num = int(mainfoldernum[pos_str_cpo_num:]) # if the leaf folder is named [a+]_[d+]
         #cpo_num = int(foldername[foldername.rfind('/')+1:])
         print('cpo_num={0}'.format(cpo_num)) ###DEBUG
         mmiter_num = cpo_num #6 -was in file on Marconi 
+
+        db_id = 10002794 # where to get this?
+        #camp_id = '1wu9k2wa' #'moj202gj' # TODO find from 'foldername' or 'mainfoldernum'
+        camp_id = mainfoldernum[mainfoldernum[:pos_str_cpo_num-1].rfind('_')+1:pos_str_cpo_num-1]
 
         workdir_camp_db = './' 
 
@@ -1137,7 +1144,7 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
                              xlabel=runs_input_names_new[0],
                              ylabel=p+'_'+a
                              )
-                axes.get_figure().savefig('scan_'+p+'_'+a+'.png')
+                axes.get_figure().savefig('scan_'+p+'_'+a+'_'+mainfoldernum+'.png')
             print('plotting cuts done')
 
             # 4.5.2) Calcualting linear regression against time fit for the last window:
@@ -1167,10 +1174,11 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
             # 4.5.4) Applying Fast Fourier Transform
             val_trend_fft_s = []
             for runn in runnum_list:
-                """
-                val_trend_fft, val_fluct_fft = filter_trend(val_wind_s[runn-1], "fft")
+                
+                val_trend_fft, val_fluct_fft = filter_trend(val_wind_s[runn-1], "fft", 
+                                                 name=p+'_'+a+'_'+mainfoldernum+'_'+str(runn))
                 val_trend_fft_s.append(val_trend_fft)            
-                """
+                
                 #TODO: pass number of case to save different files
 
             # 4.5.5) Applying Exponential Averaging:
