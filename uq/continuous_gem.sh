@@ -23,7 +23,7 @@ COM=run_cobra_loop_resume_gem_nt.sh # for COBRA
 
 # TODO: add a first campaign, probably started with a different SLURM script using different non-restart python UQ script, and extract the folder name
 #ROOTCAMPDIR='moj202gj' # at MARCONI
-ROOTCAMPDIR='1wu9k2wa' # at COBRA
+export ROOTCAMPDIR='1wu9k2wa' # at COBRA
 
 # directory ID of an original UQ campaign
 

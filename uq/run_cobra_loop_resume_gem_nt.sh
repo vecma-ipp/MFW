@@ -8,7 +8,7 @@
 #SBATCH --error=test-loopntuq-err.%j
 
 ## wall time in format (HOURS):MINUTES:SECONDS
-#SBATCH --time=12:00:00
+#SBATCH --time=9:00:00
 
 ## number of nodes and tasks per node
 # order=3, n_params=4, n_subd=8 -> 1024 across 40 (80 for hthreading, not used) cpus -> 27 nodes
@@ -29,7 +29,7 @@
 #SBATCH --mail-user=yyudin@ipp.mpg.de
 
 export SYS=COBRA
-export SCRATCH=$SCRATCH
+export SCRATCH=${SCRATCH}
 
 # MPI programs starter, MPCDF recommends using 'srun' only at COBRA!
 export MPICMD=srun #mpiexec #mpirun #intelmpi
@@ -42,20 +42,22 @@ export EASYPJ_CONFIG=conf.sh
 
 # Define some global variables to configure UQ software
 export MPIMOD=default #srunmpi
-export EXECTEMPL=hydra_exclusive #short
+#export EXECTEMPL=hydra_exclusive #short
 
 export OLDCAMP='1wu9k2wa'
 
-echo -e '> In this run: use ExecuteLocal only + QCGPJ pool + '$MPIMOD' exec mode + '$SLURM_NNODES
-' nodes + 1 param + pol-order 3 + commandline passed with '$MPICMD' \n'
+export POLORDER='3'
+
+echo -e '> In this run: use ExecuteLocal only + QCGPJ pool + '${MPIMOD}' exec mode + '$SLURM_NNODES
+' nodes + 1 param + pol-order '${POLORDER}' + commandline passed with '${MPICMD}' \n'
 
 ####################################
 # Run the UQ code
 
 # Echo SLURM environmental variables
-scontrol show --detail job $SLURM_JOBID
+scontrol show --detail job ${SLURM_JOBID}
 
-python3 tests/gem_notransp.py > test-loopntuq-log.${SLURM_JOBID}
+python3 tests/gem_nt_resume.py ${OLDCAMP}> test-loopntuq-log.${SLURM_JOBID}
 
 echo "> Finished an UQ SLURM job!"
 
