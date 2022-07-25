@@ -494,8 +494,8 @@ def filter_trend(values, method='hpf', name=''):
              
         for i in range(nftc):
 
-            val_spectrum = np.fft.fft(values[i])
-            freq = np.fft.fftfreq(values.shape[-1], 1.)
+            val_spectrum = np.fft.rfft(values[i])
+            freq = np.fft.rfftfreq(values.shape[-1], 1.)
 
             #print('v.shape = {}'.format(values.shape)) ### DEBUG
             #print('val_spectrum = {}'.format(val_spectrum)) ### DEBUG
@@ -509,8 +509,8 @@ def filter_trend(values, method='hpf', name=''):
             val_slow_spectrum[np.abs(freq) > thr] = 0.
             val_fast_spectrum[np.abs(freq) < thr] = 0.
 
-            val_trend.append(np.abs(np.fft.ifft(val_slow_spectrum)))
-            val_cycle.append(np.abs(np.fft.ifft(val_fast_spectrum)))
+            val_trend.append(np.abs(np.fft.irfft(val_slow_spectrum)))
+            val_cycle.append(np.abs(np.fft.irfft(val_fast_spectrum)))
 
             en_ap_sl = (np.abs(val_slow_spectrum)**2).sum()
             en_ap_fs = (np.abs(val_fast_spectrum)**2).sum()
@@ -521,26 +521,19 @@ def filter_trend(values, method='hpf', name=''):
                    and fraction of it for low frequencies: {3:.4e}'''.
                        format(en_ap_tot, en_ap_sl, en_ap_fs, en_frac))
 
-        # DEBUGING part of block
-        # why the ifft is scaled down around the average?
-        # what is the median of frequencies?
-        #plt.plot(np.arange(values.shape[0]), val_trend)
-        #plt.savefig('debug_fft_trend.png')
-        #plt.close()
-        #plt.loglog(freq, np.abs(val_slow_spectrum)**2), '.'
-        #plt.savefig('debug_fft_spec_s.png')
-        #plt.close()
-            slope = -2.
-            plt.loglog(freq[:-1], np.abs(val_spectrum[:-1])**2,'')
-            plt.axvline(thr, alpha=0.5, color='r', linestyle='--')
-            plt.loglog(freq[:-1], 
-                       np.exp(val_spectrum[:-1].min()*np.power(freq[:-1], slope)), 
-                       color='k', 
-                       linestyle='--')
-            plt.savefig('fft_spec_'+name+'_'+str(i)+'.png')
-            plt.close()
-        #print('which frequencies have high contribution')
-        #print(np.argwhere(val_spectrum>10000.))
+            # DEBUGING part of block
+            # why the ifft is scaled down around the average?
+            # what is the median of frequencies?
+
+            #plt.plot(np.arange(values.shape[0]), val_trend)
+            #plt.savefig('debug_fft_trend.png')
+            #plt.close()
+            #print('which frequencies have high contribution')
+            #print(np.argwhere(val_spectrum>10000.))
+            #print('freqs: {}'.format(freq))
+
+            # Plotting Fourier spectrum of the windowed time series
+            plot_fft(freq, val_spectrum, thr, -2, 'fft_spec_'+name+'_'+str(i))
       
     elif method == 'hpf':
         lam = 0.5*1e9
@@ -652,6 +645,30 @@ def filter_trend(values, method='hpf', name=''):
         print('>Error in filtering: no such method')
    
     return np.array(val_trend), np.array(val_cycle)
+
+def plot_fft(freq, vals, thr, slope=-2, name='fft'):
+    """
+    Plot spectrum of some univariate function, as well as
+        vertical line for some power threshold
+        slope of the spectrum
+    """
+    #slope = -2.  
+    pivot_val = (vals[-1]**2) * np.power(freq[-1], -slope) 
+    
+    plt.loglog(freq, np.abs(vals)**2, color='b')
+    
+    plt.axvline(thr, alpha=0.5, color='r', linestyle='--')
+    
+    plt.loglog(freq, 
+                #pivot_val*np.power(10., slope * np.log10(freq)), 
+                pivot_val*np.power(freq, slope), 
+                color='k',
+                linestyle='--'
+            )
+    
+    plt.savefig(name+'.png')
+    
+    plt.close()
 
 def compare_gaussian(pdf, domain, moments):
     """
@@ -1145,6 +1162,7 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
                              ylabel=p+'_'+a
                              )
                 axes.get_figure().savefig('scan_'+p+'_'+a+'_'+mainfoldernum+'.png')
+                plt.close()
             print('plotting cuts done')
 
             # 4.5.2) Calcualting linear regression against time fit for the last window:
