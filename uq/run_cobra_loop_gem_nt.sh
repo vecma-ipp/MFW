@@ -14,7 +14,7 @@
 ## number of nodes and tasks per node
 # order=3, n_params=4, n_subd=8 -> 1024 across 40 (80 for hthreading, not used) cpus -> 27 nodes
 ###SBATCH --nodes=27 # MIND number of parameters in variation in the script
-#SBATCH --nodes=2
+#SBATCH --nodes=4
 #SBATCH --ntasks-per-node=40
 ###SBATCH --ntasks-per-core=1
 ###SBATCH --cpus-per-task=8
@@ -36,16 +36,17 @@
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=yyudin@ipp.mpg.de
 
-source activate /u/yyudin/conda-envs/python394
+source activate ${HOME}/conda-envs/python394
 
 export SYS=COBRA
-export SCRATCH=$SCRATCH
+export SCRATCH=${SCRATCH}
 
 #export PYTHONPATH=/u/yyudin/code/ual_python_interface:$PYTHONPATH
 #export PYTHONPATH=/u/yyudin/code/MFW/uq:$PYTHONPATH
 
 # MPI programs starter, MPCDF recommends using 'srun' only at COBRA!
 export MPICMD=srun #mpiexec #mpirun #intelmpi
+
 export LD_LIBRARY_PATH=${FFTW_HOME}/lib:${LD_LIBRARY_PATH}
 
 # For QCG-PilotJob usage
@@ -66,16 +67,16 @@ export EXECTEMPL=hydra_exclusive #short
 #export KMP_STACKSIZE=500000000
 #ulimit -s unlimited
 
-export POLORDER='3'
+export POLORDER=3
 
-echo -e '> In this run: use ExecuteLocal only + QCGPJ pool + '$MPIMOD' exec mode + '${SLURM_NNODES} \
-' nodes + 2 params + pol-order '${POLORDER}' + commandline passed with '$MPICMD' \n'
+echo -e '> In this run: use ExecuteLocal only + QCGPJ pool + '${MPIMOD}' exec mode + '${SLURM_NNODES} \
+' nodes + 2 params + pol-order '${POLORDER}' + commandline passed with '${MPICMD}' \n'
 
 ####################################
 # Run the UQ code
 
 # Echo SLURM environmental variables
-scontrol show --detail job $SLURM_JOBID
+scontrol show --detail job ${SLURM_JOBID}
 
 #scontrol setdebug 3
 #scontrol schedloglevel 1
@@ -83,4 +84,4 @@ scontrol show --detail job $SLURM_JOBID
 python3 tests/gem_notransp.py > test-loopntuq-log.${SLURM_JOBID}
 
 echo "> Finished an UQ SLURM job!"
-scontrol show --detail job $SLURM_JOBID
+scontrol show --detail job ${SLURM_JOBID}

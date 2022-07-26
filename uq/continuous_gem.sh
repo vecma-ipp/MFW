@@ -23,7 +23,8 @@ COM=run_cobra_loop_resume_gem_nt.sh # for COBRA
 
 # TODO: add a first campaign, probably started with a different SLURM script using different non-restart python UQ script, and extract the folder name
 #ROOTCAMPDIR='moj202gj' # at MARCONI
-export ROOTCAMPDIR=${2:-'1wu9k2wa'} # at COBRA
+#ROOTCAMPDIR='1wu9k2wa' # at COBRA
+export ROOTCAMPDIR=${2:-'brus48mm'}
 
 # directory ID of an original UQ campaign
 
@@ -38,7 +39,7 @@ echo "Starting the very first SLURM submission with UQ campaign"
 
 CPONUM=${FRUN}
 #PREVID=$(sbatch --parsable --wait ${COM} 2>&1 | sed 's/[S,a-z]* //g')
-PREVID=$(sbatch --export=ALL,CPONUM=${FRUN} --parsable --wait ${COM})
+PREVID=$(sbatch --export=ALL,CPONUM=${FRUN},OLDCAMP=${ROOTCAMPDIR} --parsable --wait ${COM})
 
 #1'. Save and process the outputs after the finish of the submission
 echo "Finished the first new UQ campaign "${PREVID}
@@ -60,7 +61,7 @@ for n in `seq ${FRUN} ${LASTRUN}`; do
 
     CPONUM=${n}
     #CURID=$(sbatch --export=ALL,CPONUM=${n} --parsable --dependency=afterany:${PREVID}:+3 --wait ${COM}  2>&1 | sed 's/[S,a-z]* //g')
-    CURID=$(sbatch --export=ALL,CPONUM=${n} --parsable --dependency=afterany:${PREVID}:+3 --wait ${COM})
+    CURID=$(sbatch --export=ALL,CPONUM=${n},OLDCAMP=${ROOTCAMPDIR} --parsable --dependency=afterany:${PREVID}:+3 --wait ${COM})
     #TODO: ideally use =afterok and make sure there are no errors in the UQ script
     #TODO make sure that the output files either have continius numerations or stored separately
     

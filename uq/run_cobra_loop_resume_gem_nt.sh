@@ -28,7 +28,6 @@
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=yyudin@ipp.mpg.de
 
-#TODO restore run_marconi_loop_gem_nt.sh from git before 57963b53de11316ac612da84eb37fe977dccf3cc !
 
 #module load anaconda/3/2021.11 intel/21.5.0 mkl impi/2021.5 fftw-mpi/3.3.10
 
@@ -52,9 +51,13 @@ export EASYPJ_CONFIG=conf.sh
 # Define some global variables to configure UQ software
 export MPIMOD=default #srunmpi
 
-export OLDCAMP='1wu9k2wa'
+echo '> CPONUM and OLDCAMP are: '
+echo ${CPONUM}
+echo ${OLDCAMP}
 
-export POLORDER='3'
+export OLDCAMP=${1:-'brus48mm'} #'1wu9k2wa'
+
+export POLORDER=3
 
 echo -e '> In this run: use ExecuteLocal only + QCGPJ pool + '${MPIMOD}' exec mode + '${SLURM_NNODES} \
 ' nodes + 1 param + pol-order '${POLORDER}' + commandline passed with '${MPICMD}' \n'
