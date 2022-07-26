@@ -93,7 +93,7 @@ def SA_exploite(analysis, qoi):
     for ea, ee in zip(sens_eigva, sens_eigve): 
         print('E.Val. {0} for E.Vec. {1}'.format(ea,ee))
 
-#AUG_GM_date_explore(filename='../data/AUG_gem_inoutput.txt')
+    #AUG_GM_date_explore(filename='../data/AUG_gem_inoutput.txt')
 
 def profile_evol_load(rho=0.69, folder_name='../gem_data/cpo5/', prof_names=['ti_transp', 'te_transp'], attrib_names=['flux'], 
                       coord_len=1, var_num=1, file_code_name='gem', name_postfix=''):
@@ -486,7 +486,8 @@ def filter_trend(values, method='hpf', name=''):
 
     # Find Fast Fourier Transform of the series 
     if method =='fft':
-        thr = 2**(-10)
+        
+        thr = values.shape[-1] * (2**(-12))
         thr_frac = 0.5
         
         val_trend = []
@@ -730,7 +731,7 @@ def read_run_uq(db_path, wd_path='./'):
 
     return input_values, input_names
 
-def plot_response_cuts(data, input_names, output_names):
+def plot_response_cuts(data, input_names, output_names, foldname=''):
     """
     Plot different cuts (fixing all input parameter values but one) of code response for given QoI
         Parameters:
@@ -740,108 +741,123 @@ def plot_response_cuts(data, input_names, output_names):
                          also used for plot labels
             output_names: list of strings with output names, corresponds to dataframe columns,
                           also used for plot labels
+            foldname: string of original campaign id to destinguish plot names
     """
-    
-    n_inputs = len(input_names)
-    n_points = len(data.index)
-    n_points_perdim = int(n_points ** (1./n_inputs))
-    n_fixvals = n_points_perdim ** (n_inputs - 1)
-    n_plots = (n_inputs) * (n_fixvals)
+    if len(input_names) == 1:
+        # If the dimension is one there are no cuts, only a single plot
 
-    qoi_name = output_names[0] # TODO to make modifyable
-    qoi_std_name = qoi_name + '_std'
-    qoi_stem_name= qoi_name + '_stem'
+        axes = data.plot(x=input_names[0], y=output_names[0],
+                             yerr=output_names[0]+'_stem',
+                             kind='line', 
+                             title='Response for a single argument',
+                             xlabel=input_names[0],
+                             ylabel=output_names[0]
+                             )
+        axes.get_figure().savefig('scan_'+output_names[0]+'_'+foldname+'.png')
+        plt.close()
 
-    #print([n_inputs, n_points, n_points_perdim, n_fixvals, n_plots, qoi_name]) ###DEBUG
-    
-    # Get unique values for every input dimension
-    input_vals_unique = np.array([np.unique(data[i]) for i in input_names])
-    print("input_vals_unique={}".format(input_vals_unique)) ###DEBUG
- 
-    # a geneartor for numbers for input dimension numbers
-    input_inds = range(n_inputs)
+    else:
 
-    fig, ax = plt.subplots(n_inputs, n_fixvals, 
-                           figsize=(40, 20)
-                          )
+        n_inputs = len(input_names)
+        n_points = len(data.index)
+        n_points_perdim = int(n_points ** (1./n_inputs))
+        n_fixvals = n_points_perdim ** (n_inputs - 1)
+        n_plots = (n_inputs) * (n_fixvals)
 
-    # Iterate over all the input dimensions, selecting single one as a running variable
-    for i_ip in range(n_inputs):
+        qoi_name = output_names[0] # TODO to make modifyable
+        qoi_std_name = qoi_name + '_std'
+        qoi_stem_name= qoi_name + '_stem'
 
-        running_ip_name = input_names[i_ip]
-        input_names_left = [n for n in input_names if n != running_ip_name]
-        input_inds_left = [n for n in input_inds if n != i_ip]
-        fixed_ip_names = ''.join([n+'&' for n in input_names_left])
-
-        offset = 1
-
-        input_fixvals_unique = list(itertools.product(
-                                    *[input_vals_unique[i,:].tolist() for i in input_inds_left]))
+        #print([n_inputs, n_points, n_points_perdim, n_fixvals, n_plots, qoi_name]) ###DEBUG
         
-        #print([i_ip, running_ip_name, input_names_left, 
-        #      input_inds_left, fixed_ip_names, input_fixvals_unique]) ###DEBUG
+        # Get unique values for every input dimension
+        input_vals_unique = np.array([np.unique(data[i]) for i in input_names])
+        print("input_vals_unique={}".format(input_vals_unique)) ###DEBUG
+    
+        # A generator for numbers for input dimension numbers
+        input_inds = range(n_inputs)
 
-        # Iterate over the all combinations of input parameters values to be kept const for a cut
-        for j_fixval in range(n_fixvals):
-            #print([i_ip, j_fixval]) ###DEBUG
-       
-            #pivot_fixed_val = data[input_names_left][j_fixval+offset]
-            #tot_ind = data[input_names_left].where() #TODO location where element is equal to pivot_fixed_val
+        fig, ax = plt.subplots(n_inputs, n_fixvals, 
+                            figsize=(40, 20)
+                            )
 
-            #tot_ind = np.arange(j_fixval*offset,
-            #                    (j_fixval+n_points_perdim-1)*offset,
-            #                    offset).tolist()
-            # TODO how to save symbolic expression for an array cut?
+        # Iterate over all the input dimensions, selecting single one as a running variable
+        for i_ip in range(n_inputs):
+
+            running_ip_name = input_names[i_ip]
+            input_names_left = [n for n in input_names if n != running_ip_name]
+            input_inds_left = [n for n in input_inds if n != i_ip]
+            fixed_ip_names = ''.join([n+'&' for n in input_names_left])
+
+            offset = 1
+
+            input_fixvals_unique = list(itertools.product(
+                                        *[input_vals_unique[i,:].tolist() for i in input_inds_left]))
             
-            input_fixvals = input_fixvals_unique[j_fixval]
-            fixval_query = ''.join([n+'=='+str(v)+' & ' for (n,v) in zip(input_names_left, input_fixvals)])[:-3]
-            # TODO query using abs(x-x*)<e_tol           
- 
-            #print([tot_ind, input_fixvals, fixval_query]) ###DEBUG            
+            #print([i_ip, running_ip_name, input_names_left, 
+            #      input_inds_left, fixed_ip_names, input_fixvals_unique]) ###DEBUG
 
-            data_slice = data.query(fixval_query)  #TODO FAILS IN THE LATEST PANDAS VERSION
-            #TODO: probably a very slow way to access a DataFrame - still think how to offset with 3-nested loop
+            # Iterate over the all combinations of input parameters values to be kept const for a cut
+            for j_fixval in range(n_fixvals):
+                #print([i_ip, j_fixval]) ###DEBUG
+        
+                #pivot_fixed_val = data[input_names_left][j_fixval+offset]
+                #tot_ind = data[input_names_left].where() #TODO location where element is equal to pivot_fixed_val
 
-            # TODO: choose one of three ways: 
-            #                      1) offsets - has to be 3 nested loops
-            #                      2) filtering - inside current two loops, use np.unique() -> using
-            #                      3) transform into ndarray of 4D, the iterate (look tuto notebook) - not gneneral for different number of params
- 
-            #fixed_ip_vals      = data[input_names_left][tot_ind[0]] # TODO count tot_ind
-            #fixed_ip_vals_str  = ''.join([str(v)+';' for v in fixed_ip_vals.to_list()]) 
-            fixed_ip_val_str = ''.join([n+'='+str(round(v, 1))+';' for (n,v) in zip(input_names_left, input_fixvals)])
+                #tot_ind = np.arange(j_fixval*offset,
+                #                    (j_fixval+n_points_perdim-1)*offset,
+                #                    offset).tolist()
+                # TODO how to save symbolic expression for an array cut?
+                
+                input_fixvals = input_fixvals_unique[j_fixval]
+                fixval_query = ''.join([n+'=='+str(v)+' & ' for (n,v) in zip(input_names_left, input_fixvals)])[:-3]
+                # TODO query using abs(x-x*)<e_tol           
+    
+                #print([tot_ind, input_fixvals, fixval_query]) ###DEBUG            
 
-            x_io = data_slice[running_ip_name].to_numpy()
-            y_qoi = data_slice[qoi_name].to_numpy()
-            y_std = data_slice[qoi_std_name].to_numpy()
-            y_stem= data_slice[qoi_stem_name].to_numpy()
- 
-            #ax[i_ip][j_fixval].plot(x_io, y_qoi, 'o-', 
-            #                   label='Response for ({})->({}) for {}'.
-            #                   format(running_ip_name, qoi_name, fixed_ip_val_str))         
-             
-            ax[i_ip][j_fixval].errorbar(x_io, y_qoi, yerr=1.96*y_stem,
-                                        #fmt='-o', 
-                                        uplims=False, lolims=False,
-                                        label='Response for ({})->({}) for {}'.
-                                        format(running_ip_name, qoi_name, fixed_ip_val_str))
-       
-            ax[i_ip][j_fixval].set_xlabel(r'{}'.format(running_ip_name))
-            ax[i_ip][j_fixval].set_ylabel(r'{}'.format(qoi_name))
-            ax[i_ip][j_fixval].set_title(r'{}'.format(fixed_ip_val_str), fontsize=10)
-      
-            ax[i_ip][j_fixval].set_ylim(1.5E+6, 3.8E+6) 
-            #ax[i_ip][j_fixval].legend(loc='best') 
-     
-        offset *= 2
-        # Filter on dataframe could be completely replaces by an offseting for different chosen parameter        
- 
-    fig.tight_layout()
-    #fig.suptitle('GEM response in {} around profile values'.format(qoi_name)) #TODO: pass names as arguments    
-    #fig.subplots_adjust(top=0.8)
+                data_slice = data.query(fixval_query)  #TODO FAILS IN THE LATEST PANDAS VERSION
+                #TODO: probably a very slow way to access a DataFrame - still think how to offset with 3-nested loop
 
-    plt.savefig('scan_{}.png'.format(qoi_name))
-    plt.close()
+                # TODO: choose one of three ways: 
+                #                      1) offsets - has to be 3 nested loops
+                #                      2) filtering - inside current two loops, use np.unique() -> using
+                #                      3) transform into ndarray of 4D, the iterate (look tuto notebook) - not gneneral for different number of params
+    
+                #fixed_ip_vals      = data[input_names_left][tot_ind[0]] # TODO count tot_ind
+                #fixed_ip_vals_str  = ''.join([str(v)+';' for v in fixed_ip_vals.to_list()]) 
+                fixed_ip_val_str = ''.join([n+'='+str(round(v, 1))+';' for (n,v) in zip(input_names_left, input_fixvals)])
+
+                x_io = data_slice[running_ip_name].to_numpy()
+                y_qoi = data_slice[qoi_name].to_numpy()
+                y_std = data_slice[qoi_std_name].to_numpy()
+                y_stem= data_slice[qoi_stem_name].to_numpy()
+    
+                #ax[i_ip][j_fixval].plot(x_io, y_qoi, 'o-', 
+                #                   label='Response for ({})->({}) for {}'.
+                #                   format(running_ip_name, qoi_name, fixed_ip_val_str))         
+                
+                ax[i_ip][j_fixval].errorbar(x_io, y_qoi, yerr=1.96*y_stem,
+                                            #fmt='-o', 
+                                            uplims=False, lolims=False,
+                                            label='Response for ({})->({}) for {}'.
+                                            format(running_ip_name, qoi_name, fixed_ip_val_str))
+        
+                ax[i_ip][j_fixval].set_xlabel(r'{}'.format(running_ip_name))
+                ax[i_ip][j_fixval].set_ylabel(r'{}'.format(qoi_name))
+                ax[i_ip][j_fixval].set_title(r'{}'.format(fixed_ip_val_str), fontsize=10)
+        
+                ax[i_ip][j_fixval].set_ylim(1.5E+6, 3.8E+6) 
+                #ax[i_ip][j_fixval].legend(loc='best') 
+        
+            offset *= 2
+            # Filter on dataframe could be completely replaces by an offseting for different chosen parameter        
+    
+        fig.tight_layout()
+        #fig.suptitle('GEM response in {} around profile values'.format(qoi_name)) #TODO: pass names as arguments    
+        #fig.subplots_adjust(top=0.8)
+
+        plt.savefig('scan_{0}_{1}.png'.format(qoi_name, foldname))
+        plt.close()
 
 def produce_stats_dataframes(runs_input_vals, val_trend_avg_s, val_std_s, stats_df, scan_df, 
                              n_lensample=1, runn=0, p='ti_transp', a='flux'):
@@ -1013,7 +1029,7 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
 
             # 4.1') Define the window to discard intial ramp-up and overshooting phase
             alpha_wind = 0.3 # how much to discard
-            val = val_ev_s[i] # singel series for a profile+attribute, shouldn't be used for now...
+            val = val_ev_s[i] # single series for a profile+attribute, shouldn't be used for now...
             #TODO: General series list now iterates with both prof+att and run case!
 
             val_wind_s = [val[:,int(alpha_wind*val.shape[-1]):] for val in val_ev_s]
@@ -1151,18 +1167,9 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
                 scan_df[param] = scan_df[param].astype('float')
 
             print('plotting cuts starting')
-            if len(runs_input_names_new) > 1:
-                plot_response_cuts(scan_df, runs_input_names_new, [p+'_'+a])
-            else:
-                axes = scan_df.plot(x=runs_input_names_new[0], y=p+'_'+a,
-                             yerr=p+'_'+a+'_std',
-                             kind='line', 
-                             title='Response for single a argument',
-                             xlabel=runs_input_names_new[0],
-                             ylabel=p+'_'+a
-                             )
-                axes.get_figure().savefig('scan_'+p+'_'+a+'_'+mainfoldernum+'.png')
-                plt.close()
+            
+            plot_response_cuts(scan_df, runs_input_names_new, [p+'_'+a], mainfoldernum)
+
             print('plotting cuts done')
 
             # 4.5.2) Calcualting linear regression against time fit for the last window:
