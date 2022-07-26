@@ -143,14 +143,14 @@ os.system("cp " + cpo_dir + "/ets_coreprof_in.cpo "
 os.system("cp " + cpo_dir + "/t0?.dat " + common_dir)
 
 # Copy XML and XSD files
-os.system("cp " + xml_dir + "/gem.xml " + common_dir)
-os.system("cp " + xml_dir + "/gem.xsd " + common_dir)
+os.system("cp " + xml_dir + "/gem.xml " + common_dir + "/gem.xml") #MIND the source file change
+os.system("cp " + xml_dir + "/gem.xsd " + common_dir + '/gem.xsd')
 
 # Copy  exec file
 os.system("cp " + obj_dir +"/"+ exec_code + " " + common_dir)
 exec_path = os.path.join(common_dir, exec_code)
 
-# TODO check if this index is read correctly
+# Check if this index is read correctly
 ftube_index_test = ftube_indices(common_dir + '/gem_coreprof_in.cpo', 
         #'/marconi/home/userexternal/yyudin00/code/MFW/standalone/bin/gem_coretransp_out.cpo',
           xml_dir + '/gem_coretransp_out.cpo',
@@ -173,8 +173,8 @@ decoder = CPODecoder(cpo_filename=output_filename,
 #####################################################
 ### --- Post EasyVVUQ release modifications ---
 
-# get ncores
-gemxml = XMLElement(xml_dir + "/gem.xml")
+# Get ncores
+gemxml = XMLElement(common_dir + "/gem.xml")
 npesx = gemxml.get_value("cpu_parameters.domain_decomposition.npesx")
 npess = gemxml.get_value("cpu_parameters.domain_decomposition.npess")
 nftubes = gemxml.get_value("cpu_parameters.parallel_cases.nftubes")
@@ -241,7 +241,7 @@ else:
 
 #qcgpjexec.run(processing_scheme=eqi.ProcessingScheme.EXEC_ONLY)
 
-# custom template for parallel job execution
+# Custom template for parallel job execution
 
 template_par_simple = {
                        ###'name': 'gem_long_var_simp',
@@ -278,7 +278,7 @@ template_par_cust = {
                                    },  
                     }
 
-# create list of actions in the campaign
+# Create list of actions in the campaign
 actions = Actions(
                   CreateRunDirectory('/runs'), 
                   Encode(encoder), 
@@ -294,6 +294,7 @@ my_campaign.add_app(name=campaign_name,
 # Create the samples
 my_sampler = uq.sampling.PCESampler(vary=vary, polynomial_order=pol_order)
 my_campaign.set_sampler(my_sampler)
+
 print('Creating an Executor')
 #executor=QCGPJExecutor(log_level='debug')
 

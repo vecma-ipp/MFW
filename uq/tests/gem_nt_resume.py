@@ -1,5 +1,5 @@
 import os
-from re import M
+#from re import M
 import sys
 
 import pickle
@@ -156,7 +156,7 @@ exec_path = os.path.join(common_dir, exec_code)
 
 # Check if this index is read correctly
 ftube_index_test = ftube_indices(common_dir + '/gem_coreprof_in.cpo', 
-        HOME+'/code/MFW/standalone/bin/gem_coretransp_out.cpo',
+        '../standalone/bin/gem_coretransp_out.cpo',
         False)
 print('The flux tube location defined from the cpo files is: {}'.format(ftube_index_test))
 
@@ -166,12 +166,7 @@ if ftube_index != ftube_index_test[0]:
 # FOR THE RESTART CAMPAIGN, EVERYTHING (ENCODER, DECODER, ACTIONS, VARY, etc.) SHOULD BE ALREADY THERE
 # Create the encoder and the decoder
 input_filename = "gem_coreprof_in.cpo"
-"""
-encoder = CPOEncoder(cpo_filename=input_filename,
-                     cpo_name=input_cponame,
-                     input_dir=common_dir,
-                     ftube_index=ftube_index)
-"""
+
 #TODO: decoder has to read the last spawned coretransp cpo file
 decoder = CPODecoder(cpo_filename=output_filename,
                      cpo_name=output_cponame,
@@ -187,8 +182,8 @@ npess = gemxml.get_value("cpu_parameters.domain_decomposition.npess")
 nftubes = gemxml.get_value("cpu_parameters.parallel_cases.nftubes")
 ncores = npesx*npess*nftubes
 
-#pol_order = 3
 pol_order = int(os.environ['POLORDER'])
+
 nruns = (pol_order + 1)**nparams # Nr=(Np+Nd, Nd)^T=(Np+Nd)!/(Np!*Nd!) |E.G.|=(3+4)!/3!4! = 5*6*7/6 = 35 => instead of 3^4=81?
 ncores_tot = ncores * nruns
 # current case: nruns=(5, 1)^T=5 not 16 ; achieved if using Point Collocation with regression via constructing PCESampler(regression=True)
@@ -216,6 +211,7 @@ print('Executing turbulence code with the line: ' + exec_path_comm)
 
 # Creating an 'Execute' object
 #print('Creating an ExecuteLocal, not ExecuteQCGPJ')
+
 if mpi_model=='default':
     # When execution model is 'default': 'execute' should be set to exec_path_comm
     execute=ExecuteLocal(exec_path_comm)
@@ -311,6 +307,7 @@ my_campaign.set_app(campaign_name)
 
 # ONLY AFTER HERE WE NEED AGAIN TO CHANGE SOMETHING w.r.t. PAST EXECUTION i.e. CREATE RESOURCE POOL; BY THIS TIME OTHER THINGS HAVE TO BE READY
 print('Creating an Executor')
+
 try:
     print('Creating resource pool')
 
