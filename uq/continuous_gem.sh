@@ -4,7 +4,7 @@
 # implemented as chaining of SLURM submissions
 
 # Launch with:
-# nohup ./continuous_gem.sh 1 > script_workflow_new_1.log 2>&1 &
+# nohup ./continuous_gem.sh 2 brus48mm > script_workflow_new_1.log 2>&1 &
 
 #0. State the total number of campaigns to run, and ordinal number of the last campaign in previous sequence
 echo "STARTING THE WORKFLOW"

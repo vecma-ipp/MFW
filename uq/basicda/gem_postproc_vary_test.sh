@@ -2,6 +2,8 @@
 
 # Bash script to run pos-processing routines from gem_da.py on outputs of a code, here on transport CPO files from GEM
 
+# NOTE: never run this for a campaing folder currently used by a code!!!
+
 #0. Set directories
 # folder of output CPO files, should be same as number of SLURM submissions (macro-macro-iterations)
 # should be the same as number of MMit TO process
@@ -58,6 +60,8 @@ for d in run*/ ; do #latest
     echo "${d}"
 
     mkdir cpo/${CPONUM}/${d}
+
+    # this should either be a slower 'cp' or never run for a folder currently used by a code
     mv ${d}/gem_coretransp*.cpo cpo/${CPONUM}/${d}/
 
     mkdir dat/${CPONUM}/${d}
