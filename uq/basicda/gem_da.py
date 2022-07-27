@@ -671,6 +671,31 @@ def plot_fft(freq, vals, thr, slope=-2, name='fft'):
     
     plt.close()
 
+def deconvolve_expavg(vals, alpha=200):
+    """
+    Deconvolve sequence of values produced by exponential averaging and get the original sequence
+
+    Parameters:
+    -----------
+        vals: array_like
+        Original sequence of values obtained after exponential averaging
+        alpha: flot
+        free memory-discounting parameter of exponential averaging
+        a e [0.; 1.] : x[t+1] = a * vals[t+1] + (1.-a) * vals[t]
+
+    Returns:
+        array_like
+        Original sequence of values before exponential averaging
+    """
+
+    xs = np.zeros(vals.shape)
+    
+    xs[1:] = (1./alpha) * vals[1:] - ((1.-alpha) / alpha) * vals[:-1]
+
+    xs[0] = (1./alpha) * vals[0]
+
+    return xs
+
 def compare_gaussian(pdf, domain, moments):
     """
     Takes pdf as f(x) e [0,1], x e {range of quantity values}
@@ -743,6 +768,7 @@ def plot_response_cuts(data, input_names, output_names, foldname=''):
                           also used for plot labels
             foldname: string of original campaign id to destinguish plot names
     """
+
     if len(input_names) == 1:
         # If the dimension is one there are no cuts, only a single plot
 
@@ -908,6 +934,8 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
       manfoldernum: for naming, if false then use cpo folder
     """
 
+    print('\n > Starting a new postprocessing sequence!!! \n')
+
     if mainfoldernum == 'false':
         mainfoldernum = foldername # rather bad, fails if foldername is composed
 
@@ -1020,12 +1048,20 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
             profile_evol_plot(val_ev_s, labels=labels, name=code_name+'_'+p+'_'+a+'_'+mainfoldernum, alignment='start') 
             
             #print('passes to plot: {}'.format(val_ev_s[0].shape)) ###DEBUG
-            #print('before shape {}'.format(val_ev_s[i].shape)) ###DEBUG
+            #print('before shape {}'.format(val_evname=code_name+'_'+p+'_'+a+'_'+mainfoldernum, alignment='start'_s[i].shape)) ###DEBUG
             #val = np.array(val_ev_s[i]).squeeze()
             #print('after shape {}'.format(val.shape)) ### DEBUG            
             #print('total number of different cases {}'.format(len(val_ev_s))) ###DEBUG
  
             ##ti_flux = np.genfromtxt('gem_ti_flux.csv', delimiter =", ")
+
+            # 4.1'*) Compare flux valeus from turbulent code and the values that where used before exponential averaging
+
+            val_deconv = deconvolve_expavg(val_ev_s[0])
+            
+            profile_evol_plot([val_ev_s[0], val_deconv], labels=['original', 'deconvolved'],
+                              name=code_name+'_'+p+'_'+a+'_'+mainfoldernum+'_deconv', 
+                              alignment='start')
 
             # 4.1') Define the window to discard intial ramp-up and overshooting phase
             alpha_wind = 0.3 # how much to discard
