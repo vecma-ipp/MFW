@@ -898,7 +898,7 @@ def produce_stats_dataframes(runs_input_vals, val_trend_avg_s, val_std_s, stats_
         n_lensample = val_trend_avg_s[runn-1].shape[-1]
    
     #n_lensample_corr = 1
-    #print('acf-corrected sample length: {0}'.format(n_lensample)) ###DEBUG
+    print('acf-corrected sample length: {0}'.format(n_lensample)) ###DEBUG
 
     stats_df = stats_df.append(pd.Series(
                                data={'mean': val_trend_avg_s[runn-1][0][0],
@@ -949,9 +949,9 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
 #                 'imp4dv',
            	 ]
     profiles = ['ti_transp', 
-#                'te_transp',
-#                'ni_transp',
-#                'ne_transp'
+                'te_transp',
+                'ni_transp',
+                'ne_transp'
                ]
 
     for code_name in code_names:
