@@ -4,6 +4,8 @@
 
 # NOTE: never run this for a campaing folder currently used by a code!!!
 
+RUN_WITH_CP=${3:-1}
+
 #0. Set directories
 # folder of output CPO files, should be same as number of SLURM submissions (macro-macro-iterations)
 # should be the same as number of MMit TO process
@@ -17,7 +19,7 @@ RUNRANGE=4 #16
 #UQCAMPDIR='dy6n5hp9' # folder id of a completed run with 100 GEM calls, and 11 series of runs 100 calls each
 # TODO new workflow with all the snapshot solved will have a different directory!
 UQCAMPDIR='moj202gj' #folder ID of a completed run with 450 GEM calls
-UQCAMPDIR=${2:-'1wu9k2wa'}
+UQCAMPDIR=${2:-'brus48mm'} #'1wu9k2wa'
 
 #DIR='/marconi_scratch/userexternal/yyudin00/VARY_1FT_GEM_NT_qairnbbz' # first run of 16 GEM cases in a script, n_it<=500
 #DIR='/marconi_scratch/userexternal/yyudin00/VARY_1FT_GEM_NT_qpyxg3bb' # first dir with 2 GEM runs
@@ -56,21 +58,28 @@ mkdir dat/${CPONUM}
 #mv gem-loop*.* $DIR
 #mv gem_coretransp*.* cpo
 
-for d in run*/ ; do #latest
-    echo "${d}"
+if ${RUN_WITH_CP} ; then
 
-    mkdir cpo/${CPONUM}/${d}
+  echo "copying CPOs from the latest run dirs"
 
-    # this should either be a slower 'cp' or never run for a folder currently used by a code
-    mv ${d}/gem_coretransp*.cpo cpo/${CPONUM}/${d}/
+  for d in run*/ ; do #latest
+      echo "${d}"
 
-    mkdir dat/${CPONUM}/${d}
-    cp ${d}/*.dat dat/${CPONUM}/${d}/
-    cp ${d}/fout_* dat/${CPONUM}/${d}/
-done
+      mkdir cpo/${CPONUM}/${d}
 
-cd ${DIR}
-cp campaign.db ${DIR_CODE}/campaign_${UQCAMPDIR}_${CPONUM}.db
+      # this should either be a slower 'cp' or never run for a folder currently used by a code
+      # alson never to be thought it's current CPO-s in the stated folder
+      mv ${d}/gem_coretransp*.cpo cpo/${CPONUM}/${d}/
+
+      mkdir dat/${CPONUM}/${d}
+      cp ${d}/*.dat dat/${CPONUM}/${d}/
+      cp ${d}/fout_* dat/${CPONUM}/${d}/
+  done
+
+  cd ${DIR}
+  cp campaign.db ${DIR_CODE}/campaign_${UQCAMPDIR}_${CPONUM}.db
+
+fi
 
 #mv imp4dv_coretransp_0*.cpo $DIR
 #mv gem_coretransp_0*.cpo $DIR
@@ -103,9 +112,18 @@ python3 gem_da.py ${DIR_SRC}/cpo/${CPONUM} 0 1 ${RUNRANGE} 'new_'${UQCAMPDIR}'_'
 #3. Prepare combined files for analysis of series across long-term runs
 #cp ${DIR_OUTPUT}/gem_??_transp_flux_evol_all${NUMPR}.csv ./
 
+QUANTITIES=('ti' 'te' 'ni' 'ne')
+
 for r in `seq 1 $RUNRANGE`; do #latest
+
     cp ${DIR_OUTPUT}/gem_??_transp_flux_evol_all_${UQCAMPDIR}_${CPONUMPR}_${r}.csv ./
-    cat gem_ti_transp_flux_evol_all_${UQCAMPDIR}_${CPONUMPR}_${r}.csv gem_ti_transp_flux_evol_new_${UQCAMPDIR}_${CPONUM}_${r}.csv > gem_ti_transp_flux_evol_all_${UQCAMPDIR}_${CPONUM}_${r}.csv
+    
+    for q in ${QUANTITIES[@]}; do
+
+      cat gem_${q}_transp_flux_evol_all_${UQCAMPDIR}_${CPONUMPR}_${r}.csv gem_${q}_transp_flux_evol_new_${UQCAMPDIR}_${CPONUM}_${r}.csv > gem_${q}_transp_flux_evol_all_${UQCAMPDIR}_${CPONUM}_${r}.csv
+     
+    done
+
 done
 
 #cat gem_ti_transp_flux_evol_all${NUMPR}.csv gem_ti_transp_flux_evol_${CPONUM}.csv > gem_ti_transp_flux_evol_all${NUM}.csv

@@ -900,23 +900,30 @@ def produce_stats_dataframes(runs_input_vals, val_trend_avg_s, val_std_s, stats_
     #n_lensample_corr = 1
     print('acf-corrected sample length: {0}'.format(n_lensample)) ###DEBUG
 
-    stats_df = stats_df.append(pd.Series(
+    stats_df = stats_df.append(#(stats_df,
+                          pd.Series(
                                data={'mean': val_trend_avg_s[runn-1][0][0],
                                      'std': val_std_s[runn-1][0][0]},
-                               name=str(runn-1))) # probably a bad workaround
+                               name=str(runn-1))
+                         #), axis=1
+                        ) # probably a bad workaround
 
     scan_data = runs_input_vals[runn-1]
     scan_data[p+'_'+a] = val_trend_avg_s[runn-1][0][0]
     scan_data[p+'_'+a+'_std'] = val_std_s[runn-1][0][0]
     scan_data[p+'_'+a+'_stem'] = scan_data[p+'_'+a+'_std'] / np.sqrt(n_lensample)
+    scan_data[p+'_'+a+'_acn'] = n_lensample
 
     scan_data_new = {}
     for k,v in scan_data.items():
         scan_data_new[k.replace('.', '_')] = v
 
-    scan_df = scan_df.append(pd.Series(
+    scan_df = scan_df.append(#(scan_df,
+                         pd.Series(
                               data=scan_data_new,
-                              name=str(runn-1)))
+                              name=str(runn-1))
+                        #), axis=1
+                       )
 
     return scan_df, stats_df
 
@@ -1028,6 +1035,10 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
         # 4) Iterate over cartesian product of all profiles and their attributes
         for i,(p,a) in enumerate(itertools.product(profiles, attributes)):
 
+            # After processing given profile/quantity we are not intersted in values
+            val_ev_s = []
+            print("Now running through {0} and {1}".format(p,a))
+
             # 4.0) Assuming there are multiple ensembles of runs for this submission 
             #     (corresponding to a global iteration of UQ campaigns) read all the 'runs' of an ensemble 
             #     in a single list of arrays
@@ -1036,7 +1047,8 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
             for runn in runnum_list:
                 csv_file_name = code_name + '_' + p + '_' + a + '_evol_' + mainfoldernum + '_' + str(runn) + '.csv'
                 val_ev_s.append(np.atleast_2d(np.genfromtxt(csv_file_name, delimiter=", ").T))     
-            print('val_ev_s[{}]).shape={}'.format(i, val_ev_s[i].shape)); #print(val_ev_s) ###DEBUG
+            
+            print('val_ev_s[{}].shape={}'.format(i, val_ev_s[i].shape)); #print(val_ev_s) ###DEBUG
             
             # 4.1) Plot the read values, pass a list of array
             
