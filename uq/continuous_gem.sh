@@ -34,6 +34,41 @@ echo "Last completed run number: "$CURRUN
 echo "First new run number: "$FRUN
 echo "Number of last run in this submission: "$LASTRUN
 
+# 0.0. Backing up snapshot files from the last runs
+$RUNRANGE=4
+TMP=${RANDOM}
+
+mkdir ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/runs/runs_0-100000000/runs_0-1000000/runs_0-10000/runs_0-100/bckp/
+mkdir ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/runs/runs_0-100000000/runs_0-1000000/runs_0-10000/runs_0-100/bckp/${TMP}
+
+for r in `seq 1 $RUNRANGE`; do
+  mkdir ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/runs/runs_0-100000000/runs_0-1000000/runs_0-10000/runs_0-100/bckp/${TMP}/run_${n}/
+
+  cp ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/runs/runs_0-100000000/runs_0-1000000/runs_0-10000/runs_0-100/run_${n}/*.dat \
+     ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/runs/runs_0-100000000/runs_0-1000000/runs_0-10000/runs_0-100/bckp/${TMP}/run_${n}/
+
+  cp ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/runs/runs_0-100000000/runs_0-1000000/runs_0-10000/runs_0-100/run_${n}/fout_0* \
+     ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/runs/runs_0-100000000/runs_0-1000000/runs_0-10000/runs_0-100/bckp/${TMP}/run_${n}/
+
+  cp ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/runs/runs_0-100000000/runs_0-1000000/runs_0-10000/runs_0-100/run_${n}/stopped \
+     ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/runs/runs_0-100000000/runs_0-1000000/runs_0-10000/runs_0-100/bckp/${TMP}/run_${n}/
+done
+
+# 0.1. Restoring snapshot files to the state of desired last completed run
+for r in `seq 1 $RUNRANGE`; do
+
+  cp ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/runs/runs_0-100000000/runs_0-1000000/runs_0-10000/runs_0-100/dat/${CURRUN}/run_${n}/*.dat \ 
+     ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/runs/runs_0-100000000/runs_0-1000000/runs_0-10000/runs_0-100/run_${n}/
+
+  cp ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/runs/runs_0-100000000/runs_0-1000000/runs_0-10000/runs_0-100/dat/${CURRUN}/run_${n}/fout_0* \ 
+     ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/runs/runs_0-100000000/runs_0-1000000/runs_0-10000/runs_0-100/run_${n}/
+
+  cp ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/runs/runs_0-100000000/runs_0-1000000/runs_0-10000/runs_0-100/dat/${CURRUN}/run_${n}/stopped \ 
+     ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/runs/runs_0-100000000/runs_0-1000000/runs_0-10000/runs_0-100/run_${n}/
+
+done
+#cd ${HOME}/code/MFW/uq/
+
 #1. First submission of a campaign, retrieve the SLURM job-id
 echo "Starting the very first SLURM submission with UQ campaign"
 
