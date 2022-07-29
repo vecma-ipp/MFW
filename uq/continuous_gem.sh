@@ -35,36 +35,32 @@ echo "First new run number: "$FRUN
 echo "Number of last run in this submission: "$LASTRUN
 
 # 0.0. Backing up snapshot files from the last runs
-$RUNRANGE=4
+RUNRANGE=4
 TMP=${RANDOM}
+RUNPATHSHORT=runs/runs_0-100000000/runs_0-1000000/runs_0-10000/runs_0-100
 
-mkdir ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/runs/runs_0-100000000/runs_0-1000000/runs_0-10000/runs_0-100/bckp/
-mkdir ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/runs/runs_0-100000000/runs_0-1000000/runs_0-10000/runs_0-100/bckp/${TMP}
+mkdir ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/${RUNPATHSHORT}/bckp/
+mkdir ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/${RUNPATHSHORT}/bckp/${TMP}
 
 for r in `seq 1 $RUNRANGE`; do
-  mkdir ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/runs/runs_0-100000000/runs_0-1000000/runs_0-10000/runs_0-100/bckp/${TMP}/run_${r}/
+  mkdir ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/${RUNPATHSHORT}/bckp/${TMP}/run_${r}/
 
-  cp ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/runs/runs_0-100000000/runs_0-1000000/runs_0-10000/runs_0-100/run_${r}/*.dat \
-     ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/runs/runs_0-100000000/runs_0-1000000/runs_0-10000/runs_0-100/bckp/${TMP}/run_${r}/
+  cp ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/${RUNPATHSHORT}/run_${r}/*.dat {SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/${RUNPATHSHORT}/bckp/${TMP}/run_${r}/
 
-  cp ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/runs/runs_0-100000000/runs_0-1000000/runs_0-10000/runs_0-100/run_${r}/fout_0* \
-     ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/runs/runs_0-100000000/runs_0-1000000/runs_0-10000/runs_0-100/bckp/${TMP}/run_${r}/
+  cp ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/${RUNPATHSHORT}/run_${r}/fout_0* ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/${RUNPATHSHORT}/bckp/${TMP}/run_${r}/
 
-  cp ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/runs/runs_0-100000000/runs_0-1000000/runs_0-10000/runs_0-100/run_${r}/stopped \
-     ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/runs/runs_0-100000000/runs_0-1000000/runs_0-10000/runs_0-100/bckp/${TMP}/run_${r}/
+  cp ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/${RUNPATHSHORT}/run_${r}/stopped ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/${RUNPATHSHORT}/bckp/${TMP}/run_${r}/
+  
 done
 
 # 0.1. Restoring snapshot files to the state of desired last completed run
 for r in `seq 1 $RUNRANGE`; do
 
-  cp ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/runs/runs_0-100000000/runs_0-1000000/runs_0-10000/runs_0-100/dat/${CURRUN}/run_${r}/*.dat \ 
-     ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/runs/runs_0-100000000/runs_0-1000000/runs_0-10000/runs_0-100/run_${r}/
+  cp ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/${RUNPATHSHORT}/dat/${CURRUN}/run_${r}/*.dat ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/${RUNPATHSHORT}/run_${r}/
 
-  cp ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/runs/runs_0-100000000/runs_0-1000000/runs_0-10000/runs_0-100/dat/${CURRUN}/run_${r}/fout_0* \ 
-     ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/runs/runs_0-100000000/runs_0-1000000/runs_0-10000/runs_0-100/run_${r}/
+  cp ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/${RUNPATHSHORT}/dat/${CURRUN}/run_${r}/fout_0* ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/${RUNPATHSHORT}/run_${r}/
 
-  cp ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/runs/runs_0-100000000/runs_0-1000000/runs_0-10000/runs_0-100/dat/${CURRUN}/run_${r}/stopped \ 
-     ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/runs/runs_0-100000000/runs_0-1000000/runs_0-10000/runs_0-100/run_${r}/
+  cp ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/${RUNPATHSHORT}/dat/${CURRUN}/run_${r}/stopped ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/${RUNPATHSHORT}/run_${r}/
 
 done
 #cd ${HOME}/code/MFW/uq/
