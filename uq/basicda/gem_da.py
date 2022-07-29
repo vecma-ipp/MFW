@@ -1,3 +1,7 @@
+"""
+Provides functions to work on CPO outputs of turbulence code GEM
+and a pipeline of post-processing
+"""
 import pandas as pd
 import numpy as np
 import matplotlib.pylab as plt
@@ -18,6 +22,7 @@ from statsmodels.tsa.ar_model import AutoReg
 from statsmodels.tsa.arima.model import ARIMA, ARIMAResults
 
 import easyvvuq as uq
+import easyvvuq.db.sql as db
 
 #from da_utils import *
 from ascii_cpo import read
@@ -29,6 +34,9 @@ import pprint
 from IPython.core import ultratb
 sys.excepthook = ultratb.FormattedTB(mode='Verbose', color_scheme='Linux', call_pdb=False)
 
+###################################################
+######### FUNCTIONS DEFINITIONS ###################
+###################################################
 
 def func_from_data(x, data):
     return data[1, (np.abs(data[0,:] - x)).argmin()]
@@ -85,18 +93,20 @@ def SA_exploite(analysis, qoi):
     for ea, ee in zip(sens_eigva, sens_eigve): 
         print('E.Val. {0} for E.Vec. {1}'.format(ea,ee))
 
-#AUG_GM_date_explore(filename='../data/AUG_gem_inoutput.txt')
+    #AUG_GM_date_explore(filename='../data/AUG_gem_inoutput.txt')
 
 def profile_evol_load(rho=0.69, folder_name='../gem_data/cpo5/', prof_names=['ti_transp', 'te_transp'], attrib_names=['flux'], 
                       coord_len=1, var_num=1, file_code_name='gem', name_postfix=''):
     """
-    Loads the quantitiy values from all CPO files with a specific type of name in the folder, then saves in a CSV file
+    Loads the quantitiy values from all CPO files with a specific type of name in the folder,
+          then saves in a CSV file
     
         Parameters:
              rho (double): radial coordinate rho of flux tube modeled in the code
              folder_name: folder location for the CPO files
              prof_names (list): list of strings with names of profile names in a CPO
-             attib_names (list): list of strings with names of parameters, which should be an attribute of a profile 
+             attib_names (list): list of strings with names of parameters, 
+                                 which should be an attribute of a profile 
              coord_len (int): number of flux tubes considered
              var_num (int): number of variables to read (? number of file)
              file_code (str): name of the code for which postprocessing is, same as prefic for CPO file names
@@ -191,7 +201,8 @@ def profile_evol_load(rho=0.69, folder_name='../gem_data/cpo5/', prof_names=['ti
 
 def profile_evol_plot(value_s, labels=['orig'], file_names=[], name='gem_ti_flux', alignment='end'):
     """
-    Saves a PNG of a Matplotlib plot for a quantity agains index/time; reads values from a list of numpy arrays passed
+    Saves a PNG of a Matplotlib plot for a quantity agains index/time; 
+          reads values from a list of numpy arrays passed
         Parameters:
             values_s (list): nested list of profile values (agains time) to be plotted
             labels (list): strings of labels for each values, should be the same length as inner list of value_s
@@ -238,9 +249,14 @@ def profile_evol_plot(value_s, labels=['orig'], file_names=[], name='gem_ti_flux
              #print('value[{0},:]'.format(i)); print(value[i,:]) ### DEBUG
              ## !!! TODO temporary changes !!!
              #ax.semilogy(ts, value[i,:], '-', label=lab+'_'+str(i))
-             ax.plot(ts, value[i,:], fmt_list[inum], label=lab+'_'+str(i))
+             ax.plot(ts, value[i,:], fmt_list[inum], label=lab)
 
-    plt.legend(loc='best')
+    ax.legend(loc='lower center',
+             #bbox_to_anchor=(0.5, 0.0), 
+              ncol=int(np.sqrt(len(labels))),
+              prop={'size' : 9})
+   
+    #plt.legend(loc='best')
     plt.savefig(name + '.png')
     plt.close()
 
@@ -253,7 +269,7 @@ def plot_coreprofval_dist(value_spw, labels=[], name='ti', discr_level=64):
     """
     #print('value_spw'); print(value_spw) ### DEBUG
      
-    # Number of flux tueb or cases
+    # Number of flux tube or case
     nftc = value_spw.shape[0]
 
     # Initialise lables if nothing was passed
@@ -289,8 +305,11 @@ def plot_coreprofval_dist(value_spw, labels=[], name='ti', discr_level=64):
         log_pdf_orig = kde.score_samples(value_spw[i, :, np.newaxis])
 
         ax.plot(x[:, 0], np.exp(log_pdf), fmt_list[i], label='density of core transport values')
-        ax.plot(value_spw[i], (-0.01*np.random.rand(log_pdf_orig.shape[0])) * np.exp(log_pdf_orig).min(), '+k')
+        
+        # Add 'pluses' underneath the plot for each point in the fitted sample
+        #ax.plot(value_spw[i], (-0.01*np.random.rand(log_pdf_orig.shape[0])) * np.exp(log_pdf_orig).min(), '+k')
 
+        # Add vertical lines for mean of the each sample
         ax.axvline(x=val_means[i], ymin=0., ymax=1., linestyle=fmt_list[i][:-1], color=fmt_list[i][-1:]) 
         #TODO: change the style specification 
     
@@ -327,18 +346,34 @@ def plot_coreprofval_dist(value_spw, labels=[], name='ti', discr_level=64):
 
 def get_coreprof_ev_acf(value_ev, name='ti', lags=[1,2,3,4,5,6,7,8,9,10]):
     """
-    Calculate autocorrelation function of the sequence of profile values
+    Calculates autocorrelation function of the sequence of profile values
+        Parameters:
+            value_ev: numpy array of length equal to original samle size
+            name    : profile name, used for outputs/plotting/saving
+            lags    : list of sizes of lags to test autocorrelation
+        Returns:
+            autocorrelation lenght
+            number of effective samples (one per ACF window)
+            ACF object
     """ 
-    #acf = [1. if l==0 else np.corrcoef(value_ev[l:], value_ev[:-l])[0][1] for l in lags]
-    
+       
     nl = 64    
     
-    nftc = value_ev.shape[0]    
+    nftc = value_ev.shape[0]
 
+    ac_len = []
+    ac_num = []   
+     
+    # Iterate over all different passed flux tubes and cases of runs
     print('>Calculating ACF')
     for i in range(nftc):
         
         print('Considering flux tube or case #{}'.format(i))
+
+        n_sample = value_ev.shape[-1]
+
+        acf_manual = [1. if l==0 else np.corrcoef(value_ev[i][l:], value_ev[i][:-l])[0][-1] for l in lags]
+        #print(acf_manual) ###DEBUG
 
         r,q,p  = acf(value_ev[i], nlags=nl, fft=True, qstat=True) 
  
@@ -358,8 +393,32 @@ def get_coreprof_ev_acf(value_ev, name='ti', lags=[1,2,3,4,5,6,7,8,9,10]):
         val_df = pd.DataFrame(value_ev[i])
    
         plot_acf(val_df, lags=lags)
-        plt.savefig(str(i)+'acf.png')
+        plt.savefig(str(i)+name+'_acf.png')
         plt.close()
+
+        # TODO find ACL, read up methods and implementations for that:
+        # Options
+        # 1) min(n) value for which ACF(n) <= Var(X_1..n)/sqrt(n) 
+        # 2) max value of a_n for an ARMA model
+
+        #acfs = acf_data_pd['AC'].to_numpy()
+        acfs = acf_manual
+        #errors = [np.std(value_ev[i][:l]) / np.mean(value_ev[i][:l]) for l in lags]
+        errors = [1./float(l) for l in lags]
+        #print(errors) ###DEBUG
+
+        acl = lags[0]
+        for l, ac, e in zip(lags, acfs, errors):
+            acl = l
+            if ac < e:
+                break
+
+        ac_len_cur = float(acl)
+        ac_len.append(ac_len_cur)
+        ac_num.append(int(n_sample/float(ac_len_cur)))
+       
+        #print([acf_manual, acfs, errors, acl, ac_len, ac_num, n_sample]) ###DEBUG
+
     """
     plot_pacf(val_df, lags=lags)
     plt.savefig('pacf.png')
@@ -376,7 +435,7 @@ def get_coreprof_ev_acf(value_ev, name='ti', lags=[1,2,3,4,5,6,7,8,9,10]):
     plt.close()
     """
 
-    return acf
+    return ac_len, ac_num 
 
 def apply_arma(values):
     """
@@ -402,7 +461,7 @@ def apply_arma(values):
 
     return values
 
-def filter_trend(values, method='hpf'):
+def filter_trend(values, method='hpf', name=''):
     """
     Applies filter to split every time series into stationary and non-stationary part
     
@@ -418,7 +477,8 @@ def filter_trend(values, method='hpf'):
                         linear_regression -
                     
         Returns:
-            Two data structure of same dimension and type as input, one corresponds for trend, another for fluctuations
+            Two data structure of same dimension and type as input, one corresponds for trend, 
+                another for fluctuations
         TODO: at the moment, back to return np-arrays
     """
  
@@ -426,7 +486,8 @@ def filter_trend(values, method='hpf'):
 
     # Find Fast Fourier Transform of the series 
     if method =='fft':
-        thr = 2**(-10)
+        
+        thr = values.shape[-1] * (2**(-12))
         thr_frac = 0.5
         
         val_trend = []
@@ -434,8 +495,8 @@ def filter_trend(values, method='hpf'):
              
         for i in range(nftc):
 
-            val_spectrum = np.fft.fft(values[i])
-            freq = np.fft.fftfreq(values.shape[-1], 1.)
+            val_spectrum = np.fft.rfft(values[i])
+            freq = np.fft.rfftfreq(values.shape[-1], 1.)
 
             #print('v.shape = {}'.format(values.shape)) ### DEBUG
             #print('val_spectrum = {}'.format(val_spectrum)) ### DEBUG
@@ -449,8 +510,8 @@ def filter_trend(values, method='hpf'):
             val_slow_spectrum[np.abs(freq) > thr] = 0.
             val_fast_spectrum[np.abs(freq) < thr] = 0.
 
-            val_trend.append(np.abs(np.fft.ifft(val_slow_spectrum)))
-            val_cycle.append(np.abs(np.fft.ifft(val_fast_spectrum)))
+            val_trend.append(np.abs(np.fft.irfft(val_slow_spectrum)))
+            val_cycle.append(np.abs(np.fft.irfft(val_fast_spectrum)))
 
             en_ap_sl = (np.abs(val_slow_spectrum)**2).sum()
             en_ap_fs = (np.abs(val_fast_spectrum)**2).sum()
@@ -461,21 +522,19 @@ def filter_trend(values, method='hpf'):
                    and fraction of it for low frequencies: {3:.4e}'''.
                        format(en_ap_tot, en_ap_sl, en_ap_fs, en_frac))
 
-        # DEBUGING part of block
-        # why the ifft is sclaed down around the average?
-        # what is the median of frequencies?
-        #plt.plot(np.arange(values.shape[0]), val_trend)
-        #plt.savefig('debug_fft_trend.png')
-        #plt.close()
-        #plt.loglog(freq, np.abs(val_slow_spectrum)**2), '.'
-        #plt.savefig('debug_fft_spec_s.png')
-        #plt.close()
-            plt.loglog(freq, np.abs(val_spectrum)**2,'')
-            plt.axvline(thr, alpha=0.5, color='r', linestyle='--')
-            plt.savefig('fft_spec'+str(i)+'.png')
-            plt.close()
-        #print('which frequencies have high contribution')
-        #print(np.argwhere(val_spectrum>10000.))
+            # DEBUGING part of block
+            # why the ifft is scaled down around the average?
+            # what is the median of frequencies?
+
+            #plt.plot(np.arange(values.shape[0]), val_trend)
+            #plt.savefig('debug_fft_trend.png')
+            #plt.close()
+            #print('which frequencies have high contribution')
+            #print(np.argwhere(val_spectrum>10000.))
+            #print('freqs: {}'.format(freq))
+
+            # Plotting Fourier spectrum of the windowed time series
+            plot_fft(freq, val_spectrum, thr, -2, 'fft_spec_'+name+'_'+str(i))
       
     elif method == 'hpf':
         lam = 0.5*1e9
@@ -588,6 +647,55 @@ def filter_trend(values, method='hpf'):
    
     return np.array(val_trend), np.array(val_cycle)
 
+def plot_fft(freq, vals, thr, slope=-2, name='fft'):
+    """
+    Plot spectrum of some univariate function, as well as
+        vertical line for some power threshold
+        slope of the spectrum
+    """
+    #slope = -2.  
+    pivot_val = (vals[-1]**2) * np.power(freq[-1], -slope) 
+    
+    plt.loglog(freq, np.abs(vals)**2, color='b')
+    
+    plt.axvline(thr, alpha=0.5, color='r', linestyle='--')
+    
+    plt.loglog(freq, 
+                #pivot_val*np.power(10., slope * np.log10(freq)), 
+                pivot_val*np.power(freq, slope), 
+                color='k',
+                linestyle='--'
+            )
+    
+    plt.savefig(name+'.png')
+    
+    plt.close()
+
+def deconvolve_expavg(vals, alpha=200):
+    """
+    Deconvolve sequence of values produced by exponential averaging and get the original sequence
+
+    Parameters:
+    -----------
+        vals: array_like
+        Original sequence of values obtained after exponential averaging
+        alpha: flot
+        free memory-discounting parameter of exponential averaging
+        a e [0.; 1.] : x[t+1] = a * vals[t+1] + (1.-a) * vals[t]
+
+    Returns:
+        array_like
+        Original sequence of values before exponential averaging
+    """
+
+    xs = np.zeros(vals.shape)
+    
+    xs[1:] = (1./alpha) * vals[1:] - ((1.-alpha) / alpha) * vals[:-1]
+
+    xs[0] = (1./alpha) * vals[0]
+
+    return xs
+
 def compare_gaussian(pdf, domain, moments):
     """
     Takes pdf as f(x) e [0,1], x e {range of quantity values}
@@ -619,7 +727,7 @@ def compare_gaussian(pdf, domain, moments):
 
     return kl_div
 
-def read_run_uq(db_path):
+def read_run_uq(db_path, wd_path='./'):
     """
     Reads information on code runs that was recorded into an EasyVVUQ campaign DB
          Parameters:
@@ -629,18 +737,26 @@ def read_run_uq(db_path):
              a list of stings with keys/names of input values 
    """
     
-    my_campaign = uq.Campaign(name="campaign_1", db_location=db_path)
+    camp_db = db.CampaignDB(location=db_path)
+    #camp_db.relocate(wd_path, 'campaign_1')
+    #TODO: get the runs information from DB object only
+     
+    #my_campaign = uq.Campaign(name="campaign_1",
+    #                          work_dir=wd_path,
+    #                          db_location=db_path)
 
-    runs = my_campaign.campaign_db.runs()
+    #runs = my_campaign.campaign_db.runs()
+    runs = camp_db.runs()
     input_values = [r[1]['params'] for r in runs]
 
-    run1 = my_campaign.campaign_db.run("run_1")
+    #run1 = my_campaign.campaign_db.run("run_1")
+    run1 = camp_db.run("run_1", campaign=1)
     input_names = list(run1['params'].keys())
     print(">Names of params: ".format(input_names))
 
     return input_values, input_names
 
-def plot_response_cuts(data, input_names, output_names):
+def plot_response_cuts(data, input_names, output_names, foldname=''):
     """
     Plot different cuts (fixing all input parameter values but one) of code response for given QoI
         Parameters:
@@ -650,38 +766,170 @@ def plot_response_cuts(data, input_names, output_names):
                          also used for plot labels
             output_names: list of strings with output names, corresponds to dataframe columns,
                           also used for plot labels
+            foldname: string of original campaign id to destinguish plot names
     """
-    
-    n_inputs = len(input_names)
-    n_points = len(df.index)
-    n_plots = (n_inputs) * (n_points)
 
-    qoi_name = output_names[0] # TODO to be modifyable
-    
-    fig, ax = plt.subplots(n_points, n_inputs, figsize=(20, 10))
+    if len(input_names) == 1:
+        # If the dimension is one there are no cuts, only a single plot
 
-    for i_ip in range(n_inputs):
-        running_ip_name = input_names[i_ip]
-        input_names_left = input_names = [n for n in input_names if n!=running_ip_name]
-        fixed_ip_names = ''.join([n+'&' for n in input_names_left])
-               for j_fixval in range(n_points):
+        axes = data.plot(x=input_names[0], y=output_names[0],
+                             yerr=output_names[0]+'_stem',
+                             kind='line', 
+                             title='Response for a single argument',
+                             xlabel=input_names[0],
+                             ylabel=output_names[0]
+                             )
+        axes.get_figure().savefig('scan_'+output_names[0]+'_'+foldname+'.png')
+        plt.close()
+
+    else:
+
+        n_inputs = len(input_names)
+        n_points = len(data.index)
+        n_points_perdim = int(n_points ** (1./n_inputs))
+        n_fixvals = n_points_perdim ** (n_inputs - 1)
+        n_plots = (n_inputs) * (n_fixvals)
+
+        qoi_name = output_names[0] # TODO to make modifyable
+        qoi_std_name = qoi_name + '_std'
+        qoi_stem_name= qoi_name + '_stem'
+
+        #print([n_inputs, n_points, n_points_perdim, n_fixvals, n_plots, qoi_name]) ###DEBUG
         
-                    fixed_ip_vals  = ''.join([str(v)+';' for v in data[input_names_left].to_list()]) 
-                    # TODO wouldn't work
-
+        # Get unique values for every input dimension
+        input_vals_unique = np.array([np.unique(data[i]) for i in input_names])
+        print("input_vals_unique={}".format(input_vals_unique)) ###DEBUG
     
-                    ax[i_ip][j_fixval].plot(x_io, y_qoi, 'o-', 
-                                       label='Response for ({})->({}) for ({})=({})'.
-                               format(running_ip_name, qoi_name, fixed_ip_names, fixed_ip_vals))         
-                    ax[i_ip][j_fixval].set_xlabel(r'{}'.format(running_ip_name))
-                    ax[i_i[][j_fixval].set_ylabel(r'{}'.format(qoi_name))
+        # A generator for numbers for input dimension numbers
+        input_inds = range(n_inputs)
+
+        fig, ax = plt.subplots(n_inputs, n_fixvals, 
+                            figsize=(40, 20)
+                            )
+
+        # Iterate over all the input dimensions, selecting single one as a running variable
+        for i_ip in range(n_inputs):
+
+            running_ip_name = input_names[i_ip]
+            input_names_left = [n for n in input_names if n != running_ip_name]
+            input_inds_left = [n for n in input_inds if n != i_ip]
+            fixed_ip_names = ''.join([n+'&' for n in input_names_left])
+
+            offset = 1
+
+            input_fixvals_unique = list(itertools.product(
+                                        *[input_vals_unique[i,:].tolist() for i in input_inds_left]))
+            
+            #print([i_ip, running_ip_name, input_names_left, 
+            #      input_inds_left, fixed_ip_names, input_fixvals_unique]) ###DEBUG
+
+            # Iterate over the all combinations of input parameters values to be kept const for a cut
+            for j_fixval in range(n_fixvals):
+                #print([i_ip, j_fixval]) ###DEBUG
         
-    fig.tight_layout()
-    
-    plt.savefig('scan_.png')
-    plt.close()
+                #pivot_fixed_val = data[input_names_left][j_fixval+offset]
+                #tot_ind = data[input_names_left].where() #TODO location where element is equal to pivot_fixed_val
 
-###########################################
+                #tot_ind = np.arange(j_fixval*offset,
+                #                    (j_fixval+n_points_perdim-1)*offset,
+                #                    offset).tolist()
+                # TODO how to save symbolic expression for an array cut?
+                
+                input_fixvals = input_fixvals_unique[j_fixval]
+                fixval_query = ''.join([n+'=='+str(v)+' & ' for (n,v) in zip(input_names_left, input_fixvals)])[:-3]
+                # TODO query using abs(x-x*)<e_tol           
+    
+                #print([tot_ind, input_fixvals, fixval_query]) ###DEBUG            
+
+                data_slice = data.query(fixval_query)  #TODO FAILS IN THE LATEST PANDAS VERSION
+                #TODO: probably a very slow way to access a DataFrame - still think how to offset with 3-nested loop
+
+                # TODO: choose one of three ways: 
+                #                      1) offsets - has to be 3 nested loops
+                #                      2) filtering - inside current two loops, use np.unique() -> using
+                #                      3) transform into ndarray of 4D, the iterate (look tuto notebook) - not gneneral for different number of params
+    
+                #fixed_ip_vals      = data[input_names_left][tot_ind[0]] # TODO count tot_ind
+                #fixed_ip_vals_str  = ''.join([str(v)+';' for v in fixed_ip_vals.to_list()]) 
+                fixed_ip_val_str = ''.join([n+'='+str(round(v, 1))+';' for (n,v) in zip(input_names_left, input_fixvals)])
+
+                x_io = data_slice[running_ip_name].to_numpy()
+                y_qoi = data_slice[qoi_name].to_numpy()
+                y_std = data_slice[qoi_std_name].to_numpy()
+                y_stem= data_slice[qoi_stem_name].to_numpy()
+    
+                #ax[i_ip][j_fixval].plot(x_io, y_qoi, 'o-', 
+                #                   label='Response for ({})->({}) for {}'.
+                #                   format(running_ip_name, qoi_name, fixed_ip_val_str))         
+                
+                ax[i_ip][j_fixval].errorbar(x_io, y_qoi, yerr=1.96*y_stem,
+                                            #fmt='-o', 
+                                            uplims=False, lolims=False,
+                                            label='Response for ({})->({}) for {}'.
+                                            format(running_ip_name, qoi_name, fixed_ip_val_str))
+        
+                ax[i_ip][j_fixval].set_xlabel(r'{}'.format(running_ip_name))
+                ax[i_ip][j_fixval].set_ylabel(r'{}'.format(qoi_name))
+                ax[i_ip][j_fixval].set_title(r'{}'.format(fixed_ip_val_str), fontsize=10)
+        
+                ax[i_ip][j_fixval].set_ylim(1.5E+6, 3.8E+6) 
+                #ax[i_ip][j_fixval].legend(loc='best') 
+        
+            offset *= 2
+            # Filter on dataframe could be completely replaces by an offseting for different chosen parameter        
+    
+        fig.tight_layout()
+        #fig.suptitle('GEM response in {} around profile values'.format(qoi_name)) #TODO: pass names as arguments    
+        #fig.subplots_adjust(top=0.8)
+
+        plt.savefig('scan_{0}_{1}.png'.format(qoi_name, foldname))
+        plt.close()
+
+def produce_stats_dataframes(runs_input_vals, val_trend_avg_s, val_std_s, stats_df, scan_df, 
+                             n_lensample=1, runn=0, p='ti_transp', a='flux'):
+    """
+    Composed pandas dataframes with code input/output and its statistics with single entry for a code run
+         Parameters:
+             
+         Returns: 
+             pandas DataFrame with rows - runs for different cases; columns - code io and stats
+    """
+    if n_lensample==1:
+        n_lensample = val_trend_avg_s[runn-1].shape[-1]
+   
+    #n_lensample_corr = 1
+    print('acf-corrected sample length: {0}'.format(n_lensample)) ###DEBUG
+
+    stats_df = stats_df.append(#(stats_df,
+                          pd.Series(
+                               data={'mean': val_trend_avg_s[runn-1][0][0],
+                                     'std': val_std_s[runn-1][0][0]},
+                               name=str(runn-1))
+                         #), axis=1
+                        ) # probably a bad workaround
+
+    scan_data = runs_input_vals[runn-1]
+    scan_data[p+'_'+a] = val_trend_avg_s[runn-1][0][0]
+    scan_data[p+'_'+a+'_std'] = val_std_s[runn-1][0][0]
+    scan_data[p+'_'+a+'_stem'] = scan_data[p+'_'+a+'_std'] / np.sqrt(n_lensample)
+    scan_data[p+'_'+a+'_acn'] = n_lensample
+
+    scan_data_new = {}
+    for k,v in scan_data.items():
+        scan_data_new[k.replace('.', '_')] = v
+
+    scan_df = scan_df.append(#(scan_df,
+                         pd.Series(
+                              data=scan_data_new,
+                              name=str(runn-1))
+                        #), axis=1
+                       )
+
+    return scan_df, stats_df
+
+#################################################l
+#### MAIN FUNCTION: PIPELINE OF PROCESSING ######
+#################################################
 
 def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernum='false'):
     """
@@ -692,6 +940,8 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
       runnum: number of different variants of run (e.g. profile shapes) to consider
       manfoldernum: for naming, if false then use cpo folder
     """
+
+    print('\n > Starting a new postprocessing sequence!!! \n')
 
     if mainfoldernum == 'false':
         mainfoldernum = foldername # rather bad, fails if foldername is composed
@@ -706,16 +956,20 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
 #                 'imp4dv',
            	 ]
     profiles = ['ti_transp', 
-#                'te_transp',
-#                'ni_transp',
-#                'ne_transp'
+                'te_transp',
+                'ni_transp',
+                'ne_transp'
                ]
 
     for code_name in code_names:
+    
         if code_name == 'imp4dv':
-       	    attributes = ['diff_eff','vconv_eff']
-        if code_name == 'gem':
-       	    attributes = ['flux']
+            attributes = ['diff_eff','vconv_eff']
+        elif code_name == 'gem':
+            attributes = ['flux']
+        else:
+            print('>Error in start of postprocessing: no such code recognized')
+
 
         # 1) If runforbatch, then csv are already in the folder, otherwise have to read CPO-s
         if not runforbatch:
@@ -750,23 +1004,40 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
                 #                                         name_postfix='_'+mainfoldernum       
 
         # 3) Getting the input profiles values, primarily for the plot labels
-        db_id = 10002794
-        camp_id = 'moj202gj'
-        mmiter_num = 6 
+        pos_str_cpo_num = mainfoldernum.rfind('_')+1
+        cpo_num = int(mainfoldernum[pos_str_cpo_num:]) # if the leaf folder is named [a+]_[d+]
+        #cpo_num = int(foldername[foldername.rfind('/')+1:])
+        print('cpo_num={0}'.format(cpo_num)) ###DEBUG
+        mmiter_num = cpo_num #6 -was in file on Marconi 
+
+        db_id = 10002794 # where to get this?
+        #camp_id = '1wu9k2wa' #'moj202gj' # TODO find from 'foldername' or 'mainfoldernum'
+        camp_id = mainfoldernum[mainfoldernum[:pos_str_cpo_num-1].rfind('_')+1:pos_str_cpo_num-1]
+
+        workdir_camp_db = './' 
+
         file_runs_db = "../gem_notransp_db_"+str(db_id)+".json" 
         #TODO: take the internal campaign folder ID as input, and then load the SLURM id -> 
-        # -> probably for that it is better to import EasyVVUQ and intilalise the campaign with the location of DB, 
+        # -> probably for that it is better to import EasyVVUQ and intilalise the campaign
+        # with the location of DB, 
         # then use the [my_]campaign.campaign_db.[func-s]() to read stuff about runs
         
         #runs_db_loc = "sqlite:///" + foldername + "/.."*7 + "/campaign.db"
-        runs_db_loc = "sqlite:///" + "campaign_" + camp_id + "_" + str(mmiter_num) + ".db"           
-        runs_uq_data, runs_input_names = read_run_uq(runs_db_loc) # test function, at least manually    
+        runs_db_loc = "sqlite:///" + "campaign_" + camp_id + "_" + str(mmiter_num) + ".db"
+        runs_input_vals, runs_input_names = read_run_uq(runs_db_loc, 
+                                                    workdir_camp_db) # test this function, at least manually  
+        print('runs_input_names={}'.format(runs_input_names)) ###DEBUG 
            
-        # 3') By default, create new list for readings and read them from file, even if they are in programm memory already      
+        # 3') By default, create new list for readings and read them from file, 
+        #     even if they are in programm memory already      
         val_ev_s = []
 
         # 4) Iterate over cartesian product of all profiles and their attributes
         for i,(p,a) in enumerate(itertools.product(profiles, attributes)):
+
+            # After processing given profile/quantity we are not intersted in values
+            val_ev_s = []
+            print("Now running through {0} and {1}".format(p,a))
 
             # 4.0) Assuming there are multiple ensembles of runs for this submission 
             #     (corresponding to a global iteration of UQ campaigns) read all the 'runs' of an ensemble 
@@ -776,28 +1047,37 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
             for runn in runnum_list:
                 csv_file_name = code_name + '_' + p + '_' + a + '_evol_' + mainfoldernum + '_' + str(runn) + '.csv'
                 val_ev_s.append(np.atleast_2d(np.genfromtxt(csv_file_name, delimiter=", ").T))     
-            #print('val_ev_s[{}]).shape={}'.format(i, val_ev_s[i].shape)); #print(val_ev_s) ###DEBUG
+            
+            print('val_ev_s[{}].shape={}'.format(i, val_ev_s[i].shape)); #print(val_ev_s) ###DEBUG
             
             # 4.1) Plot the read values, pass a list of array
             
             #profile_evol_plot([val_ev_s[i]], name=code_name+'_'+p+'_'+a+'_'+mainfoldernum)
             # modification: list of arrays is for different profile variations
             labels = [str(r) for r in runnum_list]
-            labels = ["".join([rin+'='+str(round(r[rin], 1))+"; " for rin in runs_input_names]) for r in runs_uq_data]
-            """ 
+            labels = ["".join([rin+'='+str(round(r[rin], 1))+"; " for rin in runs_input_names]) for r in runs_input_vals]
+             
             profile_evol_plot(val_ev_s, labels=labels, name=code_name+'_'+p+'_'+a+'_'+mainfoldernum, alignment='start') 
-            """
-            print('passes to plot: {}'.format(val_ev_s[0].shape)) ###DEBUG
-            #print('before shape {}'.format(val_ev_s[i].shape)) ###DEBUG
+            
+            #print('passes to plot: {}'.format(val_ev_s[0].shape)) ###DEBUG
+            #print('before shape {}'.format(val_evname=code_name+'_'+p+'_'+a+'_'+mainfoldernum, alignment='start'_s[i].shape)) ###DEBUG
             #val = np.array(val_ev_s[i]).squeeze()
             #print('after shape {}'.format(val.shape)) ### DEBUG            
             #print('total number of different cases {}'.format(len(val_ev_s))) ###DEBUG
  
             ##ti_flux = np.genfromtxt('gem_ti_flux.csv', delimiter =", ")
 
+            # 4.1'*) Compare flux valeus from turbulent code and the values that where used before exponential averaging
+
+            val_deconv = deconvolve_expavg(val_ev_s[0])
+            
+            profile_evol_plot([val_ev_s[0], val_deconv], labels=['original', 'deconvolved'],
+                              name=code_name+'_'+p+'_'+a+'_'+mainfoldernum+'_deconv', 
+                              alignment='start')
+
             # 4.1') Define the window to discard intial ramp-up and overshooting phase
             alpha_wind = 0.3 # how much to discard
-            val = val_ev_s[i] # singel series for a profile+attribute, shouldn't be used for now...
+            val = val_ev_s[i] # single series for a profile+attribute, shouldn't be used for now...
             #TODO: General series list now iterates with both prof+att and run case!
 
             val_wind_s = [val[:,int(alpha_wind*val.shape[-1]):] for val in val_ev_s]
@@ -805,32 +1085,55 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
             #print('val_wind len and element shape are {} and {}'.format(len(val_wind), val_wind[0].shape)) ### DEBUG
    
             # 4.2) Calculate ACF for the values
-            lags_list = [1,4,16,64,256,256,1024,2048,4096]            
+            lags_list = [2,4,8,16,32,48,64,96,128,160,256,256,1024,2048,4096]
+            #lags_list = [64,128,256] ###DEBUG
             lags_list = [l for l in lags_list if l < val_wind_s[i].shape[-1]]
             
             #get_coreprof_ev_acf(val_ev_s[i], name=code_name+'_'+p+'_'+a+'stats'+'_'+str(runn), lags=lags_list)
+            
+            ac_len_s = []
+            ac_num_s = []
+
+            val_ev_acf_s = []
+            
             for runn in range(len(runnum_list)):
+                
                 print('ACF for case #{0}'.format(runn))
-                """ 
-                get_coreprof_ev_acf(val_ev_s[runn], name=code_name+'_'+p+'_'+a+'stats'+'_'+str(runn), lags=lags_list) 
-                #NB!: uncertainty of the ACF computation ~ Var(X)/sqrt(n) , where n=N_samples/N_lags
-                """
+                 
+                ac_len, ac_num = get_coreprof_ev_acf(val_wind_s[runn], 
+                                    name=code_name+'_'+p+'_'+a+'stats'+'_'+str(runn), 
+                                    lags=lags_list) 
+                #NB!: uncertainty of the ACF computation ~ Var(X)/sqrt(n) , where n=N_samples/L_lags
+                ac_len_s.append(ac_len)
+                ac_num_s.append(ac_num)
+                #TODO: acf function assumes multiple cases are passed and returns list - ..[0] is a workaround, change
+                print('Approximate ACL: {0}; and effective number size is {1}'.format(ac_len, ac_num))
+                 
+                # populate new array with reading from the code-produces values taken per a ACL window
+                # take one reading for a miidle of ACL
+                val_ev_acf = np.ones((1, ac_num[0]))
+                val_ev_acf = val_wind_s[runn][0, int(ac_len[0]/2.):-1:int(ac_len[0])]
+                val_ev_acf_s.append(val_ev_acf)
+
+                print([ac_num[0], ac_len[0], val_wind_s[runn].shape, val_ev_acf.shape, val_ev_acf]) ###DEBUG
+                
 
             # 4.3) Plotting histograms and KDEs of the profile values evolution
             #plot_coreprofval_dist(val_ev_s[i], name=p+'_'+a+'_'+mainfoldernum, discr_level=32)
             for runn in range(len(runnum_list)):
+                """
                 print('KDE for case #{0}'.format(runn)) 
-                """         
+                         
                 plot_coreprofval_dist(val_wind_s[runn],
                                       name=p+'_'+a+'_'+str(runn)+'_'+mainfoldernum, discr_level=32)
                 """
                 #TODO: pass number of case to save different files
 
             # 4.3.1) Plotting single plot with histograms, KDEs and distribution means
-             
+            """ 
             plot_coreprofval_dist(np.vstack([np.squeeze(v, 0) for v in val_wind_s]), labels=labels, 
                                   name='tot_'+p+'_'+a+'_'+mainfoldernum, discr_level=32)
-            
+            """
 
             # 4.4) Apply ARMA model
             """
@@ -840,28 +1143,88 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
             # 4.5)  Apply different averaging methods and plot the results
             
             # 4.5.1) Calculating the mean of last *alpha* reads
-            #TODO: check if mean actually takes the latest window, resulting values seem to be too low
+            
+            #print('input names : {}'.format(runs_input_names)) ###DEBUG
+            #print('inputs values : {}'.format(runs_input_vals)) ###DEBUG            
+
+            runs_input_names_new = [n.replace('.', '_') for n in runs_input_names]
             stats_df = pd.DataFrame(columns=['name', 'mean', 'std'])
+            scan_df = pd.DataFrame(columns=['name'] 
+                                         + runs_input_names_new
+                                         + [p+'_'+a, p+'_'+a+'_std', p+'_'+a+'_stem'])
+
             val_trend_avg_s = []
             val_std_s = []
+
+            val_trend_avg_acf_s = []
+            val_std_acf_s = []
+
             for runn in runnum_list:
+
                 val_trend_avg, val_fluct_avg = filter_trend(val_wind_s[runn-1], "mean")
                 val_trend_avg_s.append(val_trend_avg)
                 val_std_s.append(val_fluct_avg) 
                 #TODO: look up Python ways to process tuple elements differently
+
+                # Calculate mean and std using only single point per correlation length
+                # TODO mind that currently all values for slices are taken from acf-thinned data
+                val_trend_avg_acf, val_fluct_avg_acf = filter_trend(val_ev_acf_s[runn-1], "mean")
+                val_trend_avg_acf_s.append(val_trend_avg_acf)
+                val_std_acf_s.append(val_fluct_avg_acf)
+            
+                n_lensample = val_trend_avg_acf_s[runn-1].shape[-1]
+                print('acf-corrected sample length: {0}'.format(n_lensample)) ###DEBUG
+
+                scan_df, stats_df = produce_stats_dataframes(runs_input_vals,
+                                                             val_trend_avg_s,
+                                                             val_std_s,
+                                                             stats_df,
+                                                             scan_df,
+                                                             n_lensample, 
+                                                             runn, p, a)
+                
+                """               
                 stats_df = stats_df.append(pd.Series(
                                data={'mean': val_trend_avg_s[runn-1][0][0],
                                      'std': val_std_s[runn-1][0][0]},
                                name=str(runn-1))) # probably a bad workaround
-            
-            # 4.5.1') Plotting the means (mapped to the input profile values) 
-            profile_evol_plot(val_trend_avg_s, labels=labels, name='means_'+p+'_'+a+'_'+mainfoldernum)      
-            stats_df.to_csv('stats_main_'+p+'_'+a+'_'+mainfoldernum+'.csv')           
+                
+                scan_data = runs_input_vals[runn-1]
+                scan_data[p+'_'+a] = val_trend_avg_s[runn-1][0][0]
+                scan_data[p+'_'+a+'_std'] = val_std_s[runn-1][0][0]
+                scan_data[p+'_'+a+'_stem'] = scan_data[p+'_'+a+'_std'] / np.sqrt(n_lensample)
 
-            # 4.5.2) Calcualting linear regression againt time fit for the last window:
-            # Apply LR to get form of Q=a*t+b  
+                scan_data_new = {}
+                for k,v in scan_data.items():
+                    scan_data_new[k.replace('.', '_')] = v
+                
+                scan_df = scan_df.append(pd.Series(
+                              data=scan_data_new,
+                              name=str(runn-1)))
+            """
+
+            """ 
+            profile_evol_plot(val_trend_avg_s, labels=labels, name='means_'+p+'_'+a+'_'+mainfoldernum)
+            """
+            stats_df.to_csv('stats_main_'+p+'_'+a+'_'+mainfoldernum+'.csv') 
+            scan_df.to_csv('resuq_main_'+p+'_'+a+'_'+mainfoldernum+'.csv')    
+            
+            # 4.5.1'') Plot parameter dependency for single parameters
+            for param in runs_input_names_new:
+                # For Pandas query: make sure input columns are floats
+                scan_df[param] = scan_df[param].astype('float')
+
+            print('plotting cuts starting')
+            
+            plot_response_cuts(scan_df, runs_input_names_new, [p+'_'+a], mainfoldernum)
+
+            print('plotting cuts done')
+
+            # 4.5.2) Calcualting linear regression against time fit for the last window:
+            # Apply LR to get form of Q=a*t+b
             val_trend_lr_s = []
             for runn in runnum_list:
+                """
                 val_trend_lr, val_residue_lr = filter_trend(val_wind_s[runn-1], "linear_regression")
                 val_trend_lr_s.append(val_trend_lr.reshape(val_wind_s[runn-1].shape)) # bad workaround
                 
@@ -871,17 +1234,24 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
                 profile_evol_plot([val_wind_s[runn-1], val_trend_lr_s[runn-1]],
                                   labels=['original', 'linear regression with NE'],
                                   name='lr_'+p+'_'+a+'_'+str(runn-1)+'_'+mainfoldernum) 
+                """
 
             # 4.5.3) Applying HP-filter    
-            #val_trend_hp, val_fluct_exp = filter_trend(val, "hpf")
-            
+            val_trend_hpf_s = []
+            for runn in runnum_list:
+                """
+                val_trend_hpf, val_fluct_hpf = filter_trend(val, "hpf")
+                val_trend_hpf_s.append(val_trend_hpf)
+                """
+         
             # 4.5.4) Applying Fast Fourier Transform
             val_trend_fft_s = []
             for runn in runnum_list:
-                """
-                val_trend_fft, val_fluct_fft = filter_trend(val_wind_s[runn-1], "fft")
+                
+                val_trend_fft, val_fluct_fft = filter_trend(val_wind_s[runn-1], "fft", 
+                                                 name=p+'_'+a+'_'+mainfoldernum+'_'+str(runn))
                 val_trend_fft_s.append(val_trend_fft)            
-                """
+                
                 #TODO: pass number of case to save different files
 
             # 4.5.5) Applying Exponential Averaging:
@@ -895,26 +1265,33 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
 
             ##!!! TODO temorarily changes!!! --- mind what is plotted from continiuous_gem.sh           
             """
-            profile_evol_plot([val, val_trend_fft, val_trend_exp, val_trend_avg], # np.ones(val.shape)*val_trend_avg[0]], 
+            profile_evol_plot([val, val_trend_fft, val_trend_exp, val_trend_avg], 
+                            # np.ones(val.shape)*val_trend_avg[0]], 
                               labels=['original', 'fft(f<2^-10)', 'exponential(alpha=0.005)', 
-                              'mean(of {:.2e} after {} steps)'.format(val_trend_avg[0,0], int(alpha_wind*val.shape[-1]))],
+                              'mean(of {:.2e} after {} steps)'.format(val_trend_avg[0,0], 
+                                    int(alpha_wind*val.shape[-1]))],
                               name='trend_'+p+'_'+a+'_'+mainfoldernum)
             """
 
             #profile_evol_plot([val, val_trend_exp, val_trend_avg], # np.ones(val.shape)*val_trend_avg[0]], 
             #                  labels=['original', 'exponential(alpha=0.005)', 
-            #                  'mean(of {:.2e} after {} steps)'.format(val_trend_avg[0,0], int(alpha_wind*val.shape[-1]))],
+            #                  'mean(of {:.2e} after {} steps)'.format(val_trend_avg[0,0], 
+            #                        int(alpha_wind*val.shape[-1]))],
             #                  name='trend_'+p+'_'+a+'_'+mainfoldernum)
            
             # 4.6) Histogram for the last alpha_window values
             """
-            plot_coreprofval_dist(val_fluct_avg, name='wind'+code_name+p+'_'+a+'_'+mainfoldernum, discr_level=128)
+            plot_coreprofval_dist(val_fluct_avg, name='wind_'+code_name+p+'_'+a+'_'+mainfoldernum, discr_level=128)
             """
 
             #TODO get exponential average of the values: standard packaged optimize for alpha -
             # - why it is so high? is composition of exponential avaraging is another exponential averagin -
             # - if so, what is alpha_comp?
             #TODO exponential averaging with a symmetric window -> apply padding
+
+#################################
+#### OPTIONS FOR MAIN() CALL ####
+#################################
 
 if __name__ == '__main__':
 
@@ -925,10 +1302,10 @@ if __name__ == '__main__':
         # Run main with default valuer for all files in the folder, but considering there might be a csv composed already
         main(foldername=sys.argv[1], runforbatch=int(sys.argv[2]))
     elif len(sys.argv) == 4:
-        # Run main for all files in the folder, either read values from csv (runfirbatch), and for  multiple flux tubes (coord)
+        # Run main for all files in the folder, either read values from csv (runforbatch), and for  multiple flux tubes (coord)
         main(foldername=sys.argv[1], runforbatch=int(sys.argv[2]), coordnum=int(sys.argv[3]))
     elif len(sys.argv) == 5:
-        # Run main for all files in the folder, either read values from csv (runfirbatch), 
+        # Run main for all files in the folder, either read values from csv (runforbatch), 
         # for possible multiple flux tubes (coord), and specifying how to save files
         main(foldername=sys.argv[1], runforbatch=int(sys.argv[2]), coordnum=int(sys.argv[3]), mainfoldernum=sys.argv[4])
     elif len(sys.argv) == 6:

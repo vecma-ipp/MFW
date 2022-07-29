@@ -41,15 +41,18 @@ ENCODER_MODULES="mfw.templates.cpo_encoder;mfw.templates.xml_encoder"
 export ENCODER_MODULES
 export EASYPJ_CONFIG=conf.sh
 
-#try out for script with 'mpirun' execution model
+# Try out for script with 'mpirun' execution model
 #export I_MPI_HYDRA_BOOTSTRAP_EXEC_EXTRA_ARGS="--exclusive"
+
+# Set up some global variables to configure UQ software
+export MPIMOD=default
 
 #export OLDCAMP='dy6n5hp9'
 export OLDCAMP='moj202gj'
 
 #CPONUM=${1:-9}
 
-echo '> In this run: use ExecuteLocal only + QCGPJ pool + default exec mode + commandline passed + 4 nodes + 4 params + mpiexec . Using to resume an old campaign at '${OLDCAMP}' and number of run '${CPONUM}
+echo '> In this run: use ExecuteLocal only + QCGPJ pool + '$MPIMOD' exec mode + commandline passed + 4 nodes + 4 params + mpiexec . Using to resume an old campaign at '${OLDCAMP}' and number of run '${CPONUM}
 echo ''
 
 # Run the UQ code

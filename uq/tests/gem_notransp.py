@@ -1,15 +1,25 @@
 import os
+import pprint
+import sys
 
 import pickle
 import csv
 import json
 
 from math import ceil
+import numpy as np
 
 import easyvvuq as uq
 
 # EasyVVUQ/QCG-PJ
-#import eqi
+
+# from easyvvuq1.1
+from easyvvuq.actions import Encode, Decode, Actions, CreateRunDirectory, ExecuteQCGPJ, ExecuteLocal, ExecuteSLURM, QCGPJPool
+from easyvvuq.actions.execute_qcgpj import EasyVVUQParallelTemplate
+
+# form qcg-pj
+from qcg.pilotjob.executor_api.qcgpj_executor import QCGPJExecutor
+from qcg.pilotjob.api.manager import LocalManager
 
 # from ual
 from ascii_cpo import read
@@ -19,14 +29,7 @@ from base.cpo_encoder import CPOEncoder
 from base.cpo_decoder import CPODecoder
 from base.xml_element import XMLElement
 from base.utils import cpo_inputs, ftube_indices
-
-# from easyvvuq1.1
-from easyvvuq.actions import Encode, Decode, Actions, CreateRunDirectory, ExecuteQCGPJ, ExecuteLocal, ExecuteSLURM, QCGPJPool
-from easyvvuq.actions.execute_qcgpj import EasyVVUQParallelTemplate
-
-# form qcg-pj
-from qcg.pilotjob.executor_api.qcgpj_executor import QCGPJExecutor
-from qcg.pilotjob.api.manager import LocalManager
+from base.evvuq_partemplate_wenv import EasyVVUQParallelTemplateWithEnv
 
 
 '''
@@ -41,11 +44,13 @@ print('TEST GEM-NT-VARY: START')
 print('Version of EasyVVUQ: '.format(uq.__version__))
 
 # We test 1 flux tube
-# run gem_test in strandalone and use:
+# Run gem_test in strandalone and use:
 #base.utils.ftube_indices('gem_coreprof_in.cpo','gem_coretransp_out.cpo') to get the index
 #TODO double check from XML, alternatively simply read from xml
-ftube_index = 66 # 67 would not consider python/fortran numeration difference and apparently would result in variation differenct in an off place of a profile
-ftube_index = 94
+
+#ftube_index = 66 # 67 would not consider python/fortran numeration difference and apparently would result in variation in an off place of a profile
+#ftube_index = 94
+ftube_index = 68
 
 # Machine name
 SYS = os.environ['SYS']
@@ -59,9 +64,12 @@ tmp_dir = os.environ['SCRATCH']
 # From Slurm script (intelmpi)
 mpi_instance =  os.environ['MPICMD']
 #mpi_instance = 'mpirun'
-# do not use intelmpi+MARCONI+QCG !
-mpi_model = 'default' #'srunmpi' #'intelmpi' #'openmpi'
-# works with 'default'
+
+# Do not use intelmpi+MARCONI+QCG !
+#mpi_model = 'default' #'srunmpi' #'intelmpi' #'openmpi'
+# Works with 'default' on MARCONI, currently not on COBRA
+mpi_model = os.environ['MPIMOD']
+template_type = os.environ['EXECTEMPL']
 
 # CPO files location
 cpo_dir = os.path.abspath("../workflows/AUG_28906_6") 
@@ -73,15 +81,23 @@ xml_dir = os.path.abspath("../standalone/bin")
 
 # The executable code to run
 obj_dir = os.path.abspath("../standalone/bin/"+SYS)
-exec_code = "loop_gem_notransp"  #"loop_gem_notransp" 
+exec_code = "loop_gem_notransp" 
 
 # Define the uncertain parameters
 # Electron temperature and its gradient
+
+# Find such a nested set of quadrature abcissas so that coordinates used for U[-0.1,0.1]
+# within a 1st-order Gauss-Legandre are used as smaller (by absolute value) cooridantes for 
+# a 3rd-order G-S for some U[-a,+a]
+# Here only a particular coefficient!
+#alpha_q = 1.
+alpha_q = a = 1./np.sqrt( (9./7.) - 6./7.*np.sqrt(6./5.) ) 
+
 input_params = {
-    "te.value": {"dist": "Uniform", "err":  0.1, "min": 0.},
-    "ti.value": {"dist": "Uniform", "err":  0.1, "min": 0.},
-    "te.ddrho": {"dist": "Uniform", "err":  0.1, "max": 0.},
-    "ti.ddrho": {"dist": "Uniform", "err":  0.1, "max": 0.}
+#    "te.value": {"dist": "Uniform", "err":  0.1*alpha_q, "min": 0.},
+#    "ti.value": {"dist": "Uniform", "err":  0.1*alpha_q, "min": 0.},
+#    "te.ddrho": {"dist": "Uniform", "err":  0.1*alpha_q, "max": 0.},
+    "ti.ddrho": {"dist": "Uniform", "err":  0.1*alpha_q, "max": 0.}
 }
 
 nparams = len(input_params)
@@ -127,17 +143,19 @@ os.system("cp " + cpo_dir + "/ets_coreprof_in.cpo "
 os.system("cp " + cpo_dir + "/t0?.dat " + common_dir)
 
 # Copy XML and XSD files
-os.system("cp " + xml_dir + "/gem.xml " + common_dir)
-os.system("cp " + xml_dir + "/gem.xsd " + common_dir)
+os.system("cp " + xml_dir + "/gem.xml " + common_dir + "/gem.xml") #MIND the source file change
+os.system("cp " + xml_dir + "/gem.xsd " + common_dir + '/gem.xsd')
 
 # Copy  exec file
 os.system("cp " + obj_dir +"/"+ exec_code + " " + common_dir)
 exec_path = os.path.join(common_dir, exec_code)
 
-# TODO check if this index is read correctly
+# Check if this index is read correctly
 ftube_index_test = ftube_indices(common_dir + '/gem_coreprof_in.cpo', 
-        '/marconi/home/userexternal/yyudin00/code/MFW/standalone/bin/gem_coretransp_out.cpo',
-         False) # TODO : where to get the output file and should it be in common folder?
+        #'/marconi/home/userexternal/yyudin00/code/MFW/standalone/bin/gem_coretransp_out.cpo',
+          xml_dir + '/gem_coretransp_out.cpo',
+          False) # TODO : where to get the output file and should it be in common folder?
+
 print('The flux tube location defined from the cpo files is: {}'.format(ftube_index_test))
 
 # Create the encoder and the decoder
@@ -155,26 +173,34 @@ decoder = CPODecoder(cpo_filename=output_filename,
 #####################################################
 ### --- Post EasyVVUQ release modifications ---
 
-# get ncores
-gemxml = XMLElement(xml_dir + "/gem.xml")
+# Get ncores
+gemxml = XMLElement(common_dir + "/gem.xml")
 npesx = gemxml.get_value("cpu_parameters.domain_decomposition.npesx")
 npess = gemxml.get_value("cpu_parameters.domain_decomposition.npess")
 nftubes = gemxml.get_value("cpu_parameters.parallel_cases.nftubes")
 ncores = npesx*npess*nftubes
 
-pol_order = 1
+pol_order = 3
+
 nruns = (pol_order + 1)**nparams # Nr=(Np+Nd, Nd)^T=(Np+Nd)!/(Np!*Nd!)  |=(3+4)!/3!4! = 5*6*7/6 = 35 => instead 3^4=81 ?
 ncores_tot = ncores * nruns
 
 n_cores_p_node = 48
 if SYS == 'MARCONI':
     n_cores_p_node = 48
+elif SYS == 'COBRA':
+    n_cores_p_node = 40
+    #n_cores_p_node = 80 # for hyperthreading
 
 nnodes = ceil(1.*ncores/n_cores_p_node)
 nnodes_tot = ceil(1.*ncores_tot/n_cores_p_node) # not entirely correct due to an 'overkill' problem i.e. residual cores at one/more nodes may not be able to allocate any jobs, but here everything is devisible; also an import from 'math'
 
+exec_comm_flags = ' '
+#exec_comm_flags += ' -vvvvv --profile=all --slurmd-debug=3 '
+
 #exec_path_comm = mpi_instance + ' -n '+ str(ncores) + ' -N '+ str(nnodes) + ' ' + exec_path
 exec_path_comm = mpi_instance + ' -n '+ str(ncores) + ' ' + exec_path
+exec_path_comm = mpi_instance + exec_comm_flags + ' ' + exec_path # TRY OUT (with new QCG-PJ)
 
 print('Total number of nodes required for all jobs: {0}'.format(nnodes_tot))
 print('Number of cores required for single code instance computed: {0}'.format(ncores))
@@ -188,7 +214,15 @@ print('Creating an ExecuteQCGPJ')
                       #             variable='runs/'
                       #            )
 #                      )
-execute=ExecuteLocal(exec_path_comm) # when execution model is 'default': 'execute'  should be set to exec_path_comm
+
+if mpi_model=='default':
+    # When execution model is 'default': 'execute' should be set to exec_path_comm
+    execute=ExecuteLocal(exec_path_comm)
+elif mpi_model=='srunmpi':
+    #execute=ExecuteLocal(exec_path)
+    execute=ExecuteLocal(exec_path_comm) #TODO: trying out (srunmpi exec model) + (srun [com] [arg]) cli line
+else:
+    execute=ExecuteLocal(exec_path)
 
 # Execution
 #qcgpjexec = eqi.Executor(my_campaign)
@@ -207,15 +241,19 @@ execute=ExecuteLocal(exec_path_comm) # when execution model is 'default': 'execu
 
 #qcgpjexec.run(processing_scheme=eqi.ProcessingScheme.EXEC_ONLY)
 
-# custom template for parallel job exectution
+# Custom template for parallel job execution
 
 template_par_simple = {
                        ###'name': 'gem_long_var_simp',
-                       #'exec': exec_path,
-                       'venv' : os.path.join(HOME, 'python394'), 
+                       ##'exec': exec_path,
+                       
+                       ##'venv' : os.path.join(HOME, 'python394'), 
+                       ##'venv' : os.path.join(HOME, 'conda-envs/python394'), 
+                           # # for COBRA where Python is managed through conda, activation with executable does not work
+
                        'numCores': ncores,
                        'numNodes': nnodes,
-                       'model': mpi_model, # 'default' -- should work with 'default'
+                       'model': mpi_model, # 'default' -- should work with 'default' at MARCONI
                       }
 
 template_par_cust = {
@@ -240,13 +278,13 @@ template_par_cust = {
                                    },  
                     }
 
-# create list of actions in the campaign
+# Create list of actions in the campaign
 actions = Actions(
                   CreateRunDirectory('/runs'), 
                   Encode(encoder), 
                   execute,
                   Decode(decoder)
-                 ) # does CreateRunDirectory also set ups the dir? (for us the dir's themselves might be already created)
+                 ) # TODO: create a version w/o CreateDirectory and see where the outputs are spawned
 
 # Add the app (automatically set as current app)
 my_campaign.add_app(name=campaign_name,
@@ -256,6 +294,7 @@ my_campaign.add_app(name=campaign_name,
 # Create the samples
 my_sampler = uq.sampling.PCESampler(vary=vary, polynomial_order=pol_order)
 my_campaign.set_sampler(my_sampler)
+
 print('Creating an Executor')
 #executor=QCGPJExecutor(log_level='debug')
 
@@ -264,7 +303,8 @@ try:
 
     with QCGPJPool(
                   qcgpj_executor=QCGPJExecutor(log_level='debug'), # =executor,
-                  template=EasyVVUQParallelTemplate(),
+                  #template=EasyVVUQParallelTemplate(),
+                  template=EasyVVUQParallelTemplateWithEnv(),
                   template_params=template_par_simple,  #_cust
                   ) as qcgpj:
 
@@ -289,14 +329,6 @@ print('Now finally analysing results')
 #TODO: make a decoder that check the results folder and using a regex finds the latest number of iteration or the oldest file
 analysis = uq.analysis.PCEAnalysis(sampler=my_sampler, qoi_cols=output_columns)
 my_campaign.apply_analysis(analysis)
-
-# TODO: make a restart version of the workflow
-# 1. get exisiting profile shapes and their description as a varied parameter
-# 2. for the _coreprofile.cpo get the snapshot files for GEM (TFILE)
-# 3. get the same xml and equilibium files that were used for previus batch of iterations
-#      as well as info on flux tube coodinate, and parallel processing info 
-# 5. run the campaign
-# TODO: reuse functionality from the campaign restart (resume?) functionality
 
 # Get results
 results = my_campaign.get_last_analysis()

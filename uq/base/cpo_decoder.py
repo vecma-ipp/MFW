@@ -2,12 +2,13 @@ import os
 import logging
 import numpy as np
 from easyvvuq import OutputType
-from easyvvuq.decoders.base import BaseDecoder
+#from easyvvuq.decoders.base import BaseDecoder
 from .cpo_element import CPOElement
 
 
 # Specific Decoder for CPO files
-class CPODecoder(BaseDecoder, decoder_name="cpo_decoder"):
+#class CPODecoder(BaseDecoder, decoder_name="cpo_decoder"):
+class CPODecoder:
 
     def __init__(self, cpo_filename, cpo_name, output_columns):
         if cpo_filename is None:

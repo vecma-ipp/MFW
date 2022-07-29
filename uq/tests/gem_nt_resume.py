@@ -1,4 +1,5 @@
 import os
+#from re import M
 import sys
 
 import pickle
@@ -6,12 +7,10 @@ import csv
 import json
 import pprint # for debugging
 
+import numpy as np
 from math import ceil
 
 import easyvvuq as uq
-
-# EasyVVUQ/QCG-PJ
-#import eqi
 
 # from ual
 from ascii_cpo import read
@@ -21,6 +20,7 @@ from base.cpo_encoder import CPOEncoder
 from base.cpo_decoder import CPODecoder
 from base.xml_element import XMLElement
 from base.utils import cpo_inputs, ftube_indices
+from base.evvuq_partemplate_wenv import EasyVVUQParallelTemplateWithEnv
 
 # from easyvvuq1.1
 from easyvvuq.actions import Encode, Decode, Actions, CreateRunDirectory, ExecuteQCGPJ, ExecuteLocal, ExecuteSLURM, QCGPJPool, ActionPool
@@ -44,29 +44,31 @@ print('TEST GEM-NT-VARY: START')
 print('Version of EasyVVUQ: '.format(uq.__version__))
 
 # We test 1 flux tube
-# run gem_test in strandalone and use:
+# Run gem_test in strandalone and use:
 #base.utils.ftube_indices('gem_coreprof_in.cpo','gem_coretransp_out.cpo') to get the index - currently it is only a check
-ftube_index = 66 # 67 would not consider python/fortran numeration difference and apparently would result in variation difference in an off place of a profile
-ftube_index = 94
+
+#ftube_index = 66 # 67 would not consider python/fortran numeration difference and apparently would result in variation difference in an off place of a profile
+#ftube_index = 94
+ftube_index = 68
 
 # Previus campaign ID
-#campaign_id = 'dy6n5hp9' # read from the calling batch script
 campaign_id = str(sys.argv[1])
 
 # Machine name
 SYS = os.environ['SYS']
 
-# home directory, for venv
+# Home directory, for venv
 HOME = os.environ['HOME']
 
 # Working directory
 tmp_dir = os.environ['SCRATCH']
 
-# From Slurm script (intelmpi)
+# From Slurm script: srun
 mpi_instance =  os.environ['MPICMD']
-#mpi_instance = 'mpirun'
-mpi_model = 'default' #'srunmpi' #'intelmpi' #'openmpi'
-# works with 'default'
+
+# From Slurm script: default
+#mpi_model = 'default' #'srunmpi' #'intelmpi' #'openmpi'
+mpi_model = os.environ['MPIMOD']
 
 # CPO files location
 cpo_dir = os.path.abspath("../workflows/AUG_28906_6") 
@@ -81,12 +83,20 @@ obj_dir = os.path.abspath("../standalone/bin/"+SYS)
 exec_code = "loop_gem_notransp"
 
 # Define the uncertain parameters
+
+# Find such a nested set of quadrature abcissas so that coordinates used for U[-0.1,0.1]
+# within a 1st-order Gauss-Legandre are used as smaller (by absolute value) cooridantes for 
+# a 3rd-order G-S for some U[-a,+a]
+# Here only a particular coefficient!
+#alpha_q = 1.
+alpha_q = a = 1./np.sqrt( (9./7.) - 6./7.*np.sqrt(6./5.) ) 
+
 # Electron and ion temperature and their gradients
 input_params = {
-    "te.value": {"dist": "Uniform", "err":  0.1, "min": 0.},
-    "ti.value": {"dist": "Uniform", "err":  0.1, "min": 0.},
-    "te.ddrho": {"dist": "Uniform", "err":  0.1, "max": 0.},
-    "ti.ddrho": {"dist": "Uniform", "err":  0.1, "max": 0.}
+#    "te.value": {"dist": "Uniform", "err":  0.1*alpha_q, "min": 0.},
+#    "ti.value": {"dist": "Uniform", "err":  0.1*alpha_q, "min": 0.},
+#    "te.ddrho": {"dist": "Uniform", "err":  0.1*alpha_q, "max": 0.},
+    "ti.ddrho": {"dist": "Uniform", "err":  0.1*alpha_q, "max": 0.}
 }
 
 nparams = len(input_params)
@@ -101,11 +111,11 @@ output_columns = [
                  "ti_transp.flux"
                  ]
 #output_filename = "gem_coretransp_out.cpo"
-#workaround: read i-th iteration file
+# Workaround: read i-th iteration file
 output_filename = "gem_coretransp_0450.cpo" # TODO either read from folder, or make the set-up more flexible
 output_cponame = "coretransp"
 
-# parameter space for campaign and the distributions list for the sampler
+# Parameter space for campaign and the distributions list for the sampler
 params, vary = cpo_inputs(cpo_filename=input_filename,
                           cpo_name=input_cponame,
                           input_dir=cpo_dir,
@@ -142,32 +152,12 @@ my_campaign = uq.Campaign(
 campaign_dir = my_campaign.campaign_dir
 common_dir = campaign_dir +"/common/"
 
-"""
-os.mkdir(common_dir)
-
-# Copy input CPO files (cf. test_gem0.f90)
-os.system("cp " + cpo_dir + "/ets_equilibrium_in.cpo "
-                + common_dir + "gem_equilibrium_in.cpo")
-os.system("cp " + cpo_dir + "/ets_coreprof_in.cpo "
-                + common_dir + "/gem_coreprof_in.cpo")
-
-# Copy restart file
-os.system("cp " + cpo_dir + "/t0?.dat " + common_dir)
-
-# Copy XML and XSD files
-os.system("cp " + xml_dir + "/gem.xml " + common_dir)
-os.system("cp " + xml_dir + "/gem.xsd " + common_dir)
-
-# Copy  exec file
-os.system("cp " + obj_dir +"/"+ exec_code + " " + common_dir)
-"""
-
 exec_path = os.path.join(common_dir, exec_code)
 
-# check if this index is read correctly
+# Check if this index is read correctly
 ftube_index_test = ftube_indices(common_dir + '/gem_coreprof_in.cpo', 
-        '/marconi/home/userexternal/yyudin00/code/MFW/standalone/bin/gem_coretransp_out.cpo',
-         False)
+        '../standalone/bin/gem_coretransp_out.cpo',
+        False)
 print('The flux tube location defined from the cpo files is: {}'.format(ftube_index_test))
 
 if ftube_index != ftube_index_test[0]:
@@ -176,12 +166,7 @@ if ftube_index != ftube_index_test[0]:
 # FOR THE RESTART CAMPAIGN, EVERYTHING (ENCODER, DECODER, ACTIONS, VARY, etc.) SHOULD BE ALREADY THERE
 # Create the encoder and the decoder
 input_filename = "gem_coreprof_in.cpo"
-"""
-encoder = CPOEncoder(cpo_filename=input_filename,
-                     cpo_name=input_cponame,
-                     input_dir=common_dir,
-                     ftube_index=ftube_index)
-"""
+
 #TODO: decoder has to read the last spawned coretransp cpo file
 decoder = CPODecoder(cpo_filename=output_filename,
                      cpo_name=output_cponame,
@@ -197,39 +182,54 @@ npess = gemxml.get_value("cpu_parameters.domain_decomposition.npess")
 nftubes = gemxml.get_value("cpu_parameters.parallel_cases.nftubes")
 ncores = npesx*npess*nftubes
 
-pol_order = 1
-nruns = (pol_order + 1)**nparams # Nr=(Np+Nd, Nd)^T=(Np+Nd)!/(Np!*Nd!) |E.G.|=(3+4)!/3!4! = 5*6*7/6 = 35 => instead 3^4=81?
+pol_order = int(os.environ['POLORDER'])
+
+nruns = (pol_order + 1)**nparams # Nr=(Np+Nd, Nd)^T=(Np+Nd)!/(Np!*Nd!) |E.G.|=(3+4)!/3!4! = 5*6*7/6 = 35 => instead of 3^4=81?
 ncores_tot = ncores * nruns
 # current case: nruns=(5, 1)^T=5 not 16 ; achieved if using Point Collocation with regression via constructing PCESampler(regression=True)
 
 n_cores_p_node = 48
 if SYS == 'MARCONI':
     n_cores_p_node = 48
+elif SYS == 'COBRA':
+    n_cores_p_node = 40
 
 nnodes = ceil(1.*ncores/n_cores_p_node)
 nnodes_tot = ceil(1.*ncores_tot/n_cores_p_node) # not entirely correct due to an 'overkill' problem i.e. residual cores at one/more nodes may not be able to allocate any jobs, but here everything is devisible; also an import from 'math'
 
+# Command line to be executed
+exec_comm_flags = ' '
+#exec_comm_flags += ' -vvvvv --profile=all --slurmd-debug=3 '
+
 #exec_path_comm = mpi_instance + ' -n '+ str(ncores) + ' -N '+ str(nnodes) + ' ' + exec_path
-exec_path_comm = mpi_instance + ' -n '+ str(ncores) + ' ' + exec_path
+#exec_path_comm = mpi_instance + ' -n '+ str(ncores) + ' ' + exec_path
+exec_path_comm = mpi_instance + exec_comm_flags + ' ' + exec_path
 
 print('Total number of nodes requires for all jobs: {0}'.format(nnodes_tot))
 print('Number of cores required for single code instance computed: {0}'.format(ncores))
 print('Executing turbulence code with the line: ' + exec_path_comm) 
 
-print('Creating an ExecuteLocal, not ExecuteQCGPJ')
+# Creating an 'Execute' object
+#print('Creating an ExecuteLocal, not ExecuteQCGPJ')
 
-execute=ExecuteLocal(exec_path_comm) # when execution model is 'default': 'execute' should be set to exec_path_comm
+if mpi_model=='default':
+    # When execution model is 'default': 'execute' should be set to exec_path_comm
+    execute=ExecuteLocal(exec_path_comm)
+elif mpi_model=='srunmpi':
+    #execute=ExecuteLocal(exec_path)
+    execute=ExecuteLocal(exec_path_comm) #TODO: trying out (srunmpi exec model) + (srun [com] [arg]) cli line
+else:
+    execute=ExecuteLocal(exec_path)
 
-# custom template for parallel job exectution
-
+# Custom template for parallel job exectution
 template_par_simple = {
-                       'venv' : os.path.join(HOME, 'python394'), 
+                       #'venv' : os.path.join(HOME, 'python394'), 
                        'numCores': ncores,
                        'numNodes': nnodes,
                        'model': mpi_model, # 'default' - QCG-PJ pool should work with 'default', as well as a commandline with 'mpiexec'
                       }
 
-# create list of actions in the campaign
+# Create list of actions in the campaign
 # FOR THE RESTART NEED TO PERFORM NEW ACTIONS (w.o. Encode)
 
 #actions = Actions(
@@ -279,35 +279,42 @@ my_campaign.set_sampler(my_sampler, update=True)
 my_campaign.replace_actions(app_name=campaign_name, 
                             actions=resume_actions)
 
-# list of run existing run numbers to be executed again (continued)
+# List of run existing run numbers to be executed again (continued)
 run_ids = [str(x+1) for x in range(nruns)] # just numbers are correct id-s
-#print('Number of runs is {} and passed list of run id-s is: {}'.format(nruns, run_ids))
+print('Number of runs is {} and passed list of run id-s is: {}'.format(nruns, run_ids))
 
-# getting run list from the DB, better strip 'run_' from elements and use further instead of run_ids
-run_ids_db = [x for x in my_campaign.campaign_db.run_ids()]
-#print('run names from the DB: {}'.format(run_ids_db)) # run_{d} is a name but not id
+# Getting run list from the DB, better strip 'run_' from elements and use further instead of run_ids
+run_names = [x for x in my_campaign.campaign_db.run_ids()]
+print('Run names from the DB: {}'.format(run_names)) # run_{d} is a name but not id
 
-# finding all runs and setting them as ENCODED i.e. before to-be-executed
-my_campaign.rerun(run_ids) 
+# Checking the list of runs and their satus before the reassigning jobs
+#pprint.pprint(my_campaign.list_runs()) ###DEBUG
+#pprint.pprint(my_campaign.campaign_db.get_run_status(run_ids)) ###DEBUG
 
-# checking the content of the read campaign DB
+# Finding all runs and setting them as ENCODED i.e. before to-be-executed
+#my_campaign.rerun(run_ids) # TODO fix error, all runs in '1wu9k2wa' database are marked as NEW 
+my_campaign.campaign_db.set_run_statuses(run_ids, Status.ENCODED)
+
+# Checking the content of the read campaign DB
 #db_json = my_campaign.campaign_db.dump()
 #pprint.pprint(db_json) ###DEBUG
 
-# checking the list of runs adn their satus before the resume
+# Checking the list of runs and their satus before the resume
 #pprint.pprint(my_campaign.list_runs()) ###DEBUG
-#pprint.pprint(my_campaign.get_run_status(run_ids)) ###DEBUG
+#pprint.pprint(my_campaign.campaign_db.get_run_status(run_ids)) ###DEBUG
 
 my_campaign.set_app(campaign_name)
 
 # ONLY AFTER HERE WE NEED AGAIN TO CHANGE SOMETHING w.r.t. PAST EXECUTION i.e. CREATE RESOURCE POOL; BY THIS TIME OTHER THINGS HAVE TO BE READY
 print('Creating an Executor')
+
 try:
     print('Creating resource pool')
 
     with QCGPJPool(
                   qcgpj_executor=QCGPJExecutor(log_level='debug'), 
-                  template=EasyVVUQParallelTemplate(),
+                  #template=EasyVVUQParallelTemplate(),
+                  template=EasyVVUQParallelTemplateWithEnv(),
                   template_params=template_par_simple,
                   ) as qcgpj:
 
@@ -323,6 +330,7 @@ try:
     
         print('> Actions defined, now executing')    
         exec_res = my_action_pool.start(pool=qcgpj)
+        # TODO from this scripts codes still crash with SIGSEGV even if put on a separate node
 
         print('> Execution completed, now collating')
         exec_res.collate()
