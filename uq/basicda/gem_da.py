@@ -404,7 +404,9 @@ def get_coreprof_ev_acf(value_ev, name='ti', lags=[1,2,3,4,5,6,7,8,9,10]):
         #acfs = acf_data_pd['AC'].to_numpy()
         acfs = acf_manual
         #errors = [np.std(value_ev[i][:l]) / np.mean(value_ev[i][:l]) for l in lags]
-        errors = [1./float(l) for l in lags]
+        errors = [1./np.sqrt(float(l)) for l in lags]
+        if isinstance(value_ev[i][:l], np.ndarray) :
+            errors = [np.std(value_ev[i][:l]) / np.sqrt(float(l)) for l in lags]
         #print(errors) ###DEBUG
 
         acl = lags[0]
