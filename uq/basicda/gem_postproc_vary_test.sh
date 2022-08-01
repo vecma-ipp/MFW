@@ -6,6 +6,9 @@
 
 RUN_WITH_CP=${3:-1}
 
+RUN_WITH_SAVE=${4:-1}
+RUN_WITH_SAVE=0
+
 #0. Set directories
 # folder of output CPO files, should be same as number of SLURM submissions (macro-macro-iterations)
 # should be the same as number of MMit TO process
@@ -107,7 +110,7 @@ export PYTHONPATH=/cobra/u/yyudin/codes/ual_python_interface:/cobra/u/yyudin/cod
 #python3 gem_da.py 'run'$RUNNUM'/cpo'$CPONUM'/cpo' 0 1 'new_'$RUNNUM'_'$CPONUM
 #python3 gem_da.py $DIR_SRC'/cpo' 0 1 'new_'$RUNNUM'_'$CPONUM
 
-python3 gem_da.py ${DIR_SRC}/cpo/${CPONUM} 0 1 ${RUNRANGE} 'new_'${UQCAMPDIR}'_'${CPONUM} #latest
+python3 gem_da.py ${DIR_SRC}/cpo/${CPONUM} ${RUN_WITH_CP} 1 ${RUNRANGE} 'new_'${UQCAMPDIR}'_'${CPONUM} #latest
 
 #3. Prepare combined files for analysis of series across long-term runs
 #cp ${DIR_OUTPUT}/gem_??_transp_flux_evol_all${NUMPR}.csv ./
@@ -134,6 +137,8 @@ done
 python3 gem_da.py all_${UQCAMPDIR}_${CPONUM} 1 1 ${RUNRANGE} all_${UQCAMPDIR}_${CPONUM} #latest
 
 #5. Put the resulting output files in a separate directory
-mv *.txt ${DIR_OUTPUT}/
-mv *.csv ${DIR_OUTPUT}/
-mv *.png ${DIR_OUTPUT}/
+if ${RUN_WITH_SAVE} ; then
+  mv *.txt ${DIR_OUTPUT}/
+  mv *.csv ${DIR_OUTPUT}/
+  mv *.png ${DIR_OUTPUT}/
+done
