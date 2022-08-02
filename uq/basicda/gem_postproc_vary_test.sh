@@ -110,7 +110,11 @@ export PYTHONPATH=/cobra/u/yyudin/codes/ual_python_interface:/cobra/u/yyudin/cod
 #python3 gem_da.py 'run'$RUNNUM'/cpo'$CPONUM'/cpo' 0 1 'new_'$RUNNUM'_'$CPONUM
 #python3 gem_da.py $DIR_SRC'/cpo' 0 1 'new_'$RUNNUM'_'$CPONUM
 
-python3 gem_da.py ${DIR_SRC}/cpo/${CPONUM} ${RUN_WITH_CP} 1 ${RUNRANGE} 'new_'${UQCAMPDIR}'_'${CPONUM} #latest
+if ${RUN_WITH_CP} ; then
+  python3 gem_da.py ${DIR_SRC}/cpo/${CPONUM} 0 1 ${RUNRANGE} 'new_'${UQCAMPDIR}'_'${CPONUM} #latest
+else
+  python3 gem_da.py ${DIR_SRC}/cpo/${CPONUM} 1 1 ${RUNRANGE} 'new_'${UQCAMPDIR}'_'${CPONUM}
+fi
 
 #3. Prepare combined files for analysis of series across long-term runs
 #cp ${DIR_OUTPUT}/gem_??_transp_flux_evol_all${NUMPR}.csv ./
@@ -141,4 +145,4 @@ if ${RUN_WITH_SAVE} ; then
   mv *.txt ${DIR_OUTPUT}/
   mv *.csv ${DIR_OUTPUT}/
   mv *.png ${DIR_OUTPUT}/
-done
+fi

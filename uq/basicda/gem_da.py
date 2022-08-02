@@ -1110,7 +1110,7 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
                 print('ACF for case #{0}'.format(runn))
                  
                 ac_len, ac_num = get_coreprof_ev_acf(val_wind_s[runn], 
-                                    name=code_name+'_'+p+'_'+a+'stats'+'_'+str(runn), 
+                                    name=code_name+'_'+p+'_'+a+'_stats_'+mainfoldernum+str(runn), 
                                     lags=lags_list) 
                 #NB!: uncertainty of the ACF computation ~ Var(X)/sqrt(n) , where n=N_samples/L_lags
                 ac_len_s.append(ac_len)
@@ -1130,19 +1130,22 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
             # 4.3) Plotting histograms and KDEs of the profile values evolution
             #plot_coreprofval_dist(val_ev_s[i], name=p+'_'+a+'_'+mainfoldernum, discr_level=32)
             for runn in range(len(runnum_list)):
-                """
+                
                 print('KDE for case #{0}'.format(runn)) 
                          
                 plot_coreprofval_dist(val_wind_s[runn],
-                                      name=p+'_'+a+'_'+str(runn)+'_'+mainfoldernum, discr_level=32)
-                """
+                                      name=p+'_'+a+'_'+str(runn)+'_'+mainfoldernum, 
+                                      discr_level=32)
+                
                 #TODO: pass number of case to save different files
 
             # 4.3.1) Plotting single plot with histograms, KDEs and distribution means
-            """ 
-            plot_coreprofval_dist(np.vstack([np.squeeze(v, 0) for v in val_wind_s]), labels=labels, 
-                                  name='tot_'+p+'_'+a+'_'+mainfoldernum, discr_level=32)
-            """
+             
+            plot_coreprofval_dist(np.vstack([np.squeeze(v, 0) for v in val_wind_s]), 
+                                  labels=labels, 
+                                  name='tot_'+p+'_'+a+'_'+mainfoldernum, 
+                                  discr_level=32)
+            
 
             # 4.4) Apply ARMA model
             """
