@@ -55,7 +55,7 @@ echo '> CPONUM and OLDCAMP are: '
 echo ${CPONUM}
 echo ${OLDCAMP}
 
-export OLDCAMP=${1:-'brus48mm'} #'1wu9k2wa'
+export OLDCAMP=${1:-'aos1mzke'} #'brus48mm' #'1wu9k2wa'
 
 export POLORDER=3
 

@@ -4,6 +4,7 @@ import pandas as pd
 
 from ascii_cpo import read
 import easymfw.utils.io_tools
+#TODO import walklevel and read_sim_csv properly
 
 import matplotlib
 matplotlib.use('Agg')
@@ -51,7 +52,7 @@ def get_ti_flux(filename):
     tiflux = titransp.ti_transp.flux
     return tiflux
 
-def check_equal(prof1, prof2, esp=1e-10):
+def check_equal(prof1, prof2, eps=1e-10):
     """
     Retrun True if two profile are identical up to eps
     """
@@ -246,9 +247,11 @@ def plot_scatter_2D_mult(profvals, resvals, labels, campname):
     plt.savefig('T_mult_scatter_' + campname + '.pdf')
     plt.close()
 
-def print_sep_vals(basefolder, runfold1, runfold2):
+def print_sep_vals(basefolder, runfold1, runfold2, filename, filename_res, ft1_indx):
     """Prints the values (at profiles) for selected folders
     """
+    #TODO get rid of global values references 
+
     pr11 = get_te(basefolder + runfold1 + "/" + filename)
     pr12 = get_tegrad(basefolder + runfold1 + "/" + filename)
     pr21 = get_te(basefolder + runfold2 + "/" + filename)
@@ -262,10 +265,11 @@ def print_sep_vals(basefolder, runfold1, runfold2):
         + runfold1 + " teflux: " + str(res1) + " ; " + runfold2 + "teflux: " + str(res2))
     return
 
-def print_camp_fluxes(basefolder, pr1):
+def print_camp_fluxes(basefolder, pr1, filename_res):
     """
     Prints all flux values of a campaign
     """
+    #TODO get rid of global values references
     for i in range(1,200):
         pr2 = get_te_flux(basefolder +  "Run_" + str(i) + "/" + filename_res)[0]
         print(check_equal(pr1,pr2))
@@ -336,7 +340,7 @@ def deriv(prof, delta):
 # scratch_folder = "/marconi_scratch/userexternal/yyudin00/"
 # #basefolder = "/ptmp/yyudin/UQ_GEM0_wvkryt88_sequential/runs/"
 # #basefolder = "/ptmp/yyudin/UQ_GEM0_jh2q6ts1/runs/"
-# basefolder = "/u/yyudin/codes/MFW/workflows/AUG_28906_6/"
+# basefolder = "/u/yyudin/code/MFW/workflows/AUG_28906_6/"
 # basefolder = "/u/yyudin00/code/MFW/workflow/AUG_28906_6_1ft_restart/"
 # #basefolder = "/ptmp/yyudin/Fusion_Inputs/UQ_GEM_Data/runs/"
 # #basefolder = "/ptmp/yyudin/single_tries/gem0/b9e9pzco/"
@@ -417,4 +421,3 @@ plot_prof_all(profs2, rho, 'core6vs5', prlabels2)
 # print('Steepest gradTi point is {} with gradTi={}'.format(core_gradti_maxloc, prof_gradti[core_gradti_maxloc]))
 #
 # two_camp_compare()
-

@@ -393,7 +393,7 @@ def get_coreprof_ev_acf(value_ev, name='ti', lags=[1,2,3,4,5,6,7,8,9,10]):
         val_df = pd.DataFrame(value_ev[i])
    
         plot_acf(val_df, lags=lags)
-        plt.savefig(str(i)+name+'_acf.png')
+        plt.savefig(str(i)+'_'+name+'_acf.png')
         plt.close()
 
         # TODO find ACL, read up methods and implementations for that:
@@ -403,10 +403,19 @@ def get_coreprof_ev_acf(value_ev, name='ti', lags=[1,2,3,4,5,6,7,8,9,10]):
 
         #acfs = acf_data_pd['AC'].to_numpy()
         acfs = acf_manual
-        #errors = [np.std(value_ev[i][:l]) / np.mean(value_ev[i][:l]) for l in lags]
-        errors = [1./float(l) for l in lags]
-        #print(errors) ###DEBUG
 
+        # Defining Error(L) as Var(V[1..L])/sqrt(L) ...-> then Error is not normalized to [0.;1.]!s
+
+        #errors = [np.std(value_ev[i][:l]) / np.mean(value_ev[i][:l]) for l in lags]
+        errors = [1./np.sqrt(float(l)) for l in lags]
+
+        if isinstance(value_ev[i], np.ndarray) :
+            errors = [np.std(value_ev[i][:l]) / (np.abs(np.mean(value_ev[i][:l])) * np.sqrt(float(l))) for l in lags]
+
+        print('ACF errors: {}'.format(errors)) ###DEBUG
+
+        # Defining ACL as the smallest lag size L that: ACF(L)<= Err(L)
+        # TODO could be done with interpolation of ACF for intermediate lag values
         acl = lags[0]
         for l, ac, e in zip(lags, acfs, errors):
             acl = l
@@ -487,7 +496,7 @@ def filter_trend(values, method='hpf', name=''):
     # Find Fast Fourier Transform of the series 
     if method =='fft':
         
-        thr = values.shape[-1] * (2**(-12))
+        thr = values.shape[-1] * (2**(-14))
         thr_frac = 0.5
         
         val_trend = []
@@ -1101,7 +1110,7 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
                 print('ACF for case #{0}'.format(runn))
                  
                 ac_len, ac_num = get_coreprof_ev_acf(val_wind_s[runn], 
-                                    name=code_name+'_'+p+'_'+a+'stats'+'_'+str(runn), 
+                                    name=code_name+'_'+p+'_'+a+'_stats_'+mainfoldernum+'_'+str(runn), 
                                     lags=lags_list) 
                 #NB!: uncertainty of the ACF computation ~ Var(X)/sqrt(n) , where n=N_samples/L_lags
                 ac_len_s.append(ac_len)
@@ -1109,31 +1118,34 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
                 #TODO: acf function assumes multiple cases are passed and returns list - ..[0] is a workaround, change
                 print('Approximate ACL: {0}; and effective number size is {1}'.format(ac_len, ac_num))
                  
-                # populate new array with reading from the code-produces values taken per a ACL window
+                # Populate new array with reading from the code-produces values taken per a ACL window
                 # take one reading for a miidle of ACL
                 val_ev_acf = np.ones((1, ac_num[0]))
                 val_ev_acf = val_wind_s[runn][0, int(ac_len[0]/2.):-1:int(ac_len[0])]
                 val_ev_acf_s.append(val_ev_acf)
 
-                print([ac_num[0], ac_len[0], val_wind_s[runn].shape, val_ev_acf.shape, val_ev_acf]) ###DEBUG
+                print([ac_num[0], ac_len[0], val_wind_s[runn].shape, val_ev_acf.shape,]) ###DEBUG
                 
 
             # 4.3) Plotting histograms and KDEs of the profile values evolution
             #plot_coreprofval_dist(val_ev_s[i], name=p+'_'+a+'_'+mainfoldernum, discr_level=32)
             for runn in range(len(runnum_list)):
-                """
+                
                 print('KDE for case #{0}'.format(runn)) 
                          
                 plot_coreprofval_dist(val_wind_s[runn],
-                                      name=p+'_'+a+'_'+str(runn)+'_'+mainfoldernum, discr_level=32)
-                """
+                                      name=p+'_'+a+'_'+str(runn)+'_'+mainfoldernum, 
+                                      discr_level=32)
+                
                 #TODO: pass number of case to save different files
 
             # 4.3.1) Plotting single plot with histograms, KDEs and distribution means
-            """ 
-            plot_coreprofval_dist(np.vstack([np.squeeze(v, 0) for v in val_wind_s]), labels=labels, 
-                                  name='tot_'+p+'_'+a+'_'+mainfoldernum, discr_level=32)
-            """
+             
+            plot_coreprofval_dist(np.vstack([np.squeeze(v, 0) for v in val_wind_s]), 
+                                  labels=labels, 
+                                  name='tot_'+p+'_'+a+'_'+mainfoldernum, 
+                                  discr_level=32)
+            
 
             # 4.4) Apply ARMA model
             """
@@ -1299,7 +1311,7 @@ if __name__ == '__main__':
         # Run main with default values for all files in the folder
         main(foldername=sys.argv[1])
     elif len(sys.argv) == 3:
-        # Run main with default valuer for all files in the folder, but considering there might be a csv composed already
+        # Run main with default value for all files in the folder, but considering there might be a csv composed already
         main(foldername=sys.argv[1], runforbatch=int(sys.argv[2]))
     elif len(sys.argv) == 4:
         # Run main for all files in the folder, either read values from csv (runforbatch), and for  multiple flux tubes (coord)

@@ -6,6 +6,8 @@
 
 RUN_WITH_CP=${3:-1}
 
+RUN_WITH_SAVE=${4:-1}
+
 #0. Set directories
 # folder of output CPO files, should be same as number of SLURM submissions (macro-macro-iterations)
 # should be the same as number of MMit TO process
@@ -19,7 +21,7 @@ RUNRANGE=4 #16
 #UQCAMPDIR='dy6n5hp9' # folder id of a completed run with 100 GEM calls, and 11 series of runs 100 calls each
 # TODO new workflow with all the snapshot solved will have a different directory!
 UQCAMPDIR='moj202gj' #folder ID of a completed run with 450 GEM calls
-UQCAMPDIR=${2:-'brus48mm'} #'1wu9k2wa'
+UQCAMPDIR=${2:-'aos1mzke'} #'brus48mm' #'1wu9k2wa'
 
 #DIR='/marconi_scratch/userexternal/yyudin00/VARY_1FT_GEM_NT_qairnbbz' # first run of 16 GEM cases in a script, n_it<=500
 #DIR='/marconi_scratch/userexternal/yyudin00/VARY_1FT_GEM_NT_qpyxg3bb' # first dir with 2 GEM runs
@@ -58,7 +60,7 @@ mkdir dat/${CPONUM}
 #mv gem-loop*.* $DIR
 #mv gem_coretransp*.* cpo
 
-if ${RUN_WITH_CP} ; then
+if [[ ${RUN_WITH_CP} ]]; then
 
   echo "copying CPOs from the latest run dirs"
 
@@ -107,7 +109,11 @@ export PYTHONPATH=/cobra/u/yyudin/codes/ual_python_interface:/cobra/u/yyudin/cod
 #python3 gem_da.py 'run'$RUNNUM'/cpo'$CPONUM'/cpo' 0 1 'new_'$RUNNUM'_'$CPONUM
 #python3 gem_da.py $DIR_SRC'/cpo' 0 1 'new_'$RUNNUM'_'$CPONUM
 
-python3 gem_da.py ${DIR_SRC}/cpo/${CPONUM} 0 1 ${RUNRANGE} 'new_'${UQCAMPDIR}'_'${CPONUM} #latest
+if [[ ${RUN_WITH_CP} ]]; then
+  python3 gem_da.py ${DIR_SRC}/cpo/${CPONUM} 0 1 ${RUNRANGE} 'new_'${UQCAMPDIR}'_'${CPONUM} #latest
+else
+  python3 gem_da.py ${DIR_SRC}/cpo/${CPONUM} 1 1 ${RUNRANGE} 'new_'${UQCAMPDIR}'_'${CPONUM}
+fi
 
 #3. Prepare combined files for analysis of series across long-term runs
 #cp ${DIR_OUTPUT}/gem_??_transp_flux_evol_all${NUMPR}.csv ./
@@ -134,6 +140,8 @@ done
 python3 gem_da.py all_${UQCAMPDIR}_${CPONUM} 1 1 ${RUNRANGE} all_${UQCAMPDIR}_${CPONUM} #latest
 
 #5. Put the resulting output files in a separate directory
-mv *.txt ${DIR_OUTPUT}/
-mv *.csv ${DIR_OUTPUT}/
-mv *.png ${DIR_OUTPUT}/
+if [[ ${RUN_WITH_SAVE} ]]; then
+  mv *.txt ${DIR_OUTPUT}/
+  mv *.csv ${DIR_OUTPUT}/
+  mv *.png ${DIR_OUTPUT}/
+fi

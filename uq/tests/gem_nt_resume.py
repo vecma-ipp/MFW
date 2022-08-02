@@ -47,10 +47,6 @@ print('Version of EasyVVUQ: '.format(uq.__version__))
 # Run gem_test in strandalone and use:
 #base.utils.ftube_indices('gem_coreprof_in.cpo','gem_coretransp_out.cpo') to get the index - currently it is only a check
 
-#ftube_index = 66 # 67 would not consider python/fortran numeration difference and apparently would result in variation difference in an off place of a profile
-#ftube_index = 94
-ftube_index = 68
-
 # Previus campaign ID
 campaign_id = str(sys.argv[1])
 
@@ -82,47 +78,9 @@ xml_dir = os.path.abspath("../standalone/bin")
 obj_dir = os.path.abspath("../standalone/bin/"+SYS)
 exec_code = "loop_gem_notransp"
 
-# Define the uncertain parameters
+gemxml = XMLElement(xml_dir + "/gem.xml")
 
-# Find such a nested set of quadrature abcissas so that coordinates used for U[-0.1,0.1]
-# within a 1st-order Gauss-Legandre are used as smaller (by absolute value) cooridantes for 
-# a 3rd-order G-S for some U[-a,+a]
-# Here only a particular coefficient!
-#alpha_q = 1.
-alpha_q = a = 1./np.sqrt( (9./7.) - 6./7.*np.sqrt(6./5.) ) 
-
-# Electron and ion temperature and their gradients
-input_params = {
-#    "te.value": {"dist": "Uniform", "err":  0.1*alpha_q, "min": 0.},
-#    "ti.value": {"dist": "Uniform", "err":  0.1*alpha_q, "min": 0.},
-#    "te.ddrho": {"dist": "Uniform", "err":  0.1*alpha_q, "max": 0.},
-    "ti.ddrho": {"dist": "Uniform", "err":  0.1*alpha_q, "max": 0.}
-}
-
-nparams = len(input_params)
-
-# CPO file containg initial values of uncertain params
-input_filename = "ets_coreprof_in.cpo"
-input_cponame = "coreprof"
-
-# The quantities of intersts and the cpo file to set them
-output_columns = [
-                 "te_transp.flux",
-                 "ti_transp.flux"
-                 ]
-#output_filename = "gem_coretransp_out.cpo"
-# Workaround: read i-th iteration file
-output_filename = "gem_coretransp_0450.cpo" # TODO either read from folder, or make the set-up more flexible
-output_cponame = "coretransp"
-
-# Parameter space for campaign and the distributions list for the sampler
-params, vary = cpo_inputs(cpo_filename=input_filename,
-                          cpo_name=input_cponame,
-                          input_dir=cpo_dir,
-                          input_params=input_params,
-                          ftube_index=ftube_index)
-
-# Make a restart version of the workflow
+# The restart version of the workflow
 # 1. get exisiting profile shapes and their description as a varied parameter
 # 2. for the *_coreprofile.cpo get the snapshot files for GEM (TFILE)
 # 3. get the same xml and equilibium files that were used for previous batch of iterations
@@ -154,6 +112,56 @@ common_dir = campaign_dir +"/common/"
 
 exec_path = os.path.join(common_dir, exec_code)
 
+# Define the uncertain parameters
+
+# Find such a nested set of quadrature abcissas so that coordinates used for U[-0.1,0.1]
+# within a 1st-order Gauss-Legandre are used as smaller (by absolute value) cooridantes for 
+# a 3rd-order G-S for some U[-a,+a]
+# Here only a particular coefficient!
+
+#alpha_q = 1. # TODO: The error should be read from the existing database, as well as input parameters
+#alpha_q = a = 1./np.sqrt( (9./7.) - 6./7.*np.sqrt(6./5.) ) 
+alpha_q = 2.5
+
+# Electron and ion temperature and their gradients
+input_params = {
+#    "te.value": {"dist": "Uniform", "err":  0.1*alpha_q, "min": 0.},
+#    "ti.value": {"dist": "Uniform", "err":  0.1*alpha_q, "min": 0.},
+#    "te.ddrho": {"dist": "Uniform", "err":  0.1*alpha_q, "max": 0.},
+    "ti.ddrho": {"dist": "Uniform", "err":  0.1*alpha_q, "max": 0.}
+}
+
+nparams = len(input_params)
+
+# CPO file containg initial values of uncertain params
+input_filename = "ets_coreprof_in.cpo"
+input_cponame = "coreprof"
+
+# The quantities of intersts and the cpo file to set them
+output_columns = [
+                 "te_transp.flux",
+                 "ti_transp.flux"
+                 ]
+#output_filename = "gem_coretransp_out.cpo"
+# Workaround: read i-th iteration file
+output_filename = "gem_coretransp_0450.cpo" # TODO either read from folder, or make the set-up more flexible
+output_cponame = "coretransp"
+
+# Define coordinate of flux tubes
+#ftube_index = 66 # 67 would not consider python/fortran numeration difference and apparently would result in variation difference in an off place of a profile
+#ftube_index = 94
+ftube_index = 68 # TODO: Should be read from the exisiting XML in common folder
+#ftube_index = gemxml.get_value('equilibrium_parameters.geometric.ra0')
+
+# Parameter space for campaign and the distributions list for the sampler
+"""
+params, vary = cpo_inputs(cpo_filename=input_filename,
+                          cpo_name=input_cponame,
+                          input_dir=cpo_dir,
+                          input_params=input_params,
+                          ftube_index=ftube_index)
+"""
+
 # Check if this index is read correctly
 ftube_index_test = ftube_indices(common_dir + '/gem_coreprof_in.cpo', 
         '../standalone/bin/gem_coretransp_out.cpo',
@@ -162,6 +170,8 @@ print('The flux tube location defined from the cpo files is: {}'.format(ftube_in
 
 if ftube_index != ftube_index_test[0]:
     print("Different flux tube coordinate is used") # could be assert, might rewrite or through away if script is run for more flux tubes
+
+ftube_index = ftube_index_test[0]
 
 # FOR THE RESTART CAMPAIGN, EVERYTHING (ENCODER, DECODER, ACTIONS, VARY, etc.) SHOULD BE ALREADY THERE
 # Create the encoder and the decoder
@@ -175,14 +185,13 @@ decoder = CPODecoder(cpo_filename=output_filename,
 #####################################################
 ### --- Post EasyVVUQ release modifications ---
 
-# get ncores
-gemxml = XMLElement(xml_dir + "/gem.xml")
+# Get ncores
 npesx = gemxml.get_value("cpu_parameters.domain_decomposition.npesx")
 npess = gemxml.get_value("cpu_parameters.domain_decomposition.npess")
 nftubes = gemxml.get_value("cpu_parameters.parallel_cases.nftubes")
 ncores = npesx*npess*nftubes
 
-pol_order = int(os.environ['POLORDER'])
+pol_order = int(os.environ['POLORDER']) # TODO: should be read from the campaign database
 
 nruns = (pol_order + 1)**nparams # Nr=(Np+Nd, Nd)^T=(Np+Nd)!/(Np!*Nd!) |E.G.|=(3+4)!/3!4! = 5*6*7/6 = 35 => instead of 3^4=81?
 ncores_tot = ncores * nruns
