@@ -393,7 +393,7 @@ def get_coreprof_ev_acf(value_ev, name='ti', lags=[1,2,3,4,5,6,7,8,9,10]):
         val_df = pd.DataFrame(value_ev[i])
    
         plot_acf(val_df, lags=lags)
-        plt.savefig(str(i)+name+'_acf.png')
+        plt.savefig(str(i)+'_'+name+'_acf.png')
         plt.close()
 
         # TODO find ACL, read up methods and implementations for that:
@@ -1110,7 +1110,7 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
                 print('ACF for case #{0}'.format(runn))
                  
                 ac_len, ac_num = get_coreprof_ev_acf(val_wind_s[runn], 
-                                    name=code_name+'_'+p+'_'+a+'_stats_'+mainfoldernum+str(runn), 
+                                    name=code_name+'_'+p+'_'+a+'_stats_'+mainfoldernum+'_'+str(runn), 
                                     lags=lags_list) 
                 #NB!: uncertainty of the ACF computation ~ Var(X)/sqrt(n) , where n=N_samples/L_lags
                 ac_len_s.append(ac_len)
