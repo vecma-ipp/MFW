@@ -4,14 +4,14 @@
 # implemented as chaining of SLURM submissions
 
 # Launch with:
-# nohup ./continuous_gem.sh 2 brus48mm > script_workflow_new_1.log 2>&1 &
+# nohup ./continuous_gem.sh 6 aos1mzke > script_workflow_latest.log 2>&1 &
 
 #0. State the total number of campaigns to run, and ordinal number of the last campaign in previous sequence
 echo "STARTING THE WORKFLOW"
 # number of runs
-NUMRUNS=4 
+NUMRUNS=6 
 # no of current run, which is the last finished submission
-CURRUN=${1:-1}
+CURRUN=${1:-6}
 # no of the first run in the new sequence
 FRUN=$((${CURRUN}+1))
 # no of the last run in the new sequence
@@ -24,7 +24,7 @@ COM=run_cobra_loop_resume_gem_nt.sh # for COBRA
 # TODO: add a first campaign, probably started with a different SLURM script using different non-restart python UQ script, and extract the folder name
 #ROOTCAMPDIR='moj202gj' # at MARCONI
 #ROOTCAMPDIR='1wu9k2wa' # at COBRA
-export ROOTCAMPDIR=${2:-'brus48mm'}
+export ROOTCAMPDIR=${2:-'aos1mzke'} #brus48mm
 
 # directory ID of an original UQ campaign
 
@@ -88,7 +88,7 @@ echo "Finished prostprocessing, next run number: "$FRUN
 for n in `seq ${FRUN} ${LASTRUN}`; do
     #TODO: make while loop, or rather do-until loop
     
-    echo "Starting next submission after "${PREVID}" , no "${n} 
+    echo "Starting next submission after "${PREVID}" , num "${n} 
 
     CPONUM=${n}
     #CURID=$(sbatch --export=ALL,CPONUM=${n} --parsable --dependency=afterany:${PREVID}:+3 --wait ${COM}  2>&1 | sed 's/[S,a-z]* //g')
@@ -96,7 +96,7 @@ for n in `seq ${FRUN} ${LASTRUN}`; do
     #TODO: ideally use =afterok and make sure there are no errors in the UQ script
     #TODO make sure that the output files either have continius numerations or stored separately
     
-    echo "Finished UQ campaign "${CURID}" , no "${n}
+    echo "Finished UQ campaign "${CURID}" , num "${n}
 
     #NOTEL in principle the postprocessing script is called in SLURM submission, but if the argument (run number) is correct, postprocessing should be idempotent
     echo "Now postprocessing for campaign "${PREVID}
@@ -105,7 +105,7 @@ for n in `seq ${FRUN} ${LASTRUN}`; do
     cd ..
 
     PREVID=${CURID}
-    echo "Finished postprocessing for the campaing no "${n}
+    echo "Finished postprocessing for the campaing num "${n}
 done
 
 echo "FINISHED THE WORKFLOW"

@@ -90,8 +90,10 @@ exec_code = "loop_gem_notransp"
 # within a 1st-order Gauss-Legandre are used as smaller (by absolute value) cooridantes for 
 # a 3rd-order G-S for some U[-a,+a]
 # Here only a particular coefficient!
+
 #alpha_q = 1.
-alpha_q = a = 1./np.sqrt( (9./7.) - 6./7.*np.sqrt(6./5.) ) 
+alpha_q = 2.5
+#alpha_q = a = 1./np.sqrt( (9./7.) - 6./7.*np.sqrt(6./5.) ) 
 
 input_params = {
 #    "te.value": {"dist": "Uniform", "err":  0.1*alpha_q, "min": 0.},
