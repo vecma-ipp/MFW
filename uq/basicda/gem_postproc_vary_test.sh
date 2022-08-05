@@ -12,7 +12,7 @@ RUN_WITH_SAVE=${4:-1}
 # folder of output CPO files, should be same as number of SLURM submissions (macro-macro-iterations)
 # should be the same as number of MMit TO process
 #CPONUM=2
-CPONUM=${1:-1}
+CPONUM=${1:-2}
 
 #RUNNUM=2
 # number of runs in current UQ campaign
@@ -26,12 +26,6 @@ UQCAMPDIR=${2:-'aos1mzke'} #'brus48mm' #'1wu9k2wa'
 #DIR='/marconi_scratch/userexternal/yyudin00/VARY_1FT_GEM_NT_qairnbbz' # first run of 16 GEM cases in a script, n_it<=500
 #DIR='/marconi_scratch/userexternal/yyudin00/VARY_1FT_GEM_NT_qpyxg3bb' # first dir with 2 GEM runs
 DIR=$SCRATCH'/VARY_1FT_GEM_NT_'$UQCAMPDIR
-
-#DIR='/marconi_scratch/userexternal/yyudin00/MFW_runs/cpo'$CPONUM'/'
-#DIR='/marconi_scratch/userexternal/yyudin00/GEM_NT_test/run'$RUNNUM'/cpo'$CPONUM'/cpo'
-
-#DIR_SRC='/marconi_scratch/userexternal/yyudin00/MFW_runs/1ft_stprof/'
-#DIR_SRC='/marconi_scratch/userexternal/yyudin00/VARY_1FT_GEM_NT_test/run1/'
 
 #DIR_SRC=$DIR'/runs/runs_0-100000000/runs_0-1000000/runs_0-10000/runs_0-100/run_'$RUNNUM
 DIR_SRC=$DIR'/runs/runs_0-100000000/runs_0-1000000/runs_0-10000/runs_0-100/'
@@ -60,9 +54,10 @@ mkdir dat/${CPONUM}
 #mv gem-loop*.* $DIR
 #mv gem_coretransp*.* cpo
 
-if [[ ${RUN_WITH_CP} ]]; then
+if [ ${RUN_WITH_CP} = 1 ]; then
 
   echo "copying CPOs from the latest run dirs"
+  #echo "RUN_WITH_CP="${RUN_WITH_CP}
 
   for d in run*/ ; do #latest
       echo "${d}"
@@ -140,7 +135,7 @@ done
 python3 gem_da.py all_${UQCAMPDIR}_${CPONUM} 1 1 ${RUNRANGE} all_${UQCAMPDIR}_${CPONUM} #latest
 
 #5. Put the resulting output files in a separate directory
-if [[ ${RUN_WITH_SAVE} ]]; then
+if [ ${RUN_WITH_SAVE} = 1 ]; then
   mv *.txt ${DIR_OUTPUT}/
   mv *.csv ${DIR_OUTPUT}/
   mv *.png ${DIR_OUTPUT}/

@@ -270,7 +270,12 @@ def plot_coreprofval_dist(value_spw, labels=[], name='ti', discr_level=64):
     #print('value_spw'); print(value_spw) ### DEBUG
      
     # Number of flux tube or case
-    nftc = value_spw.shape[0]
+    if isinstance(value_spw, np.ndarray):
+        nftc = value_spw.shape[0]
+    elif isinstance(value_spw, list):
+        nftc = len(value_spw)
+    else:
+        nftc = 1
 
     # Initialise lables if nothing was passed
     if len(labels)==0:
@@ -279,7 +284,7 @@ def plot_coreprofval_dist(value_spw, labels=[], name='ti', discr_level=64):
     # Define the means of each value sequence
     val_means = []
     for i in range(nftc):
-        val_means.append(value_spw[i, :].mean())
+        val_means.append(value_spw[i][:].mean())
 
     # Define a set of styles for different lists plotted
     color_list = ['b', 'g', 'r', 'y']
@@ -291,18 +296,22 @@ def plot_coreprofval_dist(value_spw, labels=[], name='ti', discr_level=64):
     # Plot histograms of values for every flux tube ot case
     fig, ax = plt.subplots()
     for i in range(nftc):
-        ax.hist(value_spw[i, :], bins=len(value_spw[i, :])//discr_level, label=labels[i])
+        n = len(value_spw[i][:])
+        ax.hist(value_spw[i][:], bins=n // discr_level, label=labels[i])
     plt.savefig('hist_' + name + '.png')
     plt.close()
 
     # Compute and plot KDE fit
-    x = np.linspace(0.9*value_spw.min(), 1.1*value_spw.max(), 100)[:, np.newaxis]
+    n_kde_binning = 256
+    x_min = min([min(value_spw[i]) for i in range(nftc)])
+    x_max = max([max(value_spw[i]) for i in range(nftc)])
+    x = np.linspace(0.9*x_min, 1.1*x_max, n_kde_binning)[:, np.newaxis]
     fig, ax = plt.subplots()
     for i in range(nftc):
-        kde = KDE(kernel='gaussian', bandwidth=(value_spw[i].max() - value_spw[i].min()) / discr_level). \
-                  fit(value_spw[i, :, np.newaxis])
+        kde = KDE(kernel='gaussian', bandwidth=(max(value_spw[i]) - min(value_spw[i])) / discr_level). \
+                  fit(value_spw[i][:, np.newaxis])
         log_pdf = kde.score_samples(x)
-        log_pdf_orig = kde.score_samples(value_spw[i, :, np.newaxis])
+        log_pdf_orig = kde.score_samples(value_spw[i][:, np.newaxis])
 
         ax.plot(x[:, 0], np.exp(log_pdf), fmt_list[i], label='density of core transport values')
         
@@ -1016,7 +1025,7 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
         pos_str_cpo_num = mainfoldernum.rfind('_')+1
         cpo_num = int(mainfoldernum[pos_str_cpo_num:]) # if the leaf folder is named [a+]_[d+]
         #cpo_num = int(foldername[foldername.rfind('/')+1:])
-        print('cpo_num={0}'.format(cpo_num)) ###DEBUG
+        print('cpo_num={0} and mainfoldernum={1}'.format(cpo_num, mainfoldernum)) ###DEBUG
         mmiter_num = cpo_num #6 -was in file on Marconi 
 
         db_id = 10002794 # where to get this?
@@ -1124,29 +1133,36 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
                 val_ev_acf = val_wind_s[runn][0, int(ac_len[0]/2.):-1:int(ac_len[0])]
                 val_ev_acf_s.append(val_ev_acf)
 
-                print([ac_num[0], ac_len[0], val_wind_s[runn].shape, val_ev_acf.shape,]) ###DEBUG
-                
+                print([ac_num[0], ac_len[0], val_wind_s[runn].shape, val_ev_acf.shape,]) ###DEBUG        
 
             # 4.3) Plotting histograms and KDEs of the profile values evolution
             #plot_coreprofval_dist(val_ev_s[i], name=p+'_'+a+'_'+mainfoldernum, discr_level=32)
             for runn in range(len(runnum_list)):
                 
                 print('KDE for case #{0}'.format(runn)) 
-                         
+                
+                plot_coreprofval_dist([np.squeeze(val_wind_s[runn],0)],
+                                      name=p+'_'+a+'_'+str(runn)+'_'+mainfoldernum, 
+                                      discr_level=32)
+                """         
                 plot_coreprofval_dist(val_wind_s[runn],
                                       name=p+'_'+a+'_'+str(runn)+'_'+mainfoldernum, 
                                       discr_level=32)
-                
+                """
                 #TODO: pass number of case to save different files
 
             # 4.3.1) Plotting single plot with histograms, KDEs and distribution means
-             
+
+            plot_coreprofval_dist([np.squeeze(v, 0) for v in val_wind_s], 
+                                  labels=labels, 
+                                  name='tot_'+p+'_'+a+'_'+mainfoldernum, 
+                                  discr_level=32)
+            """ 
             plot_coreprofval_dist(np.vstack([np.squeeze(v, 0) for v in val_wind_s]), 
                                   labels=labels, 
                                   name='tot_'+p+'_'+a+'_'+mainfoldernum, 
                                   discr_level=32)
-            
-
+            """
             # 4.4) Apply ARMA model
             """
             apply_arma(val)
