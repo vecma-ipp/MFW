@@ -1144,11 +1144,7 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
                 plot_coreprofval_dist([np.squeeze(val_wind_s[runn],0)],
                                       name=p+'_'+a+'_'+str(runn)+'_'+mainfoldernum, 
                                       discr_level=32)
-                """         
-                plot_coreprofval_dist(val_wind_s[runn],
-                                      name=p+'_'+a+'_'+str(runn)+'_'+mainfoldernum, 
-                                      discr_level=32)
-                """
+
                 #TODO: pass number of case to save different files
 
             # 4.3.1) Plotting single plot with histograms, KDEs and distribution means
@@ -1157,12 +1153,7 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
                                   labels=labels, 
                                   name='tot_'+p+'_'+a+'_'+mainfoldernum, 
                                   discr_level=32)
-            """ 
-            plot_coreprofval_dist(np.vstack([np.squeeze(v, 0) for v in val_wind_s]), 
-                                  labels=labels, 
-                                  name='tot_'+p+'_'+a+'_'+mainfoldernum, 
-                                  discr_level=32)
-            """
+
             # 4.4) Apply ARMA model
             """
             apply_arma(val)
@@ -1210,26 +1201,6 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
                                                              scan_df,
                                                              n_lensample, 
                                                              runn, p, a)
-                
-                """               
-                stats_df = stats_df.append(pd.Series(
-                               data={'mean': val_trend_avg_s[runn-1][0][0],
-                                     'std': val_std_s[runn-1][0][0]},
-                               name=str(runn-1))) # probably a bad workaround
-                
-                scan_data = runs_input_vals[runn-1]
-                scan_data[p+'_'+a] = val_trend_avg_s[runn-1][0][0]
-                scan_data[p+'_'+a+'_std'] = val_std_s[runn-1][0][0]
-                scan_data[p+'_'+a+'_stem'] = scan_data[p+'_'+a+'_std'] / np.sqrt(n_lensample)
-
-                scan_data_new = {}
-                for k,v in scan_data.items():
-                    scan_data_new[k.replace('.', '_')] = v
-                
-                scan_df = scan_df.append(pd.Series(
-                              data=scan_data_new,
-                              name=str(runn-1)))
-            """
 
             """ 
             profile_evol_plot(val_trend_avg_s, labels=labels, name='means_'+p+'_'+a+'_'+mainfoldernum)
