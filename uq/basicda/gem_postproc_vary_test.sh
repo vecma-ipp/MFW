@@ -12,10 +12,11 @@ RUN_WITH_SAVE=${4:-1}
 # folder of output CPO files, should be same as number of SLURM submissions (macro-macro-iterations)
 # should be the same as number of MMit TO process
 #CPONUM=2
-CPONUM=${1:-2}
+CPONUM=${1:-1}
 
 #RUNNUM=2
 # number of runs in current UQ campaign
+RUNRANGESTART=1
 RUNRANGE=4 #16
 
 #UQCAMPDIR='dy6n5hp9' # folder id of a completed run with 100 GEM calls, and 11 series of runs 100 calls each
@@ -65,12 +66,14 @@ if [ ${RUN_WITH_CP} = 1 ]; then
       mkdir cpo/${CPONUM}/${d}
 
       # this should either be a slower 'cp' or never run for a folder currently used by a code
-      # alson never to be thought it's current CPO-s in the stated folder
+      # also never to be thought it's current CPO-s in the stated folder
       mv ${d}/gem_coretransp*.cpo cpo/${CPONUM}/${d}/
 
       mkdir dat/${CPONUM}/${d}
       cp ${d}/*.dat dat/${CPONUM}/${d}/
       cp ${d}/fout_* dat/${CPONUM}/${d}/
+      cp ${d}/stopped dat/${CPONUM}/${d}/
+
   done
 
   cd ${DIR}
@@ -115,7 +118,7 @@ fi
 
 QUANTITIES=('ti' 'te' 'ni' 'ne')
 
-for r in `seq 1 $RUNRANGE`; do #latest
+for r in `seq ${RUNRANGESTART} ${RUNRANGE}`; do #latest
 
     cp ${DIR_OUTPUT}/gem_??_transp_flux_evol_all_${UQCAMPDIR}_${CPONUMPR}_${r}.csv ./
     

@@ -5,7 +5,7 @@ cd gem_data/
 # Put ouputs after GEM postprocessing into quantity/plot/runnum folder structure
 
 qs=('te' 'ti' 'ne' 'ni')
-ts=('gem' 'resuq' 'stats' 'fft' 'scan' 'pdf' 'hist')
+ts=('gem' 'resuq' 'stats' 'fft' 'scan' 'pdf' 'hist' '0_gem')
 ns=1
 nf=6
 

@@ -70,7 +70,9 @@ export EXECTEMPL=hydra_exclusive #short
 export POLORDER=3
 
 echo -e '> In this run: use ExecuteLocal only + QCGPJ pool + '${MPIMOD}' exec mode + '${SLURM_NNODES} \
-' nodes + 2 params + pol-order '${POLORDER}' + commandline passed with '${MPICMD}' \n'
+' nodes + 1 params + pol-order '${POLORDER}' + commandline passed with '${MPICMD}' \n'
+
+echo '> Here we take gradTi +/- 25% error at rho_tor=0.7 \n'
 
 ####################################
 # Run the UQ code
