@@ -801,9 +801,12 @@ def plot_response_cuts(data, input_names, output_names, foldname=''):
                              ylabel=output_names[0]
                              )
 
+        #print(data.head())
+        #print(data.index.name)
+
         for i in range(len(data.index)):
-            axes.annotate(str(data.at(i, output_names[0]+'_stem')), 
-                          (data.at(i, input_names[0]), data.at(i, output_names[0])))
+            axes.annotate('{0:1.3f}'.format(data.at[i, output_names[0]+'_stem'] / data.at[i, output_names[0]]), 
+                          (data.at[i, input_names[0]], data.at[i, output_names[0]]))
 
         axes.get_figure().savefig('scan_'+output_names[0]+'_'+foldname+'.png')
         plt.close()
@@ -930,7 +933,7 @@ def produce_stats_dataframes(runs_input_vals, val_trend_avg_s, val_std_s, stats_
                           pd.Series(
                                data={'mean': val_trend_avg_s[runn-1][0][0],
                                      'std': val_std_s[runn-1][0][0]},
-                               name=str(runn-1))
+                               name=runn-1)
                          #), axis=1
                         ) # probably a bad workaround
 
@@ -947,9 +950,13 @@ def produce_stats_dataframes(runs_input_vals, val_trend_avg_s, val_std_s, stats_
     scan_df = scan_df.append(#(scan_df,
                          pd.Series(
                               data=scan_data_new,
-                              name=str(runn-1))
+                              name=runn-1,
+                              #index=runn-1,
+                                  )
                         #), axis=1
                        )
+    #TODO: name is NaN; and index is saved in csv but not recognised in dataframe
+    #scan_df.reset_index()
 
     return scan_df, stats_df
 
@@ -1177,7 +1184,7 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
 
             runs_input_names_new = [n.replace('.', '_') for n in runs_input_names]
             stats_df = pd.DataFrame(columns=['name', 'mean', 'std'])
-            scan_df = pd.DataFrame(columns=['name'] 
+            scan_df = pd.DataFrame(columns=['index', 'name'] 
                                          + runs_input_names_new
                                          + [p+'_'+a, p+'_'+a+'_std', p+'_'+a+'_stem'])
 
