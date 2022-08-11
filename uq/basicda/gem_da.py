@@ -199,7 +199,7 @@ def profile_evol_load(rho=0.69, folder_name='../gem_data/cpo5/', prof_names=['ti
     #return [value[0] for value in value_s], file_names
     return value_s, file_names
 
-def profile_evol_plot(value_s, labels=['orig'], file_names=[], name='gem_ti_flux', alignment='end'):
+def profile_evol_plot(value_s, labels=['orig'], file_names=[], name='gem_ti_flux', alignment='end', vertline=False):
     """
     Saves a PNG of a Matplotlib plot for a quantity agains index/time; 
           reads values from a list of numpy arrays passed
@@ -255,6 +255,9 @@ def profile_evol_plot(value_s, labels=['orig'], file_names=[], name='gem_ti_flux
              #bbox_to_anchor=(0.5, 0.0), 
               ncol=int(np.sqrt(len(labels))),
               prop={'size' : 9})
+
+    if vertline:
+        ax.axvline(vertline, alpha=0.3, color='k', linestyle='--', label='left border of the window')
    
     #plt.legend(loc='best')
     plt.savefig(name + '.png')
@@ -797,6 +800,11 @@ def plot_response_cuts(data, input_names, output_names, foldname=''):
                              xlabel=input_names[0],
                              ylabel=output_names[0]
                              )
+
+        for i in range(len(data.index)):
+            axes.annotate(str(data.at(i, output_names[0]+'_stem')), 
+                          (data.at(i, input_names[0]), data.at(i, output_names[0])))
+
         axes.get_figure().savefig('scan_'+output_names[0]+'_'+foldname+'.png')
         plt.close()
 
@@ -1050,6 +1058,8 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
         #     even if they are in programm memory already      
         val_ev_s = []
 
+        alpha_wind = 0.3 # how much to discard
+
         # 4) Iterate over cartesian product of all profiles and their attributes
         for i,(p,a) in enumerate(itertools.product(profiles, attributes)):
 
@@ -1075,7 +1085,7 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
             labels = [str(r) for r in runnum_list]
             labels = ["".join([rin+'='+str(round(r[rin], 1))+"; " for rin in runs_input_names]) for r in runs_input_vals]
              
-            profile_evol_plot(val_ev_s, labels=labels, name=code_name+'_'+p+'_'+a+'_'+mainfoldernum, alignment='start') 
+            profile_evol_plot(val_ev_s, labels=labels, name=code_name+'_'+p+'_'+a+'_'+mainfoldernum, alignment='start', vertline=alpha_wind*val_ev_s[0].shape[-1]) 
             
             #print('passes to plot: {}'.format(val_ev_s[0].shape)) ###DEBUG
             #print('before shape {}'.format(val_evname=code_name+'_'+p+'_'+a+'_'+mainfoldernum, alignment='start'_s[i].shape)) ###DEBUG
@@ -1094,7 +1104,6 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
                               alignment='start')
 
             # 4.1') Define the window to discard intial ramp-up and overshooting phase
-            alpha_wind = 0.3 # how much to discard
             val = val_ev_s[i] # single series for a profile+attribute, shouldn't be used for now...
             #TODO: General series list now iterates with both prof+att and run case!
 
