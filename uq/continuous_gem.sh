@@ -11,7 +11,7 @@ echo "STARTING THE WORKFLOW"
 # number of runs
 NUMRUNS=10
 # no of current run, which is the last finished submission
-CURRUN=${1:-6}
+CURRUN=${1:-0}
 # no of the first run in the new sequence
 FRUN=$((${CURRUN}+1))
 # no of the last run in the new sequence
@@ -20,64 +20,93 @@ LASTRUN=$((${CURRUN}+${NUMRUNS}))
 # batch script to submit a single UQ campaign
 #COM=run_marconi_loop_resume_gem_nt.sh # for MARCONI
 COM=run_cobra_loop_resume_gem_nt.sh # for COBRA
-
-# TODO: add a first campaign, probably started with a different SLURM script using different non-restart python UQ script, and extract the folder name
-#ROOTCAMPDIR='moj202gj' # at MARCONI
-#ROOTCAMPDIR='1wu9k2wa' # at COBRA
-export ROOTCAMPDIR=${2:-'aos1mzke'} #brus48mm
-
-# directory ID of an original UQ campaign
-
-echo "Before first submission, here are the numbers"
-echo "Total number of new runs: "$NUMRUNS
-echo "Last completed run number: "$CURRUN
-echo "First new run number: "$FRUN
-echo "Number of last run in this submission: "$LASTRUN
+COM0=run_cobra_loop_gem_nt.sh
 
 RUNRANGESTART=1
 RUNRANGE=4
-# 0.0. Backing up snapshot files from the last runs
 
-TMP=${RANDOM}
-RUNPATHSHORT=runs/runs_0-100000000/runs_0-1000000/runs_0-10000/runs_0-100
+if [ "${CURRUN}" -gt 0]
+then 
 
-mkdir ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/${RUNPATHSHORT}/bckp/
-mkdir ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/${RUNPATHSHORT}/bckp/${TMP}
+  # TODO: add a first campaign, probably started with a different SLURM script using different non-restart python UQ script, and extract the folder name
+  #ROOTCAMPDIR='moj202gj' # at MARCONI
+  #ROOTCAMPDIR='1wu9k2wa' # at COBRA
+  export ROOTCAMPDIR=${2:-'aos1mzke'} #brus48mm
 
-for r in `seq ${RUNRANGESTART} ${RUNRANGE}`; do
-  mkdir ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/${RUNPATHSHORT}/bckp/${TMP}/run_${r}/
+  # directory ID of an original UQ campaign
 
-  cp ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/${RUNPATHSHORT}/run_${r}/gem_coretransp*.cpo ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/${RUNPATHSHORT}/bckp/${TMP}/run_${r}/
+  echo "Before first submission, here are the numbers"
+  echo "Total number of new runs: "$NUMRUNS
+  echo "Last completed run number: "$CURRUN
+  echo "First new run number: "$FRUN
+  echo "Number of last run in this submission: "$LASTRUN
 
-  cp ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/${RUNPATHSHORT}/run_${r}/*.dat ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/${RUNPATHSHORT}/bckp/${TMP}/run_${r}/
+  # 0.0. Backing up snapshot files from the last runs
 
-  cp ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/${RUNPATHSHORT}/run_${r}/fout_0* ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/${RUNPATHSHORT}/bckp/${TMP}/run_${r}/
+  TMP=${RANDOM}
+  RUNPATHSHORT=runs/runs_0-100000000/runs_0-1000000/runs_0-10000/runs_0-100
 
-  cp ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/${RUNPATHSHORT}/run_${r}/stopped ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/${RUNPATHSHORT}/bckp/${TMP}/run_${r}/
+  mkdir ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/${RUNPATHSHORT}/bckp/
+  mkdir ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/${RUNPATHSHORT}/bckp/${TMP}
 
-done
+  for r in `seq ${RUNRANGESTART} ${RUNRANGE}`; do
+    mkdir ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/${RUNPATHSHORT}/bckp/${TMP}/run_${r}/
 
-# 0.1. Restoring snapshot files to the state of desired last completed run
-for r in `seq ${RUNRANGESTART} ${RUNRANGE}`; do
+    cp ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/${RUNPATHSHORT}/run_${r}/gem_coretransp*.cpo ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/${RUNPATHSHORT}/bckp/${TMP}/run_${r}/
 
-  cp ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/${RUNPATHSHORT}/dat/${CURRUN}/run_${r}/*.dat ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/${RUNPATHSHORT}/run_${r}/
+    cp ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/${RUNPATHSHORT}/run_${r}/*.dat ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/${RUNPATHSHORT}/bckp/${TMP}/run_${r}/
 
-  cp ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/${RUNPATHSHORT}/dat/${CURRUN}/run_${r}/fout_0* ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/${RUNPATHSHORT}/run_${r}/
+    cp ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/${RUNPATHSHORT}/run_${r}/fout_0* ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/${RUNPATHSHORT}/bckp/${TMP}/run_${r}/
 
-  #cp ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/${RUNPATHSHORT}/dat/${CURRUN}/run_${r}/stopped ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/${RUNPATHSHORT}/run_${r}/
+    cp ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/${RUNPATHSHORT}/run_${r}/stopped ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/${RUNPATHSHORT}/bckp/${TMP}/run_${r}/
 
-done
-#cd ${HOME}/code/MFW/uq/
+  done
 
-#1. First submission of a campaign, retrieve the SLURM job-id
-echo "Starting the very first SLURM submission with UQ campaign"
+  # 0.1. Restoring snapshot files to the state of desired last completed run
+  for r in `seq ${RUNRANGESTART} ${RUNRANGE}`; do
 
-CPONUM=${FRUN}
-#PREVID=$(sbatch --parsable --wait ${COM} 2>&1 | sed 's/[S,a-z]* //g')
-PREVID=$(sbatch --export=ALL,CPONUM=${FRUN},OLDCAMP=${ROOTCAMPDIR} --parsable --wait ${COM})
+    cp ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/${RUNPATHSHORT}/dat/${CURRUN}/run_${r}/*.dat ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/${RUNPATHSHORT}/run_${r}/
 
-#1'. Save and process the outputs after the finish of the submission
-echo "Finished the first new UQ campaign "${PREVID}
+    cp ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/${RUNPATHSHORT}/dat/${CURRUN}/run_${r}/fout_0* ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/${RUNPATHSHORT}/run_${r}/
+
+    #cp ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/${RUNPATHSHORT}/dat/${CURRUN}/run_${r}/stopped ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/${RUNPATHSHORT}/run_${r}/
+
+  done
+  #cd ${HOME}/code/MFW/uq/
+
+  #1. First submission of a campaign, retrieve the SLURM job-id
+  echo "Starting the very first SLURM submission with UQ campaign"
+
+  CPONUM=${FRUN}
+  #PREVID=$(sbatch --parsable --wait ${COM} 2>&1 | sed 's/[S,a-z]* //g')
+  PREVID=$(sbatch --export=ALL,CPONUM=${FRUN},OLDCAMP=${ROOTCAMPDIR} --parsable --wait ${COM})
+
+  #1'. Save and process the outputs after the finish of the submission
+  echo "Finished the first new UQ campaign "${PREVID}
+
+else
+  # Option for starting the sequence from the very scratch, with no prior folder and DB
+
+  echo "Before first submission, here are the numbers"
+  echo "Total number of new runs: "$NUMRUNS
+  echo "Last completed run number is 0, no previous runs: "${CPONUM}
+  echo "First new run number should be 1: "$FRUN
+  echo "Number of last run in this submission: "$LASTRUN
+
+  #1. First submission of a campaign, retrieve the SLURM job-id
+  echo "Starting the VERY ACTUAL first SLURM submission with UQ campaign"
+
+  CPONUM=${FRUN}
+  PREVID=$(sbatch --export=ALL --parsable --wait ${COM0})
+
+  Extract the ROOTCAMPDIR from the submission
+  ROOTCAMPDIR=$(<camp_temp_dir.txt)
+  echo ${ROOTCAMPDIR}
+
+  #1'. Save and process the outputs after the finish of the submission
+  echo "Finished the first new UQ campaign "${PREVID}
+
+fi
 
 #NOTE: the call of postrpocessing scripts is moved to the SLURM submission
 echo "Now postprocessing for campaign "${PREVID}
