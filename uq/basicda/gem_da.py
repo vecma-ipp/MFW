@@ -408,7 +408,7 @@ def get_coreprof_ev_acf(value_ev, name='ti', lags=[1,2,3,4,5,6,7,8,9,10]):
         plt.savefig(str(i)+'_'+name+'_acf.png')
         plt.close()
 
-        # TODO find ACL, read up methods and implementations for that:
+        # TODO read up methods and implementations for that:
         # Options
         # 1) min(n) value for which ACF(n) <= Var(X_1..n)/sqrt(n) 
         # 2) max value of a_n for an ARMA model
@@ -801,9 +801,6 @@ def plot_response_cuts(data, input_names, output_names, foldname=''):
                              ylabel=output_names[0]
                              )
 
-        #print(data.head())
-        #print(data.index.name)
-
         for i in range(len(data.index)):
             axes.annotate('{0:1.3f}'.format(data.at[i, output_names[0]+'_stem'] / data.at[i, output_names[0]]), 
                           (data.at[i, input_names[0]], data.at[i, output_names[0]]))
@@ -819,7 +816,7 @@ def plot_response_cuts(data, input_names, output_names, foldname=''):
         n_fixvals = n_points_perdim ** (n_inputs - 1)
         n_plots = (n_inputs) * (n_fixvals)
 
-        qoi_name = output_names[0] # TODO to make modifyable
+        qoi_name = output_names[0] # TODO to make modifiable
         qoi_std_name = qoi_name + '_std'
         qoi_stem_name= qoi_name + '_stem'
 
@@ -927,7 +924,7 @@ def produce_stats_dataframes(runs_input_vals, val_trend_avg_s, val_std_s, stats_
         n_lensample = val_trend_avg_s[runn-1].shape[-1]
    
     #n_lensample_corr = 1
-    print('acf-corrected sample length: {0}'.format(n_lensample)) ###DEBUG
+    #print('acf-corrected sample length: {0}'.format(n_lensample)) ###DEBUG
 
     stats_df = stats_df.append(#(stats_df,
                           pd.Series(
@@ -956,7 +953,6 @@ def produce_stats_dataframes(runs_input_vals, val_trend_avg_s, val_std_s, stats_
                         #), axis=1
                        )
     #TODO: name is NaN; and index is saved in csv but not recognised in dataframe
-    #scan_df.reset_index()
 
     return scan_df, stats_df
 
@@ -1044,7 +1040,7 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
         mmiter_num = cpo_num #6 -was in file on Marconi 
 
         db_id = 10002794 # where to get this?
-        #camp_id = '1wu9k2wa' #'moj202gj' # TODO find from 'foldername' or 'mainfoldernum'
+        #camp_id = '1wu9k2wa' #'moj202gj'
         camp_id = mainfoldernum[mainfoldernum[:pos_str_cpo_num-1].rfind('_')+1:pos_str_cpo_num-1]
 
         workdir_camp_db = './' 
@@ -1300,7 +1296,7 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
             """
 
             #TODO get exponential average of the values: standard packaged optimize for alpha -
-            # - why it is so high? is composition of exponential avaraging is another exponential averagin -
+            # - why it is so high? is composition of exponential avaraging is another exponential averagings -
             # - if so, what is alpha_comp?
             #TODO exponential averaging with a symmetric window -> apply padding
 

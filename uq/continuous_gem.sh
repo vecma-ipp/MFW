@@ -4,12 +4,12 @@
 # implemented as chaining of SLURM submissions
 
 # Launch with:
-# nohup ./continuous_gem.sh 12 aos1mzke > script_workflow_latest2.log 2>&1 &
+# nohup ./continuous_gem.sh 17 aos1mzke > script_workflow_latest3.log 2>&1 &
 
 #0. State the total number of campaigns to run, and ordinal number of the last campaign in previous sequence
 echo "STARTING THE WORKFLOW"
 # number of runs
-NUMRUNS=5 
+NUMRUNS=10
 # no of current run, which is the last finished submission
 CURRUN=${1:-6}
 # no of the first run in the new sequence

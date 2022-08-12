@@ -356,6 +356,13 @@ print("Sob1: ", s1_io)
 
 ### NEW PART: saving results and serialising DB
 
+# Save the campaign dir
+camp_dir_file = 'camp_temp_dir.txt'
+camp_dir_postfix = my_campaign._campaign_dir[-8:]
+with open(camp_dir_file, 'w') as f:
+    f.write(camp_dir_postfix)
+
+# Saving a pickle of results dataframe
 pickle_filename = 'gem_notransp_results_' + os.environ['SLURM_JOBID']  + '.pickle'
 with open(pickle_filename, "bw") as file_pickle:
     pickle.dump(results, file_pickle)
