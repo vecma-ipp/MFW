@@ -20,8 +20,7 @@ RUNRANGESTART=1
 RUNRANGE=4 #16
 
 #UQCAMPDIR='dy6n5hp9' # folder id of a completed run with 100 GEM calls, and 11 series of runs 100 calls each
-# TODO new workflow with all the snapshot solved will have a different directory!
-UQCAMPDIR='moj202gj' #folder ID of a completed run with 450 GEM calls
+#UQCAMPDIR='moj202gj' #folder ID of a completed run with 450 GEM calls
 UQCAMPDIR=${2:-'aos1mzke'} #'brus48mm' #'1wu9k2wa'
 
 #DIR='/marconi_scratch/userexternal/yyudin00/VARY_1FT_GEM_NT_qairnbbz' # first run of 16 GEM cases in a script, n_it<=500
@@ -100,14 +99,11 @@ CPONUMPR=$((CPONUM-1))
 
 export PYTHONPATH=/cobra/u/yyudin/codes/ual_python_interface:/cobra/u/yyudin/codes/MFW/uq:${PYTHONPATH}
 
-#TODO: make sure the script reads right things: gem_*.cpo -s from 'cpo' in run folder, for all runs (mofify structure of script), all flux tubes 
+# Reads gem_*.cpo -s from 'cpo' in run folder, for all runs (modify structure of script), all flux tubes 
 
-# command line arguments for main: folder with cpo-s; to read from original files or from csv; number of flux tubes; number of profile variants; file name to save
+# Command line arguments for main: folder with cpo-s; to read from original files or from csv; number of flux tubes; number of profile variants; file name to save
 
-#python3 gem_da.py 'run'$RUNNUM'/cpo'$CPONUM'/cpo' 0 1 'new_'$RUNNUM'_'$CPONUM
-#python3 gem_da.py $DIR_SRC'/cpo' 0 1 'new_'$RUNNUM'_'$CPONUM
-
-if [[ ${RUN_WITH_CP} ]]; then
+if [ ${RUN_WITH_CP} = 1 ]; then
   python3 gem_da.py ${DIR_SRC}/cpo/${CPONUM} 0 1 ${RUNRANGE} 'new_'${UQCAMPDIR}'_'${CPONUM} #latest
 else
   python3 gem_da.py ${DIR_SRC}/cpo/${CPONUM} 1 1 ${RUNRANGE} 'new_'${UQCAMPDIR}'_'${CPONUM}
