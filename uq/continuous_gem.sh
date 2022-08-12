@@ -9,7 +9,7 @@
 #0. State the total number of campaigns to run, and ordinal number of the last campaign in previous sequence
 echo "STARTING THE WORKFLOW"
 # number of runs
-NUMRUNS=10
+NUMRUNS=12
 # no of current run, which is the last finished submission
 CURRUN=${1:-0}
 # no of the first run in the new sequence
@@ -25,7 +25,12 @@ COM0=run_cobra_loop_gem_nt.sh
 RUNRANGESTART=1
 RUNRANGE=4
 
-if [ "${CURRUN}" -gt 0]
+CPONUM=${FRUN}
+
+echo "Before first submission, here are the numbers"
+echo "Total number of new runs: "${NUMRUNS}
+
+if [ "${CURRUN}" -gt 0 ]
 then 
 
   # TODO: add a first campaign, probably started with a different SLURM script using different non-restart python UQ script, and extract the folder name
@@ -35,11 +40,9 @@ then
 
   # directory ID of an original UQ campaign
 
-  echo "Before first submission, here are the numbers"
-  echo "Total number of new runs: "$NUMRUNS
-  echo "Last completed run number: "$CURRUN
-  echo "First new run number: "$FRUN
-  echo "Number of last run in this submission: "$LASTRUN
+  echo "Last completed run number: "${CURRUN}
+  echo "First new run number: "${FRUN}
+  echo "Number of last run in this submission: "${LASTRUN}
 
   # 0.0. Backing up snapshot files from the last runs
 
@@ -77,7 +80,6 @@ then
   #1. First submission of a campaign, retrieve the SLURM job-id
   echo "Starting the very first SLURM submission with UQ campaign"
 
-  CPONUM=${FRUN}
   #PREVID=$(sbatch --parsable --wait ${COM} 2>&1 | sed 's/[S,a-z]* //g')
   PREVID=$(sbatch --export=ALL,CPONUM=${FRUN},OLDCAMP=${ROOTCAMPDIR} --parsable --wait ${COM})
 
@@ -87,24 +89,21 @@ then
 else
   # Option for starting the sequence from the very scratch, with no prior folder and DB
 
-  echo "Before first submission, here are the numbers"
-  echo "Total number of new runs: "$NUMRUNS
-  echo "Last completed run number is 0, no previous runs: "${CPONUM}
-  echo "First new run number should be 1: "$FRUN
-  echo "Number of last run in this submission: "$LASTRUN
+  echo "Last completed run number is 0, no previous runs: "${CURRUN}
+  echo "First new run number should be 1: "${FRUN}
+  echo "Number of last run in this submission: "${LASTRUN}
 
   #1. First submission of a campaign, retrieve the SLURM job-id
   echo "Starting the VERY ACTUAL first SLURM submission with UQ campaign"
 
-  CPONUM=${FRUN}
   PREVID=$(sbatch --export=ALL --parsable --wait ${COM0})
 
-  Extract the ROOTCAMPDIR from the submission
+  #Extract the ROOTCAMPDIR from the submission
   ROOTCAMPDIR=$(<camp_temp_dir.txt)
-  echo ${ROOTCAMPDIR}
+  echo 'Campaign directory for this workflow is: '${ROOTCAMPDIR}
 
   #1'. Save and process the outputs after the finish of the submission
-  echo "Finished the first new UQ campaign "${PREVID}
+  echo "Finished the VERY ACTUALLY first new UQ campaign "${PREVID}
 
 fi
 
@@ -115,7 +114,7 @@ cd basicda
 cd ..
 
 FRUN=$((${FRUN}+1))
-echo "Finished prostprocessing, next run number: "$FRUN
+echo "Finished prostprocessing, next run number: "${FRUN}
 
 #2. Loop over the rest of the campaign submissions
 for n in `seq ${FRUN} ${LASTRUN}`; do
