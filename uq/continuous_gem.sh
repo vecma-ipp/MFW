@@ -30,7 +30,7 @@ CPONUM=${FRUN}
 echo "Before first submission, here are the numbers"
 echo "Total number of new runs: "${NUMRUNS}
 
-if [ "${CURRUN}" -gt 0 ]
+if [ "${CURRUN}" -gt 0 ];
 then 
 
   # TODO: add a first campaign, probably started with a different SLURM script using different non-restart python UQ script, and extract the folder name
@@ -99,7 +99,8 @@ else
   PREVID=$(sbatch --export=ALL --parsable --wait ${COM0})
 
   #Extract the ROOTCAMPDIR from the submission
-  ROOTCAMPDIR=$(<camp_temp_dir.txt)
+  ROOTCAMPDIR=$(<camp_temp_dir.txt) 
+  # TODO: make distinguishable, a single name for all cuncurrently run workflows
   echo 'Campaign directory for this workflow is: '${ROOTCAMPDIR}
 
   #1'. Save and process the outputs after the finish of the submission

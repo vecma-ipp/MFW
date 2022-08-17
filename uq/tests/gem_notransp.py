@@ -97,7 +97,7 @@ alpha_q = 2.5
 
 input_params = {
 #    "te.value": {"dist": "Uniform", "err":  0.1*alpha_q, "min": 0.},
-#    "ti.value": {"dist": "Uniform", "err":  0.1*alpha_q, "min": 0.},
+    "ti.value": {"dist": "Uniform", "err":  0.1*alpha_q, "min": 0.},
 #    "te.ddrho": {"dist": "Uniform", "err":  0.1*alpha_q, "max": 0.},
     "ti.ddrho": {"dist": "Uniform", "err":  0.1*alpha_q, "max": 0.}
 }
@@ -129,6 +129,12 @@ params, vary = cpo_inputs(cpo_filename=input_filename,
 # Initialize Campaign object
 campaign_name = "VARY_1FT_GEM_NT_"
 my_campaign = uq.Campaign(name=campaign_name, work_dir=tmp_dir)
+
+# Save the campaign dir
+camp_dir_file = 'camp_temp_dir.txt'
+camp_dir_postfix = my_campaign._campaign_dir[-8:]
+with open(camp_dir_file, 'w') as f:
+    f.write(camp_dir_postfix)
 
 # Create new directory for inputs
 campaign_dir = my_campaign.campaign_dir
@@ -355,12 +361,6 @@ print("Std: ", std_io)
 print("Sob1: ", s1_io)
 
 ### NEW PART: saving results and serialising DB
-
-# Save the campaign dir
-camp_dir_file = 'camp_temp_dir.txt'
-camp_dir_postfix = my_campaign._campaign_dir[-8:]
-with open(camp_dir_file, 'w') as f:
-    f.write(camp_dir_postfix)
 
 # Saving a pickle of results dataframe
 pickle_filename = 'gem_notransp_results_' + os.environ['SLURM_JOBID']  + '.pickle'

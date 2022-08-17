@@ -56,7 +56,8 @@ echo '> CPONUM and OLDCAMP are: '
 echo ${CPONUM}
 echo ${OLDCAMP}
 
-export OLDCAMP=${1:-'aos1mzke'} #'brus48mm' #'1wu9k2wa'
+#export OLDCAMP=${1:-'aos1mzke'} #'brus48mm' #'1wu9k2wa'
+# TODO: change, works not how expected - uses default parameter
 
 export POLORDER=3
 

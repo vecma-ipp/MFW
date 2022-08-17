@@ -399,9 +399,11 @@ with open(db_json_filename, "w") as db_file_json:
 
 pprint.pprint(results.raw_data) ###DEBUG
 
+"""
 json_filename = 'gem_notransp_results_' + os.environ['SLURM_JOBID']  + '.json'
 with open(json_filename, "w") as json_file:
     json.dump(results.raw_data, json_file)  # TODO: save ndarrays
+"""
 
 csv_filename = 'gem_notransp_results_' + os.environ['SLURM_JOBID'] + '.csv'
 with open(csv_filename, "w") as file_csv:
