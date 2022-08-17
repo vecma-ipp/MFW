@@ -116,12 +116,15 @@ def profile_evol_load(rho=0.69, folder_name='../gem_data/cpo5/', prof_names=['ti
     """ 
 
     file_base_name = 'gem_coretransp'
+    file_base_intermediate = 'coretransp'
+    file_base_tocheck = file_code_name + '_' + file_base_intermediate
+
     file_ext = '.cpo'
 
     file_names = [f for f in os.listdir(folder_name) if 
                              os.path.isfile(os.path.join(folder_name, f)) and 
                              f.endswith(file_ext) and
-                             f.startswith(file_code_name)
+                             f.startswith(file_base_tocheck)
                   ]
 
     file_names.sort()
@@ -142,6 +145,8 @@ def profile_evol_load(rho=0.69, folder_name='../gem_data/cpo5/', prof_names=['ti
 
     # Iterate over passed list of file names
     for k, file_name in enumerate(file_names):
+
+        #print('Reading from {0}'.format(file_name)) ###DEBUG
         
         coretransp = read(os.path.join(folder_name, file_name), 'coretransp')
         #print('coretransp'); print(coretransp) ### DEBUG

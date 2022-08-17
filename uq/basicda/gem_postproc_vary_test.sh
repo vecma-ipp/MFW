@@ -25,19 +25,19 @@ UQCAMPDIR=${2:-'aos1mzke'} #'brus48mm' #'1wu9k2wa'
 
 #DIR='/marconi_scratch/userexternal/yyudin00/VARY_1FT_GEM_NT_qairnbbz' # first run of 16 GEM cases in a script, n_it<=500
 #DIR='/marconi_scratch/userexternal/yyudin00/VARY_1FT_GEM_NT_qpyxg3bb' # first dir with 2 GEM runs
-DIR=$SCRATCH'/VARY_1FT_GEM_NT_'$UQCAMPDIR
+DIR=${SCRATCH}'/VARY_1FT_GEM_NT_'${UQCAMPDIR}
 
 #DIR_SRC=$DIR'/runs/runs_0-100000000/runs_0-1000000/runs_0-10000/runs_0-100/run_'$RUNNUM
-DIR_SRC=$DIR'/runs/runs_0-100000000/runs_0-1000000/runs_0-10000/runs_0-100/'
+DIR_SRC=${DIR}'/runs/runs_0-100000000/runs_0-1000000/runs_0-10000/runs_0-100/'
 
 CODEMDIR=code
-if [[ "$SYS" =~ ^(DRACO|COBRA|RAVEN)$ ]]; then
+if [[ "${SYS}" =~ ^(DRACO|COBRA|RAVEN)$ ]]; then
   CODEMDIR=code
 else
   CODEMDIR=code
 fi
 
-DIR_CODE=$HOME'/'$CODEMDIR'/MFW/uq/basicda/'
+DIR_CODE=${HOME}'/'${CODEMDIR}'/MFW/uq/basicda/'
 
 DIR_OUTPUT='gem_data'
 
@@ -93,7 +93,7 @@ cd ${DIR_CODE}
 #NUM=$(($CPONUM-13))
 #NUMPR=$((NUM-1))
 #CPONUM=$(($NUM+13))
-CPONUMPR=$((CPONUM-1))
+CPONUMPR=$((${CPONUM}-1))
 
 #export PYTHONPATH=/marconi/home/userexternal/yyudin00/code/ual_python_interface:/marconi/home/userexternal/yyudin00/code/MFW/uq/base:${PYTHONPATH}
 
