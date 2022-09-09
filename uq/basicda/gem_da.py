@@ -272,7 +272,7 @@ def profile_evol_plot(value_s, labels=['orig'], file_names=[], name='gem_ti_flux
 
     return value_s
 
-def plot_coreprofval_dist(value_spw, labels=[], name='ti', discr_level=64):
+def plot_coreprofval_dist(value_spw, labels=[], name='ti', discr_level=64, forplot=False):
     """
     """
     #print('value_spw'); print(value_spw) ### DEBUG
@@ -329,6 +329,12 @@ def plot_coreprofval_dist(value_spw, labels=[], name='ti', discr_level=64):
         # Add vertical lines for mean of the each sample
         ax.axvline(x=val_means[i], ymin=0., ymax=1., linestyle=fmt_list[i][:-1], color=fmt_list[i][-1:]) 
         #TODO: change the style specification 
+        
+        if forplot:
+            ax.set_xlim([0., 4.5e6])
+            ax.invert_xaxis()
+            #ax.set_xlim(left=0.)
+            #ax.view_init(0, 90)
     
     plt.savefig('pdf_' + name + '.png')
     plt.close()
@@ -697,7 +703,7 @@ def plot_fft(freq, vals, thr, slope=-2, name='fft'):
     
     plt.close()
 
-def deconvolve_expavg(vals, alpha=200):
+def deconvolve_expavg(vals, alpha=1./200.):
     """
     Deconvolve sequence of values produced by exponential averaging and get the original sequence
 
@@ -990,9 +996,9 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
 #                 'imp4dv',
            	 ]
     profiles = ['ti_transp', 
-                'te_transp',
-                'ni_transp',
-                'ne_transp'
+                #'te_transp',
+                #'ni_transp',
+                #'ne_transp'
                ]
 
     for code_name in code_names:
@@ -1166,10 +1172,13 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
 
             # 4.3.1) Plotting single plot with histograms, KDEs and distribution means
 
-            plot_coreprofval_dist([np.squeeze(v, 0) for v in val_wind_s], 
+            plot_coreprofval_dist(
+                                  [np.squeeze(v, 0) for v in val_wind_s], 
                                   labels=labels, 
                                   name='tot_'+p+'_'+a+'_'+mainfoldernum, 
-                                  discr_level=32)
+                                  discr_level=32,
+                                  forplot=True
+                                  )
 
             # 4.4) Apply ARMA model
             """

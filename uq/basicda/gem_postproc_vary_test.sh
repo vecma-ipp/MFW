@@ -4,9 +4,13 @@
 
 # NOTE: never run this for a campaing folder currently used by a code!!!
 
+# Example usage: ./gem_postproc_vary_test.sh 12 moj202gj 0 1 16 0
+
 RUN_WITH_CP=${3:-1}
 
 RUN_WITH_SAVE=${4:-1}
+
+RUN_NOT_ONLY_ALL=${6:-1}
 
 #0. Set directories
 # folder of output CPO files, should be same as number of SLURM submissions (macro-macro-iterations)
@@ -17,7 +21,7 @@ CPONUM=${1:-1}
 #RUNNUM=2
 # number of runs in current UQ campaign
 RUNRANGESTART=1
-RUNRANGE=4 #16
+RUNRANGE=${5:-4} #16
 
 #UQCAMPDIR='dy6n5hp9' # folder id of a completed run with 100 GEM calls, and 11 series of runs 100 calls each
 #UQCAMPDIR='moj202gj' #folder ID of a completed run with 450 GEM calls
@@ -54,7 +58,7 @@ mkdir dat/${CPONUM}
 #mv gem-loop*.* $DIR
 #mv gem_coretransp*.* cpo
 
-if [ ${RUN_WITH_CP} = 1 ]; then
+if [ "${RUN_WITH_CP}" -eq 1 ]; then
 
   echo "copying CPOs from the latest run dirs"
   #echo "RUN_WITH_CP="${RUN_WITH_CP}
@@ -103,38 +107,70 @@ export PYTHONPATH=/cobra/u/yyudin/codes/ual_python_interface:/cobra/u/yyudin/cod
 
 # Command line arguments for main: folder with cpo-s; to read from original files or from csv; number of flux tubes; number of profile variants; file name to save
 
-if [ ${RUN_WITH_CP} = 1 ]; then
-  python3 gem_da.py ${DIR_SRC}/cpo/${CPONUM} 0 1 ${RUNRANGE} 'new_'${UQCAMPDIR}'_'${CPONUM} #latest
-else
-  python3 gem_da.py ${DIR_SRC}/cpo/${CPONUM} 1 1 ${RUNRANGE} 'new_'${UQCAMPDIR}'_'${CPONUM}
-fi
-
-#3. Prepare combined files for analysis of series across long-term runs
-#cp ${DIR_OUTPUT}/gem_??_transp_flux_evol_all${NUMPR}.csv ./
-
 QUANTITIES=('ti' 'te' 'ni' 'ne')
 
-for r in `seq ${RUNRANGESTART} ${RUNRANGE}`; do #latest
+if [ "${RUN_NOT_ONLY_ALL}" -eq 1 ]; then
 
-    cp ${DIR_OUTPUT}/gem_??_transp_flux_evol_all_${UQCAMPDIR}_${CPONUMPR}_${r}.csv ./
-    
-    for q in ${QUANTITIES[@]}; do
+  if [ "${RUN_WITH_CP}" -eq 1 ]; then
 
-      cat gem_${q}_transp_flux_evol_all_${UQCAMPDIR}_${CPONUMPR}_${r}.csv gem_${q}_transp_flux_evol_new_${UQCAMPDIR}_${CPONUM}_${r}.csv > gem_${q}_transp_flux_evol_all_${UQCAMPDIR}_${CPONUM}_${r}.csv
-     
+    python3 gem_da.py ${DIR_SRC}/cpo/${CPONUM} 0 1 ${RUNRANGE} 'new_'${UQCAMPDIR}'_'${CPONUM}
+
+  else
+
+    for r in `seq ${RUNRANGESTART} ${RUNRANGE}`; do 
+
+      for q in ${QUANTITIES[@]}; do
+
+        cp ${DIR_OUTPUT}/gem_${q}_transp_flux_evol_new_${UQCAMPDIR}_${CPONUM}_${r}.csv ./
+
+      done
+
     done
 
-done
+    python3 gem_da.py ${DIR_SRC}/cpo/${CPONUM} 1 1 ${RUNRANGE} 'new_'${UQCAMPDIR}'_'${CPONUM}
+
+  fi
+
+  #3. Prepare combined files for analysis of series across long-term runs
+  #cp ${DIR_OUTPUT}/gem_??_transp_flux_evol_all${NUMPR}.csv ./
+
+  for r in `seq ${RUNRANGESTART} ${RUNRANGE}`; do
+      
+      for q in ${QUANTITIES[@]}; do
+
+        cp ${DIR_OUTPUT}/gem_${q}_transp_flux_evol_all_${UQCAMPDIR}_${CPONUMPR}_${r}.csv ./
+
+        cat gem_${q}_transp_flux_evol_all_${UQCAMPDIR}_${CPONUMPR}_${r}.csv gem_${q}_transp_flux_evol_new_${UQCAMPDIR}_${CPONUM}_${r}.csv > gem_${q}_transp_flux_evol_all_${UQCAMPDIR}_${CPONUM}_${r}.csv
+      
+      done
+
+  done
+
+fi
 
 #cat gem_ti_transp_flux_evol_all${NUMPR}.csv gem_ti_transp_flux_evol_${CPONUM}.csv > gem_ti_transp_flux_evol_all${NUM}.csv
 
 #4. Run the post-processing Python script for combined csv files
 #python3 gem_da.py 'all'$NUM 1
 
+if [ "${RUN_NOT_ONLY_ALL}" -ne 1 ]; then
+
+    for r in `seq ${RUNRANGESTART} ${RUNRANGE}`; do 
+
+      for q in ${QUANTITIES[@]}; do
+
+        cp ${DIR_OUTPUT}/gem_${q}_transp_flux_evol_all_${UQCAMPDIR}_${CPONUM}_${r}.csv ./
+
+      done
+
+    done
+
+fi
+
 python3 gem_da.py all_${UQCAMPDIR}_${CPONUM} 1 1 ${RUNRANGE} all_${UQCAMPDIR}_${CPONUM} #latest
 
 #5. Put the resulting output files in a separate directory
-if [ ${RUN_WITH_SAVE} = 1 ]; then
+if [ "${RUN_WITH_SAVE}" -eq 1 ]; then
   mv *.txt ${DIR_OUTPUT}/
   mv *.csv ${DIR_OUTPUT}/
   mv *.png ${DIR_OUTPUT}/
