@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 
 from ascii_cpo import read
-import easymfw.utils.io_tools
+#import easymfw.utils.io_tools
 #TODO import walklevel and read_sim_csv properly
 
 import matplotlib
@@ -170,21 +170,22 @@ def plot_prof(prof, rho, name):
     #plt.show()
     plt.close()
 
-def plot_prof_all(profs, rho, name, proflabels):
+def plot_prof_all(profs, rho, name, proflabels, shotspec='28906'):
     """
     Plots a list of profiles of different parameters for the same scenario
     """
 
-    colorchoice = ['b','g','r','c','m','y','k',]
+    colorchoice = ['r','m','b','g','c','y','k',]
+    second_prof_type_start = r'$\nabla'
            
     fig, ax1 = plt.subplots()
-    ax1.set_ylabel('T[keV]')
+    ax1.set_ylabel(r'$T$ [eV]')
 
     ax2 = ax1.twinx()    
-    ax2.set_label('gradT')
+    ax2.set_ylabel(r'$\nabla T$ [eV/m]')
 
     for i, (prof, label) in enumerate(zip(profs, proflabels)):
-        if label.startswith('grad'):
+        if label.startswith(second_prof_type_start):
             ax2.plot(rho, prof, label=label, color=colorchoice[i])
         else:
             ax1.plot(rho, prof, label=label, color=colorchoice[i])
@@ -192,13 +193,15 @@ def plot_prof_all(profs, rho, name, proflabels):
     ax1.tick_params(axis='y', labelcolor='tab:red')
     ax2.tick_params(axis='y', labelcolor='tab:blue')
 
-    ax1.set_xlabel('rho [1..100 units]')
+    ax1.set_xlabel(r'$\rho$ [a.u.]')
 
-    ax1.legend(loc=0)
-    ax2.legend(loc=3)
+    ax1.legend(loc=3)
+    ax2.legend(loc=1)
 
-    plt.title('Profiles')
-    plt.savefig('profs_' + name + '.png')
+    plt.title('Kinetic profiles of AUG shot #{0}'.format(shotspec))
+    plt.tight_layout()
+
+    plt.savefig('imgs/profs_' + name + '.png', dpi=1500,) #bbox_inches='tight'
     plt.close()
 
 def plot_prof_seq(runfolder, nruns, name, targind=0):
@@ -206,18 +209,40 @@ def plot_prof_seq(runfolder, nruns, name, targind=0):
     Plots multiple profiles (val-s vs rho) at the sam figure
     """
     rho = range(100)
-    for i in range(1, nruns):
-        #prof = get_te(runfolder+"/runs/Run_"+str(i+1)+"/gem0_coreprof_in.cpo")
-        prof = get_tegrad(runfolder+"/runs/Run_"+str(i+1)+"/gem0_coreprof_in.cpo")
-        plt.plot(rho, prof, linewidth=0.5)
-        plt.plot(rho, prof, 'ko', markersize=8)
-    plt.xlabel('rho[ind]')
-    plt.ylabel('grTe[eV/m]')
-    if targind !=0:
-        plt.axvline(targind,0,3000)
-    plt.title("gradTe profile for " + name)
-    plt.savefig('tegrad_prof_all_' + name + '.pdf')
-    plt.close()
+
+    func_list = [get_ti, get_te, get_tigrad, get_tegrad]
+    labels_list = [r'$T_{i}$ [eV]', r'$T_{e}$ [eV]', r'$\nabla T_{i}$ [eV/m]', r'$\nabla T_{e}$ [eV/m]']
+    name_list = ['ti', 'te', 'grti', 'grte']
+    lim_list = [(500, 1800), (500, 2000), (-3750, 0), (-3750, 0)]
+
+    for f in range(len(func_list)):
+
+        for i in range(0, nruns):
+
+            #prof = get_te(runfolder+"/runs/Run_"+str(i+1)+"/gem0_coreprof_in.cpo")
+            lookup_folder = '/runs/runs_0-100000000/runs_0-1000000/runs_0-10000/runs_0-100/run_'
+            lookup_file = '/gem_coreprof_in.cpo'
+
+            prof = func_list[f](runfolder+lookup_folder+str(i+1)+lookup_file)
+            #prof = get_ti(runfolder+lookup_folder+str(i+1)+lookup_file)
+            
+            plt.plot(rho, prof, linewidth=0.7)
+            plt.plot(rho, prof, 'ko', markersize=1.)
+
+        plt.xlabel(r'$\rho$ [a.u.]')
+        plt.ylabel(labels_list[f])
+        #plt.ylabel(r'$\nabla T_{i}$ [eV/m]')
+
+        plt.ylim(lim_list[f])
+
+        if targind !=0:
+            plt.axvline(targind, linestyle='--', linewidth=0.45)
+
+        plt.title(r"Profiles for {0} runs".format(nruns))
+        #plt.title(r"$\nabla T_i$ profiles for {0} runs".format(nruns))
+
+        plt.savefig('imgs/'+ name_list[f] +'_all' + name + '.png', dpi=1200, bbox_inches='tight')
+        plt.close()
 
 def plot_scatter_2D(profvals, resvals, campname):
     fig = plt.scatter(profvals, resvals, label='Ti_flux(DTi|flux)')
@@ -275,18 +300,19 @@ def print_camp_fluxes(basefolder, pr1, filename_res):
         print(check_equal(pr1,pr2))
         print(str(pr2) + "\n")
 
-def plot_run_profiles(basefolder, name="_gem0_aug_par_tes_at69_"):
+def plot_run_profiles(basefolder, nruns=16, targind=69, name="_gem0_aug_par_tes_at69_"):
     """
     Plot profiles for a single run
     """
-    n_runs = 2048
-    targind = 0 # 69
-    for i in range(1, n_runs): 
+    #n_runs = 2048
+    #targind = 0 # 69
+    
+    for i in range(1, nruns): 
         continue   
         #rho = get_rho(basefolder + "/runs/Run_" + str(i) + "/gem0_coreprof_in.cpo")
         #plot_prof(pr11, np.linspace(0,1,100), "_gem0_aug_seq_run_input_1")
 
-    plot_prof_seq(basefolder, n_runs, name, targind)
+    plot_prof_seq(basefolder, nruns=nruns, name=name, targind=targind)
 
     #print("flux for the case " + str(1) + " : " + '%.3g'%(res1))
     #plot_prof(pr21, np.linspace(0,1,100), "_gem0_aug_sew_tun_input_2")
@@ -385,13 +411,20 @@ def deriv(prof, delta):
 #folder2ftrun = os.path.join(scratch_folder, "gem08ftuq_pce_z85mi86u") # a 2ft gem0 campaing on 13.10.2020
 #folder8ftrun = os.path.join(scratch_folder, "gem08ftuq_pce_v0ij1gtr") # a 8ft gem0 campaing on ...10.2020
 
-#plot_run_profiles(folder8ftrun, "_gem0_aug_8ft_")
+# Plot profile variations vreated by EasyVVUQ encoder
+scratch_folder = "/cobra/ptmp/yyudin/"
+#folder4 = os.path.join(scratch_folder, "VARY_1FT_GEM_NT_1wu9k2wa")
+#plot_run_profiles(basefolder=folder4, name="_gem_aug_1ft_4_", nruns=4, targind=68)
+folder16 = os.path.join(scratch_folder, "VARY_1FT_GEM_NT_o9212oqk")
+plot_run_profiles(basefolder=folder16, name="_gem_aug_1ft_16_", nruns=16, targind=68)
 
 #num = 2047 
 #plot_prof(get_te(folder8ftrun+'/runs/Run_'+str(num)+'/gem0_coreprof_in.cpo'), np.linspace(0,1,100), 'prof_8ftrun_at_'+str(8))
 
-#check current AUG profile steepest points
-exp_folder = "../workflows/AUG_28906_6_1ft_restart"
+# Check current AUG profile steepest points
+
+#exp_folder = "../workflows/AUG_28906_6_1ft_restart"
+exp_folder = "../workflows/AUG_28906_6"
 prof_file = "ets_coreprof_in.cpo"
 prof_file_path = os.path.join(exp_folder, prof_file)
 rho = np.linspace(0, 100, 100)
@@ -402,17 +435,20 @@ prof_ti =  get_ti(prof_file_path)
 prof_gradte = get_tegrad(prof_file_path)
 prof_gradti = get_tigrad(prof_file_path)
 profs = [prof_te, prof_ti, prof_gradte, prof_gradti]
-prlabels = ['te', 'ti', 'gradte', 'gradti']
-#plot_prof_all(profs, rho, 'aug6_r', prlabels)
+#prlabels = ['Te', 'Ti', '$grad Te$', 'grad Ti']
+prlabels = [r'$T_{e}$', r'$T_{i}$', r'$\nabla T_{e}$', r'$\nabla T_{i}$']
+plot_prof_all(profs, rho, 'aug6_r_new', prlabels)
 
+
+"""
 exp_folder1 = "../workflows/AUG_28906_5"
 prof_file_path2 = os.path.join(exp_folder1, prof_file)
 prof_te2 = get_te(prof_file_path2)
 prof_ti2 = get_ti(prof_file_path2)
 profs2 = [prof_te, prof_ti, prof_te2, prof_ti2]
 prlabels2 = ['te_rst', 'ti_rst', 'te_org', 'ti_org']
-plot_prof_all(profs2, rho, 'core6vs5', prlabels2)
-
+plot_prof_all(profs2, rho, 'core6vs5_new', prlabels2)
+"""
 
 # print(prof_gradte[65:73])
 # print(prof_gradti[65:73].reshape(1,-1))
