@@ -1185,16 +1185,19 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
             # 4.3.2) Plotting single plot with histograms including data from MFW production runs
 
             mfw_data_file='AUG_gem_inoutput.txt' #AUG_mix-lim_gem_inoutput.txt
-            mfw_ft_s = [5, 6]
+            mfw_ft_s = [5, 6, 7]
 
             val_mwf = pd.read_table('../data/'+mfw_data_file, delimiter='  *', engine='python') 
             val_mwf_s = [val_mwf['flux-Ti-ft'+str(mfw_ft)].to_numpy().reshape(1,-1) for mfw_ft in mfw_ft_s]
 
+            tiddrho_mwf_refval_s = [val_mwf['dTi-ft'+str(mfw_ft)].mean() for mfw_ft in mfw_ft_s]
+
             #print(' Shapes of old and new arrays {0} {1}'.format(val_wind_s[0].shape, val_mwf.shape)) ### DEBUG
+            #print(' MFW dTi values ara {0} {1}'.format(tiddrho_mwf_refval_s[0], tiddrho_mwf_refval_s[1])) ### DEBUG
 
             plot_coreprofval_dist(
                                     [np.squeeze(v,0) for v in [*val_wind_s, *val_mwf_s]],
-                                    labels=[*labels, *['mfw_ft'+str(ft) for ft in mfw_ft_s]],
+                                    labels=[*labels, *['mfw_ft'+str(mfw_ft_s[i])+'; tiddrho={:.2f}'.format(tiddrho_mwf_refval_s[i]) for i in range(len(mfw_ft_s))]],
                                     name='tot_mwf_'+str(mfw_ft_s[0])+'_'+p+'_'+a+'_'+mainfoldernum,
                                     discr_level=32,
                                     forplot=False,
