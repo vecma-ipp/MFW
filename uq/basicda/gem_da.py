@@ -1180,6 +1180,24 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
                                   forplot=True
                                   )
 
+            # 4.3.2) Plotting single plot with histograms including data from MFW production runs
+
+            mfw_data_file='AUG_gem_inoutput.txt' #AUG_mix-lim_gem_inoutput.txt
+            mfw_ft = 6
+
+            val_mwf = pd.read_table('../data/'+mfw_data_file, delimiter='  *', engine='python') 
+            val_mwf = val_mwf['flux-Ti-ft'+str(mfw_ft)].to_numpy().reshape(1,-1)
+
+            #print(' Shapes of old and new arrays {0} {1}'.format(val_wind_s[0].shape, val_mwf.shape)) ### DEBUG
+
+            plot_coreprofval_dist(
+                                    [np.squeeze(v,0) for v in [*val_wind_s, val_mwf]],
+                                    labels=[*labels, 'MFW data'],
+                                    name='tot_mwf_'+p+'_'+a+'_'+mainfoldernum,
+                                    discr_level=32,
+                                    forplot=False
+                                 )
+
             # 4.4) Apply ARMA model
             """
             apply_arma(val)
