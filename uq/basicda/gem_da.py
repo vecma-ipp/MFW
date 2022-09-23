@@ -305,7 +305,7 @@ def plot_coreprofval_dist(value_spw, labels=[], name='ti', discr_level=64, forpl
     fig, ax = plt.subplots()
     for i in range(nftc):
         n = len(value_spw[i][:])
-        ax.hist(value_spw[i][:], bins=n // discr_level, label=labels[i])
+        ax.hist(value_spw[i][:], bins=n // discr_level, label=labels[i], alpha=0.7)
     plt.legend(loc='best')
     plt.savefig('hist_' + name + '.png')
     plt.close()
@@ -1111,7 +1111,7 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
  
             ##ti_flux = np.genfromtxt('gem_ti_flux.csv', delimiter =", ")
 
-            # 4.1'*) Compare flux valeus from turbulent code and the values that where used before exponential averaging
+            # 4.1'*) Compare flux values from turbulent code and the values that where used before exponential averaging
 
             val_deconv = deconvolve_expavg(val_ev_s[0])
             
@@ -1152,7 +1152,7 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
                 #TODO: acf function assumes multiple cases are passed and returns list - ..[0] is a workaround, change
                 print('Approximate ACL: {0}; and effective number size is {1}'.format(ac_len, ac_num))
                  
-                # Populate new array with reading from the code-produces values taken per a ACL window
+                # Populate new array with reading from the code-produced values taken per a ACL window
                 # take one reading for a miidle of ACL
                 val_ev_acf = np.ones((1, ac_num[0]))
                 val_ev_acf = val_wind_s[runn][0, int(ac_len[0]/2.):-1:int(ac_len[0])]
@@ -1184,20 +1184,22 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
 
             # 4.3.2) Plotting single plot with histograms including data from MFW production runs
 
+            mfw_input_names = ['dTi', 'dTe', 'Ti', 'Te']
+
             mfw_data_file='AUG_gem_inoutput.txt' #AUG_mix-lim_gem_inoutput.txt
             mfw_ft_s = [5, 6, 7]
 
             val_mwf = pd.read_table('../data/'+mfw_data_file, delimiter='  *', engine='python') 
             val_mwf_s = [val_mwf['flux-Ti-ft'+str(mfw_ft)].to_numpy().reshape(1,-1) for mfw_ft in mfw_ft_s]
 
-            tiddrho_mwf_refval_s = [val_mwf['dTi-ft'+str(mfw_ft)].mean() for mfw_ft in mfw_ft_s]
+            mfw_input_refval_s = [[val_mwf[input_name+'-ft'+str(mfw_ft)].mean() for mfw_ft in mfw_ft_s] for input_name in mfw_input_names]
 
             #print(' Shapes of old and new arrays {0} {1}'.format(val_wind_s[0].shape, val_mwf.shape)) ### DEBUG
-            #print(' MFW dTi values ara {0} {1}'.format(tiddrho_mwf_refval_s[0], tiddrho_mwf_refval_s[1])) ### DEBUG
+            #print(' MFW input values are dti={0} dte={1} ti={2} te={3}'.format(tiddrho_mwf_refval_s[0], teddrho_mwf_refval_s[0], ti_mwf_refval_s[0], te_mwf_refval_s[0])) ### DEBUG
 
             plot_coreprofval_dist(
                                     [np.squeeze(v,0) for v in [*val_wind_s, *val_mwf_s]],
-                                    labels=[*labels, *['mfw_ft'+str(mfw_ft_s[i])+'; tiddrho={:.2f}'.format(tiddrho_mwf_refval_s[i]) for i in range(len(mfw_ft_s))]],
+                                    labels=[*labels, *['mfw_ft'+str(mfw_ft_s[i])+'; tiddrho={:.2f}'.format(mfw_input_refval_s[0][i]) for i in range(len(mfw_ft_s))]],
                                     name='tot_mwf_'+str(mfw_ft_s[0])+'_'+p+'_'+a+'_'+mainfoldernum,
                                     discr_level=32,
                                     forplot=False,
@@ -1210,7 +1212,7 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
 
             # 4.5)  Apply different averaging methods and plot the results
             
-            # 4.5.1) Calculating the mean of last *alpha* reads
+            # 4.5.1) Calculating the mean of last *1-alpha* reads
             
             #print('input names : {}'.format(runs_input_names)) ###DEBUG
             #print('inputs values : {}'.format(runs_input_vals)) ###DEBUG            
