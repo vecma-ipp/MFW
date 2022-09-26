@@ -64,13 +64,14 @@ if [ "${RUN_WITH_CP}" -eq 1 ]; then
       #TODO make loop go recursevely over run folders
       echo "${d}"
 
-      mkdir cpo/${CPONUM}/${d}
+      mkdir -p cpo/${CPONUM}/${d}
 
-      # this should either be a slower 'cp' or never run for a folder currently used by a code
-      # also never to be thought it's current CPO-s in the stated folder
+      ## this should either be a slower 'cp' or never run for a folder currently used by a code
+      ## also never to be thought it's current CPO-s in the stated folder
+      
       mv ${d}/gem_coretransp*.cpo cpo/${CPONUM}/${d}/
 
-      mkdir dat/${CPONUM}/${d}
+      mkdir -p dat/${CPONUM}/${d}
       cp ${d}/*.dat dat/${CPONUM}/${d}/
       cp ${d}/fout_* dat/${CPONUM}/${d}/
       cp ${d}/stopped dat/${CPONUM}/${d}/

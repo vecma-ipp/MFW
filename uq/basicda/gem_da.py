@@ -24,7 +24,8 @@ from statsmodels.tsa.arima.model import ARIMA, ARIMAResults
 import easyvvuq as uq
 import easyvvuq.db.sql as db
 
-#from da_utils import *
+from da_utils import walklevel
+
 from ascii_cpo import read
 sys.path.append('..')
 import base
@@ -235,7 +236,7 @@ def profile_evol_plot(value_s, labels=['orig'], file_names=[], name='gem_ti_flux
     color_list = ['b', 'g', 'r', 'y']
     line_list = ['-', '--', '-.', ':']
     marker_list = ['.', 'o', 'v', '^']
-    style_lists = [line_list, color_list] # NB!: can be modified to include marker style
+    style_lists = [line_list, color_list, marker_list] # NB!: can be modified to include marker style
     fmt_list = ["".join(map(str, style)) for style in itertools.product(*style_lists)]
 
     fig, ax = plt.subplots(figsize=(24.,8.))
@@ -265,7 +266,7 @@ def profile_evol_plot(value_s, labels=['orig'], file_names=[], name='gem_ti_flux
         ax.axvline(vertline, alpha=0.3, color='k', linestyle='--', label='left border of the window')
    
     #plt.legend(loc='best')
-    plt.savefig(name + '.png')
+    plt.savefig(name + '.png', dpi=1250)
     plt.close()
 
     #np.savetxt(name + '.csv', np.squeeze(value_s, 0), delimiter =", ", fmt ='% s')
@@ -988,11 +989,17 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
     if mainfoldernum == 'false':
         mainfoldernum = foldername # rather bad, fails if foldername is composed
 
-    #workdir = os.path.join(os.getenv('SCRATCH'), 'MFW_runs')
-    #workdir = os.path.join(os.getenv('SCRATCH'), 'VARY_1FT_GEM_NT_test')
     workdir = os.path.join(os.getenv('SCRATCH'),)
 
     runnum_list = [r+1 for r in range(runnum)]
+
+    runfolder_list = [f[0] for f in os.walk(foldername) if not f[1]]
+
+    #runfolder_list_new = [f for f in runfolder_list if (int(f[f.rfind('_')+1:]) if f.rfind('_')!=-1 else 0) in runnum_list]
+    runfolder_list_new = [f for f in runfolder_list if int(f[f.rfind('_')+1:]) in runnum_list]
+
+    #print('folder of original runs: {}'.format(runfolder_list)) ###DEBUG
+    #print('and modified: {}'.format(runfolder_list_new)) ###DEBUG
 
     code_names = ['gem',
 #                 'imp4dv',
@@ -1028,17 +1035,22 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
             # (TODO) plotting function with chosen profile/attribute/coordinate/etc 
             
             # 2) Iterate over all runs, meaning for same scenario but with a different transport profile variation
-            for runn in runnum_list: 
+            #for runn in runnum_list:
+            for runn, fname in enumerate(runfolder_list_new): 
                 
-                folder_name_curr = os.path.join(workdir, foldername+'/run_'+str(runn)) 
+                #folder_name_curr = os.path.join(workdir, foldername+'/run_'+str(runn)) 
                 # TODO make more flexible for different existing cases?
+                folder_name_curr = os.path.join(workdir, fname) 
                 
                 print('Going over CPO-s in the folder: {}'.format(folder_name_curr))
                 
-                val_ev_s, file_names = profile_evol_load(prof_names=profiles, attrib_names=attributes, coord_len=coordnum, 
+                val_ev_s, file_names = profile_evol_load(prof_names=profiles, 
+                                                         attrib_names=attributes, 
+                                                         coord_len=coordnum, 
                                                          folder_name=folder_name_curr, 
                                                          file_code_name=code_name, 
-                                                         name_postfix='_'+mainfoldernum+'_'+str(runn))
+                                                         name_postfix='_'+mainfoldernum+'_'+str(runn)
+                                                        )
                
                 #val_ev_s, file_names = profile_evol_load(prof_names=profiles, attrib_names=attributes, coord_len=coordnum, 
                 #                                         folder_name=os.path.join(workdir, 'cpo'+mainfoldernum), 
@@ -1092,8 +1104,9 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
                 csv_file_name = code_name + '_' + p + '_' + a + '_evol_' + mainfoldernum + '_' + str(runn) + '.csv'
                 val_ev_s.append(np.atleast_2d(np.genfromtxt(csv_file_name, delimiter=", ").T))     
             
+            #TODO for some reason the previous line fails for (foldername='/ptmp/yyudin//VARY_1FT_GEM_NT_n2qks5e7/runs//cpo/1', runforbatch=1, coordnum=1, runnum=64, mainfoldernum='new_n2qks5e7_1')
             print('val_ev_s[{}].shape={}'.format(i, val_ev_s[i].shape)); #print(val_ev_s) ###DEBUG
-            
+            q
             # 4.1) Plot the read values, pass a list of array
             
             #profile_evol_plot([val_ev_s[i]], name=code_name+'_'+p+'_'+a+'_'+mainfoldernum)
@@ -1183,7 +1196,7 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
                                   )
 
             # 4.3.2) Plotting single plot with histograms including data from MFW production runs
-
+            """
             mfw_input_names = ['dTi', 'dTe', 'Ti', 'Te']
 
             mfw_data_file='AUG_gem_inoutput.txt' #AUG_mix-lim_gem_inoutput.txt
@@ -1204,6 +1217,7 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
                                     discr_level=32,
                                     forplot=False,
                                  )
+            """
 
             # 4.4) Apply ARMA model
             """
