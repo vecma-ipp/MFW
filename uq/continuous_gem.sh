@@ -66,7 +66,7 @@ then
   cd ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/${RUNPATHSHORT}/
 
   #for r in `seq ${RUNRANGESTART} ${RUNRANGE}`; do
-  for r in (find -maxdepth 5 -mindepth 5 -type d -name "run*"); do
+  for r in $(find -maxdepth 5 -mindepth 5 -type d -name "run*"); do
 
     #mkdir ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/${RUNPATHSHORT}/bckp/${TMP}/run_${r}/
     mkdir -p bckp/${TMP}/${r}/
@@ -91,7 +91,9 @@ then
     cp /dat/${CURRUN}/${r}/fout_0* ${r}/
 
   done
+  
   #cd ${HOME}/code/MFW/uq/
+  cd ${ORIGDIR}
 
   #1. First submission of a campaign, retrieve the SLURM job-id
   echo "Starting the very first SLURM submission with UQ campaign"
@@ -150,7 +152,7 @@ for n in `seq ${FRUN} ${LASTRUN}`; do
     #NOTE: in principle the postprocessing script is called in SLURM submission, but if the argument (run number) is correct, postprocessing should be idempotent
     echo "Now postprocessing for campaign "${PREVID}
     cd basicda
-    ./gem_postproc_vary_test.sh ${n} ${ROOTCAMPDIR} 1 1
+    ./gem_postproc_vary_test.sh ${n} ${ROOTCAMPDIR} 1 1 ${RUNRANGE} 1
     cd ..
 
     PREVID=${CURID}
