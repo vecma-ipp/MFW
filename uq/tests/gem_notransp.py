@@ -96,9 +96,9 @@ alpha_q = 2.5
 #alpha_q = a = 1./np.sqrt( (9./7.) - 6./7.*np.sqrt(6./5.) ) 
 
 input_params = {
-#    "te.value": {"dist": "Uniform", "err":  0.1*alpha_q, "min": 0.},
+    "te.value": {"dist": "Uniform", "err":  0.1*alpha_q, "min": 0.},
     "ti.value": {"dist": "Uniform", "err":  0.1*alpha_q, "min": 0.},
-#    "te.ddrho": {"dist": "Uniform", "err":  0.1*alpha_q, "max": 0.},
+    "te.ddrho": {"dist": "Uniform", "err":  0.1*alpha_q, "max": 0.},
     "ti.ddrho": {"dist": "Uniform", "err":  0.1*alpha_q, "max": 0.}
 }
 
@@ -188,7 +188,8 @@ npess = gemxml.get_value("cpu_parameters.domain_decomposition.npess")
 nftubes = gemxml.get_value("cpu_parameters.parallel_cases.nftubes")
 ncores = npesx*npess*nftubes
 
-pol_order = 3
+#pol_order = 3
+pol_order = int(os.environ['POLORDER']) 
 
 nruns = (pol_order + 1)**nparams # Nr=(Np+Nd, Nd)^T=(Np+Nd)!/(Np!*Nd!)  |=(3+4)!/3!4! = 5*6*7/6 = 35 => instead 3^4=81 ?
 ncores_tot = ncores * nruns
@@ -205,9 +206,10 @@ nnodes_tot = ceil(1.*ncores_tot/n_cores_p_node) # not entirely correct due to an
 
 exec_comm_flags = ' '
 #exec_comm_flags += ' -vvvvv --profile=all --slurmd-debug=3 '
+#exec_comm_flags = ' --oversubscribe --overcommit '
 
 #exec_path_comm = mpi_instance + ' -n '+ str(ncores) + ' -N '+ str(nnodes) + ' ' + exec_path
-exec_path_comm = mpi_instance + ' -n '+ str(ncores) + ' ' + exec_path
+#exec_path_comm = mpi_instance + ' -n '+ str(ncores) + ' ' + exec_path
 exec_path_comm = mpi_instance + exec_comm_flags + ' ' + exec_path # TRY OUT (with new QCG-PJ)
 
 print('Total number of nodes required for all jobs: {0}'.format(nnodes_tot))

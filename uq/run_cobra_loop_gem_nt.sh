@@ -8,13 +8,13 @@
 #SBATCH --error=test-loopntuq-err.%j
 
 ## wall time in format (HOURS):MINUTES:SECONDS
-#SBATCH --time=12:00:00
+#SBATCH --time=23:45:00
 ###23:30:00 #CHANGED FOR DEBUGGING!
 
 ## number of nodes and tasks per node
 # order=3, n_params=4, n_subd=8 -> 1024 across 40 (80 for hthreading, not used) cpus -> 27 nodes
 ###SBATCH --nodes=27 # MIND number of parameters in variation in the script
-#SBATCH --nodes=4
+#SBATCH --nodes=28
 #SBATCH --ntasks-per-node=40
 ###SBATCH --ntasks-per-core=1
 ###SBATCH --cpus-per-task=8
@@ -67,12 +67,12 @@ export EXECTEMPL=hydra_exclusive #short
 #export KMP_STACKSIZE=500000000
 #ulimit -s unlimited
 
-export POLORDER=3
+export POLORDER=2
 
 echo -e '> In this run: use ExecuteLocal only + QCGPJ pool + '${MPIMOD}' exec mode + '${SLURM_NNODES} \
-' nodes + 1 params + pol-order '${POLORDER}' + commandline passed with '${MPICMD}' \n'
+' nodes + 4 params + pol-order '${POLORDER}' + commandline passed with '${MPICMD}' \n'
 
-echo '> Here we take gradTi +/- 25% error at rho_tor=0.7 \n'
+echo '> Here we take all 4 params +/- 25% error at rho_tor=0.7 \n'
 
 ####################################
 # Run the UQ code

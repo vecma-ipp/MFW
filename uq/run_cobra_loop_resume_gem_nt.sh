@@ -8,11 +8,11 @@
 #SBATCH --error=test-loopntuq-err.%j
 
 ## wall time in format (HOURS):MINUTES:SECONDS
-#SBATCH --time=9:00:00
+#SBATCH --time=23:45:00
 
 ## number of nodes and tasks per node
 # order=3, n_params=4, n_subd=8 -> 1024 across 40 (80 for hthreading, not used) cpus -> 27 nodes
-#SBATCH --nodes=4
+#SBATCH --nodes=28
 #SBATCH --ntasks-per-node=40
 ###SBATCH --ntasks-per-core=1
 ###SBATCH --cpus-per-task=8
@@ -59,10 +59,13 @@ echo ${OLDCAMP}
 #export OLDCAMP=${1:-'aos1mzke'} #'brus48mm' #'1wu9k2wa'
 # TODO: change, works not how expected - uses default parameter
 
-export POLORDER=3
+if [ -z "${POLORDER}" ]; then
+    export POLORDER=2
+done
+fi
 
 echo -e '> In this run: use ExecuteLocal only + QCGPJ pool + '${MPIMOD}' exec mode + '${SLURM_NNODES} \
-' nodes + 1 param + pol-order '${POLORDER}' + commandline passed with '${MPICMD}' \n'
+' nodes + 4 param + pol-order '${POLORDER}' + commandline passed with '${MPICMD}' \n'
 
 ####################################
 # Run the UQ code

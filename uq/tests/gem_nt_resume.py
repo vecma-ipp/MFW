@@ -125,9 +125,9 @@ alpha_q = 2.5
 
 # Electron and ion temperature and their gradients
 input_params = {
-#    "te.value": {"dist": "Uniform", "err":  0.1*alpha_q, "min": 0.},
-#    "ti.value": {"dist": "Uniform", "err":  0.1*alpha_q, "min": 0.},
-#    "te.ddrho": {"dist": "Uniform", "err":  0.1*alpha_q, "max": 0.},
+    "te.value": {"dist": "Uniform", "err":  0.1*alpha_q, "min": 0.},
+    "ti.value": {"dist": "Uniform", "err":  0.1*alpha_q, "min": 0.},
+    "te.ddrho": {"dist": "Uniform", "err":  0.1*alpha_q, "max": 0.},
     "ti.ddrho": {"dist": "Uniform", "err":  0.1*alpha_q, "max": 0.}
 }
 
@@ -209,6 +209,7 @@ nnodes_tot = ceil(1.*ncores_tot/n_cores_p_node) # not entirely correct due to an
 # Command line to be executed
 exec_comm_flags = ' '
 #exec_comm_flags += ' -vvvvv --profile=all --slurmd-debug=3 '
+#exec_comm_flags = ' --oversubscribe --overcommit '
 
 #exec_path_comm = mpi_instance + ' -n '+ str(ncores) + ' -N '+ str(nnodes) + ' ' + exec_path
 #exec_path_comm = mpi_instance + ' -n '+ str(ncores) + ' ' + exec_path
