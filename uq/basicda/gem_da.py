@@ -233,11 +233,12 @@ def profile_evol_plot(value_s, labels=['orig'], file_names=[], name='gem_ti_flux
     #print('value_s'); print(value_s) ### DEBUG
 
     # Define a set of styles for different lists plotted
-    color_list = ['b', 'g', 'r', 'y']
+    color_list = ['b', 'g', 'r', 'y' , 'm', 'c', 'k']
     line_list = ['-', '--', '-.', ':']
-    marker_list = ['.', 'o', 'v', '^']
+    marker_list = ['', '.', 'o', 'v', '^', '<', '>']
     style_lists = [line_list, color_list, marker_list] # NB!: can be modified to include marker style
-    fmt_list = ["".join(map(str, style)) for style in itertools.product(*style_lists)]
+    #fmt_list = ["".join(map(str, style)) for style in itertools.product(*style_lists)]
+    fmt_list = [style for style in itertools.product(*style_lists)]
 
     fig, ax = plt.subplots(figsize=(24.,8.))
 
@@ -253,13 +254,15 @@ def profile_evol_plot(value_s, labels=['orig'], file_names=[], name='gem_ti_flux
 
         for i in range(value.shape[0]):
              #print('value[{0},:]'.format(i)); print(value[i,:]) ### DEBUG
-             ## !!! TODO temporary changes !!!
+
              #ax.semilogy(ts, value[i,:], '-', label=lab+'_'+str(i))
-             ax.plot(ts, value[i,:], fmt_list[inum], label=lab)
+             
+             #ax.plot(ts, value[i,:], fmt_list[inum], label=lab)
+             ax.plot(ts, value[i,:], color=fmt_list[inum][1], linestyle=fmt_list[inum][0], marker=fmt_list[inum][2])
 
     ax.legend(loc='lower center',
              #bbox_to_anchor=(0.5, 0.0), 
-              ncol=int(np.sqrt(len(labels))),
+              ncol=int(np.sqrt(len(labels))) if len(labels) < 25 else 4,
               prop={'size' : 9})
 
     if vertline:
@@ -299,16 +302,20 @@ def plot_coreprofval_dist(value_spw, labels=[], name='ti', discr_level=64, forpl
     color_list = ['b', 'g', 'r', 'y']
     line_list = ['-', '--', '-.', ':']
     marker_list = ['.', 'o', 'v', '^']
-    style_lists = [line_list, color_list] # NB!: can be modified to include marker style
+    style_lists = [line_list, color_list, marker_list] # NB!: can be modified to include marker style
     fmt_list = ["".join(map(str, style)) for style in itertools.product(*style_lists)]
 
     # Plot histograms of values for every flux tube ot case
     fig, ax = plt.subplots()
+
     for i in range(nftc):
+
         n = len(value_spw[i][:])
         ax.hist(value_spw[i][:], bins=n // discr_level, label=labels[i], alpha=0.7)
-    plt.legend(loc='best')
-    plt.savefig('hist_' + name + '.png')
+
+    plt.legend(loc='best' if len(labels) < 16 else (-0.2, -0.2),
+               ncol=int(np.sqrt(len(labels))) if len(labels) < 25 else 4,)
+    plt.savefig('hist_' + name + '.png', dpi=1200)
     plt.close()
 
     # Compute and plot KDE fit
@@ -316,8 +323,11 @@ def plot_coreprofval_dist(value_spw, labels=[], name='ti', discr_level=64, forpl
     x_min = min([min(value_spw[i]) for i in range(nftc)])
     x_max = max([max(value_spw[i]) for i in range(nftc)])
     x = np.linspace(0.9*x_min, 1.1*x_max, n_kde_binning)[:, np.newaxis]
+
     fig, ax = plt.subplots()
+
     for i in range(nftc):
+
         kde = KDE(kernel='gaussian', bandwidth=(max(value_spw[i]) - min(value_spw[i])) / discr_level). \
                   fit(value_spw[i][:, np.newaxis])
         log_pdf = kde.score_samples(x)
@@ -329,17 +339,18 @@ def plot_coreprofval_dist(value_spw, labels=[], name='ti', discr_level=64, forpl
         #ax.plot(value_spw[i], (-0.01*np.random.rand(log_pdf_orig.shape[0])) * np.exp(log_pdf_orig).min(), '+k')
 
         # Add vertical lines for mean of the each sample
-        ax.axvline(x=val_means[i], ymin=0., ymax=1., linestyle=fmt_list[i][:-1], color=fmt_list[i][-1:]) 
+        ax.axvline(x=val_means[i], ymin=0., ymax=1., linestyle=fmt_list[i][:-2], color=fmt_list[i][-2], marker=fmt_list[i][-1]) 
         #TODO: change the style specification 
         
         if forplot:
-            ax.set_xlim([0., 4.5e6])
+            ax.set_xlim([0., 4.5e6]) #TODO make right limit variable
             ax.invert_xaxis()
             #ax.set_xlim(left=0.)
             #ax.view_init(0, 90)
     
-    plt.legend(loc='best')
-    plt.savefig('pdf_' + name + '.png')
+    plt.legend(loc='best' if len(labels) < 16 else (-0.2, -0.2),
+               ncol=int(np.sqrt(len(labels))) if len(labels) < 25 else 4,)
+    plt.savefig('pdf_' + name + '.png', dpi=1200)
     plt.close()
 
     # Print main moments
@@ -1106,7 +1117,7 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
             
             #TODO for some reason the previous line fails for (foldername='/ptmp/yyudin//VARY_1FT_GEM_NT_n2qks5e7/runs//cpo/1', runforbatch=1, coordnum=1, runnum=64, mainfoldernum='new_n2qks5e7_1')
             print('val_ev_s[{}].shape={}'.format(i, val_ev_s[i].shape)); #print(val_ev_s) ###DEBUG
-            q
+
             # 4.1) Plot the read values, pass a list of array
             
             #profile_evol_plot([val_ev_s[i]], name=code_name+'_'+p+'_'+a+'_'+mainfoldernum)
@@ -1125,12 +1136,14 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
             ##ti_flux = np.genfromtxt('gem_ti_flux.csv', delimiter =", ")
 
             # 4.1'*) Compare flux values from turbulent code and the values that where used before exponential averaging
-
+            
+            """
             val_deconv = deconvolve_expavg(val_ev_s[0])
             
             profile_evol_plot([val_ev_s[0], val_deconv], labels=['original', 'deconvolved'],
                               name=code_name+'_'+p+'_'+a+'_'+mainfoldernum+'_deconv', 
                               alignment='start')
+            """
 
             # 4.1') Define the window to discard intial ramp-up and overshooting phase
             val = val_ev_s[i] # single series for a profile+attribute, shouldn't be used for now...
@@ -1312,10 +1325,11 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
             val_trend_fft_s = []
             for runn in runnum_list:
                 
+                """
                 val_trend_fft, val_fluct_fft = filter_trend(val_wind_s[runn-1], "fft", 
                                                  name=p+'_'+a+'_'+mainfoldernum+'_'+str(runn))
                 val_trend_fft_s.append(val_trend_fft)            
-                
+                """
                 #TODO: pass number of case to save different files
 
             # 4.5.5) Applying Exponential Averaging:

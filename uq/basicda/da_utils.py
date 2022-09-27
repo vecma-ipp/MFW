@@ -551,6 +551,10 @@ def plot_prediction_variance_2d(x_observ, y_observ, x_domain, y_test, y_pred, si
     #wrt_dir = os.path.join(os.environ['PWD'], 'locmaxsamp')
     wrt_dir = "surr2d"
 
+    cmap_val = 'viridis' #"RdBu_r"
+    xlabel_val = r'$\nabla T_{e}$'
+    ylabel_val = r'$\nabla T_{i}$'
+
     # Plot function,prediction and 95% confidence interval
     x1o = x_observ[:,0]
     x2o = x_observ[:,1]
@@ -564,39 +568,42 @@ def plot_prediction_variance_2d(x_observ, y_observ, x_domain, y_test, y_pred, si
     fig, (ax1, ax2, ax3) = plt.subplots(nrows=1, ncols=3, figsize=(9, 3.7))
 
     ### --- First plot for response function
-    cntr1 = ax1.tricontourf(x1i, x2i, y_test, levels=12, cmap="RdBu_r")
+    cntr1 = ax1.tricontourf(x1i, x2i, y_test, levels=12, cmap=cmap_val)
+
     divider1 = make_axes_locatable(ax1)
     cax1 = divider1.append_axes("right", size="8%", pad=0.1)
+
     cbar1 = fig.colorbar(cntr1, cax1)
-    ax1.set_title('Ground truth Te flux response', pad=10.0)
-    ax1.set_xlabel(r'$T_{e}$')   #(r'$Te$')
-    ax1.set_ylabel(r'$ \nabla T_{e}$')   #(r'$\nabla Te$')
-    #cbar1.set_label(r'$\Phi_{T_{e}}$')
+
+    ax1.set_title('Ground truth Ti flux response', pad=10.0)
+    ax1.set_xlabel(xlabel_val)   #(r'$Te$')
+    ax1.set_ylabel(ylabel_val)   #(r'$\nabla Te$')
+    #cbar1.set_label(r'$Q_{T_{e}}$')
     ax1.set_aspect('equal')
 
     ### --- Second plot for GPR mean
-    cntr2 = ax2.tricontourf(x1i, x2i, y_pred, levels=12, cmap="RdBu_r")
-    ax2.scatter(x1o, x2o, c=y_observ, cmap='RdBu_r', edgecolors='k', s=12)
+    cntr2 = ax2.tricontourf(x1i, x2i, y_pred, levels=12, cmap=cmap_val)
+    ax2.scatter(x1o, x2o, c=y_observ, cmap=cmap_val, edgecolors='k', s=12)
     divider2 = make_axes_locatable(ax2)
     cax2 = divider2.append_axes("right", size="8%", pad=0.1)
     cbar2 = fig.colorbar(cntr2, cax2, boundaries=[0, 180000])
     #ax2.set_title('GPR results for f=(' + funcname + ') with ' + str(len(y_observ)) + ' # func. eval-s')
-    ax2.set_title('Te flux prediction for training set of {} '.format(len(y_observ)), pad=10.0)
-    ax2.set_xlabel(r'$T_{e}$')   #(r'$Te$')
-    ax2.set_ylabel(r'$ \nabla T_{e}$')   #(r'$\nabla Te$')
+    ax2.set_title('Ti flux prediction for training set of {} '.format(len(y_observ)), pad=10.0)
+    ax2.set_xlabel(xlabel_val)   #(r'$Te$')
+    ax2.set_ylabel(ylabel_val)   #(r'$\nabla Te$')
     ax2.set_aspect('equal')
     if len(newpoints) != 0:  #TODO fix two different scatter plots ; fix scatter plots margin iside the figure box
         ax2.scatter(newpoints[0][:,0], newpoints[0][:,1], c=newpoints[1][:,0], edgecolors='g', s=14) #, label='new samples')
 
     ### --- Third plot for the neg-utility (GPR STD)
-    cntr3 = ax3.tricontourf(x1i, x2i, sigma, levels=14, cmap="RdBu_r")
+    cntr3 = ax3.tricontourf(x1i, x2i, sigma, levels=14, cmap=cmap_val)
     divider3 = make_axes_locatable(ax3)
     cax3 = divider3.append_axes("right", size="8%", pad=0.1)
     cbar3 = fig.colorbar(cntr3, cax3, boundaries=[0, 20000])
     #ax2.plot(x, y, 'ko', ms=3)
     ax3.set_title('Surrogate uncertainty (st.dev.)', pad=10.0)  #(r'GPR $\sigma$')
-    ax3.set_xlabel(r'$T_{e}$')  #(r'$Te$')
-    ax3.set_ylabel(r'$ \nabla T_{e}$')  #(r'$\nabla Te$')
+    ax3.set_xlabel(xlabel_val)  #(r'$Te$')
+    ax3.set_ylabel(ylabel_val)  #(r'$\nabla Te$')
     ax3.set_aspect('equal')
 
     ################################
@@ -605,7 +612,7 @@ def plot_prediction_variance_2d(x_observ, y_observ, x_domain, y_test, y_pred, si
 
     plt.tight_layout()
     plt.subplots_adjust()  # TODO should have less margin at saved figure
-    plt.savefig(os.path.join(wrt_dir, 'TE_surr2d_gem0_' + str(len(y_observ))+'.png'))
+    plt.savefig(os.path.join(wrt_dir, 'Ti_surr2d_gem0_' + str(len(y_observ))+'.png'), dpi=1250)
     plt.close()
 
 def plot_error(err, name):
