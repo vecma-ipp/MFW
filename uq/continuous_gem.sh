@@ -5,7 +5,7 @@
 
 # Launch with:
 # nohup ./continuous_gem.sh 17 aos1mzke > script_workflow_latest3.log 2>&1 &
-# nohup ./continuous_gem.sh > script_wf_20092022.log 2>&1 &
+# nohup ./continuous_gem.sh > script_wf_27092022.log 2>&1 &
 
 #0. State the total number of campaigns to run, and ordinal number of the last campaign in previous sequence
 echo "STARTING THE WORKFLOW"
@@ -19,8 +19,8 @@ FRUN=$((${CURRUN}+1))
 LASTRUN=$((${CURRUN}+${NUMRUNS}))
 
 # polynomial order - current parameter regulating total number of code instances
-POLORDER = 2
-INPUT_DIM = 4
+POLORDER=2
+INPUT_DIM=4
 
 # batch script to submit a single UQ campaign
 #COM=run_marconi_loop_resume_gem_nt.sh # for MARCONI
@@ -29,7 +29,7 @@ COM0=run_cobra_loop_gem_nt.sh
 
 RUNRANGESTART=1
 #RUNRANGE=16
-RUNRANGE=$((${POLORDER} ** ${INPUT_DIM}))
+RUNRANGE=$(( $((${POLORDER}+1)) ** ${INPUT_DIM} ))
 
 CPONUM=${FRUN}
 
@@ -54,7 +54,7 @@ then
 
   # 0.0. Backing up snapshot files from the last runs
 
-  BCKP_FILES = ('gem_coretransp*.cpo' '*.dat' 'fout_0*' 'stopped')
+  BCKP_FILES=('gem_coretransp*.cpo' '*.dat' 'fout_0*' 'stopped')
 
   TMP=${RANDOM}
   #RUNPATHSHORT=runs/runs_0-100000000/runs_0-1000000/runs_0-10000/runs_0-100
@@ -82,7 +82,7 @@ then
 
   # 0.1. Restoring snapshot files to the state of desired last completed run
   #for r in `seq ${RUNRANGESTART} ${RUNRANGE}`; do
-  for r in (find -maxdepth 5 -mindepth 5 -type d -name "run*"); do
+  for r in $(find -maxdepth 5 -mindepth 5 -type d -name "run*"); do
 
     #cp ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/${RUNPATHSHORT}/dat/${CURRUN}/run_${r}/*.dat ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/${RUNPATHSHORT}/run_${r}/
     cp /dat/${CURRUN}/${r}/*.dat ${r}/

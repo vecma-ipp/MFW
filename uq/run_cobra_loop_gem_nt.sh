@@ -67,7 +67,9 @@ export EXECTEMPL=hydra_exclusive #short
 #export KMP_STACKSIZE=500000000
 #ulimit -s unlimited
 
-export POLORDER=2
+if [ -z "${POLORDER}" ]; then
+    export POLORDER=2
+fi
 
 echo -e '> In this run: use ExecuteLocal only + QCGPJ pool + '${MPIMOD}' exec mode + '${SLURM_NNODES} \
 ' nodes + 4 params + pol-order '${POLORDER}' + commandline passed with '${MPICMD}' \n'

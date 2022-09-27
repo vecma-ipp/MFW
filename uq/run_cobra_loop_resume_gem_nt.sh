@@ -61,7 +61,6 @@ echo ${OLDCAMP}
 
 if [ -z "${POLORDER}" ]; then
     export POLORDER=2
-done
 fi
 
 echo -e '> In this run: use ExecuteLocal only + QCGPJ pool + '${MPIMOD}' exec mode + '${SLURM_NNODES} \
