@@ -1,8 +1,8 @@
 import os
 import importlib.util
 #spec = importlib.util.spec_from_file_location("gem0", "/marconi/home/userexternal/yyudin00/code/MFW/standalone/src/custom_codes/gem0/gem0.py")
-#spec = importlib.util.spec_from_file_location("gem0", os.path.abspath("../MFW/standalone/src/custom_codes/gem0/gem0.py"))
-spec = importlib.util.spec_from_file_location("gem0_singleton", os.path.abspath("C:/Users/user/Documents/UNI/MPIPP/PHD/code/MFW/standalone/src/custom_codes/gem0/gem0.py"))
+spec = importlib.util.spec_from_file_location("gem0", os.path.abspath("../../../MFW/standalone/src/custom_codes/gem0/gem0.py"))
+#spec = importlib.util.spec_from_file_location("gem0_singleton", os.path.abspath("C:/Users/user/Documents/UNI/MPIPP/PHD/code/MFW/standalone/src/custom_codes/gem0/gem0.py"))
 gem0 = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(gem0)
 
@@ -10,7 +10,7 @@ from gem0 import gem
 from assign_turb_parameters import assign_turb_parameters
 
 import sys
-sys.path.append('c:\\Users\\user\\Documents\\UNI\\MPIPP\\PHD\\code\\MFW\\ual\\')
+#sys.path.append('c:\\Users\\user\\Documents\\UNI\\MPIPP\\PHD\\code\\MFW\\ual\\')
 from ascii_cpo import read, write
 
 from ual.coreprof import coreprof
@@ -18,8 +18,10 @@ from ual.coretransp import coretransp
 from ual.equilibrium import equilibrium
 
 import xml.etree.ElementTree as ET
+
+from base.cpo_element import CPOElement
 #from easymfw.templates.xml_element import XMLElement
-from easymfw.templates.cpo_element import CPOElement
+#from easymfw.templates.cpo_element import CPOElement
 
 def get_code_params(xml_file_name='gem0.xml'): #TODO check if fill_param() does exactly the same as parsing
 

@@ -520,10 +520,12 @@ def surrogate_loop(pardim):
         # x_param = [[0., 1.5, 8], [0., 1.5, 8]]
         # y_scale = 1.
 
-        # function = lambda x: np.array(gem0_call_tefltevltivl_array(x)) # TODO double check numpy dimensions
-        function = lambda x: np.array(ext_code_helper.gem0_call_tefltevltegrad_array(x))
-        # x_param = [[200., 4800, 128], [-8000, 0., 128]] # square/rectangle in domain in {Te}x{gradTe}
-        x_param = [[500., 2400, 16], [-4500., -1500., 16]]
+        function = lambda x: np.array(ext_code_helper.gem0_call_tifltegradtigrad_array(x)) # TODO double check numpy dimensions
+        x_param = [[-4500., -1500., 16], [-4500., -1500., 16]]
+
+        #function = lambda x: np.array(ext_code_helper.gem0_call_tefltevltegrad_array(x))
+        ##x_param = [[200., 4800, 128], [-8000, 0., 128]] # square/rectangle in domain in {Te}x{gradTe}
+        #x_param = [[500., 2400, 16], [-4500., -1500., 16]]
 
         # --- Prepare the domain in X and test Y values
         x1 = np.linspace(*x_param[0])
@@ -593,7 +595,9 @@ def surrogate_loop(pardim):
 
         ##print("y_test: "); print(y_test)
 
-        for i in range(16):
+        n_iter = 10
+
+        for i in range(n_iter):
             print("iteration nu {}".format(i))
             start_ts = time.time()
 
@@ -616,18 +620,19 @@ def surrogate_loop(pardim):
 
             ### --- Chose samples for the new model
             start_resample_ts = time.time()
+
             # option 1: choose single point of max utility
-            x_new_batch = [get_new_sample(x_domain, sigma)]
+            #utility = sigma
 
             # option 2: choose a set of point (for all local utility maxima)
-            #sigma_ongrid = get_ongrid(x_domain_mesh, x_domain, sigma)
-            #x_new_batch = get_new_candidates(x_domain_mesh, sigma_ongrid)
-            # print('new {} samples: {}'.format(len(x_new_batch), x_new_batch))
+            #utility = get_ongrid(x_domain_mesh, x_domain, sigma)
 
-            # option 3: choose as probability of improvement
-            poi_utility = poi_acquisition(y_pred, sigma, y_observ, y_targ=100000)
-            x_new_batch = [get_new_sample(x_domain, poi_utility)]
+            # option 3: choose as probability of improvement (to be closer to y_targ)
+            y_targ_val = 5e+4
+            utility= poi_acquisition(y_pred, sigma, y_observ, y_targ=y_targ_val)
 
+            x_new_batch = [get_new_sample(x_domain, utility)]
+            #print('new {} samples: {}'.format(len(x_new_batch), x_new_batch)) ###DEBUG
             new_points = (np.array(x_new_batch), function(np.array(x_new_batch)))
 
             print("Choosing new samples took: " + str(time.time() - start_resample_ts) + " seconds")
@@ -637,7 +642,7 @@ def surrogate_loop(pardim):
             errors.append(err)
 
             if i % 1 == 0:
-                plot_prediction_variance_2d(x_observ, y_observ, x_domain, y_test, y_pred, poi_utility.reshape(-1), new_points,
+                plot_prediction_variance_2d(x_observ, y_observ, x_domain, y_test, y_pred, utility.reshape(-1), new_points,
                                             funcname='gem0')
 
             # x_data_old = np.append(x_data, x_n.reshape(1, -1), axis=0)
