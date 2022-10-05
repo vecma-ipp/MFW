@@ -12,6 +12,8 @@ RUN_WITH_SAVE=${4:-1}
 
 RUN_NOT_ONLY_ALL=${6:-1}
 
+READ_FROM_CSV=${7:-1}
+
 #0. Set directories
 # folder of output CPO files, should be same as number of SLURM submissions (macro-macro-iterations)
 # should be the same as number of MMit TO process
@@ -100,10 +102,11 @@ export PYTHONPATH=/cobra/u/yyudin/codes/ual_python_interface:/cobra/u/yyudin/cod
 # Command line arguments for main: folder with cpo-s; to read from original files or from csv; number of flux tubes; number of profile variants; file name to save
 
 QUANTITIES=('ti' 'te' 'ni' 'ne')
+QUANTITIES=('ti')
 
 if [ "${RUN_NOT_ONLY_ALL}" -eq 1 ]; then
 
-  if [ "${RUN_WITH_CP}" -eq 1 ]; then
+  if [ "${READ_FROM_CSV}" -ne 1 ]; then
 
     python3 gem_da.py ${DIR_SRC}/cpo/${CPONUM} 0 1 ${RUNRANGE} 'new_'${UQCAMPDIR}'_'${CPONUM}
 

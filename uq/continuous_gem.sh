@@ -41,7 +41,6 @@ export ORIGDIR=$(pwd)
 if [ "${CURRUN}" -gt 0 ];
 then 
 
-  # TODO: add a first campaign, probably started with a different SLURM script using different non-restart python UQ script, and extract the folder name
   #ROOTCAMPDIR='moj202gj' # at MARCONI
   #ROOTCAMPDIR='1wu9k2wa' # at COBRA
   export ROOTCAMPDIR=${2:-'aos1mzke'} #brus48mm
@@ -129,7 +128,7 @@ fi
 #NOTE: the call of postrpocessing scripts is moved to the SLURM submission
 echo "Now postprocessing for campaign "${PREVID}
 cd basicda
-./gem_postproc_vary_test.sh ${FRUN} ${ROOTCAMPDIR}
+./gem_postproc_vary_test.sh ${FRUN} ${ROOTCAMPDIR} 1 1 ${RUNRANGE} 1 1
 cd ..
 
 FRUN=$((${FRUN}+1))
@@ -152,7 +151,7 @@ for n in `seq ${FRUN} ${LASTRUN}`; do
     #NOTE: in principle the postprocessing script is called in SLURM submission, but if the argument (run number) is correct, postprocessing should be idempotent
     echo "Now postprocessing for campaign "${PREVID}
     cd basicda
-    ./gem_postproc_vary_test.sh ${n} ${ROOTCAMPDIR} 1 1 ${RUNRANGE} 1
+    ./gem_postproc_vary_test.sh ${n} ${ROOTCAMPDIR} 1 1 ${RUNRANGE} 1 1
     cd ..
 
     PREVID=${CURID}

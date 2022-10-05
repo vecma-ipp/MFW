@@ -264,6 +264,8 @@ def profile_evol_plot(value_s, labels=['orig'], file_names=[], name='gem_ti_flux
              #bbox_to_anchor=(0.5, 0.0), 
               ncol=int(np.sqrt(len(labels))) if len(labels) < 25 else 4,
               prop={'size' : 9})
+    #TODO: for 80 and 81 cases legend is not displayed
+    #TODO: rerun for campaign 'akgbbn1a' and submission 1-5
 
     if vertline:
         ax.axvline(vertline, alpha=0.3, color='k', linestyle='--', label='left border of the window')
@@ -299,11 +301,12 @@ def plot_coreprofval_dist(value_spw, labels=[], name='ti', discr_level=64, forpl
         val_means.append(value_spw[i][:].mean())
 
     # Define a set of styles for different lists plotted
-    color_list = ['b', 'g', 'r', 'y']
+    color_list = ['b', 'g', 'r', 'y' , 'm', 'c', 'k']
     line_list = ['-', '--', '-.', ':']
-    marker_list = ['.', 'o', 'v', '^']
+    marker_list = ['', '.', 'o', 'v', '^', '<', '>']
     style_lists = [line_list, color_list, marker_list] # NB!: can be modified to include marker style
-    fmt_list = ["".join(map(str, style)) for style in itertools.product(*style_lists)]
+    #fmt_list = ["".join(map(str, style)) for style in itertools.product(*style_lists)]
+    fmt_list = [style for style in itertools.product(*style_lists)]
 
     # Plot histograms of values for every flux tube ot case
     fig, ax = plt.subplots()
@@ -339,8 +342,8 @@ def plot_coreprofval_dist(value_spw, labels=[], name='ti', discr_level=64, forpl
         #ax.plot(value_spw[i], (-0.01*np.random.rand(log_pdf_orig.shape[0])) * np.exp(log_pdf_orig).min(), '+k')
 
         # Add vertical lines for mean of the each sample
-        ax.axvline(x=val_means[i], ymin=0., ymax=1., linestyle=fmt_list[i][:-2], color=fmt_list[i][-2], marker=fmt_list[i][-1]) 
-        #TODO: change the style specification 
+        #ax.axvline(x=val_means[i], ymin=0., ymax=1., linestyle=fmt_list[i][:-2], color=fmt_list[i][-2], marker=fmt_list[i][-1])
+        ax.axvline(x=val_means[i], ymin=0., ymax=1., linestyle=fmt_list[i][0], color=fmt_list[i][1], marker=fmt_list[i][2]) 
         
         if forplot:
             ax.set_xlim([0., 4.5e6]) #TODO make right limit variable
@@ -1067,6 +1070,10 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
                 #                                         folder_name=os.path.join(workdir, 'cpo'+mainfoldernum), 
                 #                                         file_code_name=code_name, 
                 #                                         name_postfix='_'+mainfoldernum       
+
+                #TODO: 1) check why n2qks5e7 cvs-s run from 'cpo' folder are empty
+                #      2) get rid of recurcive copy-ing in parent .sh file
+                #      3) make responce cuts flexible: cases when sometimes there is one value per cut
 
         # 3) Getting the input profiles values, primarily for the plot labels
         pos_str_cpo_num = mainfoldernum.rfind('_')+1
