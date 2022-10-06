@@ -59,7 +59,7 @@ export EASYPJ_CONFIG=conf.sh
 
 # Define some global variables to configure UQ software
 export MPIMOD=default #srunmpi
-export EXECTEMPL=hydra_exclusive #short
+#export EXECTEMPL=hydra_exclusive #short
 
 #export NCORESPTASK=2
 

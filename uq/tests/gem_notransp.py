@@ -46,7 +46,6 @@ print('Version of EasyVVUQ: '.format(uq.__version__))
 # We test 1 flux tube
 # Run gem_test in strandalone and use:
 #base.utils.ftube_indices('gem_coreprof_in.cpo','gem_coretransp_out.cpo') to get the index
-#TODO double check from XML, alternatively simply read from xml
 
 #ftube_index = 66 # 67 would not consider python/fortran numeration difference and apparently would result in variation in an off place of a profile
 #ftube_index = 94
@@ -160,11 +159,15 @@ exec_path = os.path.join(common_dir, exec_code)
 
 # Check if this index is read correctly
 ftube_index_test = ftube_indices(common_dir + '/gem_coreprof_in.cpo', 
-        #'/marconi/home/userexternal/yyudin00/code/MFW/standalone/bin/gem_coretransp_out.cpo',
           xml_dir + '/gem_coretransp_out.cpo',
-          False) # TODO : where to get the output file and should it be in common folder?
+          False) 
+# TODO : where to get the output file and should it be in common folder?
 
-print('The flux tube location defined from the cpo files is: {}'.format(ftube_index_test))
+#print('The flux tube location defined from the cpo files is: {}'.format(ftube_index_test))
+if ftube_index != ftube_index_test[0]:
+    print("Different flux tube coordinate is used") # could be assert, might rewrite or through away if script is run for more flux tubes
+
+ftube_index = ftube_index_test[0] # ATTENTION: test value read from XML is actually used
 
 # Create the encoder and the decoder
 input_filename = "gem_coreprof_in.cpo"

@@ -171,7 +171,7 @@ print('The flux tube location defined from the cpo files is: {}'.format(ftube_in
 if ftube_index != ftube_index_test[0]:
     print("Different flux tube coordinate is used") # could be assert, might rewrite or through away if script is run for more flux tubes
 
-ftube_index = ftube_index_test[0]
+ftube_index = ftube_index_test[0] # ATTENTION: test value read from XML is actually used
 
 # FOR THE RESTART CAMPAIGN, EVERYTHING (ENCODER, DECODER, ACTIONS, VARY, etc.) SHOULD BE ALREADY THERE
 # Create the encoder and the decoder
