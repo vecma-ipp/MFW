@@ -258,14 +258,17 @@ def profile_evol_plot(value_s, labels=['orig'], file_names=[], name='gem_ti_flux
              #ax.semilogy(ts, value[i,:], '-', label=lab+'_'+str(i))
              
              #ax.plot(ts, value[i,:], fmt_list[inum], label=lab)
-             ax.plot(ts, value[i,:], color=fmt_list[inum][1], linestyle=fmt_list[inum][0], marker=fmt_list[inum][2])
+             ax.plot(ts, value[i,:], color=fmt_list[inum][1], linestyle=fmt_list[inum][0], marker=fmt_list[inum][2], label=lab)
 
     ax.legend(loc='lower center',
              #bbox_to_anchor=(0.5, 0.0), 
               ncol=int(np.sqrt(len(labels))) if len(labels) < 25 else 4,
               prop={'size' : 9})
+
     #TODO: for 80 and 81 cases legend is not displayed
-    #TODO: rerun for campaign 'akgbbn1a' and submission 1-5
+    #TODO: rerun for campaign 'akgbbn1a' and submission 4-5
+
+    ax.set_ylim(-5.E+5, 4.5E+6) #TODO either delete or make modifiable
 
     if vertline:
         ax.axvline(vertline, alpha=0.3, color='k', linestyle='--', label='left border of the window')
@@ -346,7 +349,7 @@ def plot_coreprofval_dist(value_spw, labels=[], name='ti', discr_level=64, forpl
         ax.axvline(x=val_means[i], ymin=0., ymax=1., linestyle=fmt_list[i][0], color=fmt_list[i][1], marker=fmt_list[i][2]) 
         
         if forplot:
-            ax.set_xlim([0., 4.5e6]) #TODO make right limit variable
+            ax.set_xlim([0., value_spw[i].max()])
             ax.invert_xaxis()
             #ax.set_xlim(left=0.)
             #ax.view_init(0, 90)
@@ -926,7 +929,8 @@ def plot_response_cuts(data, input_names, output_names, foldname=''):
                 ax[i_ip][j_fixval].set_ylabel(r'{}'.format(qoi_name))
                 ax[i_ip][j_fixval].set_title(r'{}'.format(fixed_ip_val_str), fontsize=10)
         
-                ax[i_ip][j_fixval].set_ylim(1.5E+6, 3.8E+6) 
+                #ax[i_ip][j_fixval].set_ylim(1.5E+6, 3.8E+6) # TODO make limits variable
+                ax[i_ip][j_fixval].set_ylim(-5.E+5, 4.5E+6)
                 #ax[i_ip][j_fixval].legend(loc='best') 
         
             offset *= 2
@@ -1046,7 +1050,6 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
 
             # Get list of directories for runs of profile variation; read them separetely in a loop 
             # (now there are different number of iterations), then load and pass to a new 
-            # (TODO) plotting function with chosen profile/attribute/coordinate/etc 
             
             # 2) Iterate over all runs, meaning for same scenario but with a different transport profile variation
             #for runn in runnum_list:
@@ -1071,7 +1074,7 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
                 #                                         file_code_name=code_name, 
                 #                                         name_postfix='_'+mainfoldernum       
 
-                #TODO: 1) check why n2qks5e7 cvs-s run from 'cpo' folder are empty
+                #TODO:
                 #      2) get rid of recurcive copy-ing in parent .sh file
                 #      3) make responce cuts flexible: cases when sometimes there is one value per cut
 
@@ -1099,6 +1102,8 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
         runs_input_vals, runs_input_names = read_run_uq(runs_db_loc, 
                                                     workdir_camp_db) # test this function, at least manually  
         print('runs_input_names={}'.format(runs_input_names)) ###DEBUG 
+        #TODO: check which DB is copied - no run_name are in default copied ones
+        #TODO: gem_ti_transp_flux_evol_*_*_80.csv is not created apparently
            
         # 3') By default, create new list for readings and read them from file, 
         #     even if they are in programm memory already      
@@ -1154,7 +1159,6 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
 
             # 4.1') Define the window to discard intial ramp-up and overshooting phase
             val = val_ev_s[i] # single series for a profile+attribute, shouldn't be used for now...
-            #TODO: General series list now iterates with both prof+att and run case!
 
             val_wind_s = [val[:,int(alpha_wind*val.shape[-1]):] for val in val_ev_s]
             print('sizes before and after windowing: {} and {} '.format(val_ev_s[0].shape, val_wind_s[0].shape)) ###DEBUG

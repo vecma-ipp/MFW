@@ -48,22 +48,21 @@ DIR_OUTPUT='gem_data'
 
 #1. Transfer output files from the run directories to a separate cpo dir
 
-cd ${DIR_SRC}
-mkdir cpo
-mkdir dat
-
-mkdir cpo/${CPONUM}
-mkdir dat/${CPONUM}
-
 if [ "${RUN_WITH_CP}" -eq 1 ]; then
+
+  cd ${DIR_SRC}
+  mkdir cpo
+  mkdir dat
+
+  mkdir cpo/${CPONUM}
+  mkdir dat/${CPONUM}
 
   echo "copying CPOs from the latest run dirs"
   #echo "RUN_WITH_CP="${RUN_WITH_CP}
 
   #for d in run*/ ; do
-  for d in $(find -maxdepth 5 -mindepth 5 -type d -name "run*") ; do
+  for d in $(find -maxdepth 5 -mindepth 5 -type d -name "run_*") ; do
       
-      #TODO make loop go recursevely over run folders
       echo "${d}"
 
       mkdir -p cpo/${CPONUM}/${d}
@@ -88,9 +87,6 @@ fi
 #2. Run prosprocessing scripts
 cd ${DIR_CODE}
 
-#NUM=$(($CPONUM-13))
-#NUMPR=$((NUM-1))
-#CPONUM=$(($NUM+13))
 CPONUMPR=$((${CPONUM}-1))
 
 #export PYTHONPATH=/marconi/home/userexternal/yyudin00/code/ual_python_interface:/marconi/home/userexternal/yyudin00/code/MFW/uq/base:${PYTHONPATH}
@@ -166,7 +162,18 @@ python3 gem_da.py all_${UQCAMPDIR}_${CPONUM} 1 1 ${RUNRANGE} all_${UQCAMPDIR}_${
 
 #5. Put the resulting output files in a separate directory
 if [ "${RUN_WITH_SAVE}" -eq 1 ]; then
-  mv *.txt ${DIR_OUTPUT}/
-  mv *.csv ${DIR_OUTPUT}/
-  mv *.png ${DIR_OUTPUT}/
+
+  cd ${DIR_OUTPUT}
+  mkdir ${UQCAMPDIR}
+
+  mv ../*.png ${UQCAMPDIR}/
+  mv ../*.txt ${UQCAMPDIR}/
+  cp ../*.csv ${UQCAMPDIR}/
+  mv ../*.csv ./
+
+  # Sort files into folder by quantity, number of run, type of file -> make sure the file is in folder and the ranges are set up!
+  cp ../sort_files.sh ${UQCAMPDIR}/
+  cd ${UQCAMPDIR}
+  ./sort_files.sh
+
 fi
