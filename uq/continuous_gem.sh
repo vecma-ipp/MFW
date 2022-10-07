@@ -5,12 +5,12 @@
 
 # Launch with:
 # nohup ./continuous_gem.sh 17 aos1mzke > script_workflow_latest3.log 2>&1 &
-# nohup ./continuous_gem.sh > script_wf_27092022.log 2>&1 &
+# nohup ./continuous_gem.sh > script_wf_07102022.log 2>&1 &
 
 #0. State the total number of campaigns to run, and ordinal number of the last campaign in previous sequence
 echo "STARTING THE WORKFLOW"
 # number of runs
-NUMRUNS=5
+NUMRUNS=6
 # no of current run, which is the last finished submission
 CURRUN=${1:-0}
 # no of the first run in the new sequence
@@ -19,7 +19,7 @@ FRUN=$((${CURRUN}+1))
 LASTRUN=$((${CURRUN}+${NUMRUNS}))
 
 # polynomial order - current parameter regulating total number of code instances
-POLORDER=2
+POLORDER=3
 INPUT_DIM=4
 
 # batch script to submit a single UQ campaign

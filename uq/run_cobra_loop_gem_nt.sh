@@ -8,13 +8,13 @@
 #SBATCH --error=test-loopntuq-err.%j
 
 ## wall time in format (HOURS):MINUTES:SECONDS
-#SBATCH --time=23:45:00
+#SBATCH --time=24:00:00
 ###23:30:00 #CHANGED FOR DEBUGGING!
 
 ## number of nodes and tasks per node
 # order=3, n_params=4, n_subd=8 -> 1024 across 40 (80 for hthreading, not used) cpus -> 27 nodes
 ###SBATCH --nodes=27 # MIND number of parameters in variation in the script
-#SBATCH --nodes=28
+#SBATCH --nodes=65
 #SBATCH --ntasks-per-node=40
 ###SBATCH --ntasks-per-core=1
 ###SBATCH --cpus-per-task=8
