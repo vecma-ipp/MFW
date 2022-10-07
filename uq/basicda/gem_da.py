@@ -372,13 +372,14 @@ def plot_coreprofval_dist(value_spw, labels=[], name='ti', discr_level=64, forpl
     
         with open('stats_' + name + '.txt', 'w') as wfile:
             for n in range(mom_len):
+                
                 if n == 1:
                     m = value_spw[i].mean()
                 else:
                     m = moment(value_spw[i], moment=n)
+
                 moments[i,n] = m
                 line = '{0}-th moment is: {1:.3e}'.format(n, m)
-                #print(line)
                 wfile.write(line+'\n')
 
     # Check the normality of distribution function
@@ -705,7 +706,7 @@ def plot_fft(freq, vals, thr, slope=-2, name='fft'):
         vertical line for some power threshold
         slope of the spectrum
     """
-    #slope = -2.  
+
     pivot_val = (vals[-1]**2) * np.power(freq[-1], -slope) 
     
     plt.loglog(freq, np.abs(vals)**2, color='b')
@@ -955,7 +956,6 @@ def produce_stats_dataframes(runs_input_vals, val_trend_avg_s, val_std_s, stats_
     if n_lensample==1:
         n_lensample = val_trend_avg_s[runn-1].shape[-1]
    
-    #n_lensample_corr = 1
     #print('acf-corrected sample length: {0}'.format(n_lensample)) ###DEBUG
 
     stats_df = stats_df.append(#(stats_df,
@@ -1055,6 +1055,9 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
             #for runn in runnum_list:
             for runn, fname in enumerate(runfolder_list_new): 
                 
+                print('Number of run folder and run file are equal: {}'.format(runn == int(fname[fname.rfind('_')+1:]))) ##DEBUG
+                #TODO: check if csv files written in the right order
+
                 #folder_name_curr = os.path.join(workdir, foldername+'/run_'+str(runn)) 
                 # TODO make more flexible for different existing cases?
                 folder_name_curr = os.path.join(workdir, fname) 
@@ -1075,23 +1078,24 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
                 #                                         name_postfix='_'+mainfoldernum       
 
                 #TODO:
-                #      2) get rid of recurcive copy-ing in parent .sh file
+                #      2) get rid of recurcive copy-ing in parent .sh file -> check if solution works
                 #      3) make responce cuts flexible: cases when sometimes there is one value per cut
 
         # 3) Getting the input profiles values, primarily for the plot labels
         pos_str_cpo_num = mainfoldernum.rfind('_')+1
         cpo_num = int(mainfoldernum[pos_str_cpo_num:]) # if the leaf folder is named [a+]_[d+]
         #cpo_num = int(foldername[foldername.rfind('/')+1:])
-        print('cpo_num={0} and mainfoldernum={1}'.format(cpo_num, mainfoldernum)) ###DEBUG
-        mmiter_num = cpo_num #6 -was in file on Marconi 
+        
+        #print('cpo_num={0} and mainfoldernum={1}'.format(cpo_num, mainfoldernum)) ###DEBUG
+        mmiter_num = cpo_num
 
-        db_id = 10002794 # where to get this?
-        #camp_id = '1wu9k2wa' #'moj202gj'
+        #db_id = 10002794 # where to get this among EasyVVUQ files?
+        #file_runs_db = "../gem_notransp_db_"+str(db_id)+".json" 
+
         camp_id = mainfoldernum[mainfoldernum[:pos_str_cpo_num-1].rfind('_')+1:pos_str_cpo_num-1]
 
         workdir_camp_db = './' 
 
-        file_runs_db = "../gem_notransp_db_"+str(db_id)+".json" 
         #TODO: take the internal campaign folder ID as input, and then load the SLURM id -> 
         # -> probably for that it is better to import EasyVVUQ and intilalise the campaign
         # with the location of DB, 
@@ -1109,7 +1113,7 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
         #     even if they are in programm memory already      
         val_ev_s = []
 
-        alpha_wind = 0.3 # how much to discard
+        alpha_wind = 0.3 # how much to discard, in fractions of readings
 
         # 4) Iterate over cartesian product of all profiles and their attributes
         for i,(p,a) in enumerate(itertools.product(profiles, attributes)):
@@ -1134,7 +1138,8 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
             
             #profile_evol_plot([val_ev_s[i]], name=code_name+'_'+p+'_'+a+'_'+mainfoldernum)
             # modification: list of arrays is for different profile variations
-            labels = [str(r) for r in runnum_list]
+            
+            #labels = [str(r) for r in runnum_list]
             labels = ["".join([rin+'='+str(round(r[rin], 1))+"; " for rin in runs_input_names]) for r in runs_input_vals]
              
             profile_evol_plot(val_ev_s, labels=labels, name=code_name+'_'+p+'_'+a+'_'+mainfoldernum, alignment='start', vertline=alpha_wind*val_ev_s[0].shape[-1]) 
@@ -1161,12 +1166,12 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
             val = val_ev_s[i] # single series for a profile+attribute, shouldn't be used for now...
 
             val_wind_s = [val[:,int(alpha_wind*val.shape[-1]):] for val in val_ev_s]
-            print('sizes before and after windowing: {} and {} '.format(val_ev_s[0].shape, val_wind_s[0].shape)) ###DEBUG
+            #print('sizes before and after windowing: {} and {} '.format(val_ev_s[0].shape, val_wind_s[0].shape)) ###DEBUG
             #print('val_wind len and element shape are {} and {}'.format(len(val_wind), val_wind[0].shape)) ### DEBUG
    
             # 4.2) Calculate ACF for the values
-            lags_list = [2,4,8,16,32,48,64,96,128,160,256,256,1024,2048,4096]
-            #lags_list = [64,128,256] ###DEBUG
+           
+            #lags_list = [2,4,8,16,32,48,64,96,128,160,256,256,1024,2048,4096] # [64,128,256]
             lags_list = [l for l in lags_list if l < val_wind_s[i].shape[-1]]
             
             #get_coreprof_ev_acf(val_ev_s[i], name=code_name+'_'+p+'_'+a+'stats'+'_'+str(runn), lags=lags_list)
@@ -1183,6 +1188,7 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
                 ac_len, ac_num = get_coreprof_ev_acf(val_wind_s[runn], 
                                     name=code_name+'_'+p+'_'+a+'_stats_'+mainfoldernum+'_'+str(runn), 
                                     lags=lags_list) 
+
                 #NB!: uncertainty of the ACF computation ~ Var(X)/sqrt(n) , where n=N_samples/L_lags
                 ac_len_s.append(ac_len)
                 ac_num_s.append(ac_num)
@@ -1190,7 +1196,7 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
                 print('Approximate ACL: {0}; and effective number size is {1}'.format(ac_len, ac_num))
                  
                 # Populate new array with reading from the code-produced values taken per a ACL window
-                # take one reading for a miidle of ACL
+                # Take one reading for a miidle of ACL
                 val_ev_acf = np.ones((1, ac_num[0]))
                 val_ev_acf = val_wind_s[runn][0, int(ac_len[0]/2.):-1:int(ac_len[0])]
                 val_ev_acf_s.append(val_ev_acf)
