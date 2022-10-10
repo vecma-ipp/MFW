@@ -266,7 +266,6 @@ def profile_evol_plot(value_s, labels=['orig'], file_names=[], name='gem_ti_flux
               prop={'size' : 9})
 
     #TODO: for 80 and 81 cases legend is not displayed
-    #TODO: rerun for campaign 'akgbbn1a' and submission 4-5
 
     ax.set_ylim(-5.E+5, 4.5E+6) #TODO either delete or make modifiable
 
@@ -448,7 +447,7 @@ def get_coreprof_ev_acf(value_ev, name='ti', lags=[1,2,3,4,5,6,7,8,9,10]):
         #acfs = acf_data_pd['AC'].to_numpy()
         acfs = acf_manual
 
-        # Defining Error(L) as Var(V[1..L])/sqrt(L) ...-> then Error is not normalized to [0.;1.]!s
+        # Defining Error(L) as Var(V[1..L])/sqrt(L) ...-> then Error is not normalized to [0.;1.]!
 
         #errors = [np.std(value_ev[i][:l]) / np.mean(value_ev[i][:l]) for l in lags]
         errors = [1./np.sqrt(float(l)) for l in lags]
@@ -1171,7 +1170,7 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
    
             # 4.2) Calculate ACF for the values
            
-            #lags_list = [2,4,8,16,32,48,64,96,128,160,256,256,1024,2048,4096] # [64,128,256]
+            lags_list = [2,4,8,16,32,48,64,96,128,160,256,256,1024,2048,4096] # [64,128,256]
             lags_list = [l for l in lags_list if l < val_wind_s[i].shape[-1]]
             
             #get_coreprof_ev_acf(val_ev_s[i], name=code_name+'_'+p+'_'+a+'stats'+'_'+str(runn), lags=lags_list)

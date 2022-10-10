@@ -68,7 +68,7 @@ mpi_instance =  os.environ['MPICMD']
 #mpi_model = 'default' #'srunmpi' #'intelmpi' #'openmpi'
 # Works with 'default' on MARCONI, currently not on COBRA
 mpi_model = os.environ['MPIMOD']
-template_type = os.environ['EXECTEMPL']
+#template_type = os.environ['EXECTEMPL']
 
 # CPO files location
 cpo_dir = os.path.abspath("../workflows/AUG_28906_6") 
