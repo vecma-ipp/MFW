@@ -38,6 +38,9 @@ echo "Total number of new runs: "${NUMRUNS}
 
 export ORIGDIR=$(pwd)
 
+#TODO: akgbbn1a cpo2+ are overwritten - if the very first campaign fails, the script will overwrite the old campaign output file 
+# - the runs will be consistent though due to restoration from the old cpo numbers
+
 if [ "${CURRUN}" -gt 0 ];
 then 
 
@@ -65,7 +68,7 @@ then
   cd ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/${RUNPATHSHORT}/
 
   #for r in `seq ${RUNRANGESTART} ${RUNRANGE}`; do
-  for r in $(find -maxdepth 5 -mindepth 5 -type d -name "run*"); do
+  for r in $(find -maxdepth 5 -mindepth 5 -type d -name "run_*"); do
 
     #mkdir ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/${RUNPATHSHORT}/bckp/${TMP}/run_${r}/
     mkdir -p bckp/${TMP}/${r}/
@@ -81,7 +84,7 @@ then
 
   # 0.1. Restoring snapshot files to the state of desired last completed run
   #for r in `seq ${RUNRANGESTART} ${RUNRANGE}`; do
-  for r in $(find -maxdepth 5 -mindepth 5 -type d -name "run*"); do
+  for r in $(find -maxdepth 5 -mindepth 5 -type d -name "run_*"); do
 
     #cp ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/${RUNPATHSHORT}/dat/${CURRUN}/run_${r}/*.dat ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/${RUNPATHSHORT}/run_${r}/
     cp /dat/${CURRUN}/${r}/*.dat ${r}/
@@ -116,7 +119,7 @@ else
   PREVID=$(sbatch --export=ALL,POLORDER=${POLORDER} --parsable --wait ${COM0})
 
   #Extract the ROOTCAMPDIR from the submission
-  ROOTCAMPDIR=$(<camp_temp_dir.txt) 
+  k=$(<camp_temp_dir.txt) 
   # TODO: make distinguishable, a single name for all cuncurrently run workflows
   echo 'Campaign directory for this workflow is: '${ROOTCAMPDIR}
 
@@ -157,6 +160,8 @@ for n in `seq ${FRUN} ${LASTRUN}`; do
     PREVID=${CURID}
     echo "Finished postprocessing for the campaign num "${n}
 done
+
+yes | rm camp_temp_dir.txt
 
 echo "FINISHED THE WORKFLOW"
 

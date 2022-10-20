@@ -231,7 +231,7 @@ elif mpi_model=='srunmpi':
 else:
     execute=ExecuteLocal(exec_path)
 
-# Custom template for parallel job exectution
+# Custom template for parallel job execution
 template_par_simple = {
                        #'venv' : os.path.join(HOME, 'python394'), 
                        'numCores': ncores,
