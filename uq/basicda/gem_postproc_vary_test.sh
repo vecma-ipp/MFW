@@ -6,27 +6,32 @@
 
 # Example usage: ./gem_postproc_vary_test.sh 12 moj202gj 0 1 16 0
 
-RUN_WITH_CP=${3:-1}
-
-RUN_WITH_SAVE=${4:-1}
-
-RUN_NOT_ONLY_ALL=${6:-1}
-
-READ_FROM_CSV=${7:-1}
-
 #0. Set directories
-# folder of output CPO files, should be same as number of SLURM submissions (macro-macro-iterations)
-# should be the same as number of MMit TO process
+#  folder of output CPO files, should be same as number of SLURM submissions (macro-macro-iterations)
+#  should be the same as number of MMit TO process
+# Get the number of 'mactoiteration'
 CPONUM=${1:-1}
-
-#RUNNUM=2
-# number of runs in current UQ campaign
-RUNRANGESTART=1
-RUNRANGE=${5:-4} #16
 
 #UQCAMPDIR='dy6n5hp9' # folder id of a completed run with 100 GEM calls, and 11 series of runs 100 calls each
 #UQCAMPDIR='moj202gj' #folder ID of a completed run with 450 GEM calls
+# Get the name of the UQ campaign
 UQCAMPDIR=${2:-'aos1mzke'} #'brus48mm' #'1wu9k2wa'
+
+# True if all simulation files need to be copied out of the working directory
+RUN_WITH_CP=${3:-1}
+
+# True if all the postprocessing files should be stored in data directory
+RUN_WITH_SAVE=${4:-1}
+
+# Number of runs in current UQ campaign
+RUNRANGESTART=1
+RUNRANGE=${5:-4} #16
+
+# True if first the script should be run for the last 'macroiteration'
+RUN_NOT_ONLY_ALL=${6:-1}
+
+# True if the simulation data has to read from .CSV files
+READ_FROM_CSV=${7:-1}
 
 #DIR='/marconi_scratch/userexternal/yyudin00/VARY_1FT_GEM_NT_qairnbbz' # first run of 16 GEM cases in a script, n_it<=500
 #DIR='/marconi_scratch/userexternal/yyudin00/VARY_1FT_GEM_NT_qpyxg3bb' # first dir with 2 GEM runs
@@ -63,7 +68,7 @@ if [ "${RUN_WITH_CP}" -eq 1 ]; then
   #for d in run*/ ; do
   for d in $(find -maxdepth 5 -mindepth 5 -type d -name "run_*") ; do
       
-      echo "${d}"
+      #echo "${d}"
 
       mkdir -p cpo/${CPONUM}/${d}
 
@@ -158,7 +163,8 @@ if [ "${RUN_NOT_ONLY_ALL}" -ne 1 ]; then
 
 fi
 
-python3 gem_da.py all_${UQCAMPDIR}_${CPONUM} 1 1 ${RUNRANGE} all_${UQCAMPDIR}_${CPONUM} #latest
+#python3 gem_da.py all_${UQCAMPDIR}_${CPONUM} 1 1 ${RUNRANGE} all_${UQCAMPDIR}_${CPONUM}
+python3 gem_da.py ${DIR_SRC}/cpo/${CPONUM} 1 1 ${RUNRANGE} all_${UQCAMPDIR}_${CPONUM}
 
 #5. Put the resulting output files in a separate directory
 if [ "${RUN_WITH_SAVE}" -eq 1 ]; then

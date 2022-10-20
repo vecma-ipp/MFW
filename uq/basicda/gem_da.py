@@ -96,7 +96,7 @@ def SA_exploite(analysis, qoi):
 
     #AUG_GM_date_explore(filename='../data/AUG_gem_inoutput.txt')
 
-def profile_evol_load(rho=0.69, folder_name='../gem_data/cpo5/', prof_names=['ti_transp', 'te_transp'], attrib_names=['flux'], 
+def profile_evol_load(rho=0.7, folder_name='../gem_data/cpo5/', prof_names=['ti_transp', 'te_transp'], attrib_names=['flux'], 
                       coord_len=1, var_num=1, file_code_name='gem', name_postfix=''):
     """
     Loads the quantitiy values from all CPO files with a specific type of name in the folder,
@@ -345,7 +345,7 @@ def plot_coreprofval_dist(value_spw, labels=[], name='ti', discr_level=64, forpl
 
         # Add vertical lines for mean of the each sample
         #ax.axvline(x=val_means[i], ymin=0., ymax=1., linestyle=fmt_list[i][:-2], color=fmt_list[i][-2], marker=fmt_list[i][-1])
-        ax.axvline(x=val_means[i], ymin=0., ymax=1., linestyle=fmt_list[i][0], color=fmt_list[i][1], marker=fmt_list[i][2]) 
+        ax.axvline(x=val_means[i], ymin=0., ymax=np.exp(log_pdf).max(), linestyle=fmt_list[i][0], color=fmt_list[i][1], marker=fmt_list[i][2]) 
         
         if forplot:
             ax.set_xlim([0., value_spw[i].max()])
@@ -808,7 +808,7 @@ def read_run_uq(db_path, wd_path='./'):
 
     return input_values, input_names
 
-def plot_response_cuts(data, input_names, output_names, foldname=''):
+def plot_response_cuts(data, input_names, output_names, compare_vals=None, foldname='', traces=None):
     """
     Plot different cuts (fixing all input parameter values but one) of code response for given QoI
         Parameters:
@@ -818,7 +818,9 @@ def plot_response_cuts(data, input_names, output_names, foldname=''):
                          also used for plot labels
             output_names: list of strings with output names, corresponds to dataframe columns,
                           also used for plot labels
+            compare_vals: for a single QoI name - a tuple of type (mean, min value, max_value)
             foldname: string of original campaign id to destinguish plot names
+            traces: list of lists with values over time for each cases described in 'data'
     """
 
     if len(input_names) == 1:
@@ -872,7 +874,7 @@ def plot_response_cuts(data, input_names, output_names, foldname=''):
             input_inds_left = [n for n in input_inds if n != i_ip]
             fixed_ip_names = ''.join([n+'&' for n in input_names_left])
 
-            offset = 1
+            #offset = 1
 
             input_fixvals_unique = list(itertools.product(
                                         *[input_vals_unique[i,:].tolist() for i in input_inds_left]))
@@ -883,6 +885,8 @@ def plot_response_cuts(data, input_names, output_names, foldname=''):
             # Iterate over the all combinations of input parameters values to be kept const for a cut
             for j_fixval in range(n_fixvals):
                 #print([i_ip, j_fixval]) ###DEBUG
+
+                # Choosing data for the cut 
         
                 #pivot_fixed_val = data[input_names_left][j_fixval+offset]
                 #tot_ind = data[input_names_left].where() #TODO location where element is equal to pivot_fixed_val
@@ -915,6 +919,8 @@ def plot_response_cuts(data, input_names, output_names, foldname=''):
                 y_std = data_slice[qoi_std_name].to_numpy()
                 y_stem= data_slice[qoi_stem_name].to_numpy()
     
+                # Plotting part of iteration
+
                 #ax[i_ip][j_fixval].plot(x_io, y_qoi, 'o-', 
                 #                   label='Response for ({})->({}) for {}'.
                 #                   format(running_ip_name, qoi_name, fixed_ip_val_str))         
@@ -932,8 +938,14 @@ def plot_response_cuts(data, input_names, output_names, foldname=''):
                 #ax[i_ip][j_fixval].set_ylim(1.5E+6, 3.8E+6) # TODO make limits variable
                 ax[i_ip][j_fixval].set_ylim(-5.E+5, 4.5E+6)
                 #ax[i_ip][j_fixval].legend(loc='best') 
+
+                if compare_vals is not None:
+                    
+                    ax[i_ip][j_fixval].hlines(y=compare_vals[0], xmin=x_io.min(), xmax=x_io.max(), color='r', linestyle='-')
+                    ax[i_ip][j_fixval].hlines(y=compare_vals[1], xmin=x_io.min(), xmax=x_io.max(), color='r', linestyle='--')
+                    ax[i_ip][j_fixval].hlines(y=compare_vals[2], xmin=x_io.min(), xmax=x_io.max(), color='r', linestyle='--')
         
-            offset *= 2
+            #offset *= 2
             # Filter on dataframe could be completely replaces by an offseting for different chosen parameter        
     
         fig.tight_layout()
@@ -1011,12 +1023,16 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
     runnum_list = [r+1 for r in range(runnum)]
 
     runfolder_list = [f[0] for f in os.walk(foldername) if not f[1]]
+    runfolder_list.sort()
 
     #runfolder_list_new = [f for f in runfolder_list if (int(f[f.rfind('_')+1:]) if f.rfind('_')!=-1 else 0) in runnum_list]
     runfolder_list_new = [f for f in runfolder_list if int(f[f.rfind('_')+1:]) in runnum_list]
 
-    #print('folder of original runs: {}'.format(runfolder_list)) ###DEBUG
-    #print('and modified: {}'.format(runfolder_list_new)) ###DEBUG
+    print('foldername={}'.format(foldername)) ###DEBUG
+    print('runnum_list is : {}'.format(runnum_list)) ###DEBUG
+    print('folder of original runs: {}'.format(runfolder_list)) ###DEBUG
+    print('and modified: {}'.format(runfolder_list_new)) ###DEBUG
+    #TODO: check the order of folders and the order of runs!
 
     code_names = ['gem',
 #                 'imp4dv',
@@ -1225,10 +1241,10 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
                                   )
 
             # 4.3.2) Plotting single plot with histograms including data from MFW production runs
-            """
+            
             mfw_input_names = ['dTi', 'dTe', 'Ti', 'Te']
 
-            mfw_data_file='AUG_gem_inoutput.txt' #AUG_mix-lim_gem_inoutput.txt
+            mfw_data_file='AUG_mix-lim_gem_inoutput.txt' #'AUG_gem_inoutput.txt'
             mfw_ft_s = [5, 6, 7]
 
             val_mwf = pd.read_table('../data/'+mfw_data_file, delimiter='  *', engine='python') 
@@ -1238,6 +1254,9 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
 
             #print(' Shapes of old and new arrays {0} {1}'.format(val_wind_s[0].shape, val_mwf.shape)) ### DEBUG
             #print(' MFW input values are dti={0} dte={1} ti={2} te={3}'.format(tiddrho_mwf_refval_s[0], teddrho_mwf_refval_s[0], ti_mwf_refval_s[0], te_mwf_refval_s[0])) ### DEBUG
+            print('Mean of MFW ft5 QTi={0}'.format(val_mwf['cp-flux-Ti-ft5'].mean())) ###DEBUG
+
+            # Mind that here 0 index is consider to be most important to compare: flux tube #5 from MFW run
 
             plot_coreprofval_dist(
                                     [np.squeeze(v,0) for v in [*val_wind_s, *val_mwf_s]],
@@ -1246,7 +1265,10 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
                                     discr_level=32,
                                     forplot=False,
                                  )
-            """
+            
+            val_mwf_mean = val_mwf_s[0].mean()
+            val_mwf_min = val_mwf_s[0].min()
+            val_mwf_max = val_mwf_s[0].max()
 
             # 4.4) Apply ARMA model
             """
@@ -1307,9 +1329,11 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
                 # For Pandas query: make sure input columns are floats
                 scan_df[param] = scan_df[param].astype('float')
 
+            compare_vals_mfw = (val_mwf_mean, val_mwf_min, val_mwf_max)
+
             print('plotting cuts starting')
             
-            plot_response_cuts(scan_df, runs_input_names_new, [p+'_'+a], mainfoldernum)
+            plot_response_cuts(scan_df, runs_input_names_new, [p+'_'+a], compare_vals=compare_vals_mfw, foldname=mainfoldernum)
 
             print('plotting cuts done')
 
