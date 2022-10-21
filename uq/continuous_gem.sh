@@ -5,12 +5,12 @@
 
 # Launch with:
 # nohup ./continuous_gem.sh 17 aos1mzke > script_workflow_latest3.log 2>&1 &
-# nohup ./continuous_gem.sh > script_wf_07102022.log 2>&1 &
+# nohup ./continuous_gem.sh 6 akgbbn1a> script_wf_20102022.log 2>&1 &
 
 #0. State the total number of campaigns to run, and ordinal number of the last campaign in previous sequence
 echo "STARTING THE WORKFLOW"
 # number of runs
-NUMRUNS=6
+NUMRUNS=3
 # no of current run, which is the last finished submission
 CURRUN=${1:-0}
 # no of the first run in the new sequence
@@ -119,7 +119,7 @@ else
   PREVID=$(sbatch --export=ALL,POLORDER=${POLORDER} --parsable --wait ${COM0})
 
   #Extract the ROOTCAMPDIR from the submission
-  k=$(<camp_temp_dir.txt) 
+  ROOTCAMPDIR=$(<camp_temp_dir.txt) 
   # TODO: make distinguishable, a single name for all cuncurrently run workflows
   echo 'Campaign directory for this workflow is: '${ROOTCAMPDIR}
 

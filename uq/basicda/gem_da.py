@@ -193,7 +193,7 @@ def profile_evol_load(rho=0.7, folder_name='../gem_data/cpo5/', prof_names=['ti_
     
     # Iterate over the carthesian product of all profiles and their attributes, for each save a csv with the value list
     for i,(prof,attrib) in enumerate(itertools.product(prof_names, attrib_names)):
-        value_arr = np.array(value_s[i])
+        #value_arr = np.array(value_s[i])
         
         np.savetxt(file_code_name + '_' + prof + '_' + attrib  + '_evol' + name_postfix +'.csv', 
                    value_s[i].T, delimiter =", ", fmt ='% s')
@@ -265,14 +265,11 @@ def profile_evol_plot(value_s, labels=['orig'], file_names=[], name='gem_ti_flux
               ncol=int(np.sqrt(len(labels))) if len(labels) < 25 else 4,
               prop={'size' : 9})
 
-    #TODO: for 80 and 81 cases legend is not displayed
-
     ax.set_ylim(-5.E+5, 4.5E+6) #TODO either delete or make modifiable
 
     if vertline:
         ax.axvline(vertline, alpha=0.3, color='k', linestyle='--', label='left border of the window')
    
-    #plt.legend(loc='best')
     plt.savefig(name + '.png', dpi=1250)
     plt.close()
 
@@ -362,6 +359,7 @@ def plot_coreprofval_dist(value_spw, labels=[], name='ti', discr_level=64, forpl
     mom_len = 5
     moments = np.zeros((nftc, mom_len))
     
+    """
     for i in range(nftc):
         
         print('Considering flux tube #{0}'.format(i))
@@ -384,7 +382,8 @@ def plot_coreprofval_dist(value_spw, labels=[], name='ti', discr_level=64, forpl
     # Check the normality of distribution function
     kld = compare_gaussian(np.exp(log_pdf[0]), x, moments)
     print('KL-d is: ' + str(kld))
-
+    """
+    
     return moments
 
 def get_coreprof_ev_acf(value_ev, name='ti', lags=[1,2,3,4,5,6,7,8,9,10]):
@@ -866,6 +865,12 @@ def plot_response_cuts(data, input_names, output_names, compare_vals=None, foldn
                             figsize=(40, 20)
                             )
 
+        # if traces are passed, create same type of plot layout but with time traces 
+        if traces is not None:
+            fig_tr, ax_tr = plt.subplots(n_inputs, n_fixvals, 
+                                figsize=(50, 25)
+                                        )
+
         # Iterate over all the input dimensions, selecting single one as a running variable
         for i_ip in range(n_inputs):
 
@@ -939,11 +944,21 @@ def plot_response_cuts(data, input_names, output_names, compare_vals=None, foldn
                 ax[i_ip][j_fixval].set_ylim(-5.E+5, 4.5E+6)
                 #ax[i_ip][j_fixval].legend(loc='best') 
 
+                # if y values (mean, min, max) to compare are passed, plot the horizontal lines
                 if compare_vals is not None:
                     
                     ax[i_ip][j_fixval].hlines(y=compare_vals[0], xmin=x_io.min(), xmax=x_io.max(), color='r', linestyle='-')
                     ax[i_ip][j_fixval].hlines(y=compare_vals[1], xmin=x_io.min(), xmax=x_io.max(), color='r', linestyle='--')
                     ax[i_ip][j_fixval].hlines(y=compare_vals[2], xmin=x_io.min(), xmax=x_io.max(), color='r', linestyle='--')
+
+                if traces is not None:
+
+                    n = max([v.shape[-1] for v in traces])
+                    ts = np.arange(traces[0].shape[-1])
+                     
+                    ax_tr[i_ip][j_fixval].plot(ts, traces[i_ip*len(input_fixvals_unique)+j_fixval]) 
+                    # TODO: plot time traces :
+                    #    the index is wrong -> get index from dataframe slice
         
             #offset *= 2
             # Filter on dataframe could be completely replaces by an offseting for different chosen parameter        
@@ -1022,16 +1037,19 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
 
     runnum_list = [r+1 for r in range(runnum)]
 
+    # Get the list of folders in the SCRATCH to run over ad get CPOs from
+    #   NB1: some runs might be missing
+    #   NB2: order of runs in the DB and in the postprocessing script should be the same
     runfolder_list = [f[0] for f in os.walk(foldername) if not f[1]]
-    runfolder_list.sort()
+    runfolder_list.sort(key=lambda dir: int(dir[dir.rfind('_')+1:]))
 
-    #runfolder_list_new = [f for f in runfolder_list if (int(f[f.rfind('_')+1:]) if f.rfind('_')!=-1 else 0) in runnum_list]
-    runfolder_list_new = [f for f in runfolder_list if int(f[f.rfind('_')+1:]) in runnum_list]
+    #runfolder_list_filtered = [f for f in runfolder_list if (int(f[f.rfind('_')+1:]) if f.rfind('_')!=-1 else 0) in runnum_list]
+    runfolder_list_filtered = [f for f in runfolder_list if int(f[f.rfind('_')+1:]) in runnum_list]
 
     print('foldername={}'.format(foldername)) ###DEBUG
     print('runnum_list is : {}'.format(runnum_list)) ###DEBUG
     print('folder of original runs: {}'.format(runfolder_list)) ###DEBUG
-    print('and modified: {}'.format(runfolder_list_new)) ###DEBUG
+    print('and modified: {}'.format(runfolder_list_filtered)) ###DEBUG
     #TODO: check the order of folders and the order of runs!
 
     code_names = ['gem',
@@ -1068,9 +1086,10 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
             
             # 2) Iterate over all runs, meaning for same scenario but with a different transport profile variation
             #for runn in runnum_list:
-            for runn, fname in enumerate(runfolder_list_new): 
+            for runn, fname in enumerate(runfolder_list_filtered): 
                 
-                print('Number of run folder and run file are equal: {}'.format(runn == int(fname[fname.rfind('_')+1:]))) ##DEBUG
+                print('Number of run folder and run file are equal: {0}; {1} and {2}'.
+                    format(runn+1 == int(fname[fname.rfind('_')+1:]), runn+1, fname[fname.rfind('_')+1:])) ##DEBUG
                 #TODO: check if csv files written in the right order
 
                 #folder_name_curr = os.path.join(workdir, foldername+'/run_'+str(runn)) 
@@ -1084,7 +1103,7 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
                                                          coord_len=coordnum, 
                                                          folder_name=folder_name_curr, 
                                                          file_code_name=code_name, 
-                                                         name_postfix='_'+mainfoldernum+'_'+str(runn)
+                                                         name_postfix='_'+mainfoldernum+'_'+str(runn+1) # here runn is from enumerate, not from the list
                                                         )
                
                 #val_ev_s, file_names = profile_evol_load(prof_names=profiles, attrib_names=attributes, coord_len=coordnum, 
@@ -1186,7 +1205,7 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
    
             # 4.2) Calculate ACF for the values
            
-            lags_list = [2,4,8,16,32,48,64,96,128,160,256,256,1024,2048,4096] # [64,128,256]
+            lags_list = [2,4,8,16,32,48,64,96,128,160,256,512,1024,2048,4096] # [64,128,256]
             lags_list = [l for l in lags_list if l < val_wind_s[i].shape[-1]]
             
             #get_coreprof_ev_acf(val_ev_s[i], name=code_name+'_'+p+'_'+a+'stats'+'_'+str(runn), lags=lags_list)
@@ -1196,11 +1215,12 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
 
             val_ev_acf_s = []
             
-            for runn in range(len(runnum_list)):
+            #for runn in range(len(runnum_list)):
+            for runn in runnum_list:
                 
                 print('ACF for case #{0}'.format(runn))
                  
-                ac_len, ac_num = get_coreprof_ev_acf(val_wind_s[runn], 
+                ac_len, ac_num = get_coreprof_ev_acf(val_wind_s[runn-1], 
                                     name=code_name+'_'+p+'_'+a+'_stats_'+mainfoldernum+'_'+str(runn), 
                                     lags=lags_list) 
 
@@ -1213,18 +1233,20 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
                 # Populate new array with reading from the code-produced values taken per a ACL window
                 # Take one reading for a miidle of ACL
                 val_ev_acf = np.ones((1, ac_num[0]))
-                val_ev_acf = val_wind_s[runn][0, int(ac_len[0]/2.):-1:int(ac_len[0])]
+                val_ev_acf = val_wind_s[runn-1][0, int(ac_len[0]/2.):-1:int(ac_len[0])]
                 val_ev_acf_s.append(val_ev_acf)
 
-                print([ac_num[0], ac_len[0], val_wind_s[runn].shape, val_ev_acf.shape,]) ###DEBUG        
+                print([ac_num[0], ac_len[0], val_wind_s[runn-1].shape, val_ev_acf.shape,]) ###DEBUG        
 
             # 4.3) Plotting histograms and KDEs of the profile values evolution
             #plot_coreprofval_dist(val_ev_s[i], name=p+'_'+a+'_'+mainfoldernum, discr_level=32)
-            for runn in range(len(runnum_list)):
+            
+            #for runn in range(len(runnum_list)):
+            for runn in runnum_list:
                 
                 print('KDE for case #{0}'.format(runn)) 
                 
-                plot_coreprofval_dist([np.squeeze(val_wind_s[runn],0)],
+                plot_coreprofval_dist([np.squeeze(val_wind_s[runn-1],0)],
                                       name=p+'_'+a+'_'+str(runn)+'_'+mainfoldernum, 
                                       discr_level=32)
 
