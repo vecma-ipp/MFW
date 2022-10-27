@@ -415,8 +415,9 @@ def get_coreprof_ev_acf(value_ev, name='ti', lags=[1,2,3,4,5,6,7,8,9,10]):
         n_sample = value_ev.shape[-1]
 
         acf_manual = [1. if l==0 else np.corrcoef(value_ev[i][l:], value_ev[i][:-l])[0][-1] for l in lags]
-        #print(acf_manual) ###DEBUG
 
+        #NB: commented out because currently is not in use for furhter processing, should probably be adopted to calcualte autocorrelation time
+        """
         r,q,p  = acf(value_ev[i], nlags=nl, fft=True, qstat=True) 
  
         acf_data = np.c_[np.arange(1, nl+1), r[1:], q, p]
@@ -437,7 +438,8 @@ def get_coreprof_ev_acf(value_ev, name='ti', lags=[1,2,3,4,5,6,7,8,9,10]):
         plot_acf(val_df, lags=lags)
         plt.savefig(str(i)+'_'+name+'_acf.png')
         plt.close()
-
+        """
+        
         # TODO read up methods and implementations for that:
         # Options
         # 1) min(n) value for which ACF(n) <= Var(X_1..n)/sqrt(n) 
@@ -919,10 +921,13 @@ def plot_response_cuts(data, input_names, output_names, compare_vals=None, foldn
                 #fixed_ip_vals_str  = ''.join([str(v)+';' for v in fixed_ip_vals.to_list()]) 
                 fixed_ip_val_str = ''.join([n+'='+str(round(v, 1))+';' for (n,v) in zip(input_names_left, input_fixvals)])
 
-                x_io = data_slice[running_ip_name].to_numpy()
+                x_io  = data_slice[running_ip_name].to_numpy()
                 y_qoi = data_slice[qoi_name].to_numpy()
                 y_std = data_slice[qoi_std_name].to_numpy()
                 y_stem= data_slice[qoi_stem_name].to_numpy()
+                inds  = data_slice.index.to_list()
+
+                print('inds : {0}'.format(inds)) ###DEBUG
     
                 # Plotting part of iteration
 
@@ -954,11 +959,17 @@ def plot_response_cuts(data, input_names, output_names, compare_vals=None, foldn
                 if traces is not None:
 
                     n = max([v.shape[-1] for v in traces])
-                    ts = np.arange(traces[0].shape[-1])
+                    ts = np.arange(n)
                      
-                    ax_tr[i_ip][j_fixval].plot(ts, traces[i_ip*len(input_fixvals_unique)+j_fixval]) 
-                    # TODO: plot time traces :
-                    #    the index is wrong -> get index from dataframe slice
+                    #ax_tr[i_ip][j_fixval].plot(ts, traces[i_ip*len(input_fixvals_unique)+j_fixval]) 
+                    for k in inds:
+                    
+                        ax_tr[i_ip][j_fixval].plot(np.arange(len(traces[k][:])), traces[k][:],
+                                                   label='time trace for ({})->({}) for {}'.format(running_ip_name, qoi_name, fixed_ip_val_str))
+
+
+                        # TODO: plot time traces :
+                        #    the index is wrong -> get index from dataframe slice
         
             #offset *= 2
             # Filter on dataframe could be completely replaces by an offseting for different chosen parameter        
@@ -967,8 +978,13 @@ def plot_response_cuts(data, input_names, output_names, compare_vals=None, foldn
         #fig.suptitle('GEM response in {} around profile values'.format(qoi_name)) #TODO: pass names as arguments    
         #fig.subplots_adjust(top=0.8)
 
-        plt.savefig('scan_{0}_{1}.png'.format(qoi_name, foldname))
-        plt.close()
+        fig.savefig('scan_{0}_{1}.png'.format(qoi_name, foldname))
+        fig.close()
+
+        if traces is not None:
+            fig_tr.tight_layout()
+            fig_tr.savefig('scan_traces_{0}_{1}.png'.format(qoi_name, foldname))
+            fig_tr.close()
 
 def produce_stats_dataframes(runs_input_vals, val_trend_avg_s, val_std_s, stats_df, scan_df, 
                              n_lensample=1, runn=0, p='ti_transp', a='flux'):
@@ -1266,7 +1282,7 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
             
             mfw_input_names = ['dTi', 'dTe', 'Ti', 'Te']
 
-            mfw_data_file='AUG_mix-lim_gem_inoutput.txt' #'AUG_gem_inoutput.txt'
+            mfw_data_file = 'AUG_mix-lim_gem_inoutput.txt' # 'AUG_gem_inoutput.txt'
             mfw_ft_s = [5, 6, 7]
 
             val_mwf = pd.read_table('../data/'+mfw_data_file, delimiter='  *', engine='python') 
@@ -1355,7 +1371,13 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
 
             print('plotting cuts starting')
             
-            plot_response_cuts(scan_df, runs_input_names_new, [p+'_'+a], compare_vals=compare_vals_mfw, foldname=mainfoldernum)
+            plot_response_cuts(scan_df, 
+                               runs_input_names_new, 
+                               [p+'_'+a],
+                               compare_vals=compare_vals_mfw, 
+                               foldname=mainfoldernum,
+                               traces=val_wind_s,
+                              )
 
             print('plotting cuts done')
 
