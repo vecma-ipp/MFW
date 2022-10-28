@@ -9,6 +9,7 @@ import os
 import sys
 
 import itertools
+import time
 
 from sklearn.neighbors import KernelDensity as KDE
 from scipy.stats import moment, linregress
@@ -73,9 +74,9 @@ def AUG_GM_date_explore(filename='AUG_gem_inoutput.txt'):
     #GP_analysis_toy(X=AUG_gem['time'], y=y1)
 
 def SA_exploite(analysis, qoi):
-    # Function to analyses the SVD decomposition of the Sobol indices matrix and find largest eigenvaules among
+    # Function to analyses the SVD decomposition of the Sobol indices matrix and find largest eigenvalues among
     # linear combinations of Sobol indices of different order.
-    # Further should use the eigen vectors as "directions" for new resampling for UQ quadratures
+    # Further should use the eigenvectors as "directions" for new resampling for UQ quadratures
 
     #stat = {}
     sob1 = {}
@@ -99,7 +100,7 @@ def SA_exploite(analysis, qoi):
 def profile_evol_load(rho=0.7, folder_name='../gem_data/cpo5/', prof_names=['ti_transp', 'te_transp'], attrib_names=['flux'], 
                       coord_len=1, var_num=1, file_code_name='gem', name_postfix=''):
     """
-    Loads the quantitiy values from all CPO files with a specific type of name in the folder,
+    Loads the quantity values from all CPO files with a specific type of name in the folder,
           then saves in a CSV file
     
         Parameters:
@@ -178,7 +179,7 @@ def profile_evol_load(rho=0.7, folder_name='../gem_data/cpo5/', prof_names=['ti_
                          #print('after v[a][c]'); print(value_s[i*m+j]) ### DEBUG
 
                 # Choose profiles for electrons, it is always a single species, 
-                # and one fewer level of list nestedness than for ions
+                #   and one fewer level of list nestedness than for ions
                 elif profname[1] == 'e':
                      val_reading = getattr(prof, attrib)
 
@@ -207,7 +208,7 @@ def profile_evol_load(rho=0.7, folder_name='../gem_data/cpo5/', prof_names=['ti_
 
 def profile_evol_plot(value_s, labels=['orig'], file_names=[], name='gem_ti_flux', alignment='end', vertline=False):
     """
-    Saves a PNG of a Matplotlib plot for a quantity agains index/time; 
+    Saves a PNG of a Matplotlib plot for a quantity against index/time; 
           reads values from a list of numpy arrays passed
         Parameters:
             values_s (list): nested list of profile values (agains time) to be plotted
@@ -236,7 +237,7 @@ def profile_evol_plot(value_s, labels=['orig'], file_names=[], name='gem_ti_flux
     color_list = ['b', 'g', 'r', 'y' , 'm', 'c', 'k']
     line_list = ['-', '--', '-.', ':']
     marker_list = ['', '.', 'o', 'v', '^', '<', '>']
-    style_lists = [line_list, color_list, marker_list] # NB!: can be modified to include marker style
+    style_lists = [color_list, line_list, marker_list] # NB!: can be modified to include marker style
     #fmt_list = ["".join(map(str, style)) for style in itertools.product(*style_lists)]
     fmt_list = [style for style in itertools.product(*style_lists)]
 
@@ -258,7 +259,7 @@ def profile_evol_plot(value_s, labels=['orig'], file_names=[], name='gem_ti_flux
              #ax.semilogy(ts, value[i,:], '-', label=lab+'_'+str(i))
              
              #ax.plot(ts, value[i,:], fmt_list[inum], label=lab)
-             ax.plot(ts, value[i,:], color=fmt_list[inum][1], linestyle=fmt_list[inum][0], marker=fmt_list[inum][2], label=lab)
+             ax.plot(ts, value[i,:], color=fmt_list[inum][0], linestyle=fmt_list[inum][1], marker=fmt_list[inum][2], label=lab)
 
     ax.legend(loc='lower center',
              #bbox_to_anchor=(0.5, 0.0), 
@@ -303,7 +304,7 @@ def plot_coreprofval_dist(value_spw, labels=[], name='ti', discr_level=64, forpl
     color_list = ['b', 'g', 'r', 'y' , 'm', 'c', 'k']
     line_list = ['-', '--', '-.', ':']
     marker_list = ['', '.', 'o', 'v', '^', '<', '>']
-    style_lists = [line_list, color_list, marker_list] # NB!: can be modified to include marker style
+    style_lists = [color_list, line_list, marker_list] # NB!: can be modified to include marker style
     #fmt_list = ["".join(map(str, style)) for style in itertools.product(*style_lists)]
     fmt_list = [style for style in itertools.product(*style_lists)]
 
@@ -342,7 +343,7 @@ def plot_coreprofval_dist(value_spw, labels=[], name='ti', discr_level=64, forpl
 
         # Add vertical lines for mean of the each sample
         #ax.axvline(x=val_means[i], ymin=0., ymax=1., linestyle=fmt_list[i][:-2], color=fmt_list[i][-2], marker=fmt_list[i][-1])
-        ax.axvline(x=val_means[i], ymin=0., ymax=np.exp(log_pdf).max(), linestyle=fmt_list[i][0], color=fmt_list[i][1], marker=fmt_list[i][2]) 
+        ax.axvline(x=val_means[i], ymin=0., ymax=np.exp(log_pdf).max(), color=fmt_list[i][0], linestyle=fmt_list[i][1], marker=fmt_list[i][2]) 
         
         if forplot:
             ax.set_xlim([0., value_spw[i].max()])
@@ -456,7 +457,7 @@ def get_coreprof_ev_acf(value_ev, name='ti', lags=[1,2,3,4,5,6,7,8,9,10]):
         if isinstance(value_ev[i], np.ndarray) :
             errors = [np.std(value_ev[i][:l]) / (np.abs(np.mean(value_ev[i][:l])) * np.sqrt(float(l))) for l in lags]
 
-        print('ACF errors: {}'.format(errors)) ###DEBUG
+        #print('ACF errors: {}'.format(errors)) ###DEBUG
 
         # Defining ACL as the smallest lag size L that: ACF(L)<= Err(L)
         # TODO could be done with interpolation of ACF for intermediate lag values
@@ -855,22 +856,23 @@ def plot_response_cuts(data, input_names, output_names, compare_vals=None, foldn
         qoi_stem_name= qoi_name + '_stem'
 
         #print([n_inputs, n_points, n_points_perdim, n_fixvals, n_plots, qoi_name]) ###DEBUG
+        print('n_inputs={0}, n_points={1}, n_ppdim={2}, n_fv={3}, n_pl={4}'.format(n_inputs, n_points, n_points_perdim, n_fixvals, n_plots)) ###DEBUG
         
         # Get unique values for every input dimension
         input_vals_unique = np.array([np.unique(data[i]) for i in input_names])
-        print("input_vals_unique={}".format(input_vals_unique)) ###DEBUG
+        #print("input_vals_unique={}".format(input_vals_unique)) ###DEBUG
     
         # A generator for numbers for input dimension numbers
         input_inds = range(n_inputs)
 
         fig, ax = plt.subplots(n_inputs, n_fixvals, 
-                            figsize=(40, 20)
+                            figsize=(60, 20)
                             )
 
         # if traces are passed, create same type of plot layout but with time traces 
         if traces is not None:
             fig_tr, ax_tr = plt.subplots(n_inputs, n_fixvals, 
-                                figsize=(50, 25)
+                                figsize=(75, 25)
                                         )
 
         # Iterate over all the input dimensions, selecting single one as a running variable
@@ -891,7 +893,6 @@ def plot_response_cuts(data, input_names, output_names, compare_vals=None, foldn
 
             # Iterate over the all combinations of input parameters values to be kept const for a cut
             for j_fixval in range(n_fixvals):
-                #print([i_ip, j_fixval]) ###DEBUG
 
                 # Choosing data for the cut 
         
@@ -905,7 +906,7 @@ def plot_response_cuts(data, input_names, output_names, compare_vals=None, foldn
                 
                 input_fixvals = input_fixvals_unique[j_fixval]
                 fixval_query = ''.join([n+'=='+str(v)+' & ' for (n,v) in zip(input_names_left, input_fixvals)])[:-3]
-                # TODO query using abs(x-x*)<e_tol           
+                # TODO query using abs(x-x*)<e_tol, or math.isclose() !           
     
                 #print([tot_ind, input_fixvals, fixval_query]) ###DEBUG            
 
@@ -927,7 +928,7 @@ def plot_response_cuts(data, input_names, output_names, compare_vals=None, foldn
                 y_stem= data_slice[qoi_stem_name].to_numpy()
                 inds  = data_slice.index.to_list()
 
-                print('inds : {0}'.format(inds)) ###DEBUG
+                #print('inds : {0}'.format(inds)) ###DEBUG
     
                 # Plotting part of iteration
 
@@ -939,7 +940,8 @@ def plot_response_cuts(data, input_names, output_names, compare_vals=None, foldn
                                             #fmt='-o', 
                                             uplims=False, lolims=False,
                                             label='Response for ({})->({}) for {}'.
-                                            format(running_ip_name, qoi_name, fixed_ip_val_str))
+                                                format(running_ip_name, qoi_name, fixed_ip_val_str)
+                                            )
         
                 ax[i_ip][j_fixval].set_xlabel(r'{}'.format(running_ip_name))
                 ax[i_ip][j_fixval].set_ylabel(r'{}'.format(qoi_name))
@@ -961,15 +963,24 @@ def plot_response_cuts(data, input_names, output_names, compare_vals=None, foldn
                     n = max([v.shape[-1] for v in traces])
                     ts = np.arange(n)
                      
-                    #ax_tr[i_ip][j_fixval].plot(ts, traces[i_ip*len(input_fixvals_unique)+j_fixval]) 
                     for k in inds:
-                    
-                        ax_tr[i_ip][j_fixval].plot(np.arange(len(traces[k][:])), traces[k][:],
-                                                   label='time trace for ({})->({}) for {}'.format(running_ip_name, qoi_name, fixed_ip_val_str))
 
+                        n_cur = len(traces[k][0])
 
-                        # TODO: plot time traces :
-                        #    the index is wrong -> get index from dataframe slice
+                        #print('trace passed to cut plot: {0}'.format(traces[k][:])) ###DEBUG
+                        #print('traces have len= {0}'.format(n_cur)) ###DEBUG
+
+                        ax_tr[i_ip][j_fixval].plot(np.arange(n_cur), traces[k][0][:],
+                                                   #label='time trace for ({})->({}) for {}'.format(running_ip_name, qoi_name, fixed_ip_val_str),
+                                                   label=r'{}'.format(fixed_ip_val_str),
+                                                  )
+
+                        ax_tr[i_ip][j_fixval].set_xlabel(r't.st. for {}'.format(running_ip_name))
+                        ax_tr[i_ip][j_fixval].set_ylabel(r'{}'.format(qoi_name))
+                        ax_tr[i_ip][j_fixval].set_title(r'{}'.format(fixed_ip_val_str), fontsize=6)
+                        
+                        ax_tr[i_ip][j_fixval].set_ylim(-5.E+5, 4.5E+6)
+                        #ax_tr[i_ip][j_fixval].legend(loc='best')
         
             #offset *= 2
             # Filter on dataframe could be completely replaces by an offseting for different chosen parameter        
@@ -979,12 +990,12 @@ def plot_response_cuts(data, input_names, output_names, compare_vals=None, foldn
         #fig.subplots_adjust(top=0.8)
 
         fig.savefig('scan_{0}_{1}.png'.format(qoi_name, foldname))
-        fig.close()
 
         if traces is not None:
             fig_tr.tight_layout()
             fig_tr.savefig('scan_traces_{0}_{1}.png'.format(qoi_name, foldname))
-            fig_tr.close()
+            
+        plt.close()
 
 def produce_stats_dataframes(runs_input_vals, val_trend_avg_s, val_std_s, stats_df, scan_df, 
                              n_lensample=1, runn=0, p='ti_transp', a='flux'):
@@ -1088,6 +1099,7 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
 
 
         # 1) If runforbatch, then csv are already in the folder, otherwise have to read CPO-s
+        time_start = time.time()
         if not runforbatch:
             # If asserets, then alway specify folders with original cpo files
             # Here are the possibilities where to look for the cpo containing folder:
@@ -1127,11 +1139,14 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
                 #                                         file_code_name=code_name, 
                 #                                         name_postfix='_'+mainfoldernum       
 
-                #TODO:
+                #TODO: 1) +
                 #      2) get rid of recurcive copy-ing in parent .sh file -> check if solution works
                 #      3) make responce cuts flexible: cases when sometimes there is one value per cut
 
+        print("time to load cpo files: {0} s".format(time.time()-time_start))
         # 3) Getting the input profiles values, primarily for the plot labels
+        time_start = time.time()
+
         pos_str_cpo_num = mainfoldernum.rfind('_')+1
         cpo_num = int(mainfoldernum[pos_str_cpo_num:]) # if the leaf folder is named [a+]_[d+]
         #cpo_num = int(foldername[foldername.rfind('/')+1:])
@@ -1148,14 +1163,15 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
 
         #TODO: take the internal campaign folder ID as input, and then load the SLURM id -> 
         # -> probably for that it is better to import EasyVVUQ and intilalise the campaign
-        # with the location of DB, 
-        # then use the [my_]campaign.campaign_db.[func-s]() to read stuff about runs
+        #     with the location of DB, 
+        #    then use the [my_]campaign.campaign_db.[func-s]() to read stuff about runs
         
         #runs_db_loc = "sqlite:///" + foldername + "/.."*7 + "/campaign.db"
         runs_db_loc = "sqlite:///" + "campaign_" + camp_id + "_" + str(mmiter_num) + ".db"
         runs_input_vals, runs_input_names = read_run_uq(runs_db_loc, 
                                                     workdir_camp_db) # test this function, at least manually  
-        print('runs_input_names={}'.format(runs_input_names)) ###DEBUG 
+        
+        #print('runs_input_names={}'.format(runs_input_names)) ###DEBUG 
         #TODO: check which DB is copied - no run_name are in default copied ones
         #TODO: gem_ti_transp_flux_evol_*_*_80.csv is not created apparently
            
@@ -1165,7 +1181,9 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
 
         alpha_wind = 0.3 # how much to discard, in fractions of readings
 
+        print("time to read and set-up basic values: {0} s".format(time.time()-time_start))
         # 4) Iterate over cartesian product of all profiles and their attributes
+
         for i,(p,a) in enumerate(itertools.product(profiles, attributes)):
 
             # After processing given profile/quantity we are not intersted in values
@@ -1175,6 +1193,7 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
             # 4.0) Assuming there are multiple ensembles of runs for this submission 
             #     (corresponding to a global iteration of UQ campaigns) read all the 'runs' of an ensemble 
             #     in a single list of arrays
+            time_start = time.time()
             
             #csv_file_name = code_name+'_'+p+'_'+a+'_evol_'+mainfoldernum+'.csv'
             for runn in runnum_list:
@@ -1182,17 +1201,20 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
                 val_ev_s.append(np.atleast_2d(np.genfromtxt(csv_file_name, delimiter=", ").T))     
             
             #TODO for some reason the previous line fails for (foldername='/ptmp/yyudin//VARY_1FT_GEM_NT_n2qks5e7/runs//cpo/1', runforbatch=1, coordnum=1, runnum=64, mainfoldernum='new_n2qks5e7_1')
-            print('val_ev_s[{}].shape={}'.format(i, val_ev_s[i].shape)); #print(val_ev_s) ###DEBUG
-
+        
+            print("time to read values from CSV files: {0} s".format(time.time()-time_start))
             # 4.1) Plot the read values, pass a list of array
-            
+            time_start = time.time()
+
             #profile_evol_plot([val_ev_s[i]], name=code_name+'_'+p+'_'+a+'_'+mainfoldernum)
             # modification: list of arrays is for different profile variations
             
             #labels = [str(r) for r in runnum_list]
             labels = ["".join([rin+'='+str(round(r[rin], 1))+"; " for rin in runs_input_names]) for r in runs_input_vals]
-             
+            
+            """ 
             profile_evol_plot(val_ev_s, labels=labels, name=code_name+'_'+p+'_'+a+'_'+mainfoldernum, alignment='start', vertline=alpha_wind*val_ev_s[0].shape[-1]) 
+            """
             
             #print('passes to plot: {}'.format(val_ev_s[0].shape)) ###DEBUG
             #print('before shape {}'.format(val_evname=code_name+'_'+p+'_'+a+'_'+mainfoldernum, alignment='start'_s[i].shape)) ###DEBUG
@@ -1219,7 +1241,9 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
             #print('sizes before and after windowing: {} and {} '.format(val_ev_s[0].shape, val_wind_s[0].shape)) ###DEBUG
             #print('val_wind len and element shape are {} and {}'.format(len(val_wind), val_wind[0].shape)) ### DEBUG
    
+            print("time to discard values, set up labels etc.: {0} s".format(time.time()-time_start))
             # 4.2) Calculate ACF for the values
+            time_start = time.time()
            
             lags_list = [2,4,8,16,32,48,64,96,128,160,256,512,1024,2048,4096] # [64,128,256]
             lags_list = [l for l in lags_list if l < val_wind_s[i].shape[-1]]
@@ -1252,24 +1276,29 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
                 val_ev_acf = val_wind_s[runn-1][0, int(ac_len[0]/2.):-1:int(ac_len[0])]
                 val_ev_acf_s.append(val_ev_acf)
 
-                print([ac_num[0], ac_len[0], val_wind_s[runn-1].shape, val_ev_acf.shape,]) ###DEBUG        
+                #print([ac_num[0], ac_len[0], val_wind_s[runn-1].shape, val_ev_acf.shape,]) ###DEBUG        
 
+            print("time to calculate autocorrelation time and effective sample: {0} s".format(time.time()-time_start))
             # 4.3) Plotting histograms and KDEs of the profile values evolution
+            time_start = time.time()
             #plot_coreprofval_dist(val_ev_s[i], name=p+'_'+a+'_'+mainfoldernum, discr_level=32)
             
             #for runn in range(len(runnum_list)):
             for runn in runnum_list:
-                
+                """
                 print('KDE for case #{0}'.format(runn)) 
                 
                 plot_coreprofval_dist([np.squeeze(val_wind_s[runn-1],0)],
                                       name=p+'_'+a+'_'+str(runn)+'_'+mainfoldernum, 
                                       discr_level=32)
-
+                """
                 #TODO: pass number of case to save different files
 
+            print("time to plot single histograms and KDEs: {0} s".format(time.time()-time_start))
             # 4.3.1) Plotting single plot with histograms, KDEs and distribution means
+            time_start = time.time()
 
+            """
             plot_coreprofval_dist(
                                   [np.squeeze(v, 0) for v in val_wind_s], 
                                   labels=labels, 
@@ -1277,16 +1306,19 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
                                   discr_level=32,
                                   forplot=False,
                                   )
+            """
 
+            print("time to plot global histogram and KDE: {0} s".format(time.time()-time_start))
             # 4.3.2) Plotting single plot with histograms including data from MFW production runs
-            
+            time_start = time.time()
+
             mfw_input_names = ['dTi', 'dTe', 'Ti', 'Te']
 
             mfw_data_file = 'AUG_mix-lim_gem_inoutput.txt' # 'AUG_gem_inoutput.txt'
             mfw_ft_s = [5, 6, 7]
 
             val_mwf = pd.read_table('../data/'+mfw_data_file, delimiter='  *', engine='python') 
-            val_mwf_s = [val_mwf['flux-Ti-ft'+str(mfw_ft)].to_numpy().reshape(1,-1) for mfw_ft in mfw_ft_s]
+            val_mwf_s = [val_mwf['cp-flux-Ti-ft'+str(mfw_ft)].to_numpy().reshape(1,-1) for mfw_ft in mfw_ft_s]
 
             mfw_input_refval_s = [[val_mwf[input_name+'-ft'+str(mfw_ft)].mean() for mfw_ft in mfw_ft_s] for input_name in mfw_input_names]
 
@@ -1308,6 +1340,7 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
             val_mwf_min = val_mwf_s[0].min()
             val_mwf_max = val_mwf_s[0].max()
 
+            print("time to compare with MFW production runs: {0} s".format(time.time()-time_start))
             # 4.4) Apply ARMA model
             """
             apply_arma(val)
@@ -1316,6 +1349,7 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
             # 4.5)  Apply different averaging methods and plot the results
             
             # 4.5.1) Calculating the mean of last *1-alpha* reads
+            time_start = time.time()
             
             #print('input names : {}'.format(runs_input_names)) ###DEBUG
             #print('inputs values : {}'.format(runs_input_vals)) ###DEBUG            
@@ -1346,7 +1380,7 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
                 val_std_acf_s.append(val_fluct_avg_acf)
             
                 n_lensample = val_trend_avg_acf_s[runn-1].shape[-1]
-                print('acf-corrected sample length: {0}'.format(n_lensample)) ###DEBUG
+                #print('acf-corrected sample length: {0}'.format(n_lensample)) ###DEBUG
 
                 scan_df, stats_df = produce_stats_dataframes(runs_input_vals,
                                                              val_trend_avg_s,
@@ -1359,10 +1393,14 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
             """ 
             profile_evol_plot(val_trend_avg_s, labels=labels, name='means_'+p+'_'+a+'_'+mainfoldernum)
             """
+
             stats_df.to_csv('stats_main_'+p+'_'+a+'_'+mainfoldernum+'.csv') 
             scan_df.to_csv('resuq_main_'+p+'_'+a+'_'+mainfoldernum+'.csv')    
             
+            print("time to calculate and save basic moments: {0} s".format(time.time()-time_start))
             # 4.5.1'') Plot parameter dependency for single parameters
+            time_start = time.time()
+
             for param in runs_input_names_new:
                 # For Pandas query: make sure input columns are floats
                 scan_df[param] = scan_df[param].astype('float')
@@ -1376,11 +1414,12 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
                                [p+'_'+a],
                                compare_vals=compare_vals_mfw, 
                                foldname=mainfoldernum,
-                               traces=val_wind_s,
+                               traces=val_ev_s, #val_wind_s,
                               )
 
             print('plotting cuts done')
 
+            print("time to plot scans for different parameters: {0} s".format(time.time()-time_start))
             # 4.5.2) Calcualting linear regression against time fit for the last window:
             # Apply LR to get form of Q=a*t+b
             val_trend_lr_s = []
@@ -1464,7 +1503,7 @@ if __name__ == '__main__':
         # Run main with default value for all files in the folder, but considering there might be a csv composed already
         main(foldername=sys.argv[1], runforbatch=int(sys.argv[2]))
     elif len(sys.argv) == 4:
-        # Run main for all files in the folder, either read values from csv (runforbatch), and for  multiple flux tubes (coord)
+        # Run main for all files in the folder, either read values from csv (runforbatch), and for multiple flux tubes (coord)
         main(foldername=sys.argv[1], runforbatch=int(sys.argv[2]), coordnum=int(sys.argv[3]))
     elif len(sys.argv) == 5:
         # Run main for all files in the folder, either read values from csv (runforbatch), 
