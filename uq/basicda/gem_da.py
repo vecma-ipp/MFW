@@ -281,6 +281,7 @@ def profile_evol_plot(value_s, labels=['orig'], file_names=[], name='gem_ti_flux
 def plot_coreprofval_dist(value_spw, labels=[], name='ti', discr_level=64, forplot=False):
     """
     """
+    time_loc = time.time()
     #print('value_spw'); print(value_spw) ### DEBUG
      
     # Number of flux tube or case
@@ -311,6 +312,8 @@ def plot_coreprofval_dist(value_spw, labels=[], name='ti', discr_level=64, forpl
     # Plot histograms of values for every flux tube ot case
     fig, ax = plt.subplots()
 
+    print('--time in distribution plotting: before histograms: {0}'.format(time.time()-time_loc))
+    time_loc = time.time()
     for i in range(nftc):
 
         n = len(value_spw[i][:])
@@ -321,7 +324,10 @@ def plot_coreprofval_dist(value_spw, labels=[], name='ti', discr_level=64, forpl
     plt.savefig('hist_' + name + '.png', dpi=1200)
     plt.close()
 
+    print('--time in distribution plotting: histograms before KDE: {0}'.format(time.time()-time_loc))
+    
     # Compute and plot KDE fit
+    """
     n_kde_binning = 256
     x_min = min([min(value_spw[i]) for i in range(nftc)])
     x_max = max([max(value_spw[i]) for i in range(nftc)])
@@ -330,6 +336,8 @@ def plot_coreprofval_dist(value_spw, labels=[], name='ti', discr_level=64, forpl
     fig, ax = plt.subplots()
 
     for i in range(nftc):
+
+        time_loc = time.time()    
 
         kde = KDE(kernel='gaussian', bandwidth=(max(value_spw[i]) - min(value_spw[i])) / discr_level). \
                   fit(value_spw[i][:, np.newaxis])
@@ -350,11 +358,14 @@ def plot_coreprofval_dist(value_spw, labels=[], name='ti', discr_level=64, forpl
             ax.invert_xaxis()
             #ax.set_xlim(left=0.)
             #ax.view_init(0, 90)
+
+        print('--time in distribution plotting: KDE for {1}: {0}'.format(time.time()-time_loc, i))
     
     plt.legend(loc='best' if len(labels) < 16 else (-0.2, -0.2),
                ncol=int(np.sqrt(len(labels))) if len(labels) < 25 else 4,)
     plt.savefig('pdf_' + name + '.png', dpi=1200)
     plt.close()
+    """
 
     # Print main moments
     mom_len = 5
@@ -872,7 +883,7 @@ def plot_response_cuts(data, input_names, output_names, compare_vals=None, foldn
         # if traces are passed, create same type of plot layout but with time traces 
         if traces is not None:
             fig_tr, ax_tr = plt.subplots(n_inputs, n_fixvals, 
-                                figsize=(75, 25)
+                                figsize=(125, 25)
                                         )
 
         # Iterate over all the input dimensions, selecting single one as a running variable
@@ -945,7 +956,7 @@ def plot_response_cuts(data, input_names, output_names, compare_vals=None, foldn
         
                 ax[i_ip][j_fixval].set_xlabel(r'{}'.format(running_ip_name))
                 ax[i_ip][j_fixval].set_ylabel(r'{}'.format(qoi_name))
-                ax[i_ip][j_fixval].set_title(r'{}'.format(fixed_ip_val_str), fontsize=10)
+                ax[i_ip][j_fixval].set_title(r'{}'.format(fixed_ip_val_str), fontsize=7)
         
                 #ax[i_ip][j_fixval].set_ylim(1.5E+6, 3.8E+6) # TODO make limits variable
                 ax[i_ip][j_fixval].set_ylim(-5.E+5, 4.5E+6)
@@ -975,9 +986,9 @@ def plot_response_cuts(data, input_names, output_names, compare_vals=None, foldn
                                                    label=r'{}'.format(fixed_ip_val_str),
                                                   )
 
-                        ax_tr[i_ip][j_fixval].set_xlabel(r't.st. for {}'.format(running_ip_name))
-                        ax_tr[i_ip][j_fixval].set_ylabel(r'{}'.format(qoi_name))
-                        ax_tr[i_ip][j_fixval].set_title(r'{}'.format(fixed_ip_val_str), fontsize=6)
+                        ax_tr[i_ip][j_fixval].set_xlabel(r't.st. for {0}, runs#{1}'.format(running_ip_name, inds))
+                        ax_tr[i_ip][j_fixval].set_ylabel(r'{0}'.format(qoi_name))
+                        ax_tr[i_ip][j_fixval].set_title(r'{0}'.format(fixed_ip_val_str), fontsize=7)
                         
                         ax_tr[i_ip][j_fixval].set_ylim(-5.E+5, 4.5E+6)
                         #ax_tr[i_ip][j_fixval].legend(loc='best')
@@ -1041,23 +1052,70 @@ def produce_stats_dataframes(runs_input_vals, val_trend_avg_s, val_std_s, stats_
 
     return scan_df, stats_df
 
+def discontinuity_check(vals, tol=3E-2, n_thr=0):
+    """
+    Checks if for a particular time series there is a time stamp for which next value changed more than by some tolerance factor.
+    For each such discontinuity looks for another time series among the list which could fit as a continuation of the studied time series
+    """
+    
+    n = len(vals)
+    
+    for i in range(n):
+
+        m = len(vals[i][0])
+        
+        # Numbering is from 0 to m-1, gradient is gT_t = X_t+1 - X_t
+        grad = vals[i][0][1:] - vals[i][0][:-1]
+        # Relative gradient is gTrel_t = (X_t+1 - X_t) / X_t
+        relgrad = np.divide(grad, vals[i][0][:-1])
+        
+        # Indices of array where relative gradient is larger then tolerance
+        ts = np.where(abs(relgrad) > tol)[0].tolist()
+        #ts = np.where(abs(relgrad) > tol or abs(grad) > 3E5)[0].tolist()
+        n_disc_s = len(ts)
+        print("For run ind#{0} there are {1} discontinuities".format(i, n_disc_s))
+
+        #print('vals of len {1}: {0}'.format(vals[i][0], n))
+        #print('relgrad: {}'.format(relgrad)) ###DEBUG
+        
+        for t in ts:
+            cands = []
+
+            for j in range(n):
+
+                if np.divide(abs(vals[j][0][t+1] - vals[i][0][t]), vals[i][0][t]) < tol/1. :
+                    cands.append(j)
+
+            print("For run ind:#{0} there is a discontinuity at t={1}. Most likely candidates for continuation: {2}".format(i, t+n_thr, cands))
+
+    cands_glob = [
+            [
+                [
+                    np.where(np.divide(abs(vals[j][0][t+1] - vals[i][0][t]), vals[i][0][t]) < tol)[0].tolist() for j in range(n)
+                ] for t in np.where(np.divide(abs(vals[i][0][1:] - vals[i][0][:-1]), vals[i][0][1:]) > tol)[0].tolist()
+            ] for i in range(n)
+        ]
+    
+    return cands_glob
+
+
 #################################################l
 #### MAIN FUNCTION: PIPELINE OF PROCESSING ######
 #################################################
 
-def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernum='false'):
+def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernum=None):
     """
     Parameters:
       foldername: relative path to folder where to read cpo files from
       runforbatch: if False then first read values from cpo files, if True then look for a csv file
       coordnum: number of coordinate values (flux tubes) to consider
       runnum: number of different variants of run (e.g. profile shapes) to consider
-      manfoldernum: for naming, if false then use cpo folder
+      manfoldernum: for naming, if None then use cpo folder
     """
 
     print('\n > Starting a new postprocessing sequence!!! \n')
 
-    if mainfoldernum == 'false':
+    if mainfoldernum is None:
         mainfoldernum = foldername # rather bad, fails if foldername is composed
 
     workdir = os.path.join(os.getenv('SCRATCH'),)
@@ -1069,14 +1127,19 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
     #   NB2: order of runs in the DB and in the postprocessing script should be the same
     runfolder_list = [f[0] for f in os.walk(foldername) if not f[1]]
     runfolder_list.sort(key=lambda dir: int(dir[dir.rfind('_')+1:]))
+    runfolder_list_numbers = [int(r[r.rfind('_')+1:]) for r in runfolder_list]
 
     #runfolder_list_filtered = [f for f in runfolder_list if (int(f[f.rfind('_')+1:]) if f.rfind('_')!=-1 else 0) in runnum_list]
     runfolder_list_filtered = [f for f in runfolder_list if int(f[f.rfind('_')+1:]) in runnum_list]
+    runnum_list_filtered = [r for r in runnum_list if r in runfolder_list_numbers]
+
+    print('The list of runs found from disk and the list of assumed ones are equal: {0}'.format(runnum_list==runnum_list_filtered)) ###DEBUG
 
     print('foldername={}'.format(foldername)) ###DEBUG
-    print('runnum_list is : {}'.format(runnum_list)) ###DEBUG
-    print('folder of original runs: {}'.format(runfolder_list)) ###DEBUG
-    print('and modified: {}'.format(runfolder_list_filtered)) ###DEBUG
+    print('runnum_list of len {1} is : {0}'.format(runnum_list, len(runnum_list))) ###DEBUG
+    print('and modified of len {1}: {0}'.format(runnum_list_filtered, len(runnum_list_filtered))) ###DEBUG
+    #print('folder list of len {1} of original runs: {0}'.format(runfolder_list, len(runfolder_list))) ###DEBUG
+    #print('and modified of len {1}: {0}'.format(runfolder_list_filtered, len(runfolder_list_filtered))) ###DEBUG
     #TODO: check the order of folders and the order of runs!
 
     code_names = ['gem',
@@ -1203,6 +1266,7 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
             #TODO for some reason the previous line fails for (foldername='/ptmp/yyudin//VARY_1FT_GEM_NT_n2qks5e7/runs//cpo/1', runforbatch=1, coordnum=1, runnum=64, mainfoldernum='new_n2qks5e7_1')
         
             print("time to read values from CSV files: {0} s".format(time.time()-time_start))
+
             # 4.1) Plot the read values, pass a list of array
             time_start = time.time()
 
@@ -1237,11 +1301,20 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
             # 4.1') Define the window to discard intial ramp-up and overshooting phase
             val = val_ev_s[i] # single series for a profile+attribute, shouldn't be used for now...
 
-            val_wind_s = [val[:,int(alpha_wind*val.shape[-1]):] for val in val_ev_s]
+            n_thrown_vals = int(alpha_wind*val.shape[-1])
+            val_wind_s = [val[:,n_thrown_vals:] for val in val_ev_s]
             #print('sizes before and after windowing: {} and {} '.format(val_ev_s[0].shape, val_wind_s[0].shape)) ###DEBUG
             #print('val_wind len and element shape are {} and {}'.format(len(val_wind), val_wind[0].shape)) ### DEBUG
    
             print("time to discard values, set up labels etc.: {0} s".format(time.time()-time_start))
+            
+            # 4.1'') Check if there are any discontinuities in the evolution
+            time_start = time.time()
+
+            discontinuity_check(val_wind_s, n_thr=n_thrown_vals)
+
+            print("time to go over time traces and look for discontinuities: {0} s".format(time.time()-time_start))
+            
             # 4.2) Calculate ACF for the values
             time_start = time.time()
            
@@ -1268,7 +1341,7 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
                 ac_len_s.append(ac_len)
                 ac_num_s.append(ac_num)
                 #TODO: acf function assumes multiple cases are passed and returns list - ..[0] is a workaround, change
-                print('Approximate ACL: {0}; and effective number size is {1}'.format(ac_len, ac_num))
+                print('Approximate ACL: {0}; and effective number size is {1}'.format(ac_len[0], ac_num[0]))
                  
                 # Populate new array with reading from the code-produced values taken per a ACL window
                 # Take one reading for a miidle of ACL
@@ -1318,10 +1391,14 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
             mfw_ft_s = [5, 6, 7]
 
             val_mwf = pd.read_table('../data/'+mfw_data_file, delimiter='  *', engine='python') 
+            print("-time to load MFW data and set-up stuff: {0} s".format(time.time()-time_start))
+            time_start_tmp = time.time()
+            
             val_mwf_s = [val_mwf['cp-flux-Ti-ft'+str(mfw_ft)].to_numpy().reshape(1,-1) for mfw_ft in mfw_ft_s]
-
             mfw_input_refval_s = [[val_mwf[input_name+'-ft'+str(mfw_ft)].mean() for mfw_ft in mfw_ft_s] for input_name in mfw_input_names]
-
+            print("-time to select right columns: {0} s".format(time.time()-time_start_tmp))
+            time_start_tmp = time.time()
+            
             #print(' Shapes of old and new arrays {0} {1}'.format(val_wind_s[0].shape, val_mwf.shape)) ### DEBUG
             #print(' MFW input values are dti={0} dte={1} ti={2} te={3}'.format(tiddrho_mwf_refval_s[0], teddrho_mwf_refval_s[0], ti_mwf_refval_s[0], te_mwf_refval_s[0])) ### DEBUG
             print('Mean of MFW ft5 QTi={0}'.format(val_mwf['cp-flux-Ti-ft5'].mean())) ###DEBUG
@@ -1335,7 +1412,8 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
                                     discr_level=32,
                                     forplot=False,
                                  )
-            
+
+            print("-time to plot the MFW histograms only: {0} s".format(time.time()-time_start_tmp))            
             val_mwf_mean = val_mwf_s[0].mean()
             val_mwf_min = val_mwf_s[0].min()
             val_mwf_max = val_mwf_s[0].max()
