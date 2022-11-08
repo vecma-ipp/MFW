@@ -988,7 +988,7 @@ def plot_response_cuts(data, input_names, output_names, compare_vals=None, foldn
 
                         ax_tr[i_ip][j_fixval].set_xlabel(r't.st. for {0}, runs#{1}'.format(running_ip_name, inds))
                         ax_tr[i_ip][j_fixval].set_ylabel(r'{0}'.format(qoi_name))
-                        ax_tr[i_ip][j_fixval].set_title(r'{0}'.format(fixed_ip_val_str), fontsize=7)
+                        ax_tr[i_ip][j_fixval].set_title(r'{0}'.format(fixed_ip_val_str), fontsize=9)
                         
                         ax_tr[i_ip][j_fixval].set_ylim(-5.E+5, 4.5E+6)
                         #ax_tr[i_ip][j_fixval].legend(loc='best')
@@ -1022,13 +1022,28 @@ def produce_stats_dataframes(runs_input_vals, val_trend_avg_s, val_std_s, stats_
    
     #print('acf-corrected sample length: {0}'.format(n_lensample)) ###DEBUG
 
-    stats_df = stats_df.append(#(stats_df,
-                          pd.Series(
-                               data={'mean': val_trend_avg_s[runn-1][0][0],
-                                     'std': val_std_s[runn-1][0][0]},
-                               name=runn-1)
-                         #), axis=1
-                        ) # probably a bad workaround
+    # stats_df = stats_df.append(#(stats_df,
+    #                       pd.Series(
+    #                            data={'mean': val_trend_avg_s[runn-1][0][0],
+    #                                  'std': val_std_s[runn-1][0][0]},
+    #                            name=runn-1)
+    #                      #), axis=1
+    #                     ) # probably a bad workaround
+
+    stats_df = pd.concat([
+                        stats_df,
+                        pd.Series(
+                            data={'mean': val_trend_avg_s[runn-1][0][0],
+                                  'std': val_std_s[runn-1][0][0]},
+                            name=runn-1,
+                                 ).to_frame().T,
+                             ],
+                         #axis=0,
+                         #ignore_index=True,
+                        )
+
+    #print('stats_df: \n {0}'.format(stats_df)) ###DEBUG
+    #print('stats_df_new: \n {0}'.format(stats_df_new)) ###DEBUG
 
     scan_data = runs_input_vals[runn-1]
     scan_data[p+'_'+a] = val_trend_avg_s[runn-1][0][0]
@@ -1040,59 +1055,99 @@ def produce_stats_dataframes(runs_input_vals, val_trend_avg_s, val_std_s, stats_
     for k,v in scan_data.items():
         scan_data_new[k.replace('.', '_')] = v
 
-    scan_df = scan_df.append(#(scan_df,
-                         pd.Series(
-                              data=scan_data_new,
-                              name=runn-1,
-                              #index=runn-1,
-                                  )
-                        #), axis=1
-                       )
-    #TODO: name is NaN; and index is saved in csv but not recognised in dataframe
+    # scan_df = scan_df.append(#(scan_df,
+    #                      pd.Series(
+    #                           data=scan_data_new,
+    #                           name=runn-1,
+    #                           #index=runn-1,
+    #                               )
+    #                     #), axis=1
+    #                    )
+    # #TODO: name is NaN; and index is saved in csv but not recognised in dataframe
+
+    scan_df = pd.concat([
+                        scan_df,
+                        pd.Series(
+                               data=scan_data_new,
+                               name=runn-1,
+                               #index={runn-1},
+                                 ).to_frame().T,
+                            ],
+                         #axis=0,
+                         #ignore_index=True,
+                        )
+
+    #print('scan_df: \n {0}'.format(scan_df)) ###DEBUG
+    #print('scan_df_new: \n {0}'.format(scan_df_new)) ###DEBUG
 
     return scan_df, stats_df
 
-def discontinuity_check(vals, tol=3E-2, n_thr=0):
+def discontinuity_check(vals, reltol=5E-2, abstol=10E4, disc_criterion='combined', n_thr=0):
     """
+    Function to check for errors of reading different run cases and error in run numbering
     Checks if for a particular time series there is a time stamp for which next value changed more than by some tolerance factor.
     For each such discontinuity looks for another time series among the list which could fit as a continuation of the studied time series
     """
     
     n = len(vals)
+
+    print('Using {0} as a criterion to find discontinuities in quantity evolution'.format(disc_criterion))
     
     for i in range(n):
 
         m = len(vals[i][0])
         
-        # Numbering is from 0 to m-1, gradient is gT_t = X_t+1 - X_t
-        grad = vals[i][0][1:] - vals[i][0][:-1]
-        # Relative gradient is gTrel_t = (X_t+1 - X_t) / X_t
-        relgrad = np.divide(grad, vals[i][0][:-1])
+        # Numbering is from 0 to m-2, gradient is gX^f_t = X_t+1 - X_t
+        diff = vals[i][0][1:] - vals[i][0][:-1]
+        # Relative gradient is gXrel^f_t = (X_t+1 - X_t) / X_t
+        grad = np.divide(diff, vals[i][0][:-1])
+
+        # Array of second derivatives: interested in gX^f_t+1 - gX^b_t = X_t+2 - X_t+1 - X_t + X_t-1 
+        # Numeration from 1 to m-3
+        #second_der = vals[i][0][2:] + vals[i][0][:-2] - 2*vals[i][0][1:-1] # first-order Laplacian without prefactor
+        second_diff = vals[i][0][3:] - vals[i][0][2:-1] - vals[i][0][1:-2] + vals[i][0][:-3]
+        rel_second_diff = np.divide(second_diff, vals[i][0][1:-2])
         
         # Indices of array where relative gradient is larger then tolerance
-        ts = np.where(abs(relgrad) > tol)[0].tolist()
-        #ts = np.where(abs(relgrad) > tol or abs(grad) > 3E5)[0].tolist()
+        if disc_criterion == 'gradient':
+            ts = np.where(abs(grad) > reltol)[0].tolist() #TODO works badly when function growth quickly
+        elif disc_criterion == 'absolute_diff':
+            ts = np.where(abs(diff) > abstol)[0].tolist() #TODO make tolerance variable
+        elif disc_criterion == 'rel_second_diff':
+            ts = np.where(abs(rel_second_diff) > reltol)[0].tolist()
+            ts = [t+1 for t in ts]
+        else: # disc_criterion == 'combined':
+            ts1 = np.where(abs(rel_second_diff) > reltol)[0].tolist()
+            ts1 = [t+1 for t in ts1]
+            ts2 = np.where(abs(diff) > abstol)[0].tolist()
+            
+            #ts = [t for t in ts1 if t in ts2] # choosing an intersection of 'lists'
+            ts = ts1 + [t for t in ts2 if t not in ts1] # choosing a union of 'lists'
+
         n_disc_s = len(ts)
         print("For run ind#{0} there are {1} discontinuities".format(i, n_disc_s))
 
-        #print('vals of len {1}: {0}'.format(vals[i][0], n))
+        #print('vals of len {1}: {0}'.format(vals[i][0], n)) ###DEBUG
         #print('relgrad: {}'.format(relgrad)) ###DEBUG
         
+        # Looking for such other time series, for which at the found timestamps values where close to the one in the current time series 
         for t in ts:
             cands = []
 
             for j in range(n):
 
-                if np.divide(abs(vals[j][0][t+1] - vals[i][0][t]), vals[i][0][t]) < tol/1. :
+                # Currently using relative gradient criterion to found potential mapping
+                if np.divide(abs(vals[j][0][t+1] - vals[i][0][t]), vals[i][0][t]) < reltol/1. :
                     cands.append(j)
 
-            print("For run ind:#{0} there is a discontinuity at t={1}. Most likely candidates for continuation: {2}".format(i, t+n_thr, cands))
+            print("For run ind#{0} there is a discontinuity at t={1} with original value of {3:.2f}. Most likely candidates for continuation have indices: {2}".
+                format(i, t+n_thr, cands, vals[i][0][t]))
 
     cands_glob = [
             [
                 [
-                    np.where(np.divide(abs(vals[j][0][t+1] - vals[i][0][t]), vals[i][0][t]) < tol)[0].tolist() for j in range(n)
-                ] for t in np.where(np.divide(abs(vals[i][0][1:] - vals[i][0][:-1]), vals[i][0][1:]) > tol)[0].tolist()
+                    np.where(np.divide(abs(vals[j][0][t+1] - vals[i][0][t]), vals[i][0][t]) < reltol)[0].tolist() for j in range(n)
+                ] for t in np.where(np.divide(abs(vals[i][0][1:] - vals[i][0][:-1]), vals[i][0][1:]) > reltol)[0].tolist()
             ] for i in range(n)
         ]
     
@@ -1311,7 +1366,7 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
             # 4.1'') Check if there are any discontinuities in the evolution
             time_start = time.time()
 
-            discontinuity_check(val_wind_s, n_thr=n_thrown_vals)
+            discontinuity_check(val_wind_s, disc_criterion='combined', n_thr=n_thrown_vals)
 
             print("time to go over time traces and look for discontinuities: {0} s".format(time.time()-time_start))
             
