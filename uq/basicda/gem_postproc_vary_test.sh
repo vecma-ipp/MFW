@@ -174,8 +174,11 @@ if [ "${RUN_WITH_SAVE}" -eq 1 ]; then
 
   mv ../*.png ${UQCAMPDIR}/
   mv ../*.txt ${UQCAMPDIR}/
-  cp ../*.csv ${UQCAMPDIR}/
-  mv ../*.csv ./
+  mv ../resuq*.csv ${UQCAMPDIR}/
+  mv ../stat*.csv ${UQCAMPDIR}/
+  cp ../gem*.csv ${UQCAMPDIR}/
+  
+  mv ../gem*.csv ./
 
   # Sort files into folder by quantity, number of run, type of file -> make sure the file is in folder and the ranges are set up!
   cp ../sort_files.sh ${UQCAMPDIR}/
