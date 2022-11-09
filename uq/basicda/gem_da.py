@@ -31,7 +31,8 @@ from ascii_cpo import read
 sys.path.append('..')
 import base
 
-# imports (and set-up) for debugging
+# Imports (and set-up) for debugging
+#import matplotlib.font_manager as font_manager
 import pprint
 from IPython.core import ultratb
 sys.excepthook = ultratb.FormattedTB(mode='Verbose', color_scheme='Linux', call_pdb=False)
@@ -877,13 +878,13 @@ def plot_response_cuts(data, input_names, output_names, compare_vals=None, foldn
         input_inds = range(n_inputs)
 
         fig, ax = plt.subplots(n_inputs, n_fixvals, 
-                            figsize=(60, 20)
+                            figsize=(100, 20)
                             )
 
         # if traces are passed, create same type of plot layout but with time traces 
         if traces is not None:
             fig_tr, ax_tr = plt.subplots(n_inputs, n_fixvals, 
-                                figsize=(125, 25)
+                                figsize=(175, 25)
                                         )
 
         # Iterate over all the input dimensions, selecting single one as a running variable
@@ -956,7 +957,7 @@ def plot_response_cuts(data, input_names, output_names, compare_vals=None, foldn
         
                 ax[i_ip][j_fixval].set_xlabel(r'{}'.format(running_ip_name))
                 ax[i_ip][j_fixval].set_ylabel(r'{}'.format(qoi_name))
-                ax[i_ip][j_fixval].set_title(r'{}'.format(fixed_ip_val_str), fontsize=7)
+                ax[i_ip][j_fixval].set_title(r'{}'.format(fixed_ip_val_str), fontsize=6)
         
                 #ax[i_ip][j_fixval].set_ylim(1.5E+6, 3.8E+6) # TODO make limits variable
                 ax[i_ip][j_fixval].set_ylim(-5.E+5, 4.5E+6)
@@ -978,12 +979,15 @@ def plot_response_cuts(data, input_names, output_names, compare_vals=None, foldn
 
                         n_cur = len(traces[k][0])
 
+                        x_io_val = data[running_ip_name].iloc[k]
+                        x_io_val_str = '{0}={1}'.format(running_ip_name, x_io_val)
+
                         #print('trace passed to cut plot: {0}'.format(traces[k][:])) ###DEBUG
                         #print('traces have len= {0}'.format(n_cur)) ###DEBUG
 
                         ax_tr[i_ip][j_fixval].plot(np.arange(n_cur), traces[k][0][:],
                                                    #label='time trace for ({})->({}) for {}'.format(running_ip_name, qoi_name, fixed_ip_val_str),
-                                                   label=r'{}'.format(fixed_ip_val_str),
+                                                   label=r'{}'.format(x_io_val_str),
                                                   )
 
                         ax_tr[i_ip][j_fixval].set_xlabel(r't.st. for {0}, runs#{1}'.format(running_ip_name, inds))
@@ -991,7 +995,7 @@ def plot_response_cuts(data, input_names, output_names, compare_vals=None, foldn
                         ax_tr[i_ip][j_fixval].set_title(r'{0}'.format(fixed_ip_val_str), fontsize=9)
                         
                         ax_tr[i_ip][j_fixval].set_ylim(-5.E+5, 4.5E+6)
-                        #ax_tr[i_ip][j_fixval].legend(loc='best')
+                        ax_tr[i_ip][j_fixval].legend(loc='best', prop={'size':8})
         
             #offset *= 2
             # Filter on dataframe could be completely replaces by an offseting for different chosen parameter        
@@ -1108,7 +1112,7 @@ def discontinuity_check(vals, reltol=5E-2, abstol=10E4, disc_criterion='combined
         second_diff = vals[i][0][3:] - vals[i][0][2:-1] - vals[i][0][1:-2] + vals[i][0][:-3]
         rel_second_diff = np.divide(second_diff, vals[i][0][1:-2])
         
-        # Indices of array where relative gradient is larger then tolerance
+        # Indices of array where gradient (or other studied quantity) is larger then tolerance
         if disc_criterion == 'gradient':
             ts = np.where(abs(grad) > reltol)[0].tolist() #TODO works badly when function growth quickly
         elif disc_criterion == 'absolute_diff':
@@ -1136,13 +1140,14 @@ def discontinuity_check(vals, reltol=5E-2, abstol=10E4, disc_criterion='combined
 
             for j in range(n):
 
-                # Currently using relative gradient criterion to found potential mapping
+                # Currently using gradient criterion to found potential mapping
                 if np.divide(abs(vals[j][0][t+1] - vals[i][0][t]), vals[i][0][t]) < reltol/1. :
                     cands.append(j)
 
             print("For run ind#{0} there is a discontinuity at t={1} with original value of {3:.2f}. Most likely candidates for continuation have indices: {2}".
                 format(i, t+n_thr, cands, vals[i][0][t]))
 
+    # NB!: here considers only gradient condition
     cands_glob = [
             [
                 [
