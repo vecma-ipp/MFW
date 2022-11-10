@@ -131,7 +131,7 @@ fi
 #NOTE: the call of postrpocessing scripts is moved to the SLURM submission
 echo "Now postprocessing for campaign "${PREVID}
 cd basicda
-./gem_postproc_vary_test.sh ${FRUN} ${ROOTCAMPDIR} 1 1 ${RUNRANGE} 1 1
+./gem_postproc_vary_test.sh ${FRUN} ${ROOTCAMPDIR} 1 1 ${RUNRANGE} 1 0
 cd ..
 
 FRUN=$((${FRUN}+1))
@@ -154,7 +154,7 @@ for n in `seq ${FRUN} ${LASTRUN}`; do
     #NOTE: in principle the postprocessing script is called in SLURM submission, but if the argument (run number) is correct, postprocessing should be idempotent
     echo "Now postprocessing for campaign "${PREVID}
     cd basicda
-    ./gem_postproc_vary_test.sh ${n} ${ROOTCAMPDIR} 1 1 ${RUNRANGE} 1 1
+    ./gem_postproc_vary_test.sh ${n} ${ROOTCAMPDIR} 1 1 ${RUNRANGE} 1 0
     cd ..
 
     PREVID=${CURID}

@@ -30,7 +30,7 @@ RUNRANGE=${5:-4} #16
 # True if first the script should be run for the last 'macroiteration'
 RUN_NOT_ONLY_ALL=${6:-1}
 
-# True if the simulation data has to read from .CSV files
+# True if the simulation data has to be read from .CSV files
 READ_FROM_CSV=${7:-1}
 
 #DIR='/marconi_scratch/userexternal/yyudin00/VARY_1FT_GEM_NT_qairnbbz' # first run of 16 GEM cases in a script, n_it<=500
