@@ -4,7 +4,7 @@ import pandas as pd
 
 from ascii_cpo import read
 #import easymfw.utils.io_tools
-#TODO import walklevel and read_sim_csv properly
+from basicda.da_utils import walklevel, read_sim_csv
 
 import matplotlib
 matplotlib.use('Agg')
@@ -361,7 +361,7 @@ def deriv(prof, delta):
 
 ###---------------------------------------------------------
 	
-# ft1_indx = 69 # 61
+ft1_indx = 68 # 61
 #
 # scratch_folder = "/marconi_scratch/userexternal/yyudin00/"
 # #basefolder = "/ptmp/yyudin/UQ_GEM0_wvkryt88_sequential/runs/"
@@ -412,11 +412,13 @@ def deriv(prof, delta):
 #folder8ftrun = os.path.join(scratch_folder, "gem08ftuq_pce_v0ij1gtr") # a 8ft gem0 campaing on ...10.2020
 
 # Plot profile variations vreated by EasyVVUQ encoder
+"""
 scratch_folder = "/cobra/ptmp/yyudin/"
 #folder4 = os.path.join(scratch_folder, "VARY_1FT_GEM_NT_1wu9k2wa")
 #plot_run_profiles(basefolder=folder4, name="_gem_aug_1ft_4_", nruns=4, targind=68)
 folder16 = os.path.join(scratch_folder, "VARY_1FT_GEM_NT_o9212oqk")
 plot_run_profiles(basefolder=folder16, name="_gem_aug_1ft_16_", nruns=16, targind=68)
+"""
 
 #num = 2047 
 #plot_prof(get_te(folder8ftrun+'/runs/Run_'+str(num)+'/gem0_coreprof_in.cpo'), np.linspace(0,1,100), 'prof_8ftrun_at_'+str(8))
@@ -429,25 +431,37 @@ prof_file = "ets_coreprof_in.cpo"
 prof_file_path = os.path.join(exp_folder, prof_file)
 rho = np.linspace(0, 100, 100)
 prof_te = get_te(prof_file_path)
-# #print(rho)
 # plot_prof(prof_te, rho, 'te_aug6')
 prof_ti =  get_ti(prof_file_path)
 prof_gradte = get_tegrad(prof_file_path)
 prof_gradti = get_tigrad(prof_file_path)
+"""
 profs = [prof_te, prof_ti, prof_gradte, prof_gradti]
 #prlabels = ['Te', 'Ti', '$grad Te$', 'grad Ti']
 prlabels = [r'$T_{e}$', r'$T_{i}$', r'$\nabla T_{e}$', r'$\nabla T_{i}$']
 plot_prof_all(profs, rho, 'aug6_r_new', prlabels)
-
+"""
+print(' MFW input values are dti={0} dte={1} ti={2} te={3}'.
+        format(prof_gradti[ft1_indx], prof_gradte[ft1_indx], prof_ti[ft1_indx], prof_te[ft1_indx]))
 
 """
 exp_folder1 = "../workflows/AUG_28906_5"
-prof_file_path2 = os.path.join(exp_folder1, prof_file)
+prof_file_path1 = os.path.join(exp_folder1, prof_file)
+prof_te1 = get_te(prof_file_path1)
+prof_ti1 = get_ti(prof_file_path1)
+profs1 = [prof_te, prof_ti, prof_te1, prof_ti1]
+prlabels1 = ['te_rst', 'ti_rst', 'te_org', 'ti_org']
+plot_prof_all(profs1, rho, 'core6vs5_new', prlabels1)
+"""
+
+"""
+exp_folder2 = "../workflows/AUG_28906_6_8ft_restart"
+prof_file_path2 = os.path.join(exp_folder2, prof_file)
 prof_te2 = get_te(prof_file_path2)
 prof_ti2 = get_ti(prof_file_path2)
+prlabels2 = ['te_6', 'ti_6', 'te_rst', 'ti_rst']
 profs2 = [prof_te, prof_ti, prof_te2, prof_ti2]
-prlabels2 = ['te_rst', 'ti_rst', 'te_org', 'ti_org']
-plot_prof_all(profs2, rho, 'core6vs5_new', prlabels2)
+plot_prof_all(profs2, rho, 'core6vsRST', prlabels2)
 """
 
 # print(prof_gradte[65:73])

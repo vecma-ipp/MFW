@@ -1122,7 +1122,7 @@ def discontinuity_check(vals, reltol=5E-2, abstol=10E4, disc_criterion='combined
             ts = [t+1 for t in ts]
         else: # disc_criterion == 'combined':
             ts1 = np.where(abs(rel_second_diff) > reltol)[0].tolist()
-            ts1 = [t+1 for t in ts1]
+            ts1 = [t+1 for t in ts1 if t+2 in ts1] # unnormalized 4-point second derivative indicates change at +/1 of sought position
             ts2 = np.where(abs(diff) > abstol)[0].tolist()
             
             #ts = [t for t in ts1 if t in ts2] # choosing an intersection of 'lists'

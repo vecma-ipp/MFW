@@ -45,7 +45,7 @@ export EASYPJ_CONFIG=conf.sh
 #try out for script with 'mpirun' execution model
 #export I_MPI_HYDRA_BOOTSTRAP_EXEC_EXTRA_ARGS="--exclusive"
 
-echo '> In this run: use ExecuteLocal only + QCGPJ pool + default exec mode + commandline passed + 4 nodes + 4 params + mpiexec '
+echo '> In this run: use ExecuteLocal only + QCGPJ pool + default exec mode + commandline passed + 4 nodes +  params + mpiexec '
 echo '' # \n should work?
 
 #echo $SLURM_NODELIST

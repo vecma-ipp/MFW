@@ -18,5 +18,5 @@ a_avg = np.array(aa).mean(axis=0)
 
 print(len(aa))
 
-plot_sobols_pie(a_avg, labels, '010622')
+plot_sobols_pie(a_avg, labels, '090922')
 

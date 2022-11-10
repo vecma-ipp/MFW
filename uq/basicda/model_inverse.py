@@ -43,7 +43,9 @@ surrogate = joblib.load(os.path.join(model_dir, surrogate_file_name))
 # Initialise campaign object
 campaign_name = "INV_GEM0_"
 
-m_campaign = uq.Campaign(name=campaign_name, work_dir=)
+m_campaign = uq.Campaign(name=campaign_name, 
+                        #work_dir=
+                        )
 
 # Crete the encoder
 encoder = uq.encodersGenericEncoder(template_fname='surrogate_inverse.template',
