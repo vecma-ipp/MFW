@@ -822,7 +822,7 @@ def read_run_uq(db_path, wd_path='./'):
 
     return input_values, input_names
 
-def plot_response_cuts(data, input_names, output_names, compare_vals=None, foldname='', traces=None):
+def plot_response_cuts(data, input_names, output_names, compare_vals=None, foldname='', traces=None, hists=None):
     """
     Plot different cuts (fixing all input parameter values but one) of code response for given QoI
         Parameters:
@@ -835,6 +835,7 @@ def plot_response_cuts(data, input_names, output_names, compare_vals=None, foldn
             compare_vals: for a single QoI name - a tuple of type (mean, min value, max_value)
             foldname: string of original campaign id to destinguish plot names
             traces: list of lists with values over time for each cases described in 'data'
+            hists: histograms to be plotteed in an array
     """
 
     if len(input_names) == 1:
@@ -886,6 +887,11 @@ def plot_response_cuts(data, input_names, output_names, compare_vals=None, foldn
             fig_tr, ax_tr = plt.subplots(n_inputs, n_fixvals, 
                                 figsize=(175, 25)
                                         )
+        
+        if hists is not None:
+            fig_hs, ax_hs = plt.subplots(n_inputs, n_fixvals, 
+                                figsize=(100, 20)
+                                        )
 
         # Iterate over all the input dimensions, selecting single one as a running variable
         for i_ip in range(n_inputs):
@@ -902,6 +908,9 @@ def plot_response_cuts(data, input_names, output_names, compare_vals=None, foldn
             
             #print([i_ip, running_ip_name, input_names_left, 
             #      input_inds_left, fixed_ip_names, input_fixvals_unique]) ###DEBUG
+
+            #Create figure for combined scan, one for every input variable
+            fig_loc, ax_loc = plt.subplots(1, 1, figsize=(9,9))
 
             # Iterate over the all combinations of input parameters values to be kept const for a cut
             for j_fixval in range(n_fixvals):
@@ -928,7 +937,7 @@ def plot_response_cuts(data, input_names, output_names, compare_vals=None, foldn
                 # TODO: choose one of three ways: 
                 #                      1) offsets - has to be 3 nested loops
                 #                      2) filtering - inside current two loops, use np.unique() -> using
-                #                      3) transform into ndarray of 4D, the iterate (look tuto notebook) - not gneneral for different number of params
+                #                      3) transform into ndarray of 4D, the iterate (look tuto notebook) - not general for different number of params
     
                 #fixed_ip_vals      = data[input_names_left][tot_ind[0]] # TODO count tot_ind
                 #fixed_ip_vals_str  = ''.join([str(v)+';' for v in fixed_ip_vals.to_list()]) 
@@ -944,7 +953,7 @@ def plot_response_cuts(data, input_names, output_names, compare_vals=None, foldn
     
                 # Plotting part of iteration
 
-                #ax[i_ip][j_fixval].plot(x_io, y_qoi, 'o-', 
+                #ax[i_ip][j_fixval].plot(x_io, y_running_ip_nameqoi, 'o-', 
                 #                   label='Response for ({})->({}) for {}'.
                 #                   format(running_ip_name, qoi_name, fixed_ip_val_str))         
                 
@@ -957,11 +966,19 @@ def plot_response_cuts(data, input_names, output_names, compare_vals=None, foldn
         
                 ax[i_ip][j_fixval].set_xlabel(r'{}'.format(running_ip_name))
                 ax[i_ip][j_fixval].set_ylabel(r'{}'.format(qoi_name))
-                ax[i_ip][j_fixval].set_title(r'{}'.format(fixed_ip_val_str), fontsize=6)
+                ax[i_ip][j_fixval].set_title(r'{}'.format(fixed_ip_val_str), fontsize=8)
         
                 #ax[i_ip][j_fixval].set_ylim(1.5E+6, 3.8E+6) # TODO make limits variable
                 ax[i_ip][j_fixval].set_ylim(-5.E+5, 4.5E+6)
                 #ax[i_ip][j_fixval].legend(loc='best') 
+
+                #Do the same for a combined plot
+                ax_loc.errorbar(x_io, y_qoi, yerr=1.96*y_stem,
+                                            #fmt='-o', 
+                                            uplims=False, lolims=False,
+                                            label=r'{}'.format(fixed_ip_val_str),
+                               )
+
 
                 # if y values (mean, min, max) to compare are passed, plot the horizontal lines
                 if compare_vals is not None:
@@ -969,6 +986,10 @@ def plot_response_cuts(data, input_names, output_names, compare_vals=None, foldn
                     ax[i_ip][j_fixval].hlines(y=compare_vals[0], xmin=x_io.min(), xmax=x_io.max(), color='r', linestyle='-')
                     ax[i_ip][j_fixval].hlines(y=compare_vals[1], xmin=x_io.min(), xmax=x_io.max(), color='r', linestyle='--')
                     ax[i_ip][j_fixval].hlines(y=compare_vals[2], xmin=x_io.min(), xmax=x_io.max(), color='r', linestyle='--')
+
+                    ax_loc.hlines(y=compare_vals[0], xmin=x_io.min(), xmax=x_io.max(), color='r', linestyle='-')
+                    ax_loc.hlines(y=compare_vals[1], xmin=x_io.min(), xmax=x_io.max(), color='r', linestyle='--')
+                    ax_loc.hlines(y=compare_vals[2], xmin=x_io.min(), xmax=x_io.max(), color='r', linestyle='--')
 
                 if traces is not None:
 
@@ -992,23 +1013,49 @@ def plot_response_cuts(data, input_names, output_names, compare_vals=None, foldn
 
                         ax_tr[i_ip][j_fixval].set_xlabel(r't.st. for {0}, runs#{1}'.format(running_ip_name, inds))
                         ax_tr[i_ip][j_fixval].set_ylabel(r'{0}'.format(qoi_name))
-                        ax_tr[i_ip][j_fixval].set_title(r'{0}'.format(fixed_ip_val_str), fontsize=9)
+                        ax_tr[i_ip][j_fixval].set_title(r'{0}'.format(fixed_ip_val_str), fontsize=11)
                         
                         ax_tr[i_ip][j_fixval].set_ylim(-5.E+5, 4.5E+6)
-                        ax_tr[i_ip][j_fixval].legend(loc='best', prop={'size':8})
+                        ax_tr[i_ip][j_fixval].legend(loc='best', prop={'size':11})
+
+                        if hists is not None:
+                            
+                            ax_hs[i_ip][j_fixval].hist(traces[k][0][:],
+                                                       bins=n//64,
+                                                       label=r'{}'.format(x_io_val_str),
+                                                       alpha=0.75,
+                                                      )
+
+                            ax_hs[i_ip][j_fixval].set_xlabel(r'val-s for {0}, runs#{1}'.format(running_ip_name, inds))
+                            ax_hs[i_ip][j_fixval].set_ylabel(r'#runs')
+                            ax_hs[i_ip][j_fixval].set_title(r'{0}'.format(fixed_ip_val_str), fontsize=10)
+                        
+                            ax_hs[i_ip][j_fixval].legend(loc='best', prop={'size':10})
         
             #offset *= 2
-            # Filter on dataframe could be completely replaces by an offseting for different chosen parameter        
+            # Filter on dataframe could be completely replaced by an offseting for different chosen parameter        
     
+            ax_loc.set_xlabel(r'{}'.format(running_ip_name))
+            ax_loc.set_ylabel(r'{}'.format(qoi_name))
+            ax_loc.set_title(r'Scans for {0}'.format(running_ip_name))
+            ax_loc.set_ylim(-1.E+5, 4.E+6)
+            ax_loc.legend(loc='best')
+            fig_loc.tight_layout()
+            fig_loc.savefig('scan_comb_{0}_{1}.png'.format(running_ip_name, foldname))
+        
         fig.tight_layout()
         #fig.suptitle('GEM response in {} around profile values'.format(qoi_name)) #TODO: pass names as arguments    
         #fig.subplots_adjust(top=0.8)
 
-        fig.savefig('scan_{0}_{1}.png'.format(qoi_name, foldname))
+        fig.savefig('scan_{0}_{1}.pdf'.format(qoi_name, foldname))
 
         if traces is not None:
             fig_tr.tight_layout()
-            fig_tr.savefig('scan_traces_{0}_{1}.png'.format(qoi_name, foldname))
+            fig_tr.savefig('scan_traces_{0}_{1}.pdf'.format(qoi_name, foldname))
+        
+        if hists is not None:
+            fig_hs.tight_layout()
+            fig_hs.savefig('scan_hists_{0}_{1}.pdf'.format(qoi_name, foldname))
             
         plt.close()
 
@@ -1553,6 +1600,7 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
                                compare_vals=compare_vals_mfw, 
                                foldname=mainfoldernum,
                                traces=val_ev_s, #val_wind_s,
+                               hists=True,
                               )
 
             print('plotting cuts done')
