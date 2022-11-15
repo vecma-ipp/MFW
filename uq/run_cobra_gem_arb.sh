@@ -5,10 +5,10 @@
 
 ## stdout and stderr files
 #SBATCH --output=test-arbuq-out.%j
-#SBATCH --error=test-arbtuq-err.%j
+#SBATCH --error=test-arbuq-err.%j
 
 ## wall time in format (HOURS):MINUTES:SECONDS
-#SBATCH --time=24:00:00
+#SBATCH --time=18:00:00
 
 ## number of nodes and tasks per node
 #SBATCH --nodes=3

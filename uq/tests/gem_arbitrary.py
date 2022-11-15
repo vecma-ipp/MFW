@@ -7,6 +7,7 @@ import json
 
 from math import ceil
 #import numpy as np
+import pandas as pd
 
 import easyvvuq as uq
 
@@ -84,13 +85,12 @@ exec_code = "loop_gem_notransp"
 # a 3rd-order G-S for some U[-a,+a]
 
 alpha_q = 2.5 #1.
-#alpha_q = a = 1./np.sqrt( (9./7.) - 6./7.*np.sqrt(6./5.) ) 
 
 input_params = {
-    "te.value": {"dist": "Uniform", "err":  0.1*alpha_q, "min": 0.},
-    "ti.value": {"dist": "Uniform", "err":  0.1*alpha_q, "min": 0.},
-    "te.ddrho": {"dist": "Uniform", "err":  0.1*alpha_q, "max": 0.},
-    "ti.ddrho": {"dist": "Uniform", "err":  0.1*alpha_q, "max": 0.}
+    "te.value": {"type": "float", "dist": "Uniform", "err":  0.1*alpha_q, "min": 0.},
+    "ti.value": {"type": "float", "dist": "Uniform", "err":  0.1*alpha_q, "min": 0.},
+    "te.ddrho": {"type": "float", "dist": "Uniform", "err":  0.1*alpha_q, },
+    "ti.ddrho": {"type": "float", "dist": "Uniform", "err":  0.1*alpha_q, },
 }
 
 nparams = len(input_params)
@@ -116,8 +116,20 @@ params, vary = cpo_inputs(cpo_filename=input_filename,
                           input_params=input_params,
                           ftube_index=ftube_index)
 
+### 
 # !!! We read this files with params vals !!!
 param_file = 'gem_uq_new_param_vals.csv'
+
+sampling_dataframe = pd.read_csv(param_file, delimiter=',')
+
+#print('old param dict: {0}; \n and new one: {1}'.format(input_params, params)) ###DEBUG
+# input_data={
+# 'te.value': [1141.1193896658299, 1141.1193896658299, 1141.1193896658299, 1141.1193896658299],
+# 'ti.value': [1072.88294389798, 1072.88294389798, 1072.88294389798, 969.0014995443084, 1176.7643882516518],
+# 'te.ddrho': [-3133.41967082512, -3133.41967082512, -3133.41967082512, -3133.41967082512, -3133.41967082512],
+# 'ti.ddrho': [-2422.84156326195, -3634.262344892925, -4845.6831265239, -2422.84156326195, -2422.84156326195],
+# }
+#print('input dataframe: {0}'.format(sampling_dataframe)) ###DEBUG
 
 # Initialize Campaign object
 campaign_name = "VARY_1FT_GEM_"
@@ -183,9 +195,8 @@ npess = gemxml.get_value("cpu_parameters.domain_decomposition.npess")
 nftubes = gemxml.get_value("cpu_parameters.parallel_cases.nftubes")
 ncores = npesx*npess*nftubes
 
-pol_order = int(os.environ['POLORDER']) 
-
-nruns = (pol_order + 1)**nparams # Nr=(Np+Nd, Nd)^T=(Np+Nd)!/(Np!*Nd!)  |=(3+4)!/3!4! = 5*6*7/6 = 35 => instead 3^4=81 ?
+# nruns = (pol_order + 1)**nparams # Nr=(Np+Nd, Nd)^T=(Np+Nd)!/(Np!*Nd!)  |=(3+4)!/3!4! = 5*6*7/6 = 35 => instead 3^4=81 ?
+nruns = len(sampling_dataframe.index)
 ncores_tot = ncores * nruns
 
 n_cores_p_node = 48
@@ -197,6 +208,7 @@ elif SYS == 'COBRA':
 
 nnodes = ceil(1.*ncores/n_cores_p_node)
 nnodes_tot = ceil(1.*ncores_tot/n_cores_p_node) # not entirely correct due to an 'overkill' problem i.e. residual cores at one/more nodes may not be able to allocate any jobs, but here everything is devisible; also an import from 'math'
+#nnodes_tot = 3 # TODO: can be also read from the calling SLURM script
 
 exec_comm_flags = ' '
 #exec_comm_flags += ' -vvvvv --profile=all --slurmd-debug=3 '
@@ -206,7 +218,7 @@ exec_comm_flags = ' '
 #exec_path_comm = mpi_instance + ' -n '+ str(ncores) + ' ' + exec_path
 exec_path_comm = mpi_instance + exec_comm_flags + ' ' + exec_path
 
-print('Total number of nodes required for all jobs: {0}'.format(nnodes_tot))
+print('Total number of nodes required for all jobs: {0}'.format(nnodes))
 print('Number of cores required for single code instance computed: {0}'.format(ncores))
 print('Executing turbulence code with the line: ' + exec_path_comm) 
 
@@ -230,13 +242,9 @@ else:
 
 # Custom template for parallel job execution
 
-template_par_simple = {
-                       ###'name': 'gem_long_var_simp',
-                       ##'exec': exec_path,
-                       
+template_par_simple = {                       
                        ##'venv' : os.path.join(HOME, 'conda-envs/python394'), 
                            # # for COBRA where Python is managed through conda, activation with executable does not work
-
                        'numCores': ncores,
                        'numNodes': nnodes,
                        'model': mpi_model, # 'default' -- should work with 'default' at MARCONI
@@ -245,13 +253,11 @@ template_par_simple = {
 template_par_cust = {
                       'name': 'gem_long_varied',
                       'execution': {
-                                     #'exec': exec_path,
                                      'model': mpi_model,
                                      'model_options': {
                                                         #'mpirun': '',
                                                         #'mpirun_args' : ''
                                                       },
-                                      #'modules': ['impi']
                                       #'venv' : os.path.join(HOME, 'python394')             
                                    },
                       'resources': {
@@ -279,7 +285,10 @@ my_campaign.add_app(name=campaign_name,
 
 # Create the samples
 # !!! Here we do not use PCE/SC, but just a list of param values instead !!!
-my_sampler = uq.sampling.CSVSampler(filename=param_file)
+
+#my_sampler = uq.sampling.CSVSampler(filename=param_file)
+my_sampler = uq.sampling.DataFrameSampler(df=sampling_dataframe)
+
 my_campaign.set_sampler(my_sampler)
 
 print('Creating an Executor')
