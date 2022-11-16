@@ -132,7 +132,7 @@ sampling_dataframe = pd.read_csv(param_file, delimiter=',')
 #print('input dataframe: {0}'.format(sampling_dataframe)) ###DEBUG
 
 # Initialize Campaign object
-campaign_name = "VARY_1FT_GEM_"
+campaign_name = "VARY_1FT_GEM_NT_"
 my_campaign = uq.Campaign(name=campaign_name, work_dir=tmp_dir)
 
 # Save the campaign dir
@@ -210,7 +210,7 @@ nnodes = ceil(1.*ncores/n_cores_p_node)
 nnodes_tot = ceil(1.*ncores_tot/n_cores_p_node) # not entirely correct due to an 'overkill' problem i.e. residual cores at one/more nodes may not be able to allocate any jobs, but here everything is devisible; also an import from 'math'
 #nnodes_tot = 3 # TODO: can be also read from the calling SLURM script
 
-exec_comm_flags = ' '
+exec_comm_flags = ''
 #exec_comm_flags += ' -vvvvv --profile=all --slurmd-debug=3 '
 #exec_comm_flags = ' --oversubscribe --overcommit '
 
@@ -322,7 +322,7 @@ except Exception as e:
 print('Now finally analysing results')
 #TODO: make sure decoder reads the file that exists, this may be a numbered file; current workaround: read a file from a fixed number of iteration
 #TODO: make a decoder that check the results folder and using a regex finds the latest number of iteration or the oldest file
-analysis = uq.analysis.PCEAnalysis(sampler=my_sampler, qoi_cols=output_columns)
+analysis = uq.analysis.BasicStats(qoi_cols=output_columns)
 my_campaign.apply_analysis(analysis)
 
 # Get results

@@ -86,6 +86,7 @@ if [ "${RUN_WITH_CP}" -eq 1 ]; then
 
   cd ${DIR}
   cp campaign.db ${DIR_CODE}/campaign_${UQCAMPDIR}_${CPONUM}.db
+  #TODO: apparently after the gem_da.py is run the copied DB is corrupted, so this either has to be fixed or a new copy should be created
 
 fi
 

@@ -6,11 +6,12 @@
 # Launch with:
 # nohup ./continuous_gem.sh 17 aos1mzke 1> script_workflow_latest3.log 2>&1 &
 # nohup ./continuous_gem.sh 6  akgbbn1a 1> script_wf_20102022.log 2>&1 &
+# nohup ./continuous_gem.sh 1  w468l7ng 1> script_wf_16112022.log 2>&1 &
 
 #0. State the total number of campaigns to run, and ordinal number of the last campaign in previous sequence
 echo "STARTING THE WORKFLOW"
 # number of runs
-NUMRUNS=3
+NUMRUNS=2
 # no of current run, which is the last finished submission
 CURRUN=${1:-0}
 # no of the first run in the new sequence
@@ -21,6 +22,8 @@ LASTRUN=$((${CURRUN}+${NUMRUNS}))
 # polynomial order - current parameter regulating total number of code instances
 POLORDER=3
 INPUT_DIM=4
+#ATTENTION: arbitrary param to set number of core instances
+NUM_CODE_INSTS=5
 
 # batch script to submit a single UQ campaign
 #COM=run_marconi_loop_resume_gem_nt.sh # for MARCONI
@@ -29,7 +32,12 @@ COM0=run_cobra_loop_gem_nt.sh
 
 RUNRANGESTART=1
 #RUNRANGE=16
-RUNRANGE=$(( $((${POLORDER}+1)) ** ${INPUT_DIM} ))
+if [ -n "${NUM_CODE_INSTS}" ];
+then
+  RUNRANGE=${NUM_CODE_INSTS}
+else
+  RUNRANGE=$(( $((${POLORDER}+1)) ** ${INPUT_DIM} ))
+fi
 
 CPONUM=${FRUN}
 
@@ -68,7 +76,7 @@ then
   cd ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/${RUNPATHSHORT}/
 
   #for r in `seq ${RUNRANGESTART} ${RUNRANGE}`; do
-  for r in $(find -maxdepth 5 -mindepth 5 -type d -name "run_*"); do
+  for r in $(find -maxdepth 5 -mindepth 5 -type d -name "run_*" | sed "s|^\.||"); do
 
     #mkdir ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/${RUNPATHSHORT}/bckp/${TMP}/run_${r}/
     mkdir -p bckp/${TMP}/${r}/

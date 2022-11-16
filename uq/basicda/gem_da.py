@@ -238,7 +238,7 @@ def profile_evol_plot(value_s, labels=['orig'], file_names=[], name='gem_ti_flux
     color_list = ['b', 'g', 'r', 'y' , 'm', 'c', 'k']
     line_list = ['-', '--', '-.', ':']
     marker_list = ['', '.', 'o', 'v', '^', '<', '>']
-    style_lists = [color_list, line_list, marker_list] # NB!: can be modified to include marker style
+    style_lists = [marker_list, line_list, color_list, ] # NB!: can be modified to include marker style
     #fmt_list = ["".join(map(str, style)) for style in itertools.product(*style_lists)]
     fmt_list = [style for style in itertools.product(*style_lists)]
 
@@ -260,7 +260,7 @@ def profile_evol_plot(value_s, labels=['orig'], file_names=[], name='gem_ti_flux
              #ax.semilogy(ts, value[i,:], '-', label=lab+'_'+str(i))
              
              #ax.plot(ts, value[i,:], fmt_list[inum], label=lab)
-             ax.plot(ts, value[i,:], color=fmt_list[inum][0], linestyle=fmt_list[inum][1], marker=fmt_list[inum][2], label=lab)
+             ax.plot(ts, value[i,:], color=fmt_list[inum][2], linestyle=fmt_list[inum][1], marker=fmt_list[inum][0], label=lab)
 
     ax.legend(loc='lower center',
              #bbox_to_anchor=(0.5, 0.0), 
@@ -306,7 +306,7 @@ def plot_coreprofval_dist(value_spw, labels=[], name='ti', discr_level=64, forpl
     color_list = ['b', 'g', 'r', 'y' , 'm', 'c', 'k']
     line_list = ['-', '--', '-.', ':']
     marker_list = ['', '.', 'o', 'v', '^', '<', '>']
-    style_lists = [color_list, line_list, marker_list] # NB!: can be modified to include marker style
+    style_lists = [marker_list, line_list, color_list,] # NB!: can be modified to include marker style
     #fmt_list = ["".join(map(str, style)) for style in itertools.product(*style_lists)]
     fmt_list = [style for style in itertools.product(*style_lists)]
 
@@ -321,7 +321,9 @@ def plot_coreprofval_dist(value_spw, labels=[], name='ti', discr_level=64, forpl
         ax.hist(value_spw[i][:], bins=n // discr_level, label=labels[i], alpha=0.7)
 
     plt.legend(loc='best' if len(labels) < 16 else (-0.2, -0.2),
-               ncol=int(np.sqrt(len(labels))) if len(labels) < 25 else 4,)
+               #ncol=int(np.sqrt(len(labels))) if len(labels) < 25 else 4,
+               ncol=1,
+               )
     plt.savefig('hist_' + name + '.png', dpi=1200)
     plt.close()
 
@@ -345,14 +347,14 @@ def plot_coreprofval_dist(value_spw, labels=[], name='ti', discr_level=64, forpl
         log_pdf = kde.score_samples(x)
         log_pdf_orig = kde.score_samples(value_spw[i][:, np.newaxis])
 
-        ax.plot(x[:, 0], np.exp(log_pdf), fmt_list[i], label=labels[i]) #label='density of core transport values'
+        ax.plot(x[:, 0], np.exp(log_pdf), color=fmt_list[i][2], linestyle=fmt_list[i][1], marker=fmt_list[i][0], label=labels[i]) #label='density of core transport values'
         
         # Add 'pluses' underneath the plot for each point in the fitted sample
         #ax.plot(value_spw[i], (-0.01*np.random.rand(log_pdf_orig.shape[0])) * np.exp(log_pdf_orig).min(), '+k')
 
         # Add vertical lines for mean of the each sample
-        #ax.axvline(x=val_means[i], ymin=0., ymax=1., linestyle=fmt_list[i][:-2], color=fmt_list[i][-2], marker=fmt_list[i][-1])
-        ax.axvline(x=val_means[i], ymin=0., ymax=np.exp(log_pdf).max(), color=fmt_list[i][0], linestyle=fmt_list[i][1], marker=fmt_list[i][2]) 
+        #ax.axvline(x=val_means[i], ymin=0., ymax=1., linestyle=fmt_list[i][:-2], color=fmt_list[i][-2], marker=fmt_list[i][-1]) # now fmt_list numbering is wrong
+        ax.axvline(x=val_means[i], ymin=0., ymax=np.exp(log_pdf).max(), color=fmt_list[i][2], linestyle=fmt_list[i][1], marker=fmt_list[i][0]) 
         
         if forplot:
             ax.set_xlim([0., value_spw[i].max()])
@@ -977,6 +979,7 @@ def plot_response_cuts(data, input_names, output_names, compare_vals=None, foldn
                                             #fmt='-o', 
                                             uplims=False, lolims=False,
                                             label=r'{}'.format(fixed_ip_val_str),
+                                            alpha=0.5,
                                )
 
 
@@ -1035,6 +1038,7 @@ def plot_response_cuts(data, input_names, output_names, compare_vals=None, foldn
             #offset *= 2
             # Filter on dataframe could be completely replaced by an offseting for different chosen parameter        
     
+            #Set and save scans combined by the input value
             ax_loc.set_xlabel(r'{}'.format(running_ip_name))
             ax_loc.set_ylabel(r'{}'.format(qoi_name))
             ax_loc.set_title(r'Scans for {0}'.format(running_ip_name))
@@ -1206,7 +1210,7 @@ def discontinuity_check(vals, reltol=5E-2, abstol=10E4, disc_criterion='combined
     return cands_glob
 
 
-#################################################l
+#################################################
 #### MAIN FUNCTION: PIPELINE OF PROCESSING ######
 #################################################
 
@@ -1383,9 +1387,9 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
             #labels = [str(r) for r in runnum_list]
             labels = ["".join([rin+'='+str(round(r[rin], 1))+"; " for rin in runs_input_names]) for r in runs_input_vals]
             
-            """ 
+            
             profile_evol_plot(val_ev_s, labels=labels, name=code_name+'_'+p+'_'+a+'_'+mainfoldernum, alignment='start', vertline=alpha_wind*val_ev_s[0].shape[-1]) 
-            """
+            
             
             #print('passes to plot: {}'.format(val_ev_s[0].shape)) ###DEBUG
             #print('before shape {}'.format(val_evname=code_name+'_'+p+'_'+a+'_'+mainfoldernum, alignment='start'_s[i].shape)) ###DEBUG
@@ -1575,9 +1579,9 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
                                                              n_lensample, 
                                                              runn, p, a)
 
-            """ 
+             
             profile_evol_plot(val_trend_avg_s, labels=labels, name='means_'+p+'_'+a+'_'+mainfoldernum)
-            """
+            
 
             stats_df.to_csv('stats_main_'+p+'_'+a+'_'+mainfoldernum+'.csv') 
             scan_df.to_csv('resuq_main_'+p+'_'+a+'_'+mainfoldernum+'.csv')    
@@ -1610,7 +1614,8 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
             # Apply LR to get form of Q=a*t+b
             val_trend_lr_s = []
             for runn in runnum_list:
-                """
+                
+                
                 val_trend_lr, val_residue_lr = filter_trend(val_wind_s[runn-1], "linear_regression")
                 val_trend_lr_s.append(val_trend_lr.reshape(val_wind_s[runn-1].shape)) # bad workaround
                 
@@ -1620,7 +1625,7 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
                 profile_evol_plot([val_wind_s[runn-1], val_trend_lr_s[runn-1]],
                                   labels=['original', 'linear regression with NE'],
                                   name='lr_'+p+'_'+a+'_'+str(runn-1)+'_'+mainfoldernum) 
-                """
+                
 
             # 4.5.3) Applying HP-filter    
             val_trend_hpf_s = []

@@ -127,8 +127,8 @@ alpha_q = 2.5
 input_params = {
     "te.value": {"dist": "Uniform", "err":  0.1*alpha_q, "min": 0.},
     "ti.value": {"dist": "Uniform", "err":  0.1*alpha_q, "min": 0.},
-    "te.ddrho": {"dist": "Uniform", "err":  0.1*alpha_q, "max": 0.},
-    "ti.ddrho": {"dist": "Uniform", "err":  0.1*alpha_q, "max": 0.}
+    "te.ddrho": {"dist": "Uniform", "err":  0.1*alpha_q, },
+    "ti.ddrho": {"dist": "Uniform", "err":  0.1*alpha_q, },
 }
 
 nparams = len(input_params)
@@ -193,7 +193,9 @@ ncores = npesx*npess*nftubes
 
 pol_order = int(os.environ['POLORDER']) # TODO: should be read from the campaign database
 
-nruns = (pol_order + 1)**nparams # Nr=(Np+Nd, Nd)^T=(Np+Nd)!/(Np!*Nd!) |E.G.|=(3+4)!/3!4! = 5*6*7/6 = 35 => instead of 3^4=81?
+#nruns = (pol_order + 1)**nparams # Nr=(Np+Nd, Nd)^T=(Np+Nd)!/(Np!*Nd!) |E.G.|=(3+4)!/3!4! = 5*6*7/6 = 35 => instead of 3^4=81?
+nruns = int(os.environ['RUNRANGE'])    # ATTENTION: this might be less preferable for campaigns with parameter values chosen from a grid
+
 ncores_tot = ncores * nruns
 # current case: nruns=(5, 1)^T=5 not 16 ; achieved if using Point Collocation with regression via constructing PCESampler(regression=True)
 
@@ -362,8 +364,10 @@ print('Now finally analysing results')
 #TODO: make sure decoder reads the file that exists, this may be a numbered file; current workaround: read a file from a fixed number of iteration
 #TODO: make a decoder that check the results folder and using a regex finds the latest number of iteration or the oldest file
 #TODO: make GEM iteration wrapper to continue numeration of GEM calls/macroiterations - currently every restart/slurm-batch will restart numbers from 0
-analysis = uq.analysis.PCEAnalysis(sampler=my_sampler, qoi_cols=output_columns)
-my_campaign.apply_analysis(analysis)
+
+#analysis = uq.analysis.PCEAnalysis(sampler=my_sampler, qoi_cols=output_columns)
+analysis = uq.analysis.BasicStats(qoi_cols=output_columns) #ATTENTION: this is general but might break further code e.g. during Sobols' calculation
+my_campaign.apply_analysis(analysis) 
 
 # Get results
 results = my_campaign.get_last_analysis()

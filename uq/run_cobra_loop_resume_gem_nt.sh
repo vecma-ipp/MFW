@@ -12,7 +12,7 @@
 
 ## number of nodes and tasks per node
 # order=3, n_params=4, n_subd=8 -> 1024 across 40 (80 for hthreading, not used) cpus -> 27 nodes
-#SBATCH --nodes=65
+#SBATCH --nodes=3
 #SBATCH --ntasks-per-node=40
 ###SBATCH --ntasks-per-core=1
 ###SBATCH --cpus-per-task=8
