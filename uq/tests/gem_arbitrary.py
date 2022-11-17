@@ -118,7 +118,7 @@ params, vary = cpo_inputs(cpo_filename=input_filename,
 
 ### 
 # !!! We read this files with params vals !!!
-param_file = 'gem_uq_new_param_vals.csv'
+param_file = 'gem_uq_new_param_vals_2.csv'
 
 sampling_dataframe = pd.read_csv(param_file, delimiter=',')
 
@@ -132,7 +132,7 @@ sampling_dataframe = pd.read_csv(param_file, delimiter=',')
 #print('input dataframe: {0}'.format(sampling_dataframe)) ###DEBUG
 
 # Initialize Campaign object
-campaign_name = "VARY_1FT_GEM_NT_"
+campaign_name = "VARY_1FT_GEM_" #ATTENTION should be consistent with further resumption and postprocessing scripts
 my_campaign = uq.Campaign(name=campaign_name, work_dir=tmp_dir)
 
 # Save the campaign dir

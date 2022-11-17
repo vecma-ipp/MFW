@@ -95,13 +95,13 @@ gemxml = XMLElement(xml_dir + "/gem.xml")
 #   campaign(db_location=...) - currently used
 #   campaign(state_file=...) - not necessary?
 
-campaign_name = "VARY_1FT_GEM_NT_"
+campaign_name = "VARY_1FT_GEM_" #ATTENTION: changed due to switch to arbitrary set of runs; TODO: has to bea read from DB or SLURM scrip
 db_location = 'sqlite:///' + tmp_dir + '/' + campaign_name + campaign_id + '/campaign.db'
 print("> Loading existing campaign from a database at: {}".format(db_location))
 my_campaign = uq.Campaign(
                           name=campaign_name,
                           db_location=db_location,
-                          #work_dir=tmp_dir,
+                          work_dir=tmp_dir, #trying, on 17.11.22:01:17 resume campaign created a dir in /uq/
                           #state_file=,
                          )
 

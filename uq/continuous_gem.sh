@@ -6,7 +6,7 @@
 # Launch with:
 # nohup ./continuous_gem.sh 17 aos1mzke 1> script_workflow_latest3.log 2>&1 &
 # nohup ./continuous_gem.sh 6  akgbbn1a 1> script_wf_20102022.log 2>&1 &
-# nohup ./continuous_gem.sh 1  w468l7ng 1> script_wf_16112022.log 2>&1 &
+# nohup ./continuous_gem.sh 1 w468l7ng 1> script_wf_17112022.log 2>&1 &
 
 #0. State the total number of campaigns to run, and ordinal number of the last campaign in previous sequence
 echo "STARTING THE WORKFLOW"
@@ -46,6 +46,10 @@ echo "Total number of new runs: "${NUMRUNS}
 
 export ORIGDIR=$(pwd)
 
+# Following can be anything but should be consistent with prevoius and further scripts
+#export CAMP_NAME_PREFIX=VARY_1FT_GEM_NT_
+export CAMP_NAME_PREFIX=VARY_1FT_GEM_
+
 #TODO: akgbbn1a cpo2+ are overwritten - if the very first campaign fails, the script will overwrite the old campaign output file 
 # - the runs will be consistent though due to restoration from the old cpo numbers
 
@@ -71,9 +75,9 @@ then
   RUNPATHSHORT=runs/
 
   #mkdir ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/${RUNPATHSHORT}/bckp/
-  mkdir -p ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/${RUNPATHSHORT}/bckp/${TMP}
+  mkdir -p ${SCRATCH}/${CAMP_NAME_PREFIX}${ROOTCAMPDIR}/${RUNPATHSHORT}/bckp/${TMP}
 
-  cd ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/${RUNPATHSHORT}/
+  cd ${SCRATCH}/${CAMP_NAME_PREFIX}${ROOTCAMPDIR}/${RUNPATHSHORT}/
 
   #for r in `seq ${RUNRANGESTART} ${RUNRANGE}`; do
   for r in $(find -maxdepth 5 -mindepth 5 -type d -name "run_*" | sed "s|^\.||"); do
@@ -85,6 +89,8 @@ then
 
       #cp ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/${RUNPATHSHORT}/run_${r}/${bckp_f} ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/${RUNPATHSHORT}/bckp/${TMP}/run_${r}/
       cp ${r}/${bckp_f} /bckp/${TMP}/${r}/
+
+      cp ${SCRATCH}/${CAMP_NAME_PREFIX}${ROOTCAMPDIR}/campaign.db /bckp/${TMP}/
 
     done
 
@@ -172,4 +178,3 @@ done
 yes | rm camp_temp_dir.txt
 
 echo "FINISHED THE WORKFLOW"
-
