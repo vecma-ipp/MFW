@@ -1,17 +1,17 @@
 #!/bin/bash -l
 
 ## job name
-#SBATCH --job-name=VARY_GEM_1FT
+#SBATCH --job-name=VARY_GEM_1FT_ARB_
 
 ## stdout and stderr files
 #SBATCH --output=test-arbuq-out.%j
 #SBATCH --error=test-arbuq-err.%j
 
 ## wall time in format (HOURS):MINUTES:SECONDS
-#SBATCH --time=18:00:00
+#SBATCH --time=24:00:00
 
 ## number of nodes and tasks per node
-#SBATCH --nodes=3
+#SBATCH --nodes=2
 #SBATCH --ntasks-per-node=40
 ###SBATCH --ntasks-per-core=1
 ###SBATCH --cpus-per-task=8
@@ -53,7 +53,7 @@ if [ -z "${POLORDER}" ]; then
 fi
 
 echo -e '> In this run: use ExecuteLocal only + QCGPJ pool + '${MPIMOD}' exec mode + '${SLURM_NNODES} \
-' nodes + 4 params + 5 values + commandline passed with '${MPICMD}' \n'
+' nodes + 4 params + 3 values + commandline passed with '${MPICMD}' \n'
 
 echo '> Here we take larger ti_ddrho and intermediate ti error at rho_tor=0.7 \n'
 

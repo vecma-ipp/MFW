@@ -6,7 +6,7 @@
 # Launch with:
 # nohup ./continuous_gem.sh 17 aos1mzke 1> script_workflow_latest3.log 2>&1 &
 # nohup ./continuous_gem.sh 6  akgbbn1a 1> script_wf_20102022.log 2>&1 &
-# nohup ./continuous_gem.sh 1 w468l7ng 1> script_wf_17112022.log 2>&1 &
+# nohup ./continuous_gem.sh 1 w468l7ng 1> script_wf_18112022.log 2>&1 &
 
 #0. State the total number of campaigns to run, and ordinal number of the last campaign in previous sequence
 echo "STARTING THE WORKFLOW"
@@ -79,8 +79,8 @@ then
 
   cd ${SCRATCH}/${CAMP_NAME_PREFIX}${ROOTCAMPDIR}/${RUNPATHSHORT}/
 
-  #for r in `seq ${RUNRANGESTART} ${RUNRANGE}`; do
-  for r in $(find -maxdepth 5 -mindepth 5 -type d -name "run_*" | sed "s|^\.||"); do
+  #for r in `seq ${RUNRANGESTART} ${RUNRANGE}`; do 
+  for r in $(find -maxdepth 5 -mindepth 5 -type d -name "run_*" | sed "s|^\.||"); do 
 
     #mkdir ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/${RUNPATHSHORT}/bckp/${TMP}/run_${r}/
     mkdir -p bckp/${TMP}/${r}/
@@ -97,8 +97,8 @@ then
   done
 
   # 0.1. Restoring snapshot files to the state of desired last completed run
-  #for r in `seq ${RUNRANGESTART} ${RUNRANGE}`; do
-  for r in $(find -maxdepth 5 -mindepth 5 -type d -name "run_*"); do
+  #for r in `seq ${RUNRANGESTART} ${RUNRANGE}`; do 
+  for r in $(find -maxdepth 5 -mindepth 5 -type d -name "run_*" | sed "s|^\.||"); do 
 
     #cp ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/${RUNPATHSHORT}/dat/${CURRUN}/run_${r}/*.dat ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/${RUNPATHSHORT}/run_${r}/
     cp /dat/${CURRUN}/${r}/*.dat ${r}/
@@ -115,7 +115,7 @@ then
   echo "Starting the very first SLURM submission with UQ campaign"
 
   #PREVID=$(sbatch --parsable --wait ${COM} 2>&1 | sed 's/[S,a-z]* //g')
-  PREVID=$(sbatch --export=ALL,CPONUM=${FRUN},OLDCAMP=${ROOTCAMPDIR},POLORDER=${POLORDER} --parsable --wait ${COM})
+  PREVID=$(sbatch --export=ALL,CPONUM=${FRUN},OLDCAMP=${ROOTCAMPDIR},POLORDER=${POLORDER},RUNRANGE=${RUNRANGE},CAMP_NAME_PREFIX=${CAMP_NAME_PREFIX} --parsable --wait ${COM})
 
   #1'. Save and process the outputs after the finish of the submission
   echo "Finished the first new UQ campaign "${PREVID}
@@ -152,14 +152,14 @@ FRUN=$((${FRUN}+1))
 echo "Finished prostprocessing, next run number: "${FRUN}
 
 #2. Loop over the rest of the campaign submissions
-for n in `seq ${FRUN} ${LASTRUN}`; do
+for n in `seq ${FRUN} ${LASTRUN}`; do 
     #TODO: make while loop, or rather do-until loop
     
     echo "Starting next submission after "${PREVID}" , num "${n} 
 
     CPONUM=${n}
     #CURID=$(sbatch --export=ALL,CPONUM=${n} --parsable --dependency=afterany:${PREVID}:+3 --wait ${COM}  2>&1 | sed 's/[S,a-z]* //g')
-    CURID=$(sbatch --export=ALL,CPONUM=${n},OLDCAMP=${ROOTCAMPDIR},POLORDER=${POLORDER} --parsable --dependency=afterany:${PREVID}:+3 --wait ${COM})
+    CURID=$(sbatch --export=ALL,CPONUM=${n},OLDCAMP=${ROOTCAMPDIR},POLORDER=${POLORDER},RUNRANGE=${RUNRANGE},CAMP_NAME_PREFIX=${CAMP_NAME_PREFIX} --parsable --dependency=afterany:${PREVID}:+3 --wait ${COM})
     #TODO: ideally use =afterok and make sure there are no errors in the UQ script
     #TODO make sure that the output files either have continuous numerations or stored separately
     

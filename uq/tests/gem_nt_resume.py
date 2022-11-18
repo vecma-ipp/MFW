@@ -101,7 +101,7 @@ print("> Loading existing campaign from a database at: {}".format(db_location))
 my_campaign = uq.Campaign(
                           name=campaign_name,
                           db_location=db_location,
-                          work_dir=tmp_dir, #trying, on 17.11.22:01:17 resume campaign created a dir in /uq/
+                          #work_dir=tmp_dir, #trying, on 17.11.22:01:17 resume campaign created a dir in /uq/
                           #state_file=,
                          )
 
