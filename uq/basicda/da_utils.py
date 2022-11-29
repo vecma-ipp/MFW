@@ -653,11 +653,23 @@ def plot_sobols_pie(sobol_ind_vals, labels, name=''):
     for paramaters names with labels
     """
     explode = [.0,]*len(sobol_ind_vals)
-    explode[np.argmax(sobol_ind_vals)] = 0.1
+    #explode[np.argmax(sobol_ind_vals)] = 0.1 #comments disables highlighting of the largest fraction
     
-    fig1, ax1 = plt.subplots()
-    ax1.pie(sobol_ind_vals, explode=explode, labels=labels, 
-            autopct='%.2f', shadow=False, startangle=0)
+    fig1, ax1 = plt.subplots(figsize=(10,10))
+    
+    ps,ts = ax1.pie(sobol_ind_vals,
+             explode=explode,
+             #labels=labels,
+             #autopct='%.2f%%',
+             #labeldistance=1.05,
+             #pctdistance=1.0,
+             shadow=False, 
+             startangle=0, 
+             textprops={"fontsize":18})
+
+    labels_long = ['{0} - {1:1.2f}%'.format(l,100.*v) for l,v in zip(labels, sobol_ind_vals)]
+
+    ax1.legend(ps, labels_long, loc='center left', fontsize=18)
 
     plt.savefig('sobols_pie_'+name+'.png')
     plt.close()

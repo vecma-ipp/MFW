@@ -265,14 +265,14 @@ def profile_evol_plot(value_s, labels=['orig'], file_names=[], name='gem_ti_flux
     ax.legend(loc='lower center',
              #bbox_to_anchor=(0.5, 0.0), 
               ncol=int(np.sqrt(len(labels))) if len(labels) < 25 else 4,
-              prop={'size' : 9})
+              prop={'size' : 10})
 
     ax.set_ylim(-5.E+5, 4.5E+6) #TODO either delete or make modifiable
 
     if vertline:
         ax.axvline(vertline, alpha=0.3, color='k', linestyle='--', label='left border of the window')
    
-    plt.savefig(name + '.png', dpi=1250)
+    plt.savefig(name + '.svg', dpi=1250)
     plt.close()
 
     #np.savetxt(name + '.csv', np.squeeze(value_s, 0), delimiter =", ", fmt ='% s')
@@ -324,7 +324,7 @@ def plot_coreprofval_dist(value_spw, labels=[], name='ti', discr_level=64, forpl
                #ncol=int(np.sqrt(len(labels))) if len(labels) < 25 else 4,
                ncol=1,
                )
-    plt.savefig('hist_' + name + '.png', dpi=1200)
+    plt.savefig('hist_' + name + '.svg', dpi=1200)
     plt.close()
 
     print('--time in distribution plotting: histograms before KDE: {0}'.format(time.time()-time_loc))
@@ -735,7 +735,7 @@ def plot_fft(freq, vals, thr, slope=-2, name='fft'):
                 linestyle='--'
             )
     
-    plt.savefig(name+'.png')
+    plt.savefig(name+'.svg')
     
     plt.close()
 
@@ -840,6 +840,13 @@ def plot_response_cuts(data, input_names, output_names, compare_vals=None, foldn
             hists: histograms to be plotteed in an array
     """
 
+    # Define a set of styles for different lists plotted
+    color_list = ['b', 'g', 'r', 'y' , 'm', 'c', 'k']
+    line_list = ['-', '--', '-.', ':']
+    marker_list = ['', '.', 'o', 'v', '^', '<', '>']
+    style_lists = [marker_list, line_list, color_list,] 
+    fmt_list = [style for style in itertools.product(*style_lists)]
+
     if len(input_names) == 1:
         # If the dimension is one there are no cuts, only a single plot
 
@@ -855,7 +862,7 @@ def plot_response_cuts(data, input_names, output_names, compare_vals=None, foldn
             axes.annotate('{0:1.3f}'.format(data.at[i, output_names[0]+'_stem'] / data.at[i, output_names[0]]), 
                           (data.at[i, input_names[0]], data.at[i, output_names[0]]))
 
-        axes.get_figure().savefig('scan_'+output_names[0]+'_'+foldname+'.png')
+        axes.get_figure().savefig('scan_'+output_names[0]+'_'+foldname+'.svg')
         plt.close()
 
     else:
@@ -912,7 +919,7 @@ def plot_response_cuts(data, input_names, output_names, compare_vals=None, foldn
             #      input_inds_left, fixed_ip_names, input_fixvals_unique]) ###DEBUG
 
             #Create figure for combined scan, one for every input variable
-            fig_loc, ax_loc = plt.subplots(1, 1, figsize=(9,9))
+            fig_loc, ax_loc = plt.subplots(1, 1, figsize=(7,7))
 
             # Iterate over the all combinations of input parameters values to be kept const for a cut
             for j_fixval in range(n_fixvals):
@@ -968,31 +975,33 @@ def plot_response_cuts(data, input_names, output_names, compare_vals=None, foldn
         
                 ax[i_ip][j_fixval].set_xlabel(r'{}'.format(running_ip_name))
                 ax[i_ip][j_fixval].set_ylabel(r'{}'.format(qoi_name))
-                ax[i_ip][j_fixval].set_title(r'{}'.format(fixed_ip_val_str), fontsize=8)
+                ax[i_ip][j_fixval].set_title(r'{}'.format(fixed_ip_val_str), fontsize=10)
         
                 #ax[i_ip][j_fixval].set_ylim(1.5E+6, 3.8E+6) # TODO make limits variable
-                ax[i_ip][j_fixval].set_ylim(-5.E+5, 4.5E+6)
+                ax[i_ip][j_fixval].set_ylim(-5.E+5, 4.E+6)
                 #ax[i_ip][j_fixval].legend(loc='best') 
 
                 #Do the same for a combined plot
-                ax_loc.errorbar(x_io, y_qoi, yerr=1.96*y_stem,
-                                            #fmt='-o', 
+                ax_loc.errorbar(x_io, y_qoi, yerr=1.96*y_stem, 
                                             uplims=False, lolims=False,
                                             label=r'{}'.format(fixed_ip_val_str),
                                             alpha=0.5,
+                                            color=fmt_list[j_fixval][2],
+                                            linestyle=fmt_list[j_fixval][1],
+                                            marker=fmt_list[j_fixval][0],
                                )
 
 
                 # if y values (mean, min, max) to compare are passed, plot the horizontal lines
                 if compare_vals is not None:
                     
-                    ax[i_ip][j_fixval].hlines(y=compare_vals[0], xmin=x_io.min(), xmax=x_io.max(), color='r', linestyle='-')
+                    ax[i_ip][j_fixval].hlines(y=compare_vals[0], xmin=x_io.min(), xmax=x_io.max(), color='r', linestyle='-' )
                     ax[i_ip][j_fixval].hlines(y=compare_vals[1], xmin=x_io.min(), xmax=x_io.max(), color='r', linestyle='--')
                     ax[i_ip][j_fixval].hlines(y=compare_vals[2], xmin=x_io.min(), xmax=x_io.max(), color='r', linestyle='--')
 
-                    ax_loc.hlines(y=compare_vals[0], xmin=x_io.min(), xmax=x_io.max(), color='r', linestyle='-')
-                    ax_loc.hlines(y=compare_vals[1], xmin=x_io.min(), xmax=x_io.max(), color='r', linestyle='--')
-                    ax_loc.hlines(y=compare_vals[2], xmin=x_io.min(), xmax=x_io.max(), color='r', linestyle='--')
+                    ax_loc.hlines(y=compare_vals[0], xmin=x_io.min(), xmax=x_io.max(), color='r', linestyle='-',  alpha=0.5)
+                    ax_loc.hlines(y=compare_vals[1], xmin=x_io.min(), xmax=x_io.max(), color='r', linestyle='--', alpha=0.5)
+                    ax_loc.hlines(y=compare_vals[2], xmin=x_io.min(), xmax=x_io.max(), color='r', linestyle='--', alpha=0.5)
 
                 if traces is not None:
 
@@ -1016,10 +1025,10 @@ def plot_response_cuts(data, input_names, output_names, compare_vals=None, foldn
 
                         ax_tr[i_ip][j_fixval].set_xlabel(r't.st. for {0}, runs#{1}'.format(running_ip_name, inds))
                         ax_tr[i_ip][j_fixval].set_ylabel(r'{0}'.format(qoi_name))
-                        ax_tr[i_ip][j_fixval].set_title(r'{0}'.format(fixed_ip_val_str), fontsize=11)
+                        ax_tr[i_ip][j_fixval].set_title(r'{0}'.format(fixed_ip_val_str), fontsize=12)
                         
-                        ax_tr[i_ip][j_fixval].set_ylim(-5.E+5, 4.5E+6)
-                        ax_tr[i_ip][j_fixval].legend(loc='best', prop={'size':11})
+                        ax_tr[i_ip][j_fixval].set_ylim(-5.E+5, 4.E+6)
+                        ax_tr[i_ip][j_fixval].legend(loc='best', prop={'size':12})
 
                         if hists is not None:
                             
@@ -1031,9 +1040,9 @@ def plot_response_cuts(data, input_names, output_names, compare_vals=None, foldn
 
                             ax_hs[i_ip][j_fixval].set_xlabel(r'val-s for {0}, runs#{1}'.format(running_ip_name, inds))
                             ax_hs[i_ip][j_fixval].set_ylabel(r'#runs')
-                            ax_hs[i_ip][j_fixval].set_title(r'{0}'.format(fixed_ip_val_str), fontsize=10)
+                            ax_hs[i_ip][j_fixval].set_title(r'{0}'.format(fixed_ip_val_str), fontsize=11)
                         
-                            ax_hs[i_ip][j_fixval].legend(loc='best', prop={'size':10})
+                            ax_hs[i_ip][j_fixval].legend(loc='best', prop={'size':11})
         
             #offset *= 2
             # Filter on dataframe could be completely replaced by an offseting for different chosen parameter        
@@ -1043,9 +1052,9 @@ def plot_response_cuts(data, input_names, output_names, compare_vals=None, foldn
             ax_loc.set_ylabel(r'{}'.format(qoi_name))
             ax_loc.set_title(r'Scans for {0}'.format(running_ip_name))
             ax_loc.set_ylim(-1.E+5, 4.E+6)
-            ax_loc.legend(loc='best')
+            ax_loc.legend(loc='best',prop={'size':7}) #TEMP -probably an overload for a poster
             fig_loc.tight_layout()
-            fig_loc.savefig('scan_comb_{0}_{1}.png'.format(running_ip_name, foldname))
+            fig_loc.savefig('scan_comb_{0}_{1}.svg'.format(running_ip_name, foldname))
         
         fig.tight_layout()
         #fig.suptitle('GEM response in {} around profile values'.format(qoi_name)) #TODO: pass names as arguments    
