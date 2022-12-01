@@ -6,6 +6,7 @@ import time as t
 
 import glob
 import ast
+import itertools
 
 import matplotlib
 #matplotlib.use('Agg')
@@ -714,3 +715,335 @@ def read_sobols_from_logs(labels=['te_val', 'ti_val', 'te_grad', 'ti_grad']):
 
     return sob_list_list
 
+def merge_result_csv(file_list, output_name='resuq_extended'):
+    """
+    Takes a list of filenames of CSVs with turbulence code results and saves a CSV which is a combination of all runs
+    """
+
+    df = pd.concat([pd.read_csv(f, delimiter=',', engine='python') for f in file_list])
+
+    df.to_csv(output_name + '.csv')
+
+def produce_stats_dataframes(runs_input_vals, val_trend_avg_s, val_std_s, stats_df, scan_df, 
+                             n_lensample=1, runn=0, p='ti_transp', a='flux'):
+    """
+    Composed pandas dataframes with code input/output and its statistics with single entry for a code run
+         Parameters:
+             
+         Returns: 
+             pandas DataFrame with rows - runs for different cases; columns - code io and stats
+    """
+    if n_lensample==1:
+        n_lensample = val_trend_avg_s[runn-1].shape[-1]
+   
+    #print('acf-corrected sample length: {0}'.format(n_lensample)) ###DEBUG
+
+    # stats_df = stats_df.append(#(stats_df,
+    #                       pd.Series(
+    #                            data={'mean': val_trend_avg_s[runn-1][0][0],
+    #                                  'std': val_std_s[runn-1][0][0]},
+    #                            name=runn-1)
+    #                      #), axis=1
+    #                     ) # probably a bad workaround
+
+    stats_df = pd.concat([
+                        stats_df,
+                        pd.Series(
+                            data={'mean': val_trend_avg_s[runn-1][0][0],
+                                  'std': val_std_s[runn-1][0][0]},
+                            name=runn-1,
+                                 ).to_frame().T,
+                             ],
+                         #axis=0,
+                         #ignore_index=True,
+                        )
+
+    #print('stats_df: \n {0}'.format(stats_df)) ###DEBUG
+    #print('stats_df_new: \n {0}'.format(stats_df_new)) ###DEBUG
+
+    scan_data = runs_input_vals[runn-1]
+    scan_data[p+'_'+a] = val_trend_avg_s[runn-1][0][0]
+    scan_data[p+'_'+a+'_std'] = val_std_s[runn-1][0][0]
+    scan_data[p+'_'+a+'_stem'] = scan_data[p+'_'+a+'_std'] / np.sqrt(n_lensample)
+    scan_data[p+'_'+a+'_acn'] = n_lensample
+
+    scan_data_new = {}
+    for k,v in scan_data.items():
+        scan_data_new[k.replace('.', '_')] = v
+
+    # scan_df = scan_df.append(#(scan_df,
+    #                      pd.Series(
+    #                           data=scan_data_new,
+    #                           name=runn-1,
+    #                           #index=runn-1,
+    #                               )
+    #                     #), axis=1
+    #                    )
+    # #TODO: name is NaN; and index is saved in csv but not recognised in dataframe
+
+    scan_df = pd.concat([
+                        scan_df,
+                        pd.Series(
+                               data=scan_data_new,
+                               name=runn-1,
+                               #index={runn-1},
+                                 ).to_frame().T,
+                            ],
+                         #axis=0,
+                         #ignore_index=True,
+                        )
+
+    #print('scan_df: \n {0}'.format(scan_df)) ###DEBUG
+    #print('scan_df_new: \n {0}'.format(scan_df_new)) ###DEBUG
+
+    return scan_df, stats_df
+
+def plot_response_cuts(data, input_names, output_names, compare_vals=None, foldname='', traces=None, hists=None):
+    """
+    Plot different cuts (fixing all input parameter values but one) of code response for given QoI
+        Parameters:
+            data: pandas dataframe with input and output values of code
+                  note: pass means of the outputs
+            input_names: list of stings with input names, corresponds to dataframe columns, 
+                         also used for plot labels
+            output_names: list of strings with output names, corresponds to dataframe columns,
+                          also used for plot labels
+            compare_vals: for a single QoI name - a tuple of type (mean, min value, max_value)
+            foldname: string of original campaign id to destinguish plot names
+            traces: list of lists with values over time for each cases described in 'data'
+            hists: histograms to be plotteed in an array
+    """
+
+    # Define a set of styles for different lists plotted
+    color_list = ['b', 'g', 'r', 'y' , 'm', 'c', 'k']
+    line_list = ['-', '--', '-.', ':']
+    marker_list = ['', '.', 'o', 'v', '^', '<', '>']
+    style_lists = [marker_list, line_list, color_list,] 
+    fmt_list = [style for style in itertools.product(*style_lists)]
+
+    if len(input_names) == 1:
+        # If the dimension is one there are no cuts, only a single plot
+
+        axes = data.plot(x=input_names[0], 
+                        y=output_names[0],
+                        yerr=output_names[0]+'_stem',
+                        kind='scatter', #'line',
+                        style={'color': 'b', 'marker':'.', 'linestyle':''},
+                        title='Response for a single argument',
+                        xlabel=input_names[0],
+                        ylabel=output_names[0]
+                        )
+
+        for i in range(len(data.index)):
+            axes.annotate('{0:1.3f}'.format(data.at[i, output_names[0]+'_stem'] / data.at[i, output_names[0]]), 
+                          (data.at[i, input_names[0]], data.at[i, output_names[0]]))
+
+        axes.get_figure().savefig('scan_'+output_names[0]+'_'+foldname+'.svg')
+        plt.close()                        
+
+    else:
+
+        n_inputs = len(input_names)
+        n_points = len(data.index)
+        n_points_perdim = int(n_points ** (1./n_inputs))
+        n_fixvals = n_points_perdim ** (n_inputs - 1)
+        n_plots = (n_inputs) * (n_fixvals)
+
+        qoi_name = output_names[0] # TODO to make modifiable
+        qoi_std_name = qoi_name + '_std'
+        qoi_stem_name= qoi_name + '_stem'
+
+        #print([n_inputs, n_points, n_points_perdim, n_fixvals, n_plots, qoi_name]) ###DEBUG
+        #print('n_inputs={0}, n_points={1}, n_ppdim={2}, n_fv={3}, n_pl={4}'.format(n_inputs, n_points, n_points_perdim, n_fixvals, n_plots)) ###DEBUG
+        
+        # Get unique values for every input dimension
+        input_vals_unique = np.array([np.unique(data[i]) for i in input_names])
+        #print("input_vals_unique={}".format(input_vals_unique)) ###DEBUG
+    
+        # A generator for numbers for input dimension numbers
+        input_inds = range(n_inputs)
+
+        fig, ax = plt.subplots(n_inputs, n_fixvals, 
+                            figsize=(100, 20)
+                            )
+
+        # if traces are passed, create same type of plot layout but with time traces 
+        if traces is not None:
+            fig_tr, ax_tr = plt.subplots(n_inputs, n_fixvals, 
+                                figsize=(175, 25)
+                                        )
+        
+        if hists is not None:
+            fig_hs, ax_hs = plt.subplots(n_inputs, n_fixvals, 
+                                figsize=(100, 20)
+                                        )
+
+        # Iterate over all the input dimensions, selecting single one as a running variable
+        for i_ip in range(n_inputs):
+
+            running_ip_name = input_names[i_ip]
+            input_names_left = [n for n in input_names if n != running_ip_name]
+            input_inds_left = [n for n in input_inds if n != i_ip]
+            fixed_ip_names = ''.join([n+'&' for n in input_names_left])
+
+            #offset = 1
+
+            input_fixvals_unique = list(itertools.product(
+                                        *[input_vals_unique[i,:].tolist() for i in input_inds_left]))
+            
+            #print([i_ip, running_ip_name, input_names_left, 
+            #      input_inds_left, fixed_ip_names, input_fixvals_unique]) ###DEBUG
+
+            #Create figure for combined scan, one for every input variable
+            fig_loc, ax_loc = plt.subplots(1, 1, figsize=(7,7))
+
+            # Iterate over the all combinations of input parameters values to be kept const for a cut
+            for j_fixval in range(n_fixvals):
+
+                # Choosing data for the cut 
+        
+                #pivot_fixed_val = data[input_names_left][j_fixval+offset]
+                #tot_ind = data[input_names_left].where() #TODO location where element is equal to pivot_fixed_val
+
+                #tot_ind = np.arange(j_fixval*offset,
+                #                    (j_fixval+n_points_perdim-1)*offset,
+                #                    offset).tolist()
+                # TODO how to save symbolic expression for an array cut?
+                
+                input_fixvals = input_fixvals_unique[j_fixval]
+                fixval_query = ''.join([n+'=='+str(v)+' & ' for (n,v) in zip(input_names_left, input_fixvals)])[:-3]
+                # TODO query using abs(x-x*)<e_tol, or math.isclose() !           
+    
+                #print([tot_ind, input_fixvals, fixval_query]) ###DEBUG            
+
+                data_slice = data.query(fixval_query)  #TODO FAILS IN THE LATEST PANDAS VERSION
+                #TODO: probably a very slow way to access a DataFrame - still think how to offset with 3-nested loop
+
+                # TODO: choose one of three ways: 
+                #                      1) offsets - has to be 3 nested loops
+                #                      2) filtering - inside current two loops, use np.unique() -> using
+                #                      3) transform into ndarray of 4D, the iterate (look tuto notebook) - not general for different number of params
+    
+                #fixed_ip_vals      = data[input_names_left][tot_ind[0]] # TODO count tot_ind
+                #fixed_ip_vals_str  = ''.join([str(v)+';' for v in fixed_ip_vals.to_list()]) 
+                fixed_ip_val_str = ''.join([n+'='+str(round(v, 1))+';' for (n,v) in zip(input_names_left, input_fixvals)])
+
+                x_io  = data_slice[running_ip_name].to_numpy()
+                y_qoi = data_slice[qoi_name].to_numpy()
+                y_std = data_slice[qoi_std_name].to_numpy()
+                y_stem= data_slice[qoi_stem_name].to_numpy()
+                inds  = data_slice.index.to_list()
+
+                #print('inds : {0}'.format(inds)) ###DEBUG
+    
+                # Plotting part of iteration
+
+                #ax[i_ip][j_fixval].plot(x_io, y_running_ip_nameqoi, 'o-', 
+                #                   label='Response for ({})->({}) for {}'.
+                #                   format(running_ip_name, qoi_name, fixed_ip_val_str))         
+                
+                ax[i_ip][j_fixval].errorbar(x_io, y_qoi, yerr=1.96*y_stem,
+                                            #fmt='-o', 
+                                            uplims=False, lolims=False,
+                                            label='Response for ({})->({}) for {}'.
+                                                format(running_ip_name, qoi_name, fixed_ip_val_str)
+                                            )
+        
+                ax[i_ip][j_fixval].set_xlabel(r'{}'.format(running_ip_name))
+                ax[i_ip][j_fixval].set_ylabel(r'{}'.format(qoi_name))
+                ax[i_ip][j_fixval].set_title(r'{}'.format(fixed_ip_val_str), fontsize=10)
+        
+                #ax[i_ip][j_fixval].set_ylim(1.5E+6, 3.8E+6) # TODO make limits variable
+                ax[i_ip][j_fixval].set_ylim(-5.E+5, 4.E+6)
+                #ax[i_ip][j_fixval].legend(loc='best') 
+
+                #Do the same for a combined plot
+                ax_loc.errorbar(x_io, y_qoi, yerr=1.96*y_stem, 
+                                            uplims=False, lolims=False,
+                                            label=r'{}'.format(fixed_ip_val_str),
+                                            alpha=0.5,
+                                            color=fmt_list[j_fixval][2],
+                                            linestyle=fmt_list[j_fixval][1],
+                                            marker=fmt_list[j_fixval][0],
+                               )
+
+
+                # if y values (mean, min, max) to compare are passed, plot the horizontal lines
+                if compare_vals is not None:
+                    
+                    ax[i_ip][j_fixval].hlines(y=compare_vals[0], xmin=x_io.min(), xmax=x_io.max(), color='r', linestyle='-' )
+                    ax[i_ip][j_fixval].hlines(y=compare_vals[1], xmin=x_io.min(), xmax=x_io.max(), color='r', linestyle='--')
+                    ax[i_ip][j_fixval].hlines(y=compare_vals[2], xmin=x_io.min(), xmax=x_io.max(), color='r', linestyle='--')
+
+                    ax_loc.hlines(y=compare_vals[0], xmin=x_io.min(), xmax=x_io.max(), color='r', linestyle='-',  alpha=0.5)
+                    ax_loc.hlines(y=compare_vals[1], xmin=x_io.min(), xmax=x_io.max(), color='r', linestyle='--', alpha=0.5)
+                    ax_loc.hlines(y=compare_vals[2], xmin=x_io.min(), xmax=x_io.max(), color='r', linestyle='--', alpha=0.5)
+
+                if traces is not None:
+
+                    n = max([v.shape[-1] for v in traces])
+                    ts = np.arange(n)
+                     
+                    for k in inds:
+
+                        n_cur = len(traces[k][0])
+
+                        x_io_val = data[running_ip_name].iloc[k]
+                        x_io_val_str = '{0}={1}'.format(running_ip_name, x_io_val)
+
+                        #print('trace passed to cut plot: {0}'.format(traces[k][:])) ###DEBUG
+                        #print('traces have len= {0}'.format(n_cur)) ###DEBUG
+
+                        ax_tr[i_ip][j_fixval].plot(np.arange(n_cur), traces[k][0][:],
+                                                   #label='time trace for ({})->({}) for {}'.format(running_ip_name, qoi_name, fixed_ip_val_str),
+                                                   label=r'{}'.format(x_io_val_str),
+                                                  )
+
+                        ax_tr[i_ip][j_fixval].set_xlabel(r't.st. for {0}, runs#{1}'.format(running_ip_name, inds))
+                        ax_tr[i_ip][j_fixval].set_ylabel(r'{0}'.format(qoi_name))
+                        ax_tr[i_ip][j_fixval].set_title(r'{0}'.format(fixed_ip_val_str), fontsize=12)
+                        
+                        ax_tr[i_ip][j_fixval].set_ylim(-5.E+5, 4.E+6)
+                        ax_tr[i_ip][j_fixval].legend(loc='best', prop={'size':12})
+
+                        if hists is not None:
+                            
+                            ax_hs[i_ip][j_fixval].hist(traces[k][0][:],
+                                                       bins=n//64,
+                                                       label=r'{}'.format(x_io_val_str),
+                                                       alpha=0.75,
+                                                      )
+
+                            ax_hs[i_ip][j_fixval].set_xlabel(r'val-s for {0}, runs#{1}'.format(running_ip_name, inds))
+                            ax_hs[i_ip][j_fixval].set_ylabel(r'#runs')
+                            ax_hs[i_ip][j_fixval].set_title(r'{0}'.format(fixed_ip_val_str), fontsize=11)
+                        
+                            ax_hs[i_ip][j_fixval].legend(loc='best', prop={'size':11})
+        
+            #offset *= 2
+            # Filter on dataframe could be completely replaced by an offseting for different chosen parameter        
+    
+            #Set and save scans combined by the input value
+            ax_loc.set_xlabel(r'{}'.format(running_ip_name))
+            ax_loc.set_ylabel(r'{}'.format(qoi_name))
+            ax_loc.set_title(r'Scans for {0}'.format(running_ip_name))
+            ax_loc.set_ylim(-1.E+5, 4.E+6)
+            ax_loc.legend(loc='best',prop={'size':7}) #TEMP -probably an overload for a poster
+            fig_loc.tight_layout()
+            fig_loc.savefig('scan_comb_{0}_{1}.svg'.format(running_ip_name, foldname))
+        
+        fig.tight_layout()
+        #fig.suptitle('GEM response in {} around profile values'.format(qoi_name)) #TODO: pass names as arguments    
+        #fig.subplots_adjust(top=0.8)
+
+        fig.savefig('scan_{0}_{1}.pdf'.format(qoi_name, foldname))
+
+        if traces is not None:
+            fig_tr.tight_layout()
+            fig_tr.savefig('scan_traces_{0}_{1}.pdf'.format(qoi_name, foldname))
+        
+        if hists is not None:
+            fig_hs.tight_layout()
+            fig_hs.savefig('scan_hists_{0}_{1}.pdf'.format(qoi_name, foldname))
+            
+        plt.close()

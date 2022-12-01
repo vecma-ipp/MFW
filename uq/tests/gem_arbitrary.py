@@ -118,7 +118,7 @@ params, vary = cpo_inputs(cpo_filename=input_filename,
 
 ### 
 # !!! We read this files with params vals !!!
-param_file = 'gem_uq_new_param_vals_2.csv'
+param_file = 'gem_uq_new_param_vals_al_1.csv'
 
 sampling_dataframe = pd.read_csv(param_file, delimiter=',')
 

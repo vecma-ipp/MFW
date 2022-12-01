@@ -53,7 +53,7 @@ if [ -z "${POLORDER}" ]; then
 fi
 
 echo -e '> In this run: use ExecuteLocal only + QCGPJ pool + '${MPIMOD}' exec mode + '${SLURM_NNODES} \
-' nodes + 4 params + 3 values + commandline passed with '${MPICMD}' \n'
+' nodes + 4 params + 6 values + commandline passed with '${MPICMD}' \n'
 
 echo '> Here we take larger ti_ddrho and intermediate ti error at rho_tor=0.7 \n'
 

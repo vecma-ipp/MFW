@@ -57,7 +57,6 @@ echo ${CPONUM}
 echo ${OLDCAMP}
 
 #export OLDCAMP=${1:-'aos1mzke'} #'brus48mm' #'1wu9k2wa'
-# TODO: change, works not how expected - uses default parameter
 
 if [ -z "${POLORDER}" ]; then
     export POLORDER=2
