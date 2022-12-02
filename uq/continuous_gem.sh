@@ -131,7 +131,7 @@ else
   #1. First submission of a campaign, retrieve the SLURM job-id
   echo "Starting the VERY ACTUAL first SLURM submission with UQ campaign"
 
-  PREVID=$(sbatch --export=ALL,POLORDER=${POLORDER} --parsable --wait ${COM0})
+  PREVID=$(sbatch --export=ALL,POLORDER=${POLORDER},RUNRANGE=${RUNRANGE} --parsable --wait ${COM0})
 
   #Extract the ROOTCAMPDIR from the submission
   ROOTCAMPDIR=$(<camp_temp_dir.txt) 

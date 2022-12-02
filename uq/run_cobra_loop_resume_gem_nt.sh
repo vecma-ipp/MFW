@@ -52,9 +52,10 @@ export EASYPJ_CONFIG=conf.sh
 # Define some global variables to configure UQ software
 export MPIMOD=default #srunmpi
 
-echo '> CPONUM and OLDCAMP are: '
+echo '> CPONUM, OLDCAMP and RUNRANGE are: '
 echo ${CPONUM}
 echo ${OLDCAMP}
+echo ${RUNRANGE}
 
 #export OLDCAMP=${1:-'aos1mzke'} #'brus48mm' #'1wu9k2wa'
 
@@ -62,7 +63,7 @@ if [ -z "${POLORDER}" ]; then
     export POLORDER=2
 fi
 
-echo -e '> In this run: use ExecuteLocal only + QCGPJ pool + '${MPIMOD}' exec mode + '${SLURM_NNODES} \
+echo -e '> In this run: use ExecuteLocal only + QCGPJ pool + '${MPIMOD}' exec mode + '${SLURM_NNODES}\
 ' nodes + 4 param + pol-order '${POLORDER}' + commandline passed with '${MPICMD}' \n'
 
 ####################################
