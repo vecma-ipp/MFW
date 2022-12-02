@@ -13,6 +13,7 @@ import time
 
 from sklearn.neighbors import KernelDensity as KDE
 from scipy.stats import moment, linregress
+from scipy import interpolate
 
 import statsmodels.api as sm
 from statsmodels.tsa.api import acf, pacf, graphics
@@ -409,30 +410,33 @@ def get_coreprof_ev_acf(value_ev, name='ti', lags=[1,2,3,4,5,6,7,8,9,10]):
             name    : profile name, used for outputs/plotting/saving
             lags    : list of sizes of lags to test autocorrelation
         Returns:
-            autocorrelation lenght
+            autocorrelation length
             number of effective samples (one per ACF window)
             ACF object
     """ 
-       
-    nl = 64    
     
     nftc = value_ev.shape[0]
 
     ac_len = []
     ac_num = []   
+
+    lags_np = np.array(lags)
      
     # Iterate over all different passed flux tubes and cases of runs
     print('>Calculating ACF')
     for i in range(nftc):
         
         print('Considering flux tube or case #{}'.format(i))
+        #TODO: get rid of lists and use numpy arrays
 
         n_sample = value_ev.shape[-1]
 
         acf_manual = [1. if l==0 else np.corrcoef(value_ev[i][l:], value_ev[i][:-l])[0][-1] for l in lags]
 
-        #NB: commented out because currently is not in use for furhter processing, should probably be adopted to calcualte autocorrelation time
+        #NB: commented out because currently is not in use for further processing, should probably be adopted to calcualte autocorrelation time
         """
+        nl = 64    
+        
         r,q,p  = acf(value_ev[i], nlags=nl, fft=True, qstat=True) 
  
         acf_data = np.c_[np.arange(1, nl+1), r[1:], q, p]
@@ -462,24 +466,43 @@ def get_coreprof_ev_acf(value_ev, name='ti', lags=[1,2,3,4,5,6,7,8,9,10]):
 
         #acfs = acf_data_pd['AC'].to_numpy()
         acfs = acf_manual
+        acfs_np = np.array(acfs)
 
         # Defining Error(L) as Var(V[1..L])/sqrt(L) ...-> then Error is not normalized to [0.;1.]!
 
         #errors = [np.std(value_ev[i][:l]) / np.mean(value_ev[i][:l]) for l in lags]
         errors = [1./np.sqrt(float(l)) for l in lags]
 
+        #TODO: probably apply following by default
+        # Normalization of Error, dividing by absolute mean of time traces
+        #TODO: probably autocorrelation time calculation should employ e-folding i.e. 
+        #   a. 'for which t ACF(t) decreases by 1/e compared to ACF(1)?'
+        #   b. 'for which t ACF(t) decreases by 1/e compared to ACF(0)?'
+        #   c. 'for which t ACF(t) decreases by 1/e (corrected by standard deviation) compared to ACF(0)?'
         if isinstance(value_ev[i], np.ndarray) :
             errors = [np.std(value_ev[i][:l]) / (np.abs(np.mean(value_ev[i][:l])) * np.sqrt(float(l))) for l in lags]
+        errors_np = np.array(errors)
 
         #print('ACF errors: {}'.format(errors)) ###DEBUG
 
         # Defining ACL as the smallest lag size L that: ACF(L)<= Err(L)
-        # TODO could be done with interpolation of ACF for intermediate lag values
+        """
         acl = lags[0]
         for l, ac, e in zip(lags, acfs, errors):
             acl = l
             if ac < e:
                 break
+        """
+        #Interpolating ACF and Err for intermediate values of lags
+        f_acf = interpolate.interp1d(lags_np, acfs_np, kind='cubic')
+        f_err = interpolate.interp1d(lags_np, errors_np, kind='cubic')
+
+        lags_int = np.arrange(lags_np.min(), lags_np.max(), 1.)
+        acfs_int = f_acf(lags_int)
+        errors_int = f_err(lags_int)
+
+        # Calculating autocorrelation time as lag for which ACF drops below its calcualtion error
+        acl = lags_int[np.where(acfs_int < errors_int)[0].min()]
 
         ac_len_cur = float(acl)
         ac_len.append(ac_len_cur)
@@ -1076,7 +1099,7 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
             
             
             profile_evol_plot(val_ev_s, labels=labels, name=code_name+'_'+p+'_'+a+'_'+mainfoldernum, alignment='start', vertline=alpha_wind*val_ev_s[0].shape[-1]) 
-            
+
             
             #print('passes to plot: {}'.format(val_ev_s[0].shape)) ###DEBUG
             #print('before shape {}'.format(val_evname=code_name+'_'+p+'_'+a+'_'+mainfoldernum, alignment='start'_s[i].shape)) ###DEBUG
