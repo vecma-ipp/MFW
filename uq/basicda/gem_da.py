@@ -497,7 +497,7 @@ def get_coreprof_ev_acf(value_ev, name='ti', lags=[1,2,3,4,5,6,7,8,9,10]):
         f_acf = interpolate.interp1d(lags_np, acfs_np, kind='cubic')
         f_err = interpolate.interp1d(lags_np, errors_np, kind='cubic')
 
-        lags_int = np.arrange(lags_np.min(), lags_np.max(), 1.)
+        lags_int = np.arange(lags_np.min(), lags_np.max(), 1.)
         acfs_int = f_acf(lags_int)
         errors_int = f_err(lags_int)
 
@@ -895,7 +895,7 @@ def discontinuity_check(vals, reltol=5E-2, abstol=10E4, disc_criterion='combined
         #print('vals of len {1}: {0}'.format(vals[i][0], n)) ###DEBUG
         #print('relgrad: {}'.format(relgrad)) ###DEBUG
         
-        # Looking for such other time series, for which at the found timestamps values where close to the one in the current time series 
+        # Looking for such other time series, for which values at the found timestamps where close to the one in the current time series 
         for t in ts:
             cands = []
 

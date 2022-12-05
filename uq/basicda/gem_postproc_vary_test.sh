@@ -35,7 +35,11 @@ READ_FROM_CSV=${7:-1}
 
 #DIR='/marconi_scratch/userexternal/yyudin00/VARY_1FT_GEM_NT_qairnbbz' # first run of 16 GEM cases in a script, n_it<=500
 #DIR='/marconi_scratch/userexternal/yyudin00/VARY_1FT_GEM_NT_qpyxg3bb' # first dir with 2 GEM runs
-DIR_PREFIX='VARY_1FT_GEM_NT_' #'VARY_1FT_GEM_NT_'
+if [-n "${CAMP_NAME_PREFIX}"]
+  DIR_PREFIX=${CAMP_NAME_PREFIX}
+else
+  DIR_PREFIX='VARY_1FT_GEM_NT_' #'VARY_1FT_GEM_NT_'
+fi
 DIR=${SCRATCH}'/'${DIR_PREFIX}${UQCAMPDIR}
 
 #DIR_SRC=${DIR}'/runs/runs_0-100000000/runs_0-1000000/runs_0-10000/runs_0-100/'
