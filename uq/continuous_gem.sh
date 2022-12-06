@@ -6,13 +6,13 @@
 # Launch with:
 # nohup ./continuous_gem.sh 17 aos1mzke 1> script_workflow_latest3.log 2>&1 &
 # nohup ./continuous_gem.sh 6  akgbbn1a 1> script_wf_20102022.log 2>&1 &
-# nohup ./continuous_gem.sh 1  w468l7ng 1> script_wf_18112022.log 2>&1 &
+# nohup ./continuous_gem.sh 2  w468l7ng 1> script_wf_06122022.log 2>&1 &
 # nohup ./continuous_gem.sh 1  rp1pw2y6 1> script_wf_05122022.log 2>&1 &
 
 #0. State the total number of campaigns to run, and ordinal number of the last campaign in previous sequence
 echo "STARTING THE WORKFLOW"
 # number of runs
-NUMRUNS=2
+NUMRUNS=3
 # no of current run, which is the last finished submission
 CURRUN=${1:-0}
 # no of the first run in the new sequence

@@ -52,10 +52,11 @@ export EASYPJ_CONFIG=conf.sh
 # Define some global variables to configure UQ software
 export MPIMOD=default #srunmpi
 
-echo '> CPONUM, OLDCAMP and RUNRANGE are: '
+echo '> CPONUM, OLDCAMP, RUNRANGE and are: '
 echo ${CPONUM}
 echo ${OLDCAMP}
 echo ${RUNRANGE}
+echo ${CAMP_NAME_PREFIX}
 
 #export OLDCAMP=${1:-'aos1mzke'} #'brus48mm' #'1wu9k2wa'
 
