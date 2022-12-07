@@ -117,8 +117,9 @@ params, vary = cpo_inputs(cpo_filename=input_filename,
                           ftube_index=ftube_index)
 
 ### 
-# !!! We read this files with params vals !!!
-param_file = 'gem_uq_new_param_vals_al_1.csv'
+# !!! We read this file with params vals !!!
+#param_file = 'gem_uq_new_param_vals_al_2.csv'
+param_file = os.environ['PARAM_FILE_NAME']
 
 sampling_dataframe = pd.read_csv(param_file, delimiter=',')
 
@@ -132,7 +133,8 @@ sampling_dataframe = pd.read_csv(param_file, delimiter=',')
 #print('input dataframe: {0}'.format(sampling_dataframe)) ###DEBUG
 
 # Initialize Campaign object
-campaign_name = "VARY_1FT_GEM_" #ATTENTION should be consistent with further resumption and postprocessing scripts
+#campaign_name = "VARY_1FT_GEM_" #ATTENTION should be consistent with further resumption and postprocessing scripts
+campaign_name = os.environ['CAMP_NAME_PREFIX']
 my_campaign = uq.Campaign(name=campaign_name, work_dir=tmp_dir)
 
 # Save the campaign dir
@@ -208,7 +210,7 @@ elif SYS == 'COBRA':
 
 nnodes = ceil(1.*ncores/n_cores_p_node)
 nnodes_tot = ceil(1.*ncores_tot/n_cores_p_node) # not entirely correct due to an 'overkill' problem i.e. residual cores at one/more nodes may not be able to allocate any jobs, but here everything is devisible; also an import from 'math'
-#nnodes_tot = 3 # TODO: can be also read from the calling SLURM script
+#nnodes_tot = 3 # TODO: can be also read from the calling SLURM script -> either pre-calculate to input into SLURM script, or calculate here knowing number of runs
 
 exec_comm_flags = ''
 #exec_comm_flags += ' -vvvvv --profile=all --slurmd-debug=3 '
@@ -276,7 +278,7 @@ actions = Actions(
                   Encode(encoder), 
                   execute,
                   Decode(decoder)
-                 ) # TODO: create a version w/o CreateDirectory and see where the outputs are spawned
+                 ) # TODO: create a version w/o CreateRunDirectory and see where the outputs are spawned
 
 # Add the app (automatically set as current app)
 my_campaign.add_app(name=campaign_name,

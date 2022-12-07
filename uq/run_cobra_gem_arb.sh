@@ -48,14 +48,23 @@ export MPIMOD=default #srunmpi
 
 ######################################################
 
+if [ -n "${CAMP_NAME_PREFIX}" ]; then
+    export CAMP_NAME_PREFIX=VARY_1FT_GEM_
+fi
+
 if [ -z "${POLORDER}" ]; then
     export POLORDER=2
 fi
 
-echo -e '> In this run: use ExecuteLocal only + QCGPJ pool + '${MPIMOD}' exec mode + '${SLURM_NNODES} \
-' nodes + 4 params + 6 values + commandline passed with '${MPICMD}' \n'
+export RUNRANGE=6
 
-echo '> Here we take larger ti_ddrho and intermediate ti error at rho_tor=0.7 \n'
+export PARAM_FILE_NAME=gem_uq_new_param_vals_al_2.csv
+
+echo -e '> In this run: use ExecuteLocal only + QCGPJ pool + '${MPIMOD}' exec mode + '${SLURM_NNODES} \
+' nodes + 4 params + '${RUNRANGE}' values + commandline passed with '${MPICMD}' \n'
+
+#echo '> Here we take larger ti_ddrho and intermediate ti error at rho_tor=0.7 \n'
+echo '> Here we take points suggested by GPR for GEM to yield Qi~=2e6 at rho_tor=0.7 \n'
 
 ####################################
 # Run the UQ code

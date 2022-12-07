@@ -24,7 +24,7 @@ LASTRUN=$((${CURRUN}+${NUMRUNS}))
 POLORDER=3
 INPUT_DIM=4
 #ATTENTION: arbitrary param to set number of core instances
-NUM_CODE_INSTS=3
+NUM_CODE_INSTS=5
 
 # batch script to submit a single UQ campaign
 #COM=run_marconi_loop_resume_gem_nt.sh # for MARCONI
@@ -49,7 +49,7 @@ export ORIGDIR=$(pwd)
 
 # Following can be anything but should be consistent with prevoius and further scripts
 #export CAMP_NAME_PREFIX=VARY_1FT_GEM_NT_
-export CAMP_NAME_PREFIX=VARY_1FT_GEM_NT_
+export CAMP_NAME_PREFIX=VARY_1FT_GEM_
 
 #TODO: akgbbn1a cpo2+ are overwritten - if the very first campaign fails, the script will overwrite the old campaign output file 
 # - the runs will be consistent though due to restoration from the old cpo numbers
@@ -81,7 +81,7 @@ then
   cd ${SCRATCH}/${CAMP_NAME_PREFIX}${ROOTCAMPDIR}/${RUNPATHSHORT}/
 
   #for r in `seq ${RUNRANGESTART} ${RUNRANGE}`; do 
-  for r in $(find -maxdepth 5 -mindepth 5 -type d -name "run_*" | sed "s|^\.||"); do 
+  for r in $(find -maxdepth 5 -mindepth 5 -type d -name "run_*" | sed "s|^\.\/||"); do 
 
     #mkdir ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/${RUNPATHSHORT}/bckp/${TMP}/run_${r}/
     mkdir -p bckp/${TMP}/${r}/
@@ -99,7 +99,7 @@ then
 
   # 0.1. Restoring snapshot files to the state of desired last completed run
   #for r in `seq ${RUNRANGESTART} ${RUNRANGE}`; do 
-  for r in $(find -maxdepth 5 -mindepth 5 -type d -name "run_*" | sed "s|^\.||"); do 
+  for r in $(find -maxdepth 5 -mindepth 5 -type d -name "run_*" | sed "s|^\.\/||"); do 
 
     #cp ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/${RUNPATHSHORT}/dat/${CURRUN}/run_${r}/*.dat ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/${RUNPATHSHORT}/run_${r}/
     cp /dat/${CURRUN}/${r}/*.dat ${r}/
@@ -120,7 +120,6 @@ then
 
   #1'. Save and process the outputs after the finish of the submission
   echo "Finished the first new UQ campaign "${PREVID}
-  #TODO: after here, somewhere here a dangling quotation mark is found
 
 else
   # Option for starting the sequence from the very scratch, with no prior folder and DB

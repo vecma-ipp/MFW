@@ -71,7 +71,7 @@ if [ "${RUN_WITH_CP}" -eq 1 ]; then
   #echo "RUN_WITH_CP="${RUN_WITH_CP}
 
   #for d in run*/ ; do
-  for d in $(find -maxdepth 5 -mindepth 5 -type d -name "run_*") ; do
+  for d in $(find -maxdepth 5 -mindepth 5 -type d -name "run_*" | sed "s|^\.\/||") ; do
       
       #echo "${d}"
 
