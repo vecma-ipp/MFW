@@ -48,7 +48,7 @@ export MPIMOD=default #srunmpi
 
 ######################################################
 
-if [ -n "${CAMP_NAME_PREFIX}" ]; then
+if [ -z "${CAMP_NAME_PREFIX}" ]; then
     export CAMP_NAME_PREFIX=VARY_1FT_GEM_
 fi
 
@@ -76,3 +76,4 @@ python3 tests/gem_arbitrary.py > test-arbuq-log.${SLURM_JOBID}
 
 echo "> Finished an UQ SLURM job!"
 scontrol show --detail job ${SLURM_JOBID}
+

@@ -178,18 +178,19 @@ if [ "${RUN_WITH_SAVE}" -eq 1 ]; then
   cd ${DIR_OUTPUT}
   mkdir ${UQCAMPDIR}
 
-  mv ../*.png ${UQCAMPDIR}/
-  mv ../*.txt ${UQCAMPDIR}/
-  mv ../resuq*.csv ${UQCAMPDIR}/
-  mv ../stat*.csv ${UQCAMPDIR}/
-  cp ../gem*.csv ${UQCAMPDIR}/
+  mv ../*${UQCAMPDIR}*.png ${UQCAMPDIR}/
+  mv ../*${UQCAMPDIR}*.csv ${UQCAMPDIR}/
+  mv ../*${UQCAMPDIR}*.txt ${UQCAMPDIR}/
+  mv ../resuq*${UQCAMPDIR}*.csv ${UQCAMPDIR}/
+  mv ../stat*${UQCAMPDIR}*.csv ${UQCAMPDIR}/
+  cp ../gem*${UQCAMPDIR}*.csv ${UQCAMPDIR}/
   
-  mv ../gem*.csv ./
+  mv ../gem*${UQCAMPDIR}*.csv ./
 
   # Sort files into folder by quantity, number of run, type of file -> make sure the file is in folder and the ranges are set up!
   cp ../sort_files.sh ${UQCAMPDIR}/
   cd ${UQCAMPDIR}
   ./sort_files.sh
-  #TODO: sort files copies flux time traces CSV files with wrong campaign names
+  #TODO: sort_files.sh copies flux time traces CSV files with wrong campaign names
 
 fi

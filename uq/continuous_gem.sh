@@ -143,7 +143,7 @@ else
 
 fi
 
-#NOTE: the call of postrpocessing scripts is moved to the SLURM submission
+#NOTE: the call of postrpocessing scripts COULD BE moved to the SLURM submission
 echo "Now postprocessing for campaign "${PREVID}
 cd basicda
 ./gem_postproc_vary_test.sh ${FRUN} ${ROOTCAMPDIR} 1 1 ${RUNRANGE} 1 0
