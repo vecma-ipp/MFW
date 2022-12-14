@@ -1047,3 +1047,39 @@ def plot_response_cuts(data, input_names, output_names, compare_vals=None, foldn
             fig_hs.savefig('scan_hists_{0}_{1}.pdf'.format(qoi_name, foldname))
             
         plt.close()
+
+def plot_1D_scalings(data, input_names, output_names=['ti_transp_flux'], scale_type=['lnti_ddrho', 'lnte_ddrho'], compare_vals=None, foldname='', traces=None, hists=None):
+
+    """
+    """
+    
+    scale_function_lookup = {
+                        'lnti_ddrho': (lambda x: x[input_names[3]]/x[input_names[1]], [3,1]), 
+                        # takes a 2-tuple and returns their fraction, assumes x[1]=ti, x[3]=grad_ti; active dimensions are 1 and 3
+                        'lnte_ddrho': (lambda x: x[input_names[2]]/x[input_names[0]], [2,0]), 
+                        # takes a 2-tuple and returns their fraction, assumes x[0]=te, x[2]=grad_te; active dimensions are 0 and 2                   
+                            }
+
+    # Define a set of styles for different lists plotted
+    color_list = ['b', 'g', 'r', 'y' , 'm', 'c', 'k']
+    line_list = ['-', '--', '-.', ':']
+    marker_list = ['', '.', 'o', 'v', '^', '<', '>']
+    style_lists = [marker_list, line_list, color_list,] 
+    fmt_list = [style for style in itertools.product(*style_lists)]
+
+    for scaling in scale_type:
+
+        scaling_function = scale_function_lookup[scaling][0]
+        active_input_dimensions = scale_function_lookup[scaling][1]
+
+        data[scaling] = data.apply(scaling_function, axis=1)
+
+        input_vals_unique = np.unique(data[scaling])
+
+        #fig, ax = plt.subplots(1, 1, figsize=(7,7))
+
+        ax = data.plot(x=scaling, y=output_names[0], 
+                    kind='scatter', logy=True, ylim=(1e1,1e7))
+
+        fig = ax.get_figure()
+        fig.savefig('scan_{0}_{1}.svg'.format(scaling, foldname))
