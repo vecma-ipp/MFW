@@ -967,7 +967,6 @@ def plot_response_cuts(data, input_names, output_names, compare_vals=None, foldn
                                             marker=fmt_list[j_fixval][0],
                                )
 
-
                 # if y values (mean, min, max) to compare are passed, plot the horizontal lines
                 if compare_vals is not None:
                     
@@ -1048,9 +1047,10 @@ def plot_response_cuts(data, input_names, output_names, compare_vals=None, foldn
             
         plt.close()
 
-def plot_1D_scalings(data, input_names, output_names=['ti_transp_flux'], scale_type=['lnti_ddrho', 'lnte_ddrho'], compare_vals=None, foldname='', traces=None, hists=None):
+def plot_1D_scalings(data, input_names=['te_value', 'ti_value', 'te_ddrho', 'ti_ddrho'], output_names=['ti_transp_flux'], scale_type=['lnti_ddrho', 'lnte_ddrho'], compare_vals=None, foldname='', traces=None, hists=None):
 
     """
+    Saves an image with a plot of some QoI dependency on a function of original simulator input variables
     """
     
     scale_function_lookup = {
@@ -1078,8 +1078,137 @@ def plot_1D_scalings(data, input_names, output_names=['ti_transp_flux'], scale_t
 
         #fig, ax = plt.subplots(1, 1, figsize=(7,7))
 
-        ax = data.plot(x=scaling, y=output_names[0], 
-                    kind='scatter', logy=True, ylim=(1e1,1e7))
+        ax = data.plot( x=scaling, 
+                        y=output_names[0], 
+                        kind='scatter', 
+                        logy=True, 
+                        ylim=(1e1,1e7)
+                      )
 
         fig = ax.get_figure()
         fig.savefig('scan_{0}_{1}.svg'.format(scaling, foldname))
+
+def plot_2D_scalings(data, input_names=['te_value', 'ti_value', 'te_ddrho', 'ti_ddrho'], output_names=['ti_transp_flux'], scale_type=[('ti_value','ti_ddrho')], compare_vals=None, foldname='', traces=None, hists=None):
+
+    """
+    Saves an image with a contour plot of some QoI dependency on a pair of functions of original simulator input variables
+    """
+    
+    scale_function_lookup = {
+                        'te_value': (lambda x: x[input_names[0]], [0]),
+                        'ti_value': (lambda x: x[input_names[1]], [1]),
+                        'te_ddrho': (lambda x: x[input_names[2]], [2]),
+                        'ti_ddrho': (lambda x: x[input_names[3]], [3]),
+
+                        'abs_te_ddrho':(lambda x: abs(x[input_names[2]]), [2]),
+                        'abs_ti_ddrho':(lambda x: abs(x[input_names[2]]), [2]),
+
+                        'lnti_ddrho': (lambda x: x[input_names[3]]/x[input_names[1]], [3,1]), 
+                        # takes a 2-tuple and returns their fraction, assumes x[1]=ti, x[3]=grad_ti; active dimensions are 1 and 3
+                        'lnte_ddrho': (lambda x: x[input_names[2]]/x[input_names[0]], [2,0]), 
+                        # takes a 2-tuple and returns their fraction, assumes x[0]=te, x[2]=grad_te; active dimensions are 0 and 2                   
+                            }
+
+    # Define a set of styles for different lists plotted
+    color_list = ['b', 'g', 'r', 'y' , 'm', 'c', 'k']
+    line_list = ['-', '--', '-.', ':']
+    marker_list = ['', '.', 'o', 'v', '^', '<', '>']
+    style_lists = [marker_list, line_list, color_list,] 
+    fmt_list = [style for style in itertools.product(*style_lists)]
+
+    # Preparing an array of plots
+    n_plottypes = len(scale_type)
+    n_inputs = len(input_names)
+    n_points = len(data.index)
+    n_points_perdim = int(n_points ** (1./n_inputs))
+    n_fixvals = n_points_perdim ** (n_inputs - 2)
+    
+    basesize = 7
+    figs, axs = plt.subplots(n_plottypes, n_fixvals, 
+                            figsize=((basesize*1.1)*n_fixvals, basesize))
+
+    for ifi, scaling_pair in enumerate(scale_type):
+
+        # Things for X axis of a new plot: 0 element of tuple
+        scaling_function_x = scale_function_lookup[scaling_pair[0]][0]
+        active_input_dimensions_x = scale_function_lookup[scaling_pair[0]][1]
+
+        if scaling_pair[0] not in input_names:
+            data[scaling_pair[0]] = data.apply(scaling_function_x, axis=1)
+
+        input_vals_unique_x = np.unique(data[scaling_pair[0]])
+        n_x = input_vals_unique_x.size
+
+        # Things for Y axis of a new plot: 1 element of tuple 
+        scaling_function_y = scale_function_lookup[scaling_pair[1]][0]
+        active_input_dimensions_y = scale_function_lookup[scaling_pair[1]][1]
+        
+        if scaling_pair[1] not in input_names:
+            data[scaling_pair[1]] = data.apply(scaling_function_y, axis=1)
+
+        input_vals_unique_y = np.unique(data[scaling_pair[1]])
+        n_y = input_vals_unique_y.size
+
+        # Looking for fixed non-running dimensions
+        input_vals_unique = np.array([np.unique(data[i]) for i in input_names])
+        
+        inactive_dimensions = [i for i in range(len(input_names)) 
+            if i not in active_input_dimensions_x and 
+               i not in active_input_dimensions_y]
+
+        input_names_left = [input_names[i] for i in inactive_dimensions]
+
+        input_fixvals_unique = list(itertools.product(
+                                *[input_vals_unique[i,:].tolist() for i in inactive_dimensions]))
+        
+        # Running over fixed dimensions that do not vary in a separate plot
+        for jfi, jfv in enumerate(input_fixvals_unique):
+
+                fixval_query = ''.join([n+'=='+str(v)+' & ' for (n,v) in zip(input_names_left, jfv)])[:-3]        
+                data_slice = data.query(fixval_query) 
+
+                fixed_ip_val_str = ''.join([n+'='+str(round(v, 1))+';' for (n,v) in zip(input_names_left, jfv)])
+
+                z_oo = data_slice[output_names[0]].to_numpy().reshape(n_x, n_y)
+                x_io = data_slice[scaling_pair[0]].to_numpy().reshape(n_x, n_y)
+                y_io = data_slice[scaling_pair[1]].to_numpy().reshape(n_x, n_y)
+
+                #x_io, y_io = np.meshgrid(input_vals_unique_x, input_vals_unique_y)
+                #inds = data_slice.index.to_list()
+                #TODO check the local and global index mapping consistency !!!
+
+                # Making a plot for this cell of the matrix
+                #TODO axs degenerates into 1D array if one of the dimensions is 1
+                cs = axs[jfi].contourf(
+                                    x_io,
+                                    y_io,
+                                    z_oo,
+                                    vmin=0.0,
+                                    vmax=3.2E+6,
+                                      )
+                
+                #cax = divider3.append_axes("right", size="8%", pad=0.1)
+                cbar = figs.colorbar(cs, ax=axs[jfi], boundaries=[0, 3.2E+6])
+
+                axs[jfi].set_xlabel(r'{}'.format(scaling_pair[0]))
+                axs[jfi].set_ylabel(r'{}'.format(scaling_pair[1]))
+                axs[jfi].set_title(r'{}'.format(fixed_ip_val_str), fontsize=10)
+
+                #axs[jfi].set_aspect('equal')
+                # TODO double check input-ouput mapping of the data read from GEM runs !
+
+        ####################################################
+        # Making a contour plot
+        # fig, ax = plt.subplots(figsize=(7,7))
+        #
+        # #TODO for 3^4 samples it should be a matrix of 9*12 plots, with 9 points each -> distinguish cuts, make an array or mean+variance
+        # ax.contourf(
+        #             X=data[scaling_pair[0]].to_numpy(),
+        #             Y=data[scaling_pair[1]].to_numpy(),
+        #             Z=data[output_names[0]].to_numpy(),
+        #             #cmap=plt.cm.jet,
+        #            )
+        # fig = ax.get_figure()
+        ####################################################
+        
+        figs.savefig('scan_{0}_{1}_{2}.svg'.format(scaling_pair[0], scaling_pair[1], foldname))
