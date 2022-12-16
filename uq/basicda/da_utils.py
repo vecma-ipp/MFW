@@ -1054,6 +1054,16 @@ def plot_1D_scalings(data, input_names=['te_value', 'ti_value', 'te_ddrho', 'ti_
     """
     
     scale_function_lookup = {
+                        'te_value': (lambda x: x[input_names[0]], [0]),
+                        'ti_value': (lambda x: x[input_names[1]], [1]),
+                        'te_ddrho': (lambda x: x[input_names[2]], [2]),
+                        'ti_ddrho': (lambda x: x[input_names[3]], [3]),
+
+                        'abs_te_ddrho':(lambda x: abs(x[input_names[2]]), [2]),
+                        'abs_ti_ddrho':(lambda x: abs(x[input_names[2]]), [2]),
+
+                        'te_ti':(lambda x: x[input_names[0]]/x[input_names[1]],[0,1]),
+
                         'lnti_ddrho': (lambda x: x[input_names[3]]/x[input_names[1]], [3,1]), 
                         # takes a 2-tuple and returns their fraction, assumes x[1]=ti, x[3]=grad_ti; active dimensions are 1 and 3
                         'lnte_ddrho': (lambda x: x[input_names[2]]/x[input_names[0]], [2,0]), 
@@ -1081,8 +1091,8 @@ def plot_1D_scalings(data, input_names=['te_value', 'ti_value', 'te_ddrho', 'ti_
         ax = data.plot( x=scaling, 
                         y=output_names[0], 
                         kind='scatter', 
-                        logy=True, 
-                        ylim=(1e1,1e7)
+                        #logy=True, 
+                        #ylim=(1e1,1e7)
                       )
 
         fig = ax.get_figure()
@@ -1103,11 +1113,18 @@ def plot_2D_scalings(data, input_names=['te_value', 'ti_value', 'te_ddrho', 'ti_
                         'abs_te_ddrho':(lambda x: abs(x[input_names[2]]), [2]),
                         'abs_ti_ddrho':(lambda x: abs(x[input_names[2]]), [2]),
 
+                        'te_ti':(lambda x: x[input_names[0]]/x[input_names[1]],[0,1]),
+
                         'lnti_ddrho': (lambda x: x[input_names[3]]/x[input_names[1]], [3,1]), 
                         # takes a 2-tuple and returns their fraction, assumes x[1]=ti, x[3]=grad_ti; active dimensions are 1 and 3
                         'lnte_ddrho': (lambda x: x[input_names[2]]/x[input_names[0]], [2,0]), 
                         # takes a 2-tuple and returns their fraction, assumes x[0]=te, x[2]=grad_te; active dimensions are 0 and 2                   
                             }
+
+    ### Examples of different combinations of original input names
+    #scale_pairs = product([input_names, input_names])
+    #scale_pairs_nodiag = [x for x in scale_pairs if x[0]!=x[1]]
+    #scale_pairs_nodiag_nosym = [x for i,x in enumerate(scale_pairs_nodiag) if (x[1],x[0]) not in scale_pairs_nodiag[:i]]
 
     # Define a set of styles for different lists plotted
     color_list = ['b', 'g', 'r', 'y' , 'm', 'c', 'k']
@@ -1125,36 +1142,36 @@ def plot_2D_scalings(data, input_names=['te_value', 'ti_value', 'te_ddrho', 'ti_
     
     basesize = 7
     figs, axs = plt.subplots(n_plottypes, n_fixvals, 
-                            figsize=((basesize*1.1)*n_fixvals, basesize))
+                            figsize=((basesize*1.05)*n_fixvals, basesize*n_plottypes))
 
     for ifi, scaling_pair in enumerate(scale_type):
 
-        # Things for X axis of a new plot: 0 element of tuple
-        scaling_function_x = scale_function_lookup[scaling_pair[0]][0]
-        active_input_dimensions_x = scale_function_lookup[scaling_pair[0]][1]
+        # Things for X1 axis of a new plot: 0 element of tuple
+        scaling_function_x1 = scale_function_lookup[scaling_pair[0]][0]
+        active_input_dimensions_x1 = scale_function_lookup[scaling_pair[0]][1]
 
         if scaling_pair[0] not in input_names:
-            data[scaling_pair[0]] = data.apply(scaling_function_x, axis=1)
+            data[scaling_pair[0]] = data.apply(scaling_function_x1, axis=1)
 
-        input_vals_unique_x = np.unique(data[scaling_pair[0]])
-        n_x = input_vals_unique_x.size
+        input_vals_unique_x1 = np.unique(data[scaling_pair[0]])
+        n_x1 = input_vals_unique_x1.size
 
-        # Things for Y axis of a new plot: 1 element of tuple 
-        scaling_function_y = scale_function_lookup[scaling_pair[1]][0]
-        active_input_dimensions_y = scale_function_lookup[scaling_pair[1]][1]
+        # Things for X2 axis of a new plot: 1 element of tuple 
+        scaling_function_x2 = scale_function_lookup[scaling_pair[1]][0]
+        active_input_dimensions_x2 = scale_function_lookup[scaling_pair[1]][1]
         
         if scaling_pair[1] not in input_names:
-            data[scaling_pair[1]] = data.apply(scaling_function_y, axis=1)
+            data[scaling_pair[1]] = data.apply(scaling_function_x2, axis=1)
 
-        input_vals_unique_y = np.unique(data[scaling_pair[1]])
-        n_y = input_vals_unique_y.size
+        input_vals_unique_x2 = np.unique(data[scaling_pair[1]])
+        n_x2 = input_vals_unique_x2.size
 
         # Looking for fixed non-running dimensions
         input_vals_unique = np.array([np.unique(data[i]) for i in input_names])
         
         inactive_dimensions = [i for i in range(len(input_names)) 
-            if i not in active_input_dimensions_x and 
-               i not in active_input_dimensions_y]
+            if i not in active_input_dimensions_x1 and 
+               i not in active_input_dimensions_x2]
 
         input_names_left = [input_names[i] for i in inactive_dimensions]
 
@@ -1169,33 +1186,39 @@ def plot_2D_scalings(data, input_names=['te_value', 'ti_value', 'te_ddrho', 'ti_
 
                 fixed_ip_val_str = ''.join([n+'='+str(round(v, 1))+';' for (n,v) in zip(input_names_left, jfv)])
 
-                z_oo = data_slice[output_names[0]].to_numpy().reshape(n_x, n_y)
-                x_io = data_slice[scaling_pair[0]].to_numpy().reshape(n_x, n_y)
-                y_io = data_slice[scaling_pair[1]].to_numpy().reshape(n_x, n_y)
+                y_oo = data_slice[output_names[0]].to_numpy().reshape(n_x1, n_x2)
+                x1_io = data_slice[scaling_pair[0]].to_numpy().reshape(n_x1, n_x2)
+                x2_io = data_slice[scaling_pair[1]].to_numpy().reshape(n_x1, n_x2)
 
                 #x_io, y_io = np.meshgrid(input_vals_unique_x, input_vals_unique_y)
                 #inds = data_slice.index.to_list()
                 #TODO check the local and global index mapping consistency !!!
 
+                cmap_val = 'viridis'
+
                 # Making a plot for this cell of the matrix
                 #TODO axs degenerates into 1D array if one of the dimensions is 1
-                cs = axs[jfi].contourf(
-                                    x_io,
-                                    y_io,
-                                    z_oo,
+                cs = axs[ifi][jfi].contourf(
+                                    x1_io,
+                                    x2_io,
+                                    y_oo,
                                     vmin=0.0,
                                     vmax=3.2E+6,
+                                    cmap=cmap_val,
                                       )
                 
                 #cax = divider3.append_axes("right", size="8%", pad=0.1)
-                cbar = figs.colorbar(cs, ax=axs[jfi], boundaries=[0, 3.2E+6])
+                cbar = figs.colorbar(cs, ax=axs[ifi][jfi], boundaries=[0, 3.2E+6])
 
-                axs[jfi].set_xlabel(r'{}'.format(scaling_pair[0]))
-                axs[jfi].set_ylabel(r'{}'.format(scaling_pair[1]))
-                axs[jfi].set_title(r'{}'.format(fixed_ip_val_str), fontsize=10)
+                axs[ifi][jfi].set_xlabel(r'{}'.format(scaling_pair[0]))
+                axs[ifi][jfi].set_ylabel(r'{}'.format(scaling_pair[1]))
+                axs[ifi][jfi].set_title(r'{}'.format(fixed_ip_val_str), fontsize=10)
 
                 #axs[jfi].set_aspect('equal')
-                # TODO double check input-ouput mapping of the data read from GEM runs !
+                #TODO double check input-ouput mapping of the data read from GEM runs !
+
+                # Adding actual points to the plot
+                axs[ifi][jfi].scatter(x1_io, x2_io, c=y_oo, cmap=cmap_val, edgecolors='k', s=10)
 
         ####################################################
         # Making a contour plot
