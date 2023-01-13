@@ -49,19 +49,23 @@ export MPIMOD=default #srunmpi
 ######################################################
 
 if [ -z "${CAMP_NAME_PREFIX}" ]; then
-    export CAMP_NAME_PREFIX=VARY_1FT_GEM_
+    export CAMP_NAME_PREFIX=VARY_1FT_GEM_NT_
 fi
+echo ${CAMP_NAME_PREFIX} ###DEBUG
 
 if [ -z "${POLORDER}" ]; then
     export POLORDER=2
 fi
+echo ${POLORDER} ###DEBUG - POLORDER here is not needed
 
-export RUNRANGE=6
+export NUM_PARAMS=4
+
+export RUNRANGE=6 
 
 export PARAM_FILE_NAME=gem_uq_new_param_vals_al_2.csv
 
 echo -e '> In this run: use ExecuteLocal only + QCGPJ pool + '${MPIMOD}' exec mode + '${SLURM_NNODES} \
-' nodes + 4 params + '${RUNRANGE}' values + commandline passed with '${MPICMD}' \n'
+' nodes + '${NUM_PARAMS}' params + '${RUNRANGE}' values + commandline passed with '${MPICMD}' \n'
 
 #echo '> Here we take larger ti_ddrho and intermediate ti error at rho_tor=0.7 \n'
 echo '> Here we take points suggested by GPR for GEM to yield Qi~=2e6 at rho_tor=0.7 \n'
@@ -76,4 +80,3 @@ python3 tests/gem_arbitrary.py > test-arbuq-log.${SLURM_JOBID}
 
 echo "> Finished an UQ SLURM job!"
 scontrol show --detail job ${SLURM_JOBID}
-

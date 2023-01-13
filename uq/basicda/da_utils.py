@@ -1219,19 +1219,5 @@ def plot_2D_scalings(data, input_names=['te_value', 'ti_value', 'te_ddrho', 'ti_
 
                 # Adding actual points to the plot
                 axs[ifi][jfi].scatter(x1_io, x2_io, c=y_oo, cmap=cmap_val, edgecolors='k', s=10)
-
-        ####################################################
-        # Making a contour plot
-        # fig, ax = plt.subplots(figsize=(7,7))
-        #
-        # #TODO for 3^4 samples it should be a matrix of 9*12 plots, with 9 points each -> distinguish cuts, make an array or mean+variance
-        # ax.contourf(
-        #             X=data[scaling_pair[0]].to_numpy(),
-        #             Y=data[scaling_pair[1]].to_numpy(),
-        #             Z=data[output_names[0]].to_numpy(),
-        #             #cmap=plt.cm.jet,
-        #            )
-        # fig = ax.get_figure()
-        ####################################################
         
         figs.savefig('scan_{0}_{1}_{2}.svg'.format(scaling_pair[0], scaling_pair[1], foldname))

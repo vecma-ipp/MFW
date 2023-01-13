@@ -8,6 +8,7 @@
 # nohup ./continuous_gem.sh 6  akgbbn1a 1> script_wf_20102022.log 2>&1 &
 # nohup ./continuous_gem.sh 2  w468l7ng 1> script_wf_06122022.log 2>&1 &
 # nohup ./continuous_gem.sh 1  rp1pw2y6 1> script_wf_05122022.log 2>&1 &
+# nohup ./continuous_gem.sh 1  1f3hw2ikn 1> script_wf_13122022.log 2>&1 &
 
 #0. State the total number of campaigns to run, and ordinal number of the last campaign in previous sequence
 echo "STARTING THE WORKFLOW"
@@ -24,7 +25,7 @@ LASTRUN=$((${CURRUN}+${NUMRUNS}))
 POLORDER=3
 INPUT_DIM=4
 #ATTENTION: arbitrary param to set number of core instances
-NUM_CODE_INSTS=5
+NUM_CODE_INSTS=6
 
 # batch script to submit a single UQ campaign
 #COM=run_marconi_loop_resume_gem_nt.sh # for MARCONI
@@ -49,7 +50,8 @@ export ORIGDIR=$(pwd)
 
 # Following can be anything but should be consistent with prevoius and further scripts
 #export CAMP_NAME_PREFIX=VARY_1FT_GEM_NT_
-export CAMP_NAME_PREFIX=VARY_1FT_GEM_
+#export CAMP_NAME_PREFIX=VARY_1FT_GEM_
+export CAMP_NAME_PREFIX=''
 
 #TODO: akgbbn1a cpo2+ are overwritten - if the very first campaign fails, the script will overwrite the old campaign output file 
 # - the runs will be consistent though due to restoration from the old cpo numbers
@@ -131,7 +133,7 @@ else
   #1. First submission of a campaign, retrieve the SLURM job-id
   echo "Starting the VERY ACTUAL first SLURM submission with UQ campaign"
 
-  PREVID=$(sbatch --export=ALL,POLORDER=${POLORDER},RUNRANGE=${RUNRANGE} --parsable --wait ${COM0})
+  PREVID=$(sbatch --export=ALL,POLORDER=${POLORDER},RUNRANGE=${RUNRANGE},CAMP_NAME_PREFIX=${CAMP_NAME_PREFIX} --parsable --wait ${COM0})
 
   #Extract the ROOTCAMPDIR from the submission
   ROOTCAMPDIR=$(<camp_temp_dir.txt) 
