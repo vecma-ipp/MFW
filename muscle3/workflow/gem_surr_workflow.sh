@@ -6,7 +6,7 @@ if [ -z "$MUSCLE3_HOME" ] ; then
     exit 1
 fi
 
-echo 'Running gem_sur workflow in Fortran & Python'
+echo 'Running gem_surr workflow in Fortran & Python'
 
 . ~/muscle3_venv/bin/activate
 muscle_manager gem-surr-fusion.ymmsl &
@@ -14,7 +14,11 @@ muscle_manager gem-surr-fusion.ymmsl &
 manager_pid=$!
 
 #export LD_LIBRARY_PATH=$MUSCLE3_HOME/lib:$LD_LIBRARY_PATH
-BINDIR=../bin/MARCONI-GNU
+BINDIR=../bin/COBRA/
+
+#TODO: may be start with no MPI vesion
+#TODO compile wrapper implementations
+#TODO make sure MUSCLE3 works with FORTRAN
 
 $BINDIR/stop_M3 --muscle-instance=stop >'stop.log' 2>&1 &
 $BINDIR/duplicate_M3 --muscle-instance=duplicate >'duplicate.log' 2>&1 &

@@ -61,8 +61,9 @@ ifeq (${MPI},yes)
  FPPFLAGS += -DMPI -DMPI2
 endif
 
-MUSCLE_LDFLAGS += $(shell pkg-config --libs libmuscle_fortran ymmsl_fortran)
-MUSCLE_MPI_LDFLAGS += $(shell pkg-config --libs libmuscle_mpi_fortran ymmsl_fortran)	#OL
+MUSCLE_LDFLAGS += $(shell pkg-config --libs libmuscle_fortran ymmsl_fortran) -lymmsl -lmuscle
+MUSCLE_MPI_LDFLAGS += $(shell pkg-config --libs libmuscle_mpi_fortran ymmsl_fortran) -lymmsl -lmuscle	#OL
+#NB: be careful with additional explicit flag: may be not needed
 
 FC90FLAGS += ${INCLUDES} ${MODSPEC}${INCDIR}
 MPI_FC90FLAGS = ${FC90FLAGS} ${MUSCLE_MPI_INCLUDES}
@@ -126,7 +127,7 @@ ${OBJDIR}/gem_M3.o: gem_M3.f90
 #	$(FPP) $(FPPFLAGS) $< $@ 
 
 INIT_M3: ${INIT_O} 
-	$(FC90) -o ${INIT_EXE} $^ -L${LIB_TYPES} -L${LIB_UAL} -litmtypes -lual ${MUSCLE_LDFLAGS} 
+	$(FC90) -o ${INIT_EXE} $^ -L${LIB_TYPES} -L${LIB_UAL} -litmtypes -lual ${MUSCLE_LDFLAGS}
 
 STOP_M3: ${STOP_O} 
 	$(FC90) -o ${STOP_EXE} $^ -L${LIB_TYPES} -L${LIB_UAL} -litmtypes -lual ${MUSCLE_LDFLAGS} 
@@ -152,7 +153,7 @@ IMP4DV_M3: ${IMP4DV_O}
 	$(FC90) -o ${IMP4DV_EXE} $^ -L${IMP4DV} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_UAL} -limp4dv -lbds -litmconstants -litmtypes -lual ${MUSCLE_LDFLAGS} 
 
 GEM_M3: ${GEM_O} 
-	$(FC90) -o ${GEM_EXE} $^ -L${GEM} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_XML} -L${LIB_UAL} -lgem -lbds -litmconstants -litmtypes -lxmllib -lual ${FFTW_LIB} ${MUSCLE_MPI_LDFLAGS} 
+	$(FC90) -o ${GEM_EXE} $^ -L${GEM} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_XML} -L${LIB_UAL} -lgem -lbds -litmconstants -litmtypes -lxmllib -lual ${FFTW_LIB} ${MUSCLE_MPI_LDFLAGS}
 
 BOHMGB_M3: ${BOHMGB_O}
 	$(FC90) -o ${BOHMGB_EXE} $^ -L${BOHMGB} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_XML} -L${LIB_UAL} -lbohmgb -lbds -litmconstants -litmtypes -lxmllib -lual ${MUSCLE_LDFLAGS}
