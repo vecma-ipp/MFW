@@ -30,6 +30,12 @@ export MAINMAKE=yes
 SVNURL_GFORGE = https://gforge-next.eufus.eu/svn
 SVNURL_SOLPS  = https://solps-mdsplus.aug.ipp.mpg.de/repos
 
+SVNADR_EPFL = https://spcsvn.epfl.ch/repos/
+
+GITLABADR_PSNC = gitlab.eufus.psnc.pl
+GITLABURL_PSNC = https://${GITLABADR_PSNC}
+GITLABADR_EPFL = gitlab.epfl.ch
+
 ################################################################################
 # global rules                                                                 #
 ################################################################################
@@ -115,10 +121,12 @@ libbds: ual
 get-libbds:
 	@if [ ! -d "externals/libbds" ]; then \
 	  echo "Checking out libbds..."; \
-		svn co $(SVNURL_GFORGE)/libbds/tags/4.10b externals/libbds; \
+		# svn co $(SVNURL_GFORGE)/libbds/tags/4.10b externals/libbds; \
+		# git clone ${GITLABURL_PSNC}/ets/libbds.git externals/libbds; \
+		(git clone git@${GITLABADR_PSNC}:ets/libbds.git --branch 4.10b --single-branch externals/libbds;) \
 	else  \
 		echo "Updating libbds..."; \
-		svn up externals/libbds; \
+		# svn up externals/libbds; \
 	fi
 
 clean-libbds:
@@ -138,10 +146,12 @@ ets: ual libbds get-ets
 get-ets:
 	@if [ ! -d "externals/ets" ]; then \
 	  echo "Checking out ets..."; \
-		svn co $(SVNURL_GFORGE)/ets/tags/4.10b.10_8 externals/ets; \
+		# svn co $(SVNURL_GFORGE)/ets/tags/4.10b.10_8 externals/ets; \
+		# git clone ${GITLABURL_PSNC}/ets/ets5sources.git externals/ets; \
+		(git clone git@${GITLABADR_PSNC}:ets/ets5sources.git --branch tags/4.10b.10_8 --single-branch externals/ets;) \
 	else  \
 		echo "Updating ets..."; \
-		svn up externals/ets; \
+		# svn up externals/ets; \
 	fi
 
 clean-ets:
@@ -161,10 +171,16 @@ bohmgb: ual libbds get-bohmgb
 get-bohmgb:
 	@if [ ! -d "externals/bohmgb" ]; then \
 	  echo "Checking out bohmgb..."; \
-		svn co $(SVNURL_GFORGE)/modtransp/tags/4.10b/bohmgb externals/bohmgb; \
+		if [ ! -d "externals/modtransp" ]; then \
+			echo "Modtransp is not yet cloned..."; \
+			git clone git@${GITLABADR_PSNC}:/ets/modtransp.git externals/modtransp ; \
+		else \
+			echo "Modtransp is already cloned..."; \
+		fi ; \
+		mv externals/modtransp/bohmgb externals/bohmgb;\
 	else  \
 		echo "Updating bohmgb..."; \
-		svn up externals/bohmgb; \
+		# # svn up externals/bohmgb; \
 	fi
 
 clean-bohmgb:
@@ -183,12 +199,19 @@ gem0: ual libbds get-gem0 patch-gem0
 	|| echo -e "\033[31m\033[1m -- FAIL -- \033[0m"
 
 get-gem0:
+#TODO what is -r : version? git counterpart?
 	@if [ ! -d "externals/gem0" ]; then \
 	  echo "Checking out gem0..."; \
-		svn co $(SVNURL_GFORGE)/modtransp/trunk/gem0 externals/gem0 -r 119; \
+		if [ ! -d "externals/modtransp" ]; then \
+			echo "Modtransp is not yet cloned..."; \
+			git clone git@${GITLABADR_PSNC}:/ets/modtransp.git externals/modtransp ; \
+		else \
+			echo "Modtransp is already cloned..." ; \
+		fi ; \
+		mv externals/modtransp/gem0 externals/gem0; \
 	else  \
 		echo "Updating gem0..."; \
-		svn up externals/gem0 -r 119; \
+		# # svn up externals/gem0 -r 119; \
 	fi
 
 patch-gem0: 
@@ -224,10 +247,12 @@ bdseq: ual libbds get-bdseq
 get-bdseq:
 	@if [ ! -d "externals/bdseq" ]; then \
 	  echo "Checking out bdseq..."; \
-		svn co $(SVNURL_GFORGE)/bdseq/tags/4.10b externals/bdseq; \
+		# svn co $(SVNURL_GFORGE)/bdseq/tags/4.10b externals/bdseq; \
+		#git clone ${GITLABURL_PSNC}/ets/bdseq.git externals/bdseq; \
+		(git clone git@${GITLABADR_PSNC}:ets/bdseq.git --branch 4.10b --single-branch externals/bdseq;) \
 	else  \
 		echo "Updating bdseq..."; \
-		svn up externals/bdseq; \
+		# svn up externals/bdseq; \
 	fi
 
 clean-bdseq:
@@ -262,10 +287,11 @@ gem: ual libbds get-gem patch-gem
 get-gem:
 	@if [ ! -d "externals/gem" ]; then \
 	  echo "Checking out gem..."; \
-		svn co $(SVNURL_SOLPS)/GEM/trunk externals/gem; \
+		# svn co $(SVNURL_SOLPS)/GEM/trunk externals/gem; \
+		git clone ${}/... externals/gem; \
 	else  \
 		echo "Updating gem..."; \
-		svn up externals/gem; \
+		# svn up externals/gem; \
 	fi
 
 clean-gem: revert-gem
@@ -292,10 +318,11 @@ dfefi: ual libbds get-dfefi
 get-dfefi:
 	@if [ ! -d "externals/dfefi" ]; then \
 	  echo "Checking out dfefi..."; \
-		svn co $(SVNURL_SOLPS)/dFEFI/trunk externals/dfefi; \
+		# svn co $(SVNURL_SOLPS)/dFEFI/trunk externals/dfefi; \
+		git clone ${GITLABURL_PSNC}/... externals/dfefi; \
 	else  \
 		echo "Updating dfefi..."; \
-		svn up externals/dfefi; \
+		# svn up externals/dfefi; \
 	fi
 
 clean-dfefi:
@@ -315,10 +342,16 @@ imp4dv: ual libbds get-imp4dv
 get-imp4dv:
 	@if [ ! -d "externals/imp4dv" ]; then \
 	  echo "Checking out imp4dv..."; \
-		svn co $(SVNURL_GFORGE)/modtransp/trunk/imp4dv externals/imp4dv; \
+		if [ ! -d "externals/modtransp" ]; then \
+			echo "Modtransp is not yet cloned..."; \
+			git clone git@${GITLABADR_PSNC}:/ets/modtransp.git externals/modtransp ; \
+		else \
+			echo "Modtransp is already cloned..."; \
+		fi ; \
+		mv externals/modtransp/imp4dv externals/imp4dv ; \
 	else  \
 		echo "Updating imp4dv..."; \
-		svn up externals/imp4dv; \
+		# # svn up externals/imp4dv; \
 	fi
 
 clean-imp4dv:
@@ -371,10 +404,12 @@ chease: ual get-chease strip-chease patch-chease
 get-chease:
 	@if [ ! -d "externals/chease" ]; then \
 	  echo "Checking out chease..."; \
-		svn co $(SVNURL_GFORGE)/chease/chease/tags/4.10b.10_CHEASEv12_9 externals/chease; \
+		# svn co $(SVNURL_GFORGE)/chease/chease/tags/4.10b.10_CHEASEv12_9 externals/chease; \
+		# git clone git@${GITLABADR_EPFL}:spc/chease.git --branch 4.10b.10_CHEASEv12_9 --single-branch externals/chease ; \
+		svn co ${SVNADR_EPFL}/CHEASE/chease/tags/4.10b.10_CHEASEv12_9 externals/chease; \
 	else  \
 		echo "Updating chease..."; \
-		svn up externals/chease; \
+		# svn up externals/chease; \
 	fi
 
 clean-chease: revert-chease
