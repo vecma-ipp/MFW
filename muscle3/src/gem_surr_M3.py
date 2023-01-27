@@ -3,7 +3,7 @@ import pandas as pd
 
 import logging
 
-from libmuscle import Instance, Message
+from libmuscle import Instance, Message, USES_CHECKPOINT_API
 from ymmsl import Operator
 
 from ascii_cpo import read
@@ -100,7 +100,9 @@ def gem_surr_M3():
         Operator.F_INIT: ['coreprof_in',],
         Operator.F_INIT: ['equilibrium_in',],
         Operator.O_F:    ['coretransp_out',],
-                        })
+                        },
+        USES_CHECKPOINT_API,
+                       )
 
     while instance.reuse_instance():
         # when is the instance constructed and destructed?
@@ -132,7 +134,7 @@ def gem_surr_M3():
         # Get a message from transport code
         msg_in = instance.receive('coreprof_in')
 
-        t_cur = msg_in.timestamp
+        num_it = msg_in.timestamp + 1
 
         profiles_in_data = msg_in.data.copy()
         profiles_in = coreprof_to_input_value(profiles_in_data, rho_ind_s,)
@@ -158,7 +160,11 @@ def gem_surr_M3():
         
         core_transp_datastructure = output_value_to_coretransp(fluxes_out_dict, coretransp_default_file_path)
 
-        msg_out = Message(t_cur, None, core_transp_datastructure)
+        msg_out = Message(num_it, None, core_transp_datastructure)
+
+        if instance.should_save_snapshot():
+            msg_snapshot = Message(num_it, data=fluxes_out_dict) #TODO: check how to save dict
+
         instance.send('coretransp_out', msg_out)
 
 

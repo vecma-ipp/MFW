@@ -49,3 +49,10 @@ settings:
   turbulence.profs_out: ['ti_transp.flux',]
   turbulence.surrogate_path: "../../workflows/gem_es_model.pickle"
   turbulence.cortransp_default: "gem_coretransp_out.cpo"
+
+checkpoints:
+  at_end:True
+  simulation_time:
+  - every 1
+    start 0
+  

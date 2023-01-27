@@ -50,8 +50,8 @@ VPATH = ${SRCDIR}
 
 # additional flags #############################################################
 INCLUDES = -I${INCDIR} -I${INC_UAL} -I${STDA_INC}
-MUSCLE_INCLUDES = $(shell pkg-config --cflags libmuscle_fortran ymmsl_fortran)
-MUSCLE_MPI_INCLUDES = $(shell pkg-config --cflags libmuscle_mpi_fortran ymmsl_fortran)	#OL 
+MUSCLE_INCLUDES = $(shell pkg-config --cflags libmuscle_fortran ymmsl_fortran libmuscle ymmsl) 
+MUSCLE_MPI_INCLUDES = $(shell pkg-config --cflags libmuscle_mpi_fortran ymmsl_fortran libmuscle ymmsl)	#OL 
 
 #--------------------------------------------------------------------#
 # use MPI compiler for all Fortran kernel sources (default=no)       #
@@ -61,8 +61,8 @@ ifeq (${MPI},yes)
  FPPFLAGS += -DMPI -DMPI2
 endif
 
-MUSCLE_LDFLAGS += $(shell pkg-config --libs libmuscle_fortran ymmsl_fortran) -lymmsl -lmuscle
-MUSCLE_MPI_LDFLAGS += $(shell pkg-config --libs libmuscle_mpi_fortran ymmsl_fortran) -lymmsl -lmuscle	#OL
+MUSCLE_LDFLAGS += $(shell pkg-config --libs libmuscle_fortran ymmsl_fortran)
+MUSCLE_MPI_LDFLAGS += $(shell pkg-config --libs libmuscle_mpi_fortran ymmsl_fortran)	#OL
 #NB: be careful with additional explicit flag: may be not needed
 
 FC90FLAGS += ${INCLUDES} ${MODSPEC}${INCDIR}
