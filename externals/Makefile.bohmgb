@@ -29,8 +29,14 @@ OBJ = ${OBJDIR}/bohmgb_coeff.o ${OBJDIR}/assign_turb_parameters.o \
 ${OBJDIR}/%.o: %.f90
 	$(FC90) -o $@ -c $< $(FC90FLAGS)
 
+${OBJDIR}/%.o: %.F90
+	$(FC90) -o $@ -c $< $(FC90FLAGS)
+
 
 %.f90: %.h90
+	$(FPP) $(FPPFLAGS) $< $@ 
+
+%.F90: %.h90
 	$(FPP) $(FPPFLAGS) $< $@ 
 
 
