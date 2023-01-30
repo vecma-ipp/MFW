@@ -1,4 +1,4 @@
-################################################################################
+################################################################################bohmgb
 # system choice (specific compilers/path/options in config file)               #
 ################################################################################
 
@@ -68,7 +68,8 @@ clean-kernels:
 	|| echo -e "\033[31m\033[1m -- FAIL -- \033[0m"
 
 
-standalone: ual ets imp4dv bohmgb chease gem0 gem
+standalone: ual ets imp4dv bohmgb chease gem0
+#ual ets imp4dv bohmgb chease gem0 gem
 	@echo -e "\033[36m\033[1m ++++ Build standalone wrapper/program ++++ \033[0m"; \
 	($(MAKE) --no-print-directory -C standalone \
 	&& echo -e "\033[32m\033[1m -- OK -- \033[0m") \
@@ -123,7 +124,7 @@ get-libbds:
 	  echo "Checking out libbds..."; \
 		# svn co $(SVNURL_GFORGE)/libbds/tags/4.10b externals/libbds; \
 		# git clone ${GITLABURL_PSNC}/ets/libbds.git externals/libbds; \
-		(git clone git@${GITLABADR_PSNC}:ets/libbds.git --branch 4.10b --single-branch externals/libbds;) \
+		git clone git@${GITLABADR_PSNC}:ets/libbds.git --branch 4.10b --single-branch externals/libbds ; \
 	else  \
 		echo "Updating libbds..."; \
 		# svn up externals/libbds; \
@@ -177,7 +178,8 @@ get-bohmgb:
 		else \
 			echo "Modtransp is already cloned..."; \
 		fi ; \
-		mv externals/modtransp/bohmgb externals/bohmgb;\
+		cp -r externals/modtransp/bohmgb externals/bohmgb ; \
+	echo "Copied bohmgb sourse..."  ; \
 	else  \
 		echo "Updating bohmgb..."; \
 		# # svn up externals/bohmgb; \
@@ -199,7 +201,7 @@ gem0: ual libbds get-gem0 patch-gem0
 	|| echo -e "\033[31m\033[1m -- FAIL -- \033[0m"
 
 get-gem0:
-#TODO what is -r : version? git counterpart?
+#TODO what is -r : version? git counterpart of revision? looks like not all commits were transfered...
 	@if [ ! -d "externals/gem0" ]; then \
 	  echo "Checking out gem0..."; \
 		if [ ! -d "externals/modtransp" ]; then \
@@ -208,7 +210,8 @@ get-gem0:
 		else \
 			echo "Modtransp is already cloned..." ; \
 		fi ; \
-		mv externals/modtransp/gem0 externals/gem0; \
+		cp -r externals/modtransp/gem0 externals/gem0; \
+		echo "Copied gem0 source..." ; \
 	else  \
 		echo "Updating gem0..."; \
 		# # svn up externals/gem0 -r 119; \
@@ -218,7 +221,7 @@ patch-gem0:
 	@grep -q ra0 externals/gem0/main/gem.F90 \
 	&& echo -e "\033[32m\033[1m -- ALREADY PATCHED -- \033[0m" \
 	|| (echo -e "\033[36m\033[1m ++++ Patch GEM0 sources ++++ \033[0m"; \
-	(patch -p0 -i externals/gem0-ra0patch.diff \
+	(patch -R -p0 -i externals/gem0-ra0patch.diff \
 	&& echo -e "\033[32m\033[1m -- OK -- \033[0m") \
 	|| echo -e "\033[31m\033[1m -- FAIL -- \033[0m")
 
@@ -249,7 +252,7 @@ get-bdseq:
 	  echo "Checking out bdseq..."; \
 		# svn co $(SVNURL_GFORGE)/bdseq/tags/4.10b externals/bdseq; \
 		#git clone ${GITLABURL_PSNC}/ets/bdseq.git externals/bdseq; \
-		(git clone git@${GITLABADR_PSNC}:ets/bdseq.git --branch 4.10b --single-branch externals/bdseq;) \
+		git clone git@${GITLABADR_PSNC}:ets/bdseq.git --branch 4.10b --single-branch externals/bdseq ;  \
 	else  \
 		echo "Updating bdseq..."; \
 		# svn up externals/bdseq; \
@@ -287,8 +290,8 @@ gem: ual libbds get-gem patch-gem
 get-gem:
 	@if [ ! -d "externals/gem" ]; then \
 	  echo "Checking out gem..."; \
-		# svn co $(SVNURL_SOLPS)/GEM/trunk externals/gem; \
-		git clone ${}/... externals/gem; \
+		svn co $(SVNURL_SOLPS)/GEM/trunk externals/gem; \
+		#git clone ${}/... externals/gem; \
 	else  \
 		echo "Updating gem..."; \
 		# svn up externals/gem; \
@@ -348,7 +351,7 @@ get-imp4dv:
 		else \
 			echo "Modtransp is already cloned..."; \
 		fi ; \
-		mv externals/modtransp/imp4dv externals/imp4dv ; \
+		cp -r externals/modtransp/imp4dv externals/imp4dv ; \
 	else  \
 		echo "Updating imp4dv..."; \
 		# # svn up externals/imp4dv; \
@@ -386,6 +389,8 @@ strip-chease:
 	&& echo -e "\033[32m\033[1m -- OK -- \033[0m") \
 	|| echo -e "\033[31m\033[1m -- FAIL -- \033[0m") \
 	|| echo -e "\033[32m\033[1m -- ALREADY STRIPPED -- \033[0m" 
+	
+	#NB: Chease has to be cleaned before every build due to the current sed set-up
 
 revert-chease:
 	@echo -e "\033[36m\033[1m ++++ Revert CHEASE makefiles ++++ \033[0m"; \
