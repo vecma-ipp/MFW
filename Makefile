@@ -68,8 +68,7 @@ clean-kernels:
 	|| echo -e "\033[31m\033[1m -- FAIL -- \033[0m"
 
 
-standalone: ual ets imp4dv bohmgb chease gem0
-#ual ets imp4dv bohmgb chease gem0 gem
+standalone: ual ets imp4dv bohmgb chease gem0 gem
 	@echo -e "\033[36m\033[1m ++++ Build standalone wrapper/program ++++ \033[0m"; \
 	($(MAKE) --no-print-directory -C standalone \
 	&& echo -e "\033[32m\033[1m -- OK -- \033[0m") \
@@ -184,6 +183,15 @@ get-bohmgb:
 		echo "Updating bohmgb..."; \
 		# # svn up externals/bohmgb; \
 	fi
+
+patch-bohmgb:
+# patch to change turbulent coefficients type declarations 
+	@grep -q R8 externals/bohmgb/include/bohmgb_coeff.h90 \
+	&& echo -e "\033[32m\033[1m -- ALREADY PATCHED -- \033[0m" \
+	|| (echo -e "\033[36m\033[1m ++++ Patch BohmGB sources ++++ \033[0m"; \
+	(patch -R -p0 -i externals/bohmgb-coefftypes-patch.diff \
+	&& echo -e "\033[32m\033[1m -- OK -- \033[0m") \
+	|| echo -e "\033[31m\033[1m -- FAIL -- \033[0m")
 
 clean-bohmgb:
 	@echo -e "\033[36m\033[1m ++++ Clean BOHMGB ++++ \033[0m"; \
