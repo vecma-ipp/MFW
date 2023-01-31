@@ -10,6 +10,7 @@ externals/*
 !chease-patch.diff
 !gem-tmppatch.diff
 !gem0-ra0patch.diff
+!bohmgb-coefftypes-patch.diff
 
 usr/*
 
