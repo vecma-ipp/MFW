@@ -1,4 +1,4 @@
-################################################################################bohmgb
+################################################################################
 # system choice (specific compilers/path/options in config file)               #
 ################################################################################
 
@@ -50,8 +50,7 @@ all: kernels
 	@echo -e "\033[35m\033[1m ==== Full Build Completed ==== \033[0m"
 
 
-codes: libbds bohmgb chease imp4dv gem0 
-#bdseq ets gem dfefi
+codes: libbds bdseq bohmgb est gem chease imp4dv gem0 
 #orb5
 
 
@@ -111,8 +110,7 @@ clean-ual:
 
 
 # libbds #######################################################################
-libbds: ual 
-#get-libbds
+libbds: ual get-libbds
 	@echo -e "\033[36m\033[1m ++++ Build LIBBDS ++++ \033[0m"; \
 	($(MAKE) --no-print-directory -C externals -f Makefile.libbds \
   && echo -e "\033[32m\033[1m -- OK -- \033[0m") \
@@ -122,7 +120,6 @@ get-libbds:
 	@if [ ! -d "externals/libbds" ]; then \
 	  echo "Checking out libbds..."; \
 		# svn co $(SVNURL_GFORGE)/libbds/tags/4.10b externals/libbds; \
-		# git clone ${GITLABURL_PSNC}/ets/libbds.git externals/libbds; \
 		git clone git@${GITLABADR_PSNC}:ets/libbds.git --branch 4.10b --single-branch externals/libbds ; \
 	else  \
 		echo "Updating libbds..."; \
@@ -229,7 +226,7 @@ patch-gem0:
 	@grep -q ra0 externals/gem0/main/gem.F90 \
 	&& echo -e "\033[32m\033[1m -- ALREADY PATCHED -- \033[0m" \
 	|| (echo -e "\033[36m\033[1m ++++ Patch GEM0 sources ++++ \033[0m"; \
-	(patch -R -p0 -i externals/gem0-ra0patch.diff \
+	(patch -p0 -i externals/gem0-ra0patch.diff \
 	&& echo -e "\033[32m\033[1m -- OK -- \033[0m") \
 	|| echo -e "\033[31m\033[1m -- FAIL -- \033[0m")
 
@@ -259,7 +256,6 @@ get-bdseq:
 	@if [ ! -d "externals/bdseq" ]; then \
 	  echo "Checking out bdseq..."; \
 		# svn co $(SVNURL_GFORGE)/bdseq/tags/4.10b externals/bdseq; \
-		#git clone ${GITLABURL_PSNC}/ets/bdseq.git externals/bdseq; \
 		git clone git@${GITLABADR_PSNC}:ets/bdseq.git --branch 4.10b --single-branch externals/bdseq ;  \
 	else  \
 		echo "Updating bdseq..."; \
