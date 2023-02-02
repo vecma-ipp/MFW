@@ -1,6 +1,6 @@
 
---- externals/gem0/main/assign_turb_parameters.F90	2020-08-07 16:08:51.974141000 +0200
-+++ externals/gem0/main/assign_turb_parameters.F90	2020-08-07 15:32:52.825692000 +0200
+--- externals/gem0/main/assign_turb_parameters.F90  2020-08-07 15:32:52.825692000 +0200
++++ externals/gem0/main/assign_turb_parameters.F90  2020-08-07 16:08:51.974141000 +0200
 @@ -98,6 +98,9 @@
        case ("nrho_transp")
          if (allocated(temp_pointer%cvalue)) &
@@ -12,21 +12,21 @@
          if (allocated(temp_pointer%cvalue)) &
           call char2num(temp_pointer%cvalue, nion)
  
---- externals/gem0/inputs/gem.xsd	2020-08-07 17:30:59.725956000 +0200
-+++ externals/gem0/inputs/gem.xsd	2020-08-07 17:41:16.831939000 +0200
-@@ -58,7 +58,6 @@
+--- externals/gem0/inputs/gem.xsd  2023-02-02 19:01:31.175530000 +0100
++++ externals/gem0/inputs/gem.xsd  2023-02-02 19:04:34.732132000 +0100
+@@ -58,6 +58,7 @@
      <xs:complexType>
        <xs:all>
          <xs:element ref="nrho_transp" minOccurs="0" maxOccurs="1"/>
--        <xs:element ref="ra0" minOccurs="0" maxOccurs="1" />
++        <xs:element ref="ra0" minOccurs="0" maxOccurs="1" />
          <xs:element ref="nion" minOccurs="0" maxOccurs="1"/>
        </xs:all>
      </xs:complexType>
-@@ -66,7 +65,6 @@
+@@ -65,6 +66,7 @@
  
  <xs:element name="nrho_transp" type="xs:integer"/>
  <xs:element name="nion" type="xs:integer"/>
--<xs:element name="ra0" type="xs:float"/>
++<xs:element name="ra0" type="xs:float"/>
  
  </xs:schema>
  
@@ -45,11 +45,15 @@
    ELSE
       rho = (/ ((1.0/REAL(2*nrho_transp))*(2*i-1), i=1,nrho_transp) /)**0.7
 __++
---- externals/gem0/include/turb_coeff.h90	2020-08-07 18:29:17.301025000 +0200
-+++ externals/gem0/include/turb_coeff.h90	2020-08-07 18:10:56.459445000 +0200
-@@ -17,7 +17,8 @@
-   INTEGER(ITM_I4), SAVE :: nrho_transp = 0, nion = 0
-   REAL(R8), SAVE :: thresh = 6., &
+
+--- externals/gem0/include/turb_coeff.h90 2023-02-02 16:46:57.356001000 +0100
++++ externals/gem0/include/turb_coeff.h90 2023-02-02 16:47:18.883936000 +0100
+@@ -13,9 +13,10 @@
+   character(len = 12) :: q_choice = "equilibrium"
+ 
+   INTEGER, SAVE :: nrho_transp = 0, nion = 0
+-  REAL, SAVE :: thresh = 6., &
++  REAL(R8), SAVE :: thresh = 6., &
         beta_reduction = 10., etae_pinch = 3., &
 -       chi_d = 3., chiratio_phi = 0.7
 +       chi_d = 3., chiratio_phi = 0.7, &
