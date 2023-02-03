@@ -14,8 +14,8 @@ VPATH = ${SRCDIR}/actor \
 
 
 # additional flags #############################################################
-export DOOPT=no
-export DODEBUG=yes
+export DOOPT=yes
+export DODEBUG=no
 
 LIB = libgem.a
 
@@ -40,7 +40,9 @@ FC90FLAGS += ${INCLUDES} ${MODSPEC}${OBJDIR}
 
 ifeq ($(DODEBUG),yes)
 #intel here...
-FC90FLAGS += -O0 -check all -stand f95 -g -fbounds-check -Wall
+FC90FLAGS += -O0 -check all -stand f95 -g -traceback 
+#-fbounds-check -warn all -check all -init=snan
+PERF=yes
 else 
 ifeq ($(DOOPT),yes)
 FC90FLAGS += -O3
