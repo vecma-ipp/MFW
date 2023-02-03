@@ -44,7 +44,7 @@
       rho = rho0(2:nrho_prof-1:2)
    ELSE
       rho = (/ ((1.0/REAL(2*nrho_transp))*(2*i-1), i=1,nrho_transp) /)**0.7
-__++
+
 
 --- externals/gem0/include/turb_coeff.h90 2023-02-02 16:46:57.356001000 +0100
 +++ externals/gem0/include/turb_coeff.h90 2023-02-02 16:47:18.883936000 +0100
