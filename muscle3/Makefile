@@ -47,6 +47,8 @@ ORB5 = ../externals/orb5.git/${SYS}
 # set up the VPATH for searching for source files ##############################
 VPATH = ${SRCDIR} 
 
+# testing compiling issues: adding other source directories
+VPATH += ../standalone/src/
 
 # additional flags #############################################################
 INCLUDES = -I${INCDIR} -I${INC_UAL} -I${STDA_INC}
@@ -70,27 +72,30 @@ RPATHLINK_FLAG = -Wl,-rpath-link,/u/yyudin/muscle3/lib
 MUSCLE_LDFLAGS += ${RPATHLINK_FLAG}
 
 FC90FLAGS += ${INCLUDES} ${MODSPEC}${INCDIR}
-#  testing linkage of gfortran version of MUSCLE3 to ifort codes: next 2 lined are uncommented before test
-#MPI_FC90FLAGS = ${FC90FLAGS} ${MUSCLE_MPI_INCLUDES}
-#FC90FLAGS += ${MUSCLE_INCLUDES}
+MPI_FC90FLAGS = ${FC90FLAGS} 
+# testing linkage of gfortran version of MUSCLE3 to ifort codes: next 2 lines are uncommented before test
+# MPI_FC90FLAGS += ${MUSCLE_MPI_INCLUDES}
+# FC90FLAGS += ${MUSCLE_INCLUDES}
+
 
 # objects files ################################################################
 STDA_SHARED_O = ${STDA_OBJ}/linterp.o ${STDA_OBJ}/string_binding.o \
 	   ${STDA_OBJ}/c_tools.o ${STDA_OBJ}/filetools.o 
 
 
-IFORT_O = ${STDA_SHARED_O} ${OBJDIR}/ymmsl.o ${OBJDIR}/libmuscle.o ${OBJDIR}/libmuscle_mpi.o
-INIT_O = ${STDA_SHARED_O} ${OBJDIR}/init_M3.o
-STOP_O = ${STDA_SHARED_O} ${OBJDIR}/stop_M3.o
-ETS_O = ${STDA_SHARED_O} ${STDA_OBJ}/ets_standalone.o ${STDA_OBJ}/equilupdate_standalone.o ${OBJDIR}/ets_M3.o 
-CHEASE_O = ${STDA_SHARED_O} ${STDA_OBJ}/chease_standalone.o ${OBJDIR}/chease_M3.o
-GEM0_O = ${STDA_SHARED_O} ${STDA_OBJ}/gem0_standalone.o ${STDA_OBJ}/imp4dv_standalone.o ${OBJDIR}/gem0_M3.o
-DUPLICATE_O = ${OBJDIR}/duplicate_M3.o
-CPDUP_O = ${OBJDIR}/cpdup_M3.o
+#TODO check the order of objects
+IFORT_O = ${OBJDIR}/ymmsl.o ${OBJDIR}/libmuscle.o #${OBJDIR}/libmuscle_mpi.o
+INIT_O = ${STDA_SHARED_O} ${IFORT_O} ${OBJDIR}/init_M3.o
+STOP_O = ${STDA_SHARED_O} ${IFORT_O} ${OBJDIR}/stop_M3.o
+ETS_O = ${STDA_SHARED_O} ${STDA_OBJ}/ets_standalone.o ${STDA_OBJ}/equilupdate_standalone.o ${IFORT_O} ${OBJDIR}/ets_M3.o
+CHEASE_O = ${STDA_SHARED_O} ${STDA_OBJ}/chease_standalone.o ${OBJDIR}/chease_M3.o ${IFORT_O}
+GEM0_O = ${STDA_SHARED_O} ${STDA_OBJ}/gem0_standalone.o ${STDA_OBJ}/imp4dv_standalone.o ${OBJDIR}/gem0_M3.o ${IFORT_O}
+DUPLICATE_O = ${OBJDIR}/duplicate_M3.o ${IFORT_O}
+CPDUP_O = ${OBJDIR}/cpdup_M3.o ${IFORT_O}
 #EQUILUPDATE_O = ${STDA_SHARED_O} ${STDA_OBJ}/equilupdate_standalone.o ${OBJDIR}/equilupdate_M3.o 
-IMP4DV_O = ${STDA_SHARED_O} ${STDA_OBJ}/imp4dv_standalone.o ${OBJDIR}/imp4dv_M3.o
-GEM_O = ${STDA_SHARED_O} ${STDA_OBJ}/gem_standalone.o ${OBJDIR}/gem_M3.o
-BOHMGB_O = ${STDA_SHARED_O} ${STDA_OBJ}/bohmgb_standalone.o ${OBJDIR}/bohmgb_M3.o
+IMP4DV_O = ${STDA_SHARED_O} ${STDA_OBJ}/imp4dv_standalone.o ${OBJDIR}/imp4dv_M3.o ${IFORT_O}
+GEM_O = ${STDA_SHARED_O} ${STDA_OBJ}/gem_standalone.o ${OBJDIR}/gem_M3.o ${IFORT_O}
+BOHMGB_O = ${STDA_SHARED_O} ${STDA_OBJ}/bohmgb_standalone.o ${OBJDIR}/bohmgb_M3.o ${IFORT_O}
 
 MODELS = IFORT_M3 INIT_M3 STOP_M3 ETS_M3 CHEASE_M3 GEM0_M3 DUPLICATE_M3 GEM_M3 BOHMGB_M3 IMP4DV_M3 CPDUP_M3
 #EQUILUPDATE_M3
@@ -156,18 +161,18 @@ ${OBJDIR}/libmuscle.o: /u/yyudin/muscle3/include/libmuscle.f90
 	${FC90} -o $@ -c $< $(FC90FLAGS) ; \
 	echo "compiled new libmuscle.o"
 
-${OBJDIR}/libmuscle_mpi.o: /u/yyudin/muscle3/include/libmuscle_mpi.f90
-	${FC90} -o $@ -c $< $(FC90FLAGS) ; \
-	echo "compiles new libmuscle_mpi.o"
+# ${OBJDIR}/libmuscle_mpi.o: /u/yyudin/muscle3/include/libmuscle_mpi.f90
+# 	${FC90} -o $@ -c $< $(FC90FLAGS) ; \
+# 	echo "compiles new libmuscle_mpi.o"
 
 
 INIT_M3: ${INIT_O} 
 	$(FC90) -o ${INIT_EXE} $^ -L${LIB_TYPES} -L${LIB_UAL} -litmtypes -lual ${MUSCLE_LDFLAGS}
 
-STOP_M3: ${STOP_O} 
+STOP_M3: ${STOP_O}
 	$(FC90) -o ${STOP_EXE} $^ -L${LIB_TYPES} -L${LIB_UAL} -litmtypes -lual ${MUSCLE_LDFLAGS} 
 
-ETS_M3: ${ETS_O} 
+ETS_M3: ${ETS_O}
 	$(FC90) -o ${ETS_EXE} $^ -L${ETS} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_XML} -L${LIB_UAL} -lets -lbds -lxmllib -litmconstants -litmtypes -lual ${MUSCLE_LDFLAGS} ${LIBLAPACK}
 
 CHEASE_M3: ${CHEASE_O} 
