@@ -101,43 +101,52 @@ def gem_surr_M3():
         Operator.F_INIT: ['equilibrium_in',],
         Operator.O_F:    ['coretransp_out',],
                         },
-        USES_CHECKPOINT_API,
+        #USES_CHECKPOINT_API,
                        )
 
     while instance.reuse_instance():
         # when is the instance constructed and destructed?
 
-        rho_ind_s = instance.get_setting('rho_ind_s', 'list') #TODO: consider using function to calculate index fron rho_tor
-        prof_out_names = instance.get_setting('profs_out', 'list')
+        rho_ind_s = instance.get_setting('rho_ind_s', 'float') #TODO: consider using function to calculate index fron rho_tor
+        prof_out_names = instance.get_setting('profs_out', 'string') #TODO: figure out how to pass lists of float/strings
         model_file = instance.get_setting('surrogate_path', 'string')
         coretransp_default_file_name = instance.get_setting('cortransp_default', 'string')
         init_cpo_dir = instance.get_setting('init_cpo_dir', 'string')
 
         coretransp_default_file_path = init_cpo_dir + '/' + coretransp_default_file_name
-        n_dim_out = len(prof_out_names)
+        n_dim_out = len([prof_out_names])
 
         # Initialising surrogate model
         #   for a one-shot case should only be done once in f_init
 
         #TODO: consider other model initialisation e.g. using just an ML library
         #TODO: consider single model load per MUSCLE3 Manager run
+
+        print('> Loading ES campaign with a surrogate')
         try:
             campaign = es.Campaign(load_state=True, file_path=model_file)
         except OSError:
             print('No such model file!')
             return
         model = campaign.surrogate
+        print('> Got a surrogate from a ES campaign')
 
         #TODO: read target names from campaign
         output_names = ['ti_transp_flux', 'te_transp_flux']
 
+        # Get a message form equilibrium code: NOT USED HERE!
+        msg_in = instance.receive('equilibrium_in')
+        print('> Got a message from EQUILIBRIUM')
+        
         # Get a message from transport code
         msg_in = instance.receive('coreprof_in')
+        print('> Got a message from TRANSOP')
 
         num_it = msg_in.timestamp + 1
 
         profiles_in_data = msg_in.data.copy()
-        profiles_in = coreprof_to_input_value(profiles_in_data, rho_ind_s,)
+        profiles_in = coreprof_to_input_value(profiles_in_data, [rho_ind_s],)
+        print('> Read incoming core profile {0}'.format(profiles_in))
 
         # Get (n_features, n_samples) from surrogate from (n_features, n_radial_points)
         if profiles_in.shape[1] == 1:
@@ -148,8 +157,10 @@ def gem_surr_M3():
         #                   a. dictionary with keys being names of profiles and values being numpy arrays or lists
         #                   b+. numpy array of shape==(n_sample, n_profiles_dim, [n_rad_points]) and dtype=float
 
+        #TODO use a surrogate for a vector output: ['te.transp.flux', 'ti.transp.flux']
         # Infer a mean flux value using a surrogate
         fluxes_out, _ = model.predict(profiles_in)
+        print('> Used a surrogate to predict new Qi={0}'.format(fluxes_out))
 
         #TODO: in principle with large scale separation local t_cur does not play role,
         # but one could also estimate time for turbulence saturation with surrogate 
@@ -160,12 +171,16 @@ def gem_surr_M3():
         
         core_transp_datastructure = output_value_to_coretransp(fluxes_out_dict, coretransp_default_file_path)
 
+        print('> Gettting ready an outcoming core transp')
         msg_out = Message(num_it, None, core_transp_datastructure)
+        print('> Sending an outcoming core transp')
 
-        if instance.should_save_snapshot():
-            msg_snapshot = Message(num_it, data=fluxes_out_dict) #TODO: check how to save dict
+        #if instance.should_save_snapshot():
+        #    msg_snapshot = Message(num_it, data=fluxes_out_dict) #TODO: check how to save dict
 
         instance.send('coretransp_out', msg_out)
+        print('> Sent an outcoming core transp')
+
 
 
 if __name__ == '__main__':

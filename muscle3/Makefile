@@ -48,10 +48,10 @@ ORB5 = ../externals/orb5.git/${SYS}
 VPATH = ${SRCDIR} 
 
 # testing compiling issues: adding other source directories
-VPATH += ../standalone/src/
+#VPATH += ../standalone/src/
 
 # additional flags #############################################################
-INCLUDES = -I${INCDIR} -I${INC_UAL} -I${STDA_INC}
+INCLUDES = -I${INCDIR} -I${INC_UAL} -I${STDA_INC} -I${LIB_TYPES} -I${INC_TYPES}
 MUSCLE_INCLUDES = $(shell pkg-config --cflags libmuscle_fortran ymmsl_fortran) 
 MUSCLE_MPI_INCLUDES = $(shell pkg-config --cflags libmuscle_mpi_fortran ymmsl_fortran)	#OL 
 
@@ -68,15 +68,18 @@ MUSCLE_MPI_LDFLAGS += $(shell pkg-config --libs libmuscle_mpi_fortran ymmsl_fort
 #NB: be careful with additional explicit flag: may be not needed
 
 # testing out a linkage issue
-RPATHLINK_FLAG = -Wl,-rpath-link,/u/yyudin/muscle3/lib
+RPATHLINK_FLAG = -Wl,-rpath-link,/cobra/u/yyudin/muscle3/lib 
 MUSCLE_LDFLAGS += ${RPATHLINK_FLAG}
 
 FC90FLAGS += ${INCLUDES} ${MODSPEC}${INCDIR}
 MPI_FC90FLAGS = ${FC90FLAGS} 
 # testing linkage of gfortran version of MUSCLE3 to ifort codes: next 2 lines are uncommented before test
-# MPI_FC90FLAGS += ${MUSCLE_MPI_INCLUDES}
-# FC90FLAGS += ${MUSCLE_INCLUDES}
+MPI_FC90FLAGS += ${MUSCLE_MPI_INCLUDES}
+FC90FLAGS += ${MUSCLE_INCLUDES}
 
+# testing rpath flag for compiling
+FC90FLAGS += ${RPATHLINK_FLAG}
+FC90FLAGS += ${RPATHLINK_FLAG}
 
 # objects files ################################################################
 STDA_SHARED_O = ${STDA_OBJ}/linterp.o ${STDA_OBJ}/string_binding.o \
@@ -84,20 +87,21 @@ STDA_SHARED_O = ${STDA_OBJ}/linterp.o ${STDA_OBJ}/string_binding.o \
 
 
 #TODO check the order of objects
-IFORT_O = ${OBJDIR}/ymmsl.o ${OBJDIR}/libmuscle.o #${OBJDIR}/libmuscle_mpi.o
-INIT_O = ${STDA_SHARED_O} ${IFORT_O} ${OBJDIR}/init_M3.o
-STOP_O = ${STDA_SHARED_O} ${IFORT_O} ${OBJDIR}/stop_M3.o
-ETS_O = ${STDA_SHARED_O} ${STDA_OBJ}/ets_standalone.o ${STDA_OBJ}/equilupdate_standalone.o ${IFORT_O} ${OBJDIR}/ets_M3.o
-CHEASE_O = ${STDA_SHARED_O} ${STDA_OBJ}/chease_standalone.o ${OBJDIR}/chease_M3.o ${IFORT_O}
-GEM0_O = ${STDA_SHARED_O} ${STDA_OBJ}/gem0_standalone.o ${STDA_OBJ}/imp4dv_standalone.o ${OBJDIR}/gem0_M3.o ${IFORT_O}
-DUPLICATE_O = ${OBJDIR}/duplicate_M3.o ${IFORT_O}
-CPDUP_O = ${OBJDIR}/cpdup_M3.o ${IFORT_O}
-#EQUILUPDATE_O = ${STDA_SHARED_O} ${STDA_OBJ}/equilupdate_standalone.o ${OBJDIR}/equilupdate_M3.o 
-IMP4DV_O = ${STDA_SHARED_O} ${STDA_OBJ}/imp4dv_standalone.o ${OBJDIR}/imp4dv_M3.o ${IFORT_O}
-GEM_O = ${STDA_SHARED_O} ${STDA_OBJ}/gem_standalone.o ${OBJDIR}/gem_M3.o ${IFORT_O}
-BOHMGB_O = ${STDA_SHARED_O} ${STDA_OBJ}/bohmgb_standalone.o ${OBJDIR}/bohmgb_M3.o ${IFORT_O}
+#IFORT_O = ${OBJDIR}/ymmsl.o ${OBJDIR}/libmuscle.o #${OBJDIR}/libmuscle_mpi.o
 
-MODELS = IFORT_M3 INIT_M3 STOP_M3 ETS_M3 CHEASE_M3 GEM0_M3 DUPLICATE_M3 GEM_M3 BOHMGB_M3 IMP4DV_M3 CPDUP_M3
+INIT_O = ${STDA_SHARED_O} ${OBJDIR}/init_M3.o
+STOP_O = ${STDA_SHARED_O} ${OBJDIR}/stop_M3.o
+ETS_O = ${STDA_SHARED_O} ${STDA_OBJ}/ets_standalone.o ${STDA_OBJ}/equilupdate_standalone.o ${OBJDIR}/ets_M3.o
+CHEASE_O = ${STDA_SHARED_O} ${STDA_OBJ}/chease_standalone.o ${OBJDIR}/chease_M3.o
+GEM0_O = ${STDA_SHARED_O} ${STDA_OBJ}/gem0_standalone.o ${STDA_OBJ}/imp4dv_standalone.o ${OBJDIR}/gem0_M3.o
+DUPLICATE_O = ${OBJDIR}/duplicate_M3.o
+CPDUP_O = ${OBJDIR}/cpdup_M3.o
+#EQUILUPDATE_O = ${STDA_SHARED_O} ${STDA_OBJ}/equilupdate_standalone.o ${OBJDIR}/equilupdate_M3.o 
+IMP4DV_O = ${STDA_SHARED_O} ${STDA_OBJ}/imp4dv_standalone.o ${OBJDIR}/imp4dv_M3.o
+GEM_O = ${STDA_SHARED_O} ${STDA_OBJ}/gem_standalone.o ${OBJDIR}/gem_M3.o
+BOHMGB_O = ${STDA_SHARED_O} ${STDA_OBJ}/bohmgb_standalone.o ${OBJDIR}/bohmgb_M3.o
+
+MODELS = INIT_M3 STOP_M3 ETS_M3 CHEASE_M3 GEM0_M3 DUPLICATE_M3 IMP4DV_M3 CPDUP_M3 #BOHMGB_M3 #GEM_M3
 #EQUILUPDATE_M3
 
 INIT_EXE = ${BINDIR}/init_M3
@@ -151,15 +155,15 @@ ${OBJDIR}/gem_M3.o: gem_M3.f90
 #%.f90: %.F90
 #	$(FPP) $(FPPFLAGS) $< $@ 
 
-IFORT_M3: ${IFORT_O}
-#testing linkage of gfortran version of MUSCLE3 to ifort codes: next 3 blocks are for test
-${OBJDIR}/ymmsl.o: /u/yyudin/muscle3/include/ymmsl.f90
-	${FC90} -o $@ -c $< $(FC90FLAGS) ; \
-	echo "compiled new ymmsl.o"
+#IFORT_M3: ${IFORT_O}
+## testing linkage of gfortran version of MUSCLE3 to ifort codes: next 3 blocks are for test
+# ${OBJDIR}/ymmsl.o: /u/yyudin/muscle3/include/ymmsl.f90
+# 	${FC90} -o $@ -c $< $(FC90FLAGS) ; \
+# 	echo "compiled new ymmsl.o"
 
-${OBJDIR}/libmuscle.o: /u/yyudin/muscle3/include/libmuscle.f90
-	${FC90} -o $@ -c $< $(FC90FLAGS) ; \
-	echo "compiled new libmuscle.o"
+# ${OBJDIR}/libmuscle.o: /u/yyudin/muscle3/include/libmuscle.f90
+# 	${FC90} -o $@ -c $< $(FC90FLAGS) ; \
+# 	echo "compiled new libmuscle.o"
 
 # ${OBJDIR}/libmuscle_mpi.o: /u/yyudin/muscle3/include/libmuscle_mpi.f90
 # 	${FC90} -o $@ -c $< $(FC90FLAGS) ; \

@@ -9,12 +9,10 @@ model:
     init:        init_M3
     stop:        stop_M3
     transport:   ets_M3
-    turbulence:  gem_surr_M3
-    f2dv:        imp4dv_M3
+    turbulence:  gem0_M3
     equilibrium: chease_M3
     duplicate:   duplicate_M3
-    cpdup:       cpdup_M3
-
+    
   conduits:
     init.equilibrium_init:       transport.equilibrium_init
     init.coreprof_init:          transport.coreprof_init
@@ -22,15 +20,11 @@ model:
     init.coreimpur_init:         transport.coreimpur_init
     init.toroidfield_init:       transport.toroidfield_init
     transport.equilibrium_out:   equilibrium.equilibrium_in
-    transport.coreprof_out:      cpdup.input
+    transport.coreprof_out:      turbulence.coreprof_in
     equilibrium.equilibrium_out: duplicate.input
     duplicate.copy_A:            turbulence.equilibrium_in
     duplicate.copy_B:            transport.equilibrium_in
-    duplicate.copy_C:            f2dv.equilibrium_in
-    cpdup.copy_A:                turbulence.coreprof_in
-    cpdup.copy_B:                f2dv.coreprof_in
-    turbulence.coretransp_out:   f2dv.coretransp_in
-    f2dv.coretransp_out:         transport.coretransp_in
+    turbulence.coretransp_out:   transport.coretransp_in
     transport.equilibrium_final: stop.equilibrium_in
     transport.coreprof_final:    stop.coreprof_in
     transport.coresource_final:  stop.coresource_in
@@ -45,14 +39,14 @@ settings:
   muscle_remote_log_level: "DEBUG"  
   slice_initial_number: 0
   save_slice: True
-  turbulence.rho_ind_s: [68]
-  turbulence.profs_out: ['ti_transp.flux',]
+  turbulence.rho_ind_s: 68
+  turbulence.profs_out: "ti_transp.flux"
   turbulence.surrogate_path: "../../workflows/gem_es_model.pickle"
   turbulence.cortransp_default: "gem_coretransp_out.cpo"
 
-checkpoints:
-  at_end:True
-  simulation_time:
-  - every 1
-    start 0
+#checkpoints:
+#  at_end:True
+#  simulation_time:
+#  - every 1
+#    start 0
   

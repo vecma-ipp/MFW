@@ -8,13 +8,15 @@ fi
 
 echo 'Running gem_surr workflow in Fortran & Python'
 
-. ~/muscle3_venv/bin/activate
+#. ~/muscle3_venv/bin/activate
+. ~/muscle3/bin/muscle3.env
 muscle_manager gem-surr-fusion.ymmsl &
 
 manager_pid=$!
 
 #export LD_LIBRARY_PATH=$MUSCLE3_HOME/lib:$LD_LIBRARY_PATH
 BINDIR=../bin/COBRA/
+SRCDIR=../src/
 
 #TODO: may be start with no MPI vesion
 #TODO compile wrapper implementations
@@ -22,7 +24,7 @@ BINDIR=../bin/COBRA/
 
 $BINDIR/stop_M3 --muscle-instance=stop >'stop.log' 2>&1 &
 $BINDIR/duplicate_M3 --muscle-instance=duplicate >'duplicate.log' 2>&1 &
-$BINDIR/gem_surr_M3 --muscle-instance=turbulence >'turbulence.log' 2>&1 &
+python3 $SRCDIR/gem_surr_M3.py --muscle-instance=turbulence >'turbulence.log' 2>&1 &
 $BINDIR/chease_M3 --muscle-instance=equilibrium >'equilibrium.log' 2>&1 &
 $BINDIR/init_M3 --muscle-instance=init >'init.log' 2>&1 &
 $BINDIR/ets_M3 --muscle-instance=transport >'transport.log' 2>&1 &
