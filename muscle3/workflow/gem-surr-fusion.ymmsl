@@ -9,7 +9,7 @@ model:
     init:        init_M3
     stop:        stop_M3
     transport:   ets_M3
-    turbulence:  gem0_M3
+    turbulence:  gem_surr_M3.py
     equilibrium: chease_M3
     duplicate:   duplicate_M3
     
