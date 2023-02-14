@@ -60,12 +60,19 @@ class CPOEncoder:
 
         for name, attr in self.input_params.items():
             value = params[name]
+            
+            if not isinstance(value, list):
+                value = float(value) # For values read from a CSV .This should be double check for some parameters
+            else:
+                value = [float(v) for v in value]
+
+            index = self.ftube_index
 
             if name in ['te.value', 'te.ddrho', 'ti.value', 'ti.ddrho']:
                 # TODO verify if self.ftube_index is not None
-                self._update_gradients(name, value)
+                self._update_gradients(name, value, index=index)
             else:
-                self.cpo.set_value(name, value)
+                self.cpo.set_value(name, value, index=index)
 
         # Do a symbolic link to other files (cpo, xml and xsd)
         os.system("ln -s " + self.input_dir + "*.xml " + target_dir + " 2>/dev/null")
@@ -83,51 +90,66 @@ class CPOEncoder:
         self.cpo.save_file(target_file_path)
 
 
-    def _update_gradients(self, name, value):
+    def _update_gradients(self, name, value, index=0):
+        """
+        Params:
+            name
+            value: can be float or list<float>
+            index
+        """
         rho = self.cpo.get_value('rho_tor_norm')
-        i = self.ftube_index
 
-        values = []
-        indices = []
-        if name == 'te.value':
-            dt = self.cpo.get_value('te.ddrho')
-            t_i  = value
-            dt_i = dt[i]
-            values.append(value)
-            indices.append(i)
-        if name == 'te.ddrho':
-            t = self.cpo.get_value('te.value')
-            t_i  = t[i]
-            dt_i = value
-            self.cpo.set_value('te.ddrho', [value], [i])
-        if name == 'ti.value':
-            dt = self.cpo.get_value('ti.ddrho')
-            t_i  = value
-            if self.nion == 1:
+        if isinstance(index, int):
+            index = [index]
+
+        if not isinstance(value, list):
+            value = [value]
+        
+        print('>DEBUG: i is of type: {0}'.format(type(index)))
+
+        for i, v in zip(index, value):
+
+            values = []
+            indices = []
+            if name == 'te.value':
+                dt = self.cpo.get_value('te.ddrho')
+                t_i  = v
                 dt_i = dt[i]
-            else:
-                dt_i = dt[i][0]
-            values.append(value)
-            indices.append(i)
-        if name == 'ti.ddrho':
-            t = self.cpo.get_value('ti.value')
-            if self.nion == 1:
+                values.append(v)
+                indices.append(i)
+            if name == 'te.ddrho':
+                t = self.cpo.get_value('te.value')
                 t_i  = t[i]
-            else:
-                t_i  = t[i][0]
-            dt_i = value
-            self.cpo.set_value('ti.ddrho', [value], [i])
+                dt_i = v
+                self.cpo.set_value('te.ddrho', [v], [i])
+            if name == 'ti.value':
+                dt = self.cpo.get_value('ti.ddrho')
+                t_i  = v
+                if self.nion == 1:
+                    dt_i = dt[i]
+                else:
+                    dt_i = dt[i][0]
+                values.append(v)
+                indices.append(i)
+            if name == 'ti.ddrho':
+                t = self.cpo.get_value('ti.value')
+                if self.nion == 1:
+                    t_i  = t[i]
+                else:
+                    t_i  = t[i][0]
+                dt_i = v
+                self.cpo.set_value('ti.ddrho', [v], [i])
 
-        # neighbors to update
-        values.append(dt_i*(rho[i-2] - rho[i]) + t_i)
-        values.append(dt_i*(rho[i-1] - rho[i]) + t_i)
-        values.append(dt_i*(rho[i+1] - rho[i]) + t_i)
-        values.append(dt_i*(rho[i+2] - rho[i]) + t_i)
-        indices += [i-2, i-1, i+1, i+2]
-        if name[0:2] =='te':
-            self.cpo.set_value('te.value', values, indices)
-        if name[0:2] == 'ti':
-            self.cpo.set_value('ti.value', values, indices)
+            # neighbors to update
+            values.append(dt_i*(rho[i-2] - rho[i]) + t_i)
+            values.append(dt_i*(rho[i-1] - rho[i]) + t_i)
+            values.append(dt_i*(rho[i+1] - rho[i]) + t_i)
+            values.append(dt_i*(rho[i+2] - rho[i]) + t_i)
+            indices += [i-2, i-1, i+1, i+2]
+            if name[0:2] =='te':
+                self.cpo.set_value('te.value', values, indices)
+            if name[0:2] == 'ti':
+                self.cpo.set_value('ti.value', values, indices)
 
 
     def get_restart_dict(self):
@@ -140,4 +162,4 @@ class CPOEncoder:
                 }
 
     def element_version(self):
-        return "0.5"
+        return "0.51"

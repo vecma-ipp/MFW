@@ -88,8 +88,8 @@ def cpo_inputs(cpo_filename, cpo_name, input_dir, input_params, ftube_index=None
         containnig {key: value} like:
         {"param_name": {"dist":"Normal", "err":0.2}, "min":100., "max":2000}
         (min and max are optional)
-    ftube_index : int
-        the index of the position of a flux tube (optional)
+    ftube_index : int or list of int-s
+        the index(indices) of the position of a flux tube (optional)
 
     Returns
     -------
@@ -106,6 +106,29 @@ def cpo_inputs(cpo_filename, cpo_name, input_dir, input_params, ftube_index=None
     return params, vary
 
 
+def _update_val(value, attr, name, params, vary):
+    
+    attr_type = type(value)
+    if attr_type in [np.float64,  float]:
+        attr_type = "float"
+    elif attr_type in [np.int, int]:
+        attr_type = "integer"
+    else:
+        raise RuntimeError('Unexpected parameter type.')
+
+    d = {"type": attr_type, "default": value}
+    if 'min' in attr:
+        d.update({'min': attr['min']})
+    if 'max' in attr:
+        d.update({'max': attr['max']})
+    params.update({name: d})
+
+    # get the probability distribution and update vary
+    dist_name = attr["dist"]
+    err = attr["err"]
+    dist = get_dist(dist_name, value, err)
+    vary.update({name: dist})
+
 def _input_dicts(elem, input_params, ftube_index=None):
 
     params = {}
@@ -119,26 +142,12 @@ def _input_dicts(elem, input_params, ftube_index=None):
         if ftube_index is not None:
             value = value[ftube_index]
 
-        attr_type = type(value)
-        if attr_type in [np.float64,  float]:
-            attr_type = "float"
-        elif attr_type in [np.int, int]:
-            attr_type = "integer"
-        else:
-            raise RuntimeError('Unexpected parameter type.')
-
-        d = {"type": attr_type, "default": value}
-        if 'min' in attr:
-            d.update({'min': attr['min']})
-        if 'max' in attr:
-            d.update({'max': attr['max']})
-        params.update({name: d})
-
-        # get the probability distribution and update vary
-        dist_name = attr["dist"]
-        err = attr["err"]
-        dist = get_dist(dist_name, value, err)
-        vary.update({name: dist})
+        # TODO: either have lists for values, or have different params
+        if isinstance(ftube_index, int):
+            _update_val(value, attr, name, params, vary)
+        elif isinstance(ftube_index, list):
+            #TODO test if lists are assigned
+            _update_val(value, attr, name, params, vary)
 
     return params, vary
 
@@ -149,9 +158,9 @@ def ftube_indices(corep_file, coret_file, norm=True):
 
     Parameters
     ----------
-    corep_file : str
+    corep_file : string
         coreprof file.
-    coret_file : str
+    coret_file : string
         coretransp file.
     norm: bool
         flag if normalized rho_tor is to be used
