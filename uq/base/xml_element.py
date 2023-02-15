@@ -34,6 +34,10 @@ class XMLElement():
         self.xml_tree = parse(xml_file)
         self.xml_root = self.xml_tree.getroot()
 
+        # reading the folder of file and its name
+        self.xml_filename_full = xml_filename
+        self.xml_filename_final = self.xml_filename_full.split('/')[-1]
+
 
     def get_value(self, param_name):
         """
@@ -101,13 +105,18 @@ class XMLElement():
         elem.text = str(value)
 
 
-    def save_file(self, filename):
+    def save_file(self, filename=None):
         """  Save the element into new xml file.
 
         Parameters
         ----------
         xml_filename : str
             the new xml filename to save.
+            could be a final folder, a full psecification of path, or None
         """
-
-        self.xml_tree.write(filename)
+        if filename.endswith('.xml'):
+            self.xml_tree.write(filename)
+        elif filename is not None:
+            self.xml_tree.write(filename + '/' + self.xml_filename_final)
+        else: 
+            self.xml_tree.write(self.xml_filename_full)

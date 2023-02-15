@@ -129,6 +129,7 @@ def _update_val(value, attr, name, params, vary):
     dist = get_dist(dist_name, value, err)
     vary.update({name: dist})
 
+
 def _input_dicts(elem, input_params, ftube_index=None):
 
     params = {}
@@ -142,12 +143,26 @@ def _input_dicts(elem, input_params, ftube_index=None):
         if ftube_index is not None:
             value = value[ftube_index]
 
-        # TODO: either have lists for values, or have different params
-        if isinstance(ftube_index, int):
-            _update_val(value, attr, name, params, vary)
-        elif isinstance(ftube_index, list):
-            #TODO test if lists are assigned
-            _update_val(value, attr, name, params, vary)
+        attr_type = type(value)
+        if attr_type in [np.float64,  float]:
+            attr_type = "float"
+        elif attr_type in [np.int, int]:
+            attr_type = "integer"
+        else:
+            raise RuntimeError('Unexpected parameter type.')
+
+        d = {"type": attr_type, "default": value}
+        if 'min' in attr:
+            d.update({'min': attr['min']})
+        if 'max' in attr:
+            d.update({'max': attr['max']})
+        params.update({name: d})
+
+        # get the probability distribution and update vary
+        dist_name = attr["dist"]
+        err = attr["err"]
+        dist = get_dist(dist_name, value, err)
+        vary.update({name: dist})
 
     return params, vary
 

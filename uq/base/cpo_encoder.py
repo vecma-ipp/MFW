@@ -15,7 +15,8 @@ from .cpo_element import CPOElement
 class CPOEncoder:
 
     def __init__(self, cpo_filename, cpo_name, input_dir,
-                 input_params=None, target_filename=None, ftube_index=None):
+                 input_params=None, target_filename=None, ftube_index=None,
+                 xmlelement=None):
 
         # Check that user has specified the object to use as cpo
         if cpo_filename is None:
@@ -41,6 +42,8 @@ class CPOEncoder:
 
         # TODO: put back ftube_index in input_params or keep it there (or remove it)?
         self.ftube_index = ftube_index
+
+        self.xml = xmlelement
 
         # The cpo object
         self.cpo = CPOElement(cpo_filename, cpo_name, input_dir)
@@ -75,9 +78,13 @@ class CPOEncoder:
                 self.cpo.set_value(name, value, index=index)
 
         # Do a symbolic link to other files (cpo, xml and xsd)
-        os.system("ln -s " + self.input_dir + "*.xml " + target_dir + " 2>/dev/null")
         os.system("ln -s " + self.input_dir + "*.xsd " + target_dir + " 2>/dev/null")
         os.system("ln -s " + self.input_dir + "*.cpo " + target_dir + " 2>/dev/null")
+        if self.xml is not None:
+            # if there is a unique XML for run, write a new file instead of linking the common one
+            self.xml.save_file(target_dir)
+        else:
+            os.system("ln -s " + self.input_dir + "*.xml " + target_dir + " 2>/dev/null")
         # Copy restart data if given
         for filename in os.listdir(self.input_dir):
             if filename.endswith(".dat"):
@@ -98,58 +105,59 @@ class CPOEncoder:
             index
         """
         rho = self.cpo.get_value('rho_tor_norm')
+        i = self.ftube_index
 
+        """
         if isinstance(index, int):
             index = [index]
 
         if not isinstance(value, list):
             value = [value]
-        
-        print('>DEBUG: i is of type: {0}'.format(type(index)))
+        """
 
-        for i, v in zip(index, value):
+        #print('>DEBUG: i is of type: {0}'.format(type(index)))
 
-            values = []
-            indices = []
-            if name == 'te.value':
-                dt = self.cpo.get_value('te.ddrho')
-                t_i  = v
+        values = []
+        indices = []
+        if name == 'te.value':
+            dt = self.cpo.get_value('te.ddrho')
+            t_i  = value
+            dt_i = dt[i]
+            values.append(value)
+            indices.append(i)
+        if name == 'te.ddrho':
+            t = self.cpo.get_value('te.value')
+            t_i  = t[i]
+            dt_i = value
+            self.cpo.set_value('te.ddrho', [value], [i])
+        if name == 'ti.value':
+            dt = self.cpo.get_value('ti.ddrho')
+            t_i  = value
+            if self.nion == 1:
                 dt_i = dt[i]
-                values.append(v)
-                indices.append(i)
-            if name == 'te.ddrho':
-                t = self.cpo.get_value('te.value')
+            else:
+                dt_i = dt[i][0]
+            values.append(value)
+            indices.append(i)
+        if name == 'ti.ddrho':
+            t = self.cpo.get_value('ti.value')
+            if self.nion == 1:
                 t_i  = t[i]
-                dt_i = v
-                self.cpo.set_value('te.ddrho', [v], [i])
-            if name == 'ti.value':
-                dt = self.cpo.get_value('ti.ddrho')
-                t_i  = v
-                if self.nion == 1:
-                    dt_i = dt[i]
-                else:
-                    dt_i = dt[i][0]
-                values.append(v)
-                indices.append(i)
-            if name == 'ti.ddrho':
-                t = self.cpo.get_value('ti.value')
-                if self.nion == 1:
-                    t_i  = t[i]
-                else:
-                    t_i  = t[i][0]
-                dt_i = v
-                self.cpo.set_value('ti.ddrho', [v], [i])
+            else:
+                t_i  = t[i][0]
+            dt_i = value
+            self.cpo.set_value('ti.ddrho', [value], [i])
 
-            # neighbors to update
-            values.append(dt_i*(rho[i-2] - rho[i]) + t_i)
-            values.append(dt_i*(rho[i-1] - rho[i]) + t_i)
-            values.append(dt_i*(rho[i+1] - rho[i]) + t_i)
-            values.append(dt_i*(rho[i+2] - rho[i]) + t_i)
-            indices += [i-2, i-1, i+1, i+2]
-            if name[0:2] =='te':
-                self.cpo.set_value('te.value', values, indices)
-            if name[0:2] == 'ti':
-                self.cpo.set_value('ti.value', values, indices)
+        # neighbors to update
+        values.append(dt_i*(rho[i-2] - rho[i]) + t_i)
+        values.append(dt_i*(rho[i-1] - rho[i]) + t_i)
+        values.append(dt_i*(rho[i+1] - rho[i]) + t_i)
+        values.append(dt_i*(rho[i+2] - rho[i]) + t_i)
+        indices += [i-2, i-1, i+1, i+2]
+        if name[0:2] =='te':
+            self.cpo.set_value('te.value', values, indices)
+        if name[0:2] == 'ti':
+            self.cpo.set_value('ti.value', values, indices)
 
 
     def get_restart_dict(self):
@@ -160,6 +168,7 @@ class CPOEncoder:
                 "target_filename": self.target_filename,
                 "ftube_index": self.ftube_index
                 }
+
 
     def element_version(self):
         return "0.51"
