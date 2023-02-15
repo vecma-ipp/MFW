@@ -15,6 +15,7 @@ from ascii_cpo import read
 from base.cpo_encoder import CPOEncoder
 from base.cpo_decoder import CPODecoder
 from base.xml_element import XMLElement
+from base.xml_encoder import XMLEncoder
 from base.utils import cpo_inputs, ftube_indices
 from base.plots import plot_moments, plot_sobols
 from base.evvuq_partemplate_wenv import EasyVVUQParallelTemplateWithEnv
@@ -28,7 +29,7 @@ The electon and ion temperature and their gradient localisd on flux tube positio
 '''
 
 # UQ app
-def setup_gem(ftube_index_list, common_dir, input_params, output_columns):
+def setup_gem(ftube_index, common_dir, input_params, output_columns, xml=None):
     # CPO file containg initial values of uncertain params
     input_filename = "ets_coreprof_in.cpo"
     input_cponame = "coreprof"
@@ -43,14 +44,15 @@ def setup_gem(ftube_index_list, common_dir, input_params, output_columns):
                               cpo_name=input_cponame,
                               input_dir=cpo_dir,
                               input_params=input_params,
-                              ftube_index=ftube_index_list)
+                              ftube_index=ftube_index)
 
     # Encoder, decoder, sampler
     input_filename = "gem_coreprof_in.cpo"
     encoder = CPOEncoder(cpo_filename=input_filename,
                           cpo_name=input_cponame,
                           input_dir=common_dir,
-                          ftube_index=ftube_index_list)
+                          ftube_index=ftube_index,
+                          xmlelement=xml)
 
     # The decoder
     decoder = CPODecoder(cpo_filename=output_filename,
@@ -67,6 +69,8 @@ def setup_gem(ftube_index_list, common_dir, input_params, output_columns):
 
 # Execution using QCG Pilot-Job
 def exec_pj(campaign, exec_path, ncores, nnodes, mpi_instance, log_level="debug"):
+
+    exec_res = None
 
     template_par_short = {
                        'numCores': ncores,
@@ -90,7 +94,13 @@ def exec_pj(campaign, exec_path, ncores, nnodes, mpi_instance, log_level="debug"
 
         print('!>> Exception during batch execution! :')
         print(e)
+    
+    return exec_res
 
+def exec_loc(campaign, exec_path, log_level="debug"):
+    exec_res = campaign.execute()
+    exec_res.collate()
+    return exec_res
 
 def plot_results(means, stds, sob1, sobt, output_columns):
 
@@ -143,6 +153,7 @@ if __name__ == "__main__":
     # base.utils.ftube_indices('gem_coreprof_in.cpo','gem_coretransp_out.cpo')
     # to get the list
     ftube_indices = [15, 31, 44, 55, 66, 76, 85, 94]
+    ftube_rhos = [0.14, 0.31, 0.44, 0.56, 0.67, 0.77, 0.86, 0.95]
 
     # Campaign for mutliapp
     campaign = uq.Campaign(name='UQ_8FTgem_', work_dir=tmp_dir)
@@ -187,8 +198,10 @@ if __name__ == "__main__":
     nnodes = ceil(1.*ncores/n_cores_p_node)
     pol_order = int(os.environ['POLORDER'])
     nparams = len(input_params)
-    nruns = (pol_order + 1)**nparams
+    nruns = (pol_order + 1)**nparams # should probably rely only on eVVUQ information
     ncores_tot = ncores * nruns
+
+    print('> {2} Runs requiring totally {0} cores at {1} nodes'.format(ncores, nnodes, nruns))
 
     # To store Statistics and Sobols
     means = {qoi: [] for qoi in output_columns}
@@ -197,39 +210,45 @@ if __name__ == "__main__":
     sobt = {qoi: [] for qoi in output_columns}
 
     # Run
-    params, encoder, decoder, sampler, stats = setup_gem(ft_index, common_dir, input_params, output_columns)
+    for i, ft_index in enumerate(ftube_indices):
 
-    actions = Actions(
-                        CreateRunDirectory('/runs'),
-                        Encode(encoder),
-                        ExecuteLocal(exec_path_comm),
-                        Decode(decoder),
-                        )
+        gemxml.set_value('equilibrium_parameters.geometric.ra0', ftube_rhos[i])
 
-    camp_name =  "gem_8FT"
-    campaign.add_app(name=camp_name,
-                         params=params,
-                         actions=actions)
+        params, encoder, decoder, sampler, stats = setup_gem(ft_index, common_dir, input_params, output_columns, gemxml)
 
-    # Set and run campaign
-    campaign.set_sampler(sampler)
 
-    exec_pj(campaign, exec_path, ncores, nnodes, mpi_instance)
+        actions = Actions(
+                            CreateRunDirectory('/runs'),
+                            Encode(encoder),
+                            ExecuteLocal(exec_path_comm),
+                            Decode(decoder),
+                            )
 
-    campaign.apply_analysis(stats)
-    result = campaign.get_last_analysis()
+        camp_name =  "gem_FT"+str(i)
+        campaign.add_app(name=camp_name,
+                            params=params,
+                            actions=actions)
 
-    # Store results - TODO has to be done on per f.t. basis
-    for qoi in output_columns:
-        means[qoi].append(result.describe(qoi, 'mean')[i])
-        stds[qoi].append(result.describe(qoi, 'std')[i])
-        s1 = {}
-        st = {}
-        for par in list(input_params.keys()):
-            s1.update({par: result.sobols_first(qoi)[par][i]})
-            st.update({par: result.sobols_total(qoi)[par][i]})
-        sob1[qoi].append(s1)
-        sobt[qoi].append(st)
+        # Set and run campaign
+        campaign.set_sampler(sampler)
+
+        exec_res = exec_pj(campaign, exec_path, ncores, nnodes, mpi_instance)
+        #exex_res = exec_loc(campaign, exec_path)
+
+        campaign.apply_analysis(stats)
+        result = campaign.get_last_analysis()
+
+        # Store results - TODO has to be done on per f.t. basis
+        for qoi in output_columns:
+            means[qoi].append(result.describe(qoi, 'mean')[i])
+            stds[qoi].append(result.describe(qoi, 'std')[i])
+            s1 = {}
+            st = {}
+            for par in list(input_params.keys()):
+                s1.update({par: result.sobols_first(qoi)[par][i]})
+                st.update({par: result.sobols_total(qoi)[par][i]})
+            sob1[qoi].append(s1)
+            sobt[qoi].append(st)
 
     # Plot descrtiptive statistics and sensitivity analysis
     #plot_results(means, stds, sob1, sobt, output_columns)

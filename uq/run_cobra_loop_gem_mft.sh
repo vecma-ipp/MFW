@@ -54,7 +54,7 @@ if [ -z "${POLORDER}" ]; then
 fi
 
 echo -e '> In this run: use ExecuteLocal only + QCGPJ pool + '${MPIMOD}' exec mode + '${SLURM_NNODES} \
-' nodes + 4 params + pol-order '${POLORDER}'+ 8 flux tubes + commandline passed with '${MPICMD}' \n'
+' nodes + 4 params + pol-order '${POLORDER}' + 8 flux tubes + commandline passed with '${MPICMD}' \n'
 
 echo '> Here we take all 4 params +/- 25% error at rho_tor=[...] \n'
 
