@@ -24,7 +24,7 @@ from statsmodels.tsa.arima.model import ARIMA, ARIMAResults
 import easyvvuq as uq
 import easyvvuq.db.sql as db
 
-from da_utils import walklevel, get_coreprof_ev_acf, produce_stats_dataframes, plot_response_cuts, plot_timetraces_act
+from da_utils import walklevel, get_coreprof_ev_acf, produce_stats_dataframes, plot_response_cuts, plot_timetraces_act, time_traces_per_run
 
 from ascii_cpo import read
 sys.path.append('..')
@@ -1199,8 +1199,9 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
                               )
             """
 
+            #4.5.1''') Plotting time traces for one case with its AVG, STD, SEM
             runn_loc = 6
-            print('ACN here is {0} and total len is {1}'.format(scan_df.iloc[runn_loc-1]['ti_transp_flux_acn'], len(val_wind_s[runn_loc-1][0]))) ###DEBUG
+            #print('ACN here is {0} and total len is {1}'.format(scan_df.iloc[runn_loc-1]['ti_transp_flux_acn'], len(val_wind_s[runn_loc-1][0]))) ###DEBUG
             plot_timetraces_act(
                     val_ev_s[runn_loc-1][0][:],
                     avg=scan_df.iloc[runn_loc-1]['ti_transp_flux'],
@@ -1209,6 +1210,16 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
                     foldname=p+'_'+a+'_'+mainfoldernum,
                     apha_discard=0.3,
                     act=int(len(val_wind_s[runn_loc-1][0])/scan_df.iloc[runn_loc-1]['ti_transp_flux_acn']),
+                                )
+            
+            #4.5.1'''') Plotting time traces for one case with its AVG, STD, SEM, each taken per run
+            runn_loc = 6
+            #print('ACN here is {0} and total len is {1}'.format(scan_df.iloc[runn_loc-1]['ti_transp_flux_acn'], len(val_wind_s[runn_loc-1][0]))) ###DEBUG
+            time_traces_per_run(
+                    val_ev_s[runn_loc-1][0][:],
+                    run_len=150,
+                    foldname=p+'_'+a+'_'+mainfoldernum,
+                    apha_discard=0.3,
                                 )
 
             print('plotting cuts done')

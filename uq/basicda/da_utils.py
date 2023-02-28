@@ -1383,7 +1383,8 @@ def plot_timetraces_act(traces, avg, std, sem, foldname='', apha_discard=0.3, ac
     style_lists = [marker_list, line_list, color_list,] 
     fmt_list = [style for style in itertools.product(*style_lists)]
 
-    y_lim = (-5.E+4, 2.8E+6)
+    #y_lim = (-5.E+4, 2.8E+6)
+    y_lim = (1.5E+6, 2.8E+6)
 
     fig, ax = plt.subplots(figsize=(9, 9))
     
@@ -1394,7 +1395,7 @@ def plot_timetraces_act(traces, avg, std, sem, foldname='', apha_discard=0.3, ac
 
     # Plotting for the ramp-up phase
     ax.plot(np.arange(0, n_disc), traces[0:n_disc], color='b', linestyle='-',)
-    ax.vlines(n_disc, y_lim[0], y_lim[1], colors='grey', alpha=0.5, linestyles='dashed', label='autocorrelation time windows')
+    ax.vlines(n_disc, y_lim[0], y_lim[1], colors='grey', alpha=0.5, linestyles='dashed', label='autocorrelation time windows, n={0}, len={1}'.format(n_act, act))
 
     for i in range(n_act):
         # Plotting traces for each of the ACT window
@@ -1409,16 +1410,15 @@ def plot_timetraces_act(traces, avg, std, sem, foldname='', apha_discard=0.3, ac
         ax.vlines(i_l, y_lim[0], y_lim[1], colors='grey', alpha=0.5, linestyles='dashed')
 
     # Plotting horisontal lines for AVG and bands of STD and SEM
-    ax.hlines(y=avg, xmin=0, xmax=n_tt, color='g', linestyle='-', label='mean')
+    ax.hlines(y=avg, xmin=0, xmax=n_tt, color='g', linestyle='-', label='mean: {0:.2}'.format(avg))
 
-    ax.hlines(y=avg+sem, xmin=0, xmax=n_tt, color='g', linestyle='--', label='+/- standard error of mean')
+    ax.hlines(y=avg+sem, xmin=0, xmax=n_tt, color='g', linestyle='--', label='+/- standard error: {0:.2}'.format(sem))
     ax.hlines(y=avg-sem, xmin=0, xmax=n_tt, color='g', linestyle='--')
 
-    ax.hlines(y=avg+std, xmin=0, xmax=n_tt, color='g', linestyle='dotted', label='+/- standard deviation')
+    ax.hlines(y=avg+std, xmin=0, xmax=n_tt, color='g', linestyle='dotted', label='+/- standard deviation: {0:.2}'.format(std))
     ax.hlines(y=avg-std, xmin=0, xmax=n_tt, color='g', linestyle='dotted')
 
     # Setting lables, legend etc.
-
     ax.set_ylabel(r'{0}'.format('Ion heat flux, W/m^2'))
     ax.set_xlabel(r'{0}'.format('time, code time-steps'))
     #ax.set_title(r'', fontsize=12)
@@ -1444,9 +1444,9 @@ def time_traces_per_run(traces, run_len=450, foldname='', apha_discard=0.3):
     style_lists = [marker_list, line_list, color_list,] 
     fmt_list = [style for style in itertools.product(*style_lists)]
 
-    y_lim = (-5.E+5, 4.E+6)
+    y_lim = (1.5E+6, 2.8E+6)
 
-    fig, ax = plt.subplots(figsize=(12,12))
+    fig, ax = plt.subplots(figsize=(9,9))
     
     n_tt = len(traces)
     n_disc = m.floor(apha_discard*n_tt)
@@ -1454,11 +1454,12 @@ def time_traces_per_run(traces, run_len=450, foldname='', apha_discard=0.3):
     n_r = m.floor(n_stat / run_len)
 
     # Plotting for the ramp-up phase
-    ax.plot(np.arange(0, n_disc), traces[0:n_disc], color='b', linestyle='-', label=r'{}')
-    ax.vlines(run_len, y_lim[0], y_lim[1], colors='grey', alpha=0.5, linestyles='dashed')
+    ax.plot(np.arange(0, n_disc), traces[0:n_disc], color='b', linestyle='-')
+    ax.vlines(n_disc, y_lim[0], y_lim[1], colors='grey', alpha=0.5, linestyles='dashed', label='simulation length, n={0}'.format(run_len))
 
     means = np.zeros(n_r)
     rel_mean_changes = np.zeros(n_r)
+    abs_mean_changes = np.zeros(n_r)
     sems = np.zeros(n_r)
 
     for i in range(n_r):
@@ -1471,49 +1472,66 @@ def time_traces_per_run(traces, run_len=450, foldname='', apha_discard=0.3):
         traces_wind = traces[i_f:i_l]
         x_wind = np.arange(i_f, i_l)
 
-        traces_loc = traces[0:i_l]
-        x_loc = np.arange(0, i_l)
+        traces_loc = traces[n_disc:i_l]
+        x_loc = np.arange(n_disc, i_l)
         
         # Calculating local ACT
         lags_list = [2,4,8,16,32,48,64,96,128,160,256,512,1024,2048,4096]
-        lags_list = [l for l in lags_list if l < traces_loc[i].shape[-1]]
-        act_loc, acn_loc = get_coreprof_ev_acf([traces_loc],
+        lags_list = [l for l in lags_list if l < len(traces_loc)]
+        act_loc, acn_loc = get_coreprof_ev_acf(np.array([traces_loc]),
                 name='locacf'+foldname+'_substep_'+str(i),
                 lags=lags_list)
-        traces_acf_loc = traces_loc[0, int(act_loc[0]/2.):-1:int(act_loc[0])]
+        traces_acf_loc = traces_loc[int(act_loc[0]/2.):-1:int(act_loc[0])]
 
         # Calculating local AVG
         avg_loc = traces_acf_loc.mean()
+        means[i] = avg_loc
+        rel_mean_changes[i] = (means[i]- means[i-1]) / means[i-1] if i>0 else 1.
+        abs_mean_changes[i] = abs(means[i]- means[i-1]) if i>0 else 1.
         
-        """
-        std_loc=
-        sem_loc=
+        std_loc = traces_acf_loc.std()
+        sem_loc = std_loc / np.sqrt(acn_loc[0])
+        sems[i] = sem_loc
 
-        ax.plot(x_loc, traces_loc, color='b', linestyle='-', label=r'{}')
+        ax.plot(x_loc, traces_loc, color='b', linestyle='-',)
         ax.vlines(i_l, y_lim[0], y_lim[1], colors='grey', alpha=0.5, linestyles='dashed')
         
         # Plotting horisontal lines for AVG and bands of STD and SEM
-        ax.hlines(y=avg_loc,         xmin=i_f, xmax=i_l, color='g', linestyle='-')
+        ax.hlines(y=avg_loc,         xmin=i_f, xmax=i_l, color='r', linestyle='-')
 
         ax.hlines(y=avg_loc+sem_loc, xmin=i_f, xmax=i_l, color='g', linestyle='--')
         ax.hlines(y=avg_loc-sem_loc, xmin=i_f, xmax=i_l, color='g', linestyle='--')
 
-        ax.hlines(y=avg_loc+std_loc, xmin=i_f, xmax=i_l, color='g', linestyle='dotted')
-        ax.hlines(y=avg_loc-std_loc, xmin=i_f, xmax=i_l, color='g', linestyle='dotted')
-        """
-
+        ax.hlines(y=avg_loc+1.96*std_loc, xmin=i_f, xmax=i_l, color='g', linestyle='dotted')
+        ax.hlines(y=avg_loc-1.96*std_loc, xmin=i_f, xmax=i_l, color='g', linestyle='dotted')
 
     # Setting lables, legend etc.
-
-    #ax.set_xlabel(r't.st. for {0}, runs#{1}'.format(running_ip_name, inds))
-    #ax.set_ylabel(r'{0}'.format(qoi_name))
-    #ax.set_title(r'{0}'.format(fixed_ip_val_str), fontsize=12)
+    ax.set_ylabel(r'{0}'.format('Ion heat flux, W/m^2'))
+    ax.set_xlabel(r'{0}'.format('time, code time-steps'))
     
     ax.set_ylim(y_lim[0], y_lim[1])
-    #ax.legend(loc='best', prop={'size':12})
+    ax.legend(loc='best', prop={'size':12})
 
     fig.tight_layout()
     fig.savefig('timetraces_runs_{0}.pdf'.format(foldname))
+    plt.close()
+
+    # Plotting mean change
+    fig1, ax1 = plt.subplots(figsize=(7,7))
+    ax1.plot(np.arange(1, n_r), abs_mean_changes[1:])
+    ax1.set_xlabel('Number of simulations')
+    ax1.set_ylabel('Absolute change of the mean')
+    fig1.tight_layout()
+    fig1.savefig('rabs_mean_{0}.pdf'.format(foldname))
+    plt.close()
+
+    # Plotting SEM 
+    fig2, ax2 = plt.subplots(figsize=(7,7))
+    ax2.plot(np.arange(n_r), sems)
+    ax2.set_xlabel('Number of simulations')
+    ax2.set_ylabel('Standard error')
+    fig2.tight_layout()
+    fig2.savefig('sem_{0}.pdf'.format(foldname))
     plt.close()
 
 def get_reference_vals(p,a, filename='AUG_mix-lim_gem_inoutput.txt', path='../data/'):
