@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 import chaospy as cp
 import time as t
+import math as m
 
 import glob
 import ast
@@ -27,6 +28,9 @@ from mpl_toolkits.mplot3d import Axes3D
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 from sklearn.neighbors import KernelDensity
+
+from scipy import interpolate
+from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
 
 #from extcodehelper import ExtCodeHelper
 #import lhsmdu
@@ -798,6 +802,142 @@ def produce_stats_dataframes(runs_input_vals, val_trend_avg_s, val_std_s, stats_
 
     return scan_df, stats_df
 
+def get_coreprof_ev_acf(value_ev, name='ti', lags=[1,2,3,4,5,6,7,8,9,10]):
+    """
+    Calculates autocorrelation function of the sequence of profile values
+        Parameters:
+            value_ev: numpy array of length equal to original samle size
+            name    : profile name, used for outputs/plotting/saving
+            lags    : list of sizes of lags to test autocorrelation
+        Returns:
+            autocorrelation length
+            number of effective samples (one per ACF window)
+            ACF object
+    """ 
+    
+    nftc = value_ev.shape[0]
+
+    ac_len = []
+    ac_num = []   
+
+    lags_np = np.array(lags)
+     
+    # Iterate over all different passed flux tubes and cases of runs
+    print('>Calculating ACF')
+    for i in range(nftc):
+        
+        print('Considering flux tube or case #{}'.format(i))
+        #TODO: get rid of lists and use numpy arrays
+
+        n_sample = value_ev.shape[-1]
+
+        acf_manual = [1. if l==0 else np.corrcoef(value_ev[i][l:], value_ev[i][:-l])[0][-1] for l in lags]
+
+        #NB: commented out because currently is not in use for further processing, should probably be adopted to calcualte autocorrelation time
+        """
+        nl = 64    
+        
+        r,q,p  = acf(value_ev[i], nlags=nl, fft=True, qstat=True) 
+ 
+        acf_data = np.c_[np.arange(1, nl+1), r[1:], q, p]
+  
+        acf_data_pd = pd.DataFrame(acf_data, columns=['lags', 'AC', 'Q', 'P(>Q)']) 
+        acf_data_pd.set_index('lags')
+ 
+        #acf_res = np.array(acf_res)
+        #line = 'ACF :' + str(acf_res)
+    
+        print(acf_data_pd)
+
+        #with open(name+'_acf.txt', 'w') as wfile:
+        #    wfile.write(line)
+    
+        val_df = pd.DataFrame(value_ev[i])
+   
+        plot_acf(val_df, lags=lags)
+        plt.savefig(str(i)+'_'+name+'_acf.png')
+        plt.close()
+        """
+        
+        # TODO read up methods and implementations for that:
+        # Options
+        # 1) min(n) value for which ACF(n) <= Var(X_1..n)/sqrt(n) 
+        # 2) max value of a_n for an ARMA model
+
+        #acfs = acf_data_pd['AC'].to_numpy()
+        acfs = acf_manual
+        acfs_np = np.array(acfs)
+
+        # Defining Error(L) as Var(V[1..L])/sqrt(L) ...-> then Error is not normalized to [0.;1.]!
+
+        #errors = [np.std(value_ev[i][:l]) / np.mean(value_ev[i][:l]) for l in lags]
+        errors = [1./np.sqrt(float(l)) for l in lags]
+
+        #TODO: probably apply following by default
+        # Normalization of Error, dividing by absolute mean of time traces
+        #TODO: probably autocorrelation time calculation should employ e-folding i.e. 
+        #   a. 'for which t ACF(t) decreases by 1/e compared to ACF(1)?'
+        #   b. 'for which t ACF(t) decreases by 1/e compared to ACF(0)?'
+        #   c. 'for which t ACF(t) decreases by 1/e (corrected by standard deviation) compared to ACF(0)?'
+        
+        # Apply next line as only 'errors' assignment to simply check e-fold for ACF
+        errors = [1.*acfs_np[0]/np.e for l in lags]
+        
+        if isinstance(value_ev[i], np.ndarray) :
+            errors = [np.std(value_ev[i][:l]) / (np.abs(np.mean(value_ev[i][:l])) * np.sqrt(float(l))) for l in lags]
+        
+        errors_np = np.array(errors)
+
+        #print('ACF errors: {}'.format(errors)) ###DEBUG
+
+        # Defining ACL as the smallest lag size L that: ACF(L)<= Err(L)
+        """
+        acl = lags[0]
+        for l, ac, e in zip(lags, acfs, errors):
+            acl = l
+            if ac < e:
+                break
+        """
+        #Interpolating ACF and Err for intermediate values of lags
+        f_acf = interpolate.interp1d(lags_np, acfs_np, kind='cubic')
+        f_err = interpolate.interp1d(lags_np, errors_np, kind='cubic')
+
+        lags_int = np.arange(lags_np.min(), lags_np.max(), 1.)
+        acfs_int = f_acf(lags_int)
+        errors_int = f_err(lags_int)
+
+        # Calculating autocorrelation time as lag for which ACF drops below its calcualtion error
+        decor_lags = np.where(acfs_int < errors_int)[0]
+        #print(decor_lags) ###DEBUG
+        if decor_lags.size == 0:
+            acl = lags_int[-1]
+        else:
+            acl = lags_int[decor_lags.min()]
+
+        ac_len_cur = float(acl)
+        ac_len.append(ac_len_cur)
+        ac_num.append(int(n_sample/float(ac_len_cur)))
+       
+        print('ACF data:'); print([acf_manual, acfs, errors, acl, ac_len, ac_num, n_sample]) ###DEBUG
+
+    """
+    plot_pacf(val_df, lags=lags)
+    plt.savefig('pacf.png')
+    plt.close()
+    """
+    # DEBUG AND PLOTTING
+    """
+    plt.plot( acf, '.', label='ACF')
+    plt.xlabel('lags')
+    plt.ylabel('ACF')
+    plt.title('Autocorrelation function')
+    plt.ylim([-1., 1.])
+    plt.savefig('debug_acf.png')
+    plt.close()
+    """
+
+    return ac_len, ac_num 
+
 def plot_response_cuts(data, input_names, output_names, compare_vals=None, foldname='', traces=None, hists=None):
     """
     Plot different cuts (fixing all input parameter values but one) of code response for given QoI
@@ -895,7 +1035,7 @@ def plot_response_cuts(data, input_names, output_names, compare_vals=None, foldn
             #      input_inds_left, fixed_ip_names, input_fixvals_unique]) ###DEBUG
 
             #Create figure for combined scan, one for every input variable
-            fig_loc, ax_loc = plt.subplots(1, 1, figsize=(7,7))
+            fig_loc, ax_loc = plt.subplots(1, 1, figsize=(9,5))
 
             # Iterate over the all combinations of input parameters values to be kept const for a cut
             for j_fixval in range(n_fixvals):
@@ -1027,8 +1167,10 @@ def plot_response_cuts(data, input_names, output_names, compare_vals=None, foldn
             ax_loc.set_ylabel(r'{}'.format(qoi_name))
             ax_loc.set_title(r'Scans for {0}'.format(running_ip_name))
             ax_loc.set_ylim(-1.E+5, 4.E+6)
-            ax_loc.legend(loc='best',prop={'size':7}) #TEMP -probably an overload for a poster
-            fig_loc.tight_layout()
+            box_loc = ax_loc.get_position()
+            ax_loc.set_position([box_loc.x0, box_loc.y0, box_loc.width*0.6, box_loc.height])
+            ax_loc.legend(loc='center left',prop={'size':7},bbox_to_anchor=(1,0.5)) #TEMP -probably an overload for a poster
+            #fig_loc.tight_layout()
             fig_loc.savefig('scan_comb_{0}_{1}.svg'.format(running_ip_name, foldname))
         
         fig.tight_layout()
@@ -1122,7 +1264,7 @@ def plot_2D_scalings(data, input_names=['te_value', 'ti_value', 'te_ddrho', 'ti_
                             }
 
     ### Examples of different combinations of original input names
-    #scale_pairs = product([input_names, input_names])
+    #scale_pairs = product(input_names, input_names)
     #scale_pairs_nodiag = [x for x in scale_pairs if x[0]!=x[1]]
     #scale_pairs_nodiag_nosym = [x for i,x in enumerate(scale_pairs_nodiag) if (x[1],x[0]) not in scale_pairs_nodiag[:i]]
 
@@ -1221,3 +1363,183 @@ def plot_2D_scalings(data, input_names=['te_value', 'ti_value', 'te_ddrho', 'ti_
                 axs[ifi][jfi].scatter(x1_io, x2_io, c=y_oo, cmap=cmap_val, edgecolors='k', s=10)
         
         figs.savefig('scan_{0}_{1}_{2}.svg'.format(scaling_pair[0], scaling_pair[1], foldname))
+
+def plot_timetraces_act(traces, avg, std, sem, foldname='', apha_discard=0.3, act=100):
+    """
+    Plots time traces for a single run case and indicates:
+        ACT windows, for each:
+            effective sample points
+            AVG estimation
+            STD estimation
+            SEM estimstion
+    """
+
+    print(avg, std, sem, act) ###DEBUG
+
+    # Define a set of styles for different lists plotted
+    color_list = ['b', 'g', 'r', 'y' , 'm', 'c', 'k']
+    line_list = ['-', '--', '-.', ':']
+    marker_list = ['', '.', 'o', 'v', '^', '<', '>']
+    style_lists = [marker_list, line_list, color_list,] 
+    fmt_list = [style for style in itertools.product(*style_lists)]
+
+    y_lim = (-5.E+4, 2.8E+6)
+
+    fig, ax = plt.subplots(figsize=(9, 9))
+    
+    n_tt = len(traces)
+    n_disc = m.floor(apha_discard*n_tt)
+    n_stat = n_tt - n_disc
+    n_act = m.floor(n_stat / act)
+
+    # Plotting for the ramp-up phase
+    ax.plot(np.arange(0, n_disc), traces[0:n_disc], color='b', linestyle='-',)
+    ax.vlines(n_disc, y_lim[0], y_lim[1], colors='grey', alpha=0.5, linestyles='dashed', label='autocorrelation time windows')
+
+    for i in range(n_act):
+        # Plotting traces for each of the ACT window
+        i_f = n_disc + act * i
+        i_l = n_disc + act * (i + 1)
+
+        ax.plot(np.arange(i_f, i_l), traces[i_f:i_l], color='b', linestyle='-',)
+        
+        mid_point = m.floor((i_f+i_l) / 2),
+        ax.plot(mid_point, traces[mid_point], 'k*') # scatter? fmt?
+
+        ax.vlines(i_l, y_lim[0], y_lim[1], colors='grey', alpha=0.5, linestyles='dashed')
+
+    # Plotting horisontal lines for AVG and bands of STD and SEM
+    ax.hlines(y=avg, xmin=0, xmax=n_tt, color='g', linestyle='-', label='mean')
+
+    ax.hlines(y=avg+sem, xmin=0, xmax=n_tt, color='g', linestyle='--', label='+/- standard error of mean')
+    ax.hlines(y=avg-sem, xmin=0, xmax=n_tt, color='g', linestyle='--')
+
+    ax.hlines(y=avg+std, xmin=0, xmax=n_tt, color='g', linestyle='dotted', label='+/- standard deviation')
+    ax.hlines(y=avg-std, xmin=0, xmax=n_tt, color='g', linestyle='dotted')
+
+    # Setting lables, legend etc.
+
+    ax.set_ylabel(r'{0}'.format('Ion heat flux, W/m^2'))
+    ax.set_xlabel(r'{0}'.format('time, code time-steps'))
+    #ax.set_title(r'', fontsize=12)
+    
+    ax.set_ylim(y_lim[0], y_lim[1])
+    ax.legend(loc='best', prop={'size':12})
+
+    fig.tight_layout()
+    fig.savefig('timetraces_act_{0}.pdf'.format(foldname))
+    plt.close()
+
+def time_traces_per_run(traces, run_len=450, foldname='', apha_discard=0.3):
+    """
+    Goes through timetraces for a single runs though each submission and:
+        calculates ACT, N_s_eff, AVG, STD, SEM
+    Plots the timetraces with data from each run
+    """
+
+    # Define a set of styles for different lists plotted
+    color_list = ['b', 'g', 'r', 'y' , 'm', 'c', 'k']
+    line_list = ['-', '--', '-.', ':']
+    marker_list = ['', '.', 'o', 'v', '^', '<', '>']
+    style_lists = [marker_list, line_list, color_list,] 
+    fmt_list = [style for style in itertools.product(*style_lists)]
+
+    y_lim = (-5.E+5, 4.E+6)
+
+    fig, ax = plt.subplots(figsize=(12,12))
+    
+    n_tt = len(traces)
+    n_disc = m.floor(apha_discard*n_tt)
+    n_stat = n_tt - n_disc
+    n_r = m.floor(n_stat / run_len)
+
+    # Plotting for the ramp-up phase
+    ax.plot(np.arange(0, n_disc), traces[0:n_disc], color='b', linestyle='-', label=r'{}')
+    ax.vlines(run_len, y_lim[0], y_lim[1], colors='grey', alpha=0.5, linestyles='dashed')
+
+    means = np.zeros(n_r)
+    rel_mean_changes = np.zeros(n_r)
+    sems = np.zeros(n_r)
+
+    for i in range(n_r):
+
+        # Plotting traces for each of the ACT window
+        # Selecting local indices and corrsponding time traces
+        i_f = n_disc + run_len * i
+        i_l = n_disc + run_len * (i + 1)
+
+        traces_wind = traces[i_f:i_l]
+        x_wind = np.arange(i_f, i_l)
+
+        traces_loc = traces[0:i_l]
+        x_loc = np.arange(0, i_l)
+        
+        # Calculating local ACT
+        lags_list = [2,4,8,16,32,48,64,96,128,160,256,512,1024,2048,4096]
+        lags_list = [l for l in lags_list if l < traces_loc[i].shape[-1]]
+        act_loc, acn_loc = get_coreprof_ev_acf([traces_loc],
+                name='locacf'+foldname+'_substep_'+str(i),
+                lags=lags_list)
+        traces_acf_loc = traces_loc[0, int(act_loc[0]/2.):-1:int(act_loc[0])]
+
+        # Calculating local AVG
+        avg_loc = traces_acf_loc.mean()
+        
+        """
+        std_loc=
+        sem_loc=
+
+        ax.plot(x_loc, traces_loc, color='b', linestyle='-', label=r'{}')
+        ax.vlines(i_l, y_lim[0], y_lim[1], colors='grey', alpha=0.5, linestyles='dashed')
+        
+        # Plotting horisontal lines for AVG and bands of STD and SEM
+        ax.hlines(y=avg_loc,         xmin=i_f, xmax=i_l, color='g', linestyle='-')
+
+        ax.hlines(y=avg_loc+sem_loc, xmin=i_f, xmax=i_l, color='g', linestyle='--')
+        ax.hlines(y=avg_loc-sem_loc, xmin=i_f, xmax=i_l, color='g', linestyle='--')
+
+        ax.hlines(y=avg_loc+std_loc, xmin=i_f, xmax=i_l, color='g', linestyle='dotted')
+        ax.hlines(y=avg_loc-std_loc, xmin=i_f, xmax=i_l, color='g', linestyle='dotted')
+        """
+
+
+    # Setting lables, legend etc.
+
+    #ax.set_xlabel(r't.st. for {0}, runs#{1}'.format(running_ip_name, inds))
+    #ax.set_ylabel(r'{0}'.format(qoi_name))
+    #ax.set_title(r'{0}'.format(fixed_ip_val_str), fontsize=12)
+    
+    ax.set_ylim(y_lim[0], y_lim[1])
+    #ax.legend(loc='best', prop={'size':12})
+
+    fig.tight_layout()
+    fig.savefig('timetraces_runs_{0}.pdf'.format(foldname))
+    plt.close()
+
+def get_reference_vals(p,a, filename='AUG_mix-lim_gem_inoutput.txt', path='../data/'):
+            """
+            Reads MFW production runs CSV files and get the range of flux values
+            """
+
+            mfw_input_names = ['dTi', 'dTe', 'Ti', 'Te']
+
+            mfw_data_file = filename # 'AUG_gem_inoutput.txt'
+            mfw_ft_s = [5, 6, 7]
+
+            val_mwf = pd.read_table(path+mfw_data_file, delimiter='  *', engine='python') 
+            
+            if   p+'_'+a == 'ti_transp':
+                val_mwf_s = [val_mwf['cp-flux-Ti-ft'+str(mfw_ft)].to_numpy().reshape(1,-1) for mfw_ft in mfw_ft_s]
+            elif p+'_'+ a == 'te_transp':
+                val_mwf_s = [val_mwf['cp-flux-Te-ft'+str(mfw_ft)].to_numpy().reshape(1,-1) for mfw_ft in mfw_ft_s]
+            else:
+                #Fall-back option
+                val_mwf_s = [val_mwf['cp-flux-Ti-ft'+str(mfw_ft)].to_numpy().reshape(1,-1) for mfw_ft in mfw_ft_s]
+
+            mfw_input_refval_s = [[val_mwf_s[input_name+'-ft'+str(mfw_ft)].mean() for mfw_ft in mfw_ft_s] for input_name in mfw_input_names]
+            
+            #print(' Shapes of old and new arrays {0} {1}'.format(val_wind_s[0].shape, val_mwf.shape)) ### DEBUG
+            #print(' MFW input values are dti={0} dte={1} ti={2} te={3}'.format(tiddrho_mwf_refval_s[0], teddrho_mwf_refval_s[0], ti_mwf_refval_s[0], te_mwf_refval_s[0])) ### DEBUG
+            print('Mean of MFW ft5 QTi={0}'.format(val_mwf['cp-flux-Ti-ft'+str(mfw_ft_s[0])].mean())) ###DEBUG
+
+            return mfw_input_refval_s

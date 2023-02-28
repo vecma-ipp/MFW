@@ -13,12 +13,10 @@ import time
 
 from sklearn.neighbors import KernelDensity as KDE
 from scipy.stats import moment, linregress
-from scipy import interpolate
 
 import statsmodels.api as sm
 from statsmodels.tsa.api import acf, pacf, graphics
 from statsmodels.tsa.api import SimpleExpSmoothing, ExponentialSmoothing  
-from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
 from statsmodels.graphics.api import qqplot
 from statsmodels.tsa.ar_model import AutoReg
 from statsmodels.tsa.arima.model import ARIMA, ARIMAResults
@@ -26,7 +24,7 @@ from statsmodels.tsa.arima.model import ARIMA, ARIMAResults
 import easyvvuq as uq
 import easyvvuq.db.sql as db
 
-from da_utils import walklevel, produce_stats_dataframes, plot_response_cuts
+from da_utils import walklevel, get_coreprof_ev_acf, produce_stats_dataframes, plot_response_cuts, plot_timetraces_act
 
 from ascii_cpo import read
 sys.path.append('..')
@@ -401,132 +399,6 @@ def plot_coreprofval_dist(value_spw, labels=[], name='ti', discr_level=64, forpl
     """
     
     return moments
-
-def get_coreprof_ev_acf(value_ev, name='ti', lags=[1,2,3,4,5,6,7,8,9,10]):
-    """
-    Calculates autocorrelation function of the sequence of profile values
-        Parameters:
-            value_ev: numpy array of length equal to original samle size
-            name    : profile name, used for outputs/plotting/saving
-            lags    : list of sizes of lags to test autocorrelation
-        Returns:
-            autocorrelation length
-            number of effective samples (one per ACF window)
-            ACF object
-    """ 
-    
-    nftc = value_ev.shape[0]
-
-    ac_len = []
-    ac_num = []   
-
-    lags_np = np.array(lags)
-     
-    # Iterate over all different passed flux tubes and cases of runs
-    print('>Calculating ACF')
-    for i in range(nftc):
-        
-        print('Considering flux tube or case #{}'.format(i))
-        #TODO: get rid of lists and use numpy arrays
-
-        n_sample = value_ev.shape[-1]
-
-        acf_manual = [1. if l==0 else np.corrcoef(value_ev[i][l:], value_ev[i][:-l])[0][-1] for l in lags]
-
-        #NB: commented out because currently is not in use for further processing, should probably be adopted to calcualte autocorrelation time
-        """
-        nl = 64    
-        
-        r,q,p  = acf(value_ev[i], nlags=nl, fft=True, qstat=True) 
- 
-        acf_data = np.c_[np.arange(1, nl+1), r[1:], q, p]
-  
-        acf_data_pd = pd.DataFrame(acf_data, columns=['lags', 'AC', 'Q', 'P(>Q)']) 
-        acf_data_pd.set_index('lags')
- 
-        #acf_res = np.array(acf_res)
-        #line = 'ACF :' + str(acf_res)
-    
-        print(acf_data_pd)
-
-        #with open(name+'_acf.txt', 'w') as wfile:
-        #    wfile.write(line)
-    
-        val_df = pd.DataFrame(value_ev[i])
-   
-        plot_acf(val_df, lags=lags)
-        plt.savefig(str(i)+'_'+name+'_acf.png')
-        plt.close()
-        """
-        
-        # TODO read up methods and implementations for that:
-        # Options
-        # 1) min(n) value for which ACF(n) <= Var(X_1..n)/sqrt(n) 
-        # 2) max value of a_n for an ARMA model
-
-        #acfs = acf_data_pd['AC'].to_numpy()
-        acfs = acf_manual
-        acfs_np = np.array(acfs)
-
-        # Defining Error(L) as Var(V[1..L])/sqrt(L) ...-> then Error is not normalized to [0.;1.]!
-
-        #errors = [np.std(value_ev[i][:l]) / np.mean(value_ev[i][:l]) for l in lags]
-        errors = [1./np.sqrt(float(l)) for l in lags]
-
-        #TODO: probably apply following by default
-        # Normalization of Error, dividing by absolute mean of time traces
-        #TODO: probably autocorrelation time calculation should employ e-folding i.e. 
-        #   a. 'for which t ACF(t) decreases by 1/e compared to ACF(1)?'
-        #   b. 'for which t ACF(t) decreases by 1/e compared to ACF(0)?'
-        #   c. 'for which t ACF(t) decreases by 1/e (corrected by standard deviation) compared to ACF(0)?'
-        if isinstance(value_ev[i], np.ndarray) :
-            errors = [np.std(value_ev[i][:l]) / (np.abs(np.mean(value_ev[i][:l])) * np.sqrt(float(l))) for l in lags]
-        errors_np = np.array(errors)
-
-        #print('ACF errors: {}'.format(errors)) ###DEBUG
-
-        # Defining ACL as the smallest lag size L that: ACF(L)<= Err(L)
-        """
-        acl = lags[0]
-        for l, ac, e in zip(lags, acfs, errors):
-            acl = l
-            if ac < e:
-                break
-        """
-        #Interpolating ACF and Err for intermediate values of lags
-        f_acf = interpolate.interp1d(lags_np, acfs_np, kind='cubic')
-        f_err = interpolate.interp1d(lags_np, errors_np, kind='cubic')
-
-        lags_int = np.arange(lags_np.min(), lags_np.max(), 1.)
-        acfs_int = f_acf(lags_int)
-        errors_int = f_err(lags_int)
-
-        # Calculating autocorrelation time as lag for which ACF drops below its calcualtion error
-        acl = lags_int[np.where(acfs_int < errors_int)[0].min()]
-
-        ac_len_cur = float(acl)
-        ac_len.append(ac_len_cur)
-        ac_num.append(int(n_sample/float(ac_len_cur)))
-       
-        #print([acf_manual, acfs, errors, acl, ac_len, ac_num, n_sample]) ###DEBUG
-
-    """
-    plot_pacf(val_df, lags=lags)
-    plt.savefig('pacf.png')
-    plt.close()
-    """
-    # DEBUG AND PLOTTING
-    """
-    plt.plot( acf, '.', label='ACF')
-    plt.xlabel('lags')
-    plt.ylabel('ACF')
-    plt.title('Autocorrelation function')
-    plt.ylim([-1., 1.])
-    plt.savefig('debug_acf.png')
-    plt.close()
-    """
-
-    return ac_len, ac_num 
 
 def apply_arma(values):
     """
@@ -1139,6 +1011,7 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
             # 4.2) Calculate ACF for the values
             time_start = time.time()
            
+            #lags_list = [2**i for i in range(12) if 2**i < val_wind_s[i].shape[-1]] #add intermediate vals + sort
             lags_list = [2,4,8,16,32,48,64,96,128,160,256,512,1024,2048,4096] # [64,128,256]
             lags_list = [l for l in lags_list if l < val_wind_s[i].shape[-1]]
             
@@ -1215,7 +1088,14 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
             print("-time to load MFW data and set-up stuff: {0} s".format(time.time()-time_start))
             time_start_tmp = time.time()
             
-            val_mwf_s = [val_mwf['cp-flux-Ti-ft'+str(mfw_ft)].to_numpy().reshape(1,-1) for mfw_ft in mfw_ft_s]
+            if   p+'_'+a == 'ti_transp':
+                val_mwf_s = [val_mwf['cp-flux-Ti-ft'+str(mfw_ft)].to_numpy().reshape(1,-1) for mfw_ft in mfw_ft_s]
+            elif p+'_'+a == 'te_transp':
+                val_mwf_s = [val_mwf['cp-flux-Te-ft'+str(mfw_ft)].to_numpy().reshape(1,-1) for mfw_ft in mfw_ft_s]
+            else:
+                #Fall-back option
+                val_mwf_s = [val_mwf['cp-flux-Ti-ft'+str(mfw_ft)].to_numpy().reshape(1,-1) for mfw_ft in mfw_ft_s]
+
             mfw_input_refval_s = [[val_mwf[input_name+'-ft'+str(mfw_ft)].mean() for mfw_ft in mfw_ft_s] for input_name in mfw_input_names]
             print("-time to select right columns: {0} s".format(time.time()-time_start_tmp))
             time_start_tmp = time.time()
@@ -1224,7 +1104,7 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
             #print(' MFW input values are dti={0} dte={1} ti={2} te={3}'.format(tiddrho_mwf_refval_s[0], teddrho_mwf_refval_s[0], ti_mwf_refval_s[0], te_mwf_refval_s[0])) ### DEBUG
             print('Mean of MFW ft5 QTi={0}'.format(val_mwf['cp-flux-Ti-ft5'].mean())) ###DEBUG
 
-            # Mind that here 0 index is consider to be most important to compare: flux tube #5 from MFW run
+            # Mind that here 0 index is considered to be most important to compare: flux tube #5 from MFW run
 
             plot_coreprofval_dist(
                                     [np.squeeze(v,0) for v in [*val_wind_s, *val_mwf_s]],
@@ -1308,14 +1188,28 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
 
             print('plotting cuts starting')
             
+            """
             plot_response_cuts(scan_df, 
                                runs_input_names_new, 
                                [p+'_'+a],
                                compare_vals=compare_vals_mfw, 
-                               foldname=mainfoldernum,
+                               foldname=p+'_'+a+'_'+mainfoldernum,
                                traces=val_ev_s, #val_wind_s,
                                hists=True,
                               )
+            """
+
+            runn_loc = 6
+            print('ACN here is {0} and total len is {1}'.format(scan_df.iloc[runn_loc-1]['ti_transp_flux_acn'], len(val_wind_s[runn_loc-1][0]))) ###DEBUG
+            plot_timetraces_act(
+                    val_ev_s[runn_loc-1][0][:],
+                    avg=scan_df.iloc[runn_loc-1]['ti_transp_flux'],
+                    std=scan_df.iloc[runn_loc-1]['ti_transp_flux_std'],
+                    sem=scan_df.iloc[runn_loc-1]['ti_transp_flux_stem'],
+                    foldname=p+'_'+a+'_'+mainfoldernum,
+                    apha_discard=0.3,
+                    act=int(len(val_wind_s[runn_loc-1][0])/scan_df.iloc[runn_loc-1]['ti_transp_flux_acn']),
+                                )
 
             print('plotting cuts done')
 
