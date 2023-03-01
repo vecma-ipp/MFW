@@ -31,6 +31,7 @@ from sklearn.neighbors import KernelDensity
 
 from scipy import interpolate
 from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
+from statsmodels.tsa.api import acf, pacf, graphics
 
 #from extcodehelper import ExtCodeHelper
 #import lhsmdu
@@ -814,7 +815,7 @@ def get_coreprof_ev_acf(value_ev, name='ti', lags=[1,2,3,4,5,6,7,8,9,10]):
             number of effective samples (one per ACF window)
             ACF object
     """ 
-    
+
     nftc = value_ev.shape[0]
 
     ac_len = []
@@ -831,11 +832,21 @@ def get_coreprof_ev_acf(value_ev, name='ti', lags=[1,2,3,4,5,6,7,8,9,10]):
 
         n_sample = value_ev.shape[-1]
 
-        acf_manual = [1. if l==0 else np.corrcoef(value_ev[i][l:], value_ev[i][:-l])[0][-1] for l in lags]
+        # Option I.1: ACF(n) = COV(Y(t),Y(t+n))/sqrt(VAR(Y(t)*VAR(Y(t+n))
+        #acf_manual = [1. if l==0 else np.corrcoef(value_ev[i][l:], value_ev[i][:-l])[0][-1] for l in lags]
+        
+        # Option I.2: ACF(n) = 1/(N-n) SUM((Y(t)-AVG(Y(t)))*(Y(t+n)-AVG(t)))
+        mean_val = value_ev[i].mean()
+        #acf_manual= [np.divide(np.dot(value_ev[i][:-l] - mean_val, value_ev[i][l:] - mean_val), (n_sample - l)) for l in lags]
 
+        acf_norm = float(np.divide(np.dot(value_ev[i][:] - mean_val, value_ev[i][:] - mean_val), n_sample))
+
+        # Option I.3: acf function from scipy
         #NB: commented out because currently is not in use for further processing, should probably be adopted to calcualte autocorrelation time
-        """
-        nl = 64    
+        
+        nl = lags[-1]
+        lags = [l+1 for l in range(nl)]
+        lags_np = np.array(lags)
         
         r,q,p  = acf(value_ev[i], nlags=nl, fft=True, qstat=True) 
  
@@ -843,10 +854,10 @@ def get_coreprof_ev_acf(value_ev, name='ti', lags=[1,2,3,4,5,6,7,8,9,10]):
   
         acf_data_pd = pd.DataFrame(acf_data, columns=['lags', 'AC', 'Q', 'P(>Q)']) 
         acf_data_pd.set_index('lags')
- 
+        
+        """
         #acf_res = np.array(acf_res)
         #line = 'ACF :' + str(acf_res)
-    
         print(acf_data_pd)
 
         #with open(name+'_acf.txt', 'w') as wfile:
@@ -859,38 +870,45 @@ def get_coreprof_ev_acf(value_ev, name='ti', lags=[1,2,3,4,5,6,7,8,9,10]):
         plt.close()
         """
         
+        acfs = acf_data_pd['AC'].to_numpy()
+        #acfs = acf_manual
+        acfs_np = np.array(acfs)
+
         # TODO read up methods and implementations for that:
-        # Options
+        # Options II:
         # 1) min(n) value for which ACF(n) <= Var(X_1..n)/sqrt(n) 
         # 2) max value of a_n for an ARMA model
-
-        #acfs = acf_data_pd['AC'].to_numpy()
-        acfs = acf_manual
-        acfs_np = np.array(acfs)
+        # 3) min(n) value for which ACF(n) <= ACF(0)/e
+        # 4) ACF(n) < 1/sqrt(n)
+        # 5) FFT approach:
 
         # Defining Error(L) as Var(V[1..L])/sqrt(L) ...-> then Error is not normalized to [0.;1.]!
 
+        # II.1)
         #errors = [np.std(value_ev[i][:l]) / np.mean(value_ev[i][:l]) for l in lags]
-        errors = [1./np.sqrt(float(l)) for l in lags]
+        # II.4)
+        #errors = [1./np.sqrt(float(l)) for l in lags]
 
-        #TODO: probably apply following by default
         # Normalization of Error, dividing by absolute mean of time traces
         #TODO: probably autocorrelation time calculation should employ e-folding i.e. 
+        # Options II.3:
         #   a. 'for which t ACF(t) decreases by 1/e compared to ACF(1)?'
         #   b. 'for which t ACF(t) decreases by 1/e compared to ACF(0)?'
         #   c. 'for which t ACF(t) decreases by 1/e (corrected by standard deviation) compared to ACF(0)?'
         
         # Apply next line as only 'errors' assignment to simply check e-fold for ACF
-        errors = [1.*acfs_np[0]/np.e for l in lags]
+        # II.3.b)
+        errors = [acf_norm/np.e for l in lags]
         
-        if isinstance(value_ev[i], np.ndarray) :
-            errors = [np.std(value_ev[i][:l]) / (np.abs(np.mean(value_ev[i][:l])) * np.sqrt(float(l))) for l in lags]
+        # II.3.c)
+        #if isinstance(value_ev[i], np.ndarray) :
+        #    errors = [np.std(value_ev[i][:l]) / (np.abs(np.mean(value_ev[i][:l])) * np.sqrt(float(l))) for l in lags]
         
         errors_np = np.array(errors)
 
         #print('ACF errors: {}'.format(errors)) ###DEBUG
 
-        # Defining ACL as the smallest lag size L that: ACF(L)<= Err(L)
+        # III.1: Defining ACL as the smallest lag size L that: ACF(L)<= Err(L)
         """
         acl = lags[0]
         for l, ac, e in zip(lags, acfs, errors):
@@ -898,7 +916,7 @@ def get_coreprof_ev_acf(value_ev, name='ti', lags=[1,2,3,4,5,6,7,8,9,10]):
             if ac < e:
                 break
         """
-        #Interpolating ACF and Err for intermediate values of lags
+        #III.2: Interpolating ACF and Err for intermediate values of lags
         f_acf = interpolate.interp1d(lags_np, acfs_np, kind='cubic')
         f_err = interpolate.interp1d(lags_np, errors_np, kind='cubic')
 
@@ -906,19 +924,26 @@ def get_coreprof_ev_acf(value_ev, name='ti', lags=[1,2,3,4,5,6,7,8,9,10]):
         acfs_int = f_acf(lags_int)
         errors_int = f_err(lags_int)
 
-        # Calculating autocorrelation time as lag for which ACF drops below its calcualtion error
+        # Option IV.1: Calculating autocorrelation time as lag for which ACF drops below its calcualtion error
         decor_lags = np.where(acfs_int < errors_int)[0]
-        #print(decor_lags) ###DEBUG
+
+        print(acfs_int) ###DEBUG
+
         if decor_lags.size == 0:
             acl = lags_int[-1]
         else:
             acl = lags_int[decor_lags.min()]
 
+        # Option IV.2: 
+        acfs_norm = np.divide(acfs_int, acf_norm)
+        tau = 1. + 2. * acfs_norm.sum()
+        acl = tau
+
         ac_len_cur = float(acl)
         ac_len.append(ac_len_cur)
         ac_num.append(int(n_sample/float(ac_len_cur)))
        
-        print('ACF data:'); print([acf_manual, acfs, errors, acl, ac_len, ac_num, n_sample]) ###DEBUG
+        print('ACF data:'); print([acl, ac_len, ac_num, n_sample]) ###DEBUG
 
     """
     plot_pacf(val_df, lags=lags)
@@ -1407,7 +1432,7 @@ def plot_timetraces_act(traces, avg, std, sem, foldname='', apha_discard=0.3, ac
         mid_point = m.floor((i_f+i_l) / 2),
         ax.plot(mid_point, traces[mid_point], 'k*') # scatter? fmt?
 
-        ax.vlines(i_l, y_lim[0], y_lim[1], colors='grey', alpha=0.5, linestyles='dashed')
+        ax.vlines(i_l, y_lim[0], y_lim[1], colors='grey', alpha=0.3, linestyles='dashed')
 
     # Plotting horisontal lines for AVG and bands of STD and SEM
     ax.hlines(y=avg, xmin=0, xmax=n_tt, color='g', linestyle='-', label='mean: {0:.2}'.format(avg))
@@ -1455,46 +1480,54 @@ def time_traces_per_run(traces, run_len=450, foldname='', apha_discard=0.3):
 
     # Plotting for the ramp-up phase
     ax.plot(np.arange(0, n_disc), traces[0:n_disc], color='b', linestyle='-')
-    ax.vlines(n_disc, y_lim[0], y_lim[1], colors='grey', alpha=0.5, linestyles='dashed', label='simulation length, n={0}'.format(run_len))
+    ax.vlines(n_disc, y_lim[0], y_lim[1], colors='grey', alpha=0.3, linestyles='dashed')
 
+    lens = np.zeros(n_r)
+    acts = np.zeros(n_r)
+    acns = np.zeros(n_r)
     means = np.zeros(n_r)
     rel_mean_changes = np.zeros(n_r)
     abs_mean_changes = np.zeros(n_r)
+    stds = np.zeros(n_r)
     sems = np.zeros(n_r)
 
-    for i in range(n_r):
+    for i in range(n_r-1):
 
         # Plotting traces for each of the ACT window
         # Selecting local indices and corrsponding time traces
         i_f = n_disc + run_len * i
         i_l = n_disc + run_len * (i + 1)
 
-        traces_wind = traces[i_f:i_l]
-        x_wind = np.arange(i_f, i_l)
-
         traces_loc = traces[n_disc:i_l]
         x_loc = np.arange(n_disc, i_l)
         
         # Calculating local ACT
-        lags_list = [2,4,8,16,32,48,64,96,128,160,256,512,1024,2048,4096]
+        lags_list = [0,1,2,4,8,16,32,48,64,96,128,160,256,512,1024,2048,4096]
         lags_list = [l for l in lags_list if l < len(traces_loc)]
         act_loc, acn_loc = get_coreprof_ev_acf(np.array([traces_loc]),
                 name='locacf'+foldname+'_substep_'+str(i),
                 lags=lags_list)
-        traces_acf_loc = traces_loc[int(act_loc[0]/2.):-1:int(act_loc[0])]
+        #TODO: take an window-average; transfer to gem_da.py
+        #traces_acf_loc = traces_loc[int(act_loc[0]/2.):-1:int(act_loc[0])]
+        traces_acf_loc = np.array([traces_loc[i*int(act_loc[0]):(i+1)*int(act_loc[0])].mean() for i in range(int(acn_loc[0]))])
+
+        lens[i] = len(traces_loc)
+        acns[i] = acn_loc[0]
+        acts[i] = act_loc[0]
 
         # Calculating local AVG
         avg_loc = traces_acf_loc.mean()
         means[i] = avg_loc
-        rel_mean_changes[i] = (means[i]- means[i-1]) / means[i-1] if i>0 else 1.
+        rel_mean_changes[i] = abs(means[i]- means[i-1]) / means[i-1] if i>0 else 1.
         abs_mean_changes[i] = abs(means[i]- means[i-1]) if i>0 else 1.
         
         std_loc = traces_acf_loc.std()
+        stds[i] = std_loc
         sem_loc = std_loc / np.sqrt(acn_loc[0])
         sems[i] = sem_loc
 
-        ax.plot(x_loc, traces_loc, color='b', linestyle='-',)
-        ax.vlines(i_l, y_lim[0], y_lim[1], colors='grey', alpha=0.5, linestyles='dashed')
+        ax.plot(x_loc, traces_loc, color='b', linestyle='-')
+        ax.vlines(i_l, y_lim[0], y_lim[1], colors='grey', alpha=0.3, linestyles='dashed')
         
         # Plotting horisontal lines for AVG and bands of STD and SEM
         ax.hlines(y=avg_loc,         xmin=i_f, xmax=i_l, color='r', linestyle='-')
@@ -1504,6 +1537,52 @@ def time_traces_per_run(traces, run_len=450, foldname='', apha_discard=0.3):
 
         ax.hlines(y=avg_loc+1.96*std_loc, xmin=i_f, xmax=i_l, color='g', linestyle='dotted')
         ax.hlines(y=avg_loc-1.96*std_loc, xmin=i_f, xmax=i_l, color='g', linestyle='dotted')
+
+    ##### Special iteration to add legends #####
+    i = n_r - 1
+
+    i_f = n_disc + run_len * i
+    #i_l = n_disc + run_len * (i + 1)
+    i_l = n_tt
+
+    traces_loc = traces[n_disc:i_l]
+    x_loc = np.arange(n_disc, i_l)
+    
+    # Calculating local ACT
+    lags_list = [2,4,8,16,32,48,64,96,128,160,256,512,1024,2048,4096]
+    lags_list = [l for l in lags_list if l < len(traces_loc)]
+    act_loc, acn_loc = get_coreprof_ev_acf(np.array([traces_loc]),
+            name='locacf'+foldname+'_substep_'+str(i),
+            lags=lags_list)
+    traces_acf_loc = traces_loc[int(act_loc[0]/2.):-1:int(act_loc[0])]
+
+    lens[i] = len(traces_loc)
+    acns[i] = acn_loc[0]
+    acts[i] = act_loc[0]
+
+    # Calculating local AVG
+    avg_loc = traces_acf_loc.mean()
+    means[i] = avg_loc
+    rel_mean_changes[i] = (means[i]- means[i-1]) / means[i-1] if i>0 else 1.
+    abs_mean_changes[i] = abs(means[i]- means[i-1]) if i>0 else 1.
+    
+    std_loc = traces_acf_loc.std()
+    stds[i] = std_loc
+    sem_loc = std_loc / np.sqrt(acn_loc[0])
+    sems[i] = sem_loc
+
+    ax.plot(x_loc, traces_loc, color='b', linestyle='-', label='time traces')
+    ax.vlines(i_l, y_lim[0], y_lim[1], colors='grey', alpha=0.3, linestyles='dashed', label='simulation length, n={0}'.format(run_len))
+    
+    # Plotting horisontal lines for AVG and bands of STD and SEM
+    ax.hlines(y=avg_loc,         xmin=i_f, xmax=i_l, color='r', linestyle='-', label='mean: {0:.2}'.format(avg_loc))
+
+    ax.hlines(y=avg_loc+sem_loc, xmin=i_f, xmax=i_l, color='g', linestyle='--', label='+/- standard error: {0:.2}'.format(sem_loc))
+    ax.hlines(y=avg_loc-sem_loc, xmin=i_f, xmax=i_l, color='g', linestyle='--')
+
+    ax.hlines(y=avg_loc+1.96*std_loc, xmin=i_f, xmax=i_l, color='g', linestyle='dotted', label='95% predictive interval, std: {0:.2}'.format(std_loc))
+    ax.hlines(y=avg_loc-1.96*std_loc, xmin=i_f, xmax=i_l, color='g', linestyle='dotted')
+    ##########
 
     # Setting lables, legend etc.
     ax.set_ylabel(r'{0}'.format('Ion heat flux, W/m^2'))
@@ -1516,6 +1595,16 @@ def time_traces_per_run(traces, run_len=450, foldname='', apha_discard=0.3):
     fig.savefig('timetraces_runs_{0}.pdf'.format(foldname))
     plt.close()
 
+    # Saving a CSV with results
+    res_csv_array = np.concatenate(
+                (np.arange(n_r).reshape(-1,1),
+                 lens.reshape(-1,1), acts.reshape(-1,1), acns.reshape(-1,1),
+                 means.reshape(-1,1), stds.reshape(-1,1), sems.reshape(-1,1),
+                 rel_mean_changes.reshape(-1,1), abs_mean_changes.reshape(-1,1)),
+                            axis=1)
+    np.savetxt('res_timetraces_perrun.csv', res_csv_array, delimiter=",",
+               header='runnum, len, act, n_eff, avg, std, sem, rmc, amc')
+    
     # Plotting mean change
     fig1, ax1 = plt.subplots(figsize=(7,7))
     ax1.plot(np.arange(1, n_r), abs_mean_changes[1:])

@@ -15,7 +15,6 @@ from sklearn.neighbors import KernelDensity as KDE
 from scipy.stats import moment, linregress
 
 import statsmodels.api as sm
-from statsmodels.tsa.api import acf, pacf, graphics
 from statsmodels.tsa.api import SimpleExpSmoothing, ExponentialSmoothing  
 from statsmodels.graphics.api import qqplot
 from statsmodels.tsa.ar_model import AutoReg
@@ -968,11 +967,9 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
             
             #labels = [str(r) for r in runnum_list]
             labels = ["".join([rin+'='+str(round(r[rin], 1))+"; " for rin in runs_input_names]) for r in runs_input_vals]
-            
-            
+               
             profile_evol_plot(val_ev_s, labels=labels, name=code_name+'_'+p+'_'+a+'_'+mainfoldernum, alignment='start', vertline=alpha_wind*val_ev_s[0].shape[-1]) 
 
-            
             #print('passes to plot: {}'.format(val_ev_s[0].shape)) ###DEBUG
             #print('before shape {}'.format(val_evname=code_name+'_'+p+'_'+a+'_'+mainfoldernum, alignment='start'_s[i].shape)) ###DEBUG
             #val = np.array(val_ev_s[i]).squeeze()
@@ -1012,7 +1009,7 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
             time_start = time.time()
            
             #lags_list = [2**i for i in range(12) if 2**i < val_wind_s[i].shape[-1]] #add intermediate vals + sort
-            lags_list = [2,4,8,16,32,48,64,96,128,160,256,512,1024,2048,4096] # [64,128,256]
+            lags_list = [1,2,4,8,16,32,48,64,96,128,160,256,512,1024,2048,4096] # [64,128,256]
             lags_list = [l for l in lags_list if l < val_wind_s[i].shape[-1]]
             
             #get_coreprof_ev_acf(val_ev_s[i], name=code_name+'_'+p+'_'+a+'stats'+'_'+str(runn), lags=lags_list)
@@ -1040,7 +1037,10 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
                 # Populate new array with reading from the code-produced values taken per a ACL window
                 # Take one reading for a miidle of ACL
                 val_ev_acf = np.ones((1, ac_num[0]))
-                val_ev_acf = val_wind_s[runn-1][0, int(ac_len[0]/2.):-1:int(ac_len[0])]
+                # option 1: centres of the interval
+                #val_ev_acf = val_wind_s[runn-1][0, int(ac_len[0]/2.):-1:int(ac_len[0])]
+                # option 2: means of the interval
+                val_ev_acf = np.array([val_wind_s[runn-1][0, i*int(ac_len[0]):(i+1)*int(ac_len[0])].mean() for i in range(int(ac_len[0]))])
                 val_ev_acf_s.append(val_ev_acf)
 
                 #print([ac_num[0], ac_len[0], val_wind_s[runn-1].shape, val_ev_acf.shape,]) ###DEBUG        
@@ -1177,7 +1177,7 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
             scan_df.to_csv('resuq_main_'+p+'_'+a+'_'+mainfoldernum+'.csv')    
             
             print("time to calculate and save basic moments: {0} s".format(time.time()-time_start))
-            # 4.5.1'') Plot parameter dependency for single parameters
+            # 4.5.1b) Plot parameter dependency for single parameters
             time_start = time.time()
 
             for param in runs_input_names_new:
@@ -1199,7 +1199,7 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
                               )
             """
 
-            #4.5.1''') Plotting time traces for one case with its AVG, STD, SEM
+            #4.5.1c) Plotting time traces for one case with its AVG, STD, SEM
             runn_loc = 6
             #print('ACN here is {0} and total len is {1}'.format(scan_df.iloc[runn_loc-1]['ti_transp_flux_acn'], len(val_wind_s[runn_loc-1][0]))) ###DEBUG
             plot_timetraces_act(
@@ -1212,14 +1212,13 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
                     act=int(len(val_wind_s[runn_loc-1][0])/scan_df.iloc[runn_loc-1]['ti_transp_flux_acn']),
                                 )
             
-            #4.5.1'''') Plotting time traces for one case with its AVG, STD, SEM, each taken per run
+            #4.5.1d) Plotting time traces for one case with its AVG, STD, SEM, each taken per run
             runn_loc = 6
-            #print('ACN here is {0} and total len is {1}'.format(scan_df.iloc[runn_loc-1]['ti_transp_flux_acn'], len(val_wind_s[runn_loc-1][0]))) ###DEBUG
             time_traces_per_run(
                     val_ev_s[runn_loc-1][0][:],
                     run_len=150,
                     foldname=p+'_'+a+'_'+mainfoldernum,
-                    apha_discard=0.3,
+                    apha_discard=0.15,
                                 )
 
             print('plotting cuts done')
