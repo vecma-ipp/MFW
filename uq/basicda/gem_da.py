@@ -1200,26 +1200,28 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
             """
 
             #4.5.1c) Plotting time traces for one case with its AVG, STD, SEM
-            runn_loc = 6
-            #print('ACN here is {0} and total len is {1}'.format(scan_df.iloc[runn_loc-1]['ti_transp_flux_acn'], len(val_wind_s[runn_loc-1][0]))) ###DEBUG
-            plot_timetraces_act(
-                    val_ev_s[runn_loc-1][0][:],
-                    avg=scan_df.iloc[runn_loc-1]['ti_transp_flux'],
-                    std=scan_df.iloc[runn_loc-1]['ti_transp_flux_std'],
-                    sem=scan_df.iloc[runn_loc-1]['ti_transp_flux_stem'],
-                    foldname=p+'_'+a+'_'+mainfoldernum,
-                    apha_discard=0.3,
-                    act=int(len(val_wind_s[runn_loc-1][0])/scan_df.iloc[runn_loc-1]['ti_transp_flux_acn']),
-                                )
-            
+            #runn_loc = 6
+            runnum_list_loc = [29]
+            for runn_loc in runnum_list_loc:
+                #print('ACN here is {0} and total len is {1}'.format(scan_df.iloc[runn_loc-1]['ti_transp_flux_acn'], len(val_wind_s[runn_loc-1][0]))) ###DEBUG
+                plot_timetraces_act(
+                        val_ev_s[runn_loc-1][0][:],
+                        avg=scan_df.iloc[runn_loc-1]['ti_transp_flux'],
+                        std=scan_df.iloc[runn_loc-1]['ti_transp_flux_std'],
+                        sem=scan_df.iloc[runn_loc-1]['ti_transp_flux_stem'],
+                        foldname=p+'_'+a+'_'+mainfoldernum+'_'+str(runn_loc),
+                        apha_discard=0.15,
+                        act=int(len(val_wind_s[runn_loc-1][0])/scan_df.iloc[runn_loc-1]['ti_transp_flux_acn']),
+                                    )
+                
             #4.5.1d) Plotting time traces for one case with its AVG, STD, SEM, each taken per run
-            runn_loc = 6
-            time_traces_per_run(
-                    val_ev_s[runn_loc-1][0][:],
-                    run_len=150,
-                    foldname=p+'_'+a+'_'+mainfoldernum,
-                    apha_discard=0.15,
-                                )
+            #runn_loc = 6
+                time_traces_per_run(
+                        val_ev_s[runn_loc-1][0][:],
+                        run_len=150,
+                        foldname=p+'_'+a+'_'+mainfoldernum+'_'+str(runn_loc),
+                        apha_discard=0.15,
+                                    )
 
             print('plotting cuts done')
 
