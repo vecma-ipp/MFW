@@ -310,6 +310,7 @@ my_campaign.set_sampler(my_sampler)
 
 print('Creating an Executor')
 #executor=QCGPJExecutor(log_level='debug')
+local_manager = LocalManager(cfg={'init_timeout':500})
 
 try:
     print('Creating resource pool')

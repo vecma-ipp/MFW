@@ -25,18 +25,18 @@ from math import ceil
 '''
 Perform UQ for the Turblence code gem (using 8 flux tubes).
 Uncertainties are driven by:
-The electon and ion temperature and their gradient localisd on flux tube positions.
+The electon and ion temperature and their gradient localised on flux tube positions.
 '''
 
 # UQ app
-def setup_gem(ftube_index, common_dir, input_params, output_columns, xml=None):
+def setup_gem(ftube_index, common_dir, input_params, output_columns, xml=None, pol_order=2):
     # CPO file containg initial values of uncertain params
     input_filename = "ets_coreprof_in.cpo"
     input_cponame = "coreprof"
 
     # CPO file containing the quantities of intersts
     #output_filename = "gem_coretransp_out.cpo"
-    output_filename = "gem_coretransp_0450.cpo"
+    output_filename = "gem_coretransp_0100.cpo"
     output_cponame = "coretransp"
 
     # Parameter space for campaign and the distributions list for the sampler
@@ -60,7 +60,7 @@ def setup_gem(ftube_index, common_dir, input_params, output_columns, xml=None):
                          output_columns=output_columns)
 
     # The sampler
-    sampler = uq.sampling.PCESampler(vary=vary, polynomial_order=3)
+    sampler = uq.sampling.PCESampler(vary=vary, polynomial_order=pol_order)
 
     # The Analysis
     stats = uq.analysis.PCEAnalysis(sampler=sampler, qoi_cols=output_columns)
@@ -75,13 +75,13 @@ def exec_pj(campaign, exec_path, ncores, nnodes, mpi_instance, log_level="debug"
     template_par_short = {
                        'numCores': ncores,
                        'numNodes': nnodes,
-                       'model': mpi_instance, #mpi_model,
+                       'model': mpi_model,
                          }
     try:
         print('Creating resource pool')
 
         with QCGPJPool(
-                    qcgpj_executor=QCGPJExecutor(log_level=log_level),
+                    qcgpj_executor=QCGPJExecutor(log_level=log_level, ),
                     template=EasyVVUQParallelTemplateWithEnv(),
                     template_params=template_par_short,
                     ) as qcgpj:
@@ -133,14 +133,14 @@ if __name__ == "__main__":
     obj_dir = os.path.abspath("../standalone/bin/"+SYS)
     exec_code = "loop_gem_notransp"
 
-    alpha_in_unc = 0.25
+    alpha_unc = 0.25
 
     # Define the uncertain parameters (UQ inputs)
     input_params = {
-        "te.value": {"dist": "Uniform", "err":  alpha_in_unc, "min": 0.},
-        "ti.value": {"dist": "Uniform", "err":  alpha_in_unc, "min": 0.},
-        "te.ddrho": {"dist": "Uniform", "err":  alpha_in_unc, "max": 0.},
-        "ti.ddrho": {"dist": "Uniform", "err":  alpha_in_unc, "max": 0.}
+        "te.value": {"dist": "Uniform", "err":  alpha_unc, "min": 0.},
+        "ti.value": {"dist": "Uniform", "err":  alpha_unc, "min": 0.},
+        "te.ddrho": {"dist": "Uniform", "err":  alpha_unc, "max": 0.},
+        "ti.ddrho": {"dist": "Uniform", "err":  alpha_unc, "max": 0.}
     }
 
     # The quantities of intersts (UQ outputs)
@@ -153,7 +153,8 @@ if __name__ == "__main__":
     # base.utils.ftube_indices('gem_coreprof_in.cpo','gem_coretransp_out.cpo')
     # to get the list
     ftube_indices = [15, 31, 44, 55, 66, 76, 85, 94]
-    ftube_rhos = [0.14, 0.31, 0.44, 0.56, 0.67, 0.77, 0.86, 0.95]
+    ftube_rhos = [0.14, 0.31, 0.44, 0.56, 0.67, 0.77, 0.86, 0.95] # these are rho_tor_norm
+    # TODO might be possible to read from some existing cpo files
 
     # Campaign for mutliapp
     campaign = uq.Campaign(name='UQ_8FTgem_', work_dir=tmp_dir)
@@ -198,10 +199,14 @@ if __name__ == "__main__":
     nnodes = ceil(1.*ncores/n_cores_p_node)
     pol_order = int(os.environ['POLORDER'])
     nparams = len(input_params)
-    nruns = (pol_order + 1)**nparams # should probably rely only on eVVUQ information
+    nruns = (pol_order + 1)**nparams #TODO  should probably rely only on eVVUQ information
     ncores_tot = ncores * nruns
+    nnodes_tot = nnodes * nruns #nnodes_tot = ceil(1.*ncores_tot/n_cores_p_node)
+    # Current implementation: one run needs an entire node of 40 cores and only 32 will be used...
+    #    single submission of one node can cary about 3 complete runs
+    #    each runs here is multiplicated for number of flux tubes, here it is 8
 
-    print('> {2} Runs requiring totally {0} cores at {1} nodes'.format(ncores, nnodes, nruns))
+    print('> {2} Runs requiring totally {0} cores at {1} nodes'.format(ncores_tot, nnodes_tot, nruns))
 
     # To store Statistics and Sobols
     means = {qoi: [] for qoi in output_columns}
@@ -214,7 +219,7 @@ if __name__ == "__main__":
 
         gemxml.set_value('equilibrium_parameters.geometric.ra0', ftube_rhos[i])
 
-        params, encoder, decoder, sampler, stats = setup_gem(ft_index, common_dir, input_params, output_columns, gemxml)
+        params, encoder, decoder, sampler, stats = setup_gem(ft_index, common_dir, input_params, output_columns, xml=gemxml, pol_order=pol_order)
 
 
         actions = Actions(
