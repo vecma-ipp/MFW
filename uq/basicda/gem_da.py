@@ -795,7 +795,7 @@ def discontinuity_check(vals, reltol=5E-2, abstol=10E4, disc_criterion='combined
 #### MAIN FUNCTION: PIPELINE OF PROCESSING ######
 #################################################
 
-def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernum=None):
+def main(foldername=False, runforbatch=False, coordnum=1, runnumstart=1, runnum=1, mainfoldernum=None):
     """
     Parameters:
       foldername: relative path to folder where to read cpo files from
@@ -812,7 +812,7 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
 
     workdir = os.path.join(os.getenv('SCRATCH'),)
 
-    runnum_list = [r+1 for r in range(runnum)]
+    runnum_list = [r+1 for r in range(runnumstart-1, runnum)]
 
     # Get the list of folders in the SCRATCH to run over ad get CPOs from
     #   NB1: some runs might be missing
@@ -1024,7 +1024,7 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
                 
                 print('ACF for case #{0}'.format(runn))
                  
-                ac_len, ac_num = get_coreprof_ev_acf(val_wind_s[runn-1], 
+                ac_len, ac_num = get_coreprof_ev_acf(val_wind_s[runn-runnumstart], 
                                     name=code_name+'_'+p+'_'+a+'_stats_'+mainfoldernum+'_'+str(runn), 
                                     lags=lags_list) 
 
@@ -1040,7 +1040,7 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
                 # option 1: centres of the interval
                 #val_ev_acf = val_wind_s[runn-1][0, int(ac_len[0]/2.):-1:int(ac_len[0])]
                 # option 2: means of the interval
-                val_ev_acf = np.array([val_wind_s[runn-1][0, i*int(ac_len[0]):(i+1)*int(ac_len[0])].mean() for i in range(int(ac_len[0]))])
+                val_ev_acf = np.array([val_wind_s[runn-runnumstart][0, i*int(ac_len[0]):(i+1)*int(ac_len[0])].mean() for i in range(int(ac_len[0]))])
                 val_ev_acf_s.append(val_ev_acf)
 
                 #print([ac_num[0], ac_len[0], val_wind_s[runn-1].shape, val_ev_acf.shape,]) ###DEBUG        
@@ -1147,18 +1147,18 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
 
             for runn in runnum_list:
 
-                val_trend_avg, val_fluct_avg = filter_trend(val_wind_s[runn-1], "mean")
+                val_trend_avg, val_fluct_avg = filter_trend(val_wind_s[runn-runnumstart], "mean")
                 val_trend_avg_s.append(val_trend_avg)
                 val_std_s.append(val_fluct_avg) 
                 #TODO: look up Python ways to process tuple elements differently
 
                 # Calculate mean and std using only single point per correlation length
                 # TODO mind that currently all values for slices are taken from acf-thinned data
-                val_trend_avg_acf, val_fluct_avg_acf = filter_trend(val_ev_acf_s[runn-1], "mean")
+                val_trend_avg_acf, val_fluct_avg_acf = filter_trend(val_ev_acf_s[runn-runnumstart], "mean")
                 val_trend_avg_acf_s.append(val_trend_avg_acf)
                 val_std_acf_s.append(val_fluct_avg_acf)
             
-                n_lensample = val_trend_avg_acf_s[runn-1].shape[-1]
+                n_lensample = val_trend_avg_acf_s[runn-runnumstart].shape[-1]
                 #print('acf-corrected sample length: {0}'.format(n_lensample)) ###DEBUG
 
                 scan_df, stats_df = produce_stats_dataframes(runs_input_vals,
@@ -1167,7 +1167,8 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
                                                              stats_df,
                                                              scan_df,
                                                              n_lensample, 
-                                                             runn, p, a)
+                                                             runn-runnumstart, 
+                                                             p, a)
 
              
             profile_evol_plot(val_trend_avg_s, labels=labels, name='means_'+p+'_'+a+'_'+mainfoldernum)
@@ -1205,19 +1206,19 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
             for runn_loc in runnum_list_loc:
                 #print('ACN here is {0} and total len is {1}'.format(scan_df.iloc[runn_loc-1]['ti_transp_flux_acn'], len(val_wind_s[runn_loc-1][0]))) ###DEBUG
                 plot_timetraces_act(
-                        val_ev_s[runn_loc-1][0][:],
-                        avg=scan_df.iloc[runn_loc-1]['ti_transp_flux'],
-                        std=scan_df.iloc[runn_loc-1]['ti_transp_flux_std'],
-                        sem=scan_df.iloc[runn_loc-1]['ti_transp_flux_stem'],
+                        val_ev_s[runn_loc-runnumstart][0][:],
+                        avg=scan_df.iloc[runn_loc-runnumstart]['ti_transp_flux'],
+                        std=scan_df.iloc[runn_loc-runnumstart]['ti_transp_flux_std'],
+                        sem=scan_df.iloc[runn_loc-runnumstart]['ti_transp_flux_stem'],
                         foldname=p+'_'+a+'_'+mainfoldernum+'_'+str(runn_loc),
                         apha_discard=0.15,
-                        act=int(len(val_wind_s[runn_loc-1][0])/scan_df.iloc[runn_loc-1]['ti_transp_flux_acn']),
+                        act=int(len(val_wind_s[runn_loc-runnumstart][0])/scan_df.iloc[runn_loc-runnumstart]['ti_transp_flux_acn']),
                                     )
                 
             #4.5.1d) Plotting time traces for one case with its AVG, STD, SEM, each taken per run
             #runn_loc = 6
                 time_traces_per_run(
-                        val_ev_s[runn_loc-1][0][:],
+                        val_ev_s[runn_loc-runnumstart][0][:],
                         run_len=150,
                         foldname=p+'_'+a+'_'+mainfoldernum+'_'+str(runn_loc),
                         apha_discard=0.15,
@@ -1231,18 +1232,16 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnum=1, mainfoldernu
             val_trend_lr_s = []
             for runn in runnum_list:
                 
-                
-                val_trend_lr, val_residue_lr = filter_trend(val_wind_s[runn-1], "linear_regression")
-                val_trend_lr_s.append(val_trend_lr.reshape(val_wind_s[runn-1].shape)) # bad workaround
+                val_trend_lr, val_residue_lr = filter_trend(val_wind_s[runn-runnumstart], "linear_regression")
+                val_trend_lr_s.append(val_trend_lr.reshape(val_wind_s[runn-runnumstart].shape)) # bad workaround
                 
                 #print('>shapes passed to plot: {} and {}'.
                 #       format(val_wind_s[runn-1].shape, val_trend_lr_s[runn-1].shape)) ###DEBUG
                 
-                profile_evol_plot([val_wind_s[runn-1], val_trend_lr_s[runn-1]],
+                profile_evol_plot([val_wind_s[runn-runnumstart], val_trend_lr_s[runn-runnumstart]],
                                   labels=['original', 'linear regression with NE'],
-                                  name='lr_'+p+'_'+a+'_'+str(runn-1)+'_'+mainfoldernum) 
+                                  name='lr_'+p+'_'+a+'_'+str(runn-runnumstart)+'_'+mainfoldernum) 
                 
-
             # 4.5.3) Applying HP-filter    
             val_trend_hpf_s = []
             for runn in runnum_list:
@@ -1316,11 +1315,11 @@ if __name__ == '__main__':
         # Run main for all files in the folder, either read values from csv (runforbatch), 
         # for possible multiple flux tubes (coord), and specifying how to save files
         main(foldername=sys.argv[1], runforbatch=int(sys.argv[2]), coordnum=int(sys.argv[3]), mainfoldernum=sys.argv[4])
-    elif len(sys.argv) == 6:
+    elif len(sys.argv) > 5:
         # Run main for all files in folder, possibly reading values from csv, possibly for multiple flux tubes, 
         # and for possibly many cases (e.g. different input profiles) + specify save folder
-        main(foldername=sys.argv[1], runforbatch=int(sys.argv[2]), coordnum=int(sys.argv[3]), 
-             runnum=int(sys.argv[4]), mainfoldernum=sys.argv[5])
+        main(foldername=sys.argv[1], runforbatch=int(sys.argv[2]), coordnum=int(sys.argv[3]), runnumstart=int(sys.argv[4]),
+             runnum=int(sys.argv[5]), mainfoldernum=sys.argv[6])
     else:
         # Run main with all defaults
         main()
