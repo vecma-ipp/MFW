@@ -13,14 +13,15 @@ import matplotlib
 #matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 params = { #"text.usetex": True,
-          'axes.labelsize': 10,
-          'axes.titlesize': 11.0,
-          'xtick.labelsize': 8,
-          'ytick.labelsize': 8,
-          'axes.titlepad': 3,
-          'axes.labelpad': .7,
-          'legend.fontsize': 9,
-          'legend.handlelength': 1.2}
+          #'axes.labelsize': 10,
+          #'axes.titlesize': 11.0,
+          #'xtick.labelsize': 8,
+          #'ytick.labelsize': 8,
+          #'axes.titlepad': 3,
+          #'axes.labelpad': .7,
+          #'legend.fontsize': 9,
+          #'legend.handlelength': 1.2
+          }
 plt.rcParams.update(params)
 import matplotlib.tri as mtri
 
@@ -37,6 +38,15 @@ from statsmodels.tsa.api import acf, pacf, graphics
 #import lhsmdu
 from shutil import copyfileobj
 import re
+
+#latexplotlib
+import latexplotlib as lpl
+plt.style.use("default")
+plt.rcParams.update({
+    "axes.grid": True, 
+    "font.family": "sans-serif", 
+    "text.usetex": False
+            })
 
 def exponential_model(x, theta=[1.0, 1.0, 1.0]):
     """
@@ -661,7 +671,15 @@ def plot_sobols_pie(sobol_ind_vals, labels, name=''):
     explode = [.0,]*len(sobol_ind_vals)
     #explode[np.argmax(sobol_ind_vals)] = 0.1 #comments disables highlighting of the largest fraction
     
-    fig1, ax1 = plt.subplots(figsize=(10,10))
+    # next 2 lines - lpl version
+    plt.style.use("latex10pt")
+    #lpl_context = [1000, 1000]
+    lpl_context = [550, 350]
+
+    # next 1st and 3rd line - lpl version
+    lpl.size.set(*lpl_context)
+    #fig1, ax1 = plt.subplots(figsize=(10,10))
+    fig1, ax1 = lpl.subplots(1,1, aspect='equal')
     
     ps,ts = ax1.pie(sobol_ind_vals,
              explode=explode,
@@ -673,7 +691,9 @@ def plot_sobols_pie(sobol_ind_vals, labels, name=''):
              startangle=0, 
              textprops={"fontsize":18})
 
-    labels_long = ['{0} - {1:1.2f}%'.format(l,100.*v) for l,v in zip(labels, sobol_ind_vals)]
+    #labels_long = ['{0} - {1:1.2f}%'.format(l,100.*v) for l,v in zip(labels, sobol_ind_vals)]
+    # next 1 line - lpl version
+    labels_long = [f"{l} - ${v:1.2f}$" for l,v in zip(labels, sobol_ind_vals)]
 
     ax1.legend(ps, labels_long, loc='center left', fontsize=18)
 
@@ -1473,11 +1493,15 @@ def time_traces_per_run(traces, run_len=450, foldname='', apha_discard=0.3):
     Plots the timetraces with data from each run
     """
 
-    #y_lim = (1.5E+6, 2.8E+6)
-    #y_lim = (1.E+4, 3.5E+6)
-    y_lim = (1.8E+6, 3.0E+6)
+    y_lim = (1.8E+6, 3.0E+6) #(1.5E+6, 2.8E+6) #(1.E+4, 3.5E+6)
 
-    fig, ax = plt.subplots(figsize=(8,8))
+    plt.style.use("latex10pt")
+    plt.rcParams.update({"axes.grid": True, "font.family": "sans-serif", "text.usetex": False})
+    lpl_context = [1100, 700]
+    lpl.size.set(*lpl_context)
+
+    #fig, ax = plt.subplots(figsize=(8,8))
+    fig, ax = lpl.subplots(1,1,)
 
     lags_list = [1,2,4,8,16,32,48,64,96,128,160,256,512,1024,2048,4096]
 
@@ -1577,28 +1601,28 @@ def time_traces_per_run(traces, run_len=450, foldname='', apha_discard=0.3):
     sem_loc = std_loc / np.sqrt(acn_loc[0])
     sems[i] = sem_loc
 
-    ax.plot(x_loc, traces_loc, color='b', linestyle='-', label='time traces')
-    ax.vlines(i_l, y_lim[0], y_lim[1], colors='grey', alpha=0.3, linestyles='dashed', label='simulation length, n={0}'.format(run_len))
+    ax.plot(x_loc, traces_loc, color='b', linestyle='-', label=f"time traces")
+    ax.vlines(i_l, y_lim[0], y_lim[1], colors='grey', alpha=0.3, linestyles='dashed', label=f"simulation length, n={run_len}")
     
     # Plotting horisontal lines for AVG and bands of STD and SEM
-    ax.hlines(y=avg_loc,         xmin=i_f, xmax=i_l, color='r', linestyle='-', label='mean: {0:.2}'.format(avg_loc))
+    ax.hlines(y=avg_loc,         xmin=i_f, xmax=i_l, color='r', linestyle='-', label=f"mean: {avg_loc:.2}")
 
-    ax.hlines(y=avg_loc+sem_loc, xmin=i_f, xmax=i_l, color='g', linestyle='--', label='+/- standard error: {0:.2}'.format(sem_loc))
+    ax.hlines(y=avg_loc+sem_loc, xmin=i_f, xmax=i_l, color='g', linestyle='--', label=f"+/- standard error: {sem_loc:.2}")
     ax.hlines(y=avg_loc-sem_loc, xmin=i_f, xmax=i_l, color='g', linestyle='--')
 
-    ax.hlines(y=avg_loc+1.96*std_loc, xmin=i_f, xmax=i_l, color='g', linestyle='dotted', label='95% predictive interval, std: {0:.2}'.format(std_loc))
+    ax.hlines(y=avg_loc+1.96*std_loc, xmin=i_f, xmax=i_l, color='g', linestyle='dotted', label=f"95% predictive interval, std: {std_loc:.2}")
     ax.hlines(y=avg_loc-1.96*std_loc, xmin=i_f, xmax=i_l, color='g', linestyle='dotted')
     ##########
 
     # Setting lables, legend etc.
-    ax.set_ylabel(r'{0}'.format('Ion heat flux, W/m^2'))
-    ax.set_xlabel(r'{0}'.format('time, code time-steps'))
+    ax.set_ylabel(f"{'Ion heat flux, W/m^2'}")
+    ax.set_xlabel(f"{'time, code time-steps'}")
     
     ax.set_ylim(y_lim[0], y_lim[1])
     ax.legend(loc='best', prop={'size':12})
 
     fig.tight_layout()
-    fig.savefig('timetraces_runs_{0}.pdf'.format(foldname))
+    fig.savefig(f"timetraces_runs_{foldname}.pdf")
     plt.close()
 
     # Saving a CSV with results
