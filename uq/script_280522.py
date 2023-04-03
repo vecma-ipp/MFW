@@ -14,10 +14,12 @@ import numpy as np
 #test_line = "{'te.value': 0.30395316, 'ti.value': 0.0195003, 'te.ddrho': 0.0445635, 'ti.ddrho': 0.63198303}"
 #test_dict = ast.literal_eval(test_line)
 
-res_akgbbn1a_9_titr = {'te.value': 0.00031439,
-                  'ti.value': 0.94327257,
-                  'te.ddrho': 0.00171975,
-                  'ti.ddrho': 0.03674999}
+res_akgbbn1a_9_titr = {
+                'te.ddrho': 0.00171975,
+                'te.value': 0.00031439,
+                'ti.ddrho': 0.03674999,
+                'ti.value': 0.94327257,
+                      }
 
 sobols_first_sum = sum([v for k,v in res_akgbbn1a_9_titr.items()])
 sobols_higher_sum = 1. - sobols_first_sum
@@ -30,9 +32,11 @@ res_akgbbn1a_9_titr_tot = {'te.value': 0.00101375,
                       'te.ddrho': 0.00283654,
                       'ti.ddrho': 0.05339608}
 
+label_list = ["$\\nabla T_{{e}}$", "$T_{{e}}$", "$\\nabla T_{{i}}$", "$T_{{i}}$"]
 #labels=['te_val', 'ti_val', 'te_grad', 'ti_grad']
 labels=['te.value', 'ti.value', 'te.ddrho', 'ti.ddrho']
 labels_exp=[k for k,v in res_akgbbn1a_9_titr_exp.items()]
+labels_exp = label_list
 
 #aa = read_sobols_from_logs(labels=labels)
 #a_avg = np.array(aa).mean(axis=0)
@@ -41,7 +45,7 @@ labels_exp=[k for k,v in res_akgbbn1a_9_titr_exp.items()]
 a_avg = [v for k,v in res_akgbbn1a_9_titr_exp.items()]
 
 #plot_sobols_pie(a_avg, labels, '090922')
-plot_sobols_pie(a_avg, labels_exp, '181122')
+plot_sobols_pie(a_avg, labels_exp, '030423_lpl')
 
 ##### Addition 20.02.2023 ######
 
@@ -68,4 +72,5 @@ sobols_first_tetr_sum = sum([v for k,v in res_akgbbn1a_9_tetr_exp.items()])
 res_akgbbn1a_9_tetr_exp['S.higher'] = 1. - sobols_first_tetr_sum
 s_tetr =   [v for k,v in res_akgbbn1a_9_tetr_exp.items()]
 labels_exp=[k for k,v in res_akgbbn1a_9_tetr_exp.items()]
-plot_sobols_pie(s_tetr, labels_exp, 'tetr_200223')
+labels_exp = label_list
+plot_sobols_pie(s_tetr, labels_exp, 'tetr_030423_lpl')

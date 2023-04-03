@@ -671,10 +671,13 @@ def plot_sobols_pie(sobol_ind_vals, labels, name=''):
     explode = [.0,]*len(sobol_ind_vals)
     #explode[np.argmax(sobol_ind_vals)] = 0.1 #comments disables highlighting of the largest fraction
     
-    # next 2 lines - lpl version
+    # next 6 lines - lpl version
     plt.style.use("latex10pt")
+    plt.rcParams.update({"axes.grid": True, "font.family": "serif", "text.usetex": False})
     #lpl_context = [1000, 1000]
-    lpl_context = [550, 350]
+    #lpl_context = [550, 350]
+    #lpl_context = [1100, 700] # poster size
+    lpl_context = [347, 549] # LNCS paper size
 
     # next 1st and 3rd line - lpl version
     lpl.size.set(*lpl_context)
@@ -689,7 +692,8 @@ def plot_sobols_pie(sobol_ind_vals, labels, name=''):
              #pctdistance=1.0,
              shadow=False, 
              startangle=0, 
-             textprops={"fontsize":18})
+             #textprops={"fontsize":18}
+             )
 
     #labels_long = ['{0} - {1:1.2f}%'.format(l,100.*v) for l,v in zip(labels, sobol_ind_vals)]
     # next 1 line - lpl version
@@ -759,7 +763,7 @@ def produce_stats_dataframes(runs_input_vals, val_trend_avg_s, val_std_s, stats_
              pandas DataFrame with rows - runs for different cases; columns - code io and stats
     """
     if n_lensample==1:
-        n_lensample = val_trend_avg_s[runn-1].shape[-1]
+        n_lensample = val_trend_avg_s[runn].shape[-1]
    
     #print('acf-corrected sample length: {0}'.format(n_lensample)) ###DEBUG
 
@@ -774,9 +778,9 @@ def produce_stats_dataframes(runs_input_vals, val_trend_avg_s, val_std_s, stats_
     stats_df = pd.concat([
                         stats_df,
                         pd.Series(
-                            data={'mean': val_trend_avg_s[runn-1][0][0],
-                                  'std': val_std_s[runn-1][0][0]},
-                            name=runn-1,
+                            data={'mean': val_trend_avg_s[runn][0][0],
+                                  'std': val_std_s[runn][0][0]},
+                            name=runn,
                                  ).to_frame().T,
                              ],
                          #axis=0,
@@ -786,9 +790,9 @@ def produce_stats_dataframes(runs_input_vals, val_trend_avg_s, val_std_s, stats_
     #print('stats_df: \n {0}'.format(stats_df)) ###DEBUG
     #print('stats_df_new: \n {0}'.format(stats_df_new)) ###DEBUG
 
-    scan_data = runs_input_vals[runn-1]
-    scan_data[p+'_'+a] = val_trend_avg_s[runn-1][0][0]
-    scan_data[p+'_'+a+'_std'] = val_std_s[runn-1][0][0]
+    scan_data = runs_input_vals[runn]
+    scan_data[p+'_'+a] = val_trend_avg_s[runn][0][0]
+    scan_data[p+'_'+a+'_std'] = val_std_s[runn][0][0]
     scan_data[p+'_'+a+'_stem'] = scan_data[p+'_'+a+'_std'] / np.sqrt(n_lensample)
     scan_data[p+'_'+a+'_acn'] = n_lensample
 
@@ -810,7 +814,7 @@ def produce_stats_dataframes(runs_input_vals, val_trend_avg_s, val_std_s, stats_
                         scan_df,
                         pd.Series(
                                data=scan_data_new,
-                               name=runn-1,
+                               name=runn,
                                #index={runn-1},
                                  ).to_frame().T,
                             ],
@@ -1022,26 +1026,51 @@ def plot_response_cuts(data, input_names, output_names, compare_vals=None, foldn
     style_lists = [marker_list, line_list, color_list,] 
     fmt_list = [style for style in itertools.product(*style_lists)]
 
+    lookup_param_names = {
+            'te_value': "$T_{{e}}$", 
+            'ti_value': "$T_{{i}}$", 
+            'te_ddrho': "$\\nabla T_{{e}}$", 
+            'ti_ddrho': "$\\nabla T_{{i}}$",
+            'te_transp_flux': "$Q_{{e}}$", 
+            'ti_transp_flux': "$Q_{{i}}$",
+                         }
+
     if len(input_names) == 1:
         # If the dimension is one there are no cuts, only a single plot
 
+        plt.style.use("latex10pt")
+        plt.rcParams.update({"axes.grid": True, "font.family": "serif", "text.usetex": False})
+        lpl_context = [347, 549] # LNCS paper size
+        lpl.size.set(*lpl_context)
+
+        fig, ax = lpl.subplots(1,1)
+
         axes = data.sort_values(by=[input_names[0]]).plot(
+                        ax=ax,
                         x=input_names[0], 
                         y=output_names[0],
                         yerr=output_names[0]+'_stem',
-                        kind= 'line', #'scatter',
-                        style={'color': 'b', 'marker':'.', 'linestyle':'-'},
-                        title='Response for a single argument',
-                        xlabel=input_names[0],
-                        ylabel=output_names[0]
+                        kind='line', #'scatter',
+                        color='C0',
+                        linestyle='-',
+                        marker='.',
+                        #style={'color': 'C1', 'marker':'.', 'linestyle':'-'},
+                        title=f"Response for a single argument",
+                        xlabel=lookup_param_names[input_names[0]],
+                        ylabel=lookup_param_names[output_names[0]],
+                        legend=False,
                         )
+        
+        ax.ticklabel_format(useMathText=True)
 
         for i in data.index:
 
-            axes.annotate('{0:1.3f}'.format(data.at[i, output_names[0]+'_stem'] / data.at[i, output_names[0]]), 
-                          (data.at[i, input_names[0]], data.at[i, output_names[0]]))
+            axes.annotate(f"{data.at[i, output_names[0]+'_stem'] / data.at[i, output_names[0]]:1.3f}", 
+                          (data.at[i, input_names[0]], data.at[i, output_names[0]]),
+                          label='Standard Error of the Mean',
+                          )
 
-        axes.get_figure().savefig('scan_'+output_names[0]+'_'+foldname+'.svg')
+        axes.get_figure().savefig('scan_'+output_names[0]+'_'+foldname+'.pdf')
         plt.close()                        
 
     else:
@@ -1437,52 +1466,83 @@ def plot_timetraces_act(traces, avg, std, sem, foldname='', apha_discard=0.3, ac
             SEM estimstion
     """
 
-    print(avg, std, sem, act) ###DEBUG
+    print(f"from time traces plotting: {avg}, {std}, {sem}, {act}") ###DEBUG
+    #TODO legend too large
+    #TODO gap between ACT parts
+    #TODO linewidth and markersize don't work
+
+    my_lw = 1
+    my_ms = 1
+
+    plt.style.use("latex10pt")
+    plt.rcParams.update({"axes.grid": True, "font.family": "serif", "text.usetex": False})
+    #lpl_context = [1100, 700] # poster size
+    lpl_context = [347, 549] # LNCS paper size
+    #lpl_context = [700, 442] #DEBUG manual fitting
+    lpl.size.set(*lpl_context)
 
     #y_lim = (-5.E+4, 2.8E+6)
     y_lim = (1.8E+6, 3.0E+6)
 
-    fig, ax = plt.subplots(figsize=(16, 8))
-    
+    #fig, ax = plt.subplots(figsize=(16, 8))
+    fig, ax = lpl.subplots(1,1,)
+
     n_tt = len(traces)
     n_disc = m.floor(apha_discard*n_tt)
     n_stat = n_tt - n_disc
     n_act = m.floor(n_stat / act)
 
     # Plotting for the ramp-up phase
-    ax.plot(np.arange(0, n_disc), traces[0:n_disc], color='b', linestyle='-',)
-    ax.vlines(n_disc, y_lim[0], y_lim[1], colors='grey', alpha=0.5, linestyles='dashed', label='autocorrelation time windows, n={0}, len={1}'.format(n_act, act))
+    ax.plot(np.arange(0, n_disc), traces[0:n_disc], color='b', linestyle='-', linewidth=my_lw)
+    ax.vlines(n_disc, y_lim[0], y_lim[1], colors='grey', alpha=0.5, linestyles='dashed', label=f"autocorrelation time windows, n={n_act}, len={act}")
 
-    for i in range(n_act):
+    for i in range(n_act-1):
         # Plotting traces for each of the ACT window
         i_f = n_disc + act * i
         i_l = n_disc + act * (i + 1)
-
-        ax.plot(np.arange(i_f, i_l), traces[i_f:i_l], color='b', linestyle='-',)
+    
+        ax.plot(np.arange(i_f, i_l), traces[i_f:i_l], color='b', linestyle='-', linewidth=my_lw)
         
         mid_point = m.floor((i_f+i_l) / 2),
-        ax.plot(mid_point, traces[mid_point], 'k*') # scatter? fmt?
+        ax.plot(mid_point, traces[mid_point], 'k*', markersize=my_ms) # scatter? fmt?
 
         ax.vlines(i_l, y_lim[0], y_lim[1], colors='grey', alpha=0.3, linestyles='dashed')
 
-    # Plotting horisontal lines for AVG and bands of STD and SEM
-    ax.hlines(y=avg, xmin=0, xmax=n_tt, color='g', linestyle='-', label='mean: {0:.2}'.format(avg))
+    # Plotting - special iteration for legends
+    i_f = n_disc + act * (n_act - 1)
+    i_l = n_disc + act * n_act
 
-    ax.hlines(y=avg+sem, xmin=0, xmax=n_tt, color='g', linestyle='--', label='+/- standard error: {0:.2}'.format(sem))
+    ax.plot(np.arange(i_f, i_l), traces[i_f:i_l], color='b', linestyle='-', linewidth=my_lw, label="time traces of $Q_{{i}}$")
+    
+    mid_point = m.floor((i_f+i_l) / 2),
+    ax.plot(mid_point, traces[mid_point], 'k*', markersize=my_ms, label=f"effective sample points")
+
+    ax.vlines(i_l, y_lim[0], y_lim[1], colors='grey', alpha=0.3, linestyles='dashed')
+
+    # Plotting horisontal lines for AVG and bands of STD and SEM
+    ax.hlines(y=avg, xmin=0, xmax=n_tt, color='g', linestyle='-', label=f"mean: {avg:.2}")
+
+    ax.hlines(y=avg+sem, xmin=0, xmax=n_tt, color='g', linestyle='--', label=f"+/- standard error: {sem:.2}")
     ax.hlines(y=avg-sem, xmin=0, xmax=n_tt, color='g', linestyle='--')
 
-    ax.hlines(y=avg+std, xmin=0, xmax=n_tt, color='g', linestyle='dotted', label='+/- standard deviation: {0:.2}'.format(std))
+    ax.hlines(y=avg+std, xmin=0, xmax=n_tt, color='g', linestyle='dotted', label=f"+/- standard deviation: {std:.2}")
     ax.hlines(y=avg-std, xmin=0, xmax=n_tt, color='g', linestyle='dotted')
 
     # Setting lables, legend etc.
-    ax.set_ylabel(r'{0}'.format('Ion heat flux, W/m^2'))
-    ax.set_xlabel(r'{0}'.format('time, code time-steps'))
+    #ax.set_ylabel(r'{0}'.format('Ion heat flux, W/m^2'))
+    ax.set_ylabel("$Q_{{i}}$, $ \\frac{{W}}{{m^{2}}}$")
+    #ax.set_xlabel(r'{0}'.format('time, code time-steps'))
+    ax.set_xlabel("${{t}}$, code time-steps")
     #ax.set_title(r'', fontsize=12)
     
     ax.set_ylim(y_lim[0], y_lim[1])
-    ax.legend(loc='best', prop={'size':12})
+    # ax.legend(
+    #     loc='best', 
+    #     #prop={'size':12}, 
+    #     ncol=2,
+    #          )
 
-    fig.tight_layout()
+    #fig.tight_layout()
     fig.savefig('timetraces_act_{0}.pdf'.format(foldname))
     plt.close()
 
@@ -1496,12 +1556,13 @@ def time_traces_per_run(traces, run_len=450, foldname='', apha_discard=0.3):
     y_lim = (1.8E+6, 3.0E+6) #(1.5E+6, 2.8E+6) #(1.E+4, 3.5E+6)
 
     plt.style.use("latex10pt")
-    plt.rcParams.update({"axes.grid": True, "font.family": "sans-serif", "text.usetex": False})
-    lpl_context = [1100, 700]
+    plt.rcParams.update({"axes.grid": True, "font.family": "serif", "text.usetex": False})
+    #lpl_context = [1100, 700] # poster size
+    lpl_context = [347, 549] # LNCS paper size
     lpl.size.set(*lpl_context)
 
     #fig, ax = plt.subplots(figsize=(8,8))
-    fig, ax = lpl.subplots(1,1,)
+    fig, ax = lpl.subplots(2,1,)
 
     lags_list = [1,2,4,8,16,32,48,64,96,128,160,256,512,1024,2048,4096]
 
@@ -1511,8 +1572,8 @@ def time_traces_per_run(traces, run_len=450, foldname='', apha_discard=0.3):
     n_r = m.floor(n_stat / run_len)
 
     # Plotting for the ramp-up phase
-    ax.plot(np.arange(0, n_disc), traces[0:n_disc], color='b', linestyle='-')
-    ax.vlines(n_disc, y_lim[0], y_lim[1], colors='grey', alpha=0.3, linestyles='dashed')
+    ax[0].plot(np.arange(0, n_disc), traces[0:n_disc], color='k', linestyle='-')
+    ax[0].vlines(n_disc, y_lim[0], y_lim[1], colors='grey', alpha=0.3, linestyles='dashed')
 
     lens = np.zeros(n_r)
     acts = np.zeros(n_r)
@@ -1557,17 +1618,17 @@ def time_traces_per_run(traces, run_len=450, foldname='', apha_discard=0.3):
         sem_loc = std_loc / np.sqrt(acn_loc[0])
         sems[i] = sem_loc
 
-        ax.plot(x_loc, traces_loc, color='b', linestyle='-')
-        ax.vlines(i_l, y_lim[0], y_lim[1], colors='grey', alpha=0.3, linestyles='dashed')
+        ax[0].plot(x_loc, traces_loc, color='k', linestyle='-')
+        ax[0].vlines(i_l, y_lim[0], y_lim[1], colors='grey', alpha=0.3, linestyles='dashed')
         
         # Plotting horisontal lines for AVG and bands of STD and SEM
-        ax.hlines(y=avg_loc,         xmin=i_f, xmax=i_l, color='r', linestyle='-')
+        ax[0].hlines(y=avg_loc,         xmin=i_f, xmax=i_l, color='b', linestyle='-')
 
-        ax.hlines(y=avg_loc+sem_loc, xmin=i_f, xmax=i_l, color='g', linestyle='--')
-        ax.hlines(y=avg_loc-sem_loc, xmin=i_f, xmax=i_l, color='g', linestyle='--')
+        ax[0].hlines(y=avg_loc+sem_loc, xmin=i_f, xmax=i_l, color='g', linestyle='--')
+        ax[0].hlines(y=avg_loc-sem_loc, xmin=i_f, xmax=i_l, color='g', linestyle='--')
 
-        ax.hlines(y=avg_loc+1.96*std_loc, xmin=i_f, xmax=i_l, color='g', linestyle='dotted')
-        ax.hlines(y=avg_loc-1.96*std_loc, xmin=i_f, xmax=i_l, color='g', linestyle='dotted')
+        ax[0].hlines(y=avg_loc+1.96*std_loc, xmin=i_f, xmax=i_l, color='g', linestyle='dotted')
+        ax[0].hlines(y=avg_loc-1.96*std_loc, xmin=i_f, xmax=i_l, color='g', linestyle='dotted')
 
     ##### Special iteration to add legends #####
     i = n_r - 1
@@ -1601,29 +1662,34 @@ def time_traces_per_run(traces, run_len=450, foldname='', apha_discard=0.3):
     sem_loc = std_loc / np.sqrt(acn_loc[0])
     sems[i] = sem_loc
 
-    ax.plot(x_loc, traces_loc, color='b', linestyle='-', label=f"time traces")
-    ax.vlines(i_l, y_lim[0], y_lim[1], colors='grey', alpha=0.3, linestyles='dashed', label=f"simulation length, n={run_len}")
+    ax[0].plot(x_loc, traces_loc, color='k', linestyle='-', label=f"time traces")
+    ax[0].vlines(i_l, y_lim[0], y_lim[1], colors='grey', alpha=0.3, linestyles='dashed', label=f"simulation length, n={run_len}")
     
     # Plotting horisontal lines for AVG and bands of STD and SEM
-    ax.hlines(y=avg_loc,         xmin=i_f, xmax=i_l, color='r', linestyle='-', label=f"mean: {avg_loc:.2}")
+    ax[0].hlines(y=avg_loc,         xmin=i_f, xmax=i_l, color='b', linestyle='-', label=f"mean: {avg_loc:.2}")
 
-    ax.hlines(y=avg_loc+sem_loc, xmin=i_f, xmax=i_l, color='g', linestyle='--', label=f"+/- standard error: {sem_loc:.2}")
-    ax.hlines(y=avg_loc-sem_loc, xmin=i_f, xmax=i_l, color='g', linestyle='--')
+    ax[0].hlines(y=avg_loc+sem_loc, xmin=i_f, xmax=i_l, color='g', linestyle='--', label=f"+/- standard error: {sem_loc:.2}")
+    ax[0].hlines(y=avg_loc-sem_loc, xmin=i_f, xmax=i_l, color='g', linestyle='--')
 
-    ax.hlines(y=avg_loc+1.96*std_loc, xmin=i_f, xmax=i_l, color='g', linestyle='dotted', label=f"95% predictive interval, std: {std_loc:.2}")
-    ax.hlines(y=avg_loc-1.96*std_loc, xmin=i_f, xmax=i_l, color='g', linestyle='dotted')
+    ax[0].hlines(y=avg_loc+1.96*std_loc, xmin=i_f, xmax=i_l, color='g', linestyle='dotted', label=f"95% predictive interval, std: {std_loc:.2}")
+    ax[0].hlines(y=avg_loc-1.96*std_loc, xmin=i_f, xmax=i_l, color='g', linestyle='dotted')
     ##########
 
     # Setting lables, legend etc.
-    ax.set_ylabel(f"{'Ion heat flux, W/m^2'}")
-    ax.set_xlabel(f"{'time, code time-steps'}")
+    #ax.set_ylabel(f"{'Ion heat flux, W/m^2'}")
+    ax[0].set_ylabel("$Q_{{i}}$, $ \\frac{{W}}{{m^{2}}}$")
+    #ax.set_xlabel(f"{'time, code time-steps'}")
+    ax[0].set_xlabel("${{t}}$, code time-steps")
     
-    ax.set_ylim(y_lim[0], y_lim[1])
-    ax.legend(loc='best', prop={'size':12})
+    ax[0].set_ylim(y_lim[0], y_lim[1])
+    ax[0].legend(
+        loc='best', 
+        #prop={'size':12}
+             )
 
-    fig.tight_layout()
+    #fig.tight_layout()
     fig.savefig(f"timetraces_runs_{foldname}.pdf")
-    plt.close()
+    #plt.close()
 
     # Saving a CSV with results
     res_csv_array = np.concatenate(
@@ -1635,6 +1701,29 @@ def time_traces_per_run(traces, run_len=450, foldname='', apha_discard=0.3):
     np.savetxt('res_timetraces_perrun_'+foldname+'.csv', res_csv_array, delimiter=",",
                header='runnum, len, act, n_eff, avg, std, sem, rmc, amc')
 
+    # Plotting ACT
+    #fig1, ax1 = plt.subplots(figsize=(5,5))
+    ax[1].plot(np.arange(n_r), acts, color='b')
+    ax[1].set_xlabel('Number of simulations')
+    ax[1].set_ylabel('Autocorrelation Time')
+    ax[1].set_ylim(ymin=0)
+    ax[1].yaxis.label.set_color('b')
+    #fig1.tight_layout()
+    #fig1.savefig(f"vact_mean_{foldname}.pdf")
+    #plt.close()
+
+    # Plotting SEM 
+    #fig1, ax2 = plt.subplots(figsize=(5,5))
+    ax2 = ax[1].twinx()
+    ax2.plot(np.arange(n_r), sems, color='g')
+    #ax2.set_xlabel('Number of simulations')
+    ax2.set_ylabel('Standard error')
+    ax2.set_ylim(ymin=0)
+    ax2.yaxis.label.set_color('g')
+    #fig.tight_layout()
+    fig.savefig(f"sem_act_timetraces_{foldname}.pdf")
+    plt.close()
+
     # Plotting mean
     fig1, ax1 = plt.subplots(figsize=(7,7))
     ax1.plot(np.arange(n_r), means)
@@ -1642,16 +1731,6 @@ def time_traces_per_run(traces, run_len=450, foldname='', apha_discard=0.3):
     ax1.set_ylabel('Mean value')
     fig1.tight_layout()
     fig1.savefig('val_mean_{0}.pdf'.format(foldname))
-    plt.close()
-
-    # Plotting ACT
-    fig1, ax1 = plt.subplots(figsize=(7,7))
-    ax1.plot(np.arange(n_r), acts)
-    ax1.set_xlabel('Number of simulations')
-    ax1.set_ylabel('Autocorrelation Time')
-    ax1.set_ylim(ymin=0)
-    fig1.tight_layout()
-    fig1.savefig('vact_mean_{0}.pdf'.format(foldname))
     plt.close()
 
     # Plotting mean change
@@ -1662,16 +1741,6 @@ def time_traces_per_run(traces, run_len=450, foldname='', apha_discard=0.3):
     ax1.set_ylim(ymin=0)
     fig1.tight_layout()
     fig1.savefig('rabs_mean_{0}.pdf'.format(foldname))
-    plt.close()
-
-    # Plotting SEM 
-    fig2, ax2 = plt.subplots(figsize=(7,7))
-    ax2.plot(np.arange(n_r), sems)
-    ax2.set_xlabel('Number of simulations')
-    ax2.set_ylabel('Standard error')
-    ax2.set_ylim(ymin=0)
-    fig2.tight_layout()
-    fig2.savefig('sem_{0}.pdf'.format(foldname))
     plt.close()
 
 def get_reference_vals(p,a, filename='AUG_mix-lim_gem_inoutput.txt', path='../data/'):

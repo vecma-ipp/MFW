@@ -1189,7 +1189,7 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnumstart=1, runnum=
 
             print('plotting cuts starting')
             
-            """
+            
             plot_response_cuts(scan_df, 
                                runs_input_names_new, 
                                [p+'_'+a],
@@ -1198,11 +1198,12 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnumstart=1, runnum=
                                traces=val_ev_s, #val_wind_s,
                                hists=True,
                               )
-            """
+            
 
             #4.5.1c) Plotting time traces for one case with its AVG, STD, SEM
-            #runn_loc = 6
-            runnum_list_loc = [29]
+            #runn_loc = 6   
+            #runnum_list_loc = [29]
+            runnum_list_loc = runnum_list
             for runn_loc in runnum_list_loc:
                 #print('ACN here is {0} and total len is {1}'.format(scan_df.iloc[runn_loc-1]['ti_transp_flux_acn'], len(val_wind_s[runn_loc-1][0]))) ###DEBUG
                 plot_timetraces_act(
