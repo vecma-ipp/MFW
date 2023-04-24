@@ -20,6 +20,10 @@ program chease_M3
   character(kind=c_char), pointer :: equilibrium_in_buf(:)
   character(kind=c_char), pointer :: equilibrium_out_buf(:)
 
+  ! copy chease.xml and chease.xsd
+  call system('cp ../../../../chease.xml chease.xml')
+  call system('cp ../../../../chease.xsd chease.xsd')
+
   ports = LIBMUSCLE_PortsDescription_create()
   call LIBMUSCLE_PortsDescription_add(ports, YMMSL_Operator_F_INIT, 'equilibrium_in')
   call LIBMUSCLE_PortsDescription_add(ports, YMMSL_Operator_O_F, 'equilibrium_out')
@@ -40,6 +44,10 @@ program chease_M3
      t_cur = LIBMUSCLE_Message_timestamp(rmsg)
      !t_max = LIBMUSCLE_Message_timestamp(rmsg) + t_max
      call LIBMUSCLE_Message_free(rmsg)
+
+     ! DEBUG: next 2 lines
+     !print *, rdata(1:32)
+     !print *, equilibrium_in_buf(1:4096)
 
      call chease2buf(equilibrium_in_buf, equilibrium_out_buf)
 
