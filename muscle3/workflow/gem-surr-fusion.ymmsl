@@ -6,12 +6,65 @@ model:
 
 #  compute_elements:
   components:
-    init:        init_M3
-    stop:        stop_M3
-    transport:   ets_M3
-    turbulence:  gem_surr_M3.py
-    equilibrium: chease_M3
-    duplicate:   duplicate_M3
+    init:        
+      implementation: init_impl
+      ports: 
+        o_f: 
+          - equilibrium_init
+          - coreprof_init
+          - coresource_init
+          - coreimpur_init
+          - toroidfield_init
+    stop:        
+      implementation: stop_impl
+      ports:
+        f_init:
+          - equilibrium_in
+          - coreprof_in
+          - coresource_in
+          - coreimpur_in
+          - toroidfield_in
+    transport:   
+      implementation: ets_impl
+      ports:
+        f_init:
+          - equilibrium_init
+          - coreprof_init
+          - coresource_init
+          - coreimpur_init
+          - toroidfield_init
+        s:
+          - equilibrium_in
+          - coretransp_in
+        o_i:
+          - coreprof_out
+          - equilibrium_out
+        o_f:
+          - coreprof_final
+          - equilibrium_final
+          - coresource_final
+          - coreimpur_final
+          - toroidfield_final
+    turbulence:
+      implementation: gem_surr_impl
+      ports:
+        f_init: 
+          - coreprof_in
+          - equilibrium_in
+        o_f: coretransp_out
+    equilibrium: 
+      implementation: chease_impl
+      ports:
+        f_init: equilibrium_in
+        o_f: equilibrium_out
+    duplicate:   
+      implementation: duplicate_impl
+      ports:
+        f_init: input
+        o_f:
+          - copy_A
+          - copy_B
+          - copy_C
     
   conduits:
     init.equilibrium_init:       transport.equilibrium_init
@@ -31,18 +84,63 @@ model:
     transport.coreimpur_final:   stop.coreimpur_in
     transport.toroidfield_final: stop.toroidfield_in
 
+
+resources:
+  init:
+    threads: 1
+  stop:
+    threads: 1
+  transport:
+    threads: 1
+  turbulence:
+    threads: 1
+  equilibrium:
+    threads: 1
+  duplicate:
+    threads: 1
+
+
+implementations:
+  init_impl:
+    executable: /u/yyudin/code/MFW/muscle3/bin/COBRA/init_M3
+  init_impl_debug:
+    executable: xterm
+    args:
+      - -e
+      - gdb
+      - --args
+      - /u/yyudin/code/MFW/muscle3/bin/COBRA/init_M3
+  stop_impl:
+    executable: /u/yyudin/code/MFW/muscle3/bin/COBRA/stop_M3
+  ets_impl:
+    executable: /u/yyudin/code/MFW/muscle3/bin/COBRA/ets_M3
+  gem_surr_impl:
+    executable: python3 /u/yyudin/code/MFW/muscle3/src/gem_surr_M3.py
+  chease_impl:
+    executable: /u/yyudin/code/MFW/muscle3/bin/COBRA/chease_M3
+  chease_impl_debug:
+    executable: xterm
+    args:
+      - -e
+      - gdb
+      - --args
+      - /u/yyudin/code/MFW/muscle3/bin/COBRA/chease_M3
+  duplicate_impl:
+    executable: /u/yyudin/code/MFW/muscle3/bin/COBRA/duplicate_M3
+  
 settings:
   transport.duration: 0.05
   transport.dt: 0.01
-  init_cpo_dir: "../../workflows/AUG_28906_6"
+  init_cpo_dir: "../../../../../../workflows/AUG_28906_6"
   final_cpo_dir: "./"
   muscle_remote_log_level: "DEBUG"  
   slice_initial_number: 0
   save_slice: True
   turbulence.rho_ind_s: 68
   turbulence.profs_out: "ti_transp.flux"
-  turbulence.surrogate_path: "../../workflows/gem_es_model.pickle"
+  turbulence.surrogate_path: "../../../../../../workflows/gem_es_model.pickle"
   turbulence.cortransp_default: "gem_coretransp_out.cpo"
+
 
 #checkpoints:
 #  at_end:True

@@ -63,8 +63,8 @@ ifeq (${MPI},yes)
  FPPFLAGS += -DMPI -DMPI2
 endif
 
-MUSCLE_LDFLAGS += $(shell pkg-config --libs libmuscle_fortran ymmsl_fortran libmuscle ymmsl )
-MUSCLE_MPI_LDFLAGS += $(shell pkg-config --libs libmuscle_mpi_fortran ymmsl_fortran libmuscle ymmsl )	#OL
+MUSCLE_LDFLAGS += $(shell pkg-config --libs libmuscle_fortran ymmsl_fortran) # libmuscle ymmsl )
+MUSCLE_MPI_LDFLAGS += $(shell pkg-config --libs libmuscle_mpi_fortran ymmsl_fortran) # libmuscle ymmsl )	#OL
 #NB: be careful with additional explicit flag: may be not needed
 
 # testing out a linkage issue
@@ -81,10 +81,13 @@ FC90FLAGS += ${MUSCLE_INCLUDES}
 FC90FLAGS += ${RPATHLINK_FLAG}
 FC90FLAGS += ${RPATHLINK_FLAG}
 
+#TEST: compile all components for debug
+#FC90FLAGS += -O0 -Wall
+FC90FLAGS_DEBUG = -g -O0 -Wall -fPIC -Iinclude/COBRA -I../ual/include/COBRA/fortran_interface -I../standalone/include/COBRA -I../ual/lib/COBRA/types -I../ual/include/COBRA/types -module include/COBRA -pthread -I/u/yyudin/muscle3/include -Wl,-rpath-link,/cobra/u/yyudin/muscle3/lib -Wl,-rpath-link,/cobra/u/yyudin/muscle3/lib
+
 # objects files ################################################################
 STDA_SHARED_O = ${STDA_OBJ}/linterp.o ${STDA_OBJ}/string_binding.o \
 	   ${STDA_OBJ}/c_tools.o ${STDA_OBJ}/filetools.o 
-
 
 #TODO check the order of objects
 #IFORT_O = ${OBJDIR}/ymmsl.o ${OBJDIR}/libmuscle.o #${OBJDIR}/libmuscle_mpi.o
@@ -116,6 +119,7 @@ IMP4DV_EXE = ${BINDIR}/imp4dv_M3
 GEM_EXE = ${BINDIR}/gem_M3
 BOHMGB_EXE = ${BINDIR}/bohmgb_M3
 
+# Compilation commands
 
 #.PHONY: all clean
 # rules ########################################################################
@@ -152,6 +156,14 @@ ${OBJDIR}/gem_standalone.o: gem_standalone.f90
 ${OBJDIR}/gem_M3.o: gem_M3.f90
 	${FC90} -o $@ -c $< $(MPI_FC90FLAGS)
 
+# #For debugging of init_M3 SIGSEGV
+# ${OBJDIR}/init_M3.o: init_M3.f90
+# 	${FC90} -o $@ -c $< $(FC90FLAGS_DEBUG)
+
+#For debugging of chease_M3 reading issues
+${OBJDIR}/chease_M3.o: chease_M3.f90
+	${FC90} -o $@ -c $< $(FC90FLAGS_DEBUG)
+
 #%.f90: %.F90
 #	$(FPP) $(FPPFLAGS) $< $@ 
 
@@ -169,7 +181,9 @@ ${OBJDIR}/gem_M3.o: gem_M3.f90
 # 	${FC90} -o $@ -c $< $(FC90FLAGS) ; \
 # 	echo "compiles new libmuscle_mpi.o"
 
+# Linking commands:
 
+#@echo "\n FC90FLAGS="${FC90FLAGS} "\n INCLUDES="${INCLUDES} "\n MODSPEC="${MODSPEC} "\n INCDIR="${INCDIR} 
 INIT_M3: ${INIT_O} 
 	$(FC90) -o ${INIT_EXE} $^ -L${LIB_TYPES} -L${LIB_UAL} -litmtypes -lual ${MUSCLE_LDFLAGS}
 
