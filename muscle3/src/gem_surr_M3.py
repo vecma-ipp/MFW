@@ -97,21 +97,25 @@ def gem_surr_M3():
 
     # Creating a MUSCLE3 instance
     instance = Instance({
-        Operator.F_INIT: ['coreprof_in',],
-        Operator.F_INIT: ['equilibrium_in',],
+        Operator.F_INIT: ['coreprof_in', 'equilibrium_in'],
+        #Operator.F_INIT: ['equilibrium_in',],
         Operator.O_F:    ['coretransp_out',],
                         },
         #USES_CHECKPOINT_API,
                        )
+    
+    print(f"> Initialised turbulence instance") #DEBUG
 
     while instance.reuse_instance():
         # when is the instance constructed and destructed?
+        print(f"> Entering a turbulence model iteration") #DEBUG
 
-        rho_ind_s = instance.get_setting('rho_ind_s', 'float') #TODO: consider using function to calculate index fron rho_tor
-        prof_out_names = instance.get_setting('profs_out', 'string') #TODO: figure out how to pass lists of float/strings
-        model_file = instance.get_setting('surrogate_path', 'string')
-        coretransp_default_file_name = instance.get_setting('cortransp_default', 'string')
-        init_cpo_dir = instance.get_setting('init_cpo_dir', 'string')
+        rho_ind_s = instance.get_setting('rho_ind_s', 'int') #TODO: consider using function to calculate index fron rho_tor
+        #TODO Error: alue for setting "turbulence.rho_ind_s" is of type <class 'int'>, where float was expected.
+        prof_out_names = instance.get_setting('profs_out', 'str') #TODO: figure out how to pass lists of float/strings
+        model_file = instance.get_setting('surrogate_path', 'str')
+        coretransp_default_file_name = instance.get_setting('cortransp_default', 'str')
+        init_cpo_dir = instance.get_setting('init_cpo_dir', 'str')
 
         coretransp_default_file_path = init_cpo_dir + '/' + coretransp_default_file_name
         n_dim_out = len([prof_out_names])
@@ -140,11 +144,14 @@ def gem_surr_M3():
         
         # Get a message from transport code
         msg_in = instance.receive('coreprof_in')
-        print('> Got a message from TRANSOP')
+        print('> Got a message from TRANSP')
 
         num_it = msg_in.timestamp + 1
 
-        profiles_in_data = msg_in.data.copy()
+        profiles_in_data_bytes = msg_in.data
+        print(f"length of profile bytes received : {len(profiles_in_data_bytes)}")
+        
+        profiles_in_data = profiles_in_data_bytes.array.copy()
         profiles_in = coreprof_to_input_value(profiles_in_data, [rho_ind_s],)
         print('> Read incoming core profile {0}'.format(profiles_in))
 
@@ -180,7 +187,6 @@ def gem_surr_M3():
 
         instance.send('coretransp_out', msg_out)
         print('> Sent an outcoming core transp')
-
 
 
 if __name__ == '__main__':
