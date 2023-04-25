@@ -6,8 +6,12 @@ import logging
 from libmuscle import Instance, Message, USES_CHECKPOINT_API
 from ymmsl import Operator
 
-from ascii_cpo import read
+from ascii_cpo import read, read_fstream
+import ual
 import base
+
+from ctypes import c_char, string_at
+import io, sys, copy
 
 import easysurrogate as es
 
@@ -15,8 +19,8 @@ import easysurrogate as es
 def coreprof_to_input_value(
             data, 
             rho_ind_s, 
-            prof_names=['te_value', 'ti_value', 'te_ddrho', 'ti_ddrho',], 
-            attrib_names=['',],
+            prof_names=['te', 'ti'], 
+            attrib_names=['value', 'ddrho'],
                      ):
     """
     Transforms coreprof message data into values acceptable by a surrogate model as an input
@@ -33,22 +37,25 @@ def coreprof_to_input_value(
 
     for i, prof_name in enumerate(prof_names):
 
-        prof = getattr(data.core.values[0], prof_name)
+        prof = getattr(data, prof_name)
 
         for j, attrib_name in enumerate(attrib_names):
 
             for r, rho_ind in enumerate(rho_ind_s):
 
-                val_reading = getattr(prof, attrib_name)[rho_ind]
+                val_readings = getattr(prof, attrib_name)
+                #print(f"val_readings={val_readings}") ###DEBUG
 
                 if prof_name[1] == 'i':
-                    val_reading = val_reading[0]
+                    val_readings = val_readings[0]
 
                 elif prof_name[1] == 'e':
                     pass
                 
                 else:
                     print('Error: Attributes have to belong either to ions or to electrons')
+
+                val_reading = val_readings[rho_ind]
 
                 prof_vals[i*m+j][r] = val_reading
 
@@ -98,7 +105,6 @@ def gem_surr_M3():
     # Creating a MUSCLE3 instance
     instance = Instance({
         Operator.F_INIT: ['coreprof_in', 'equilibrium_in'],
-        #Operator.F_INIT: ['equilibrium_in',],
         Operator.O_F:    ['coretransp_out',],
                         },
         #USES_CHECKPOINT_API,
@@ -110,9 +116,8 @@ def gem_surr_M3():
         # when is the instance constructed and destructed?
         print(f"> Entering a turbulence model iteration") #DEBUG
 
-        rho_ind_s = instance.get_setting('rho_ind_s', 'int') #TODO: consider using function to calculate index fron rho_tor
-        #TODO Error: alue for setting "turbulence.rho_ind_s" is of type <class 'int'>, where float was expected.
-        prof_out_names = instance.get_setting('profs_out', 'str') #TODO: figure out how to pass lists of float/strings
+        rho_ind_s = instance.get_setting('rho_ind_s', 'int') #TODO: consider using function to calculate index from rho_tor
+        prof_out_names = instance.get_setting('profs_out', 'str') #TODO: figure out how to pass lists of float/strings -> possible: ['float']/['str']
         model_file = instance.get_setting('surrogate_path', 'str')
         coretransp_default_file_name = instance.get_setting('cortransp_default', 'str')
         init_cpo_dir = instance.get_setting('init_cpo_dir', 'str')
@@ -121,7 +126,7 @@ def gem_surr_M3():
         n_dim_out = len([prof_out_names])
 
         # Initialising surrogate model
-        #   for a one-shot case should only be done once in f_init
+        #   for a one-shot training case should only be done once in f_init
 
         #TODO: consider other model initialisation e.g. using just an ML library
         #TODO: consider single model load per MUSCLE3 Manager run
@@ -134,6 +139,7 @@ def gem_surr_M3():
             return
         model = campaign.surrogate
         print('> Got a surrogate from a ES campaign')
+        #print(campaign.surrogate.model) ###DEBUG
 
         #TODO: read target names from campaign
         output_names = ['ti_transp_flux', 'te_transp_flux']
@@ -146,13 +152,38 @@ def gem_surr_M3():
         msg_in = instance.receive('coreprof_in')
         print('> Got a message from TRANSP')
 
+        # Update timestep number
         num_it = msg_in.timestamp + 1
 
+        # Get profile byte array data from the message from TRANSP (and check what's inside)
         profiles_in_data_bytes = msg_in.data
-        print(f"length of profile bytes received : {len(profiles_in_data_bytes)}")
+        #print(f"length of profile bytes received : {len(profiles_in_data_bytes)}") ###DEBUG
+        #n_print = 4096; print(f"first {n_print} bytes(?) of the buffer is:\n{profiles_in_data_bytes[0:n_print]}") ###DEBUG
+        #print(f"bytes(?) 8400-8600 of the buffer is:\n{profiles_in_data_bytes[8400:8600]}") ###DEBUG
+
+        # Convert profile byte array to (numpy array) string
+        #profiles_in_data = np.frombuffer(profiles_in_data_bytes, dtype=c_char)
+        profiles_in_data_str = profiles_in_data_bytes.decode("utf-8")
+        #n_print = 512; print(f"first {n_print} elements of the data str is:\n{profiles_in_data_bytes[0:n_print]}") ###DEBUG
         
-        profiles_in_data = profiles_in_data_bytes.array.copy()
-        profiles_in = coreprof_to_input_value(profiles_in_data, [rho_ind_s],)
+        # Read the data string like it is a CPO file and find the turbulence-relevant array of values for given flux tubes
+        file_like_profiles_in_data_str   = io.StringIO(profiles_in_data_str)
+        file_like_profiles_in_data_bytes = io.BytesIO(profiles_in_data_bytes)
+                
+        itmobj = ual.itm()
+        try:
+            glob_cpo = getattr(itmobj, "coreprof")
+        except AttributeError:
+            sys.exit("Error: no CPO named coreprof")
+        cpo = copy.deepcopy(glob_cpo)
+        print(f"CPO object created empty is:\n{cpo}") ###DEBUG
+
+        profiles_cpo_obj_test = read("../../../../../../standalone/bin/gem_coreprof_in.cpo", "coreprof")
+        print(f"CPO object read from file is:\n{profiles_cpo_obj_test}") ###DEBUG
+        profiles_cpo_obj = read_fstream(file_like_profiles_in_data_str, cpo, "coreprof")
+        print(f"CPO object read is:\n{profiles_cpo_obj}") ###DEBUG
+
+        profiles_in = coreprof_to_input_value(profiles_cpo_obj, [rho_ind_s],)
         print('> Read incoming core profile {0}'.format(profiles_in))
 
         # Get (n_features, n_samples) from surrogate from (n_features, n_radial_points)
@@ -167,7 +198,7 @@ def gem_surr_M3():
         #TODO use a surrogate for a vector output: ['te.transp.flux', 'ti.transp.flux']
         # Infer a mean flux value using a surrogate
         fluxes_out, _ = model.predict(profiles_in)
-        print('> Used a surrogate to predict new Qi={0}'.format(fluxes_out))
+        print('> Used a surrogate to predict new Q_i={0}'.format(fluxes_out))
 
         #TODO: in principle with large scale separation local t_cur does not play role,
         # but one could also estimate time for turbulence saturation with surrogate 
