@@ -116,6 +116,14 @@ implementations:
     executable: /u/yyudin/code/MFW/muscle3/bin/COBRA/ets_M3
   gem_surr_impl:
     executable: python3 /u/yyudin/code/MFW/muscle3/src/gem_surr_M3.py
+  gem_surr_impl_debug:
+    executable: xterm
+    args:
+      - -e
+      - python3
+      - -m
+      - pdb
+      - /u/yyudin/code/MFW/muscle3/src/gem_surr_M3.py
   chease_impl:
     executable: /u/yyudin/code/MFW/muscle3/bin/COBRA/chease_M3
   chease_impl_debug:
@@ -132,14 +140,14 @@ settings:
   transport.duration: 0.05
   transport.dt: 0.01
   init_cpo_dir: "../../../../../../workflows/AUG_28906_6"
-  final_cpo_dir: "./"
+  final_cpo_dir: "../../"
   muscle_remote_log_level: "DEBUG"  
   slice_initial_number: 0
   save_slice: True
   turbulence.rho_ind_s: 68
   turbulence.profs_out: "ti_transp.flux"
   turbulence.surrogate_path: "../../../../../../workflows/gem_es_model.pickle"
-  turbulence.cortransp_default: "gem_coretransp_out.cpo"
+  turbulence.cortransp_default: "ets_coretransp_in.cpo"
 
 
 #checkpoints:
