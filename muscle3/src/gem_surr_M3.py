@@ -208,13 +208,13 @@ def gem_surr_M3():
         #print(f"CPO object created empty is:\n{cpo}") ###DEBUG
 
         ###DEBUG (next 7 lines)
-        # test_file_name = "../../../../../../workflows/AUG_28906_6/ets_coreprof_in.cpo"
+        test_file_name = "../../../../../../workflows/AUG_28906_6/ets_coreprof_in.cpo"
         # with open(test_file_name, 'r') as f:
         #     test_file_string = f.read()
         # print(f"> String read from a test file is:\n{test_file_string}") ###DEBUG
         # print(f"> Equivalence of strings from file and from buffer: {test_file_string==profiles_in_data_str}")
-        # profiles_cpo_obj_test = read(test_file_name, "coreprof")
-        # print(f"> CPO object read from a test file is:\n{profiles_cpo_obj_test}") ###DEBUG
+        profiles_cpo_obj_test = read(test_file_name, "coreprof")
+        print(f"> CPO object read from a test file is:\n{profiles_cpo_obj_test}") ###DEBUG
 
         ###DEBUG (next 8 lines): every string is the same!
         # f_test = open(test_file_name, 'r') 
