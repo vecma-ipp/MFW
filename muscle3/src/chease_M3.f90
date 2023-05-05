@@ -21,6 +21,7 @@ program chease_M3
   character(kind=c_char), pointer :: equilibrium_out_buf(:)
 
   ! copy chease.xml and chease.xsd
+  !TODO: get relative path prefix from ymmsl settings
   call system('cp ../../../../chease.xml chease.xml')
   call system('cp ../../../../chease.xsd chease.xsd')
 

@@ -36,14 +36,17 @@ program stop_M3
   instance = LIBMUSCLE_Instance_create(ports)
   call LIBMUSCLE_PortsDescription_free(ports)
   
+  print *, ">before entering the loop" !!!DEBUG
   ! main loop
   do while (LIBMUSCLE_Instance_reuse_instance(instance))
 
+     print *, ">entering the loop and getting params" !!!DEBUG
      ! get params
      final_cpos = LIBMUSCLE_Instance_get_setting_as_character(instance, 'final_cpo_dir')
 
      ! recv and write final CPO to file into specified dir
      ! equilibrium
+     print *, ">receiving equilibrium CPO" !!!DEBUG
      rmsg = LIBMUSCLE_Instance_receive(instance, 'equilibrium_in')
      rdata = LIBMUSCLE_Message_get_data(rmsg)
      allocate (equilibrium_in_buf(LIBMUSCLE_DataConstRef_size(rdata)))
@@ -52,7 +55,9 @@ program stop_M3
      call LIBMUSCLE_Message_free(rmsg)
      call byte2file(trim(final_cpos)//'/ets_equilibrium_in.cpo', equilibrium_in_buf, size(equilibrium_in_buf))
      deallocate(equilibrium_in_buf)
+     print *, ">received equilibrium CPO!" !!!DEBUG
      ! coreprof
+     print *, ">receiving coreprof CPO" !!!DEBUG
      rmsg = LIBMUSCLE_Instance_receive(instance, 'coreprof_in')
      rdata = LIBMUSCLE_Message_get_data(rmsg)
      allocate (coreprof_in_buf(LIBMUSCLE_DataConstRef_size(rdata)))
@@ -62,7 +67,9 @@ program stop_M3
      call LIBMUSCLE_Message_free(rmsg)
      call byte2file(trim(final_cpos)//'/ets_coreprof_in.cpo', coreprof_in_buf, size(coreprof_in_buf))
      deallocate(coreprof_in_buf)
+     print *, ">received coreprof CPO!" !!!DEBUG
      ! recv init coresource
+     print *, ">receiving coresource CPO" !!!DEBUG
      rmsg = LIBMUSCLE_Instance_receive(instance, 'coresource_in')
      rdata = LIBMUSCLE_Message_get_data(rmsg)
      allocate (coresource_in_buf(LIBMUSCLE_DataConstRef_size(rdata)))
@@ -71,7 +78,9 @@ program stop_M3
      call LIBMUSCLE_Message_free(rmsg)
      call byte2file(trim(final_cpos)//'/ets_coresource_in.cpo', coresource_in_buf, size(coresource_in_buf))
      deallocate(coresource_in_buf)
+     print *, ">received coresource CPO!" !!!DEBUG
      ! recv init coreimpur
+     print *, ">receiving coreimpur CPO" !!!DEBUG
      rmsg = LIBMUSCLE_Instance_receive(instance, 'coreimpur_in')
      rdata = LIBMUSCLE_Message_get_data(rmsg)
      allocate (coreimpur_in_buf(LIBMUSCLE_DataConstRef_size(rdata)))
@@ -80,7 +89,9 @@ program stop_M3
      call LIBMUSCLE_Message_free(rmsg)
      call byte2file(trim(final_cpos)//'/ets_coreimpur_in.cpo', coreimpur_in_buf, size(coreimpur_in_buf))
      deallocate(coreimpur_in_buf)
+     print *, ">received coreimpur CPO" !!!DEBUG
      ! recv init toroidfield
+     print *, ">receiving init toroidfield CPO!" !!!DEBUG
      rmsg = LIBMUSCLE_Instance_receive(instance, 'toroidfield_in')
      rdata = LIBMUSCLE_Message_get_data(rmsg)
      allocate (toroidfield_in_buf(LIBMUSCLE_DataConstRef_size(rdata)))
@@ -89,6 +100,7 @@ program stop_M3
      call LIBMUSCLE_Message_free(rmsg)
      call byte2file(trim(final_cpos)//'/ets_toroidfield_in.cpo', toroidfield_in_buf, size(toroidfield_in_buf))
      deallocate(toroidfield_in_buf)
+     print *, ">received init toroidfield CPO" !!!DEBUG
 
   end do
   

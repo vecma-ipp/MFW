@@ -34,6 +34,9 @@ program ets_M3
   integer :: step
   character(5) :: stepstr
 
+  call system('cp ../../../../ets.xml ets.xml')
+  call system('cp ../../../../ets.xsd ets.xsd')
+
   ports = LIBMUSCLE_PortsDescription_create()
   call LIBMUSCLE_PortsDescription_add(ports, YMMSL_Operator_F_INIT, 'coreprof_init')
   call LIBMUSCLE_PortsDescription_add(ports, YMMSL_Operator_F_INIT, 'equilibrium_init')
@@ -58,11 +61,14 @@ program ets_M3
 
   coretransp_in_buf => null()
   
+  !!!TODO DEBUG - this fails first now
+  print *, ">before entering the loop" !!!DEBUG
   ! main loop
   do while (LIBMUSCLE_Instance_reuse_instance(instance))
 
      !###  INIT (F_INIT)  ########################!
 
+     print *, ">entering the loop and getting params" !!!DEBUG
      ! get params
      dt_max = LIBMUSCLE_Instance_get_setting_as_real8(instance, 'dt')
      tau = dt_max ! tau is from ets_standalone module
@@ -70,6 +76,7 @@ program ets_M3
      slice_init = LIBMUSCLE_Instance_get_setting_as_int8(instance, 'slice_initial_number')
      save_slice = LIBMUSCLE_Instance_get_setting_as_logical(instance, 'save_slice')
      
+     print *, ">receiving equilibrium CPO" !!!DEBUG
      ! recv init equilibrium
      rmsg = LIBMUSCLE_Instance_receive(instance, 'equilibrium_init')
      rdata = LIBMUSCLE_Message_get_data(rmsg)
