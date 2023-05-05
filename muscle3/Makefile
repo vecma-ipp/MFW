@@ -160,9 +160,18 @@ ${OBJDIR}/gem_M3.o: gem_M3.f90
 # ${OBJDIR}/init_M3.o: init_M3.f90
 # 	${FC90} -o $@ -c $< $(FC90FLAGS_DEBUG)
 
-#For debugging of chease_M3 reading issues
-${OBJDIR}/chease_M3.o: chease_M3.f90
-	${FC90} -o $@ -c $< $(FC90FLAGS_DEBUG)
+# #For debugging of stop_M3 SIGSEGV
+# ${OBJDIR}/stop_M3.o: stop_M3.f90
+# 	${FC90} -o $@ -c $< $(FC90FLAGS_DEBUG)
+
+# #For debugging of chease_M3 reading issues
+# ${OBJDIR}/chease_M3.o: chease_M3.f90
+# 	${FC90} -o $@ -c $< $(FC90FLAGS_DEBUG)
+
+# #For debugging of ets_M3 reading issues
+# ${OBJDIR}/ets_M3.o: ets_M3.f90
+# 	${FC90} -o $@ -c $< $(FC90FLAGS_DEBUG)
+
 
 #%.f90: %.F90
 #	$(FPP) $(FPPFLAGS) $< $@ 
