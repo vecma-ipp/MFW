@@ -61,7 +61,6 @@ def coreprof_to_input_value(
                 else:
                     print('Error: Attributes have to belong either to ions or to electrons')
 
-                #print(f">val_readings={val_readings}") ###DEBUG
                 #print(f">val_readings[rho_ind]={val_readings[rho_ind]}") ###DEBUG
                 val_reading = val_readings[rho_ind]
                 #print(f">val_reading: {val_reading}") ###DEBUG
@@ -81,8 +80,6 @@ def output_value_to_coretransp(
     """
     Transforms flux mean values infered by model into a CPO coretransp datastracture
     """
-
-    #print(f">fluxes_out: {fluxes_out}") ###DEBUG
     
     # Casting array elements to strings
     fluxes_out_str = {k:np.array([str(v) for v in vs]) for k,vs in fluxes_out.items()}
@@ -94,26 +91,14 @@ def output_value_to_coretransp(
     # NB: when this is commented out and will not change the coretransp passed
     for prof_name in prof_names:
 
-        #field_prof = getattr(coretransp_datastructure.values[0], prof_name)
-
         for attribute in attributes:
 
-            #field_attr = getattr(field_prof, attribute)
-
             for r in r_s:
-
-                #vals = []
 
                 if attribute == 'flux':
 
                     if prof_name == 'ti_transp':
 
-                        # print(f">coretransp_datastructure: {coretransp_datastructure}") ###DEBUG
-                        # print(f">coretransp_datastructure.values: {coretransp_datastructure.values}") ###DEBUG
-                        # print(f"coretransp_datastructure.values[0]: {coretransp_datastructure.values[0]}") ###DEBUG
-                        # print(f">coretransp_datastructure.values.ti_transp: {coretransp_datastructure.values[0].ti_transp}") ###DEBUG
-                        # print(f">coretransp_datastructure.values[0].ti_transp.flux: {coretransp_datastructure.values[0].ti_transp.flux}") ###DEBUG
-                        
                         # print(f"flux datastructure [0]: {fluxes_out[prof_name+'_'+attribute][0]}") ###DEBUG
                         #coretransp_datastructure.values[0].ti_transp.flux[r] = fluxes_out[prof_name+'_'+attribute]
                         #coretransp_datastructure.values[0].ti_transp.flux = []
@@ -126,8 +111,6 @@ def output_value_to_coretransp(
                         if len(coretransp_datastructure.values[0].ti_transp.flux) == 0:
                             coretransp_datastructure.values[0].ti_transp.flux = np.zeros((len(r_s), 1))
                         coretransp_datastructure.values[0].ti_transp.flux[r, 0] = fluxes_out_str[prof_name+'_'+attribute][0]
-
-                        #print(f">coretransp_datastructure.values.ti_transp.flux: {coretransp_datastructure.values[0].ti_transp.flux}") ###DEBUG
                     
                     elif prof_name == 'te_transp':
 
@@ -146,8 +129,6 @@ def output_value_to_coretransp(
                 
                 else:
                     print('Erorr: currently only models infering fluxes are supported')
-
-            #print(f">coretransp_datastructure.values[0].ti_transp.flux: {coretransp_datastructure.values[0].ti_transp.flux}") ###DEBUG
 
     return coretransp_datastructure
 
@@ -170,7 +151,7 @@ def gem_surr_M3():
 
     while instance.reuse_instance():
         # when is the instance constructed and destructed?
-        print(f"> Entering a turbulence model iteration") #DEBUG
+        print(f"> Entering a turbulence model iteration")
 
         rho_ind_s = instance.get_setting('rho_ind_s', 'int') #TODO: consider using function to calculate index from rho_tor
         prof_out_names = instance.get_setting('profs_out', 'str') #TODO: figure out how to pass lists of float/strings -> possible: ['float']/['str']
@@ -196,10 +177,11 @@ def gem_surr_M3():
         model = campaign.surrogate
         print('> Got a surrogate from a ES campaign')
         #print(campaign.surrogate.model) ###DEBUG
+        print(f"y_train: {model.y_train}") ###DEBUG
 
         #TODO: read target names from campaign
-        output_names = ['ti_transp_flux', 'te_transp_flux']
-        #output_names = ['ti_transp_flux']
+        #output_names = ['ti_transp_flux', 'te_transp_flux']
+        output_names = ['ti_transp_flux']
 
         # Get a message form equilibrium code: NOT USED HERE!
         msg_in = instance.receive('equilibrium_in')
@@ -214,9 +196,6 @@ def gem_surr_M3():
 
         # Get profile byte array data from the message from TRANSP (and check what's inside)
         coreprof_in_data_bytes = msg_in.data
-        #print(f"length of profile bytes received : {len(coreprof_in_data_bytes)}") ###DEBUG
-        #n_print = 4096; print(f"first {n_print} bytes(?) of the buffer is:\n{coreprof_in_data_bytes[0:n_print]}") ###DEBUG
-        #print(f"bytes(?) 8400-8600 of the buffer is:\n{coreprof_in_data_bytes[8400:8600]}") ###DEBUG
 
         # Save the binary buffer to a file
         devshm_file = "/dev/shm/ets_coreprof_in.cpo"
@@ -229,47 +208,16 @@ def gem_surr_M3():
         # Convert profile byte array to (numpy array) string
         #coreprof_in_data = np.frombuffer(coreprof_in_data_bytes, dtype=c_char) # not required, ual interface require to read a file (or a string)
         #coreprof_in_data_str = coreprof_in_data_bytes.decode("utf-8")
-        #n_print = len(coreprof_in_data_str); print(f"first {n_print} elements of the data str is:\n{coreprof_in_data_str[0:n_print]}") ###DEBUG
         
         # Read the data string like it is a CPO file and find the turbulence-relevant array of values for given flux tubes
         #file_like_coreprof_in_data_str   = io.StringIO(coreprof_in_data_str) # TODO: the issue has to be here
-        #file_like_coreprof_in_data_bytes = io.BytesIO(coreprof_in_data_bytes)
-        
-        ###DEBUG (next 3 lines): test the file_like_coreprof_in_data_str -> carefull, moves the read head down the file
-        # for i in range(1):
-        #     stest = file_like_coreprof_in_data_str.readline()
-        #     print(f"line read from a stream made of the buffer string:\n{stest}")
                 
         #itmobj = ual.itm()
         #glob_cpo = getattr(itmobj, "coreprof")
         #cpo = copy.deepcopy(glob_cpo)
-        # #print(f"CPO object created empty is:\n{cpo}") ###DEBUG
 
-        ###DEBUG (next 7 lines)
-        # test_file_name = "../../../../../../workflows/AUG_28906_6/ets_coreprof_in.cpo"
-        # with open(test_file_name, 'r') as f:
-        #     test_file_string = f.read()
-        # print(f"> String read from a test file is:\n{test_file_string}") ###DEBUG
-        # print(f"> Equivalence of strings from file and from buffer: {test_file_string==coreprof_in_data_str}")
-        # start_t = t()
-        # coreprof_cpo_obj_test = read(test_file_name, "coreprof")
-        # print(f"> CPO object read from a test file (took {t()-start_t} s) is:\n{coreprof_cpo_obj_test}") ###DEBUG
-
-        ###DEBUG (next 8 lines): every string is the same!
-        # f_test = open(test_file_name, 'r') 
-        # f_test_lines = f_test.readlines()
-        # f_string = io.StringIO(coreprof_in_data_str)
-        # f_string_lines = f_string.readlines()
-        # print(f"Checking file and string streams line by line")        
-        # for i,l1 in enumerate(f_test_lines):
-        #     if l1 != f_string_lines[i]:
-        #         print(f"string #{i} is different in StringIO!")
-
-        #print("Starting to parse an IOString buffer") ###DEBUG
         #coreprof_cpo_obj = read_fstream(file_like_coreprof_in_data_str, cpo, "coreprof") #TODO: fails here - StrionIO has no file descriptor
-        #print(f"CPO object read is:\n{coreprof_cpo_obj}") ###DEBUG, coreprof_cpo_obj and coreprof_cpo_obj_test have to be the same
 
-        #profiles_in =  coreprof_to_input_value(coreprof_cpo_obj_test, [rho_ind_s],) ### DEBUG/TEST version
         profiles_in = coreprof_to_input_value(coreprof_cpo_obj, [rho_ind_s],)
         print('> Read incoming core profile {0}'.format(profiles_in))
 
@@ -295,8 +243,7 @@ def gem_surr_M3():
         fluxes_out_dict = {k:fluxes_out[i] for i,k in enumerate(output_names)}
         
         coretransp_cpo_obj = output_value_to_coretransp(fluxes_out_dict, coretransp_default_file_path, prof_names=['ti_transp'])
-        #print(f"CPO coretransp object after writing fluxes is:\n{coretransp_cpo_obj}") ###DEBUG, coreprof_cpo_obj and coreprof_cpo_obj_test have to be the same
-        write(coretransp_cpo_obj, "sur_coretransp_out.cpo", "coretransp") ###DEBUG
+        #write(coretransp_cpo_obj, "sur_coretransp_out.cpo", "coretransp") ###DEBUG
 
         # Creating a bytes variable to be sent via MUSCLE3, coretransp_cpo_obj -> bytes
         # coretransp_str_bytes = bytes(coretransp_cpo_obj)
