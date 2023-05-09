@@ -86,6 +86,7 @@ def output_value_to_coretransp(
     
     # Casting array elements to strings
     fluxes_out_str = {k:np.array([str(v) for v in vs]) for k,vs in fluxes_out.items()}
+    #fluxes_out_str = {k:np.array(['  '+str(v)+'E+00' for v in vs]) for k,vs in fluxes_out.items()} # now assumes that value fits to a zero exponent
     #print(f">fluxes_out_str: {fluxes_out_str}") ###DEBUG
 
     coretransp_datastructure = read(coretransp_file, 'coretransp')
@@ -93,38 +94,60 @@ def output_value_to_coretransp(
     # NB: when this is commented out and will not change the coretransp passed
     for prof_name in prof_names:
 
+        #field_prof = getattr(coretransp_datastructure.values[0], prof_name)
+
         for attribute in attributes:
 
+            #field_attr = getattr(field_prof, attribute)
+
             for r in r_s:
+
+                #vals = []
 
                 if attribute == 'flux':
 
                     if prof_name == 'ti_transp':
-                        #coretransp_datastructure.values[0].ti_transp.flux[r, ion] = fluxes_out[prof_name+'_'+attribute]
+
                         # print(f">coretransp_datastructure: {coretransp_datastructure}") ###DEBUG
                         # print(f">coretransp_datastructure.values: {coretransp_datastructure.values}") ###DEBUG
                         # print(f"coretransp_datastructure.values[0]: {coretransp_datastructure.values[0]}") ###DEBUG
                         # print(f">coretransp_datastructure.values.ti_transp: {coretransp_datastructure.values[0].ti_transp}") ###DEBUG
-                        # print(f">coretransp_datastructure.values.ti_transp.flux: {coretransp_datastructure.values[0].ti_transp.flux}") ###DEBUG
+                        # print(f">coretransp_datastructure.values[0].ti_transp.flux: {coretransp_datastructure.values[0].ti_transp.flux}") ###DEBUG
                         
-                        #print(f"flux datastructure tolist[0]: {fluxes_out[prof_name+'_'+attribute].tolist()[0]}") ###DEBUG
+                        # print(f"flux datastructure [0]: {fluxes_out[prof_name+'_'+attribute][0]}") ###DEBUG
                         #coretransp_datastructure.values[0].ti_transp.flux[r] = fluxes_out[prof_name+'_'+attribute]
                         #coretransp_datastructure.values[0].ti_transp.flux = []
                         #coretransp_datastructure.values[0].ti_transp.flux.append(fluxes_out[prof_name+'_'+attribute])
-                        coretransp_datastructure.values[0].ti_transp.flux = fluxes_out_str[prof_name+'_'+attribute].tolist()
-                        
+                        #coretransp_datastructure.values[0].ti_transp.flux = fluxes_out_str[prof_name+'_'+attribute].tolist()
+                        # if len(vals) == 0:
+                        #     vals.append([])
+                        # vals[0].append(fluxes_out[prof_name+'_'+attribute][0])
+                       
+                        if len(coretransp_datastructure.values[0].ti_transp.flux) == 0:
+                            coretransp_datastructure.values[0].ti_transp.flux = np.zeros((len(r_s), 1))
+                        coretransp_datastructure.values[0].ti_transp.flux[r, 0] = fluxes_out_str[prof_name+'_'+attribute][0]
+
                         #print(f">coretransp_datastructure.values.ti_transp.flux: {coretransp_datastructure.values[0].ti_transp.flux}") ###DEBUG
                     
                     elif prof_name == 'te_transp':
+
                         #coretransp_datastructure.values[0].te_transp.flux[r, ion] = fluxes_out[prof_name+'_'+attribute]
                         #coretransp_datastructure.values.te_transp.flux = []
-                        coretransp_datastructure.values.te_transp.flux = fluxes_out[prof_name+'_'+attribute].to_list()
-                    
+                        #coretransp_datastructure.values.te_transp.flux = fluxes_out[prof_name+'_'+attribute].to_list()
+                        #coretransp_datastructure.set_value(prof_name+'.'+attribute, fluxes_out_str[prof_name+'_'+attribute].tolist(), r_s)
+                        #vals.append(fluxes_out[prof_name+'_'+attribute][0])
+                        
+                        if len(coretransp_datastructure.values[0].te_transp.flux) == 0:
+                            coretransp_datastructure.values[0].te_transp.flux = np.zeros((len(r_s)))
+                        coretransp_datastructure.values[0].te_transp.flux[r] = fluxes_out_str[prof_name+'_'+attribute][0]
+                                
                     else:
                         print('Error: currently only temperatures for two species are supported')
                 
                 else:
                     print('Erorr: currently only models infering fluxes are supported')
+
+            #print(f">coretransp_datastructure.values[0].ti_transp.flux: {coretransp_datastructure.values[0].ti_transp.flux}") ###DEBUG
 
     return coretransp_datastructure
 
@@ -175,8 +198,8 @@ def gem_surr_M3():
         #print(campaign.surrogate.model) ###DEBUG
 
         #TODO: read target names from campaign
-        #output_names = ['ti_transp_flux', 'te_transp_flux']
-        output_names = ['ti_transp_flux']
+        output_names = ['ti_transp_flux', 'te_transp_flux']
+        #output_names = ['ti_transp_flux']
 
         # Get a message form equilibrium code: NOT USED HERE!
         msg_in = instance.receive('equilibrium_in')
