@@ -82,9 +82,9 @@ def output_value_to_coretransp(
     """
     
     # Casting array elements to strings
-    fluxes_out_str = {k:np.array([str(v) for v in vs]) for k,vs in fluxes_out.items()}
+    #fluxes_out_str = {k:np.array([str(v) for v in vs]) for k,vs in fluxes_out.items()}
     #fluxes_out_str = {k:np.array(['  '+str(v)+'E+00' for v in vs]) for k,vs in fluxes_out.items()} # now assumes that value fits to a zero exponent
-    #print(f">fluxes_out_str: {fluxes_out_str}") ###DEBUG
+    print(f"> fluxes_out: {fluxes_out}") ###DEBUG
 
     coretransp_datastructure = read(coretransp_file, 'coretransp')
 
@@ -99,7 +99,7 @@ def output_value_to_coretransp(
 
                     if prof_name == 'ti_transp':
 
-                        # print(f"flux datastructure [0]: {fluxes_out[prof_name+'_'+attribute][0]}") ###DEBUG
+                        print(f"> flux datastructure : {fluxes_out[prof_name+'_'+attribute]}") ###DEBUG
                         #coretransp_datastructure.values[0].ti_transp.flux[r] = fluxes_out[prof_name+'_'+attribute]
                         #coretransp_datastructure.values[0].ti_transp.flux = []
                         #coretransp_datastructure.values[0].ti_transp.flux.append(fluxes_out[prof_name+'_'+attribute])
@@ -110,7 +110,7 @@ def output_value_to_coretransp(
                        
                         if len(coretransp_datastructure.values[0].ti_transp.flux) == 0:
                             coretransp_datastructure.values[0].ti_transp.flux = np.zeros((len(r_s), 1))
-                        coretransp_datastructure.values[0].ti_transp.flux[r, 0] = fluxes_out_str[prof_name+'_'+attribute][0]
+                        coretransp_datastructure.values[0].ti_transp.flux[r, 0] = fluxes_out[prof_name+'_'+attribute]
                     
                     elif prof_name == 'te_transp':
 
@@ -122,7 +122,7 @@ def output_value_to_coretransp(
                         
                         if len(coretransp_datastructure.values[0].te_transp.flux) == 0:
                             coretransp_datastructure.values[0].te_transp.flux = np.zeros((len(r_s)))
-                        coretransp_datastructure.values[0].te_transp.flux[r] = fluxes_out_str[prof_name+'_'+attribute][0]
+                        coretransp_datastructure.values[0].te_transp.flux[r] = fluxes_out[prof_name+'_'+attribute]
                                 
                     else:
                         print('Error: currently only temperatures for two species are supported')
@@ -177,11 +177,11 @@ def gem_surr_M3():
         model = campaign.surrogate
         print('> Got a surrogate from a ES campaign')
         #print(campaign.surrogate.model) ###DEBUG
-        print(f"y_train: {model.y_train}") ###DEBUG
+        #print(f"y_train: {model.y_train}") ###DEBUG
 
         #TODO: read target names from campaign
-        #output_names = ['ti_transp_flux', 'te_transp_flux']
-        output_names = ['ti_transp_flux']
+        output_names = ['ti_transp_flux', 'te_transp_flux']
+        #output_names = ['ti_transp_flux']
 
         # Get a message form equilibrium code: NOT USED HERE!
         msg_in = instance.receive('equilibrium_in')
@@ -233,16 +233,20 @@ def gem_surr_M3():
         #TODO use a surrogate for a vector output: ['te.transp.flux', 'ti.transp.flux']
         # Infer a mean flux value using a surrogate
         fluxes_out, _ = model.predict(profiles_in)
-        print('> Used a surrogate to predict new Q_i={0}'.format(fluxes_out))
+        print('> Used a surrogate to predict new Q_e,i={0}'.format(fluxes_out))
 
         #TODO: in principle with large scale separation local t_cur does not play role,
         # but one could also estimate time for turbulence saturation with surrogate 
         #TODO: find MUSCLE3 format for dictionaries or dataframes
         #TODO: initialise the default data to fill in coretransp structures - look up GEM0 in Python
 
-        fluxes_out_dict = {k:fluxes_out[i] for i,k in enumerate(output_names)}
+        fluxes_out_dict = {k:fluxes_out[0][i] for i,k in enumerate(output_names)}
         
-        coretransp_cpo_obj = output_value_to_coretransp(fluxes_out_dict, coretransp_default_file_path, prof_names=['ti_transp'])
+        coretransp_cpo_obj = output_value_to_coretransp(
+                                        fluxes_out_dict, 
+                                        coretransp_default_file_path, 
+                                        prof_names=['te_transp', 'ti_transp'],
+                                                        )
         #write(coretransp_cpo_obj, "sur_coretransp_out.cpo", "coretransp") ###DEBUG
 
         # Creating a bytes variable to be sent via MUSCLE3, coretransp_cpo_obj -> bytes
