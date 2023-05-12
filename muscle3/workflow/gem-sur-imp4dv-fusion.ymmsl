@@ -68,16 +68,16 @@ model:
     flux2tcoeff:
       implementation: imp4dv_impl
       ports:
-        f_init:
-          - coreprof_init
-          - equilibrium_init
-          - coretransp_init
+        #f_init:
+        #  - coreprof_init
+        #  - equilibrium_init
+        #  - coretransp_init
         s:
           - coreprof_in
           - equilibrium_in
           - coretransp_in
         o_i: coretransp_out
-        o_f: coretransp_final
+        #o_f: coretransp_final
     
   conduits:
     init.equilibrium_init:       transport.equilibrium_init
@@ -85,9 +85,9 @@ model:
     init.coresource_init:        transport.coresource_init
     init.coreimpur_init:         transport.coreimpur_init
     init.toroidfield_init:       transport.toroidfield_init
-    init.coreprof_init:          flux2tcoeff.coreprof_init
-    init.equilibrium_init:       flux2tcoeff.equilibrium_init
-    init.coretransp_init:        flux2tcoeff.coretransp_init
+#    init.coreprof_init:          flux2tcoeff.coreprof_init
+#    init.equilibrium_init:       flux2tcoeff.equilibrium_init
+#    init.coretransp_init:        flux2tcoeff.coretransp_init
     transport.equilibrium_out:   equilibrium.equilibrium_in
     transport.coreprof_out:      turbulence.coreprof_in
     transport.coreprof_out:      flux2tcoeff.coreprof_in
