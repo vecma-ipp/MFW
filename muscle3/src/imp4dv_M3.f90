@@ -106,6 +106,8 @@ program imp4dv_M3
      ! calling imp4dv
      !allocate(coretransp_out_buf, source=coretransp_in_buf)
 
+     print *, coretransp_in_buf(1:10) !DEBUG
+
      print *, ">calling imp4dv2buf"
      call imp4dv2buf( &
           equilibrium_in_buf, &
@@ -116,7 +118,7 @@ program imp4dv_M3
      print *,"IMP4DV CALCULATED D AND V"
 
      deallocate(coreprof_in_buf)
-     allocate(coreprof_in_buf, source=coretransp_in_buf)
+     !allocate(coreprof_in_buf, source=coretransp_in_buf)
 
      !###  O_I  ###############################!
      ! send coretransp

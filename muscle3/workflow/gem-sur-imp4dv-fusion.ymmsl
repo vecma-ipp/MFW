@@ -1,10 +1,8 @@
-#/* -*- yaml -*- */
 ymmsl_version: v0.1
 
 model:
   name: fusion_gem_surr
-
-#compute_elements:
+  
   components:
     init:        
       implementation: init_impl
@@ -89,11 +87,11 @@ model:
 #    init.equilibrium_init:       flux2tcoeff.equilibrium_init
 #    init.coretransp_init:        flux2tcoeff.coretransp_init
     transport.equilibrium_out:   equilibrium.equilibrium_in
-    transport.coreprof_out:      turbulence.coreprof_in
-    transport.coreprof_out:      flux2tcoeff.coreprof_in
-    equilibrium.equilibrium_out: turbulence.equilibrium_in #duplicate.input
-    equilibrium.equilibrium_out: transport.equilibrium_in
-    equilibrium.equilibrium_out: flux2tcoeff.equilibrium_in
+    transport.coreprof_out:      [turbulence.coreprof_in, flux2tcoeff.coreprof_in]
+#    transport.coreprof_out:      flux2tcoeff.coreprof_in
+    equilibrium.equilibrium_out: [turbulence.equilibrium_in, transport.equilibrium_in, flux2tcoeff.equilibrium_in] #duplicate.input
+#    equilibrium.equilibrium_out: transport.equilibrium_in
+#    equilibrium.equilibrium_out: flux2tcoeff.equilibrium_in
 #    duplicate.copy_A:            turbulence.equilibrium_in
 #    duplicate.copy_B:            transport.equilibrium_in
 #    duplicate.copy_C:            flux2tcoeff.equilibrium_in
@@ -159,6 +157,13 @@ implementations:
     executable: /u/yyudin/code/MFW/muscle3/bin/COBRA/duplicate_M3
   imp4dv_impl:
     executable: /u/yyudin/code/MFW/muscle3/bin/COBRA/imp4dv_M3
+  imp4dv_impl_debug:
+    executable: xterm
+    args:
+      - -e
+      - gdb
+      - --args
+      - /u/yyudin/code/MFW/muscle3/bin/COBRA/imp4dv_M3
 
 settings:
   transport.duration: 0.05
