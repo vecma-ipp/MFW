@@ -172,6 +172,9 @@ ${OBJDIR}/gem_M3.o: gem_M3.f90
 # ${OBJDIR}/ets_M3.o: ets_M3.f90
 # 	${FC90} -o $@ -c $< $(FC90FLAGS_DEBUG)
 
+#For debugging of imp4dv coreprof buffer issue
+${OBJDIR}/imp4dv_M3.o: imp4dv_M3.f90
+	${FC90} -o $@ -c $< $(FC90FLAGS_DEBUG)
 
 #%.f90: %.F90
 #	$(FPP) $(FPPFLAGS) $< $@ 

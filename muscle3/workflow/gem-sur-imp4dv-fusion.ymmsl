@@ -36,6 +36,7 @@ model:
           - coretransp_in
         o_i:
           - coreprof_out
+          - coreprof_out_flux2tcoeff
           - equilibrium_out
         o_f:
           - coreprof_final
@@ -87,7 +88,8 @@ model:
 #    init.equilibrium_init:       flux2tcoeff.equilibrium_init
 #    init.coretransp_init:        flux2tcoeff.coretransp_init
     transport.equilibrium_out:   equilibrium.equilibrium_in
-    transport.coreprof_out:      [turbulence.coreprof_in, flux2tcoeff.coreprof_in]
+    transport.coreprof_out_flux2tcoeff: flux2tcoeff.coreprof_in
+    transport.coreprof_out:       turbulence.coreprof_in
 #    transport.coreprof_out:      flux2tcoeff.coreprof_in
     equilibrium.equilibrium_out: [turbulence.equilibrium_in, transport.equilibrium_in, flux2tcoeff.equilibrium_in] #duplicate.input
 #    equilibrium.equilibrium_out: transport.equilibrium_in
@@ -134,6 +136,13 @@ implementations:
     executable: /u/yyudin/code/MFW/muscle3/bin/COBRA/stop_M3
   ets_impl:
     executable: /u/yyudin/code/MFW/muscle3/bin/COBRA/ets_M3
+  ets_impl_debug:
+    executable: xterm
+    args:
+      - -e
+      - gdb
+      - --args
+      - /u/yyudin/code/MFW/muscle3/bin/COBRA/ets_M3
   gem_surr_impl:
     executable: python3 /u/yyudin/code/MFW/muscle3/src/gem_surr_M3.py
   gem_surr_impl_debug:

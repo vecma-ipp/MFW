@@ -33,7 +33,7 @@ program imp4dv_M3
   call LIBMUSCLE_PortsDescription_add(ports, YMMSL_Operator_S, 'equilibrium_in')
   call LIBMUSCLE_PortsDescription_add(ports, YMMSL_Operator_S, 'coretransp_in')
 
-  call LIBMUSCLE_PortsDescription_add(ports, YMMSL_Operator_O_I, 'coretransp_out')
+  call LIBMUSCLE_PortsDescription_add(ports, YMMSL_Operator_O_I, 'coretransp_out')  
 
   !call LIBMUSCLE_PortsDescription_add(ports, YMMSL_Operator_O_F, 'coretransp_final')
 
@@ -49,40 +49,17 @@ program imp4dv_M3
      !###  INIT (F_INIT)  ########################!
 
      print *, ">entering the loop"
-     
-    !  ! recv init equilibrium
-    !  rmsg = LIBMUSCLE_Instance_receive(instance, 'equilibrium_init')
-    !  rdata = LIBMUSCLE_Message_get_data(rmsg)
-    !  allocate (equilibrium_in_buf(LIBMUSCLE_DataConstRef_size(rdata)))
-    !  call LIBMUSCLE_DataConstRef_as_byte_array(rdata, equilibrium_in_buf)
-    !  call LIBMUSCLE_DataConstRef_free(rdata)
-    !  call LIBMUSCLE_Message_free(rmsg)
-    !  ! recv init coreprof
-    !  rmsg = LIBMUSCLE_Instance_receive(instance, 'coreprof_init')
-    !  rdata = LIBMUSCLE_Message_get_data(rmsg)
-    !  allocate (coreprof_in_buf(LIBMUSCLE_DataConstRef_size(rdata)))
-    !  call LIBMUSCLE_DataConstRef_as_byte_array(rdata, coreprof_in_buf)
-    !  call LIBMUSCLE_DataConstRef_free(rdata)
-    !  t_init = LIBMUSCLE_Message_timestamp(rmsg)
-    !  call LIBMUSCLE_Message_free(rmsg)
-    !  ! recv init coretransp
-    !  rmsg = LIBMUSCLE_Instance_receive(instance, 'coretransp_init')
-    !  rdata = LIBMUSCLE_Message_get_data(rmsg)
-    !  allocate (coreprof_in_buf(LIBMUSCLE_DataConstRef_size(rdata)))
-    !  call LIBMUSCLE_DataConstRef_as_byte_array(rdata, coretransp_in_buf)
-    !  call LIBMUSCLE_DataConstRef_free(rdata)
-    !  t_init = LIBMUSCLE_Message_timestamp(rmsg)
-    !  call LIBMUSCLE_Message_free(rmsg)
 
      !###  S  #################################!
      if (associated(coreprof_in_buf)) deallocate(coreprof_in_buf)
      if (associated(equilibrium_in_buf)) deallocate(equilibrium_in_buf)
      if (associated(coretransp_in_buf)) deallocate(coretransp_in_buf)
+
      ! recv coreprof
      print *, ">receiving coreprof"
      rmsg = LIBMUSCLE_Instance_receive(instance, 'coreprof_in')
      rdata = LIBMUSCLE_Message_get_data(rmsg)
-     allocate (equilibrium_in_buf(LIBMUSCLE_DataConstRef_size(rdata)))
+     allocate (coreprof_in_buf(LIBMUSCLE_DataConstRef_size(rdata)))
      call LIBMUSCLE_DataConstRef_as_byte_array(rdata, coreprof_in_buf)
      call LIBMUSCLE_DataConstRef_free(rdata)
      call LIBMUSCLE_Message_free(rmsg)
@@ -104,9 +81,16 @@ program imp4dv_M3
      call LIBMUSCLE_Message_free(rmsg)
 
      ! calling imp4dv
-     !allocate(coretransp_out_buf, source=coretransp_in_buf)
+     allocate(coretransp_out_buf, source=coretransp_in_buf)
 
-     print *, coretransp_in_buf(1:10) !DEBUG
+     print *, ">printing first ", 64, " of equilibrium_in_buf of size ", size(equilibrium_in_buf) !DEBUG
+     print *, equilibrium_in_buf(1:64) !DEBUG
+
+     print *, ">printing first ", 64, " of coreprof_in_buf of size ", size(coreprof_in_buf) !DEBUG
+     print *, coreprof_in_buf(1:64) !DEBUG
+
+     print *, ">printing first ", 64, " of coretransp_out_buf of size ", size(coretransp_out_buf) !DEBUG
+     print *, coretransp_out_buf(1:64) !DEBUG
 
      print *, ">calling imp4dv2buf"
      call imp4dv2buf( &
@@ -115,7 +99,7 @@ program imp4dv_M3
           coretransp_in_buf, &
           coretransp_out_buf)
 
-     print *,"IMP4DV CALCULATED D AND V"
+     print *,"IMP4DV CALCULATED Ds AND Vs"
 
      deallocate(coreprof_in_buf)
      !allocate(coreprof_in_buf, source=coretransp_in_buf)
@@ -127,17 +111,9 @@ program imp4dv_M3
      call LIBMUSCLE_Instance_send(instance, 'coretransp_out', smsg)
      call LIBMUSCLE_Message_free(smsg)
      call LIBMUSCLE_Data_free(sdata)
-          
+  
      deallocate(coretransp_out_buf)
      nullify(coretransp_out_buf)
-
-    !  !###  O_F  #################################!
-    !  ! send coretransp
-    !  sdata = LIBMUSCLE_Data_create_byte_array(coretransp_out_buf)
-    !  smsg = LIBMUSCLE_Message_create(t_current, sdata)
-    !  call LIBMUSCLE_Instance_send(instance, 'coretransp_final', smsg)
-    !  call LIBMUSCLE_Message_free(smsg)
-    !  call LIBMUSCLE_Data_free(sdata)
 
      !deallocate(coretransp_out_buf)
 
