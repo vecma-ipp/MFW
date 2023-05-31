@@ -1,0 +1,225 @@
+SUBROUTINE IMP4DV(eq, coreprof, coretransp_in, coretransp)
+
+!...  here we assume the incoming CPO has flux = <Gamma dot grad rho>
+!...  the convention is flux of a = gm3 (a Veff - Deff da/drho_tor)
+!...  this rho tor has units so stay in this normalisation
+!...  assume equil has the only correct normalisation max rho tor
+!...  no need to do V' but take gm3 from equil
+
+!...  we need the coreprof CPO for the n's
+
+!...  ambipolarity rules: all Ds are equal to De and fluxes determine the Vs
+
+  USE IMP4DV_Coeff
+
+  IMPLICIT NONE
+
+  TYPE (type_equilibrium), pointer ::  eq(:)
+  TYPE (type_coreprof), pointer :: coreprof(:)
+  TYPE (type_coretransp), pointer :: coretransp_in(:), coretransp(:)
+
+  INTEGER(ITM_I4) :: i,ion
+
+!...  write out input cpos
+
+  IF (write_cpos) THEN
+
+  call open_write_file(12, 'IMP4In' )
+  call write_cpo(eq(1), 'equilibrium' )
+  call write_cpo(coreprof(1), 'coreprof' )
+  call write_cpo(coretransp_in(1), 'coretransp' )
+  call close_write_file
+
+  END IF
+
+!...  grid sizes
+
+  npsi = SIZE(eq(1)%profiles_1d%rho_tor)
+  nr = SIZE(coreprof(1)%rho_tor_norm)
+  nrho = SIZE(coretransp_in(1)%values(1)%rho_tor_norm)
+  nion = SIZE(coretransp_in(1)%values(1)%ni_transp%flux, 2)
+
+  print *, "imp4dv> using a version with a rho_tor_norm existence check" !DEBUG
+  LOGICAL :: use_rho_tor
+  use_rho_tor = .FALSE.
+
+  IF ((ALL(coreprof(1)%rho_tor_norm)==0.0) .AND. MAXVAL(coreprof(1)%rho_tor) < 0.1) THEN
+     use_rho_tor = .TRUE.
+  END IF
+
+  IF (nr == 0 .OR. MAXVAL(coreprof(1)%rho_tor_norm) < 0.1) THEN
+     WRITE (0,*) 'ERROR: please fill and set coreprof rho tor_norm'
+     STOP
+  END IF
+
+  IF ((nrho == 0 .OR. MAXVAL(coretransp_in(1)%values(1)%rho_tor_norm) < 0.1) .AND. use_rho_tor==.FALSE.) THEN
+     WRITE (0,*) 'ERROR: please fill and set coretransp rho tor_norm'
+     STOP
+  END IF
+
+  IF (nion == 0 .OR. .NOT. ASSOCIATED(coretransp_in(1)%values(1)%ne_transp%flux)) THEN
+     WRITE (0,*) 'ERROR: please fill and set fluxes'
+     STOP
+  END IF
+
+  nr = SIZE(coreprof(1)%rho_tor)
+  nrho = SIZE(coretransp_in(1)%values(1)%rho_tor)
+
+!...  initialise output CPO
+
+  allocate(coretransp(1))
+  call copy_cpo(coretransp_in(1),coretransp(1))
+
+!...  allocations
+
+  ALLOCATE(rho_eq(npsi))
+  ALLOCATE(rho_prof(nr))
+  ALLOCATE(rho(nrho))
+
+  ALLOCATE(gm3(nrho))
+
+  ALLOCATE(nnix(nrho,0:nion))
+  ALLOCATE(ttix(nrho,0:nion))
+  ALLOCATE(rlnix(nrho,0:nion))
+  ALLOCATE(rltix(nrho,0:nion))
+  ALLOCATE(ffix(nrho,0:nion))
+  ALLOCATE(ggix(nrho,0:nion))
+
+!...  get geometry
+
+  a00=eq(1)%eqgeometry%a_minor
+  b00=eq(1)%global_param%toroid_field%b0
+  r00=eq(1)%global_param%toroid_field%r0
+
+  rho_eq=eq(1)%profiles_1d%rho_tor
+  rho_tor_max=MAXVAL(rho_eq)
+  IF (use_rho_tor) THEN
+   rho_prof = coreprof(1)%rho_tor
+   rho = coretransp(1)%values(1)%rho_tor
+  ELSE
+   rho_prof = coreprof(1)%rho_tor_norm * rho_tor_max
+   rho = coretransp(1)%values(1)%rho_tor_norm * rho_tor_max
+  END IF
+
+  IF (ASSOCIATED(eq(1)%eqgeometry%boundary)) THEN
+     IF (ASSOCIATED(eq(1)%eqgeometry%boundary(1)%r)) THEN
+        b00=b00*r00
+        r_min=MINVAL(eq(1)%eqgeometry%boundary(1)%r)
+        r_max=MAXVAL(eq(1)%eqgeometry%boundary(1)%r)
+        a00=(r_max-r_min)/2.
+        r00=(r_max+r_min)/2.
+        b00=b00/r00
+     END IF
+  END IF
+
+  IF (ASSOCIATED(eq(1)%profiles_1d%gm3)) THEN
+     CALL L3interp( eq(1)%profiles_1d%gm3, rho_eq, npsi, &
+          gm3, rho, nrho)
+  ELSE
+     gm3=1.0
+  END IF
+
+!...  get parameters
+
+  CALL L3interp( coreprof(1)%ne%value(:), rho_prof, nr, &
+       nnix(:,0), rho, nrho)
+  CALL L3interp( coreprof(1)%te%value(:), rho_prof, nr, &
+       ttix(:,0), rho, nrho)
+  CALL L3deriv( coreprof(1)%ne%value(:), rho_prof, nr, &
+       rlnix(:,0), rho, nrho)
+  CALL L3deriv( coreprof(1)%te%value(:), rho_prof, nr, &
+       rltix(:,0), rho, nrho)
+  ffix(:,0)=coretransp(1)%values(1)%ne_transp%flux(:)
+  ggix(:,0)=coretransp(1)%values(1)%te_transp%flux(:)
+
+  DO ion=1,nion
+     CALL L3interp( coreprof(1)%ni%value(:,ion), rho_prof, nr, &
+          nnix(:,ion), rho, nrho)
+     CALL L3interp( coreprof(1)%ti%value(:,ion), rho_prof, nr, &
+          ttix(:,ion), rho, nrho)
+     CALL L3deriv( coreprof(1)%ni%value(:,ion), rho_prof, nr, &
+          rlnix(:,ion), rho, nrho)
+     CALL L3deriv( coreprof(1)%ti%value(:,ion), rho_prof, nr, &
+          rltix(:,ion), rho, nrho)
+     ffix(:,ion)=coretransp(1)%values(1)%ni_transp%flux(:,ion)
+     ggix(:,ion)=coretransp(1)%values(1)%ti_transp%flux(:,ion)
+  END DO
+
+!...  assume fluxes get Ds and Vs
+
+  DO i=1,nrho
+     DO ion=0,nion
+
+        tti=ttix(i,ion)
+        nni=nnix(i,ion)
+        rlni=-rlnix(i,ion)/nni
+        rlti=-rltix(i,ion)/tti
+        ffi=ffix(i,ion)/(nni*gm3(i))
+        ggi=ggix(i,ion)/(nni*kb*tti*gm3(i))
+
+        lperp=1./MAX( ABS(rlni), ABS(rlti) )
+
+        diffi=ABS(ffi)*lperp
+        chii=ABS(ggi)*lperp
+
+        IF (ion == 0) THEN
+           diffi = MAX(diffi, 0.33333333_R8*chii)
+           diffe = diffi
+        ELSE
+           diffi = diffe
+        END IF
+
+        vconvi=ffi - diffi*rlni
+        yconvi=ggi - chii*rlti
+
+        IF (ion == 0) THEN
+           coretransp(1)%values(1)%ne_transp%diff_eff(i,2) = diffi
+           coretransp(1)%values(1)%te_transp%diff_eff(i) = chii
+           coretransp(1)%values(1)%ne_transp%vconv_eff(i,2) = vconvi
+           coretransp(1)%values(1)%te_transp%vconv_eff(i) = yconvi
+        ELSE
+           coretransp(1)%values(1)%ni_transp%diff_eff(i,ion,2) = diffi
+           coretransp(1)%values(1)%ti_transp%diff_eff(i,ion) = chii
+           coretransp(1)%values(1)%ni_transp%vconv_eff(i,ion,2) = vconvi
+           coretransp(1)%values(1)%ti_transp%vconv_eff(i,ion) = yconvi
+        END IF
+
+        ffi=(vconvi + diffi*rlni) * gm3(i)*nni
+        ggi=(yconvi + chii*rlti) * gm3(i)*nni*kb*tti
+        IF (ion == 0) THEN
+           coretransp(1)%values(1)%ne_transp%flux(i) = ffi
+           coretransp(1)%values(1)%te_transp%flux(i) = ggi
+        ELSE
+           coretransp(1)%values(1)%ni_transp%flux(i,ion) = ffi
+           coretransp(1)%values(1)%ti_transp%flux(i,ion) = ggi
+        END IF
+     END DO
+  END DO
+
+!...  time
+
+  coretransp(1)%time = coretransp_in(1)%time
+
+!...  write out output cpos
+
+  IF (write_cpos) THEN
+
+  call open_write_file(12, 'IMP4Out' )
+  call write_cpo(coretransp(1), 'Coretransp' )
+  call close_write_file
+
+  END IF
+
+!...  clean up
+
+  DEALLOCATE(rho_eq)
+  DEALLOCATE(gm3)
+
+  DEALLOCATE(nnix)
+  DEALLOCATE(ttix)
+  DEALLOCATE(rlnix)
+  DEALLOCATE(rltix)
+  DEALLOCATE(ffix)
+  DEALLOCATE(ggix)
+
+END SUBROUTINE IMP4DV
