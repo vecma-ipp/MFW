@@ -185,7 +185,7 @@ settings:
   turbulence.rho_ind_s: 68
   turbulence.profs_out: "ti_transp.flux"
   turbulence.surrogate_path: "../../../../../../workflows/gem_es_model.pickle"
-  turbulence.cortransp_default: "ets_coretransp_in.cpo"
+  turbulence.cortransp_default: "../../../../../../workflows/gem_coretransp.cpo"
 
 
 #checkpoints:

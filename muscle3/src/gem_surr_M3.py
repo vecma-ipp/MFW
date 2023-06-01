@@ -159,7 +159,9 @@ def gem_surr_M3():
         coretransp_default_file_name = instance.get_setting('cortransp_default', 'str')
         init_cpo_dir = instance.get_setting('init_cpo_dir', 'str')
 
-        coretransp_default_file_path = init_cpo_dir + '/' + coretransp_default_file_name
+        #coretransp_default_file_path = init_cpo_dir + '/' + coretransp_default_file_name
+        coretransp_default_file_path = coretransp_default_file_name
+
         n_dim_out = len([prof_out_names])
 
         # Initialising surrogate model
