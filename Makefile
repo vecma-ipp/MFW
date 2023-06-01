@@ -50,7 +50,7 @@ all: kernels
 	@echo -e "\033[35m\033[1m ==== Full Build Completed ==== \033[0m"
 
 
-codes: libbds bdseq bohmgb est gem chease imp4dv gem0 
+codes: libbds bdseq bohmgb ets gem chease imp4dv gem0 
 #orb5
 
 
@@ -308,9 +308,10 @@ clean-gem: revert-gem
 	|| echo -e "\033[31m\033[1m -- FAIL -- \033[0m"
 
 compile-gem: ual libbds clean-gem patch-gem
-	@echo -e "\033[36m\033[1m ++++ Build GEM (change main function and MPI topology init; w/o getting from a repository) ++++ \033[0m"; \
+	@echo -e "\033[36m\033[1m ++++ Build GEM (change main function and MPI topology init; outputs in Energy(); w/o getting from a repository) ++++ \033[0m"; \
 	cp mppein.h90.modified externals/gem/include/mppein.h90 ;\
 	cp gem.F90.modified externals/gem/actor/gem.F90 ;\
+	cp energy.F90.modified externals/gem/main/energy.F90 ;\
 	($(MAKE) --no-print-directory -C externals -f Makefile.gem \
 	&& echo -e "\033[32m\033[1m -- OK -- \033[0m") \
 	|| echo -e "\033[31m\033[1m -- FAIL -- \033[0m"
@@ -342,6 +343,7 @@ clean-dfefi:
 # imp4dv #######################################################################
 imp4dv: ual libbds get-imp4dv
 	@echo -e "\033[36m\033[1m ++++ Build IMP4DV ++++ \033[0m"; \
+	cp imp4dv.f90.modified externals/imp4dv/main/imp4dv.f90; \
 	($(MAKE) --no-print-directory -C externals -f Makefile.imp4dv \
 	&& echo -e "\033[32m\033[1m -- OK -- \033[0m") \
 	|| echo -e "\033[31m\033[1m -- FAIL -- \033[0m"

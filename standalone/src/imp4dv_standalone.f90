@@ -93,6 +93,8 @@ contains
     allocate(equil_in(1))
     allocate(corep_in(1))
     allocate(coret_in(1))
+    !print *, "> first ", 64, " symobols of the corep_in_buf of size ", size(corep_in_buf) !DEBUG 
+    !print *, corep_in_buf(1:64) !DEBUG
 
     call getenv("USER",username)
     call getenv("CPO_SERIALIZATION_DIR",tmpdir)
@@ -104,10 +106,13 @@ contains
     end if
 
     equil_in_file = TRIM(tmpdir)//TRIM(username)//'_imp4dv_equilibrium_in.cpo'
+    !print *, ">Calling byte2file" ! DEBUG
     call byte2file(equil_in_file, equil_in_buf, size(equil_in_buf))
+    print *, ">Called byte2file: file ", TRIM(tmpdir)//TRIM(username)//'_imp4dv_equilibrium_in.cpo', " should be created" ! DEBUG
     open (unit = 10, file = equil_in_file, &
          status = 'old', form = 'formatted', &
          action = 'read', iostat = ios)
+   !print *, ">Opening file to read" !DEBUG
     if (ios == 0) then
        close (10)
        call open_read_file(10, equil_in_file )
@@ -117,27 +122,39 @@ contains
        print *,"ERROR: no input equilibrium"
        STOP
     end if
+    !print *, ">Read CPO from the new file" !DEBUG
 
     corep_in_file = TRIM(tmpdir)//TRIM(username)//'_imp4dv_coreprof_in.cpo'
+    !print *, ">Calling byte2file" ! DEBUG
+    !print *, "> first ", 64, " symobols of the corep_in_buf", corep_in_buf(1:64) !DEBUG
     call byte2file(corep_in_file, corep_in_buf, size(corep_in_buf))
+    !print *, ">Called byte2file: file ", TRIM(tmpdir)//TRIM(username)//'_imp4dv_coreprof_in.cpo', " should be created" ! DEBUG
+
     open (unit = 10, file = corep_in_file, &
          status = 'old', form = 'formatted', &
          action = 'read', iostat = ios)
+   !print *, ">Opening file to read" !DEBUG
     if (ios == 0) then
        close (10)
        call open_read_file(10, corep_in_file )
+       !print *, ">Reading coreprof CPO" !DEBUG
        call read_cpo(corep_in(1), 'coreprof')
+       !print *, ">Coreprof is read" !DEBUG
        call close_read_file
     else
        print *,"ERROR: no input coreprof"
        STOP
     end if
+    !print *, ">Read CPO from the new file" !DEBUG
 
     coret_in_file = TRIM(tmpdir)//TRIM(username)//'_imp4dv_coretransp_in.cpo'
+    !print *, ">Calling byte2file" ! DEBUG
     call byte2file(coret_in_file, coret_in_buf, size(coret_in_buf))
+    !print *, ">Called byte2file: file ", TRIM(tmpdir)//TRIM(username)//'_imp4dv_coretransp_in.cpo', " should be created" ! DEBUG
     open (unit = 10, file = coret_in_file, &
          status = 'old', form = 'formatted', &
          action = 'read', iostat = ios)
+   !print *, ">Opening file to read" !DEBUG
     if (ios == 0) then
        close (10)
        call open_read_file(10, coret_in_file )
@@ -147,6 +164,7 @@ contains
        print *,"ERROR: no input coretransp"
        STOP
     end if
+    !print *, ">Read CPO from the new file" !DEBUG
 
     call imp4dv_cpo(equil_in, corep_in, coret_in, coret_out)
 

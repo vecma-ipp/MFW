@@ -19,6 +19,8 @@ SUBROUTINE IMP4DV(eq, coreprof, coretransp_in, coretransp)
   TYPE (type_coretransp), pointer :: coretransp_in(:), coretransp(:)
 
   INTEGER(ITM_I4) :: i,ion
+    
+  LOGICAL :: use_rho_tor
 
 !...  write out input cpos
 
@@ -39,11 +41,12 @@ SUBROUTINE IMP4DV(eq, coreprof, coretransp_in, coretransp)
   nrho = SIZE(coretransp_in(1)%values(1)%rho_tor_norm)
   nion = SIZE(coretransp_in(1)%values(1)%ni_transp%flux, 2)
 
-  print *, "imp4dv> using a version with a rho_tor_norm existence check" !DEBUG
-  LOGICAL :: use_rho_tor
+  print *, "imp4dv> using a version with a rho_tor_norm existence at coretransp check" !DEBUG
+
   use_rho_tor = .FALSE.
 
-  IF ((ALL(coreprof(1)%rho_tor_norm)==0.0) .AND. MAXVAL(coreprof(1)%rho_tor) < 0.1) THEN
+  ! Additional check if the rho_tor_norm are not initialised in the parameter file
+  IF (ALL(ABS(coretransp_in(1)%values(1)%rho_tor_norm) < 1E-6) .AND. (MAXVAL(coretransp_in(1)%values(1)%rho_tor) >= 0.1)) THEN
      use_rho_tor = .TRUE.
   END IF
 
@@ -52,7 +55,7 @@ SUBROUTINE IMP4DV(eq, coreprof, coretransp_in, coretransp)
      STOP
   END IF
 
-  IF ((nrho == 0 .OR. MAXVAL(coretransp_in(1)%values(1)%rho_tor_norm) < 0.1) .AND. use_rho_tor==.FALSE.) THEN
+  IF ((nrho == 0 .OR. MAXVAL(coretransp_in(1)%values(1)%rho_tor_norm) < 0.1) .AND. (use_rho_tor == .FALSE.)) THEN
      WRITE (0,*) 'ERROR: please fill and set coretransp rho tor_norm'
      STOP
   END IF
@@ -93,7 +96,8 @@ SUBROUTINE IMP4DV(eq, coreprof, coretransp_in, coretransp)
 
   rho_eq=eq(1)%profiles_1d%rho_tor
   rho_tor_max=MAXVAL(rho_eq)
-  IF (use_rho_tor) THEN
+  ! Additional check if the rho_tor_norm are not initialised in the parameter file
+  IF (use_rho_tor == .TRUE.) THEN
    rho_prof = coreprof(1)%rho_tor
    rho = coretransp(1)%values(1)%rho_tor
   ELSE
