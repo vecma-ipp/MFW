@@ -25,9 +25,6 @@ program imp4dv_M3
   character(kind=c_char), pointer :: coretransp_out_buf(:)
 
   ports = LIBMUSCLE_PortsDescription_create()
-  !call LIBMUSCLE_PortsDescription_add(ports, YMMSL_Operator_F_INIT, 'coreprof_init')
-  !call LIBMUSCLE_PortsDescription_add(ports, YMMSL_Operator_F_INIT, 'equilibrium_init')
-  !call LIBMUSCLE_PortsDescription_add(ports, YMMSL_Operator_F_INIT, 'coretransp_init')
 
   call LIBMUSCLE_PortsDescription_add(ports, YMMSL_Operator_S, 'coreprof_in')
   call LIBMUSCLE_PortsDescription_add(ports, YMMSL_Operator_S, 'equilibrium_in')
@@ -35,14 +32,12 @@ program imp4dv_M3
 
   call LIBMUSCLE_PortsDescription_add(ports, YMMSL_Operator_O_I, 'coretransp_out')  
 
-  !call LIBMUSCLE_PortsDescription_add(ports, YMMSL_Operator_O_F, 'coretransp_final')
-
   instance = LIBMUSCLE_Instance_create(ports)
   call LIBMUSCLE_PortsDescription_free(ports)
 
   coretransp_in_buf => null()
   
-  print *, ">before entering the loop" !!!DEBUG
+  !print *, ">before entering the loop" !DEBUG
   ! main loop
   do while (LIBMUSCLE_Instance_reuse_instance(instance))
 
@@ -83,14 +78,14 @@ program imp4dv_M3
      ! calling imp4dv
      allocate(coretransp_out_buf, source=coretransp_in_buf)
 
-     print *, ">printing first ", 64, " of equilibrium_in_buf of size ", size(equilibrium_in_buf) !DEBUG
-     print *, equilibrium_in_buf(1:64) !DEBUG
+     !print *, ">printing first ", 64, " of equilibrium_in_buf of size ", size(equilibrium_in_buf) !DEBUG
+     !print *, equilibrium_in_buf(1:64) !DEBUG
 
-     print *, ">printing first ", 64, " of coreprof_in_buf of size ", size(coreprof_in_buf) !DEBUG
-     print *, coreprof_in_buf(1:64) !DEBUG
+     !print *, ">printing first ", 64, " of coreprof_in_buf of size ", size(coreprof_in_buf) !DEBUG
+     !print *, coreprof_in_buf(1:64) !DEBUG
 
-     print *, ">printing first ", 64, " of coretransp_out_buf of size ", size(coretransp_out_buf) !DEBUG
-     print *, coretransp_out_buf(1:64) !DEBUG
+     !print *, ">printing first ", 64, " of coretransp_out_buf of size ", size(coretransp_out_buf) !DEBUG
+     !print *, coretransp_out_buf(1:64) !DEBUG
 
      print *, ">calling imp4dv2buf"
      call imp4dv2buf( &
