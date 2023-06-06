@@ -77,7 +77,7 @@ program ets_M3
      slice_init = LIBMUSCLE_Instance_get_setting_as_int8(instance, 'slice_initial_number')
      save_slice = LIBMUSCLE_Instance_get_setting_as_logical(instance, 'save_slice')
      
-     print *, ">receiving equilibrium CPO" !!!DEBUG
+     print *, ">receiving equilibrium_init" !!!DEBUG
      ! recv init equilibrium
      rmsg = LIBMUSCLE_Instance_receive(instance, 'equilibrium_init')
      rdata = LIBMUSCLE_Message_get_data(rmsg)
@@ -120,18 +120,24 @@ program ets_M3
 
      t_current = t_init
      step = 0
+     
+     print *, '>ets: t_init=', t_current, ' and step=', step !DEBUG
+
      !###  TIME LOOP  ############################!
      do while (t_current+dt_max .lt. t_init+t_duration)
         
+        print *, '>ets: new iteration with t_current=', t_current, ' at step=', step !DEBUG
         !###  O_I  ###############################!
         ! send coreprof
         print *, '>ets: printing first ', 64, ' symbols of coreprof_out_buf', coreprof_out_buf(1:64)  ! DEBUG
+        print *, 'sending coreprof_out_flux2tcoeff'
         sdata = LIBMUSCLE_Data_create_byte_array(coreprof_out_buf)
         smsg = LIBMUSCLE_Message_create(t_current, sdata)
         call LIBMUSCLE_Instance_send(instance, 'coreprof_out_flux2tcoeff', smsg)
         call LIBMUSCLE_Message_free(smsg)
         call LIBMUSCLE_Data_free(sdata)
 
+        print *, 'sending coreprof_out'
         sdata = LIBMUSCLE_Data_create_byte_array(coreprof_out_buf)
         smsg = LIBMUSCLE_Message_create(t_current, sdata)
         call LIBMUSCLE_Instance_send(instance, 'coreprof_out', smsg)
@@ -139,7 +145,8 @@ program ets_M3
         call LIBMUSCLE_Data_free(sdata)
         
         ! send equilibrium
-        print *, '>ets: printing first ', 64, ' symbols of coreprof_out_buf', coreprof_out_buf(1:64)  ! DEBUG
+        print *, '>ets: printing first ', 64, ' symbols of equilibrium_out_buf', equilibrium_out_buf(1:64)  ! DEBUG
+        print *, 'sending equilibrium_out'
         sdata = LIBMUSCLE_Data_create_byte_array(equilibrium_out_buf)
         smsg = LIBMUSCLE_Message_create(t_current, sdata)
         call LIBMUSCLE_Instance_send(instance, 'equilibrium_out', smsg)
@@ -155,6 +162,7 @@ program ets_M3
         if (associated(equilibrium_in_buf)) deallocate(equilibrium_in_buf)
         if (associated(coretransp_in_buf)) deallocate(coretransp_in_buf)
         ! recv equilibrium
+        print *, 'receiving equilibrium_in'
         rmsg = LIBMUSCLE_Instance_receive(instance, 'equilibrium_in')
         rdata = LIBMUSCLE_Message_get_data(rmsg)
         allocate (equilibrium_in_buf(LIBMUSCLE_DataConstRef_size(rdata)))
@@ -162,6 +170,7 @@ program ets_M3
         call LIBMUSCLE_DataConstRef_free(rdata)
         call LIBMUSCLE_Message_free(rmsg)
         ! recv coretransp
+        print *, 'receiving coretransp_in'
         rmsg = LIBMUSCLE_Instance_receive(instance, 'coretransp_in')
         rdata = LIBMUSCLE_Message_get_data(rmsg)
         allocate (coretransp_in_buf(LIBMUSCLE_DataConstRef_size(rdata)))

@@ -141,8 +141,8 @@ def gem_surr_M3():
 
     # Creating a MUSCLE3 instance
     instance = Instance({
+        Operator.O_F:     ['coretransp_out',],
         Operator.F_INIT: ['coreprof_in', 'equilibrium_in'],
-        Operator.O_F:    ['coretransp_out',],
                         },
         #USES_CHECKPOINT_API,
                        )
