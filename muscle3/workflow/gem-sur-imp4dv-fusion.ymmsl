@@ -31,13 +31,13 @@ model:
           - coresource_init
           - coreimpur_init
           - toroidfield_init
-        s:
-          - equilibrium_in
-          - coretransp_in
         o_i:
           - coreprof_out
           - coreprof_out_flux2tcoeff
           - equilibrium_out
+        s:
+          - equilibrium_in
+          - coretransp_in
         o_f:
           - coreprof_final
           - equilibrium_final
@@ -47,15 +47,15 @@ model:
     turbulence:
       implementation: gem_surr_impl
       ports:
+        o_f: coretransp_out
         f_init: 
           - coreprof_in
           - equilibrium_in
-        o_f: coretransp_out
     equilibrium: 
       implementation: chease_impl
       ports:
-        f_init: equilibrium_in
         o_f: equilibrium_out
+        f_init: equilibrium_in
 #    duplicate:   
 #      implementation: duplicate_impl
 #      ports:
@@ -67,17 +67,12 @@ model:
     flux2tcoeff:
       implementation: imp4dv_impl
       ports:
-        #f_init:
-        #  - coreprof_init
-        #  - equilibrium_init
-        #  - coretransp_init
-        s:
+        o_f: coretransp_out
+        f_init:
           - coreprof_in
           - equilibrium_in
           - coretransp_in
-        o_i: coretransp_out
-        #o_f: coretransp_final
-    
+
   conduits:
     init.equilibrium_init:       transport.equilibrium_init
     init.coreprof_init:          transport.coreprof_init
@@ -175,7 +170,7 @@ implementations:
       - /u/yyudin/code/MFW/muscle3/bin/COBRA/imp4dv_M3
 
 settings:
-  transport.duration: 0.05
+  transport.duration: 0.1
   transport.dt: 0.01
   init_cpo_dir: "../../../../../../workflows/AUG_28906_6"
   final_cpo_dir: "./"
