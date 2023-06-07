@@ -33,6 +33,9 @@ contains
     call fill_param(code_parameters, 'gem.xml', '', 'gem.xsd')
 
     !print *,"run gem routine"
+    !DEBUG
+    print *, "Calling gem "
+    !End of Debug
     call gem(equil, corep, coret, code_parameters)
 
   end subroutine gem_cpo

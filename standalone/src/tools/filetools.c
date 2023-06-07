@@ -1,5 +1,6 @@
 #include "filetools.h"
-
+#include <stdio.h>
+#include <stdlib.h>
 
 void dealloc_charbuf(char **data)
 {
@@ -80,7 +81,17 @@ void file2byte(const char *filename, unsigned char **data, int *size)
   size_t ret_size = 0;
   int stop = 0;
 
+  // //DEBUG part: 5 lines
+  // fprintf(stdout, "Filename = %s \n", filename);
+  // int MAX_PATH_LENGTH = 128;
+  // char* path[MAX_PATH_LENGTH];
+  // getcwd(path, MAX_PATH_LENGTH);
+  // fprintf(stdout, "Current Directory = %s \n", path);  
+
   f = fopen(filename,"r");
+  //DEBUG part: 2 lines
+  if(f == NULL)
+  {fprintf(stdout, "Couldn't open the file! \n");}
   *data = malloc(tmpsize*sizeof(unsigned char));
 
   while(!stop)  
@@ -93,7 +104,7 @@ void file2byte(const char *filename, unsigned char **data, int *size)
 	{
 	  oldsize = tmpsize;
 	  tmpsize += segment;
-	  //printf("Increase buffer size to %d KB\n",tmpsize/1024);
+	  printf("Increase buffer size to %d KB\n",tmpsize/1024); //was commented out
 	  *data = realloc(*data, tmpsize*sizeof(unsigned char));
 	}
       // buffer to large => shrink to exact size
@@ -105,7 +116,7 @@ void file2byte(const char *filename, unsigned char **data, int *size)
 	}
     }
 
-  //printf("Just read %.2f KB\n",(double)ret_size/1024);
+  printf("Just read %.2f KB\n",(double)ret_size/1024); //was commneted out
   fclose(f);
 
   *size = ret_size;
@@ -118,11 +129,14 @@ void byte2file(const char *filename, const unsigned char *data, int size)
   FILE *f = NULL;
   size_t ret_size = 0;
 
+  printf(">byte2file: opening file\n"); //DEBUG
   f = fopen(filename,"w");
   
   ret_size = fwrite(data, sizeof(unsigned char), size*sizeof(unsigned char), f);
 
-  //printf("Number of written KB = %.2f\n",(double)ret_size/1024);
+  printf(">byte2file: file is written\n"); //DEBUG
+  //DEBUG: next line is originally commented out!
+  printf("Number of written KB = %.2f\n",(double)ret_size/1024);
   fclose(f);
 }
 

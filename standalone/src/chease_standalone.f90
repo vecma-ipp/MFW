@@ -41,6 +41,9 @@ contains
     ! Get code params
     call fill_param(code_parameters, 'chease.xml', '', 'chease.xsd')
 
+    ! DEBUG: next 1 line
+    print *, code_parameters%parameters !%equilibrium !%number_intervals_mapping_mesh%small%NCHI
+
     !...  run CHEASE
     call chease(equil_in, equil_out, code_parameters, output_flag, output_message)
 
@@ -106,6 +109,9 @@ contains
        print *,"ERROR: no input equilibrium"
        STOP
     end if
+
+    !DEBUG: next 1 line
+    !print *, equil_in%number_intervals_mapping_mesh
 
     call chease_cpo(equil_in, equil_out)
 
