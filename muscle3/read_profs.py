@@ -1,5 +1,6 @@
 import sys, os, csv
 import numpy as np
+import matplotlib.pyplot as plt
 from ascii_cpo import read
 
 sys.path.append('../uq/basicda')
@@ -29,11 +30,14 @@ def read_files(foldername, quantity, attribute, coord, filetype='coreprof'):
         a = read_attrib(foldername+f, quantity, attribute, coord, filetype)
         attributes.append(a)
 
-    np.savetxt('res_'+quantity+'_'+attribute+'.csv', np.array(attributes), delimiter=',')
+    atrributes_array = np.array(attributes)
+    np.savetxt('res_'+quantity+'_'+attribute+'.csv', np.array(atrributes_array), delimiter=',')
     
-    return attributes
+    return atrributes_array
 
-fold_name = 'workflow/run_fusion_gem_surr_20230606_145056/instances/transport/workdir/'
+
+date = '20230607_122233'
+fold_name = 'workflow/run_fusion_gem_surr_'+date+'/instances/transport/workdir/'
 
 n_run = 10
 runnum_list = [r for r in range (n_run)]
@@ -45,7 +49,13 @@ attributes = ['value']
 
 coord_num = [68]
 
-read_files(fold_name, quantities[0], attributes[0], coord=coord_num[0], filetype='coreprof')
+data = read_files(fold_name, quantities[0], attributes[0], coord=coord_num[0], filetype='coreprof')
+#print(f"data shape: {data.shape}") #DEBUG
+n_data = len(data)
+
+fig, ax = plt.subplots()
+ax.plot(np.linspace(0, n_data, n_data), data)
+fig.savefig('res_'+quantities[0]+'_'+attributes[0]+'_'+date+'.png')
 
 # val_ev_s, file_names = profile_evol_load(prof_names=quantities, 
 #                                         attrib_names=attributes, 
