@@ -37,6 +37,7 @@ program gem0_M3
   do while (LIBMUSCLE_Instance_reuse_instance(instance))
 
      ! receive equilibrium data
+     print *, "receiving equilibrium_in"
      rmsg = LIBMUSCLE_Instance_receive(instance, 'equilibrium_in')
      rdata = LIBMUSCLE_Message_get_data(rmsg)
      allocate (equilibrium_in_buf(LIBMUSCLE_DataConstRef_size(rdata)))
@@ -45,6 +46,7 @@ program gem0_M3
      call LIBMUSCLE_Message_free(rmsg)
 
      ! receive coreprof data
+     print *, "coreprof_in"
      rmsg = LIBMUSCLE_Instance_receive(instance, 'coreprof_in')
      rdata = LIBMUSCLE_Message_get_data(rmsg)
      allocate (coreprof_in_buf(LIBMUSCLE_DataConstRef_size(rdata)))
@@ -53,6 +55,17 @@ program gem0_M3
      t_cur = LIBMUSCLE_Message_timestamp(rmsg)
      !t_max = LIBMUSCLE_Message_timestamp(rmsg) + t_max
      call LIBMUSCLE_Message_free(rmsg)
+
+     print *, ">printing first ", 64, " of equilibrium_in_buf of size ", size(equilibrium_in_buf) !DEBUG
+     print *, equilibrium_in_buf(1:64) !DEBUG
+
+     print *, ">printing first ", 64, " of coreprof_in_buf of size ", size(coreprof_in_buf) !DEBUG
+     print *, coreprof_in_buf(1:64) !DEBUG
+
+     !print *, ">printing first ", 64, " of coretransp_out_buf of size ", size(coretransp_out_buf) !DEBUG
+     !print *, coretransp_out_buf(1:64) !DEBUG
+
+     print *,"calling gem0"
 
      call gem02buf( &
           equilibrium_in_buf, &

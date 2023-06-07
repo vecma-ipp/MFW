@@ -27,13 +27,19 @@ contains
     type (type_coretransp), pointer :: coret(:)
     type (type_param) :: code_parameters
 
-    !print *,"fortran GEM0 wrapper"
+    print *,"fortran GEM0 wrapper"
 
-    !print *,"get code params"
+    print *,"get code params"
     call fill_param(code_parameters, 'gem0.xml', '', 'gem0.xsd')
 
-    !print *,"run gem0 routine"
+   !  print *,"run gem0 routine"
+   !  print *, ">printing first ", 64, " of equil of size ", size(equil) !DEBUG
+   !  print *, equil(1:64) !DEBUG
+   !  print *, ">printing first ", 64, " of corep of size ", size(corep) !DEBUG
+   !  print *, corep(1:64) !DEBUG
+
     call gem(equil, corep, coret, code_parameters)
+    print *, "finished gem0 routine"
 
   end subroutine gem0_cpo
 
@@ -89,23 +95,29 @@ contains
 
     corep_in_file = TRIM(tmpdir)//TRIM(username)//'_gem0_coreprof_in.cpo'
     call byte2file(corep_in_file, corep_in_buf, size(corep_in_buf))
+    print *, ">opening corep_in_file" !DEBUG
     open (unit = 10, file = corep_in_file, &
          status = 'old', form = 'formatted', &
          action = 'read', iostat = ios)
+   print *, ">opened corep_in_file" !DEBUG
     if (ios == 0) then
+       print *, ">reading corep_in_file" !DEBUG
        close (10)
        call open_read_file(10, corep_in_file )
        call read_cpo(corep_in(1), 'coreprof')
        call close_read_file
+       print *, ">read corep_in_file" !DEBUG
     else
        print *,"ERROR: no input coreprof"
        STOP
     end if
 
+    print *, ">calling gem0" !DEBUG    
     call gem0_cpo(equil_in, corep_in, coret_out)
 
     ! transfer CPO to buf
     !...  write the results
+    print *, ">writing coret_out_file" !DEBUG   
     coret_out_file = 'gem0_coretransp_out.cpo'
     call open_write_file(11,coret_out_file)
     call write_cpo(coret_out(1),'coretransp')
@@ -114,6 +126,8 @@ contains
     call file2byte(coret_out_file, tmpbuf, tmpsize)
     allocate(coret_out_buf(tmpsize))
     coret_out_buf(1:tmpsize) = tmpbuf(1:tmpsize)
+
+    print *, ">deallocating datastructures" !DEBUG   
     call dealloc_cbytebuf(tmpbuf)
 
     call deallocate_cpo(equil_in)

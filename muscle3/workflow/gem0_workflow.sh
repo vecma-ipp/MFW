@@ -6,24 +6,25 @@ if [ -z "$MUSCLE3_HOME" ] ; then
     exit 1
 fi
 
-echo 'Running gem0 workflow in Fortran'
+echo 'Running gem_sur_imp4dv workflow in Fortran & Python'
 
-. ~/muscle3_venv/bin/activate
-muscle_manager fusion.ymmsl &
+. ~/muscle3/bin/muscle3.env
+muscle_manager --start-all gem0-fusion.ymmsl &
+
+echo 'MUSCLE_MANAGER started'
 
 manager_pid=$!
 
-#export LD_LIBRARY_PATH=$MUSCLE3_HOME/lib:$LD_LIBRARY_PATH
-BINDIR=../bin/MARCONI-GNU
+BINDIR=../bin/COBRA/
+SRCDIR=../src/
 
-$BINDIR/stop_M3 --muscle-instance=stop >'stop.log' 2>&1 &
-$BINDIR/duplicate_M3 --muscle-instance=duplicate >'duplicate.log' 2>&1 &
-$BINDIR/gem0_M3 --muscle-instance=turbulence >'turbulence.log' 2>&1 &
-$BINDIR/chease_M3 --muscle-instance=equilibrium >'equilibrium.log' 2>&1 &
-$BINDIR/init_M3 --muscle-instance=init >'init.log' 2>&1 &
-$BINDIR/ets_M3 --muscle-instance=transport >'transport.log' 2>&1 &
+#TODO: may be start with no MPI vesion
+#TODO compile wrapper implementations
+#TODO make sure MUSCLE3 works with FORTRAN
 
 touch muscle3_manager.log
+
+echo '> Now launching the manager'
 tail -f muscle3_manager.log --pid=${manager_pid}
 
 wait
