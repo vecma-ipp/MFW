@@ -48,7 +48,7 @@ program ets_M3
   call LIBMUSCLE_PortsDescription_add(ports, YMMSL_Operator_S, 'coretransp_in')
 
   call LIBMUSCLE_PortsDescription_add(ports, YMMSL_Operator_O_I, 'coreprof_out')
-  call LIBMUSCLE_PortsDescription_add(ports, YMMSL_Operator_O_I, 'coreprof_out_flux2tcoeff')
+  !call LIBMUSCLE_PortsDescription_add(ports, YMMSL_Operator_O_I, 'coreprof_out_flux2tcoeff')
   call LIBMUSCLE_PortsDescription_add(ports, YMMSL_Operator_O_I, 'equilibrium_out')
 
   call LIBMUSCLE_PortsDescription_add(ports, YMMSL_Operator_O_F, 'coreprof_final')
@@ -128,14 +128,15 @@ program ets_M3
         
         print *, '>ets: new iteration with t_current=', t_current, ' at step=', step !DEBUG
         !###  O_I  ###############################!
+        
         ! send coreprof
-        print *, '>ets: printing first ', 64, ' symbols of coreprof_out_buf', coreprof_out_buf(1:64)  ! DEBUG
-        print *, 'sending coreprof_out_flux2tcoeff'
-        sdata = LIBMUSCLE_Data_create_byte_array(coreprof_out_buf)
-        smsg = LIBMUSCLE_Message_create(t_current, sdata)
-        call LIBMUSCLE_Instance_send(instance, 'coreprof_out_flux2tcoeff', smsg)
-        call LIBMUSCLE_Message_free(smsg)
-        call LIBMUSCLE_Data_free(sdata)
+     !    !print *, '>ets: printing first ', 64, ' symbols of coreprof_out_buf', coreprof_out_buf(1:64)  ! DEBUG
+     !    print *, 'sending coreprof_out_flux2tcoeff'
+     !    sdata = LIBMUSCLE_Data_create_byte_array(coreprof_out_buf)
+     !    smsg = LIBMUSCLE_Message_create(t_current, sdata)
+     !    call LIBMUSCLE_Instance_send(instance, 'coreprof_out_flux2tcoeff', smsg)
+     !    call LIBMUSCLE_Message_free(smsg)
+     !    call LIBMUSCLE_Data_free(sdata)
 
         print *, 'sending coreprof_out'
         sdata = LIBMUSCLE_Data_create_byte_array(coreprof_out_buf)
@@ -145,7 +146,7 @@ program ets_M3
         call LIBMUSCLE_Data_free(sdata)
         
         ! send equilibrium
-        print *, '>ets: printing first ', 64, ' symbols of equilibrium_out_buf', equilibrium_out_buf(1:64)  ! DEBUG
+        !print *, '>ets: printing first ', 64, ' symbols of equilibrium_out_buf', equilibrium_out_buf(1:64)  ! DEBUG
         print *, 'sending equilibrium_out'
         sdata = LIBMUSCLE_Data_create_byte_array(equilibrium_out_buf)
         smsg = LIBMUSCLE_Message_create(t_current, sdata)
