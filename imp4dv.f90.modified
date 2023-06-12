@@ -204,6 +204,11 @@ SUBROUTINE IMP4DV(eq, coreprof, coretransp_in, coretransp)
 
   coretransp(1)%time = coretransp_in(1)%time
 
+!... printing d-s and v-s into stdout
+
+print *, "ti_transp%diff_eff= ", coretransp(1)%values(1)%ti_transp%diff_eff(:,1)
+print *, "ti_transp%vconv_eff= ", coretransp(1)%values(1)%ti_transp%vconv_eff(:,1)
+
 !...  write out output cpos
 
   IF (write_cpos) THEN

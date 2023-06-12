@@ -32,7 +32,8 @@ contains
     print *,"get code params"
     call fill_param(code_parameters, 'gem0.xml', '', 'gem0.xsd')
 
-   !  print *,"run gem0 routine"
+    print *,"run gem0 routine"
+
    !  print *, ">printing first ", 64, " of equil of size ", size(equil) !DEBUG
    !  print *, equil(1:64) !DEBUG
    !  print *, ">printing first ", 64, " of corep of size ", size(corep) !DEBUG

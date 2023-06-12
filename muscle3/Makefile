@@ -176,6 +176,10 @@ ${OBJDIR}/gem_M3.o: gem_M3.f90
 # ${OBJDIR}/imp4dv_M3.o: imp4dv_M3.f90
 # 	${FC90} -o $@ -c $< $(FC90FLAGS_DEBUG)
 
+#For debugging of gem0 SIGSEGV issue
+${OBJDIR}/gem0_M3.o: gem0_M3.f90
+	${FC90} -o $@ -c $< $(FC90FLAGS_DEBUG)
+
 #%.f90: %.F90
 #	$(FPP) $(FPPFLAGS) $< $@ 
 
