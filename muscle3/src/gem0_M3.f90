@@ -26,6 +26,9 @@ program gem0_M3
   character(kind=c_char), pointer :: coretransp_flux_buf(:)
   character(kind=c_char), pointer :: coretransp_out_buf(:)
 
+  call system('cp ../../../../gem0.xml gem0.xml')
+  call system('cp ../../../../gem0.xsd gem0.xsd')
+
   ports = LIBMUSCLE_PortsDescription_create()
   call LIBMUSCLE_PortsDescription_add(ports, YMMSL_Operator_F_INIT, 'equilibrium_in')
   call LIBMUSCLE_PortsDescription_add(ports, YMMSL_Operator_F_INIT, 'coreprof_in')

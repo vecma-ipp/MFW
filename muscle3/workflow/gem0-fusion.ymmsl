@@ -63,15 +63,14 @@ model:
     init.coreimpur_init:         transport.coreimpur_init
     init.toroidfield_init:       transport.toroidfield_init
     transport.equilibrium_out:   equilibrium.equilibrium_in
-    transport.coreprof_out:       turbulence.coreprof_in
-    equilibrium.equilibrium_out: [turbulence.equilibrium_in, transport.equilibrium_in] #duplicate.input
+    transport.coreprof_out:      turbulence.coreprof_in
+    equilibrium.equilibrium_out: [turbulence.equilibrium_in, transport.equilibrium_in]
     turbulence.coretransp_out:   transport.coretransp_in
     transport.equilibrium_final: stop.equilibrium_in
     transport.coreprof_final:    stop.coreprof_in
     transport.coresource_final:  stop.coresource_in
     transport.coreimpur_final:   stop.coreimpur_in
     transport.toroidfield_final: stop.toroidfield_in
-
 
 resources:
   init:
@@ -108,6 +107,13 @@ implementations:
       - /u/yyudin/code/MFW/muscle3/bin/COBRA/ets_M3
   gem0_impl:
     executable: /u/yyudin/code/MFW/muscle3/bin/COBRA/gem0_M3
+  gem0_impl_debug:
+    executable: xterm
+    args:
+      - -e
+      - gdb
+      - --args
+      - /u/yyudin/code/MFW/muscle3/bin/COBRA/gem0_M3
   gem_surr_impl:
     executable: python3 /u/yyudin/code/MFW/muscle3/src/gem_surr_M3.py
   gem_surr_impl_debug:
@@ -138,7 +144,7 @@ implementations:
 #      - /u/yyudin/code/MFW/muscle3/bin/COBRA/imp4dv_M3
 
 settings:
-  transport.duration: 0.1
+  transport.duration: 2.0
   transport.dt: 0.01
   init_cpo_dir: "../../../../../../workflows/AUG_28906_6"
   final_cpo_dir: "./"

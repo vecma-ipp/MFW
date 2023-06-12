@@ -27,6 +27,9 @@ program gem_M3
   character(kind=c_char), pointer :: equilibrium_in_buf(:)
   character(kind=c_char), pointer :: coretransp_out_buf(:)
 
+  call system('cp ../../../../gem.xml gem.xml')
+  call system('cp ../../../../gem.xsd gem.xsd')
+
   call MPI_Init(ierr)
   call MPI_Comm_size(MPI_COMM_WORLD, npes, ierr)
   call MPI_Comm_rank(MPI_COMM_WORLD, irank, ierr)
