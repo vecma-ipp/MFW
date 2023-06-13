@@ -45,24 +45,27 @@ def read_files(foldername, quantity, attribute, coords, filetype='coreprof', dat
     
     return atrributes_array
 
-date = '20230612_165511'
+date = '20230613_150846'
 codename = 'gem0'
 fold_name = 'workflow/run_fusion_'+codename+'_'+date+'/instances/transport/workdir/'
 
 n_run = 10
 runnum_list = [r for r in range (n_run)]
+n_rho_resol = 1
 
-cpo_name = 'coreprof'
-#cpo_name = 'coretransp'
+#cpo_name = 'coreprof'
+cpo_name = 'coretransp'
 
-quantities =  ['ti']
-#quantities = ['ti_transp']
-attributes = ['ddrho', 'value',]
-#attributes = ['vconv_eff', 'diff_eff']
+#quantities =  ['ti']
+quantities = ['ti_transp']
+#attributes = ['value', 'ddrho',]
+attributes = ['diff_eff', 'vconv_eff']
 
 #coord_num = [68]
-coord_num = [14, 30, 43, 55, 66, 76, 85, 95]
-#coord_num = [0,1,2,3,4,5,6,7]
+#coord_num = [14, 30, 43, 55, 66, 76, 85, 95]
+#coord_num = [x for x in range(0, 100, n_rho_resol)]
+coord_num = [0,1,2,3,4,5,6,7]
+#coord_num = [0]
 
 # Reading data of a particular attribute for all files produced by transport code
 data = read_files(fold_name, quantities[0], attributes[0], coords=coord_num, filetype=cpo_name, date=date)
@@ -70,8 +73,8 @@ data = read_files(fold_name, quantities[0], attributes[0], coords=coord_num, fil
 n_timesteps = data.shape[0]
 n_rhos = data.shape[1]
 
-# Plotting an attribute value at a the fourth flux tube against time
-n_ft = 4
+# Plotting an attribute value at a the 1st flux tube against time
+n_ft = 0
 fig, ax = plt.subplots()
 ax.plot(np.linspace(0, n_timesteps, n_timesteps), data[:, n_ft])
 fig.savefig('res_'+quantities[0]+'_'+attributes[0]+'_'+date+'.png')
