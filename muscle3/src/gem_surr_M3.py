@@ -185,6 +185,8 @@ def gem_surr_M3():
         output_names = ['ti_transp_flux', 'te_transp_flux']
         #output_names = ['ti_transp_flux']
 
+        input_names_ind_permut = [0,2,1,3]
+
         # Get a message form equilibrium code: NOT USED HERE!
         msg_in = instance.receive('equilibrium_in')
         print('> Got a message from EQUILIBRIUM')
@@ -221,7 +223,7 @@ def gem_surr_M3():
         #coreprof_cpo_obj = read_fstream(file_like_coreprof_in_data_str, cpo, "coreprof") #TODO: fails here - StrionIO has no file descriptor
 
         profiles_in = coreprof_to_input_value(coreprof_cpo_obj, [rho_ind_s],)
-        profiles_in = profiles_in[[0,2,1,3]]
+        profiles_in = profiles_in[input_names_ind_permut] #TODO: either fix original order, or store permutation separately
         print('> Read incoming core profile \n {0}'.format(profiles_in))
 
         # Get (n_features, n_samples) from surrogate from (n_features, n_radial_points)

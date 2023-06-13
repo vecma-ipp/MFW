@@ -495,6 +495,8 @@ contains
 
     time_cur = corep_out(1)%time
 
+    print*, '>ets: ti%value*rho=0.7', corep_out(1)%ti%value(69) !!!DEBUG
+
     ! transfer CPO to buf
     !...  write the results
     corep_out_file = 'ets_coreprof_out.cpo'

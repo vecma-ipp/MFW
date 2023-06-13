@@ -166,6 +166,8 @@ contains
     end if
     !print *, ">Read CPO from the new file" !DEBUG
 
+    print *, ">imp4dv: ti_tranps%flux=", coret_in(1)%values(1)%ti_transp%flux !!!DEBUG
+
     call imp4dv_cpo(equil_in, corep_in, coret_in, coret_out)
 
     ! transfer CPO to buf
