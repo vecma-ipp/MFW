@@ -104,7 +104,7 @@ IMP4DV_O = ${STDA_SHARED_O} ${STDA_OBJ}/imp4dv_standalone.o ${OBJDIR}/imp4dv_M3.
 GEM_O = ${STDA_SHARED_O} ${STDA_OBJ}/gem_standalone.o ${OBJDIR}/gem_M3.o
 BOHMGB_O = ${STDA_SHARED_O} ${STDA_OBJ}/bohmgb_standalone.o ${OBJDIR}/bohmgb_M3.o
 
-MODELS = INIT_M3 STOP_M3 ETS_M3 CHEASE_M3 GEM0_M3 DUPLICATE_M3 IMP4DV_M3 CPDUP_M3 #BOHMGB_M3 #GEM_M3
+MODELS = INIT_M3 STOP_M3 ETS_M3 CHEASE_M3 GEM0_M3 DUPLICATE_M3 IMP4DV_M3 CPDUP_M3 #GEM_M3 #BOHMGB_M3 #
 #EQUILUPDATE_M3
 
 INIT_EXE = ${BINDIR}/init_M3
@@ -152,7 +152,6 @@ ${OBJDIR}/%.o: %.c
 ${OBJDIR}/gem_standalone.o: gem_standalone.f90
 	${FC90} -o $@ -c $< $(MPI_FC90FLAGS)
 
-
 ${OBJDIR}/gem_M3.o: gem_M3.f90
 	${FC90} -o $@ -c $< $(MPI_FC90FLAGS)
 
@@ -176,9 +175,9 @@ ${OBJDIR}/gem_M3.o: gem_M3.f90
 # ${OBJDIR}/imp4dv_M3.o: imp4dv_M3.f90
 # 	${FC90} -o $@ -c $< $(FC90FLAGS_DEBUG)
 
-#For debugging of gem0 SIGSEGV issue
-${OBJDIR}/gem0_M3.o: gem0_M3.f90
-	${FC90} -o $@ -c $< $(FC90FLAGS_DEBUG)
+# #For debugging of gem0 SIGSEGV issue
+# ${OBJDIR}/gem0_M3.o: gem0_M3.f90
+# 	${FC90} -o $@ -c $< $(FC90FLAGS_DEBUG)
 
 #%.f90: %.F90
 #	$(FPP) $(FPPFLAGS) $< $@ 
