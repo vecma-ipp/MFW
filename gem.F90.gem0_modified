@@ -1,0 +1,454 @@
+SUBROUTINE GEM(eq, coreprof, coretransp, code_parameters)
+
+!...  a simple stand-in for GEM
+
+  USE Turb_Coeff
+  USE copy_structures
+  USE write_structures
+
+  IMPLICIT NONE
+
+  TYPE (type_equilibrium), pointer :: eq(:)
+  TYPE (type_coreprof), pointer :: coreprof(:)
+  TYPE (type_coretransp), pointer :: coretransp(:)
+  TYPE (type_param) :: code_parameters
+
+  INTEGER(ITM_I4) :: i,ion
+  INTEGER(ITM_I4) :: npsi,nrho_prof,nion_prof,nrho
+  REAL(R8), SAVE :: time = 0.0_R8
+  REAL(R8) :: a00,b00,r00,rho_tor_max,r_min,r_max
+  REAL(R8) :: nne,tte,nni,tti,taui,rlne,rlte,rlni,rlti,rhos,cs,zeff,qq
+  REAL(R8) :: rnue,rnui,beta,shat,rmue,epss,lperp,ionmass,ioncharge
+  REAL(R8) :: chigb,ffe,ffi,gge,ggi
+  REAL(R8) :: diffe,diffi,chie,chii,vconve,vconvi,yconve,yconvi
+
+  REAL(R8), DIMENSION(:), ALLOCATABLE, SAVE :: rhomx, &
+       nnex,ttex,nnix,ttix,qqx,zeffx,rlnex,rlnix,rltex,rltix,shatx,chix
+
+  REAL(R8), DIMENSION(:), POINTER :: rho_eq,gm3,rho_prof,rho,qq0,jj0,rho0,tt0
+
+!...  XML declarations
+
+  integer(ITM_I4) :: return_status
+
+  character(len = 132), target :: codename(1) = 'GEM0'
+  character(len = 132), target :: codeversion(1) = '4.10b'
+
+!...  assign parms
+
+  allocate(coretransp(1))
+  allocate(coretransp(1)%codeparam%codename(1))
+  allocate(coretransp(1)%codeparam%codeversion(1))
+  if (.not. associated(code_parameters%parameters)) then
+    write(*,*) 'ERROR: GEM0 parameters not associated!'
+    stop
+  else
+    allocate(coretransp(1)%codeparam%parameters(size( &
+     code_parameters%parameters)))
+  end if
+
+!.  write(*,*) 'GEM0 Parameters : ', code_parameters%parameters
+
+!-- add to coretransp
+  coretransp(1)%codeparam%codename = codename
+  coretransp(1)%codeparam%codeversion = codeversion
+  coretransp(1)%codeparam%parameters = code_parameters%parameters
+
+!-- assign code parameters to internal variables
+  call assign_turb_parameters(code_parameters, return_status)
+
+  if (return_status /= 0) then
+    write(*,*) 'ERROR: Could not assign GEM0 parameters.'
+    return
+  end if
+
+!  write(*,*) 'done assigning GEM0 parameters'
+
+!...  write out input cpos
+
+  IF (write_cpos) THEN
+
+  call open_write_file(12, 'GEMCPOs' )
+  call write_cpo(coreprof(1), 'Coreprof' )
+  call write_cpo(eq(1), 'Equil' )
+  call close_write_file
+
+  END IF
+
+!...  find grid size for equilibrium and profiles
+!...  find number of ion species from coreprof
+
+  npsi=SIZE(eq(1)%profiles_1d%rho_tor)
+  nrho_prof=SIZE(coreprof(1)%rho_tor)
+  nion_prof=SIZE(coreprof(1)%ni%value, 2)
+
+!...  set grid and allocate coretransp
+
+  IF (nrho_transp == 0) THEN
+     nrho = (nrho_prof-1)/2
+  ELSE
+     nrho = nrho_transp
+  END IF
+  IF (nion == 0) nion = nion_prof
+
+  CALL Turb_Constructor(coretransp(1), 1, nrho, nion)
+
+!...  copy composition over
+
+  call copy_cpo(coreprof(1)%compositions,coretransp(1)%compositions)
+
+!...  get geometry and set transport grid
+
+  a00=eq(1)%eqgeometry%a_minor
+  b00=eq(1)%global_param%toroid_field%b0
+  r00=eq(1)%global_param%toroid_field%r0
+  rho_tor_max=MAXVAL(eq(1)%profiles_1d%rho_tor)
+
+  IF (ASSOCIATED(eq(1)%eqgeometry%boundary)) THEN
+     IF (ASSOCIATED(eq(1)%eqgeometry%boundary(1)%r)) THEN
+        b00=b00*r00
+        r_min=MINVAL(eq(1)%eqgeometry%boundary(1)%r)
+        r_max=MAXVAL(eq(1)%eqgeometry%boundary(1)%r)
+        a00=(r_max-r_min)/2.
+        r00=(r_max+r_min)/2.
+        b00=b00/r00
+     END IF
+  END IF
+
+  ALLOCATE(rho_eq(npsi))
+  ALLOCATE(rho0(nrho_prof))
+  ALLOCATE(rho(nrho))
+
+  rho_eq = eq(1)%profiles_1d%rho_tor / rho_tor_max
+  rho0 = coreprof(1)%rho_tor
+  rho0 = rho0/MAXVAL(rho0)
+
+  IF(nrho_transp == 1) THEN
+     rho = ra0
+  ELSE IF (nrho_transp == (nrho_prof-1)/2 .OR. nrho_transp == 0) THEN
+     rho = rho0(2:nrho_prof-1:2)
+  ELSE
+     rho = (/ ((1.0/REAL(2*nrho))*(2*i-1), i=1,nrho) /)**0.7
+  END IF
+
+  ALLOCATE(gm3(nrho))
+
+  IF (ASSOCIATED(eq(1)%profiles_1d%gm3)) THEN
+     CALL L3interp( eq(1)%profiles_1d%gm3, rho_eq, npsi, &
+          gm3, rho, nrho)
+  ELSE
+     gm3=1.0
+  END IF
+
+!...  allocations with coretransp grid
+
+  ALLOCATE(rhomx(nrho))
+  ALLOCATE(nnex(nrho))
+  ALLOCATE(ttex(nrho))
+  ALLOCATE(nnix(nrho))
+  ALLOCATE(ttix(nrho))
+  ALLOCATE(zeffx(nrho))
+  ALLOCATE(qqx(nrho))
+  ALLOCATE(rlnex(nrho))
+  ALLOCATE(rlnix(nrho))
+  ALLOCATE(rltex(nrho))
+  ALLOCATE(rltix(nrho))
+  ALLOCATE(shatx(nrho))
+  ALLOCATE(chix(nrho))
+
+!...  set up transport as a function of parameters
+
+!...  do the interpolation to get parameters and gradients
+!...  species independent stuff first then electrons then ions
+
+  CALL L3interp( coreprof(1)%profiles1d%zeff%value, &
+       rho0, nrho_prof, zeffx, rho, nrho)
+
+!...  on the q profile and shear note normalisation of rho drops out
+
+  SELECT CASE (q_choice)
+  CASE ("equilibrium")
+     CALL L3interp( eq(1)%profiles_1d%q, &
+          rho_eq, npsi, qqx, rho, nrho)
+     CALL L3deriv( eq(1)%profiles_1d%q, &
+          rho_eq, npsi, shatx, rho, nrho)
+  CASE ("coreprof")
+     CALL L3interp( coreprof(1)%profiles1d%q%value, &
+          rho0, nrho_prof, qqx, rho, nrho)
+     CALL L3deriv( coreprof(1)%profiles1d%q%value, &
+          rho0, nrho_prof, shatx, rho, nrho)
+  CASE ("jtot")
+     IF (.NOT. ASSOCIATED(coreprof(1)%profiles1d%q%value)) &
+          ALLOCATE(coreprof(1)%profiles1d%q%value(nrho_prof))
+     qq0 => coreprof(1)%profiles1d%q%value
+     jj0 => coreprof(1)%profiles1d%jtot%value
+     qq0(1)=0.
+     DO i=2,nrho_prof
+        qq0(i)=qq0(i-1)+0.5*(rho0(i)*rho0(i)-rho0(i-1)*rho0(i-1)) &
+             * (jj0(i)+jj0(i-1))
+     END DO
+     qq0=mu_0*qq0*r00/(2.*b00)
+     qq0(1)=1.
+     qq0=rho0*rho0/qq0
+     qq0(1)=2.*qq0(2)-qq0(3)
+     CALL L3interp( qq0, rho0, nrho_prof, qqx, rho, nrho)
+     CALL L3deriv( qq0, rho0, nrho_prof, shatx, rho, nrho)
+  END SELECT
+
+  shatx=shatx*rho/qqx
+
+  CALL L3interp( coreprof(1)%ne%value, rho0, nrho_prof, &
+       nnex, rho, nrho)
+  CALL L3interp( coreprof(1)%te%value, rho0, nrho_prof, &
+       ttex, rho, nrho)
+  CALL L3deriv( coreprof(1)%ne%value, rho0, nrho_prof, &
+       rlnex, rho, nrho)
+  CALL L3deriv( coreprof(1)%te%value, rho0, nrho_prof, &
+       rltex, rho, nrho)
+
+  rlnex=rlnex/nnex
+  rltex=rltex/ttex
+
+!...  get rho s
+
+  rhomx=0.
+  DO ion=1,nion
+     ionmass = coreprof(1)%compositions%nuclei(1)%amn !* itm_amu
+     CALL L3interp( coreprof(1)%ni%value(:,ion), rho0, nrho_prof, &
+          nnix, rho, nrho)
+     rhomx=rhomx+nnix*ionmass
+  END DO
+  rhomx=rhomx/nnex ! YY: order of units
+
+!...  species loop
+
+  DO ion=1,nion
+
+  CALL L3interp( coreprof(1)%ni%value(:,ion), rho0, nrho_prof, &
+       nnix, rho, nrho)
+  CALL L3interp( coreprof(1)%ti%value(:,ion), rho0, nrho_prof, &
+       ttix, rho, nrho)
+  CALL L3deriv( coreprof(1)%ni%value(:,ion), rho0, nrho_prof, &
+       rlnix, rho, nrho)
+  CALL L3deriv( coreprof(1)%ti%value(:,ion), rho0, nrho_prof, &
+       rltix, rho, nrho)
+
+  rlnix=rlnix/nnix
+  rltix=rltix/ttix
+
+  print *, ">gem0: ti_value=", ttix  !!!DEBUG
+  print *, ">gem0: ti_ddrho=", rltix !!!DEBUG
+  print *, ">gem0: te_value=", ttex  !!!DEBUG
+  print *, ">gem0: te_ddrho=", rltex !!!DEBUG
+  print *, ">gem0: rhomx=",    rhomx !!!DEBUG
+
+!...  on the radial grid...
+
+  DO i=1,nrho
+
+     nne=nnex(i)
+     nni=nnix(i)
+     tte=ttex(i)
+     tti=ttix(i)
+     zeff=zeffx(i)
+
+     rlne=rlnex(i) / a00
+     rlte=rltex(i) / a00
+     rlni=rlnix(i) / a00
+     rlti=rltix(i) / a00
+
+     qq=qqx(i)
+     shat=shatx(i)
+
+!...  main ion parameters -- ionmass is rho mass over n_e e^2
+
+!     ionmass=md
+
+     ionmass = rhomx(i) * itm_amu
+
+!...  define local parameters
+
+     rhos=SQRT(cc*cc*ionmass*kb*tte/(ee*ee*b00*b00))
+     cs=SQRT(kb*tte/ionmass)
+     taui=tti/tte
+
+     beta=mu_0*nne*kb*tte/(b00*b00)
+     rmue=me/ionmass
+     rnue=(lcoul/3.44e11_R8)*zeff*nne/(tte**1.5)
+     rnui=(lcoul/2.09e13_R8)*nni/(tti**1.5)
+
+!...  normalised parameters
+
+!     lperp=1./MAX(1./r00, ABS(rlte))
+     lperp=1./MAX(1./r00, ABS(rlte), ABS(rlne))
+!     lperp=1./MAX( 1./(64.*rhos), ABS(rlte), ABS(rlne))
+
+     epss=qq*r00/lperp
+     epss=epss*epss
+     rmue=rmue*epss
+     beta=beta*epss
+     rnue=rnue*lperp/cs
+
+!...  the baseline gyroBohm diffusion coefficient uses R_0
+!...  simple downward correction due to usual beta values
+
+     IF (ion == 1) THEN
+!        chigb=rhos*rhos*cs/r00
+!        chigb=chigb*40.0_R8/SQRT(1.0_R8+(beta_reduction*beta)**2.0_R8)
+!        chigb=chigb*MAX(0., (1.0_R8-thresh/ABS((r00*rlti))))
+
+        chigb=rhos*rhos*cs/lperp
+        IF (hmode) THEN
+!           chigb=0.3*chigb
+           chigb=1.0*chigb
+        ELSE
+!           chigb=chigb*(1.0_R8+beta*SQRT(rmue))
+           chigb=chigb*(1.0_R8+rmue*(beta/rmue+SQRT(rnue)))/(1.0_R8+0.1_R8*beta)
+!           chigb=chigb*(1.0_R8+(beta/rmue)*(rmue-0.1_R8))
+        END IF
+
+        chix(i)=chigb
+     ELSE
+        chigb=chix(i)
+     END IF
+
+!...  the diffusion coefficients in this model
+!...  the coefficient is 3/2 due to the Poynting flux cancellation
+
+     diffe=chigb/chi_d
+     chie=chigb
+     diffi=diffe
+     chii=chigb
+     
+     print *, ">gem0: rhos (nft=", i,")=  ", rhos  !!!DEBUG
+     print *, ">gem0: b00  (nft=", i,")=  ", b00   !!!DEBUG
+     print *, ">gem0: cc   (nft=", i,")=  ", cc    !!!DEBUG
+     print *, ">gem0: kb   (nft=", i,")=  ", kb    !!!DEBUG
+     print *, ">gem0: ee   (nft=", i,")=  ", ee    !!!DEBUG
+     print *, ">gem0: ionmass(nft=", i,")=  ", ionmass !!!DEBUG
+     
+     print *, ">gem0: cs   (nft=", i,")=  ", cs    !!!DEBUG
+     print *, ">gem0: lperp(nft=", i,")=  ", lperp !!!DEBUG
+
+     print *, ">gem0: chigb(nft=", i,")=  ", chigb !!!DEBUG
+     print *, " "
+
+!...  basic pinch dynamics in this model
+!...  ions set via ambipolarity
+
+     vconve=diffe*(rlte/etae_pinch)
+     vconvi=vconve
+
+!...  the effective flux velocities in this model
+!...  the coefficient is 3/2 due to the Poynting flux cancellation
+!...  for temperatures use the conductive part
+
+     rlne=rlnex(i) / rho_tor_max
+     rlte=rltex(i) / rho_tor_max
+     rlni=rlnix(i) / rho_tor_max
+     rlti=rltix(i) / rho_tor_max
+
+     ffe= - diffe*rlne + vconve
+     gge= - chie*rlte
+
+     ffi= - diffi*rlni + vconvi
+     ggi= - chii*rlti
+
+!...  the CPO diffusivities velocities and fluxes themselves
+!...  for a mean field conserved quantity solver heat fluxes are totals
+!...  different models can reconstruct theirs using the D's and V's
+!...  the coefficient is 3/2 due to the Poynting flux cancellation
+
+     IF (ion == 1) THEN
+        coretransp(1)%values(1)%ne_transp%diff_eff(i,2) = diffe
+        coretransp(1)%values(1)%te_transp%diff_eff(i) = chie
+        coretransp(1)%values(1)%ne_transp%vconv_eff(i,2) = vconve
+        coretransp(1)%values(1)%ne_transp%flux(i) = nne*ffe * gm3(i)
+        coretransp(1)%values(1)%te_transp%flux(i) = nne*kb*tte*gge * gm3(i)
+     END IF
+
+     coretransp(1)%values(1)%ni_transp%diff_eff(i,ion,2) = diffi
+     coretransp(1)%values(1)%ti_transp%diff_eff(i,ion) = chii
+     coretransp(1)%values(1)%ni_transp%vconv_eff(i,ion,2) = vconvi
+     coretransp(1)%values(1)%ni_transp%flux(i,ion) = nni*ffi * gm3(i)
+     coretransp(1)%values(1)%ti_transp%flux(i,ion) = nni*kb*tti*ggi * gm3(i)
+
+  END DO
+
+!...  end species loop
+
+  END DO
+
+!...  set transp grid in the CPO
+
+  coretransp(1)%values(1)%rho_tor_norm=rho
+  coretransp(1)%values(1)%rho_tor=rho * rho_tor_max
+
+!...  set other ion coefficients with ratio switches
+
+  coretransp(1)%values(1)%vtor_transp%diff_eff= &
+       chiratio_phi*coretransp(1)%values(1)%ti_transp%diff_eff
+
+!...  stamp time
+
+  time = time + 1.0_R8
+
+  coretransp(1)%time=time
+
+!...  write diags
+
+  IF (write_diags) THEN
+
+  open (10, file = 'turbdiags.dat', form = 'formatted',position='append')
+  write (10,*) 'eq coreprof coretransp sizes',size(eq),size(coreprof),size(coretransp)
+  write (10,*) 'coretransp sizes',nrho,nion
+  WRITE (10,*) "  rho           Fe         Qe         Fi         Qi"
+  DO i=1,nrho
+     WRITE (10,100) coretransp(1)%values(1)%rho_tor_norm(i), &
+        coretransp(1)%values(1)%ne_transp%flux(i), &
+        coretransp(1)%values(1)%te_transp%flux(i), &
+        coretransp(1)%values(1)%ni_transp%flux(i,1), &
+        coretransp(1)%values(1)%ti_transp%flux(i,1)
+  END DO
+  close (10)
+
+100 FORMAT(7g11.3)
+110 FORMAT(9f8.3)
+
+  END IF
+
+!...  write out output cpos
+
+  IF (write_cpos) THEN
+
+  call open_write_file(12, 'cout_000' )
+  call write_cpo(coretransp(1), 'Coretransp' )
+  call close_write_file
+
+  END IF
+
+  print *, ">gem0: ti_transp%flux= ", coretransp(1)%values(1)%ti_transp%diff_eff(:,1) !!!DEBUG
+  print *, ">gem0: ti_transp%flux= ", coretransp(1)%values(1)%ti_transp%flux(:,1) !!!DEBUG
+
+!...  clean up
+
+  DEALLOCATE(rho_eq)
+  DEALLOCATE(rho0)
+  DEALLOCATE(rho)
+  DEALLOCATE(gm3)
+
+  DEALLOCATE(rhomx)
+  DEALLOCATE(nnex)
+  DEALLOCATE(ttex)
+  DEALLOCATE(nnix)
+  DEALLOCATE(ttix)
+  DEALLOCATE(zeffx)
+  DEALLOCATE(qqx)
+  DEALLOCATE(rlnex)
+  DEALLOCATE(rlnix)
+  DEALLOCATE(rltex)
+  DEALLOCATE(rltix)
+  DEALLOCATE(shatx)
+  DEALLOCATE(chix)
+
+END SUBROUTINE GEM
