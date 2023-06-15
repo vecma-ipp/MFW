@@ -213,7 +213,7 @@ SUBROUTINE GEM(eq, coreprof, coretransp, code_parameters)
 
   rhomx=0.
   DO ion=1,nion
-     ionmass = coreprof(1)%compositions%nuclei(1)%amn !* itm_amu
+     ionmass = coreprof(1)%compositions%nuclei(1)%amn !* itm_amu ! YY: commented out
      CALL L3interp( coreprof(1)%ni%value(:,ion), rho0, nrho_prof, &
           nnix, rho, nrho)
      rhomx=rhomx+nnix*ionmass
@@ -236,11 +236,11 @@ SUBROUTINE GEM(eq, coreprof, coretransp, code_parameters)
   rlnix=rlnix/nnix
   rltix=rltix/ttix
 
-  print *, ">gem0: ti_value=", ttix  !!!DEBUG
-  print *, ">gem0: ti_ddrho=", rltix !!!DEBUG
-  print *, ">gem0: te_value=", ttex  !!!DEBUG
-  print *, ">gem0: te_ddrho=", rltex !!!DEBUG
-  print *, ">gem0: rhomx=",    rhomx !!!DEBUG
+!  print *, ">gem0: ti_value=", ttix  !!!DEBUG
+!  print *, ">gem0: ti_ddrho=", rltix !!!DEBUG
+!  print *, ">gem0: te_value=", ttex  !!!DEBUG
+!  print *, ">gem0: te_ddrho=", rltex !!!DEBUG
+!  print *, ">gem0: rhomx=",    rhomx !!!DEBUG
 
 !...  on the radial grid...
 
@@ -320,18 +320,18 @@ SUBROUTINE GEM(eq, coreprof, coretransp, code_parameters)
      diffi=diffe
      chii=chigb
      
-     print *, ">gem0: rhos (nft=", i,")=  ", rhos  !!!DEBUG
-     print *, ">gem0: b00  (nft=", i,")=  ", b00   !!!DEBUG
-     print *, ">gem0: cc   (nft=", i,")=  ", cc    !!!DEBUG
-     print *, ">gem0: kb   (nft=", i,")=  ", kb    !!!DEBUG
-     print *, ">gem0: ee   (nft=", i,")=  ", ee    !!!DEBUG
-     print *, ">gem0: ionmass(nft=", i,")=  ", ionmass !!!DEBUG
+!     print *, ">gem0: rhos (nft=", i,")=  ", rhos  !!!DEBUG
+!     print *, ">gem0: b00  (nft=", i,")=  ", b00   !!!DEBUG
+!     print *, ">gem0: cc   (nft=", i,")=  ", cc    !!!DEBUG
+!     print *, ">gem0: kb   (nft=", i,")=  ", kb    !!!DEBUG
+!     print *, ">gem0: ee   (nft=", i,")=  ", ee    !!!DEBUG
+!     print *, ">gem0: ionmass(nft=", i,")=  ", ionmass !!!DEBUG
      
-     print *, ">gem0: cs   (nft=", i,")=  ", cs    !!!DEBUG
-     print *, ">gem0: lperp(nft=", i,")=  ", lperp !!!DEBUG
+!     print *, ">gem0: cs   (nft=", i,")=  ", cs    !!!DEBUG
+!     print *, ">gem0: lperp(nft=", i,")=  ", lperp !!!DEBUG
 
-     print *, ">gem0: chigb(nft=", i,")=  ", chigb !!!DEBUG
-     print *, " "
+!     print *, ">gem0: chigb(nft=", i,")=  ", chigb !!!DEBUG
+!     print *, " "
 
 !...  basic pinch dynamics in this model
 !...  ions set via ambipolarity
@@ -427,8 +427,8 @@ SUBROUTINE GEM(eq, coreprof, coretransp, code_parameters)
 
   END IF
 
-  print *, ">gem0: ti_transp%flux= ", coretransp(1)%values(1)%ti_transp%diff_eff(:,1) !!!DEBUG
-  print *, ">gem0: ti_transp%flux= ", coretransp(1)%values(1)%ti_transp%flux(:,1) !!!DEBUG
+!  print *, ">gem0: ti_transp%flux= ", coretransp(1)%values(1)%ti_transp%diff_eff(:,1) !!!DEBUG
+!  print *, ">gem0: ti_transp%flux= ", coretransp(1)%values(1)%ti_transp%flux(:,1) !!!DEBUG
 
 !...  clean up
 
