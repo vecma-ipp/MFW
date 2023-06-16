@@ -27,7 +27,7 @@ program gem_M3
   character(kind=c_char), pointer :: equilibrium_in_buf(:)
   character(kind=c_char), pointer :: coretransp_out_buf(:)
 
-  call system('cp ../../../../gem.xml gem.xml')
+  call system('cp ../../../../gem.xml gem.xml') ! may be do it after MPI initialisation for rank==1
   call system('cp ../../../../gem.xsd gem.xsd')
 
   call MPI_Init(ierr)
@@ -41,8 +41,12 @@ program gem_M3
   instance = LIBMUSCLE_Instance_create(ports, MPI_COMM_WORLD, root_rank)
   call LIBMUSCLE_PortsDescription_free(ports)
   
+  print *, "before entering the run iteration loop" !!!DEBUG
+
   ! main loop
   do while (LIBMUSCLE_Instance_reuse_instance(instance))
+
+     print *, "starting a new iteration"
 
      ! receive equilibrium data
      rmsg = LIBMUSCLE_Instance_receive(instance, 'equilibrium_in')
@@ -55,6 +59,7 @@ program gem_M3
         call LIBMUSCLE_Message_free(rmsg)
      end if
 
+     print *, "received equilibrium_in, now broadcasting" !!!DEBUG
      call MPI_Bcast(equil_buf_size, 1, MPI_INT, root_rank, MPI_COMM_WORLD, ierr)
 
      if (irank /= root_rank) then
@@ -62,6 +67,8 @@ program gem_M3
      end if
 
      call MPI_Bcast(equilibrium_in_buf, equil_buf_size, MPI_BYTE, root_rank, MPI_COMM_WORLD, ierr)
+     
+     print *, "broadcasted equilibrium_in, now receiving coreprof_in" !!!DEBUG
 
      ! receive coreprof data
      rmsg = LIBMUSCLE_Instance_receive(instance, 'coreprof_in')
@@ -75,6 +82,7 @@ program gem_M3
         call LIBMUSCLE_Message_free(rmsg)
      end if
 
+     print *, "received coreprof_in, now broadcasting" !!!DEBUG
      call MPI_Bcast(coreprof_buf_size, 1, MPI_INT, root_rank, MPI_COMM_WORLD, ierr)
 
      if (irank /= root_rank) then
@@ -82,8 +90,11 @@ program gem_M3
      end if
 
      call MPI_Bcast(coreprof_in_buf, coreprof_buf_size, MPI_BYTE, root_rank, MPI_COMM_WORLD, ierr)
+     print *, "broadcasted coreprof_in, now barier before the GEM call" !!!DEBUG
 
      call MPI_Barrier(MPI_COMM_WORLD, ierr)
+
+     print *, "after barier, calling gem2buf" !!!DEBUG
 
      call gem2buf( &
           equilibrium_in_buf, &

@@ -63,23 +63,25 @@ ifeq (${MPI},yes)
  FPPFLAGS += -DMPI -DMPI2
 endif
 
+# Linking flags
 MUSCLE_LDFLAGS += $(shell pkg-config --libs libmuscle_fortran ymmsl_fortran) # libmuscle ymmsl )
-MUSCLE_MPI_LDFLAGS += $(shell pkg-config --libs libmuscle_mpi_fortran ymmsl_fortran) # libmuscle ymmsl )	#OL
+MUSCLE_MPI_LDFLAGS += $(shell pkg-config --libs libmuscle_mpi_fortran ymmsl_fortran libmuscle ymmsl)	#OL
 #NB: be careful with additional explicit flag: may be not needed
 
 # testing out a linkage issue
 RPATHLINK_FLAG = -Wl,-rpath-link,/cobra/u/yyudin/muscle3/lib 
 MUSCLE_LDFLAGS += ${RPATHLINK_FLAG}
+MUSCLE_MPI_LDFLAGS += ${RPATHLINK_FLAG}
 
 FC90FLAGS += ${INCLUDES} ${MODSPEC}${INCDIR}
-MPI_FC90FLAGS = ${FC90FLAGS} 
+MPI_FC90FLAGS = ${FC90FLAGS}
 # testing linkage of gfortran version of MUSCLE3 to ifort codes: next 2 lines are uncommented before test
-MPI_FC90FLAGS += ${MUSCLE_MPI_INCLUDES}
 FC90FLAGS += ${MUSCLE_INCLUDES}
+MPI_FC90FLAGS += ${MUSCLE_MPI_INCLUDES}
 
 # testing rpath flag for compiling
 FC90FLAGS += ${RPATHLINK_FLAG}
-FC90FLAGS += ${RPATHLINK_FLAG}
+MPI_FC90FLAGS += ${RPATHLINK_FLAG}
 
 #TEST: compile all components for debug
 #FC90FLAGS += -O0 -Wall
@@ -104,7 +106,7 @@ IMP4DV_O = ${STDA_SHARED_O} ${STDA_OBJ}/imp4dv_standalone.o ${OBJDIR}/imp4dv_M3.
 GEM_O = ${STDA_SHARED_O} ${STDA_OBJ}/gem_standalone.o ${OBJDIR}/gem_M3.o
 BOHMGB_O = ${STDA_SHARED_O} ${STDA_OBJ}/bohmgb_standalone.o ${OBJDIR}/bohmgb_M3.o
 
-MODELS = INIT_M3 STOP_M3 ETS_M3 CHEASE_M3 GEM0_M3 DUPLICATE_M3 IMP4DV_M3 CPDUP_M3 #GEM_M3 #BOHMGB_M3 #
+MODELS = INIT_M3 STOP_M3 ETS_M3 CHEASE_M3 GEM0_M3 DUPLICATE_M3 IMP4DV_M3 CPDUP_M3 GEM_M3 #BOHMGB_M3 #
 #EQUILUPDATE_M3
 
 INIT_EXE = ${BINDIR}/init_M3
@@ -150,10 +152,12 @@ ${OBJDIR}/%.o: %.c
 
 
 ${OBJDIR}/gem_standalone.o: gem_standalone.f90
-	${FC90} -o $@ -c $< $(MPI_FC90FLAGS)
+	echo "MPIF90: ${MPIF90}" ; \
+	${MPIF90} -o $@ -c $ < $(MPI_FC90FLAGS)
 
 ${OBJDIR}/gem_M3.o: gem_M3.f90
-	${FC90} -o $@ -c $< $(MPI_FC90FLAGS)
+	echo "MPIF90: ${MPIF90}" ; \
+	${MPIF90} -o $@ -c $< $(MPI_FC90FLAGS)
 
 # #For debugging of init_M3 SIGSEGV
 # ${OBJDIR}/init_M3.o: init_M3.f90
@@ -226,7 +230,7 @@ IMP4DV_M3: ${IMP4DV_O}
 	$(FC90) -o ${IMP4DV_EXE} $^ -L${IMP4DV} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_UAL} -limp4dv -lbds -litmconstants -litmtypes -lual ${MUSCLE_LDFLAGS} 
 
 GEM_M3: ${GEM_O} 
-	$(FC90) -o ${GEM_EXE} $^ -L${GEM} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_XML} -L${LIB_UAL} -lgem -lbds -litmconstants -litmtypes -lxmllib -lual ${FFTW_LIB} ${MUSCLE_MPI_LDFLAGS}
+	$(MPIF90) -o ${GEM_EXE} $^ -L${GEM} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_XML} -L${LIB_UAL} -lgem -lbds -litmconstants -litmtypes -lxmllib -lual ${FFTW_LIB} ${MUSCLE_MPI_LDFLAGS}
 
 BOHMGB_M3: ${BOHMGB_O}
 	$(FC90) -o ${BOHMGB_EXE} $^ -L${BOHMGB} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_XML} -L${LIB_UAL} -lbohmgb -lbds -litmconstants -litmtypes -lxmllib -lual ${MUSCLE_LDFLAGS}
