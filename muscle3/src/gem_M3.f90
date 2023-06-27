@@ -42,6 +42,8 @@ program gem_M3
   call LIBMUSCLE_PortsDescription_free(ports)
   
   print *, "before entering the run iteration loop" !!!DEBUG
+  print *, "npes= ", npes  !!!DEBUG
+  print *, "irank= ", irank !!!DEBUG
 
   ! main loop
   do while (LIBMUSCLE_Instance_reuse_instance(instance))

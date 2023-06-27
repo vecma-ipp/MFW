@@ -80,7 +80,7 @@ resources:
   transport:
     threads: 1
   turbulence:
-    mpi_processes: 8
+    mpi_processes: 32
   equilibrium:
     threads: 1
 
@@ -160,14 +160,15 @@ implementations:
       - /u/yyudin/code/MFW/muscle3/bin/COBRA/imp4dv_M3
 
 settings:
-  transport.duration: 0.4
+  transport.duration: 0.1
   transport.dt: 0.01
   init_cpo_dir: "../../../../../../workflows/AUG_28906_6"
   final_cpo_dir: "./"
   muscle_remote_log_level: "DEBUG"  
   slice_initial_number: 0
-  save_slice: True
-  turbulence.rho_ind_s: 68
+  save_slice: true
+  adaptive_timestep: false
+  turbulence.rho_ind_s: [68.0]
   turbulence.profs_out: "ti_transp.flux"
   turbulence.surrogate_path: "../../../../../../workflows/gem_es_model.pickle"
   turbulence.cortransp_default: "../../../../../../workflows/gem_coretransp.cpo"
