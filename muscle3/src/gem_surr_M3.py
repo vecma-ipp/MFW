@@ -110,7 +110,7 @@ def output_value_to_coretransp(
                        
                         if len(coretransp_datastructure.values[0].ti_transp.flux) == 0:
                             coretransp_datastructure.values[0].ti_transp.flux = np.zeros((len(r_s), 1))
-                        coretransp_datastructure.values[0].ti_transp.flux[r, 0] = fluxes_out[prof_name+'_'+attribute]
+                        coretransp_datastructure.values[0].ti_transp.flux[r, 0] = fluxes_out[prof_name+'_'+attribute][r]
                     
                     elif prof_name == 'te_transp':
 
@@ -122,7 +122,7 @@ def output_value_to_coretransp(
                         
                         if len(coretransp_datastructure.values[0].te_transp.flux) == 0:
                             coretransp_datastructure.values[0].te_transp.flux = np.zeros((len(r_s)))
-                        coretransp_datastructure.values[0].te_transp.flux[r] = fluxes_out[prof_name+'_'+attribute]
+                        coretransp_datastructure.values[0].te_transp.flux[r] = fluxes_out[prof_name+'_'+attribute][r]
                                 
                     else:
                         print('Error: currently only temperatures for two species are supported')
@@ -153,7 +153,7 @@ def gem_surr_M3():
         # when is the instance constructed and destructed?
         print(f"> Entering a turbulence model iteration")
 
-        rho_ind_s = instance.get_setting('rho_ind_s', 'int') #TODO: consider using function to calculate index from rho_tor
+        rho_ind_s = instance.get_setting('rho_ind_s', '[float]]') #TODO: consider using function to calculate index from rho_tor
         prof_out_names = instance.get_setting('profs_out', 'str') #TODO: figure out how to pass lists of float/strings -> possible: ['float']/['str']
         model_file = instance.get_setting('surrogate_path', 'str')
         coretransp_default_file_name = instance.get_setting('cortransp_default', 'str')
@@ -163,6 +163,9 @@ def gem_surr_M3():
         coretransp_default_file_path = coretransp_default_file_name
 
         n_dim_out = len([prof_out_names])
+
+        rho_ind_s = [int(x) for x in rho_ind_s]
+        n_fts = len(rho_ind_s)
 
         # Initialising surrogate model
         #   for a one-shot training case should only be done once in f_init
@@ -202,7 +205,7 @@ def gem_surr_M3():
         coreprof_in_data_bytes = msg_in.data
 
         # Save the binary buffer to a file
-        devshm_file = "/dev/shm/ets_coreprof_in.cpo"
+        devshm_file = "/dev/shm/ets_coreprof_in.cpo" #TODO: generate and store random name
         with open(devshm_file, "wb") as f:
             f.write(coreprof_in_data_bytes)
         start_t = t()
@@ -230,6 +233,7 @@ def gem_surr_M3():
         if profiles_in.shape[1] == 1:
             profiles_in.squeeze()
         profiles_in.reshape(-1,1)
+        print('> Reshaped core profile \n {0}'.format(profiles_in)) ###DEBUG
 
         # Read coreprof to either:
         #                   a. dictionary with keys being names of profiles and values being numpy arrays or lists
@@ -237,19 +241,23 @@ def gem_surr_M3():
 
         #TODO use a surrogate for a vector output: ['te.transp.flux', 'ti.transp.flux']
         # Infer a mean flux value using a surrogate
-        fluxes_out, _ = model.predict(profiles_in)
-        print('> Used a surrogate to predict new Q_e,i={0}'.format(fluxes_out))
+        #   NB!: Assumes same model predicting for different rho_tor separately:
+        for n_ft, r in enumerate(rho_ind_s):
+            fluxes_out, fluxes_out_std = model.predict(profiles_in[:,n_ft])
+            print('> Used a surrogate at rho_ind={r} to predict new Q_e,i={0}'.format(fluxes_out))
+            print('> Predicted STDs of new Q_e,i={0}'.format(fluxes_out_std))
 
         #TODO: in principle with large scale separation local t_cur does not play role,
         # but one could also estimate time for turbulence saturation with surrogate 
         #TODO: find MUSCLE3 format for dictionaries or dataframes
         #TODO: initialise the default data to fill in coretransp structures - look up GEM0 in Python
 
-        fluxes_out_dict = {k:fluxes_out[0][i] for i,k in enumerate(output_names)}
+        fluxes_out_dict = {k:fluxes_out[:][i] for i,k in enumerate(output_names)}
         
         coretransp_cpo_obj = output_value_to_coretransp(
                                         fluxes_out_dict, 
                                         coretransp_default_file_path, 
+                                        r_s = [i for i,r in enumerate(rho_ind_s)],
                                         prof_names=['te_transp', 'ti_transp'],
                                                         )
         #write(coretransp_cpo_obj, "sur_coretransp_out.cpo", "coretransp") ###DEBUG

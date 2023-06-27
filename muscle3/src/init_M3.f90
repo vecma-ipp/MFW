@@ -75,9 +75,9 @@ program init_M3
      print *, ">opened coreprof CPO" !!!DEBUG
      if (ios == 0) then
         close (10)
-        print *, ">read close" !!!DEBUG
+        print *, ">file close" !!!DEBUG
         call open_read_file(10, trim(init_cpos)//"/ets_coreprof_in.cpo")
-        print *, ">read open" !!!DEBUG
+        print *, ">file open" !!!DEBUG
         call read_cpo(coreprof(1), 'coreprof')
         print *, ">read read" !!!DEBUG
         call close_read_file

@@ -18,6 +18,7 @@ program ets_M3
 
   real(kind=LIBMUSCLE_real8) :: t_init, t_current, t_duration, dt_max
   logical :: save_slice
+  !logical :: adaptive_timestep
   integer(kind=LIBMUSCLE_int8) :: slice_init
 
   ! code specific
@@ -76,6 +77,7 @@ program ets_M3
      t_duration = LIBMUSCLE_Instance_get_setting_as_real8(instance, 'duration')
      slice_init = LIBMUSCLE_Instance_get_setting_as_int8(instance, 'slice_initial_number')
      save_slice = LIBMUSCLE_Instance_get_setting_as_logical(instance, 'save_slice')
+     adaptive_timestep = LIBMUSCLE_Instance_get_setting_as_logical(instance, 'adaptive_timestep')
      
      print *, ">receiving equilibrium_init" !!!DEBUG
      ! recv init equilibrium
@@ -121,7 +123,7 @@ program ets_M3
      t_current = t_init
      step = 0
      
-     print *, '>ets: t_init=', t_current, ' and step=', step !DEBUG
+     print *, '>ets: t_init=', t_current, ' ;step=', step, ';dt_max=', dt_max, ' ;t_duration= ', t_duration !DEBUG
 
      !###  TIME LOOP  ############################!
      do while (t_current+dt_max .lt. t_init+t_duration)
