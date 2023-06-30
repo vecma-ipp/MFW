@@ -97,7 +97,7 @@ def SA_exploite(analysis, qoi):
     #AUG_GM_date_explore(filename='../data/AUG_gem_inoutput.txt')
 
 def profile_evol_load(rho=0.7, folder_name='../gem_data/cpo5/', prof_names=['ti_transp', 'te_transp'], attrib_names=['flux'], 
-                      coord_len=1, var_num=1, file_code_name='gem', name_postfix=''):
+                      coord_len=1, var_num=1, file_code_name='gem', name_postfix='', file_base_intermediate = 'coretransp'):
     """
     Loads the quantity values from all CPO files with a specific type of name in the folder,
           then saves in a CSV file
@@ -116,8 +116,8 @@ def profile_evol_load(rho=0.7, folder_name='../gem_data/cpo5/', prof_names=['ti_
              nested list of values: profiles&attributes -> flux-tubes -> values(time) 
     """ 
 
-    file_base_name = 'gem_coretransp'
-    file_base_intermediate = 'coretransp'
+    #file_base_name = 'gem_coretransp'
+    #file_base_intermediate = 'coretransp'
     file_base_tocheck = file_code_name + '_' + file_base_intermediate
 
     file_ext = '.cpo'
@@ -806,6 +806,7 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnumstart=1, runnum=
     """
 
     print('\n > Starting a new postprocessing sequence!!! \n')
+    print(f"foldername={foldername}, runforbatch={runforbatch}, coordnum={coordnum}, runnumstart={runnumstart}, runnum={runnum}, mainfoldernum={mainfoldernum}") ###DEBUG
 
     if mainfoldernum is None:
         mainfoldernum = foldername # rather bad, fails if foldername is composed
@@ -851,7 +852,6 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnumstart=1, runnum=
             attributes = ['flux']
         else:
             print('>Error in start of postprocessing: no such code recognized')
-
 
         # 1) If runforbatch, then csv are already in the folder, otherwise have to read CPO-s
         time_start = time.time()
@@ -1189,16 +1189,16 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnumstart=1, runnum=
 
             print('plotting cuts starting')
             
-            
+            """
             plot_response_cuts(scan_df, 
-                               runs_input_names_new, 
-                               [p+'_'+a],
+                               input_names=runs_input_names_new, 
+                               output_names=[p+'_'+a],
                                compare_vals=compare_vals_mfw, 
                                foldname=p+'_'+a+'_'+mainfoldernum,
                                traces=val_ev_s, #val_wind_s,
                                hists=True,
                               )
-            
+            """
 
             #4.5.1c) Plotting time traces for one case with its AVG, STD, SEM
             #runn_loc = 6   

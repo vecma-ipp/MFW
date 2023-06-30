@@ -39,7 +39,7 @@ if [ -n "${CAMP_NAME_PREFIX}" ]; then
   export DIR_PREFIX=${CAMP_NAME_PREFIX}
 else
   export DIR_PREFIX='VARY_1FT_GEM_NT_' #'VARY_1FT_GEM_'
-  #export DIR_PREFIX=
+  #export DIR_PREFIX=UQ_8FTgem_
 fi
 DIR=${SCRATCH}'/'${DIR_PREFIX}${UQCAMPDIR}
 
@@ -116,6 +116,7 @@ if [ "${RUN_NOT_ONLY_ALL}" -eq 1 ]; then
 
   if [ "${READ_FROM_CSV}" -ne 1 ]; then
 
+    echo RUNNUM=${RUNRANGE}
     python3 gem_da.py ${DIR_SRC}/cpo/${CPONUM} 0 1 ${RUNRANGESTART} ${RUNRANGE} 'new_'${UQCAMPDIR}'_'${CPONUM}
 
   else

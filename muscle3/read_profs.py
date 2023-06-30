@@ -1,5 +1,6 @@
 import sys, os, csv
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 from itertools import product
 
@@ -51,7 +52,7 @@ def read_files(foldername, quantity, attribute, coords, filetype='coreprof', dat
     
     return atrributes_array
 
-date = '20230615_155531'
+date = '20230622_135650'
 codename = 'gem_surr'
 load_fold_name = 'workflow/run_fusion_'+codename+'_'+date+'/instances/transport/workdir/'
 save_fold_name = 'workflow/run_fusion_'+codename+'_'+date+'/'
@@ -59,6 +60,19 @@ save_fold_name = 'workflow/run_fusion_'+codename+'_'+date+'/'
 #n_run = 10
 #runnum_list = [r for r in range (n_run)]
 n_rho_resol = 1
+
+# load reference data for the surrogate training data set
+
+if 'sur' in codename:
+    ref_data_filename = 'ref_train_data.csv'
+    ref_data = pd.read_csv(ref_data_filename, sep=',')
+
+lookup_names= {
+        "ti_value" : "$T_{{i}}$",
+        "te_value" : "$T_{{e}}$",
+        "ti_ddrho" : "$\\nabla T_{{i}}$",
+        "te_ddrho" : "$\\nabla T_{{e}}$",
+              }
 
 cpo_names = ['coreprof', 'coretransp']
 
@@ -108,23 +122,32 @@ for cpo_name in cpo_names:
         n_timesteps = data.shape[0]
         n_rhos = data.shape[1]
 
+        #n_timesteps = 5
         # Plotting an attribute value at a the n_ft-th flux tube against time
         fig, ax = plt.subplots()
-        ax.plot(np.linspace(0, n_timesteps, n_timesteps), data[:, n_ft])
-        ax.set_xlabel('time')
-        ax.set_ylabel(quantities[i_q]+'_'+attributes[j_a])
-        fig.savefig(save_fold_name+'res_'+codename+'_'+quantities[i_q]+'_'+attributes[j_a]+'_'+date+'.png')
+        ax.plot(np.linspace(0, n_timesteps, n_timesteps), data[:n_timesteps, n_ft], '.')
+        ax.set_xlabel('${{t}}$, time-steps')
+        #TODO: display integer numbers of time steps
+        ax.set_ylabel(lookup_names[quantities[i_q]+'_'+attributes[j_a]] if (quantities[i_q]+'_'+attributes[j_a] in lookup_names) else quantities[i_q]+'_'+attributes[j_a])
+        if 'sur' in codename:
+            if quantities[i_q]+'_'+attributes[j_a] in ref_data.columns:
+                min_val = ref_data[quantities[i_q]+'_'+attributes[j_a]].min()
+                max_val = ref_data[quantities[i_q]+'_'+attributes[j_a]].max()
+                ax.hlines(y = min_val, xmin=0, xmax=n_timesteps, color='r', linestyle='--', label='extrema of training dataset')
+                ax.hlines(y = max_val, xmin=0, xmax=n_timesteps, color='r', linestyle='--')
+        ax.legend(loc='best')
+        fig.savefig(save_fold_name+'res_'+codename+'_'+quantities[i_q]+'_'+attributes[j_a]+'_'+date+'.pdf')
         plt.close()
 
         # Plotting attribute profile for multiple time-steps
-        n_timesteps_toplot = 10
+        n_timesteps_toplot = 1
         fig, ax = plt.subplots()
-        #for t in range(0, n_timesteps, n_timesteps_toplot):
-        for t in range(0, 15, 1):
+        for t in range(0, n_timesteps, n_timesteps_toplot):
+        #for t in range(0, 5, 1):
             ax.plot(np.array(coord_num), data[t, :], label=f"t={t}", marker='.')
         #ax.set_yscale('symlog')
         ax.set_xlabel('rho coord')
         ax.set_ylabel(quantities[i_q]+'_'+attributes[j_a])
         ax.legend(loc='best')
-        fig.savefig(save_fold_name+'prof_'+codename+'_'+quantities[i_q]+'_'+attributes[j_a]+'_'+date+'.png')
+        fig.savefig(save_fold_name+'prof_'+codename+'_'+quantities[i_q]+'_'+attributes[j_a]+'_'+date+'.pdf')
         plt.close()
