@@ -72,6 +72,8 @@ lookup_names= {
         "te_value" : "$T_{{e}}$",
         "ti_ddrho" : "$\\nabla T_{{i}}$",
         "te_ddrho" : "$\\nabla T_{{e}}$",
+        'te_transp.flux': "$Q_{{e}}$", 
+        'ti_transp.flux': "$Q_{{i}}$",
               }
 
 cpo_names = ['coreprof', 'coretransp']
@@ -133,7 +135,7 @@ for cpo_name in cpo_names:
             if quantities[i_q]+'_'+attributes[j_a] in ref_data.columns:
                 min_val = ref_data[quantities[i_q]+'_'+attributes[j_a]].min()
                 max_val = ref_data[quantities[i_q]+'_'+attributes[j_a]].max()
-                ax.hlines(y = min_val, xmin=0, xmax=n_timesteps, color='r', linestyle='--', label='extrema of training dataset')
+                ax.hlines(y = min_val, xmin=0, xmax=n_timesteps, color='r', linestyle='--', label='bounds of the training dataset')
                 ax.hlines(y = max_val, xmin=0, xmax=n_timesteps, color='r', linestyle='--')
         ax.legend(loc='best')
         fig.savefig(save_fold_name+'res_'+codename+'_'+quantities[i_q]+'_'+attributes[j_a]+'_'+date+'.pdf')

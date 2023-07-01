@@ -1080,7 +1080,8 @@ def plot_response_cuts(data, input_names, output_names, compare_vals=None, foldn
                         title=f"Response for: {lookup_param_names[input_names[0]]} $\\rightarrow$ {lookup_param_names[output_names[0]]}",
                         xlabel=lookup_param_names[ input_names[0]]+', '+lookup_param_units[ input_names[0]],
                         ylabel=lookup_param_names[output_names[0]]+', '+lookup_param_units[output_names[0]],
-                        label=f"{lookup_param_names[input_names[0]]} $\\rightarrow$ {lookup_param_names[output_names[0]]}(Value and Standard Error)",
+                        #label=f"{lookup_param_names[input_names[0]]} $\\rightarrow$ {lookup_param_names[output_names[0]]} (Value and Standard Error)",
+                        label=f"Value and Standard Error",
                         legend=True,
                         )
         
@@ -1710,7 +1711,7 @@ def time_traces_per_run(traces, run_len=450, foldname='', apha_discard=0.3):
     # Plotting vertical lines for different phases
     ax[0].vlines(x=n_disc, ymin=y_lim[0], ymax=y_lim[1], color='grey', label=f"start of stationary phase")
     n_w_c = 12
-    ax[0].vlines(x=n_disc+n_w_c*run_len, ymin=y_lim[0], ymax=y_lim[1], color='g', label=f"convergence of estimates")
+    ax[0].vlines(x=n_disc+n_w_c*run_len, ymin=y_lim[0], ymax=y_lim[1], color='k', label=f"convergence of estimates")
     ##########
 
     # Setting lables, legend etc.
@@ -1745,71 +1746,83 @@ def time_traces_per_run(traces, run_len=450, foldname='', apha_discard=0.3):
     #fig1, ax1 = plt.subplots(figsize=(5,5))
     
     #ax[1].plot(np.arange(n_r), acts, color='b')
-    ax[1].plot(np.arange(n_disc+run_len, n_tt, run_len), acts, color='b')
+    ax[1].plot(np.arange(n_disc+run_len, n_tt, run_len), acts, color='b', label=f"ACT, t.st.")
     
-    ax[1].set_xlabel(f"${{t}}, code time steps") #('Number of simulations')
-    ax[1].set_ylabel('Autocorrelation Time')
+    ax[1].set_xlabel(f"${{t}}$, code time steps") #('Number of simulations')
+    #ax[1].set_ylabel('Autocorrelation Time')
+    #ax[1].set_ylabel('Quantity and units in legend')
     ax[1].set_ylim(ymin=0, ymax=100)
-    ax[1].yaxis.label.set_color('b')
+    ax[1].yaxis.label.set_color('k')
     #fig1.tight_layout()
     #fig1.savefig(f"vact_mean_{foldname}.pdf")
     #plt.close()
 
-    #--- Plotting SEM 
+    #--- Plotting SEM
+    scale_factor_sem = 1_000
     #fig2, ax2 = plt.subplots(figsize=(5,5))
-    ax2 = ax[1].twinx()
-    
+    #ax2 = ax[1].twinx()
+    ax2 = ax[1]
+
     #ax2.plot(np.arange(n_r), sems, color='g')
-    ax[1].plot(np.arange(n_disc+run_len, n_tt, run_len), sems, color='b')
+    ax2.plot(np.arange(n_disc+run_len, n_tt, run_len), sems/scale_factor_sem, color='b', label=f"SEM, {scale_factor_sem} $\\cdot W/m^{{2}}$")
     
     #ax2.set_xlabel('Number of simulations')
-    ax2.set_ylabel('Standard error')
-    ax2.set_ylim(ymin=0, ymax=100_000)
-    ax2.yaxis.label.set_color('g')
-    #TODO make X axis limits of same factor (for the grid) e.g. 10^4 and 10^2
+    #ax2.set_ylabel('Standard error')
+    #ax2.set_ylim(ymin=0, ymax=100_000/scale_factor_sem)
+    #ax2.yaxis.label.set_color('g')
+    
     #fig.tight_layout()
     #fig.savefig(f"sem_act_timetraces_{foldname}.pdf")
     #plt.close()
 
     #--- Plotting Mean
+    scale_factor_mmn = 50_000
     #fig3, ax3 = plt.subplots(figsize=(7,7))
-    ax3 = ax[1].twinx()
+    #ax3 = ax[1].twinx()
+    ax3 = ax[1]
 
     #ax3.plot(np.arange(n_r), means)
-    ax3.plot(np.arange(n_disc+run_len, n_tt, run_len), means, color='r')
+    ax3.plot(np.arange(n_disc+run_len, n_tt, run_len), means/scale_factor_mmn, color='r', label=f"Mean, {scale_factor_mmn} $\\cdot W/m^{{2}}$")
 
     #ax3.set_xlabel('Number of simulations')
-    ax3.set_ylabel('Mean value')
-    ax3.set_ylim(ymin=0, ymax=1_000_000)
-    ax3.yaxis.label.set_color('r')
+    #ax3.set_ylabel('Mean value')
+    #ax3.set_ylim(ymin=0, ymax=1_000_000/scale_factor_mmn)
+    #ax3.yaxis.label.set_color('r')
     #fig3.tight_layout()
     #fig3.savefig('val_mean_{0}.pdf'.format(foldname))
     #plt.close()
 
     #--- Plotting Standard Deviation
-    ax4 = ax[1].twinx()
-    ax4.plot(np.arange(n_disc+run_len, n_tt, run_len), stds, color='y')
-    ax4.set_ylabel('Standard Deviation')
-    ax4.set_ylim(ymin=0, ymax=1_000_000)
-    ax4.yaxis.label.set_color('y')
+    scale_factor_std = 10_000
+    #ax4 = ax[1].twinx()
+    ax4 = ax[1]
+
+    ax4.plot(np.arange(n_disc+run_len, n_tt, run_len), stds/scale_factor_std, color='y', label=f"STD, {scale_factor_std} $\\cdot W/m^{{2}}$")
+    #ax4.set_ylabel('Standard Deviation')
+    #ax4.set_ylim(ymin=0, ymax=1_000_000/scale_factor_std)
+    #ax4.yaxis.label.set_color('y')
     #fig.savefig(f"convergence_{foldname}.pdf")
-    plt.close()
+    #plt.close()
 
     # ---Plotting mean change
+    scale_factor_dmn = 1_000
     #fig5, ax5 = plt.subplots(figsize=(7,7))
-    ax5 = ax[1].twinx()
-    
+    #ax5 = ax[1].twinx()
+    ax5=ax[1]
+
     #ax5.plot(np.arange(1, n_r), abs_mean_changes[1:])
-    ax5.plot(np.arange(n_disc+2*run_len, n_tt, run_len), abs_mean_changes[1:])
+    ax5.plot(np.arange(n_disc+2*run_len, n_tt, run_len), abs_mean_changes[1:]/scale_factor_dmn, label=f"Mean change {scale_factor_dmn} $\\cdot W/m^{{2}}$")
 
     #ax5.set_xlabel('Number of simulations')
-    ax5.set_ylabel('Absolute change of the mean')
-    ax5.set_ylim(ymin=0, ymax=100_000)
+    #ax5.set_ylabel('Absolute change of the mean')
+    #ax5.set_ylim(ymin=0, ymax=100_000/scale_factor_dmn)
     #fig5.tight_layout()
     #fig5.savefig('rabs_mean_{0}.pdf'.format(foldname))
     
     #--- Plotting vertical line and saving
-    ax[1].vlines(x=n_disc+n_w_c*run_len, ymin=y_lim[0], ymax=y_lim[1], color='g', label=f"convergence of estimates")
+    ax[1].vlines(x=n_disc+n_w_c*run_len, ymin=0, ymax=100, color='k', label=f"Convergence of estimates")
+    ax[1].legend(loc='best')
+
     ##########
     fig.savefig(f"sem_act_timetraces_{foldname}.pdf")
     plt.close()
