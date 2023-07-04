@@ -1749,32 +1749,33 @@ def time_traces_per_run(traces, run_len=450, foldname='', apha_discard=0.3):
     ax[1].plot(np.arange(n_disc+run_len, n_tt, run_len), acts, color='b', label=f"ACT, t.st.")
     
     ax[1].set_xlabel(f"${{t}}$, code time steps") #('Number of simulations')
-    #ax[1].set_ylabel('Autocorrelation Time')
+    ax[1].set_ylabel('Autocorrelation Time, time steps')
     #ax[1].set_ylabel('Quantity and units in legend')
     ax[1].set_ylim(ymin=0, ymax=100)
-    ax[1].yaxis.label.set_color('k')
+    ax[1].yaxis.label.set_color('b')
     #fig1.tight_layout()
     #fig1.savefig(f"vact_mean_{foldname}.pdf")
     #plt.close()
 
     #--- Plotting SEM
-    scale_factor_sem = 1_000
+    scale_factor_sem = 1. #1_000
     #fig2, ax2 = plt.subplots(figsize=(5,5))
-    #ax2 = ax[1].twinx()
-    ax2 = ax[1]
+    ax2 = ax[1].twinx()
+    #ax2 = ax[1]
 
     #ax2.plot(np.arange(n_r), sems, color='g')
-    ax2.plot(np.arange(n_disc+run_len, n_tt, run_len), sems/scale_factor_sem, color='b', label=f"SEM, {scale_factor_sem} $\\cdot W/m^{{2}}$")
+    ax2.plot(np.arange(n_disc+run_len, n_tt, run_len), sems/scale_factor_sem, color='g', label=f"SEM, {scale_factor_sem} $\\cdot W/m^{{2}}$")
     
     #ax2.set_xlabel('Number of simulations')
-    #ax2.set_ylabel('Standard error')
-    #ax2.set_ylim(ymin=0, ymax=100_000/scale_factor_sem)
-    #ax2.yaxis.label.set_color('g')
+    ax2.set_ylabel('Standard error, $\\frac{W}{m^{{2}}}$')
+    ax2.set_ylim(ymin=0, ymax=100_000/scale_factor_sem)
+    ax2.yaxis.label.set_color('g')
     
     #fig.tight_layout()
     #fig.savefig(f"sem_act_timetraces_{foldname}.pdf")
     #plt.close()
-
+    
+    """
     #--- Plotting Mean
     scale_factor_mmn = 50_000
     #fig3, ax3 = plt.subplots(figsize=(7,7))
@@ -1819,9 +1820,10 @@ def time_traces_per_run(traces, run_len=450, foldname='', apha_discard=0.3):
     #fig5.tight_layout()
     #fig5.savefig('rabs_mean_{0}.pdf'.format(foldname))
     
+    """
     #--- Plotting vertical line and saving
     ax[1].vlines(x=n_disc+n_w_c*run_len, ymin=0, ymax=100, color='k', label=f"Convergence of estimates")
-    ax[1].legend(loc='best')
+    #ax[1].legend(loc='best')
 
     ##########
     fig.savefig(f"sem_act_timetraces_{foldname}.pdf")
