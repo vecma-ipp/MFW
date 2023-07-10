@@ -108,6 +108,7 @@ implementations:
   gem_impl_mpi:
     executable: /u/yyudin/code/MFW/muscle3/bin/COBRA/gem_M3
     execution_model: intelmpi
+    can_share_resources: false
 #  gem_impl:
 #    executable: mpirun
 #    args:

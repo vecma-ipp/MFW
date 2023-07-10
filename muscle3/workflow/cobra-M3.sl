@@ -1,7 +1,8 @@
 #!/bin/bash
-#SBATCH --time=02:00:00         	# time limits
+#SBATCH --time=01:00:00         	# time limits
 #SBATCH --nodes=1 			# nodes
 #SBATCH --ntasks-per-node=40		# tasks per node
+#SBATCH --ntasks-per-core=1             # tasks per core
 ###SBATCH --cpus-per-task=1		# CPU per task
 #SBATCH --partition=medium	# partition to be used
 ###SBATCH --qos=			# quality of service
