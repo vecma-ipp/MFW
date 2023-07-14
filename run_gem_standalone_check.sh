@@ -29,12 +29,14 @@ for f in $(find . -type f -name *coreprof*cpo); do
     # copy xml, xsd, sh, cpo-s and exectuables to every new directory
 
     # if the folder contains and equilibrium file, copy it, else get a default one
+    # file naming assumption might fail, especially if there are multiple equilibrium files in a folder
     if [ -e ./${d_path}/*equilibrium*.cpo ] 
     then
       echo "using local equilibrium in "${d_path}/${d_name}
       cp ./${d_path}/*equilibrium*.cpo  ${orig_repo_loc}/${new_run_dir}/${d_path}/${d_name}/gem_equilibrium_in.cpo
     else
       echo "using default equilibrium in "${d_path}/${d_name}     
+      # the only directory with multiple equilibria (for negative triangularity) should be covered by this
       cp ${orig_repo_loc}/workflows/AUG_28906_6/ets_equilibrium_in.cpo   ${orig_repo_loc}/${new_run_dir}/${d_path}/${d_name}/gem_equilibrium_in.cpo
     fi
 
