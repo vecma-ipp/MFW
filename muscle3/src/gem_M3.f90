@@ -17,7 +17,7 @@ program gem_M3
 
   integer, parameter :: root_rank = 0
   integer :: err_code, ierr, npes, irank, ios
-  character(:), allocatable :: err_msg
+  !character(:), allocatable :: err_msg
   integer :: equil_buf_size, coreprof_buf_size
 
   real (selected_real_kind(15)) :: t_cur !, t_max, dt, k
@@ -26,6 +26,9 @@ program gem_M3
   character(kind=c_char), pointer :: coreprof_in_buf(:)
   character(kind=c_char), pointer :: equilibrium_in_buf(:)
   character(kind=c_char), pointer :: coretransp_out_buf(:)
+!   character(kind=c_char), allocatable :: coreprof_in_buf(:)
+!   character(kind=c_char), allocatable :: equilibrium_in_buf(:)
+!   character(kind=c_char), allocatable :: coretransp_out_buf(:)
 
   call MPI_Init(ierr)
   call MPI_Comm_size(MPI_COMM_WORLD, npes, ierr)
@@ -64,7 +67,7 @@ program gem_M3
         call LIBMUSCLE_Message_free(rmsg)
      end if
 
-     print *, "received equilibrium_in, now broadcasting" !!!DEBUG
+     !print *, "received equilibrium_in, now broadcasting" !!!DEBUG
      call MPI_Bcast(equil_buf_size, 1, MPI_INT, root_rank, MPI_COMM_WORLD, ierr)
 
      if (irank /= root_rank) then
@@ -73,9 +76,10 @@ program gem_M3
 
      call MPI_Bcast(equilibrium_in_buf, equil_buf_size, MPI_BYTE, root_rank, MPI_COMM_WORLD, ierr)
      
-     print *, "broadcasted equilibrium_in, now receiving coreprof_in" !!!DEBUG
-     print *, "equilibrium_in_buf associated: ", associated(equilibrium_in_buf) !!!DEBUG
-     print *, "first ", 64, " symbols of equilibrium_in: ", equilibrium_in_buf(1:64) !!!DEBUG 
+     !print *, "broadcasted equilibrium_in, now receiving coreprof_in" !!!DEBUG
+     !print *, "equilibrium_in_buf associated: ", associated(equilibrium_in_buf) !!!DEBUG
+     !!print *, "equilibrium_in_buf allocated: ", allocated(equilibrium_in_buf) !!!DEBUG
+     !print *, "first ", 64, " symbols of equilibrium_in: ", equilibrium_in_buf(1:64) !!!DEBUG 
 
      ! receive coreprof data
      rmsg = LIBMUSCLE_Instance_receive(instance, 'coreprof_in')
@@ -90,7 +94,7 @@ program gem_M3
         call LIBMUSCLE_Message_free(rmsg)
      end if
 
-     print *, "received coreprof_in, now broadcasting" !!!DEBUG
+     !print *, "received coreprof_in, now broadcasting" !!!DEBUG
      call MPI_Bcast(coreprof_buf_size, 1, MPI_INT, root_rank, MPI_COMM_WORLD, ierr)
 
      if (irank /= root_rank) then
@@ -98,13 +102,14 @@ program gem_M3
      end if
 
      call MPI_Bcast(coreprof_in_buf, coreprof_buf_size, MPI_BYTE, root_rank, MPI_COMM_WORLD, ierr)
-     print *, "broadcasted coreprof_in, now barier before the GEM call" !!!DEBUG
-     print *, "coreprof_in_buf associated: ", associated(coreprof_in_buf) !!!DEBUG
-     print *, "first ", 64, " symbols of coreprof_in: ", coreprof_in_buf(1:64) !!!DEBUG 
+     !print *, "broadcasted coreprof_in, now barier before the GEM call" !!!DEBUG
+     !print *, "coreprof_in_buf associated: ", associated(coreprof_in_buf) !!!DEBUG
+     !!print *, "coreprof_in_buf allocated: ", allocated(coreprof_in_buf) !!!DEBUG
+     !print *, "first ", 64, " symbols of coreprof_in: ", coreprof_in_buf(1:64) !!!DEBUG 
 
      call MPI_Barrier(MPI_COMM_WORLD, ierr)
 
-     print *, "after barier, calling gem2buf" !!!DEBUG
+     !print *, "after barier, calling gem2buf" !!!DEBUG
 
      call gem2buf( &
           equilibrium_in_buf, &
@@ -116,34 +121,42 @@ program gem_M3
      if (irank == root_rank) then
 
         print *, "from rank=", irank, " sending coretransp_out" !!!DEBUG
-        print *, "coretransp_out_buf associated: ", associated(coretransp_out_buf) !!!DEBUG
-        print *, "first ", 64, " symbols of coretransp_out: ", coretransp_out_buf(1:64) !!!DEBUG 
+        !print *, "coretransp_out_buf associated: ", associated(coretransp_out_buf) !!!DEBUG
+        !!print *, "coretransp_out_buf allocated: ", allocated(coretransp_out_buf) !!!DEBUG
+        !print *, "first ", 64, " symbols of coretransp_out_buf: ", coretransp_out_buf(1:64) !!!DEBUG 
         sdata = LIBMUSCLE_Data_create_byte_array(coretransp_out_buf)
-        print *, "byte array created for coretransp_out" !!! DEBUG
+        !print *, "byte array created for coretransp_out" !!! DEBUG
         smsg = LIBMUSCLE_Message_create(t_cur, sdata)
-        print *, "muscle coretransp_out message created" !!! DEBUG
+        !print *, "muscle coretransp_out message created" !!! DEBUG
         call LIBMUSCLE_Instance_send(instance, 'coretransp_out', smsg)
-        print *, "muscle coretransp_out message sent" !!! DEBUG
+        !print *, "muscle coretransp_out message sent" !!! DEBUG
         call LIBMUSCLE_Message_free(smsg)
-        print *, "muscle coretransp_out message structures destroyed" !!! DEBUG
+        !print *, "muscle coretransp_out message structures destroyed" !!! DEBUG
 
         call LIBMUSCLE_Data_free(sdata)
-        print *, "muscle coretransp_out data structures destroyed" !!! DEBUG
+        !print *, "muscle coretransp_out data structures destroyed" !!! DEBUG
 
+     else
+       !print *, "coretransp_out_buf associated: ", associated(coretransp_out_buf) !!! DEBUG
+       !print *, "first ", 64, " symbols of coretransp_out_buf: ", coretransp_out_buf(1:64) !!!DEBUG
+     
      end if
      
      deallocate(equilibrium_in_buf)
      deallocate(coreprof_in_buf)
-     deallocate(coretransp_out_buf)
+     
+     if (irank == root_rank) then
+       deallocate(coretransp_out_buf)
+     end if
 
      print *, "end of muscle iteration" !!! DEBUG
 
   end do
   
   call LIBMUSCLE_Instance_free(instance)
-  print *, "freed libmuscle instance" !!! DEBUG
+  !print *, "freed libmuscle instance" !!! DEBUG
   
   call MPI_Finalize(ierr)
-  print *, "finilised mpi" !!! DEBUG
+  !print *, "finilised mpi" !!! DEBUG
 
 end program gem_M3
