@@ -40,7 +40,7 @@ for f in $(find . -type f -name *coreprof*cpo); do
       cp ${orig_repo_loc}/workflows/AUG_28906_6/ets_equilibrium_in.cpo   ${orig_repo_loc}/${new_run_dir}/${d_path}/${d_name}/gem_equilibrium_in.cpo
     fi
 
-    cp ${orig_repo_loc}/workflows/gem_1n_8ft.xml   ${orig_repo_loc}/${new_run_dir}/${d_path}/${d_name}/gem.xml
+    cp ${orig_repo_loc}/workflows/gem_8n_8ft.xml   ${orig_repo_loc}/${new_run_dir}/${d_path}/${d_name}/gem.xml
     cp ${orig_repo_loc}/workflows/gem.xsd   ${orig_repo_loc}/${new_run_dir}/${d_path}/${d_name}/
 
     cp ${orig_repo_loc}/standalone/bin/${SYS}/loop_gem_notransp   ${orig_repo_loc}/${new_run_dir}/${d_path}/${d_name}/
