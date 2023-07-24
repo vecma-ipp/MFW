@@ -25,7 +25,9 @@ ifeq (${FC90},gfortran)
 export FC90FLAGS_SOURCES = -fbacktrace -fcheck=all -fstack-check 
 else
 # Intel: ifort and mpifort
-export FC90FLAGS_SOURCES = -traceback -check all -fp-stack-check 
+export FC90FLAGS_SOURCES = -traceback -check all -fp-stack-check
+#trying how to enable traceback at gem_standalone
+#export FC90FLAGS += -traceback -check all -fp-stack-check
 endif
 
 #.SUFFIXES:
@@ -56,6 +58,9 @@ VPATH = ${SRCDIR} ${SRCDIR}/tools ${SRCDIR}/tests
 # additional flags #############################################################
 INCLUDES = -I${INCDIR} -I${INC_UAL} 
 #-I${ETS} -I${INC_TYPES} -I${INC_CONSTANTS} -I${INC_BDS}
+
+#DEBUG=yes
+DEBUG=no
 
 #--------------------------------------------------------------------#
 # use MPI compiler for all Fortran kernel sources (default=no)       #
@@ -119,7 +124,7 @@ GEM0_O = ${OBJDIR}/gem0_standalone.o
 GEM_O = ${OBJDIR}/gem_standalone.o
 
 UNIT_TESTS = ETS_TEST SOURCES_TEST EQUILUPDATE_TEST CHEASE_TEST IMP4DV_TEST BOHMGB_TEST GEM0_TEST GEM_TEST
-LOOP_TESTS = LOOP_BGB LOOP_GEM0 LOOP_GEM ETS_CHEASE ETS_EQUILUPDATE LOOP_GEM_NOTRANSP
+LOOP_TESTS = LOOP_BGB LOOP_GEM0 LOOP_GEM ETS_CHEASE ETS_EQUILUPDATE LOOP_GEM_NOTRANSP GEM_TEST_LOOP
 
 ETS_EXE = ${BINDIR}/ets_test
 SOURCES_EXE = ${BINDIR}/sources_test
@@ -136,6 +141,7 @@ LOOP_GEM_EXE = ${BINDIR}/loop_gem
 ETS_CHEASE_EXE = ${BINDIR}/ets_chease_test
 ETS_EQUILUPDATE_EXE = ${BINDIR}/ets_equilupdate_test
 LOOP_GEM_NOTRANSP_EXE = ${BINDIR}/loop_gem_notransp
+GEM_TEST_LOOP_EXE = ${BINDIR}/gem_test_loop
 
 # ROLAND CODE
 ROP_EXE = ${BINDIR}/rop_test
@@ -199,6 +205,9 @@ ETS_EQUILUPDATE: ${SHARED_O} ${ETS_O} ${EQUILUPDATE_O} ${SOURCES_O} ${OBJDIR}/et
 
 LOOP_GEM_NOTRANSP: ${SHARED_O} ${ETS_O} ${EQUILUPDATE_O} ${CHEASE_O} ${GEM_O} ${IMP4DV_O} ${SOURCES_O} ${OBJDIR}/loop_gem_notransp.o
 	$(MPIF90) -o ${LOOP_GEM_NOTRANSP_EXE} $^ -L${ETS} -L${CHEASE} -L${GEM} -L${IMP4DV} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_UAL} -L${LIB_XML} -lets -lchease_muscle -lgem -limp4dv -lbds -litmconstants -litmtypes -lual -lxmllib -lxml2  ${LDFLAGS} ${FFTW_LIB} ${LIBLAPACK}
+
+GEM_TEST_LOOP:  ${SHARED_O} ${GEM_O} ${OBJDIR}/gem_test_loop.o
+	$(MPIF90) -o ${GEM_TEST_LOOP_EXE} $^ -L${GEM} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_XML} -L${LIB_UAL} -lgem -lbds -litmconstants -litmtypes -lxmllib -lual ${LDFLAGS} ${FFTW_LIB}
 
 ##################################################################################
 
@@ -288,3 +297,5 @@ ${OBJDIR}/ets_equilupdate_test.o: src/ets_equilupdate_test.f90
 ${OBJDIR}/loop_gem_notransp.o: src/loop_gem_notransp.f90
 	${MPIF90} -o $@ -c $< $(MPIFLAGS) -I${INC_TYPES}
 
+${OBJDIR}/gem_test_loop.o: src/gem_test_loop.f90
+	${MPIF90} -o $@ -c $< $(MPIFLAGS) -I${INC_TYPES}
