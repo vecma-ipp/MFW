@@ -91,6 +91,21 @@ program gem_test
      STOP
   end if
 
+  !DEBUG
+  if (irank.eq.0) then
+    print *, "ti value passed to gem"
+    print *, corep(1)%ti%value !!!DEBUG
+    
+    call open_write_file(13, 'corep_ets.cpo')
+    call write_cpo(corep(1), 'coreprof')
+    call close_write_file
+    
+    call open_write_file(14, 'equil_chease.cpo')
+    call write_cpo(equil(1), 'equilibrium')
+    call close_write_file
+  end if
+  !DEBUG
+
   call gem_cpo(equil, corep, coret)
 
   if (irank.eq.0) then

@@ -24,7 +24,7 @@ module ets_standalone
   logical, save :: pseudo_conv = .false.
   logical, save :: check_coretransp = .false. 
 
-  logical, save :: adaptive_timestep = .false.
+  logical, save :: adaptive_timestep != .false.
   integer, save :: init_step = 0     !initial step count
 
   integer, save :: inner_steps_init = 1         !!! initial inner steps count
@@ -248,6 +248,7 @@ contains
     call copy_cpo(corep_in(1),corep_old_test(1))
     call copy_cpo(corep_iter(1),corep_iter_test(1))
 
+    print *, "adaptive_timestep= ", adaptive_timestep !!!DEBUG
     
     if (adaptive_timestep) then
       ii              = 1
@@ -495,7 +496,7 @@ contains
 
     time_cur = corep_out(1)%time
 
-    print*, '>ets: ti%value*rho=0.7', corep_out(1)%ti%value(69) !!!DEBUG
+    print*, '>ets: ti%value@rho=0.7', corep_out(1)%ti%value(69, 1) !!!DEBUG
 
     ! transfer CPO to buf
     !...  write the results

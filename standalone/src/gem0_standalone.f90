@@ -42,6 +42,8 @@ contains
     call gem(equil, corep, coret, code_parameters)
     print *, "finished gem0 routine"
 
+    print *, '>gem0: ti_transp%flux= ', coret(1)%values(1)%ti_transp%flux
+
   end subroutine gem0_cpo
 
 
