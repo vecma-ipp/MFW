@@ -26,7 +26,7 @@ program loop_gem_notransp
   use copy_structures, only: copy_cpo
 
   use gem_standalone,         only: gem_cpo
-  use imp4dv_standalone,      only: imp4dv_cpo
+  !use imp4dv_standalone,      only: imp4dv_cpo
 
   !use euitm_schemas
   use euitm_routines
