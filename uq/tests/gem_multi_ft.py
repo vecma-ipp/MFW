@@ -22,6 +22,8 @@ from base.evvuq_partemplate_wenv import EasyVVUQParallelTemplateWithEnv
 
 from math import ceil
 
+import pickle
+
 '''
 Perform UQ for the Turblence code gem (using 8 flux tubes).
 Uncertainties are driven by:
@@ -35,8 +37,10 @@ def setup_gem(ftube_index, common_dir, input_params, output_columns, xml=None, p
     input_cponame = "coreprof"
 
     # CPO file containing the quantities of intersts
+    iternum=5
     #output_filename = "gem_coretransp_out.cpo"
-    output_filename = "gem_coretransp_0100.cpo"
+    #output_filename = "gem_coretransp_0100.cpo"
+    output_filename = "gem_coretransp_000"+str(iternum)+".cpo" #TODO cast into dddd format
     output_cponame = "coretransp"
 
     # Parameter space for campaign and the distributions list for the sampler
@@ -80,8 +84,11 @@ def exec_pj(campaign, exec_path, ncores, nnodes, mpi_instance, log_level="debug"
     try:
         print('Creating resource pool')
 
+        #NB1: 100 time steps: ~ 100*648*7/(450*32)~=31.98 nodes
+        #CHECK2: 100*648/(60*32)=33.75 nodes 
         with QCGPJPool(
-                    qcgpj_executor=QCGPJExecutor(log_level=log_level, ),
+                    #qcgpj_executor=QCGPJExecutor('--nl-ready-treshold', 0.95),
+                    qcgpj_executor=QCGPJExecutor(),
                     template=EasyVVUQParallelTemplateWithEnv(),
                     template_params=template_par_short,
                     ) as qcgpj:
@@ -131,9 +138,10 @@ if __name__ == "__main__":
     cpo_dir = os.path.abspath("../workflows/AUG_28906_6_8ft_restart")
     xml_dir = cpo_dir
     obj_dir = os.path.abspath("../standalone/bin/"+SYS)
-    exec_code = "loop_gem_notransp"
+    #exec_code = "loop_gem_notransp"
+    exec_code = "gem_test_loop"
 
-    alpha_unc = 0.25
+    alpha_unc = 0.5
 
     # Define the uncertain parameters (UQ inputs)
     input_params = {
@@ -152,8 +160,12 @@ if __name__ == "__main__":
     # Flux Tubes position indices. Run gem_test in strandalone and use:
     # base.utils.ftube_indices('gem_coreprof_in.cpo','gem_coretransp_out.cpo')
     # to get the list
+    
     ftube_indices = [15, 31, 44, 55, 66, 76, 85, 94]
+    #ftube_indices = [31, 44, 55, 66, 76, 85, 94] #NB: ft#1 failed analysis due to all ti_transp_flux==0.0
+    
     ftube_rhos = [0.14, 0.31, 0.44, 0.56, 0.67, 0.77, 0.86, 0.95] # these are rho_tor_norm
+    #ftube_rhos = [0.31, 0.44, 0.56, 0.67, 0.77, 0.86, 0.95] #NB: ft#1 failed analysis due to all ti_transp_flux==0.0m
     # TODO might be possible to read from some existing cpo files
 
     # Campaign for mutliapp
@@ -170,11 +182,13 @@ if __name__ == "__main__":
                     + common_dir + "/gem_coreprof_in.cpo")
 
     # Copy restart files
-    os.system("cp " + cpo_dir + "/t0?.dat " + common_dir)
+    #TODO: might be used, for now just checking a start-up
+    #os.system("cp " + cpo_dir + "/t0?.dat " + common_dir)
 
     # Copy XML and XSD files
+    xml_file_orig_name = "gem.xml"
     # Check if nrho_transp = 8 in gem.xml
-    os.system("cp " + xml_dir + "/gem.xml " + common_dir)
+    os.system("cp " + xml_dir + "/" + xml_file_orig_name + " " + common_dir + "/gem.xml")
     os.system("cp " + xml_dir + "/gem.xsd " + common_dir)
 
     # Copy exec file
@@ -185,7 +199,7 @@ if __name__ == "__main__":
     exec_path_comm = mpi_instance + exec_comm_flags + ' ' + exec_path
 
     # get ncores
-    gemxml = XMLElement(xml_dir + "/gem.xml")
+    gemxml = XMLElement(xml_dir + "/" + xml_file_orig_name )
     npesx = gemxml.get_value("cpu_parameters.domain_decomposition.npesx")
     npess = gemxml.get_value("cpu_parameters.domain_decomposition.npess")
     nftubes = gemxml.get_value("cpu_parameters.parallel_cases.nftubes")
@@ -214,6 +228,9 @@ if __name__ == "__main__":
     sob1 = {qoi: [] for qoi in output_columns}
     sobt = {qoi: [] for qoi in output_columns}
 
+    # Star from the outer flux tubes - disabled
+    #ftube_indices.reverse()
+    #ftube_rhos.reverse()
     # Run
     for i, ft_index in enumerate(ftube_indices):
 
@@ -240,18 +257,26 @@ if __name__ == "__main__":
         exec_res = exec_pj(campaign, exec_path, ncores, nnodes, mpi_instance)
         #exex_res = exec_loc(campaign, exec_path)
 
-        campaign.apply_analysis(stats)
+        campaign.apply_analysis(stats) 
+        #TODO here campaign crashes for the 1st f.t.:
+        # 
         result = campaign.get_last_analysis()
 
+        # Saving a pickle of results dataframe
+        pickle_filename = 'gem_notransp_results_' + os.environ['SLURM_JOBID']  + '.pickle'
+        with open(pickle_filename, "bw") as file_pickle:
+            pickle.dump(result, file_pickle)
+
         # Store results - TODO has to be done on per f.t. basis
+        print(result)
         for qoi in output_columns:
-            means[qoi].append(result.describe(qoi, 'mean')[i])
-            stds[qoi].append(result.describe(qoi, 'std')[i])
+            means[qoi].append(result.describe(qoi, 'mean'))
+            stds[qoi].append(result.describe(qoi, 'std'))
             s1 = {}
             st = {}
             for par in list(input_params.keys()):
-                s1.update({par: result.sobols_first(qoi)[par][i]})
-                st.update({par: result.sobols_total(qoi)[par][i]})
+                s1.update({par: result.sobols_first(qoi)[par]})
+                st.update({par: result.sobols_total(qoi)[par]})
             sob1[qoi].append(s1)
             sobt[qoi].append(st)
 

@@ -105,8 +105,8 @@ output_columns = [
                  "ti_transp.flux"
                  ]
 #Workaround: read 450th iteration file
-#output_filename = "gem_coretransp_0100.cpo" # TODO either read from folder, or make the set-up more flexible
-output_filename = "gem_coretransp_0450.cpo"
+output_filename = "gem_coretransp_0100.cpo" # TODO either read from folder, or make the set-up more flexible
+#output_filename = "gem_coretransp_0450.cpo"
 output_cponame = "coretransp"
 
 # Parameter space for campaign and the distributions list for the sampler
