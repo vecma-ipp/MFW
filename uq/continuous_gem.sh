@@ -9,11 +9,12 @@
 # nohup ./continuous_gem.sh 2  w468l7ng 1> script_wf_06122022.log 2>&1 &
 # nohup ./continuous_gem.sh 1  rp1pw2y6 1> script_wf_05122022.log 2>&1 &
 # nohup ./continuous_gem.sh 1  1f3hw2ikn 1> script_wf_13122022.log 2>&1 &
+# nohup ./continuous_gem.sh 1  csldvnei 1> script_wf_31072023.log 2>&1 &
 
 #0. State the total number of campaigns to run, and ordinal number of the last campaign in previous sequence
 echo "STARTING THE WORKFLOW"
 # number of runs
-NUMRUNS=3
+NUMRUNS=2
 # no of current run, which is the last finished submission
 CURRUN=${1:-0}
 # no of the first run in the new sequence
@@ -24,16 +25,20 @@ LASTRUN=$((${CURRUN}+${NUMRUNS}))
 # polynomial order - current parameter regulating total number of code instances
 POLORDER=3
 INPUT_DIM=4
-#ATTENTION: arbitrary param to set number of core instances
-NUM_CODE_INSTS=6
+#ATTENTION: arbitrary param to set number of core instances - see if needed here e.g. for a bathc of AL samples
+#NUM_CODE_INSTS=6
 
 # batch script to submit a single UQ campaign
 #COM=run_marconi_loop_resume_gem_nt.sh # for MARCONI
-COM=run_cobra_loop_resume_gem_nt.sh # for COBRA
-COM0=run_cobra_loop_gem_nt.sh
+#COM=run_cobra_loop_resume_gem_nt.sh # for COBRA
+COM=run_cobra_loop_resume_gem_mft.sh # for COBRA and multiple flux tubes
+#COM0=run_cobra_loop_gem_nt.sh
+COM0=run_cobra_loop_gem_mft.sh
 
+# first and last number of runs
 RUNRANGESTART=1
 #RUNRANGE=16
+
 if [ -n "${NUM_CODE_INSTS}" ];
 then
   RUNRANGE=${NUM_CODE_INSTS}
@@ -51,7 +56,8 @@ export ORIGDIR=$(pwd)
 # Following can be anything but should be consistent with prevoius and further scripts
 #export CAMP_NAME_PREFIX=VARY_1FT_GEM_NT_
 #export CAMP_NAME_PREFIX=VARY_1FT_GEM_
-export CAMP_NAME_PREFIX=''
+#export CAMP_NAME_PREFIX=''
+export CAMP_NAME_PREFIX='UQ_8FTgem_'
 
 #TODO: akgbbn1a cpo2+ are overwritten - if the very first campaign fails, the script will overwrite the old campaign output file 
 # - the runs will be consistent though due to restoration from the old cpo numbers
@@ -76,6 +82,7 @@ then
   TMP=${RANDOM}
   #RUNPATHSHORT=runs/runs_0-100000000/runs_0-1000000/runs_0-10000/runs_0-100
   RUNPATHSHORT=runs/
+  RUNPATHTOP=runs_0-100000000/
 
   #mkdir ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/${RUNPATHSHORT}/bckp/
   mkdir -p ${SCRATCH}/${CAMP_NAME_PREFIX}${ROOTCAMPDIR}/${RUNPATHSHORT}/bckp/${TMP}
@@ -83,7 +90,7 @@ then
   cd ${SCRATCH}/${CAMP_NAME_PREFIX}${ROOTCAMPDIR}/${RUNPATHSHORT}/
 
   #for r in `seq ${RUNRANGESTART} ${RUNRANGE}`; do 
-  for r in $(find -maxdepth 5 -mindepth 5 -type d -name "run_*" | sed "s|^\.\/||"); do 
+  for r in $(find ${RUNPATHTOP} -maxdepth 4 -mindepth 4 -type d -name "run_*" | sed "s|^\.\/||"); do 
 
     #mkdir ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/${RUNPATHSHORT}/bckp/${TMP}/run_${r}/
     mkdir -p bckp/${TMP}/${r}/
@@ -91,9 +98,11 @@ then
     for bckp_f in ${BCKP_FILES[@]} ; do 
 
       #cp ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/${RUNPATHSHORT}/run_${r}/${bckp_f} ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/${RUNPATHSHORT}/bckp/${TMP}/run_${r}/
-      cp ${r}/${bckp_f} /bckp/${TMP}/${r}/
+      
+      #echo ${r}/${bckp_f}
+      cp ${r}/${bckp_f} bckp/${TMP}/${r}/
 
-      cp ${SCRATCH}/${CAMP_NAME_PREFIX}${ROOTCAMPDIR}/campaign.db /bckp/${TMP}/
+      cp ${SCRATCH}/${CAMP_NAME_PREFIX}${ROOTCAMPDIR}/campaign.db bckp/${TMP}/
 
     done
 
@@ -101,7 +110,7 @@ then
 
   # 0.1. Restoring snapshot files to the state of desired last completed run
   #for r in `seq ${RUNRANGESTART} ${RUNRANGE}`; do 
-  for r in $(find -maxdepth 5 -mindepth 5 -type d -name "run_*" | sed "s|^\.\/||"); do 
+  for r in $(find ${RUNPATHTOP} -maxdepth 4 -mindepth 4 -type d -name "run_*" | sed "s|^\.\/||"); do 
 
     #cp ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/${RUNPATHSHORT}/dat/${CURRUN}/run_${r}/*.dat ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/${RUNPATHSHORT}/run_${r}/
     cp /dat/${CURRUN}/${r}/*.dat ${r}/

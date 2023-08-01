@@ -4,18 +4,16 @@
 #SBATCH --job-name=UQ_8FTgem_
 
 ## stdout and stderr files
-#SBATCH --output=test-uq8ft-out.%j
-#SBATCH --error=test-uq8ft-err.%j
+#SBATCH --output=test-loopmftuq-out.%j
+#SBATCH --error=test-loopmftuq-err.%j
 
 ## wall time in format (HOURS):MINUTES:SECONDS
-#SBATCH --time=24:00:00
+#SBATCH --time=10:00:00
 
 ## number of nodes and tasks per node
-# order=3, n_params=4, n_subd=8, n_ft=8, 450 time steps -> 8192  across 40 (80 for hthreading, not used) cpus -> 216 nodes
-# order=3, n_params=4, n_subd=8, n_ft=8, 100 time steps-> 1821 -> 46 nodes (34 nodes?)
-#SBATCH --nodes=34
+#SBATCH --nodes=35
 #SBATCH --ntasks-per-node=40
-#SBATCH --ntasks-per-core=1
+###SBATCH --ntasks-per-core=1
 ###SBATCH --cpus-per-task=8
 
 #SBATCH --partition=medium
@@ -23,18 +21,22 @@
 
 ###SBATCH -vvvvv
 ###SBATCH --profile=all
-###SBATCH --oversubscribe
 
 ## grant
 ###SBATCH --account=
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=yyudin@ipp.mpg.de
 
+####################################
+
+#module load anaconda/3/2021.11 intel/21.5.0 mkl impi/2021.5 fftw-mpi/3.3.10
+
 source activate ${HOME}/conda-envs/python394
 
 export SYS=COBRA
 export SCRATCH=${SCRATCH}
 
+# PYTHONPATH ?
 
 # MPI programs starter, MPCDF recommends using 'srun' only at COBRA!
 export MPICMD=srun #mpiexec #mpirun #intelmpi
@@ -49,14 +51,37 @@ export EASYPJ_CONFIG=conf.sh
 # Define some global variables to configure UQ software
 export MPIMOD=default #srunmpi
 
+echo '> CPONUM, OLDCAMP, RUNRANGE and are: '
+echo ${CPONUM}
+echo ${OLDCAMP}
+echo ${RUNRANGE}
+echo ${CAMP_NAME_PREFIX}
+
+#export OLDCAMP=${1:-'aos1mzke'} #'brus48mm' #'1wu9k2wa'
+
 if [ -z "${POLORDER}" ]; then
     export POLORDER=2
 fi
 
-echo -e '> In this run: use ExecuteLocal only + QCGPJ pool + '${MPIMOD}' exec mode + '${SLURM_NNODES} \
-' nodes + 4 params + pol-order ' ${POLORDER} ' + 8 flux tubes + commandline passed with '${MPICMD}' \n'
+if [ -z "${CPONUM}" ]; then
+    export CPONUM=1
+fi
 
-echo '> Here we take all 4 params +/- 50% error at rho_tor=[...] \n'
+if [ -z "${RUNRANGE}" ]; then
+    export RUNRANGE=81
+fi
+
+if [ -z "${CAMP_NAME_PREFIX}" ]; then
+    export CAMP_NAME_PREFIX=UQ_8FTgem_
+fi
+
+if [ -z "${OLDCAMP}" ]; then
+    #export OLDCAMP=22_2pb5u
+    export OLDCAMP=csldvnei
+fi
+
+echo -e '> In this run: use ExecuteLocal only + QCGPJ pool + '${MPIMOD}' exec mode + '${SLURM_NNODES}\
+' nodes + 4 param + pol-order '${POLORDER}' + commandline passed with '${MPICMD}' \n'
 
 ####################################
 # Run the UQ code
@@ -64,8 +89,8 @@ echo '> Here we take all 4 params +/- 50% error at rho_tor=[...] \n'
 # Echo SLURM environmental variables
 scontrol show --detail job ${SLURM_JOBID}
 
-
-python3 tests/gem_multi_ft.py > test-uq8ft-log.${SLURM_JOBID}
+python3 tests/gem_mft_resume.py ${OLDCAMP}> test-loopmftuq-log.${SLURM_JOBID}
 
 echo "> Finished an UQ SLURM job!"
-scontrol show --detail job ${SLURM_JOBID}
+
+# Run postprocessing?
