@@ -24,7 +24,7 @@ manager_pid=$!
 #BINDIR=../bin/COBRA/
 #SRCDIR=../src/
 
-#next two line just to get additional info about processes and cores
+#next two lines just to get additional info about processes and cores
 sleep 60
 ps -u yyudin -o user,pid,pcpu,rss,vsz,psr,args
 
