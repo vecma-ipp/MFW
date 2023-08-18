@@ -52,8 +52,8 @@ VPATH = ${SRCDIR}
 
 # additional flags #############################################################
 INCLUDES = -I${INCDIR} -I${INC_UAL} -I${STDA_INC} -I${LIB_TYPES} -I${INC_TYPES}
-MUSCLE_INCLUDES = $(shell pkg-config --cflags libmuscle_fortran ymmsl_fortran) 
-MUSCLE_MPI_INCLUDES = $(shell pkg-config --cflags libmuscle_mpi_fortran ymmsl_fortran)	#OL 
+MUSCLE_INCLUDES = $(shell pkg-config --cflags ymmsl_fortran libmuscle_fortran) 
+MUSCLE_MPI_INCLUDES = $(shell pkg-config --cflags ymmsl_fortran libmuscle_mpi_fortran)	#OL 
 
 #--------------------------------------------------------------------#
 # use MPI compiler for all Fortran kernel sources (default=no)       #
@@ -64,8 +64,8 @@ ifeq (${MPI},yes)
 endif
 
 # Linking flags
-MUSCLE_LDFLAGS += $(shell pkg-config --libs libmuscle_fortran ymmsl_fortran) # libmuscle ymmsl )
-MUSCLE_MPI_LDFLAGS += $(shell pkg-config --libs libmuscle_mpi_fortran ymmsl_fortran libmuscle ymmsl)	#OL
+MUSCLE_LDFLAGS += $(shell pkg-config --libs ymmsl_fortran libmuscle_fortran) # libmuscle ymmsl )
+MUSCLE_MPI_LDFLAGS += $(shell pkg-config --libs ymmsl_fortran libmuscle_mpi_fortran) # libmuscle ymmsl)	#OL
 #NB: be careful with additional explicit flag: may be not needed
 
 # testing out a linkage issue
@@ -85,7 +85,8 @@ MPI_FC90FLAGS += ${RPATHLINK_FLAG}
 
 #TEST: compile all components for debug
 #FC90FLAGS += -O0 -Wall
-FC90FLAGS_DEBUG = -g -O0 -Wall -fPIC -Iinclude/COBRA -I../ual/include/COBRA/fortran_interface -I../standalone/include/COBRA -I../ual/lib/COBRA/types -I../ual/include/COBRA/types -module include/COBRA -pthread -I/u/yyudin/muscle3/include -Wl,-rpath-link,/cobra/u/yyudin/muscle3/lib -Wl,-rpath-link,/cobra/u/yyudin/muscle3/lib
+FC90FLAGS_DEBUG = -g -O0 -Wall -fPIC -traceback -Iinclude/COBRA -I../ual/include/COBRA/fortran_interface -I../standalone/include/COBRA -I../ual/lib/COBRA/types -I../ual/include/COBRA/types -module include/COBRA -pthread -I/u/yyudin/muscle3/include -Wl,-rpath-link,/cobra/u/yyudin/muscle3/lib -Wl,-rpath-link,/cobra/u/yyudin/muscle3/lib
+MPI_FC90FLAGS_DEBUG = -g -O0 -Wall -fPIC -traceback -Iinclude/COBRA -I../ual/include/COBRA/fortran_interface -I../standalone/include/COBRA -I../ual/lib/COBRA/types -I../ual/include/COBRA/types -module include/COBRA -pthread -DMUSCLE_ENABLE_MPI -I/u/yyudin/muscle3/include -Wl,-rpath-link,/cobra/u/yyudin/muscle3/lib -Wl,-rpath-link,/cobra/u/yyudin/muscle3/lib
 
 # objects files ################################################################
 STDA_SHARED_O = ${STDA_OBJ}/linterp.o ${STDA_OBJ}/string_binding.o \
@@ -155,9 +156,19 @@ ${OBJDIR}/gem_standalone.o: gem_standalone.f90
 	echo "MPIF90: ${MPIF90}" ; \
 	${MPIF90} -o $@ -c $ < $(MPI_FC90FLAGS)
 
+## For debugging of gem standalone
+#${OBJDIR}/gem_standalone.o: gem_standalone.f90
+#	echo "MPIF90: ${MPIF90}" ; \
+#	${MPIF90} -o $@ -c $ < $(MPI_FC90FLAGS_DEBUG)
+
 ${OBJDIR}/gem_M3.o: gem_M3.f90
 	echo "MPIF90: ${MPIF90}" ; \
 	${MPIF90} -o $@ -c $< $(MPI_FC90FLAGS)
+
+## For debugging of gem_M3
+#${OBJDIR}/gem_M3.o: gem_M3.f90
+#	echo "MPIF90: ${MPIF90}" ; \
+#	${MPIF90} -o $@ -c $< $(MPI_FC90FLAGS_DEBUG)
 
 # #For debugging of init_M3 SIGSEGV
 # ${OBJDIR}/init_M3.o: init_M3.f90
