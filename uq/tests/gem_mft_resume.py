@@ -180,7 +180,7 @@ if __name__ == "__main__":
     print('campaign name prefix:{0}'.format(campaign_name)) ###DEBUG
 
     db_suffix = wrk_dir + campaign_name + campaign_id + '/campaign.db'
-    db_location = 'sqlite://' + db_suffix
+    db_location = 'sqlite:///' + db_suffix
     print("> Loading existing campaign from a database at: {}".format(db_location))
     print(f"> there is a file at this location: {os.path.isfile(db_suffix)}")
 
@@ -254,10 +254,10 @@ if __name__ == "__main__":
     output_cponame = "coretransp"
 
     # Define coordinate of flux tubes
-    ftube_indices = [15, 31, 44, 55, 66, 76, 85, 94]
-    #ftube_indices = [31, 44, 55, 66, 76, 85, 94] #NB: ft#1 failed analysis due to all ti_transp_flux==0.0 -> date of run?
-    ftube_rhos = [0.14, 0.31, 0.44, 0.56, 0.67, 0.77, 0.86, 0.95] # these are rho_tor_norm
-    #ftube_rhos = [0.31, 0.44, 0.56, 0.67, 0.77, 0.86, 0.95] #NB: ft#1 failed analysis due to all ti_transp_flux==0.0m -> date of run?
+    ftube_indices_list = [15, 31, 44, 55, 66, 76, 85, 94]
+    #ftube_indices_list = [31, 44, 55, 66, 76, 85, 94] #NB: ft#1 failed analysis due to all ti_transp_flux==0.0 -> date of run?
+    ftube_rhos_list = [0.14, 0.31, 0.44, 0.56, 0.67, 0.77, 0.86, 0.95] # these are rho_tor_norm
+    #ftube_rhos_list = [0.31, 0.44, 0.56, 0.67, 0.77, 0.86, 0.95] #NB: ft#1 failed analysis due to all ti_transp_flux==0.0m -> date of run?
     
     # TODO might be possible to read from some existing cpo files
     # TODO: Should be read from the exisiting XML in common folder -- important
@@ -330,7 +330,7 @@ if __name__ == "__main__":
     #exec_path_comm = mpi_instance + ' -n '+ str(ncores) + ' ' + exec_path
     exec_path_comm = mpi_instance + exec_comm_flags + ' ' + exec_path
 
-    print('Total number of nodes requires for all jobs: {0}'.format(nnodes_tot))
+    print('Total number of nodes requires for all jobs (to start all at the same time): {0}'.format(nnodes_tot))
     print('Number of cores required for single code instance computed: {0}'.format(ncores))
     print('Executing turbulence code with the line: ' + exec_path_comm) 
 
@@ -412,6 +412,8 @@ if __name__ == "__main__":
     run_names = [x for x in my_campaign.campaign_db.run_ids()]
     print('Run names from the DB: {}'.format(run_names)) # run_{d} is a name but not id
 
+    run_ids_fromdb = [x[4:] for x in run_names] # to get rid of 'run_'
+
     # Checking the list of runs and their satus before the reassigning jobs
     #pprint.pprint(my_campaign.list_runs()) ###DEBUG
     #pprint.pprint(my_campaign.campaign_db.get_run_status(run_ids)) ###DEBUG
@@ -428,82 +430,87 @@ if __name__ == "__main__":
     #pprint.pprint(my_campaign.list_runs()) ###DEBUG
     #pprint.pprint(my_campaign.campaign_db.get_run_status(run_ids)) ###DEBUG
 
-    my_campaign.set_app(campaign_name)
+    for i in range(len(ftube_indices_list)):
 
-    # ONLY AFTER HERE WE NEED AGAIN TO CHANGE SOMETHING w.r.t. PAST EXECUTION i.e. CREATE RESOURCE POOL; BY THIS TIME OTHER THINGS HAVE TO BE READY
-    print('Creating an Executor')
+        camp_name_loc = 'gem_FT' + str(i)
+        #my_campaign.set_app(campaign_name)
+        my_campaign.set_app(camp_name_loc)
 
-    try:
-        print('Creating resource pool')
 
-        with QCGPJPool(
-                    qcgpj_executor=QCGPJExecutor(log_level='debug'), 
-                    #template=EasyVVUQParallelTemplate(),
-                    template=EasyVVUQParallelTemplateWithEnv(),
-                    template_params=template_par_simple,
-                    ) as qcgpj:
+        # ONLY AFTER HERE WE NEED AGAIN TO CHANGE SOMETHING w.r.t. PAST EXECUTION i.e. CREATE RESOURCE POOL; BY THIS TIME OTHER THINGS HAVE TO BE READY
+        print('Creating an Executor')
 
-            print('> Executing jobs and collating results')
+        try:
+            print('Creating resource pool')
+
+            with QCGPJPool(
+                        qcgpj_executor=QCGPJExecutor(log_level='debug'), 
+                        #template=EasyVVUQParallelTemplate(),
+                        template=EasyVVUQParallelTemplateWithEnv(),
+                        template_params=template_par_simple,
+                        ) as qcgpj:
+
+                print('> Executing jobs and collating results')
+                
+                #exec_res = my_campaign.execute(pool=qcgpj)
+                
+                my_action_pool = my_campaign.apply_for_each_sample(
+                                                actions=resume_actions,
+                                                status=Status.ENCODED,
+                                                sequential=False,
+                                                                )
             
-            #exec_res = my_campaign.execute(pool=qcgpj)
+                #TODO: all the run folders have to contain the TFILE, bit coretransp CPOs have to be stored away by this moment
+                print('> Actions defined, now executing')    
+                exec_res = my_action_pool.start(pool=qcgpj)
+                # TODO from this scripts codes still crash with SIGSEGV even if put on a separate node
+
+                print('> Execution completed, now collating')
+                exec_res.collate()
             
-            my_action_pool = my_campaign.apply_for_each_sample(
-                                            actions=resume_actions,
-                                            status=Status.ENCODED,
-                                            sequential=False,
-                                                            )
+                #print(os.environ['QCG_PM_CPU_SET'])
+                #print(qcgpj.template.template()[0]) ###DEBUG
+                print('> Now leaving (and destructing?) the execution resource pool')
         
-            #TODO: all the run folders have to contain the TFILE, bit coretransp CPOs have to be stored away by this moment
-            print('> Actions defined, now executing')    
-            exec_res = my_action_pool.start(pool=qcgpj)
-            # TODO from this scripts codes still crash with SIGSEGV even if put on a separate node
+        except Exception as e:
 
-            print('> Execution completed, now collating')
-            exec_res.collate()
-        
-            #print(os.environ['QCG_PM_CPU_SET'])
-            #print(qcgpj.template.template()[0]) ###DEBUG
-            print('> Now leaving (and destructing?) the execution resource pool')
-        
-    except Exception as e:
+            print('!>> Exception during batch execution! :')
+            print(e)
 
-        print('!>> Exception during batch execution! :')
-        print(e)
+        #################################
+        ### --- Old part ---
 
-    #################################
-    ### --- Old part ---
+        # Post-processing analysis
+        print('Now finally analysing results')
+        #TODO: make sure decoder reads the file that exists, this may be a numbered file; current workaround: read a file from a fixed number of iteration
+        #TODO: make a decoder that check the results folder and using a regex finds the latest number of iteration or the oldest file
+        #TODO: make GEM iteration wrapper to continue numeration of GEM calls/macroiterations - currently every restart/slurm-batch will restart numbers from 0
 
-    # Post-processing analysis
-    print('Now finally analysing results')
-    #TODO: make sure decoder reads the file that exists, this may be a numbered file; current workaround: read a file from a fixed number of iteration
-    #TODO: make a decoder that check the results folder and using a regex finds the latest number of iteration or the oldest file
-    #TODO: make GEM iteration wrapper to continue numeration of GEM calls/macroiterations - currently every restart/slurm-batch will restart numbers from 0
+        #analysis = uq.analysis.PCEAnalysis(sampler=my_sampler, qoi_cols=output_columns)
+        analysis = uq.analysis.BasicStats(qoi_cols=output_columns) #ATTENTION: this is general but might break further code e.g. during Sobols' calculation
+        my_campaign.apply_analysis(analysis) 
 
-    #analysis = uq.analysis.PCEAnalysis(sampler=my_sampler, qoi_cols=output_columns)
-    analysis = uq.analysis.BasicStats(qoi_cols=output_columns) #ATTENTION: this is general but might break further code e.g. during Sobols' calculation
-    my_campaign.apply_analysis(analysis) 
+        # Get results
+        results = my_campaign.get_last_analysis()
 
-    # Get results
-    results = my_campaign.get_last_analysis()
+        # Get Descriptive Statistics
+        mean_el = results.describe('te_transp.flux', 'mean')
+        std_el = results.describe('te_transp.flux', 'std')
+        mean_io = results.describe('ti_transp.flux', 'mean')
+        std_io = results.describe('ti_transp.flux', 'std')
 
-    # Get Descriptive Statistics
-    mean_el = results.describe('te_transp.flux', 'mean')
-    std_el = results.describe('te_transp.flux', 'std')
-    mean_io = results.describe('ti_transp.flux', 'mean')
-    std_io = results.describe('ti_transp.flux', 'std')
+        s1_el = results.sobols_first('te_transp.flux')
+        s1_io = results.sobols_first('ti_transp.flux')
 
-    s1_el = results.sobols_first('te_transp.flux')
-    s1_io = results.sobols_first('ti_transp.flux')
+        print("TE TRANSP FLUX")
+        print("Mean: ", mean_el)
+        print("Std: ", std_el)
+        print("Sob1: ", s1_el)
 
-    print("TE TRANSP FLUX")
-    print("Mean: ", mean_el)
-    print("Std: ", std_el)
-    print("Sob1: ", s1_el)
-
-    print("TI TRANSP FLUX")
-    print("Mean: ", mean_io)
-    print("Std: ", std_io)
-    print("Sob1: ", s1_io)
+        print("TI TRANSP FLUX")
+        print("Mean: ", mean_io)
+        print("Std: ", std_io)
+        print("Sob1: ", s1_io)
 
     ### NEW PART: saving results and serialising DB
 
