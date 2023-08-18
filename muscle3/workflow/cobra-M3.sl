@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --time=0:30:00         	# time limits
+#SBATCH --time=23:00:00         	# time limits
 #SBATCH --nodes=1 		     	# nodes
 
 #SBATCH --ntasks-per-node=40		# tasks per node

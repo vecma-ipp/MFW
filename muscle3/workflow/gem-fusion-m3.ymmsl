@@ -108,14 +108,14 @@ implementations:
   gem_impl_mpi:
     env:
       I_MPI_DEBUG: 4
-      # SLURM_CPU_BIND: verbose
-      # KMP_AFFINITY: verbose,compact
-      # I_MPI_PIN_RESPECT_CPUSET: enable
-      # OMP_PLACES: cores
-      # OMP_PROC_BIND: spread
+      SLURM_CPU_BIND: verbose
+      KMP_AFFINITY: verbose,compact
+      I_MPI_PIN_RESPECT_CPUSET: enable
+      OMP_PLACES: cores
+      OMP_PROC_BIND: spread
     executable: /u/yyudin/code/MFW/muscle3/bin/COBRA/gem_M3
-    execution_model: intelmpi
-    # execution_model: srunmpi
+    #execution_model: intelmpi
+    execution_model: srunmpi
     can_share_resources: false
 #  gem_impl:
 #    executable: mpirun
@@ -169,7 +169,7 @@ implementations:
       - /u/yyudin/code/MFW/muscle3/bin/COBRA/imp4dv_M3
 
 settings:
-  transport.duration: 0.05
+  transport.duration: 1.0
   transport.dt: 0.01
   init_cpo_dir: "../../../../../../workflows/AUG_28906_6"
   final_cpo_dir: "./"
