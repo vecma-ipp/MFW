@@ -37,6 +37,8 @@ program gem_M3
   if (irank == root_rank) then
     call system('cp ../../../../gem.xml gem.xml')
     call system('cp ../../../../gem.xsd gem.xsd')
+
+    call system('cp ../../../../gem_resume_data/t*.dat ./')
   end if
 
   ports = LIBMUSCLE_PortsDescription_create()
