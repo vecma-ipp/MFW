@@ -142,6 +142,9 @@ if __name__ == "__main__":
     # We test 8 flux tube
     # Look up radial coordinates at: ...
 
+    # Unless it's a serial debug, next should be True to run cases 
+    RUN_PARALLEL=False ###TO_CHECK_ANALYSIS
+
     # Previus campaign ID
     campaign_id = str(sys.argv[1])
 
@@ -370,6 +373,8 @@ if __name__ == "__main__":
                             execute,
                             Decode(decoder),
                             )
+    
+    reanalyse_actions = Actions(Decode(decoder)) ###TO_CHECK_ANALYSIS
 
     """
     my_campaign.add_app(name=campaign_name,
@@ -377,20 +382,12 @@ if __name__ == "__main__":
                         actions=actions)
     """
 
-    # Restore the sampler: check if needed to track number of runs
-    """
-    my_sampler = uq.sampling.PCESampler(vary=vary, polynomial_order=pol_order)
-    my_campaign.set_sampler(my_sampler)
-    """
-    my_sampler = my_campaign.get_active_sampler()
-    my_campaign.set_sampler(my_sampler, update=True)
-
     # Need to change actions: only the 'execute' has to be performed
     # Try:
     #  a. replace_actions() for 'execute' only - should not work
     #  a'. replace_actions() for 'execute' and 'Decode' - currently using
     #  b. apply_to_each_sample() 'execute' only - doesn't work as ActionPool has to be difined beforehand
-    #  c. use recolate() - not necessary?
+    #  c. use recollate() - not necessary?
     #  d. set_active_app() to the app with replaced actions - currently in use
     #  f. use resurrect_app() - not necessary?
     #  g. use .campaign_db.resume_campaign() - not necessary?
@@ -420,62 +417,82 @@ if __name__ == "__main__":
 
     # Finding all runs and setting them as ENCODED i.e. before to-be-executed
     #my_campaign.rerun(run_ids) # TODO fix error, all runs in '1wu9k2wa' database are marked as NEW 
-    my_campaign.campaign_db.set_run_statuses(run_ids, Status.ENCODED)
+    #my_campaign.campaign_db.set_run_statuses(run_ids_fromdb, Status.ENCODED)
+    #my_campaign.campaign_db.set_run_statuses(run_ids, Status.ENCODED) ###TO_CHECK_ANALYSIS
 
     # Checking the content of the read campaign DB
     #db_json = my_campaign.campaign_db.dump()
     #pprint.pprint(db_json) ###DEBUG
 
     # Checking the list of runs and their satus before the resume
-    #pprint.pprint(my_campaign.list_runs()) ###DEBUG
+    pprint.pprint(my_campaign.list_runs()) ###DEBUG
     #pprint.pprint(my_campaign.campaign_db.get_run_status(run_ids)) ###DEBUG
 
     for i in range(len(ftube_indices_list)):
 
-        camp_name_loc = 'gem_FT' + str(i)
-        #my_campaign.set_app(campaign_name)
+        camp_name_loc = 'gem_FT' + str(i+1)
         my_campaign.set_app(camp_name_loc)
+        #my_campaign.set_app(str(i+1))
 
+        # Restore the sampler: check if needed to track number of runs
+        """
+        my_sampler = uq.sampling.PCESampler(vary=vary, polynomial_order=pol_order)
+        my_campaign.set_sampler(my_sampler)
+        """
+        #my_sampler = my_campaign.get_active_sampler()
+        my_sampler = my_campaign.campaign_db.resurrect_sampler(i+1)
+        my_campaign.set_sampler(my_sampler, update=True)
+
+
+        print(f"running for the flux tube num {i+1}")
 
         # ONLY AFTER HERE WE NEED AGAIN TO CHANGE SOMETHING w.r.t. PAST EXECUTION i.e. CREATE RESOURCE POOL; BY THIS TIME OTHER THINGS HAVE TO BE READY
         print('Creating an Executor')
 
-        try:
-            print('Creating resource pool')
+        if RUN_PARALLEL == True:
+            try:
+                print('Creating resource pool')
 
-            with QCGPJPool(
-                        qcgpj_executor=QCGPJExecutor(log_level='debug'), 
-                        #template=EasyVVUQParallelTemplate(),
-                        template=EasyVVUQParallelTemplateWithEnv(),
-                        template_params=template_par_simple,
-                        ) as qcgpj:
+                with QCGPJPool(
+                            qcgpj_executor=QCGPJExecutor(log_level='debug'), 
+                            #template=EasyVVUQParallelTemplate(),
+                            template=EasyVVUQParallelTemplateWithEnv(),
+                            template_params=template_par_simple,
+                            ) as qcgpj:
 
-                print('> Executing jobs and collating results')
+                    print('> Executing jobs and collating results')
+                    
+                    #exec_res = my_campaign.execute(pool=qcgpj)
+                    
+                    my_action_pool = my_campaign.apply_for_each_sample(
+                                                    actions=resume_actions,
+                                                    status=Status.ENCODED,
+                                                    sequential=False,
+                                                                    )
                 
-                #exec_res = my_campaign.execute(pool=qcgpj)
-                
-                my_action_pool = my_campaign.apply_for_each_sample(
-                                                actions=resume_actions,
-                                                status=Status.ENCODED,
-                                                sequential=False,
-                                                                )
-            
-                #TODO: all the run folders have to contain the TFILE, bit coretransp CPOs have to be stored away by this moment
-                print('> Actions defined, now executing')    
-                exec_res = my_action_pool.start(pool=qcgpj)
-                # TODO from this scripts codes still crash with SIGSEGV even if put on a separate node
+                    #TODO: all the run folders have to contain the TFILE, bit coretransp CPOs have to be stored away by this moment
+                    print('> Actions defined, now executing')    
+                    exec_res = my_action_pool.start(pool=qcgpj)
+                    # TODO from this scripts codes still crash with SIGSEGV even if put on a separate node
 
-                print('> Execution completed, now collating')
-                exec_res.collate()
+                    print('> Execution completed, now collating')
+                    exec_res.collate()
+                
+                    #print(os.environ['QCG_PM_CPU_SET'])
+                    #print(qcgpj.template.template()[0]) ###DEBUG
+                    print('> Now leaving (and destructing?) the execution resource pool')
             
-                #print(os.environ['QCG_PM_CPU_SET'])
-                #print(qcgpj.template.template()[0]) ###DEBUG
-                print('> Now leaving (and destructing?) the execution resource pool')
+            except Exception as e:
+
+                print('!>> Exception during batch execution! :')
+                print(e)
         
-        except Exception as e:
-
-            print('!>> Exception during batch execution! :')
-            print(e)
+        else:
+            
+            pass
+            # my_campaign.apply_for_each_sample(actions=reanalyse_actions, 
+            #                                 status=Status.ENCODED, 
+            #                                 sequential=True) ###TO_CHECK_ANALYSIS
 
         #################################
         ### --- Old part ---
@@ -486,8 +503,13 @@ if __name__ == "__main__":
         #TODO: make a decoder that check the results folder and using a regex finds the latest number of iteration or the oldest file
         #TODO: make GEM iteration wrapper to continue numeration of GEM calls/macroiterations - currently every restart/slurm-batch will restart numbers from 0
 
+        #my_campaign.recollate() ###TO_CHECK_ANALYSIS
+        res = my_campaign.campaign_db.get_results(app_name=camp_name_loc, sampler_id=my_sampler._sampler_id) ###TO_CHECK_ANALYSIS
+        print(res) ###TO_CHECK_ANALYSIS
+
         #analysis = uq.analysis.PCEAnalysis(sampler=my_sampler, qoi_cols=output_columns)
         analysis = uq.analysis.BasicStats(qoi_cols=output_columns) #ATTENTION: this is general but might break further code e.g. during Sobols' calculation
+
         my_campaign.apply_analysis(analysis) 
 
         # Get results
