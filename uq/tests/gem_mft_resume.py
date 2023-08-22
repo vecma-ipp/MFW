@@ -143,7 +143,7 @@ if __name__ == "__main__":
     # Look up radial coordinates at: ...
 
     # Unless it's a serial debug, next should be True to run cases 
-    RUN_PARALLEL=False ###TO_CHECK_ANALYSIS
+    RUN_PARALLEL=True
 
     # Previus campaign ID
     campaign_id = str(sys.argv[1])
@@ -374,7 +374,7 @@ if __name__ == "__main__":
                             Decode(decoder),
                             )
     
-    reanalyse_actions = Actions(Decode(decoder)) ###TO_CHECK_ANALYSIS
+    #reanalyse_actions = Actions(Decode(decoder)) ###TO_CHECK_ANALYSIS
 
     """
     my_campaign.add_app(name=campaign_name,
@@ -417,7 +417,7 @@ if __name__ == "__main__":
 
     # Finding all runs and setting them as ENCODED i.e. before to-be-executed
     #my_campaign.rerun(run_ids) # TODO fix error, all runs in '1wu9k2wa' database are marked as NEW 
-    #my_campaign.campaign_db.set_run_statuses(run_ids_fromdb, Status.ENCODED)
+    my_campaign.campaign_db.set_run_statuses(run_ids_fromdb, Status.ENCODED)
     #my_campaign.campaign_db.set_run_statuses(run_ids, Status.ENCODED) ###TO_CHECK_ANALYSIS
 
     # Checking the content of the read campaign DB
@@ -425,13 +425,13 @@ if __name__ == "__main__":
     #pprint.pprint(db_json) ###DEBUG
 
     # Checking the list of runs and their satus before the resume
-    pprint.pprint(my_campaign.list_runs()) ###DEBUG
+    #pprint.pprint(my_campaign.list_runs()) ###DEBUG
     #pprint.pprint(my_campaign.campaign_db.get_run_status(run_ids)) ###DEBUG
 
     for i in range(len(ftube_indices_list)):
 
-        camp_name_loc = 'gem_FT' + str(i+1)
-        my_campaign.set_app(camp_name_loc)
+        app_name_loc = 'gem_FT' + str(i)
+        my_campaign.set_app(app_name_loc)
         #my_campaign.set_app(str(i+1))
 
         # Restore the sampler: check if needed to track number of runs
@@ -442,7 +442,6 @@ if __name__ == "__main__":
         #my_sampler = my_campaign.get_active_sampler()
         my_sampler = my_campaign.campaign_db.resurrect_sampler(i+1)
         my_campaign.set_sampler(my_sampler, update=True)
-
 
         print(f"running for the flux tube num {i+1}")
 
@@ -504,22 +503,29 @@ if __name__ == "__main__":
         #TODO: make GEM iteration wrapper to continue numeration of GEM calls/macroiterations - currently every restart/slurm-batch will restart numbers from 0
 
         #my_campaign.recollate() ###TO_CHECK_ANALYSIS
-        res = my_campaign.campaign_db.get_results(app_name=camp_name_loc, sampler_id=my_sampler._sampler_id) ###TO_CHECK_ANALYSIS
-        print(res) ###TO_CHECK_ANALYSIS
+        # res = my_campaign.campaign_db.get_results(app_name=app_name_loc, sampler_id=my_sampler._sampler_id) ###TO_CHECK_ANALYSIS
+        # print(res) ###TO_CHECK_ANALYSIS
+        # app_info = my_campaign.campaign_db.app(app_name_loc) ###TO_CHECK_ANALYSIS
+        # print(app_info) ###TO_CHECK_ANALYSIS
 
-        #analysis = uq.analysis.PCEAnalysis(sampler=my_sampler, qoi_cols=output_columns)
-        analysis = uq.analysis.BasicStats(qoi_cols=output_columns) #ATTENTION: this is general but might break further code e.g. during Sobols' calculation
+        analysis = uq.analysis.PCEAnalysis(sampler=my_sampler, qoi_cols=output_columns)
+        #analysis = uq.analysis.BasicStats(qoi_cols=output_columns) #ATTENTION: this is general but might break further code e.g. during Sobols' calculation
 
         my_campaign.apply_analysis(analysis) 
 
         # Get results
         results = my_campaign.get_last_analysis()
+        pprint.pprint(results) ###DEBUG
 
         # Get Descriptive Statistics
         mean_el = results.describe('te_transp.flux', 'mean')
         std_el = results.describe('te_transp.flux', 'std')
         mean_io = results.describe('ti_transp.flux', 'mean')
         std_io = results.describe('ti_transp.flux', 'std')
+        # mean_el = results['te_transp.flux'].loc['mean'].describe()
+        # std_el = results['te_transp.flux'].loc['std'].describe()
+        # mean_io = results['ti_transp.flux'].loc['mean'].describe()
+        # std_io = results['ti_transp.flux'].loc['std'].describe()
 
         s1_el = results.sobols_first('te_transp.flux')
         s1_io = results.sobols_first('ti_transp.flux')
@@ -540,10 +546,12 @@ if __name__ == "__main__":
     with open(pickle_filename, "bw") as file_pickle:
         pickle.dump(results, file_pickle)
 
+    """
     db_json_filename = 'gem_notransp_db_' + os.environ['SLURM_JOBID'] + '.json'
     db_json = my_campaign.campaign_db.dump()
     with open(db_json_filename, "w") as db_file_json:
         json.dump(db_json, db_file_json)
+    """
 
     pprint.pprint(results.raw_data) ###DEBUG
 
@@ -553,14 +561,15 @@ if __name__ == "__main__":
         json.dump(results.raw_data, json_file)  # TODO: save ndarrays
     """
 
+    """
     csv_filename = 'gem_notransp_results_' + os.environ['SLURM_JOBID'] + '.csv'
     with open(csv_filename, "w") as file_csv:
         w = csv.DictWriter(file_csv, results.raw_data.keys()) 
         w.writeheader()
         for r in results.raw_data:
             w.writerow(r)
+    """
 
     #results.raw_data.to_scv('UQGEMCAMP_' + os.environ['SLURM_JOBID'] + '_results.csv', index=False)
 
     print('>>> TEST GEM-NT-VARY: END')
-

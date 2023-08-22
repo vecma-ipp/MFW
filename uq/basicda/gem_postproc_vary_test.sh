@@ -38,13 +38,14 @@ READ_FROM_CSV=${8:-1}
 if [ -n "${CAMP_NAME_PREFIX}" ]; then
   export DIR_PREFIX=${CAMP_NAME_PREFIX}
 else
-  export DIR_PREFIX='VARY_1FT_GEM_NT_' #'VARY_1FT_GEM_'
-  #export DIR_PREFIX=UQ_8FTgem_
+  #export DIR_PREFIX='VARY_1FT_GEM_NT_' #'VARY_1FT_GEM_'
+  export DIR_PREFIX=UQ_8FTgem_
 fi
 DIR=${SCRATCH}'/'${DIR_PREFIX}${UQCAMPDIR}
 
 #DIR_SRC=${DIR}'/runs/runs_0-100000000/runs_0-1000000/runs_0-10000/runs_0-100/'
 DIR_SRC=${DIR}'/runs/'
+RUNPATHTOP=runs_0-100000000/
 
 CODEMDIR=code
 if [[ "${SYS}" =~ ^(DRACO|COBRA|RAVEN)$ ]]; then
@@ -72,7 +73,7 @@ if [ "${RUN_WITH_CP}" -eq 1 ]; then
   #echo "RUN_WITH_CP="${RUN_WITH_CP}
 
   #for d in run*/ ; do
-  for d in $(find -maxdepth 5 -mindepth 5 -type d -name "run_*" | sed "s|^\.\/||") ; do
+  for r in $(find ${RUNPATHTOP} -maxdepth 4 -mindepth 4 -type d -name "run_*" | sed "s|^\.\/||"); do 
       
       #echo "${d}"
 
