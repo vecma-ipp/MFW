@@ -881,7 +881,7 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnumstart=1, runnum=
                 
                 print('Going over CPO-s in the folder: {}'.format(folder_name_curr))
                 
-                val_ev_s, file_names = profile_evol_load(prof_names=profiles, 
+                val_ev_s_fromcpo, file_names = profile_evol_load(prof_names=profiles, 
                                                          attrib_names=attributes, 
                                                          coord_len=coordnum, 
                                                          folder_name=folder_name_curr, 
@@ -1106,6 +1106,7 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnumstart=1, runnum=
 
             # Mind that here 0 index is considered to be most important to compare: flux tube #5 from MFW run
 
+            """
             plot_coreprofval_dist(
                                     [np.squeeze(v,0) for v in [*val_wind_s, *val_mwf_s]],
                                     labels=[*labels, *['mfw_ft'+str(mfw_ft_s[i])+'; tiddrho={:.2f}'.format(mfw_input_refval_s[0][i]) for i in range(len(mfw_ft_s))]],
@@ -1113,6 +1114,7 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnumstart=1, runnum=
                                     discr_level=32,
                                     forplot=False,
                                  )
+            """
 
             print("-time to plot the MFW histograms only: {0} s".format(time.time()-time_start_tmp))            
             val_mwf_mean = val_mwf_s[0].mean()

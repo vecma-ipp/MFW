@@ -114,8 +114,12 @@ QUANTITIES=('ti' 'te' 'ni' 'ne')
 QUANTITIES=('ti')
 
 if [ "${RUN_NOT_ONLY_ALL}" -eq 1 ]; then
+  
+  # first, run postprocessing for new batch
 
   if [ "${READ_FROM_CSV}" -ne 1 ]; then
+
+    # read values of new batch from a CPO files
 
     echo RUNNUM=${RUNRANGE}
     python3 gem_da.py ${DIR_SRC}/cpo/${CPONUM} 0 1 ${RUNRANGESTART} ${RUNRANGE} 'new_'${UQCAMPDIR}'_'${CPONUM}
