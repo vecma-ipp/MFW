@@ -9,7 +9,7 @@
 # nohup ./continuous_gem.sh 2  w468l7ng 1> script_wf_06122022.log 2>&1 &
 # nohup ./continuous_gem.sh 1  rp1pw2y6 1> script_wf_05122022.log 2>&1 &
 # nohup ./continuous_gem.sh 1  1f3hw2ikn 1> script_wf_13122022.log 2>&1 &
-# nohup ./continuous_gem.sh 1  csldvnei 1> script_wf_18082023.log 2>&1 &
+# nohup ./continuous_gem.sh 4  csldvnei 1> script_wf_20230824.log 2>&1 &
 
 #0. State the total number of campaigns to run, and ordinal number of the last campaign in previous sequence
 echo "STARTING THE WORKFLOW"
@@ -106,11 +106,11 @@ then
       #echo ${r}/${bckp_f}
       cp ${r}/${bckp_f} bckp/${TMP}/${r}/
 
-      cp ${SCRATCH}/${CAMP_NAME_PREFIX}${ROOTCAMPDIR}/campaign.db bckp/${TMP}/
-
     done
 
   done
+
+  cp ${SCRATCH}/${CAMP_NAME_PREFIX}${ROOTCAMPDIR}/campaign.db bckp/${TMP}/
 
   # 0.1. Restoring snapshot files to the state of desired last completed run
   #TODO in some cases, when nothing failed during last submission, restoring is not needed
@@ -118,10 +118,10 @@ then
   for r in $(find ${RUNPATHTOP} -maxdepth 4 -mindepth 4 -type d -name "run_*" | sed "s|^\.\/||"); do 
 
     #cp ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/${RUNPATHSHORT}/dat/${CURRUN}/run_${r}/*.dat ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/${RUNPATHSHORT}/run_${r}/
-    cp /dat/${CURRUN}/${r}/*.dat ${r}/
+    cp dat/${CURRUN}/${r}/*.dat ${r}/
 
     #cp ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/${RUNPATHSHORT}/dat/${CURRUN}/run_${r}/fout_0* ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/${RUNPATHSHORT}/run_${r}/
-    cp /dat/${CURRUN}/${r}/fout_0* ${r}/
+    cp dat/${CURRUN}/${r}/fout_0* ${r}/
 
   done
   
@@ -133,7 +133,7 @@ then
 
   #PREVID=$(sbatch --parsable --wait ${COM} 2>&1 | sed 's/[S,a-z]* //g')
   PREVID=$(sbatch --export=ALL,CPONUM=${FRUN},OLDCAMP=${ROOTCAMPDIR},POLORDER=${POLORDER},RUNRANGE=${RUNRANGE},CAMP_NAME_PREFIX=${CAMP_NAME_PREFIX} --parsable --wait ${COM})
-
+  
   #1'. Save and process the outputs after the finish of the submission
   echo "Finished the first new UQ campaign "${PREVID}
 
@@ -162,7 +162,7 @@ fi
 #NOTE: the call of postrpocessing scripts COULD BE moved to the SLURM submission
 echo "Now postprocessing for campaign "${PREVID}
 cd basicda
-./gem_postproc_vary_test.sh ${FRUN} ${ROOTCAMPDIR} 1 1 ${RUNRANGE} 1 0
+./gem_postproc_vary_test.sh ${FRUN} ${ROOTCAMPDIR} 1 1 1 ${RUNRANGE} 1 0
 cd ..
 
 FRUN=$((${FRUN}+1))
@@ -185,7 +185,7 @@ for n in `seq ${FRUN} ${LASTRUN}`; do
     #NOTE: in principle the postprocessing script is called in SLURM submission, but if the argument (run number) is correct, postprocessing should be idempotent
     echo "Now postprocessing for campaign "${PREVID}
     cd basicda
-    ./gem_postproc_vary_test.sh ${n} ${ROOTCAMPDIR} 1 1 ${RUNRANGE} 1 0
+    ./gem_postproc_vary_test.sh ${n} ${ROOTCAMPDIR} 1 1 1 ${RUNRANGE} 1 0
     cd ..
 
     PREVID=${CURID}
