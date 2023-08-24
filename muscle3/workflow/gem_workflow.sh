@@ -13,6 +13,7 @@ echo 'Running gem workflow in Fortran'
 #source  ~/muscle3/bin/muscle3.env
 
 currdate=$(date +"%Y%m%d")
+mkdir run_fusion_gem_${currdate}
 
 #muscle_manager --start-all gem-fusion-m3.ymmsl &
 muscle_manager --log-level DEBUG --run-dir run_fusion_gem_${currdate} --start-all gem-fusion-m3.ymmsl &
