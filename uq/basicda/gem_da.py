@@ -1220,13 +1220,15 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnumstart=1, runnum=
                 
             #4.5.1d) Plotting time traces for one case with its AVG, STD, SEM, each taken per run
             #runn_loc = 6
+                """
                 time_traces_per_run(
                         val_ev_s[runn_loc-runnumstart][0][:],
                         run_len=150,
                         foldname=p+'_'+a+'_'+mainfoldernum+'_'+str(runn_loc),
                         apha_discard=0.15,
                                     )
-
+                """
+                
             print('plotting cuts done')
 
             print("time to plot scans for different parameters: {0} s".format(time.time()-time_start))

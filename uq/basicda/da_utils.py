@@ -1506,7 +1506,8 @@ def plot_timetraces_act(traces, avg, std, sem, foldname='', apha_discard=0.3, ac
     #lpl_context = [700, 442] #DEBUG manual fitting
     lpl.size.set(*lpl_context)
 
-    y_lim = (1.9E+6, 2.9E+6) #(1.8E+6, 3.0E+6) #(-5.E+4, 2.8E+6)
+    #y_lim = (1.9E+6, 2.9E+6) #(1.8E+6, 3.0E+6) #(-5.E+4, 2.8E+6)
+    y_lim = (-1E+2, 1E+4)
 
     #fig, ax = plt.subplots(figsize=(16, 8))
     fig, ax = lpl.subplots(1, 1, scale=.75)

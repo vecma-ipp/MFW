@@ -75,19 +75,19 @@ if [ "${RUN_WITH_CP}" -eq 1 ]; then
   #for d in run*/ ; do
   for r in $(find ${RUNPATHTOP} -maxdepth 4 -mindepth 4 -type d -name "run_*" | sed "s|^\.\/||"); do 
       
-      #echo "${d}"
+      #echo "${r}"
 
-      mkdir -p cpo/${CPONUM}/${d}
+      mkdir -p cpo/${CPONUM}/${r}
 
       ## this should either be a slower 'cp' or never run for a folder currently used by a code
       ## also never to be thought it's current CPO-s in the stated folder
       
-      mv ${d}/gem_coretransp*.cpo cpo/${CPONUM}/${d}/
+      mv ${r}/gem_coretransp*.cpo cpo/${CPONUM}/${r}/
 
-      mkdir -p dat/${CPONUM}/${d}
-      cp ${d}/*.dat dat/${CPONUM}/${d}/
-      cp ${d}/fout_* dat/${CPONUM}/${d}/
-      cp ${d}/stopped dat/${CPONUM}/${d}/
+      mkdir -p dat/${CPONUM}/${r}
+      cp ${r}/*.dat dat/${CPONUM}/${r}/
+      cp ${r}/fout_* dat/${CPONUM}/${r}/
+      cp ${r}/stopped dat/${CPONUM}/${r}/
 
   done
 
