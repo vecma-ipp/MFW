@@ -239,6 +239,7 @@ def profile_evol_plot(value_s, labels=['orig'], file_names=[], name='gem_ti_flux
     style_lists = [marker_list, line_list, color_list, ] # NB!: can be modified to include marker style
     #fmt_list = ["".join(map(str, style)) for style in itertools.product(*style_lists)]
     fmt_list = [style for style in itertools.product(*style_lists)]
+    fmt_len = len(fmt_list)
 
     fig, ax = plt.subplots(figsize=(24.,8.))
 
@@ -258,7 +259,7 @@ def profile_evol_plot(value_s, labels=['orig'], file_names=[], name='gem_ti_flux
              #ax.semilogy(ts, value[i,:], '-', label=lab+'_'+str(i))
              
              #ax.plot(ts, value[i,:], fmt_list[inum], label=lab)
-             ax.plot(ts, value[i,:], color=fmt_list[inum][2], linestyle=fmt_list[inum][1], marker=fmt_list[inum][0], label=lab)
+             ax.plot(ts, value[i,:], color=fmt_list[inum%fmt_len][2], linestyle=fmt_list[inum%fmt_len][1], marker=fmt_list[inum%fmt_len][0], label=lab)
 
     ax.legend(loc='lower center',
              #bbox_to_anchor=(0.5, 0.0), 
@@ -772,9 +773,10 @@ def discontinuity_check(vals, reltol=5E-2, abstol=10E4, disc_criterion='combined
 
             for j in range(n):
 
-                # Currently using gradient criterion to found potential mapping
-                if np.divide(abs(vals[j][0][t+1] - vals[i][0][t]), vals[i][0][t]) < reltol/1. :
-                    cands.append(j)
+                if len(vals[j]) > t-1:
+                    # Currently using gradient criterion to found potential mapping
+                    if np.divide(abs(vals[j][0][t+1] - vals[i][0][t]), vals[i][0][t]) < reltol/1. :
+                        cands.append(j)
 
             print("For run ind#{0} there is a discontinuity at t={1} with original value of {3:.2f}. Most likely candidates for continuation have indices: {2}".
                 format(i, t+n_thr, cands, vals[i][0][t]))
@@ -783,7 +785,7 @@ def discontinuity_check(vals, reltol=5E-2, abstol=10E4, disc_criterion='combined
     cands_glob = [
             [
                 [
-                    np.where(np.divide(abs(vals[j][0][t+1] - vals[i][0][t]), vals[i][0][t]) < reltol)[0].tolist() for j in range(n)
+                    np.where(np.divide(abs(vals[j][0][t+1] - vals[i][0][t]), vals[i][0][t]) < reltol)[0].tolist() if len(vals[j]) > t else [0] for j in range(n)
                 ] for t in np.where(np.divide(abs(vals[i][0][1:] - vals[i][0][:-1]), vals[i][0][1:]) > reltol)[0].tolist()
             ] for i in range(n)
         ]
@@ -991,7 +993,11 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnumstart=1, runnum=
             # 4.1') Define the window to discard intial ramp-up and overshooting phase
             val = val_ev_s[i] # single series for a profile+attribute, shouldn't be used for now...
 
-            n_thrown_vals = int(alpha_wind*val.shape[-1])
+            n_len_min = 100 # minimal length of time series for which we consider discarding first values
+            if val.shape[-1] > n_len_min:
+                n_thrown_vals = int(alpha_wind*val.shape[-1])
+            else:
+                n_thrown_vals = 0
             val_wind_s = [val[:,n_thrown_vals:] for val in val_ev_s]
             #print('sizes before and after windowing: {} and {} '.format(val_ev_s[0].shape, val_wind_s[0].shape)) ###DEBUG
             #print('val_wind len and element shape are {} and {}'.format(len(val_wind), val_wind[0].shape)) ### DEBUG

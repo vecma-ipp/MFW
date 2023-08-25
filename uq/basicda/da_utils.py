@@ -1038,6 +1038,7 @@ def plot_response_cuts(data, input_names, output_names, compare_vals=None, foldn
     marker_list = ['', '.', 'o', 'v', '^', '<', '>']
     style_lists = [marker_list, line_list, color_list,] 
     fmt_list = [style for style in itertools.product(*style_lists)]
+    fmt_list_len = len(fmt_list)
 
     lookup_param_names = {
             'te_value': "$T_{{e}}$", 
@@ -1218,9 +1219,9 @@ def plot_response_cuts(data, input_names, output_names, compare_vals=None, foldn
                                             uplims=False, lolims=False,
                                             label=r'{}'.format(fixed_ip_val_str),
                                             alpha=0.5,
-                                            color=fmt_list[j_fixval][2],
-                                            linestyle=fmt_list[j_fixval][1],
-                                            marker=fmt_list[j_fixval][0],
+                                            color=fmt_list[j_fixval%fmt_list_len][2], #take module to cycle the syles
+                                            linestyle=fmt_list[j_fixval%fmt_list_len][1],
+                                            marker=fmt_list[j_fixval%fmt_list_len][0],
                                )
 
                 # if y values (mean, min, max) to compare are passed, plot the horizontal lines

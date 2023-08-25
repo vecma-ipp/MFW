@@ -22,7 +22,7 @@ for q in ${qs[@]} ; do
    
       mkdir ${q}/${t}/${n}/
     
-      mv ${t}*${q}*_${n}* ${q}/${t}/${n}/
+      mv ${t}*${q}*_${n}_* ${q}/${t}/${n}/
    
     done
   done
