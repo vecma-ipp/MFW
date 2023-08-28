@@ -96,7 +96,7 @@ def SA_exploite(analysis, qoi):
 
     #AUG_GM_date_explore(filename='../data/AUG_gem_inoutput.txt')
 
-def profile_evol_load(rho=0.7, folder_name='../gem_data/cpo5/', prof_names=['ti_transp', 'te_transp'], attrib_names=['flux'], 
+def profile_evol_load(rho=0.7, folder_name='../gem_data/', prof_names=['ti_transp', 'te_transp'], attrib_names=['flux'], 
                       coord_len=1, var_num=1, file_code_name='gem', name_postfix='', file_base_intermediate = 'coretransp'):
     """
     Loads the quantity values from all CPO files with a specific type of name in the folder,
@@ -118,7 +118,7 @@ def profile_evol_load(rho=0.7, folder_name='../gem_data/cpo5/', prof_names=['ti_
 
     #file_base_name = 'gem_coretransp'
     #file_base_intermediate = 'coretransp'
-    file_base_tocheck = file_code_name + '_' + file_base_intermediate
+    file_base_tocheck = file_code_name + '_' + file_base_intermediate + '_0' # will avoid gem_coretransp_out.cpo
 
     file_ext = '.cpo'
 
@@ -841,9 +841,9 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnumstart=1, runnum=
 #                 'imp4dv',
            	 ]
     profiles = ['ti_transp', 
-                #'te_transp',
-                #'ni_transp',
-                #'ne_transp'
+                'te_transp',
+                'ni_transp',
+                'ne_transp'
                ]
 
     for code_name in code_names:

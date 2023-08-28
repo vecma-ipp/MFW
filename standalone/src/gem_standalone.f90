@@ -67,11 +67,11 @@ contains
     integer :: tmpsize, ios
 
     integer :: ierr, npes, irank
-    print *, "gem2buf: calling mpi comm and rank" !!!DEBUG
+    !print *, "gem2buf: calling mpi comm and rank" !!!DEBUG
     call MPI_Comm_size(MPI_COMM_WORLD, npes, ierr)
     call MPI_Comm_rank(MPI_COMM_WORLD, irank, ierr)
-    print *, "gem2buf: npes= ", npes !!!DEBUG
-    print *, "gem2buf: irank= ", irank !!!DEBUG
+    !print *, "gem2buf: npes= ", npes !!!DEBUG
+    !print *, "gem2buf: irank= ", irank !!!DEBUG
 
     allocate(equil_in(1))
     allocate(corep_in(1))
@@ -85,11 +85,11 @@ contains
        end if
     end if
 
-    print *, "gem2buf: calling byte2file for equilibrium_in", npes !!!DEBUG
+    !print *, "gem2buf: calling byte2file for equilibrium_in", npes !!!DEBUG
     equil_in_file = TRIM(tmpdir)//TRIM(username)//'_gem_equilibrium_in.cpo'
     call byte2file(equil_in_file, equil_in_buf, size(equil_in_buf))
 
-    print *, "gem2buf: calling byte2file for coreprof_in", npes !!!DEBUG
+    !print *, "gem2buf: calling byte2file for coreprof_in", npes !!!DEBUG
     corep_in_file = TRIM(tmpdir)//TRIM(username)//'_gem_coreprof_in.cpo'
     call byte2file(corep_in_file, corep_in_buf, size(corep_in_buf))
 
@@ -110,7 +110,7 @@ contains
        STOP
     end if
 
-    print *, "gem2buf: opening coreprof_in", npes !!!DEBUG
+    !print *, "gem2buf: opening coreprof_in", npes !!!DEBUG
 
     open (unit = 10, file = corep_in_file, &
          status = 'old', form = 'formatted', &
@@ -125,12 +125,12 @@ contains
        STOP
     end if
 
-    print *, "gem2buf: calling gem_cpo", npes !!!DEBUG
+    !print *, "gem2buf: calling gem_cpo", npes !!!DEBUG
     call gem_cpo(equil_in, corep_in, coret_out)
 
     call MPI_Barrier(MPI_COMM_WORLD, ierr)
 
-    print *, "gem2buf: after barrier filling in coretransp_out", npes !!!DEBUG
+    !print *, "gem2buf: after barrier filling in coretransp_out", npes !!!DEBUG
 
     if (irank.eq.0) then
        ! transfer CPO to buf
@@ -140,12 +140,12 @@ contains
        call write_cpo(coret_out(1),'coretransp')
        call close_write_file
        
-       print *, "gem2buf: wrote down gem_coretransp_out.cpo" !!!DEBUG
+       !print *, "gem2buf: wrote down gem_coretransp_out.cpo" !!!DEBUG
        call file2byte(coret_out_file, tmpbuf, tmpsize)
-       print *, "gem2buf: called file2buf" !!!DEBUG
+       !print *, "gem2buf: called file2buf" !!!DEBUG
        allocate(coret_out_buf(tmpsize))
        coret_out_buf(1:tmpsize) = tmpbuf(1:tmpsize)
-       print *, "gem2buf: allocated and wrote coret_out_buf" !!!DEBUG
+       !print *, "gem2buf: allocated and wrote coret_out_buf" !!!DEBUG
        call dealloc_cbytebuf(tmpbuf)
     endif
 

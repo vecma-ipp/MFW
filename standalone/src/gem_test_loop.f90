@@ -33,7 +33,7 @@ program gem_test
 
   character(4) :: itstr
 
-  integer, parameter :: STEPS = 5
+  integer, parameter :: STEPS = 15
 
   call MPI_Init(ierr)
   call MPI_Comm_size(MPI_COMM_WORLD, npes, ierr)

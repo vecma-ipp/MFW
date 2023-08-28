@@ -45,7 +45,7 @@ def setup_gem(ftube_index, common_dir, input_params, output_columns, xml=None, p
 
     # CPO file containing the quantities of intersts
     #output_filename = "gem_coretransp_out.cpo"
-    output_filename = "gem_coretransp_0005.cpo" # "gem_coretransp_0100.cpo"
+    output_filename = "gem_coretransp_0015.cpo" # "gem_coretransp_0100.cpo"
     output_cponame = "coretransp"
 
     # Parameter space for campaign and the distributions list for the sampler
@@ -253,7 +253,7 @@ if __name__ == "__main__":
                     ]
     #output_filename = "gem_coretransp_out.cpo"
     # Workaround: read i-th iteration file
-    output_filename = "gem_coretransp_0005.cpo" # "gem_coretransp_0100.cpo" # TODO either read from folder, or make the set-up more flexible
+    output_filename = "gem_coretransp_0015.cpo" # "gem_coretransp_0100.cpo" # TODO either read from folder, or make the set-up more flexible
     output_cponame = "coretransp"
 
     # Define coordinate of flux tubes
@@ -443,7 +443,7 @@ if __name__ == "__main__":
         my_sampler = my_campaign.campaign_db.resurrect_sampler(i+1)
         my_campaign.set_sampler(my_sampler, update=True)
 
-        print(f"running for the flux tube num {i+1}")
+        print(f"\n > Running for the flux tube num {i+1}")
 
         # ONLY AFTER HERE WE NEED AGAIN TO CHANGE SOMETHING w.r.t. PAST EXECUTION i.e. CREATE RESOURCE POOL; BY THIS TIME OTHER THINGS HAVE TO BE READY
         print('Creating an Executor')
@@ -515,7 +515,6 @@ if __name__ == "__main__":
 
         # Get results
         results = my_campaign.get_last_analysis()
-        pprint.pprint(results) ###DEBUG
 
         # Get Descriptive Statistics
         mean_el = results.describe('te_transp.flux', 'mean')
