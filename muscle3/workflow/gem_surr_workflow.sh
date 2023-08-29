@@ -10,7 +10,10 @@ echo 'Running gem_surr workflow in Fortran & Python'
 
 #. ~/muscle3_venv/bin/activate
 . ~/muscle3/bin/muscle3.env
-muscle_manager --start-all gem-surr-fusion.ymmsl &
+
+
+#muscle_manager --start-all gem-surr-fusion.ymmsl &
+muscle_manager --start-all gem-surr-mft-fusion.ymmsl &
 
 echo 'MUSCLE_MANAGER started'
 
