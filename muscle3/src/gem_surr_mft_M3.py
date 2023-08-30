@@ -83,6 +83,12 @@ def output_value_to_coretransp(
 
     coretransp_datastructure = read(coretransp_file, 'coretransp')
 
+    if len(coretransp_datastructure.values[0].ti_transp.flux) != len(r_s):
+        coretransp_datastructure.values[0].ti_transp.flux = np.zeros((1, len(r_s)))
+
+    if len(coretransp_datastructure.values[0].te_transp.flux) != len(r_s):
+        coretransp_datastructure.values[0].te_transp.flux = np.zeros((len(r_s)))                        
+
     # NB: when this is commented out and will not change the coretransp passed
     for prof_name in prof_names:
 
@@ -93,20 +99,13 @@ def output_value_to_coretransp(
                 if attribute == 'flux':
 
                     if prof_name == 'ti_transp':
-
-                        #print(f"> flux datastructure : {fluxes_out[prof_name+'_'+attribute]}") ###DEBUG
-                        # if len(vals) == 0:
-                        #     vals.append([])
-                        # vals[0].append(fluxes_out[prof_name+'_'+attribute][0])
-                       
-                        if len(coretransp_datastructure.values[0].ti_transp.flux) == 0:
-                            coretransp_datastructure.values[0].ti_transp.flux = np.zeros((len(r_s), 1))
-                        coretransp_datastructure.values[0].ti_transp.flux[0, r] = fluxes_out[prof_name+'_'+attribute][r]
+                                               
+                        #coretransp_datastructure.values[0].ti_transp.flux = np.zeros((1, len(r_s)))
+                        coretransp_datastructure.values[0].ti_transp.flux[r, 0] = fluxes_out[prof_name+'_'+attribute][r]
                     
                     elif prof_name == 'te_transp':
-                        
-                        if len(coretransp_datastructure.values[0].te_transp.flux) == 0:
-                            coretransp_datastructure.values[0].te_transp.flux = np.zeros((len(r_s)))
+           
+                        #coretransp_datastructure.values[0].te_transp.flux = np.zeros((len(r_s)))                       
                         coretransp_datastructure.values[0].te_transp.flux[r] = fluxes_out[prof_name+'_'+attribute][r]
                                 
                     else:
@@ -162,7 +161,7 @@ def gem_surr_M3():
         camps = []
         mods = []
 
-        for ft in range(n_fts):
+        for ft in range(n_fts): #TODO: if settings reading can be moved before the main loop, easysurrogates can be initialised once
             try:
                 camps.append(es.Campaign(load_state=True, file_path=f"{model_file_base}_{ft}.pickle"))
             except OSError:
@@ -202,14 +201,14 @@ def gem_surr_M3():
         # After reading the profile from temporary file, make an array
         profiles_in = coreprof_to_input_value(coreprof_cpo_obj, rho_ind_s,)
         profiles_in = profiles_in[input_names_ind_permut] #TODO: either fix original order, or store permutation separately
-        print('> Read incoming core profile \n {0}'.format(profiles_in))
+        print(f"> Read incoming core profile \n {profiles_in}")
 
         # Get (n_features, n_samples) from surrogate from (n_features, n_radial_points)
         # TODO should be (n_features, n_radial_points) -> (n_features, n_radial_points, n_samples)
         if profiles_in.shape[1] == 1:
             profiles_in.squeeze()
         profiles_in.reshape(-1,1)
-        print('> Reshaped core profile \n {0}'.format(profiles_in)) ###DEBUG
+        #print(f"> Reshaped core profile \n {profiles_in}") ###DEBUG
 
         # Read coreprof to either:
         #                   a. dictionary with keys being names of profiles and values being numpy arrays or lists
@@ -217,28 +216,38 @@ def gem_surr_M3():
 
         #TODO use a surrogate for a vector output: ['te.transp.flux', 'ti.transp.flux']
         # Infer a mean flux value using a surrogate
-        #   NB!: Assumes same model predicting for different rho_tor separately:
+        #   NB!: Iterate over models and save result into a commod data structure
+        fluxes_out     = np.zeros((n_fts, len(output_names)))
+        fluxes_out_std = np.zeros((n_fts, len(output_names)))
+        
         for n_ft, r in enumerate(rho_ind_s):
-            fluxes_out, fluxes_out_std = mods[n_ft].predict(profiles_in[:,n_ft])
-            print('> Used a surrogate at rho_ind={r} to predict new Q_e,i={0}'.format(fluxes_out))
-            print('> Predicted STDs of new Q_e,i={0}'.format(fluxes_out_std))
+            f_o, f_o_std = mods[n_ft].predict(profiles_in[:,n_ft].reshape(-1,1))
+            fluxes_out[n_ft,:] = f_o.reshape(-1)
+            fluxes_out_std[n_ft,:] = f_o_std.reshape(-1)
+        
+        print(f"> Used a surrogate at rho_ind={r} to predict new Q_e,i={fluxes_out}")
+        print(f"> Predicted STDs of new Q_e,i={fluxes_out_std}")
 
         #TODO: in principle with large scale separation local t_cur does not play role,
         # but one could also estimate time for turbulence saturation with surrogate 
         #TODO: find MUSCLE3 format for dictionaries or dataframes
         #TODO: initialise the default data to fill in coretransp structures - look up GEM0 in Python
 
-        fluxes_out_dict = {k:fluxes_out[:][i] for i,k in enumerate(output_names)}
+        fluxes_out_dict = {k:fluxes_out[:, i] for i,k in enumerate(output_names)}
+
+        print(f"fluxes_out_dict: \n{fluxes_out_dict}")
         
         coretransp_cpo_obj = output_value_to_coretransp(
                                         fluxes_out_dict, 
                                         coretransp_default_file_path, 
                                         r_s = [i for i,r in enumerate(rho_ind_s)],
-                                        prof_names=['te_transp', 'ti_transp'],
+                                        prof_names=['ti_transp', 'te_transp'],
+                                        attributes=['flux']
                                                         )
 
         # Creating a bytes variable to be sent via MUSCLE3, coretransp_cpo_obj -> bytes
-
+        #print(f"ti_transp.flux: \n{coretransp_cpo_obj.values[0].ti_transp.flux}") ###DEBUG
+        
         file_like_profiles_out_data_str = io.StringIO('')
         write_fstream(file_like_profiles_out_data_str, coretransp_cpo_obj, "coretransp")
         coretransp_str = file_like_profiles_out_data_str.getvalue()

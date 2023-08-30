@@ -4,7 +4,6 @@ ymmsl_version: v0.1
 model:
   name: fusion_gem_surr
 
-#  compute_elements:
   components:
     init:        
       implementation: init_impl
@@ -57,14 +56,14 @@ model:
       ports:
         f_init: equilibrium_in
         o_f: equilibrium_out
-    duplicate:   
-      implementation: duplicate_impl
+    flux2tcoeff:
+      implementation: imp4dv_impl
       ports:
-        f_init: input
-        o_f:
-          - copy_A
-          - copy_B
-          - copy_C
+        o_f: coretransp_out
+        f_init:
+          - coreprof_in
+          - equilibrium_in
+          - coretransp_in
     
   conduits:
     init.equilibrium_init:       transport.equilibrium_init
@@ -73,9 +72,10 @@ model:
     init.coreimpur_init:         transport.coreimpur_init
     init.toroidfield_init:       transport.toroidfield_init
     transport.equilibrium_out:   equilibrium.equilibrium_in
-    transport.coreprof_out:      turbulence.coreprof_in
-    equilibrium.equilibrium_out: [turbulence.equilibrium_in, transport.equilibrium_in]
-    turbulence.coretransp_out:   transport.coretransp_in
+    transport.coreprof_out:      [turbulence.coreprof_in, flux2tcoeff.coreprof_in]
+    equilibrium.equilibrium_out: [turbulence.equilibrium_in, transport.equilibrium_in, flux2tcoeff.equilibrium_in]
+    turbulence.coretransp_out:   flux2tcoeff.coretransp_in
+    flux2tcoeff.coretransp_out:  transport.coretransp_in
     transport.equilibrium_final: stop.equilibrium_in
     transport.coreprof_final:    stop.coreprof_in
     transport.coresource_final:  stop.coresource_in
@@ -94,7 +94,7 @@ resources:
     threads: 1
   equilibrium:
     threads: 1
-  duplicate:
+  flux2tcoeff:
     threads: 1
 
 
@@ -121,7 +121,7 @@ implementations:
       - python3
       - -m
       - pdb
-      - /u/yyudin/code/MFW/muscle3/src/gem_surr_M3.py
+      - /u/yyudin/code/MFW/muscle3/src/gem_surr_mft_M3.py
   chease_impl:
     executable: /u/yyudin/code/MFW/muscle3/bin/COBRA/chease_M3
   chease_impl_debug:
@@ -131,21 +131,22 @@ implementations:
       - gdb
       - --args
       - /u/yyudin/code/MFW/muscle3/bin/COBRA/chease_M3
-  duplicate_impl:
-    executable: /u/yyudin/code/MFW/muscle3/bin/COBRA/duplicate_M3
+  imp4dv_impl:
+    executable: /u/yyudin/code/MFW/muscle3/bin/COBRA/imp4dv_M3
   
 settings:
-  transport.duration: 0.05
+  transport.duration: 0.1
   transport.dt: 0.01
   init_cpo_dir: "../../../../../../workflows/AUG_28906_6"
   final_cpo_dir: "./"
   muscle_remote_log_level: "DEBUG"  
   slice_initial_number: 0
   save_slice: True
+  adaptive_timestep: False
   turbulence.rho_ind_s: [15.0, 31.0, 44.0, 55.0, 66.0, 76.0, 85.0, 94.0]
   turbulence.profs_out: "ti_transp.flux"
   turbulence.surrogate_path: "../../../../../../workflows/gem_es_model"
-  turbulence.cortransp_default: "ets_coretransp_in.cpo"
+  turbulence.cortransp_default: "../../../../../../workflows/gem_coretransp_8ft.cpo"
 
 
 #checkpoints:
