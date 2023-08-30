@@ -62,8 +62,12 @@ if len(sys.argv) < 2 :
 else:
     date = sys.argv[1]
 
-#codename = 'gem_surr'
-codename = 'gem'
+if len(sys.argv) < 3 :
+    #codename = 'gem_surr'
+    codename = 'gem'
+else:
+    codename = str(sys.argv[2])
+
 
 load_fold_name = 'workflow/run_fusion_'+codename + \
     '_'+date+'/instances/transport/workdir/'
@@ -113,14 +117,15 @@ for cpo_name in cpo_names:
         attributes = ['flux', 'diff_eff', 'vconv_eff']
 
         if codename == 'gem_surr':
-            coord_num = [0]  # if n_fts==1
+            #coord_num = [0]  # if n_fts==1
+            coord_num = [0, 1, 2, 3, 4, 5, 6, 7] 
             n_ft = 0
         else:
             coord_num = [0, 1, 2, 3, 4, 5, 6, 7]  # if n_fts==8
-            n_ft = 1 #4 # number of flux tube to plot for
+            n_ft = 0 #4 # number of flux tube to plot for
 
-        i_q_s = [0, 1]
-        j_a_s = [0, 1, 2]
+        i_q_s = [0, 1] # indiced of quantities to go through
+        j_a_s = [0, 1, 2] # indiced of attributes to go through
 
     for i_q, j_a in product(i_q_s, j_a_s):
 
@@ -153,6 +158,7 @@ for cpo_name in cpo_names:
         # TODO: display integer numbers of time steps
         ax.set_ylabel(lookup_names[quantities[i_q]+'_'+attributes[j_a]] if (
             quantities[i_q]+'_'+attributes[j_a] in lookup_names) else quantities[i_q]+'_'+attributes[j_a])
+        
         if 'sur' in codename:
             if quantities[i_q]+'_'+attributes[j_a] in ref_data.columns:
                 min_val = ref_data[quantities[i_q]+'_'+attributes[j_a]].min()
@@ -161,14 +167,16 @@ for cpo_name in cpo_names:
                           linestyle='--', label='bounds of the training dataset')
                 ax.hlines(y=max_val, xmin=0, xmax=n_timesteps,
                           color='r', linestyle='--')
+        
         ax.legend(loc='best')
         fig.savefig(save_fold_name+'res_'+codename+'_' +
                     quantities[i_q]+'_'+attributes[j_a]+'_'+date+'.pdf')
         plt.close()
 
         # Plotting attribute profile for multiple time-steps
-        n_timesteps_toplot = 5
+        n_timesteps_toplot = n_timesteps // 10 if n_timesteps // 10 > 0 else 1
         fig, ax = plt.subplots()
+        
         for t in range(0, n_timesteps, n_timesteps_toplot):
             # for t in range(0, 5, 1):
             ax.plot(np.array(coord_num),
@@ -178,6 +186,7 @@ for cpo_name in cpo_names:
                     marker=fmt_list[t//n_timesteps_toplot][0],
                     #marker='.'
                     )
+        
         # ax.set_yscale('symlog')
         ax.set_xlabel('rho coord')
         ax.set_ylabel(quantities[i_q]+'_'+attributes[j_a])
