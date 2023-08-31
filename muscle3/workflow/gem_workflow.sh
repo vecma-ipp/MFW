@@ -56,4 +56,4 @@ mv ${run_dir_name}.tar.gz /ghi/r/${username:0:1}/${username}
 
 # Make plots for the evolution of core profiles
 cd ..
-python read_profs.py ${currdate}
+python read_profs.py gem ${currdate}
