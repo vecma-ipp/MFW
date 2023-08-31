@@ -25,18 +25,19 @@ sobols_first_sum = sum([v for k,v in res_akgbbn1a_9_titr.items()])
 sobols_higher_sum = 1. - sobols_first_sum
 
 res_akgbbn1a_9_titr_exp = res_akgbbn1a_9_titr.copy()
-res_akgbbn1a_9_titr_exp['S.higher'] = sobols_higher_sum
+res_akgbbn1a_9_titr_exp['s.higher'] = sobols_higher_sum
 
 res_akgbbn1a_9_titr_tot = {'te.value': 0.00101375,
                       'ti.value': 0.96069695,
                       'te.ddrho': 0.00283654,
                       'ti.ddrho': 0.05339608}
 
-label_list = ["$\\nabla T_{{e}}$", "$T_{{e}}$", "$\\nabla T_{{i}}$", "$T_{{i}}$"]
-#labels=['te_val', 'ti_val', 'te_grad', 'ti_grad']
-labels=['te.value', 'ti.value', 'te.ddrho', 'ti.ddrho']
+#label_list = ["$\\nabla T_{{e}}$", "$T_{{e}}$", "$\\nabla T_{{i}}$", "$T_{{i}}$", ]
+#labels=['te_val', 'ti_val', 'te_grad', 'ti_grad',]
+labels=['te.value', 'ti.value', 'te.ddrho', 'ti.ddrho', 's.higher']
+
 labels_exp=[k for k,v in res_akgbbn1a_9_titr_exp.items()]
-labels_exp = label_list
+#labels_exp = labels
 
 #aa = read_sobols_from_logs(labels=labels)
 #a_avg = np.array(aa).mean(axis=0)
@@ -45,7 +46,7 @@ labels_exp = label_list
 a_avg = [v for k,v in res_akgbbn1a_9_titr_exp.items()]
 
 #plot_sobols_pie(a_avg, labels, '090922')
-plot_sobols_pie(a_avg, labels_exp, '030423_lpl')
+#plot_sobols_pie(a_avg, labels_exp, '14042023_lpl')
 
 ##### Addition 20.02.2023 ######
 
@@ -69,8 +70,16 @@ sobols_total = {'te_transp.flux': {'te.ddrho': 0.06019673,
 
 res_akgbbn1a_9_tetr_exp = sobols_first['te_transp.flux'].copy()
 sobols_first_tetr_sum = sum([v for k,v in res_akgbbn1a_9_tetr_exp.items()])
-res_akgbbn1a_9_tetr_exp['S.higher'] = 1. - sobols_first_tetr_sum
+res_akgbbn1a_9_tetr_exp['s.higher'] = 1. - sobols_first_tetr_sum
 s_tetr =   [v for k,v in res_akgbbn1a_9_tetr_exp.items()]
 labels_exp=[k for k,v in res_akgbbn1a_9_tetr_exp.items()]
-labels_exp = label_list
-plot_sobols_pie(s_tetr, labels_exp, 'tetr_030423_lpl')
+#labels_exp = label_list
+plot_sobols_pie(s_tetr, labels_exp, 'tetr_17042023_lpl')
+
+res_akgbbn1a_9_titr_exp = sobols_first['ti_transp.flux'].copy()
+sobols_first_titr_sum = sum([v for k,v in res_akgbbn1a_9_titr_exp.items()])
+res_akgbbn1a_9_titr_exp['s.higher'] = 1. - sobols_first_titr_sum
+s_titr =   [v for k,v in res_akgbbn1a_9_titr_exp.items()]
+labels_exp=[k for k,v in res_akgbbn1a_9_titr_exp.items()]
+#labels_exp = label_list
+plot_sobols_pie(s_titr, labels_exp, 'titr_17042023_lpl')

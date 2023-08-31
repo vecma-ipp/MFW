@@ -7,8 +7,10 @@
 #SBATCH --output=test-loopmftuq-out.%j
 #SBATCH --error=test-loopmftuq-err.%j
 
+#SBATCH --no-requeue
+
 ## wall time in format (HOURS):MINUTES:SECONDS
-#SBATCH --time=10:00:00
+#SBATCH --time=24:00:00
 
 ## number of nodes and tasks per node
 #SBATCH --nodes=35
