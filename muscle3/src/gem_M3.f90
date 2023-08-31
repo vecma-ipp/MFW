@@ -38,7 +38,7 @@ program gem_M3
     call system('cp ../../../../gem.xml gem.xml')
     call system('cp ../../../../gem.xsd gem.xsd')
 
-    call system('cp ../../../../gem_resume_data/t*.dat ./')
+    call system('cp ../../../../gem_resume_data/*.dat ./')
   end if
 
   ports = LIBMUSCLE_PortsDescription_create()
