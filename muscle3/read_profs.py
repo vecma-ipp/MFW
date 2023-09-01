@@ -48,12 +48,21 @@ def read_files(foldername, quantity, attribute, coords, filetype='coreprof', dat
     else:
     """
 
+
+
     file_names = [f for f in os.listdir(foldername) if
                   os.path.isfile(os.path.join(foldername, f)) and
                   f.endswith(file_ext) and
                   f.startswith(file_base_tocheck)
                   ]
     file_names.sort()
+
+    # add the last file, that might be names differently
+    last_file_tent_name = 'ets_'+filetype+'_out'+file_ext
+    if os.path.exists(os.path.join(foldername, last_file_tent_name)):
+        file_names.append(last_file_tent_name)
+
+    #print(file_names) ###DEBUG
 
     attributes = []
 
@@ -82,6 +91,7 @@ def read_profs():
 
     load_fold_names = ['workflow/run_fusion_'+codename + \
         '_'+date+'/instances/transport/workdir/' for date in dates]
+
     save_fold_name = 'workflow/run_fusion_'+codename+'_'+dates[0]+'_'+dates[-1]+'/'
 
     if not os.path.exists(save_fold_name):
@@ -121,10 +131,10 @@ def read_profs():
             coord_num = [x for x in range(0, 100, n_rho_resol)]
 
             #n_ft = 68
-            n_ft = 0
+            n_ft = coord_num[0]
 
-            i_q_s = [0, 1, 2, 3]
-            j_a_s = [0, 1]
+            i_q_s = [0, 1, 2, 3] # indiced of quantities to go through
+            j_a_s = [0, 1] # indiced of attributes to go through
 
         if cpo_name == 'coretransp':
             quantities = ['ti_transp', 'te_transp']
@@ -134,7 +144,7 @@ def read_profs():
             if codename == 'gem_surr':
                 #coord_num = [0]  # if n_fts==1
                 coord_num = [0, 1, 2, 3, 4, 5, 6, 7] 
-                n_ft = 0
+                n_ft = coord_num[-1]
             else:
                 coord_num = [0, 1, 2, 3, 4, 5, 6, 7]  # if n_fts==8
                 n_ft = 0 #4 # number of flux tube to plot for
@@ -174,7 +184,8 @@ def read_profs():
             # Plotting an attribute value at a the n_ft-th flux tube against time
             fig, ax = plt.subplots()
             ax.plot(np.linspace(0, n_timesteps, n_timesteps),
-                    data[:n_timesteps, n_ft], '.')
+                    data[:n_timesteps, n_ft], '.',
+                    label=f"@{n_ft}")
             ax.set_xlabel('${{t}}$, time-steps')
             # TODO: display integer numbers of time steps
             ax.set_ylabel(lookup_names[quantities[i_q]+'_'+attributes[j_a]] if (
