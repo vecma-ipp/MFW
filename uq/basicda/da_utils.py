@@ -1508,7 +1508,7 @@ def plot_timetraces_act(traces, avg, std, sem, foldname='', apha_discard=0.3, ac
     lpl.size.set(*lpl_context)
 
     #y_lim = (1.9E+6, 2.9E+6) #(1.8E+6, 3.0E+6) #(-5.E+4, 2.8E+6)
-    y_lim = (-1E+2, 1E+4)
+    y_lim = (-1E+2, 2E+6)
 
     #fig, ax = plt.subplots(figsize=(16, 8))
     fig, ax = lpl.subplots(1, 1, scale=.75)
@@ -1525,7 +1525,7 @@ def plot_timetraces_act(traces, avg, std, sem, foldname='', apha_discard=0.3, ac
     for i in range(n_act-1):
         # Plotting traces for each of the ACT window
         i_f = n_disc + act * i
-        i_l = n_disc + act * (i + 1)
+        i_l = n_disc + act * (i + 1) + 1 # +1 is to visually connect the plot between ACT windows
     
         ax.plot(np.arange(i_f, i_l), traces[i_f:i_l], color='b', linestyle='-', linewidth=my_lw)
         
@@ -1625,7 +1625,7 @@ def time_traces_per_run(traces, run_len=450, foldname='', apha_discard=0.3):
         # Plotting traces for each of the ACT window
         # Selecting local indices and corrsponding time traces
         i_f = n_disc + run_len * i
-        i_l = n_disc + run_len * (i + 1)
+        i_l = n_disc + run_len * (i + 1) + 1 # +1 is to visually connect the plot between ACT windows
 
         traces_loc = traces[n_disc:i_l]
         x_loc = np.arange(n_disc, i_l)

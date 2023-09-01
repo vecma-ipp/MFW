@@ -5,9 +5,9 @@ cd gem_data/
 # Put ouputs after GEM postprocessing into quantity/plot/runnum folder structure
 
 qs=('te' 'ti' 'ne' 'ni')
-ts=('gem' 'resuq' 'stats' 'fft' 'scan' 'pdf' 'hist' '0_gem')
+ts=('gem' 'resuq' 'stats' 'fft' 'scan' 'pdf' 'hist' '0_gem' 'timetraces_act' 'lr')
 ns=1
-nf=6
+nf=12
 
 for q in ${qs[@]} ; do
 

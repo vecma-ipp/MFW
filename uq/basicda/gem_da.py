@@ -1007,7 +1007,7 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnumstart=1, runnum=
             # 4.1'') Check if there are any discontinuities in the evolution
             time_start = time.time()
 
-            discontinuity_check(val_wind_s, disc_criterion='combined', n_thr=n_thrown_vals)
+            discontinuity_check(val_wind_s, disc_criterion='combined', n_thr=n_thrown_vals) 
 
             print("time to go over time traces and look for discontinuities: {0} s".format(time.time()-time_start))
             
@@ -1251,7 +1251,7 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnumstart=1, runnum=
                 
                 profile_evol_plot([val_wind_s[runn-runnumstart], val_trend_lr_s[runn-runnumstart]],
                                   labels=['original', 'linear regression with NE'],
-                                  name='lr_'+p+'_'+a+'_'+str(runn-runnumstart)+'_'+mainfoldernum) 
+                                  name='lr_'+p+'_'+a+'_'+mainfoldernum+'_'+str(runn-runnumstart)) 
                 
             # 4.5.3) Applying HP-filter    
             val_trend_hpf_s = []
