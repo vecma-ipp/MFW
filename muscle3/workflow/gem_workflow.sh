@@ -43,16 +43,18 @@ wait
 # Copy the results in a folder for the next submission and continuation of the run 
 folder_to_copy_from=${run_dir_name}
 folder_to_copy_to=gem_resume_data
-files_to_copy=('instances/transport/workdir/*_ets_equilibrium_in.cpo' 'instances/transport/workdir/*_ets_coreprof_in.cpo' 'instances/turbulence/workdir/*.dat')
+files_to_copy=('instances/transport/workdir/*_ets_equilibrium_in.cpo' 'instances/transport/workdir/*_ets_coreprof_in.cpo' 'instances/turbulence/workdir/t*.dat')
+# all *.dat files may be added, but the the resulting folder size would be very large
 files_destination=('ets_equilibrium_in.cpo' 'ets_coreprof_in.cpo')
 
 for i in ${!files_to_copy[@]} ; do
   cp ${folder_to_copy_from}/${files_to_copy[$i]} ${folder_to_copy_to}/${files_destination[$i]}
 done
 
-#Archive and store the run folder (especially the checkpoint files)
-tar -czvf ${run_dir_name}.tar.gz ${run_dir_name}/
-mv ${run_dir_name}.tar.gz /ghi/r/${username:0:1}/${username}
+# Archive and store the run folder (especially the checkpoint files)
+#  it takes too long to do it on a workign node -> external wrapping script needed?
+# tar -czvf ${run_dir_name}.tar.gz ${run_dir_name}/
+# mv ${run_dir_name}.tar.gz /ghi/r/${username:0:1}/${username}
 
 # Make plots for the evolution of core profiles
 cd ..
