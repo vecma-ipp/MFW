@@ -170,7 +170,7 @@ implementations:
 
 settings:
   transport.duration: 1.0
-  transport.dt: 0.01
+  transport.dt: 0.0025
   # init_cpo_dir: "../../../../../../workflows/AUG_28906_6"
   init_cpo_dir: "../../../../gem_resume_data"
   final_cpo_dir: "./"
