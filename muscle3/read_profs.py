@@ -17,8 +17,12 @@ def read_attrib(filename, quantity, attribute, coords, filetype='coreprof'):
     """
     cpo_obj = read(filename, filetype)
     q = cpo_obj
+    
     if filetype == 'coretransp':
         q = cpo_obj.values[0]
+    elif filetype == 'equilibrium':
+        q = cpo_obj.eqgeometry
+
     q = getattr(q, quantity)
     a = getattr(q, attribute)
 
@@ -28,7 +32,6 @@ def read_attrib(filename, quantity, attribute, coords, filetype='coreprof'):
     else:
         a_s = [a[c] for c in coords]
     return a_s
-
 
 def read_files(foldername, quantity, attribute, coords, filetype='coreprof', date=''):
 
@@ -47,8 +50,6 @@ def read_files(foldername, quantity, attribute, coords, filetype='coreprof', dat
         file_names = [foldername[i]+f for f in fs for i,fs in enumerate(file_names)]    
     else:
     """
-
-
 
     file_names = [f for f in os.listdir(foldername) if
                   os.path.isfile(os.path.join(foldername, f)) and
@@ -75,6 +76,36 @@ def read_files(foldername, quantity, attribute, coords, filetype='coreprof', dat
     atrributes_array = np.array(attributes)
 
     return atrributes_array
+
+def read_equil(foldernames):
+    """
+    Reads equilibrium file and plots last closed flux surface 
+    foldername: list of names of form: [year-month-day] e.g. 20230901
+    """
+
+    filetype = "equilibrium"
+    quantity = "boundary"
+    attribute = ["r", "z"]
+
+    labels = [f"iteration #{(j+1)*100}" for j in range(len(foldernames))]
+
+    fig, ax = plt.subplots()
+
+    for i,foldername in enumerate(foldernames):
+    
+        filename = 'workflow/run_fusion_gem_'+ foldername + '/instances/equilibrium/workdir/chease_equilibrium_out.cpo' 
+
+        cpo_obj = read(filename, filetype)
+    
+        rs = cpo_obj.eqgeometry.boundary[0].r
+        zs = cpo_obj.eqgeometry.boundary[0].z
+
+        ax.plot(rs, zs, label=labels[i])
+    
+    ax.set_aspect('equal', 'datalim')
+    ax.legend(loc='best')
+    fig.savefig(foldername[0]+'_equilibrium.pdf')
+    plt.close()
 
 def read_profs():
 
@@ -227,6 +258,11 @@ def read_profs():
                         quantities[i_q]+'_'+attributes[j_a]+'_'+dates[0]+'_'+dates[-1]+'.pdf')
             plt.close()
 
+            return dates
+
 if __name__ == '__main__':
     
-    read_profs()
+    #dates = read_profs()
+
+    dates = ['20230818_135913', '20230821_161005', '20230822_150943', '20230823_151955', '20230824', '20230825', '20230828', '20230829', '20230830', '20230831', '20230901']
+    read_equil(dates)
