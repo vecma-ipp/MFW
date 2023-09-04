@@ -82,7 +82,7 @@ if [ "${RUN_WITH_CP}" -eq 1 ]; then
       ## this should either be a slower 'cp' or never run for a folder currently used by a code
       ## also never to be thought it's current CPO-s in the stated folder
       
-      mv ${r}/gem_coretransp*.cpo cpo/${CPONUM}/${r}/
+      cp ${r}/gem_coretransp*.cpo cpo/${CPONUM}/${r}/
 
       mkdir -p dat/${CPONUM}/${r}
       cp ${r}/*.dat dat/${CPONUM}/${r}/
@@ -185,6 +185,7 @@ if [ "${RUN_WITH_SAVE}" -eq 1 ]; then
   cd ${DIR_OUTPUT}
   mkdir ${UQCAMPDIR}
 
+mv ../*${UQCAMPDIR}*.pdf ${UQCAMPDIR}/
   mv ../*${UQCAMPDIR}*.png ${UQCAMPDIR}/
   mv ../*${UQCAMPDIR}*.svg ${UQCAMPDIR}/
   mv ../*${UQCAMPDIR}*.txt ${UQCAMPDIR}/

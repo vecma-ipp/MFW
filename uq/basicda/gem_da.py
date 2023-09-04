@@ -122,6 +122,7 @@ def profile_evol_load(rho=0.7, folder_name='../gem_data/', prof_names=['ti_trans
 
     file_ext = '.cpo'
 
+    # List of files to read values from, here: list of iterations
     file_names = [f for f in os.listdir(folder_name) if 
                              os.path.isfile(os.path.join(folder_name, f)) and 
                              f.endswith(file_ext) and
@@ -828,6 +829,7 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnumstart=1, runnum=
     runfolder_list_filtered = [f for f in runfolder_list if int(f[f.rfind('_')+1:]) in runnum_list]
     runnum_list_filtered = [r for r in runnum_list if r in runfolder_list_numbers]
 
+    n_runs = len(runfolder_list_filtered)
     print('The list of runs found from disk and the list of assumed ones are equal: {0}'.format(runnum_list==runnum_list_filtered)) ###DEBUG
 
     print('foldername={}'.format(foldername)) ###DEBUG
@@ -855,6 +857,10 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnumstart=1, runnum=
         else:
             print('>Error in start of postprocessing: no such code recognized')
 
+        # Number of quantities for a given code to consider: |profiles| x |attributes|
+        n_qs =  len(profiles) * len(attributes)
+        columns = [p+'_'+a for (p,a) in itertools.product(profiles, attributes)]
+
         # 1) If runforbatch, then csv are already in the folder, otherwise have to read CPO-s
         time_start = time.time()
         if not runforbatch:
@@ -870,6 +876,9 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnumstart=1, runnum=
             # (now there are different number of iterations), then load and pass to a new 
             
             # 2) Iterate over all runs, meaning for same scenario but with a different transport profile variation
+            val_ev_fromcpo_s = []
+            dataframe_cpo = pd.DataFrame(columns=columns)
+            array_cpo = np.empty((n_runs, n_qs))
             #for runn in runnum_list:
             for runn, fname in enumerate(runfolder_list_filtered): 
                 
@@ -878,19 +887,30 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnumstart=1, runnum=
                 #TODO: check if csv files written in the right order
 
                 #folder_name_curr = os.path.join(workdir, foldername+'/run_'+str(runn)) 
-                # TODO make more flexible for different existing cases?
+                
+                # TODO make more flexible for different existing cases - currently assumes consequtive numeration!
                 folder_name_curr = os.path.join(workdir, fname) 
                 
                 print('Going over CPO-s in the folder: {}'.format(folder_name_curr))
                 
-                val_ev_s_fromcpo, file_names = profile_evol_load(prof_names=profiles, 
+                val_ev_fromcpo, file_names = profile_evol_load(prof_names=profiles, 
                                                          attrib_names=attributes, 
                                                          coord_len=coordnum, 
                                                          folder_name=folder_name_curr, 
                                                          file_code_name=code_name, 
                                                          name_postfix='_'+mainfoldernum+'_'+str(runn+1) # here runn is from enumerate, not from the list
                                                         )
-               
+
+                for k,c in enumerate(columns):
+                    # Assumes that there is always one coordinate in what is read and run numbering is consecutive
+                    # TODO: 
+                    #   1) array of series may need to require custom data structures
+                    #   2) manage to append new data to an existing file storing a dataframe
+                    pass
+                    #array_cpo[runn, k] = pd.Series(val_ev_fromcpo[runn][0][:])
+                    #dataframe_cpo[c].iloc[runn].append(val_ev_fromcpo[k][0][])
+
+                
                 #val_ev_s, file_names = profile_evol_load(prof_names=profiles, attrib_names=attributes, coord_len=coordnum, 
                 #                                         folder_name=os.path.join(workdir, 'cpo'+mainfoldernum), 
                 #                                         file_code_name=code_name, 
@@ -898,8 +918,12 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnumstart=1, runnum=
 
                 #TODO: 1) +
                 #      2) get rid of recurcive copy-ing in parent .sh file -> check if solution works
-                #      3) make responce cuts flexible: cases when sometimes there is one value per cut
-
+                #      3) make response cuts flexible: cases when sometimes there is one value per cut
+        
+            dataframe_cpo = pd.DataFrame(array_cpo, columns=columns)
+            print(dataframe_cpo)
+            dataframe_cpo('newtimetracesscan_'+mainfoldernum+'.pickle')
+        
         print("time to load cpo files: {0} s".format(time.time()-time_start))
         # 3) Getting the input profiles values, primarily for the plot labels
         time_start = time.time()
@@ -944,7 +968,7 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnumstart=1, runnum=
         for i,(p,a) in enumerate(itertools.product(profiles, attributes)):
 
             # After processing given profile/quantity we are not intersted in values
-            val_ev_s = []
+            val_ev_s = [] # why reduplicated reinitialisation?
             print("Now running through {0} and {1}".format(p,a))
 
             # 4.0) Assuming there are multiple ensembles of runs for this submission 
