@@ -276,9 +276,11 @@ if __name__ == "__main__":
     """
 
     # Check if this index is read correctly
-    ftube_index_test = ftube_indices(common_dir + '/gem_coreprof_in.cpo', 
-            '../standalone/bin/gem_coretransp_out.cpo',
-            False)
+    ftube_index_test = []
+    if os.path.exists(common_dir + '/gem_coreprof_in.cpo') and os.path.exists('../standalone/bin/gem_coretransp_out.cpo'):
+        ftube_index_test = ftube_indices(common_dir + '/gem_coreprof_in.cpo', 
+                '../standalone/bin/gem_coretransp_out.cpo',
+                True)
     print('The flux tube location defined from the cpo files is: {}'.format(ftube_index_test))
 
     if ftube_index != ftube_index_test[0]:
