@@ -111,7 +111,7 @@ export PYTHONPATH=/cobra/u/yyudin/codes/ual_python_interface:/cobra/u/yyudin/cod
 # Command line arguments for main: folder with cpo-s; to read from original files or from csv; number of flux tubes; number of profile variants; file name to save
 
 QUANTITIES=('ti' 'te' 'ni' 'ne')
-QUANTITIES=('ti')
+#QUANTITIES=('ti')
 
 if [ "${RUN_NOT_ONLY_ALL}" -eq 1 ]; then
   

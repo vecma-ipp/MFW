@@ -793,6 +793,20 @@ def discontinuity_check(vals, reltol=5E-2, abstol=10E4, disc_criterion='combined
     
     return cands_glob
 
+def merge_dataframes(dataold, datanew):
+    """
+    Dataold should have columns related to quantities and rows related to different runs, and sereis as elements
+    Function concatenates new series to dataold for every element in datanew
+    """
+    datareturn = dataold.copy()
+
+    for i,r in datanew.iterrows():
+
+        for c,v in zip(r.index, r.values):
+
+            datareturn[c].iloc[i] = pd.concat([dataold[c].iloc[i], v])
+
+    return datareturn
 
 #################################################
 #### MAIN FUNCTION: PIPELINE OF PROCESSING ######
@@ -876,9 +890,11 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnumstart=1, runnum=
             # (now there are different number of iterations), then load and pass to a new 
             
             # 2) Iterate over all runs, meaning for same scenario but with a different transport profile variation
-            val_ev_fromcpo_s = []
-            dataframe_cpo = pd.DataFrame(columns=columns)
-            array_cpo = np.empty((n_runs, n_qs))
+            #val_ev_fromcpo_s = []
+            #dataframe_cpo = pd.DataFrame(columns=columns)
+            #array_cpo = np.empty((n_runs, n_qs))
+            list_cpo = [[None for y in range(n_qs)] for z in range(n_runs)]
+            
             #for runn in runnum_list:
             for runn, fname in enumerate(runfolder_list_filtered): 
                 
@@ -906,10 +922,11 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnumstart=1, runnum=
                     # TODO: 
                     #   1) array of series may need to require custom data structures
                     #   2) manage to append new data to an existing file storing a dataframe
-                    pass
-                    #array_cpo[runn, k] = pd.Series(val_ev_fromcpo[runn][0][:])
-                    #dataframe_cpo[c].iloc[runn].append(val_ev_fromcpo[k][0][])
 
+                    # All the series read have to be read into a grid
+                    #array_cpo[runn, k] = pd.Series(val_ev_fromcpo[k][0][:])
+                    list_cpo[runn][k] = pd.Series(val_ev_fromcpo[k][0][:])
+                    #dataframe_cpo[c].iloc[runn] = pd.Series(val_ev_fromcpo[k][0][:])
                 
                 #val_ev_s, file_names = profile_evol_load(prof_names=profiles, attrib_names=attributes, coord_len=coordnum, 
                 #                                         folder_name=os.path.join(workdir, 'cpo'+mainfoldernum), 
@@ -920,10 +937,20 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnumstart=1, runnum=
                 #      2) get rid of recurcive copy-ing in parent .sh file -> check if solution works
                 #      3) make response cuts flexible: cases when sometimes there is one value per cut
         
-            dataframe_cpo = pd.DataFrame(array_cpo, columns=columns)
-            print(dataframe_cpo)
-            dataframe_cpo('newtimetracesscan_'+mainfoldernum+'.pickle')
-        
+            # Convert list of lists of Series into a dataframe to store        
+            dataframe_cpo = pd.DataFrame(list_cpo, columns=columns)            
+            #print(dataframe_cpo) ###DEBUG       
+            dataframe_cpo.to_pickle('newtimetracesscan_'+mainfoldernum+'.pickle')
+
+            # Load the old dataframe, add new readings, and save it
+            name_pos = mainfoldernum.rfind('_')
+            old_num = int(mainfoldernum[name_pos+1:])
+            old_mainfoldernum = mainfoldernum[:name_pos+1]+str(old_num-1)
+            new_mainfoldernum = 'all' + mainfoldernum[3:]
+            dataframe_cpo_old = pd.read_pickle('newtimetracesscan_'+old_mainfoldernum+'.pickle')
+            dataframe_cpo = merge_dataframes(dataframe_cpo_old, dataframe_cpo)
+            dataframe_cpo.to_pickle('newtimetracesscan_'+new_mainfoldernum+'.pickle')
+
         print("time to load cpo files: {0} s".format(time.time()-time_start))
         # 3) Getting the input profiles values, primarily for the plot labels
         time_start = time.time()
@@ -1015,11 +1042,11 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnumstart=1, runnum=
             """
 
             # 4.1') Define the window to discard intial ramp-up and overshooting phase
-            val = val_ev_s[i] # single series for a profile+attribute, shouldn't be used for now...
+            #val = val_ev_s[i] # i is number of quantity here; single series for a profile+attribute, shouldn't be used for now...
 
             n_len_min = 100 # minimal length of time series for which we consider discarding first values
-            if val.shape[-1] > n_len_min:
-                n_thrown_vals = int(alpha_wind*val.shape[-1])
+            if val_ev_s[0].shape[-1] > n_len_min: # [i]->[0] i is quantity number; assumes series are of the same length...
+                n_thrown_vals = int(alpha_wind*val_ev_s[0].shape[-1])
             else:
                 n_thrown_vals = 0
             val_wind_s = [val[:,n_thrown_vals:] for val in val_ev_s]
@@ -1040,7 +1067,7 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnumstart=1, runnum=
            
             #lags_list = [2**i for i in range(12) if 2**i < val_wind_s[i].shape[-1]] #add intermediate vals + sort
             lags_list = [1,2,4,8,16,32,48,64,96,128,160,256,512,1024,2048,4096] # [64,128,256]
-            lags_list = [l for l in lags_list if l < val_wind_s[i].shape[-1]]
+            lags_list = [l for l in lags_list if l < val_wind_s[0].shape[-1]] # [i]->[0] i is quantity number; assumes series are of the same length...
             
             #get_coreprof_ev_acf(val_ev_s[i], name=code_name+'_'+p+'_'+a+'stats'+'_'+str(runn), lags=lags_list)
             
