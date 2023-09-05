@@ -178,7 +178,7 @@ def read_profs():
                 n_ft = coord_num[-1]
             else:
                 coord_num = [0, 1, 2, 3, 4, 5, 6, 7]  # if n_fts==8
-                n_ft = 0 #4 # number of flux tube to plot for
+                n_ft = coord_num[-1] #0 #4 # number of flux tube to plot for
 
             i_q_s = [0, 1] # indiced of quantities to go through
             j_a_s = [0, 1, 2] # indiced of attributes to go through
@@ -258,11 +258,11 @@ def read_profs():
                         quantities[i_q]+'_'+attributes[j_a]+'_'+dates[0]+'_'+dates[-1]+'.pdf')
             plt.close()
 
-            return dates
+    return dates
 
 if __name__ == '__main__':
     
-    #dates = read_profs()
+    dates = read_profs()
 
-    dates = ['20230818_135913', '20230821_161005', '20230822_150943', '20230823_151955', '20230824', '20230825', '20230828', '20230829', '20230830', '20230831', '20230901']
-    read_equil(dates)
+    #dates = ['20230818_135913', '20230821_161005', '20230822_150943', '20230823_151955', '20230824', '20230825', '20230828', '20230829', '20230830', '20230831', '20230901']
+    #read_equil(dates)
