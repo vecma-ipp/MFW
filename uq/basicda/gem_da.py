@@ -943,13 +943,15 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnumstart=1, runnum=
             dataframe_cpo.to_pickle('newtimetracesscan_'+mainfoldernum+'.pickle')
 
             # Load the old dataframe, add new readings, and save it
+            # (this is specific to current naming [new/all]_[8alphanumericals]_[num_macroiter])
             name_pos = mainfoldernum.rfind('_')
             old_num = int(mainfoldernum[name_pos+1:])
             old_mainfoldernum = mainfoldernum[:name_pos+1]+str(old_num-1)
             new_mainfoldernum = 'all' + mainfoldernum[3:]
-            dataframe_cpo_old = pd.read_pickle('newtimetracesscan_'+old_mainfoldernum+'.pickle')
-            dataframe_cpo = merge_dataframes(dataframe_cpo_old, dataframe_cpo)
-            dataframe_cpo.to_pickle('newtimetracesscan_'+new_mainfoldernum+'.pickle')
+            if os.path.exists('newtimetracesscan_'+old_mainfoldernum+'.pickle'):
+                dataframe_cpo_old = pd.read_pickle('newtimetracesscan_'+old_mainfoldernum+'.pickle')
+                dataframe_cpo = merge_dataframes(dataframe_cpo_old, dataframe_cpo)
+                dataframe_cpo.to_pickle('newtimetracesscan_'+new_mainfoldernum+'.pickle')
 
         print("time to load cpo files: {0} s".format(time.time()-time_start))
         # 3) Getting the input profiles values, primarily for the plot labels
@@ -992,6 +994,14 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnumstart=1, runnum=
         print("time to read and set-up basic values: {0} s".format(time.time()-time_start))
         # 4) Iterate over cartesian product of all profiles and their attributes
 
+        try: 
+            dataframe_cpo # shpuld be a check if dataframe_cpo exists as a variable
+        except NameError:
+            print("reading dataframe from the pickle")
+            dataframe_cpo = pd.read_pickle('newtimetracesscan_'+mainfoldernum+'.pickle')  
+        else:
+            print("using dataframe read earlier")
+
         for i,(p,a) in enumerate(itertools.product(profiles, attributes)):
 
             # After processing given profile/quantity we are not intersted in values
@@ -1006,7 +1016,12 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnumstart=1, runnum=
             #csv_file_name = code_name+'_'+p+'_'+a+'_evol_'+mainfoldernum+'.csv'
             for runn in runnum_list:
                 csv_file_name = code_name + '_' + p + '_' + a + '_evol_' + mainfoldernum + '_' + str(runn) + '.csv'
-                val_ev_s.append(np.atleast_2d(np.genfromtxt(csv_file_name, delimiter=", ").T))     
+                val_ev = np.atleast_2d(np.genfromtxt(csv_file_name, delimiter=", ").T)
+   
+                val_ev_df = dataframe_cpo[p+'_'+a].iloc[runn-1].to_numpy().reshape(1,-1)
+                
+                #val_ev_s.append(val_ev)
+                val_ev_s.append(val_ev_df)
             
             #TODO for some reason the previous line fails for (foldername='/ptmp/yyudin//VARY_1FT_GEM_NT_n2qks5e7/runs//cpo/1', runforbatch=1, coordnum=1, runnum=64, mainfoldernum='new_n2qks5e7_1')
         
@@ -1020,7 +1035,7 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnumstart=1, runnum=
             
             #labels = [str(r) for r in runnum_list]
             labels = ["".join([rin+'='+str(round(r[rin], 1))+"; " for rin in runs_input_names]) for r in runs_input_vals]
-               
+   
             profile_evol_plot(val_ev_s, labels=labels, name=code_name+'_'+p+'_'+a+'_'+mainfoldernum, alignment='start', vertline=alpha_wind*val_ev_s[0].shape[-1]) 
 
             #print('passes to plot: {}'.format(val_ev_s[0].shape)) ###DEBUG
@@ -1139,7 +1154,7 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnumstart=1, runnum=
             mfw_input_names = ['dTi', 'dTe', 'Ti', 'Te']
 
             mfw_data_file = 'AUG_mix-lim_gem_inoutput.txt' # 'AUG_gem_inoutput.txt'
-            mfw_ft_s = [5, 6, 7]
+            mfw_ft_s = [1,2,3,4,5,6,7,8] #[5, 6, 7]
 
             val_mwf = pd.read_table('../data/'+mfw_data_file, delimiter='  *', engine='python') 
             print("-time to load MFW data and set-up stuff: {0} s".format(time.time()-time_start))
@@ -1149,6 +1164,10 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnumstart=1, runnum=
                 val_mwf_s = [val_mwf['cp-flux-Ti-ft'+str(mfw_ft)].to_numpy().reshape(1,-1) for mfw_ft in mfw_ft_s]
             elif p+'_'+a == 'te_transp':
                 val_mwf_s = [val_mwf['cp-flux-Te-ft'+str(mfw_ft)].to_numpy().reshape(1,-1) for mfw_ft in mfw_ft_s]
+            elif p+'_'+a == 'ni_transp':
+                val_mwf_s = [val_mwf['cp-flux-ni-ft'+str(mfw_ft)].to_numpy().reshape(1,-1) for mfw_ft in mfw_ft_s]
+            elif p+'_'+a == 'ne_transp':
+                val_mwf_s = [val_mwf['cp-flux-ne-ft'+str(mfw_ft)].to_numpy().reshape(1,-1) for mfw_ft in mfw_ft_s]
             else:
                 #Fall-back option
                 val_mwf_s = [val_mwf['cp-flux-Ti-ft'+str(mfw_ft)].to_numpy().reshape(1,-1) for mfw_ft in mfw_ft_s]
@@ -1178,7 +1197,7 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnumstart=1, runnum=
             val_mwf_min = val_mwf_s[0].min()
             val_mwf_max = val_mwf_s[0].max()
 
-            print("time to compare with MFW production runs: {0} s".format(time.time()-time_start))
+            print("-time to compare with MFW production runs: {0} s".format(time.time()-time_start))
             # 4.4) Apply ARMA model
             """
             apply_arma(val)
@@ -1227,12 +1246,13 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnumstart=1, runnum=
                                                              scan_df,
                                                              n_lensample, 
                                                              runn-runnumstart, 
-                                                             p, a)
+                                                             p, 
+                                                             a
+                                                            )
 
              
             profile_evol_plot(val_trend_avg_s, labels=labels, name='means_'+p+'_'+a+'_'+mainfoldernum)
             
-
             stats_df.to_csv('stats_main_'+p+'_'+a+'_'+mainfoldernum+'.csv') 
             scan_df.to_csv('resuq_main_'+p+'_'+a+'_'+mainfoldernum+'.csv')    
             
@@ -1264,6 +1284,7 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnumstart=1, runnum=
             #runnum_list_loc = [29]
             runnum_list_loc = runnum_list
             for runn_loc in runnum_list_loc:
+                """
                 #print('ACN here is {0} and total len is {1}'.format(scan_df.iloc[runn_loc-1]['ti_transp_flux_acn'], len(val_wind_s[runn_loc-1][0]))) ###DEBUG
                 plot_timetraces_act(
                         val_ev_s[runn_loc-runnumstart][0][:],
@@ -1274,6 +1295,7 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnumstart=1, runnum=
                         apha_discard=0.15,
                         act=int(len(val_wind_s[runn_loc-runnumstart][0])/scan_df.iloc[runn_loc-runnumstart]['ti_transp_flux_acn']),
                                     )
+                """
                 
             #4.5.1d) Plotting time traces for one case with its AVG, STD, SEM, each taken per run
             #runn_loc = 6
@@ -1300,10 +1322,12 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnumstart=1, runnum=
                 #print('>shapes passed to plot: {} and {}'.
                 #       format(val_wind_s[runn-1].shape, val_trend_lr_s[runn-1].shape)) ###DEBUG
                 
+                """
                 profile_evol_plot([val_wind_s[runn-runnumstart], val_trend_lr_s[runn-runnumstart]],
                                   labels=['original', 'linear regression with NE'],
                                   name='lr_'+p+'_'+a+'_'+mainfoldernum+'_'+str(runn-runnumstart)) 
-                
+                """
+
             # 4.5.3) Applying HP-filter    
             val_trend_hpf_s = []
             for runn in runnum_list:

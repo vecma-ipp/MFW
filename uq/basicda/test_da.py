@@ -16,10 +16,10 @@ def test_acf(func_name, func_params):
         act_ref = 1.*np.pi/theta
         xs = np.linspace(0, 99, 100)
         # ACF computation in case of cos: 
-        #   normalisation constant decreases with lag
+        #   1) normalisation constant decreases with lag
         #   but for lag equal to period convolution is of maximum value
-        #   the envelope over ACF values does not decreas
-        #   summation over lags result depends on the phase of finish 
+        #   2) the envelope over ACF values does not decrease
+        #   3) summation over lags result depends on the phase of finish 
 
     ys = func(xs, theta)
     # Lags are in integers, dx=1.
