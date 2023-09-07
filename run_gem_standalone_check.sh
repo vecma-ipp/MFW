@@ -40,10 +40,10 @@ for f in $(find . -type f -name *coreprof*cpo); do
       cp ${orig_repo_loc}/workflows/AUG_28906_6/ets_equilibrium_in.cpo   ${orig_repo_loc}/${new_run_dir}/${d_path}/${d_name}/gem_equilibrium_in.cpo
     fi
 
-    cp ${orig_repo_loc}/workflows/gem_8n_8ft.xml   ${orig_repo_loc}/${new_run_dir}/${d_path}/${d_name}/gem.xml
+    cp ${orig_repo_loc}/workflows/gem_1n_8ft.xml   ${orig_repo_loc}/${new_run_dir}/${d_path}/${d_name}/gem.xml
     cp ${orig_repo_loc}/workflows/gem.xsd   ${orig_repo_loc}/${new_run_dir}/${d_path}/${d_name}/
 
-    cp ${orig_repo_loc}/standalone/bin/${SYS}/loop_gem_notransp   ${orig_repo_loc}/${new_run_dir}/${d_path}/${d_name}/
+    cp ${orig_repo_loc}/standalone/bin/${SYS}/gem_test_loop   ${orig_repo_loc}/${new_run_dir}/${d_path}/${d_name}/
     cp ${orig_repo_loc}/uq/slurm/gem_loop_nt_8ft.sh   ${orig_repo_loc}/${new_run_dir}/${d_path}/${d_name}/
 
     # submit a GEM run for every new directory
@@ -54,7 +54,7 @@ for f in $(find . -type f -name *coreprof*cpo); do
 
 done
 
-# display the ion heat fluxes at time step #100 for all the runs
+# display the ion heat fluxes at time step #0001 for all the runs
 
-grep -iRn ti_transp%flux --include="gem_coretransp_0100.cpo" -A 5
+grep -iRn ti_transp%flux --include="gem_coretransp_0001.cpo" -A 5
 
