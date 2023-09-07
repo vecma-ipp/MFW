@@ -76,6 +76,8 @@ class CPODecoder:
                 for i in range(n):
                     qoi_values.update({(qoi, i): value[i]})
 
+        #print(qoi_values) ###DEBUG
+
         # Outputs
         return qoi_values
 
