@@ -33,7 +33,8 @@ program gem_test
 
   character(4) :: itstr
 
-  integer, parameter :: STEPS = 15
+  integer, parameter :: STEPS = 10
+  logical, parameter :: TIMETRACE = .TRUE.
 
   call MPI_Init(ierr)
   call MPI_Comm_size(MPI_COMM_WORLD, npes, ierr)
@@ -82,7 +83,7 @@ program gem_test
 
     call gem_cpo(equil, corep, coret)
 
-    if (irank.eq.0) then
+    if ((irank.eq.0).AND.(TIMETRACE)) then
       call open_write_file(23, 'gem_coretransp_'//itstr//'.cpo')
       call write_cpo(coret(1),'coretransp')
       call close_write_file
@@ -90,7 +91,7 @@ program gem_test
 
   end do 
 
-  if (irank.eq.0) then
+  if ((irank.eq.0).AND.(.not.TIMETRACE)) then
      ! Transfer CPO to file
      call open_write_file(12, coret_file_out)
      call write_cpo(coret(1), 'coretransp')
