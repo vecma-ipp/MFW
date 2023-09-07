@@ -263,6 +263,7 @@ def parseVectorField(f, parentobj, name, fullpath):
 ##################################################################
 # READ ###########################################################
 def read(filename,cponame,outcpo=None):
+
     if outcpo==None:
         itmobj = ual.itm()
         try:
@@ -280,14 +281,23 @@ def read(filename,cponame,outcpo=None):
         print(('Read file '+filename))
     f = open(filename,'r',errors='replace')
 
-    pattern = re.compile(cponame+"%.+")
-    end = False
-
-    next_field = None
-
     version = f.readline()
     if (ASCII_CPO_VERB):
         print(('Read file ' + filename + ', ' + version))
+
+    cpo = read_fstream(f, cpo, cponame)
+
+
+def read_fstream(f, cpo, cponame='coreprof'):
+    """
+    Reads a file stream f into a Python CPO object cpo
+    """
+
+    pattern = re.compile(cponame+"%.+")
+
+    end = False
+
+    next_field = None
 
     while not end:
         if next_field == None:
@@ -333,7 +343,6 @@ def read(filename,cponame,outcpo=None):
                         print('   vector')
                     next_field = parseVectorField(f,parentobj,name,field.string)
 
-
         ### NOT A VALID CPO FIELD ###
         else:
             if line == cponame:
@@ -350,9 +359,6 @@ def read(filename,cponame,outcpo=None):
                 end = True
 
     return cpo;
-
-
-
 
 
 
