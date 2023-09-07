@@ -129,14 +129,14 @@ void byte2file(const char *filename, const unsigned char *data, int size)
   FILE *f = NULL;
   size_t ret_size = 0;
 
-  printf(">byte2file: opening file\n"); //DEBUG
+  //printf(">byte2file: opening file\n"); //DEBUG
   f = fopen(filename,"w");
   
   ret_size = fwrite(data, sizeof(unsigned char), size*sizeof(unsigned char), f);
 
-  printf(">byte2file: file is written\n"); //DEBUG
+  //printf(">byte2file: file is written\n"); //DEBUG
   //DEBUG: next line is originally commented out!
-  printf("Number of written KB = %.2f\n",(double)ret_size/1024);
+  //printf("Number of written KB = %.2f\n",(double)ret_size/1024);
   fclose(f);
 }
 
