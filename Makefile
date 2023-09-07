@@ -201,6 +201,7 @@ clean-bohmgb:
 # patch to force gem0 to read ra0 param from the xml file
 gem0: ual libbds get-gem0 patch-gem0
 	@echo -e "\033[36m\033[1m ++++ Build GEM0 ++++ \033[0m"; \
+	cp gem.F90.gem0_modified externals/gem0/main/gem.F90; \
 	($(MAKE) --no-print-directory -C externals -f Makefile.gem0 \
 	&& echo -e "\033[32m\033[1m -- OK -- \033[0m") \
 	|| echo -e "\033[31m\033[1m -- FAIL -- \033[0m"
@@ -295,10 +296,9 @@ get-gem:
 	@if [ ! -d "externals/gem" ]; then \
 	  echo "Checking out gem..."; \
 		svn co $(SVNURL_SOLPS)/GEM/trunk externals/gem; \
-		#git clone ${}/... externals/gem; \
 	else  \
 		echo "Updating gem..."; \
-		# svn up externals/gem; \
+		svn up externals/gem; \
 	fi
 
 clean-gem: revert-gem
@@ -309,9 +309,9 @@ clean-gem: revert-gem
 
 compile-gem: ual libbds clean-gem patch-gem
 	@echo -e "\033[36m\033[1m ++++ Build GEM (change main function and MPI topology init; outputs in Energy(); w/o getting from a repository) ++++ \033[0m"; \
-	cp mppein.h90.modified externals/gem/include/mppein.h90 ;\
+	#cp mppein.h90.modified externals/gem/include/mppein.h90 ;\ 
 	cp gem.F90.modified externals/gem/actor/gem.F90 ;\
-	cp energy.F90.modified externals/gem/main/energy.F90 ;\
+	#cp energy.F90.modified externals/gem/main/energy.F90 ;\ 
 	($(MAKE) --no-print-directory -C externals -f Makefile.gem \
 	&& echo -e "\033[32m\033[1m -- OK -- \033[0m") \
 	|| echo -e "\033[31m\033[1m -- FAIL -- \033[0m"

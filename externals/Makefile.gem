@@ -12,10 +12,10 @@ VPATH = ${SRCDIR}/actor \
 	${SRCDIR}/include ${SRCDIR}/src ${SRCDIR}/src/plotting \
 	${SRCDIR}/main ${SRCDIR}/starts ${SRCDIR}/aux ${SRCDIR}/plots 
 
-
 # additional flags #############################################################
-export DOOPT=yes
+#export DOOPT=yes
 export DODEBUG=no
+#export DODEBUG=yes
 
 LIB = libgem.a
 
@@ -48,6 +48,8 @@ ifeq ($(DOOPT),yes)
 FC90FLAGS += -O3
 else
 FC90FLAGS += -O2
+#FC90FLAGS += -O1
+#FC90FLAGS += -O0
 endif
 endif
 
