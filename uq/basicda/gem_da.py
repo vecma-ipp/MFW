@@ -734,61 +734,64 @@ def discontinuity_check(vals, reltol=5E-2, abstol=10E4, disc_criterion='combined
     for i in range(n):
 
         m = len(vals[i][0])
-        
-        # Numbering is from 0 to m-2, gradient is gX^f_t = X_t+1 - X_t
-        diff = vals[i][0][1:] - vals[i][0][:-1]
-        # Relative gradient is gXrel^f_t = (X_t+1 - X_t) / X_t
-        grad = np.divide(diff, vals[i][0][:-1])
 
-        # Array of second derivatives: interested in gX^f_t+1 - gX^b_t = X_t+2 - X_t+1 - X_t + X_t-1 
-        # Numeration from 1 to m-3
-        #second_der = vals[i][0][2:] + vals[i][0][:-2] - 2*vals[i][0][1:-1] # first-order Laplacian without prefactor
-        second_diff = vals[i][0][3:] - vals[i][0][2:-1] - vals[i][0][1:-2] + vals[i][0][:-3]
-        rel_second_diff = np.divide(second_diff, vals[i][0][1:-2])
+        if m > 0:
         
-        # Indices of array where gradient (or other studied quantity) is larger then tolerance
-        if disc_criterion == 'gradient':
-            ts = np.where(abs(grad) > reltol)[0].tolist() #TODO works badly when function growth quickly
-        elif disc_criterion == 'absolute_diff':
-            ts = np.where(abs(diff) > abstol)[0].tolist() #TODO make tolerance variable
-        elif disc_criterion == 'rel_second_diff':
-            ts = np.where(abs(rel_second_diff) > reltol)[0].tolist()
-            ts = [t+1 for t in ts]
-        else: # disc_criterion == 'combined':
-            ts1 = np.where(abs(rel_second_diff) > reltol)[0].tolist()
-            ts1 = [t+1 for t in ts1 if t+2 in ts1] # unnormalized 4-point second derivative indicates change at +/1 of sought position
-            ts2 = np.where(abs(diff) > abstol)[0].tolist()
+            # Numbering is from 0 to m-2, gradient is gX^f_t = X_t+1 - X_t
+            diff = vals[i][0][1:] - vals[i][0][:-1]
+            # Relative gradient is gXrel^f_t = (X_t+1 - X_t) / X_t
+            grad = np.divide(diff, vals[i][0][:-1])
+
+            # Array of second derivatives: interested in gX^f_t+1 - gX^b_t = X_t+2 - X_t+1 - X_t + X_t-1 
+            # Numeration from 1 to m-3
+            #second_der = vals[i][0][2:] + vals[i][0][:-2] - 2*vals[i][0][1:-1] # first-order Laplacian without prefactor
+            second_diff = vals[i][0][3:] - vals[i][0][2:-1] - vals[i][0][1:-2] + vals[i][0][:-3]
+            rel_second_diff = np.divide(second_diff, vals[i][0][1:-2])
             
-            #ts = [t for t in ts1 if t in ts2] # choosing an intersection of 'lists'
-            ts = ts1 + [t for t in ts2 if t not in ts1] # choosing a union of 'lists'
+            # Indices of array where gradient (or other studied quantity) is larger then tolerance
+            if disc_criterion == 'gradient':
+                ts = np.where(abs(grad) > reltol)[0].tolist() #TODO works badly when function growth quickly
+            elif disc_criterion == 'absolute_diff':
+                ts = np.where(abs(diff) > abstol)[0].tolist() #TODO make tolerance variable
+            elif disc_criterion == 'rel_second_diff':
+                ts = np.where(abs(rel_second_diff) > reltol)[0].tolist()
+                ts = [t+1 for t in ts]
+            else: # disc_criterion == 'combined':
+                ts1 = np.where(abs(rel_second_diff) > reltol)[0].tolist()
+                ts1 = [t+1 for t in ts1 if t+2 in ts1] # unnormalized 4-point second derivative indicates change at +/1 of sought position
+                ts2 = np.where(abs(diff) > abstol)[0].tolist()
+                
+                #ts = [t for t in ts1 if t in ts2] # choosing an intersection of 'lists'
+                ts = ts1 + [t for t in ts2 if t not in ts1] # choosing a union of 'lists'
 
-        n_disc_s = len(ts)
-        print("For run ind#{0} there are {1} discontinuities".format(i, n_disc_s))
+            n_disc_s = len(ts)
+            print("For run ind#{0} there are {1} discontinuities".format(i, n_disc_s))
 
-        #print('vals of len {1}: {0}'.format(vals[i][0], n)) ###DEBUG
-        #print('relgrad: {}'.format(relgrad)) ###DEBUG
-        
-        # Looking for such other time series, for which values at the found timestamps where close to the one in the current time series 
-        for t in ts:
-            cands = []
+            #print('vals of len {1}: {0}'.format(vals[i][0], n)) ###DEBUG
+            #print('relgrad: {}'.format(relgrad)) ###DEBUG
+            
+            # Looking for such other time series, for which values at the found timestamps where close to the one in the current time series 
+            for t in ts:
+                cands = []
 
-            for j in range(n):
+                for j in range(n):
 
-                if len(vals[j]) > t-1:
-                    # Currently using gradient criterion to found potential mapping
-                    if np.divide(abs(vals[j][0][t+1] - vals[i][0][t]), vals[i][0][t]) < reltol/1. :
-                        cands.append(j)
+                    if len(vals[j][0]) > t+1:
+                        
+                        # Currently using gradient criterion to found potential mapping
+                        if np.divide(abs(vals[j][0][t+1] - vals[i][0][t]), vals[i][0][t]) < reltol/1. :
+                            cands.append(j)
 
-            print("For run ind#{0} there is a discontinuity at t={1} with original value of {3:.2f}. Most likely candidates for continuation have indices: {2}".
-                format(i, t+n_thr, cands, vals[i][0][t]))
+                print("For run ind#{0} there is a discontinuity at t={1} with original value of {3:.2f}. Most likely candidates for continuation have indices: {2}".
+                    format(i, t+n_thr, cands, vals[i][0][t]))
 
     # NB!: here considers only gradient condition
     cands_glob = [
-            [
-                [
-                    np.where(np.divide(abs(vals[j][0][t+1] - vals[i][0][t]), vals[i][0][t]) < reltol)[0].tolist() if len(vals[j]) > t else [0] for j in range(n)
-                ] for t in np.where(np.divide(abs(vals[i][0][1:] - vals[i][0][:-1]), vals[i][0][1:]) > reltol)[0].tolist()
-            ] for i in range(n)
+            # [
+            #     [
+            #         np.where(np.divide(abs(vals[j][0][t+1] - vals[i][0][t]), vals[i][0][t]) < reltol)[0].tolist() if len(vals[j]) > t else [0] for j in range(n)
+            #     ] for t in np.where(np.divide(abs(vals[i][0][1:] - vals[i][0][:-1]), vals[i][0][1:]) > reltol)[0].tolist()
+            # ] for i in range(n)
         ]
     
     return cands_glob
@@ -800,11 +803,12 @@ def merge_dataframes(dataold, datanew):
     """
     datareturn = dataold.copy()
 
-    for i,r in datanew.iterrows():
+    for i in datanew.index:
 
-        for c,v in zip(r.index, r.values):
+        for c in datanew.columns:
 
-            datareturn[c].iloc[i] = pd.concat([dataold[c].iloc[i], v])
+            #datareturn[c].iloc[i] = pd.concat([dataold[c].iloc[i], v], axis=0, ignore_index=True)
+            datareturn[c].iloc[i] = np.concatenate([dataold[c].iloc[i], datanew[c].iloc[i]], axis=0)
 
     return datareturn
 
@@ -877,6 +881,7 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnumstart=1, runnum=
 
         # 1) If runforbatch, then csv are already in the folder, otherwise have to read CPO-s
         time_start = time.time()
+        dataframe_cpo = pd.DataFrame(columns=columns)
         if not runforbatch:
             # If asserets, then alway specify folders with original cpo files
             # Here are the possibilities where to look for the cpo containing folder:
@@ -925,7 +930,8 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnumstart=1, runnum=
 
                     # All the series read have to be read into a grid
                     #array_cpo[runn, k] = pd.Series(val_ev_fromcpo[k][0][:])
-                    list_cpo[runn][k] = pd.Series(val_ev_fromcpo[k][0][:])
+                    #list_cpo[runn][k] = pd.Series(val_ev_fromcpo[k][0][:])
+                    list_cpo[runn][k] = val_ev_fromcpo[k][0][:]
                     #dataframe_cpo[c].iloc[runn] = pd.Series(val_ev_fromcpo[k][0][:])
                 
                 #val_ev_s, file_names = profile_evol_load(prof_names=profiles, attrib_names=attributes, coord_len=coordnum, 
@@ -994,9 +1000,7 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnumstart=1, runnum=
         print("time to read and set-up basic values: {0} s".format(time.time()-time_start))
         # 4) Iterate over cartesian product of all profiles and their attributes
 
-        try: 
-            dataframe_cpo # shpuld be a check if dataframe_cpo exists as a variable
-        except NameError:
+        if dataframe_cpo.empty:
             print("reading dataframe from the pickle")
             dataframe_cpo = pd.read_pickle('newtimetracesscan_'+mainfoldernum+'.pickle')  
         else:
@@ -1016,9 +1020,9 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnumstart=1, runnum=
             #csv_file_name = code_name+'_'+p+'_'+a+'_evol_'+mainfoldernum+'.csv'
             for runn in runnum_list:
                 csv_file_name = code_name + '_' + p + '_' + a + '_evol_' + mainfoldernum + '_' + str(runn) + '.csv'
-                val_ev = np.atleast_2d(np.genfromtxt(csv_file_name, delimiter=", ").T)
+                #val_ev = np.atleast_2d(np.genfromtxt(csv_file_name, delimiter=", ").T)
    
-                val_ev_df = dataframe_cpo[p+'_'+a].iloc[runn-1].to_numpy().reshape(1,-1)
+                val_ev_df = dataframe_cpo[p+'_'+a].iloc[runn-1].reshape(1,-1)
                 
                 #val_ev_s.append(val_ev)
                 val_ev_s.append(val_ev_df)

@@ -775,6 +775,13 @@ def produce_stats_dataframes(runs_input_vals, val_trend_avg_s, val_std_s, stats_
          Returns: 
              pandas DataFrame with rows - runs for different cases; columns - code io and stats
     """
+
+    if val_trend_avg_s[runn].size == 0:
+        val_trend_avg_s[runn] = np.zeros((1,1))
+
+    if val_std_s[runn].size == 0:
+        val_std_s[runn] = np.zeros((1,1))
+
     if n_lensample==1:
         n_lensample = val_trend_avg_s[runn].shape[-1]
    
@@ -852,6 +859,8 @@ def get_coreprof_ev_acf(value_ev, name='ti', lags=[1,2,3,4,5,6,7,8,9,10]):
             number of effective samples (one per ACF window)
             # ACF object
     """ 
+    
+    n_sample_min = 3
 
     nftc = value_ev.shape[0]
 
@@ -866,6 +875,11 @@ def get_coreprof_ev_acf(value_ev, name='ti', lags=[1,2,3,4,5,6,7,8,9,10]):
         #TODO: get rid of lists and use numpy arrays
 
         n_sample = value_ev.shape[-1]
+
+        if n_sample < n_sample_min:
+            ac_len.append(0)
+            ac_num.append(0)
+            break
 
         mean_val = value_ev[i].mean()
         var_val  = value_ev[i].var()
