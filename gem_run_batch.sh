@@ -20,7 +20,7 @@ for R in $RUN_DIR_LIST; do
     ln -s $RUN_DIR_GEN/common/gem.xsd ./gem.xsd
     ln -s $RUN_DIR_GEN/common/gem_equilibrium_in.cpo ./gem_equilibrium_in.cpo
     ln -s $RUN_DIR_GEN/common/loop_gem_notransp ./MARCONI/loop_gem_notransp
-    ln -s $HOME/code/MFW/uq/slurm/gem_loop_nt.sh ./slurm_batch.sh #check thescript name
+    ln -s $HOME/code/MFW/uq/slurm/gem_loop_nt.sh ./slurm_batch.sh #check the script name
 
     # run SLURM scripts
     sbatch slurm_batch.sh # any modifications needed?
