@@ -8,9 +8,9 @@ USER=g2yyudin
 
 CODENAMES=('ets' 'imp4dv' 'bohmgb' 'chease' 'gem0')
 
-PATHLINES=('/' '/modtransp/trunk/' '/modtransp/tags/4.10b/' '/chease/' '/modtransp/trunk/')
+PATHLINES=('/' '/modtransp/trunk/' '/modtransp/' '/chease/' '/modtransp/trunk/')
 
-BRANCHNAMES=('/tags/4.10b.10_8/' '/' '/' '/tags/4.10b.10_CHEASEv12_9/' '/')
+BRANCHNAMES=('/tags/4.10b.10_8/' '/' '/tags/4.10b/' '/tags/4.10b.10_CHEASEv12_9/' '/')
 
 for i in ${!CODENAMES[@]}; do
 
