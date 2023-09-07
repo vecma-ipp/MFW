@@ -3,8 +3,8 @@
 campname=csldvnei
 n_runs=648
 
-n_start=2
-n_finish=13
+n_start=3
+n_finish=14
 
 qs=('te' 'ti' 'ne' 'ni')
 
@@ -20,7 +20,6 @@ for ((i=n_start ; i<n_finish ; i++)); do
 	
 	rm timetraces_act_*_transp_flux_new_${campname}_${i}_[0-9]*.pdf
 	#rm gem_*_transp_flux_evol_new_${campname}_${i}_[0-9]*.csv
-	rm *_new_${campname}_${i}.*
 
 	# for q in ${qs[@]} ; do
 	# 	for j in `seq 1 ${n_runs}`; do
@@ -29,6 +28,8 @@ for ((i=n_start ; i<n_finish ; i++)); do
 	# 		fi
 	# 	done
 	# done
+	
+	rm *_new_${campname}_${i}.*
 
 done
 
