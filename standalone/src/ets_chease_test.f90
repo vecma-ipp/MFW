@@ -36,6 +36,8 @@ program ets_chease_test
   use chease_standalone,      only: chease_cpo
   use sources_standalone,     only: gaussian_source_cpo
 
+  use json_module
+
 implicit none
 
   ! CPO files
@@ -58,6 +60,9 @@ implicit none
   type(type_toroidfield), pointer :: toroidf_in(:)   => null()
 
   integer :: ios, it
+
+  type(json_core):: json
+  type(json_value),pointer:: json_param
 
   !... Read initial CPOs
   allocate(corep_in(1))
@@ -130,8 +135,13 @@ implicit none
       call gaussian_source_cpo(corep_in, equil_in, cores_in)
   end if
 
+  ! Create an empty json object to pass parameters
+  call json%initialize()
+  call json%create_object(json_param,'')
+  print *, "json initialised and created" !!!DEBUG
+
   ! ETS
-  call ets_cpo(corep_in, equil_in, coret_in, cores_in, corei_in, corep_ets)
+  call ets_cpo(corep_in, equil_in, coret_in, cores_in, corei_in, corep_ets, json_param)
 
   ! EQUILUPDATE
   call equilupdate2cpo(corep_ets, toroidf_in, equil_in, equil_update)
@@ -153,5 +163,8 @@ implicit none
   call deallocate_cpo(cores_in)
   call deallocate_cpo(corei_in)
   call deallocate_cpo(toroidf_in)
+
+  call json%destroy()
+  if (json%failed()) stop 1
 
 end program ets_chease_test

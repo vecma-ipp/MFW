@@ -18,6 +18,8 @@ program ets_test
                            &  write_cpo
   use deallocate_structures, only: deallocate_cpo
 
+  use json_module
+
 implicit none
   
   ! CPO files
@@ -40,6 +42,9 @@ implicit none
   type (type_coreprof)   , pointer :: corep_new(:) => NULL()
   
   integer :: ios 
+
+  type(json_core):: json
+  type(json_value),pointer:: json_param
 
   allocate(corep(1))
   allocate(equil(1))
@@ -132,8 +137,14 @@ implicit none
   ! For TEST with PJ:
   !call sleep(60)
 
+  ! Create an empty json object to pass parameters
+  call json%initialize()
+  call json%create_object(json_param,'')
+  !call json%add(json_param, 'tau', 1.e-3_8) 
+  !print *, "json initialised and created" !!!DEBUG
+
   ! Call ets_standalone
-  call ets_cpo(corep, equil, coret, cores, corei, corep_new)
+  call ets_cpo(corep, equil, coret, cores, corei, corep_new, json_param)
  
   ! Save the output files 
   call open_write_file(20, corep_file_out)
@@ -148,5 +159,9 @@ implicit none
   call deallocate_cpo(coret)  
   call deallocate_cpo(equil)
   call deallocate_cpo(corep)
+
+  print *, "before json destruction" !!!DEBUG
+  call json%destroy()
+  if (json%failed()) stop 1
  
 end program ets_test

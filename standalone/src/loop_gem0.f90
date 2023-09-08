@@ -39,6 +39,8 @@ program loop_gem0
   use imp4dv_standalone,      only: imp4dv_cpo
   use sources_standalone,     only: gaussian_source_cpo
 
+  use json_module
+
 implicit none
 
   ! CPO files
@@ -70,6 +72,9 @@ implicit none
 
   integer :: ios, it
   character(4)  :: itstr
+
+  type(json_core):: json
+  type(json_value),pointer:: json_param
 
   !... Read initial CPOs
   allocate(corep_in(1))
@@ -154,6 +159,10 @@ implicit none
   call copy_cpo(equil_in(1),equil_chease(1))
   call copy_cpo(coret_in(1),coret_imp4dv(1))
 
+  ! Create an empty json object to pass parameters
+  call json%initialize()
+  call json%create_object(json_param,'')
+
   do it=1,STEPS
 
      write(itstr,'(I4.4)') it
@@ -163,7 +172,7 @@ implicit none
      call copy_cpo(corep_ets(1),corep_old(1))
      call deallocate_cpo(corep_ets)
      nullify(corep_ets)
-     call ets_cpo(corep_old, equil_chease, coret_imp4dv, cores_in, corei_in, corep_ets)
+     call ets_cpo(corep_old, equil_chease, coret_imp4dv, cores_in, corei_in, corep_ets, json_param)
      if (TIMETRACE) then
         call open_write_file(20,'ets_coreprof_'//itstr//'.cpo')
         call write_cpo(corep_ets(1),'coreprof')
@@ -230,5 +239,8 @@ implicit none
   call deallocate_cpo(cores_in)
   call deallocate_cpo(corei_in)
   call deallocate_cpo(toroidf_in)
+
+  call json%destroy()
+  if (json%failed()) stop 1
 
 end program loop_gem0

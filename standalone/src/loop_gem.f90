@@ -40,6 +40,8 @@ program loop_gem
 
   use mpi
 
+  use json_module
+
 implicit none
 
   ! CPO files
@@ -71,6 +73,9 @@ implicit none
 
   integer :: ios, it, ierr, npes, irank
   character(4)  :: itstr
+  
+  type(json_core):: json
+  type(json_value),pointer:: json_param
   
   call MPI_Init(ierr)
   call MPI_Comm_size(MPI_COMM_WORLD, npes, ierr)
@@ -157,6 +162,10 @@ implicit none
   call copy_cpo(equil_in(1),equil_chease(1))
   call copy_cpo(coret_in(1),coret_imp4dv(1))
 
+  ! Create an empty json object to pass parameters
+  call json%initialize()
+  call json%create_object(json_param,'')
+
   do it=1, STEPS
 
      if (irank.eq.0) then
@@ -168,7 +177,7 @@ implicit none
      call copy_cpo(corep_ets(1),corep_old(1))
      call deallocate_cpo(corep_ets)
      nullify(corep_ets)
-     call ets_cpo(corep_old, equil_chease, coret_imp4dv, cores_in, corei_in, corep_ets)
+     call ets_cpo(corep_old, equil_chease, coret_imp4dv, cores_in, corei_in, corep_ets, json_param)
 
      if ((irank.eq.0).AND.(TIMETRACE)) then
         call open_write_file(20,'ets_coreprof_'//itstr//'.cpo')
@@ -242,5 +251,8 @@ implicit none
   call deallocate_cpo(toroidf_in)
   
   call MPI_Finalize(ierr)
+
+  call json%destroy()
+  if (json%failed()) stop 1
 
 end program loop_gem

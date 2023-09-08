@@ -19,6 +19,8 @@ program ets_equilupdate
                            &  write_cpo
   use deallocate_structures, only: deallocate_cpo
 
+  use json_module
+
 implicit none
   
   ! CPO files
@@ -42,6 +44,9 @@ implicit none
   type (type_equilibrium), pointer :: equil_new(:) => NULL()
   
   integer :: ios 
+
+  type(json_core):: json
+  type(json_value),pointer:: json_param
 
   allocate(corep(1))
   allocate(equil(1))
@@ -134,8 +139,12 @@ implicit none
       
   end if
 
+  ! Create an empty json object to pass parameters
+  call json%initialize()
+  call json%create_object(json_param,'')
+
   ! Call ets_standalone
-  call ets_cpo(corep, equil, coret, cores, corei, corep_new)
+  call ets_cpo(corep, equil, coret, cores, corei, corep_new, json_param)
   
   ! Update the Geometry
   call equilupdate2cpo(corep_new, toroidf, equil, equil_new)
@@ -158,5 +167,8 @@ implicit none
   call deallocate_cpo(equil)
   call deallocate_cpo(corep)
   call deallocate_cpo(equil_new)
+
+  call json%destroy()
+  if (json%failed()) stop 1
  
 end program ets_equilupdate
