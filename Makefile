@@ -21,6 +21,10 @@ export LIB_CONSTANTS = ${PWD}/ual/lib/${SYS}/constants
 export INC_XML = ${PWD}/ual/include/${SYS}/xml
 export LIB_XML = ${PWD}/ual/lib/${SYS}/xml
 
+export INC_JSON=../../json-fortran/build
+export LIB_JSON=../../json-fortran/build/lib
+export LIB_JSON_FILE=../../json-fortran/build/lib/libjsonfortran.so
+
 export DATAVERSION = 4.10b.10
 
 include config
@@ -286,7 +290,7 @@ revert-gem:
 	&& echo -e "\033[32m\033[1m -- OK -- \033[0m") \
 	|| echo -e "\033[31m\033[1m -- FAIL -- \033[0m"
 
-gem: ual libbds get-gem patch-gem
+gem: ual libbds patch-gem # ual libbds get-gem patch-gem
 	@echo -e "\033[36m\033[1m ++++ Build GEM ++++ \033[0m"; \
 	($(MAKE) --no-print-directory -C externals -f Makefile.gem \
 	&& echo -e "\033[32m\033[1m -- OK -- \033[0m") \

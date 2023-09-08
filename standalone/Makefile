@@ -14,6 +14,10 @@ ifneq (${MAINMAKE},yes)
  export INC_XML = ../ual/include/${SYS}/xml
  export LIB_XML = ../ual/lib/${SYS}/xml
 
+ export INC_JSON=../../json-fortran/build
+ export LIB_JSON=../../json-fortran/build/lib
+ export LIB_JSON_FILE=../../json-fortran/build/lib/libjsonfortran.so
+
  export DATAVERSION = 4.10b.10
 
  include ../config
@@ -56,7 +60,7 @@ VPATH = ${SRCDIR} ${SRCDIR}/tools ${SRCDIR}/tests
 
 
 # additional flags #############################################################
-INCLUDES = -I${INCDIR} -I${INC_UAL} 
+INCLUDES = -I${INCDIR} -I${INC_UAL} -I${INC_JSON}
 #-I${ETS} -I${INC_TYPES} -I${INC_CONSTANTS} -I${INC_BDS}
 
 #DEBUG=yes
@@ -162,7 +166,7 @@ ${OBJDIR}/%.o: %.c
 ###  EXECUTABLES #################################################################
 
 ETS_TEST: ${SHARED_O} ${ETS_O} ${OBJDIR}/ets_test.o
-	$(FC90) -o ${ETS_EXE} $^ -L${ETS} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_XML} -L${LIB_UAL} -lets -lbds -lxmllib -litmconstants -litmtypes -lual ${LDFLAGS} ${LIBLAPACK}
+	$(FC90) -o ${ETS_EXE} $^ -L${ETS} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_XML} -L${LIB_UAL} -L${LIB_JSON} -lets -lbds -lxmllib -litmconstants -litmtypes -lual ${LIB_JSON_FILE} ${LDFLAGS} ${LIBLAPACK}
 
 SOURCES_TEST: ${SHARED_O} ${SOURCES_O} ${OBJDIR}/sources_test.o
 	$(LD) -o ${SOURCES_EXE} $^ -L${ETS} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_UAL} -L${LIB_XML} -lets -lbds -litmconstants -litmtypes -lual -lxmllib ${LDFLAGS} ${LIBLAPACK}
@@ -186,19 +190,19 @@ GEM_TEST:  ${SHARED_O} ${GEM_O} ${OBJDIR}/gem_test.o
 	$(MPIF90) -o ${GEM_EXE} $^ -L${GEM} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_XML} -L${LIB_UAL} -lgem -lbds -litmconstants -litmtypes -lxmllib -lual ${LDFLAGS} ${FFTW_LIB}
 
 LOOP_BGB: ${SHARED_O} ${ETS_O} ${EQUILUPDATE_O} ${CHEASE_O} ${BOHMGB_O} ${SOURCES_O} ${OBJDIR}/loop_bgb.o
-	$(LD) -o ${LOOP_BGB_EXE} $^ -L${ETS} -L${CHEASE} -L${BOHMGB} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_XML} -L${LIB_UAL} -lets -lchease_muscle -lbohmgb -lbds -litmconstants -litmtypes -lual -lxmllib -lxml2 ${LDFLAGS} ${LIBLAPACK}
+	$(LD) -o ${LOOP_BGB_EXE} $^ -L${ETS} -L${CHEASE} -L${BOHMGB} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_XML} -L${LIB_UAL} -L${LIB_JSON} -lets -lchease_muscle -lbohmgb -lbds -litmconstants -litmtypes -lual -lxmllib -lxml2 -lual ${LIB_JSON_FILE} ${LDFLAGS} ${LIBLAPACK}
 
 LOOP_GEM0: ${SHARED_O} ${ETS_O} ${EQUILUPDATE_O} ${CHEASE_O} ${GEM0_O} ${IMP4DV_O} ${SOURCES_O} ${OBJDIR}/loop_gem0.o
-	$(LD) -o ${LOOP_GEM0_EXE} $^ -L${ETS} -L${CHEASE} -L${GEM0} -L${IMP4DV} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_XML} -L${LIB_UAL} -lets -lchease_muscle -lgem0 -limp4dv -lbds -litmconstants -litmtypes -lual -lxmllib -lxml2 ${LDFLAGS} ${LIBLAPACK}
+	$(LD) -o ${LOOP_GEM0_EXE} $^ -L${ETS} -L${CHEASE} -L${GEM0} -L${IMP4DV} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_XML} -L${LIB_UAL} -L${LIB_JSON} -lets -lchease_muscle -lgem0 -limp4dv -lbds -litmconstants -litmtypes -lual -lxmllib -lxml2 ${LIB_JSON_FILE} ${LDFLAGS} ${LIBLAPACK}
 
 LOOP_GEM: ${SHARED_O} ${ETS_O} ${EQUILUPDATE_O} ${CHEASE_O} ${GEM_O} ${IMP4DV_O} ${SOURCES_O} ${OBJDIR}/loop_gem.o
-	$(MPIF90) -o ${LOOP_GEM_EXE} $^ -L${ETS} -L${CHEASE} -L${GEM} -L${IMP4DV} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_UAL} -L${LIB_XML} -lets -lchease_muscle -lgem -limp4dv -lbds -litmconstants -litmtypes -lual -lxmllib -lxml2  ${LDFLAGS} ${FFTW_LIB} ${LIBLAPACK}
+	$(MPIF90) -o ${LOOP_GEM_EXE} $^ -L${ETS} -L${CHEASE} -L${GEM} -L${IMP4DV} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_UAL} -L${LIB_XML} -L${LIB_JSON} -lets -lchease_muscle -lgem -limp4dv -lbds -litmconstants -litmtypes -lual -lxmllib -lxml2 ${LIB_JSON_FILE} ${LDFLAGS} ${FFTW_LIB} ${LIBLAPACK}
 
 ETS_CHEASE: ${SHARED_O} ${ETS_O} ${EQUILUPDATE_O} ${CHEASE_O} ${SOURCES_O} ${OBJDIR}/ets_chease_test.o
-	$(LD) -o ${ETS_CHEASE_EXE} $^ -L${ETS} -L${CHEASE} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_XML} -L${LIB_UAL} -lets -lchease_muscle -lbds -litmconstants -litmtypes -lual -lxmllib -lxml2 ${LDFLAGS} ${LIBLAPACK}
+	$(LD) -o ${ETS_CHEASE_EXE} $^ -L${ETS} -L${CHEASE} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_XML} -L${LIB_UAL} -L${LIB_JSON} -lets -lchease_muscle -lbds -litmconstants -litmtypes -lual -lxmllib -lxml2 ${LIB_JSON_FILE} ${LDFLAGS} ${LIBLAPACK}
 
 ETS_EQUILUPDATE: ${SHARED_O} ${ETS_O} ${EQUILUPDATE_O} ${SOURCES_O} ${OBJDIR}/ets_equilupdate_test.o
-	$(LD) -o ${ETS_EQUILUPDATE_EXE} $^ -L${ETS} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_XML} -L${LIB_UAL} -lets -lbds -litmconstants -litmtypes -lual -lxmllib ${LDFLAGS} ${LIBLAPACK}
+	$(LD) -o ${ETS_EQUILUPDATE_EXE} $^ -L${ETS} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_XML} -L${LIB_UAL} -L${LIB_JSON} -lets -lbds -litmconstants -litmtypes -lual -lxmllib ${LIB_JSON_FILE} ${LDFLAGS} ${LIBLAPACK}
 
 #ROP_TEST: ${OBJDIR}/uq_modules.o ${OBJDIR}/rop_test.o
 #	$(FC90) -o  ${ROP_EXE} $^  -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_XML} -L${LIB_UAL} -lbds -lxmllib -litmconstants -litmtypes -lual ${LDFLAGS} ${LIBLAPACK}
@@ -229,7 +233,7 @@ ${OBJDIR}/string_binding.o: src/tools/string_binding.f90
 	${FC90} -o $@ -c $< $(FC90FLAGS) 
 
 ${OBJDIR}/ets_standalone.o: src/ets_standalone.f90
-	${FC90} -o $@ -c $< $(FC90FLAGS) -I${ETS} -I${INC_CONSTANTS} -I${INC_TYPES} -I${INC_XML} 
+	${FC90} -o $@ -c $< $(FC90FLAGS) -I${ETS} -I${INC_CONSTANTS} -I${INC_TYPES} -I${INC_XML} -I${INC_JSON}
 
 ${OBJDIR}/sources_standalone.o: src/sources_standalone.f90
 	${FC90} -o $@ -c $< $(FC90FLAGS) $(FC90FLAGS_SOURCES) -I${ETS} -I${INC_XML} -I${INC_CONSTANTS} -I${INC_TYPES} 
@@ -238,7 +242,7 @@ ${OBJDIR}/sources_test.o: src/sources_test.f90
 	${FC90} -o $@ -c $< $(FC90FLAGS) $(FC90FLAGS_SOURCES) -I${ETS} -I${INC_TYPES} 
 
 ${OBJDIR}/ets_test.o: src/ets_test.f90
-	${FC90} -o $@ -c $< $(FC90FLAGS) -I${INC_TYPES}  
+	${FC90} -o $@ -c $< $(FC90FLAGS) $(FC90FLAGS_SOURCES) -I${INC_TYPES} -I${INC_JSON}
 
 ${OBJDIR}/equilupdate_standalone.o: src/equilupdate_standalone.f90
 	${FC90} -o $@ -c $< $(FC90FLAGS) -I${ETS} -I${INC_CONSTANTS} -I${INC_TYPES} 
@@ -277,19 +281,19 @@ ${OBJDIR}/gem_test.o: src/gem_test.f90
 	${MPIF90} -o $@ -c $< $(MPIFLAGS)
 
 ${OBJDIR}/loop_bgb.o: src/loop_bgb.f90 
-	${FC90} -o $@ -c $< $(FC90FLAGS) -I${INC_TYPES} 
+	${FC90} -o $@ -c $< $(FC90FLAGS) -I${INC_TYPES} -I${INC_JSON}
 
 ${OBJDIR}/loop_gem0.o: src/loop_gem0.f90 
-	${FC90} -o $@ -c $< $(FC90FLAGS) -I${INC_TYPES} 
+	${FC90} -o $@ -c $< $(FC90FLAGS) -I${INC_TYPES} -I${INC_JSON}
 
 ${OBJDIR}/loop_gem.o: src/loop_gem.f90 
-	${MPIF90} -o $@ -c $< $(MPIFLAGS) -I${INC_TYPES}
+	${MPIF90} -o $@ -c $< $(MPIFLAGS) -I${INC_TYPES} -I${INC_JSON}
 
 ${OBJDIR}/ets_chease_test.o: src/ets_chease_test.f90 
-	${FC90} -o $@ -c $< $(FC90FLAGS) -I${INC_TYPES} 
+	${FC90} -o $@ -c $< $(FC90FLAGS) -I${INC_TYPES} -I${INC_JSON}
 
 ${OBJDIR}/ets_equilupdate_test.o: src/ets_equilupdate_test.f90 
-	${FC90} -o $@ -c $< $(FC90FLAGS) -I${INC_TYPES} 
+	${FC90} -o $@ -c $< $(FC90FLAGS) -I${INC_TYPES} -I${INC_JSON}
 
 #${OBJDIR}/rop_test.o: src/rop/rop_test.f90
 #	${FC90} -o $@ -c $< $(FC90FLAGS) -I${INC_CONSTANTS} -I${INC_TYPES} -I${INC_XML}
