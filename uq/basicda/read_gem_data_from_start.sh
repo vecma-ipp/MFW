@@ -29,7 +29,7 @@ for ((i=n_start ; i<n_finish ; i++)); do
 	# 	done
 	# done
 	
-	rm *_new_${campname}_${i}.*
+	#rm *_new_${campname}_${i}.*
 
 done
 
