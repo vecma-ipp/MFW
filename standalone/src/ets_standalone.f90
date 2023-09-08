@@ -2,6 +2,8 @@ module ets_standalone
   use euitm_schemas
   use itm_types
   use string_binding
+  use json_module
+  !use, intrinsic:: only: error_unit
   implicit none
 
 !hard-coded parameters -> set from muscle cxa config file otherwise
@@ -74,7 +76,8 @@ contains
        coret_in, &
        cores_in, &
        corei_in, &
-       corep_out)
+       corep_out, &
+       json_param)
 
     use itm_types
     use copy_structures
@@ -96,6 +99,8 @@ contains
     integer, save :: cpt = 0
     character(4)  :: cptstr
 
+    type(json_core):: json
+    logical :: found
 
     ! input args
     type (type_equilibrium), pointer :: equil_in(:)
@@ -103,6 +108,8 @@ contains
     type (type_coretransp), pointer :: coret_in(:) 
     type (type_coresource), pointer :: cores_in(:) 
     type (type_coreimpur), pointer :: corei_in(:) 
+    type(json_value),pointer:: json_param
+    !real(R8) :: control(6) 
 
     type (type_coreprof), pointer :: corep_iter(:), corep_out(:)
     type (type_equilibrium), pointer :: equil_iter(:)
@@ -135,6 +142,18 @@ contains
 
     control_integer = (/ 4, 0, 0 /)
     control_double = (/ tau, 1.0_8, 1.0_8, 1.e0_8, 1.e-4_8, 1.0_8 /) 
+
+    ! try to overwrite default hard-coded values with ones from json parameter dictionary
+    !print *, "getting params from json" !!!DEBUG
+    call json%initialize()
+    call json%get(json_param, 'tau', tau, found)
+    !print *, found !!!DEBUG
+    if (found) then
+      control_double(1) = tau
+      !print *, "got params from json" !!!DEBUG
+    endif
+    !print *, control_double !!!DEBUG
+    print *, "> tau = ", control_double(1) !!!DEBUG
 
     allocate(coret_ext(1))
     allocate(cores_work(1))
@@ -359,6 +378,10 @@ contains
 
     print *,"return from ets_cpo Fortran wrapper"
 
+    print *, "before json destruction" !!!DEBUG
+    call json%destroy()
+    if (json%failed()) stop 1
+
   end subroutine ets_cpo
   ! -----------------------------------------------------------------------
 
@@ -371,7 +394,8 @@ contains
        cores_in_buf, &
        corei_in_buf, &
        corep_out_buf, &
-       time_cur)
+       time_cur, &
+       json_param)
     use iso_c_binding
     use string_binding
     use deallocate_structures
@@ -396,6 +420,9 @@ contains
     type (type_coreprof), pointer :: corep_out(:)
 
     real(R8), intent(out) :: time_cur
+
+    !real(R8) :: control(6) 
+    type(json_value),pointer:: json_param
 
     character(F_STR_SIZE) :: equil_in_file, corep_in_file, coret_in_file
     character(F_STR_SIZE) :: corei_in_file, cores_in_file, corep_out_file
@@ -492,7 +519,7 @@ contains
        STOP
     end if
 
-    call ets_cpo(corep_in, equil_in, coret_in, cores_in, corei_in, corep_out)
+    call ets_cpo(corep_in, equil_in, coret_in, cores_in, corei_in, corep_out, json_param)
 
     time_cur = corep_out(1)%time
 
@@ -516,6 +543,7 @@ contains
     call deallocate_cpo(cores_in)
     call deallocate_cpo(corei_in)
     call deallocate_cpo(corep_out)
+
 
   end subroutine ets2buf
 
