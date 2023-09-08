@@ -14,6 +14,10 @@ ifneq (${MAINMAKE},yes)
  export INC_XML = ../ual/include/${SYS}/xml
  export LIB_XML = ../ual/lib/${SYS}/xml
 
+ export INC_JSON = ../../json-fortran/build
+ export LIB_JSON = ../../json-fortran/build/lib
+ export LIB_JSON_FILE=../../json-fortran/build/lib/libjsonfortran.so
+
  export DATAVERSION = 4.10b.10
 
  include ../config
@@ -51,7 +55,7 @@ VPATH = ${SRCDIR}
 #VPATH += ../standalone/src/
 
 # additional flags #############################################################
-INCLUDES = -I${INCDIR} -I${INC_UAL} -I${STDA_INC} -I${LIB_TYPES} -I${INC_TYPES}
+INCLUDES = -I${INCDIR} -I${INC_UAL} -I${STDA_INC} -I${LIB_TYPES} -I${INC_TYPES} -I${INC_JSON}
 MUSCLE_INCLUDES = $(shell pkg-config --cflags ymmsl_fortran libmuscle_fortran) 
 MUSCLE_MPI_INCLUDES = $(shell pkg-config --cflags ymmsl_fortran libmuscle_mpi_fortran)	#OL 
 
@@ -221,7 +225,7 @@ STOP_M3: ${STOP_O}
 	$(FC90) -o ${STOP_EXE} $^ -L${LIB_TYPES} -L${LIB_UAL} -litmtypes -lual ${MUSCLE_LDFLAGS} 
 
 ETS_M3: ${ETS_O}
-	$(FC90) -o ${ETS_EXE} $^ -L${ETS} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_XML} -L${LIB_UAL} -lets -lbds -lxmllib -litmconstants -litmtypes -lual ${MUSCLE_LDFLAGS} ${LIBLAPACK}
+	$(FC90) -o ${ETS_EXE} $^ -L${ETS} -L${LIB_BDS} -L${LIB_CONSTANTS} -L${LIB_TYPES} -L${LIB_XML} -L${LIB_UAL} -L${LIB_JSON} -lets -lbds -lxmllib -litmconstants -litmtypes -lual ${LIB_JSON_FILE} ${MUSCLE_LDFLAGS} ${LIBLAPACK}
 
 CHEASE_M3: ${CHEASE_O} 
 	$(FC90) -o ${CHEASE_EXE} $^ -L${CHEASE} -L${LIB_XML} -L${LIB_UAL} -lchease_muscle -lual -lxmllib -lxml2 ${MUSCLE_LDFLAGS} ${LIBLAPACK}

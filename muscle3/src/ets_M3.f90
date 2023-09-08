@@ -4,6 +4,7 @@ program ets_M3
   use c_tools
   use ymmsl
   use libmuscle
+  use json_module
   implicit none
 
   ! MUSCLE3 specific
@@ -34,6 +35,9 @@ program ets_M3
 
   integer :: step
   character(5) :: stepstr
+
+  type(json_core):: json
+  type(json_value),pointer :: json_param
 
   call system('cp ../../../../ets.xml ets.xml')
   call system('cp ../../../../ets.xsd ets.xsd')
@@ -78,6 +82,11 @@ program ets_M3
      slice_init = LIBMUSCLE_Instance_get_setting_as_int8(instance, 'slice_initial_number')
      save_slice = LIBMUSCLE_Instance_get_setting_as_logical(instance, 'save_slice')
      adaptive_timestep = LIBMUSCLE_Instance_get_setting_as_logical(instance, 'adaptive_timestep')
+
+     ! filling in parameters for this run
+     call json%initialize()
+     call json%create_object(json_param,'')
+     call json%add(json_param, 'tau', tau) 
      
      print *, ">receiving equilibrium_init" !!!DEBUG
      ! recv init equilibrium
@@ -201,7 +210,8 @@ program ets_M3
              coresource_in_buf, &
              coreimpur_in_buf, &
              coreprof_out_buf, &
-             t_current)
+             t_current, &
+             json_param)
 
         print *,"ETS CALCULATED PROFILES AT TIME = ",t_current
 
@@ -255,6 +265,9 @@ program ets_M3
      deallocate(coresource_in_buf)
      deallocate(coreimpur_in_buf)
      deallocate(toroidfield_in_buf)
+
+     call json%destroy()
+     if (json%failed()) stop 1 
         
   end do
   
