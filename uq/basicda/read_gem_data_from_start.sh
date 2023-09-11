@@ -44,8 +44,8 @@ for i in `seq ${n_start} ${n_finish}`; do
 	for q in ${qs[@]} ; do
 		for j in `seq 1 ${n_runs}`; do
 			rm gem_${q}_transp_flux_evol_new_${campname}_${i}_${j}.csv
-			if [ -e gem_${q}_transp_flux_evol_all_${campname}_${i}_${j}.csv ]; then
-				rm gem_${q}_transp_flux_evol_all_${campname}_$((${i}-1))_${j}.csv 
+			#if [ -e gem_${q}_transp_flux_evol_all_${campname}_${i}_${j}.csv ]; then
+			#	rm gem_${q}_transp_flux_evol_all_${campname}_$((${i}-1))_${j}.csv 
 			fi
 		done
 	done

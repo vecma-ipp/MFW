@@ -129,7 +129,7 @@ def profile_evol_load(rho=0.7, folder_name='../gem_data/', prof_names=['ti_trans
                              f.startswith(file_base_tocheck)
                   ]
 
-    file_names.sort()
+    file_names.sort() # should be fine because of trailing zeros before cpo number
     #print('filenames'); print(len(file_names)); #print(file_names) ### DEBUG
 
     n = len(prof_names)

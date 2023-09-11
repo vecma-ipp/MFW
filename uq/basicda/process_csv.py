@@ -37,13 +37,16 @@ def combine_csv_series(campname='csldvnei', num=11, code='gem', profile='ti', at
 
     n_read = 6
 
-    prefix = '' # 'gem_data/'
+    if len(sys.argv) < 3 :
+        prefix = '' # 'gem_data/'
+    else:
+        prefix = sys.argv[2]
 
     pattern = prefix+code+'_'+profile+'_'+attribute+'_'+quantity+'_evol_all_'+campname+'_'+str(num)+'_*.csv'
 
     runs_file_list = glob.glob(pattern) # looks up all files according to a certain name pattern
 
-    runs_file_list.sort()
+    runs_file_list.sort(key=lambda n: int(n[n.rfind('_')+1:-4]))  #.csv is 4 symbols
 
     n_runs = len(runs_file_list)
 
@@ -51,10 +54,14 @@ def combine_csv_series(campname='csldvnei', num=11, code='gem', profile='ti', at
 
     for r_f in runs_file_list:
 
-        r = np.genfromtxt(r_f, delimiter=", ").T.tolist()
+        r = np.genfromtxt(r_f, delimiter=",", skip_header=0).T.tolist()
         
+        # Cleaning:
+        # options 1: delete every n-th reading
         # del r[n_read-1::n_read] # delete every n_read reading
-        #r = clean_readings(r)
+        # option 2: go to a list of criteria
+        # option 2.a: delete a reading if it is (almost) exactly the same as the previous one
+        r = clean_readings(r, option='repeat')
         
         data.append(r)
 
@@ -63,6 +70,7 @@ def combine_csv_series(campname='csldvnei', num=11, code='gem', profile='ti', at
     save_file = code+'_'+profile+'_'+attribute+'_'+quantity+'_tot_'+campname+'_'+str(num)+'.csv'
     with open(save_file, "w", newline="") as f:
         writer = csv.writer(f)
+        writer.writerow(['run_'+str(x+1) for x in range(len(runs_file_list))])
         writer.writerows(data_t)
 
 def csv2pickle(campname='csldvnei', num=13, codes=['gem'], profiles=['ti','te','ni','ne'], attributes=['transp'], quantities=['flux']):
@@ -112,14 +120,15 @@ def main():
     if len(sys.argv) < 2 :
         iternum = 13
     else:
-        iternum = sys.argv[1]
+        iternum = int(sys.argv[1])
 
     for p in profiles:
         combine_csv_series(num=iternum, profile=p)
 
+    csv2pickle(num=iternum)
+
+    return 0
 
 if __name__ == '__main__':
 
-    #main()
-
-    csv2pickle()
+    main()
