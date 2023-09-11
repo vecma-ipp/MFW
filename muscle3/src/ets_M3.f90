@@ -19,7 +19,7 @@ program ets_M3
 
   real(kind=LIBMUSCLE_real8) :: t_init, t_current, t_duration, dt_max
   logical :: save_slice
-  !logical :: adaptive_timestep
+  logical :: adaptive_timestep_loc
   integer(kind=LIBMUSCLE_int8) :: slice_init
 
   ! code specific
@@ -81,12 +81,13 @@ program ets_M3
      t_duration = LIBMUSCLE_Instance_get_setting_as_real8(instance, 'duration')
      slice_init = LIBMUSCLE_Instance_get_setting_as_int8(instance, 'slice_initial_number')
      save_slice = LIBMUSCLE_Instance_get_setting_as_logical(instance, 'save_slice')
-     adaptive_timestep = LIBMUSCLE_Instance_get_setting_as_logical(instance, 'adaptive_timestep')
+     adaptive_timestep_loc = LIBMUSCLE_Instance_get_setting_as_logical(instance, 'adaptive_timestep')
 
      ! filling in parameters for this run
      call json%initialize()
      call json%create_object(json_param,'')
-     call json%add(json_param, 'tau', tau) 
+     call json%add(json_param, 'tau', tau)
+     call json%add(json_param, 'adaptive_timestep', adaptive_timestep_loc) 
      
      print *, ">receiving equilibrium_init" !!!DEBUG
      ! recv init equilibrium
