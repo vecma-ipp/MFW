@@ -110,6 +110,7 @@ contains
     type (type_coreimpur), pointer :: corei_in(:) 
     type(json_value),pointer:: json_param
     !real(R8) :: control(6) 
+    logical:: adaptive_timestep_loc
 
     type (type_coreprof), pointer :: corep_iter(:), corep_out(:)
     type (type_equilibrium), pointer :: equil_iter(:)
@@ -143,17 +144,22 @@ contains
     control_integer = (/ 4, 0, 0 /)
     control_double = (/ tau, 1.0_8, 1.0_8, 1.e0_8, 1.e-4_8, 1.0_8 /) 
 
-    ! try to overwrite default hard-coded values with ones from json parameter dictionary
+    ! overwrite default hard-coded values with ones from json parameter dictionary
     !print *, "getting params from json" !!!DEBUG
     call json%initialize()
+
     call json%get(json_param, 'tau', tau, found)
-    !print *, found !!!DEBUG
     if (found) then
       control_double(1) = tau
-      !print *, "got params from json" !!!DEBUG
     endif
     !print *, control_double !!!DEBUG
     print *, "> tau = ", control_double(1) !!!DEBUG
+
+    call json%get(json_param, 'adaptive_timestep', adaptive_timestep_loc, found)
+    if (found) then
+      adaptive_timestep = adaptive_timestep_loc
+    endif
+    print *, "> adaptive_timestep = ", adaptive_timestep !!!DEBUG
 
     allocate(coret_ext(1))
     allocate(cores_work(1))
@@ -378,7 +384,7 @@ contains
 
     print *,"return from ets_cpo Fortran wrapper"
 
-    print *, "before json destruction" !!!DEBUG
+    !print *, "before json destruction" !!!DEBUG
     call json%destroy()
     if (json%failed()) stop 1
 
