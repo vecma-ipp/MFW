@@ -766,6 +766,22 @@ def merge_result_csv(file_list, output_name='resuq_extended'):
 
     df.to_csv(output_name + '.csv')
 
+def merge_dataframes(dataold, datanew):
+    """
+    Dataold should have columns related to quantities and rows related to different runs, and sereis as elements
+    Function concatenates new series to dataold for every element in datanew
+    """
+    datareturn = dataold.copy()
+
+    for i in datanew.index:
+
+        for c in datanew.columns:
+
+            #datareturn[c].iloc[i] = pd.concat([dataold[c].iloc[i], v], axis=0, ignore_index=True)
+            datareturn[c].iloc[i] = np.concatenate([dataold[c].iloc[i], datanew[c].iloc[i]], axis=0)
+
+    return datareturn
+
 def produce_stats_dataframes(runs_input_vals, val_trend_avg_s, val_std_s, stats_df, scan_df, 
                              n_lensample=1, runn=0, p='ti_transp', a='flux'):
     """
@@ -1495,7 +1511,7 @@ def plot_2D_scalings(data, input_names=['te_value', 'ti_value', 'te_ddrho', 'ti_
         
         figs.savefig('scan_{0}_{1}_{2}.svg'.format(scaling_pair[0], scaling_pair[1], foldname))
 
-def plot_timetraces_act(traces, avg, std, sem, foldname='', apha_discard=0.3, act=100):
+def plot_timetraces_act(traces, avg, std, sem, foldname='', alpha_discard=0.3, act=100):
     """
     Plots time traces for a single run case and indicates:
         ACT windows, for each:
@@ -1505,9 +1521,9 @@ def plot_timetraces_act(traces, avg, std, sem, foldname='', apha_discard=0.3, ac
             SEM estimstion
     """
 
-    print(f"from time traces plotting: {avg}, {std}, {sem}, {act}") ###DEBUG
+    #print(f"from time traces plotting: {avg}, {std}, {sem}, {act}") ###DEBUG
     #TODO legend too large
-    #TODO gap between ACT parts
+    #TODO gap between ACT parts -> should be solved
     #TODO linewidth and markersize don't work
 
     my_lw = 1
@@ -1522,13 +1538,14 @@ def plot_timetraces_act(traces, avg, std, sem, foldname='', apha_discard=0.3, ac
     lpl.size.set(*lpl_context)
 
     #y_lim = (1.9E+6, 2.9E+6) #(1.8E+6, 3.0E+6) #(-5.E+4, 2.8E+6)
-    y_lim = (-1E+2, 2E+6)
+    #y_lim = (-1E+2, 2E+6)
+    y_lim = (traces.min()-0.1*traces.min(), traces.max()+0.1*traces.max())
 
     #fig, ax = plt.subplots(figsize=(16, 8))
     fig, ax = lpl.subplots(1, 1, scale=.75)
 
     n_tt = len(traces)
-    n_disc = m.floor(apha_discard*n_tt)
+    n_disc = m.floor(alpha_discard*n_tt)
     n_stat = n_tt - n_disc
     n_act = m.floor(n_stat / act)
 
@@ -1543,10 +1560,10 @@ def plot_timetraces_act(traces, avg, std, sem, foldname='', apha_discard=0.3, ac
     
         ax.plot(np.arange(i_f, i_l), traces[i_f:i_l], color='b', linestyle='-', linewidth=my_lw)
         
-        mid_point = m.floor((i_f+i_l) / 2),
+        mid_point = m.floor((i_f+i_l-1) / 2),
         ax.plot(mid_point, traces[mid_point], 'k*', markersize=my_ms) # scatter? fmt?
 
-        ax.vlines(i_l, y_lim[0], y_lim[1], colors='grey', alpha=0.3, linestyles='dashed')
+        ax.vlines(i_l-1, y_lim[0], y_lim[1], colors='grey', alpha=0.3, linestyles='dashed')
 
     # Plotting - special iteration for legends
     i_f = n_disc + act * (n_act - 1)
@@ -1589,7 +1606,7 @@ def plot_timetraces_act(traces, avg, std, sem, foldname='', apha_discard=0.3, ac
     fig.savefig('timetraces_act_{0}.pdf'.format(foldname))
     plt.close()
 
-def time_traces_per_run(traces, run_len=450, foldname='', apha_discard=0.3):
+def time_traces_per_run(traces, run_len=450, foldname='', alpha_discard=0.3):
     """
     Goes through timetraces for a single runs though each submission and:
         calculates ACT, N_s_eff, AVG, STD, SEM
@@ -1614,7 +1631,7 @@ def time_traces_per_run(traces, run_len=450, foldname='', apha_discard=0.3):
     lags_list = [1,2,4,8,16,32,48,64,96,128,160,256,512,1024,2048,4096]
 
     n_tt = len(traces) # length of time series
-    n_disc = m.floor(apha_discard*n_tt) # length of the rump-up phase to discard
+    n_disc = m.floor(alpha_discard*n_tt) # length of the rump-up phase to discard
     n_stat = n_tt - n_disc # length of time series in stationary phase to analyse
     #additional check if at least one run window fit time series length
     if run_len >= n_stat:
@@ -1837,6 +1854,7 @@ def time_traces_per_run(traces, run_len=450, foldname='', apha_discard=0.3):
     #fig5.savefig('rabs_mean_{0}.pdf'.format(foldname))
     
     """
+    
     #--- Plotting vertical line and saving
     ax[1].vlines(x=n_disc+n_w_c*run_len, ymin=0, ymax=100, color='k', label=f"Convergence of estimates")
     #ax[1].legend(loc='best')
@@ -1872,3 +1890,28 @@ def get_reference_vals(p,a, filename='AUG_mix-lim_gem_inoutput.txt', path='../da
             print('Mean of MFW ft5 QTi={0}'.format(val_mwf['cp-flux-Ti-ft'+str(mfw_ft_s[0])].mean())) ###DEBUG
 
             return mfw_input_refval_s
+
+def deconvolve_expavg(vals, alpha=1./200.):
+    """
+    Deconvolve sequence of values produced by exponential averaging and get the original sequence
+
+    Parameters:
+    -----------
+        vals: array_like
+        Original sequence of values obtained after exponential averaging
+        alpha: flot
+        free memory-discounting parameter of exponential averaging
+        a e [0.; 1.] : x[t+1] = a * vals[t+1] + (1.-a) * vals[t]
+
+    Returns:
+        array_like
+        Original sequence of values before exponential averaging
+    """
+
+    xs = np.zeros(vals.shape)
+    
+    xs[1:] = (1./alpha) * vals[1:] - ((1.-alpha) / alpha) * vals[:-1]
+
+    xs[0] = (1./alpha) * vals[0]
+
+    return xs

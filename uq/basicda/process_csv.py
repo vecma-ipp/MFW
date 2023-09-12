@@ -14,6 +14,8 @@ import numpy as np
 import pandas as pd
 import math
 
+from da_utils import plot_timetraces_act
+
 def clean_readings(data, option='repeat'):
     """
     Cleans reading that are deemed unnecessary in this list for time traces:
@@ -111,6 +113,28 @@ def csv2pickle(campname='csldvnei', num=13, codes=['gem'], profiles=['ti','te','
         df.to_pickle(df_name)
 
     return df
+
+def plot_series(row=0, campname='csldvnei', num=16, code='gem', profile='ti', attribute='transp', quantity='flux'):
+    """
+    Plot time traces for of a QoI for a single case; from dataframe
+    """
+
+    df_name = f"timetracesscan_all_{campname}_{num}.pickle"
+    df = pd.read_pickle(df_name)
+
+    col = f"{profile}_{attribute}_{quantity}"
+
+    y = df[col].iloc[row]
+    y = y[~np.isnan(y)]
+
+    y_avg = y.mean()
+    y_std = y.std()
+    y_sem = y_std
+
+    plot_name = f"{col}_{campname}_{num}_{row+1}"
+    plot_timetraces_act(y,y_avg,y_std,y_sem,plot_name,0.0,10)
+    
+    return 0
 
 
 def main():

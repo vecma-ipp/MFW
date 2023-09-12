@@ -23,7 +23,7 @@ from statsmodels.tsa.arima.model import ARIMA, ARIMAResults
 import easyvvuq as uq
 import easyvvuq.db.sql as db
 
-from da_utils import walklevel, get_coreprof_ev_acf, produce_stats_dataframes, plot_response_cuts, plot_timetraces_act, time_traces_per_run
+from da_utils import walklevel, get_coreprof_ev_acf, produce_stats_dataframes, plot_response_cuts, plot_timetraces_act, time_traces_per_run, merge_dataframes, deconvolve_expavg
 
 from ascii_cpo import read
 sys.path.append('..')
@@ -217,7 +217,7 @@ def profile_evol_plot(value_s, labels=['orig'], file_names=[], name='gem_ti_flux
             name (str): prefix of file names for the saved graphs
             alignment: where to add the graph and how to create the abcissa scale,
                         if 'end' consider that the  different lists last readings end at the same time, 
-                        if 'start' - that their firs reading are alligned 
+                        if 'start' - that their first readings are alligned 
     """
 
     #ts = np.arange(len(file_names))
@@ -604,7 +604,7 @@ def filter_trend(values, method='hpf', name=''):
             #print('NE give array shapes: {}'.format(val_trend[0].shape)) ###DEBUG 
             print('''Linear Regression: for case #{0} the slope parameter value is {1:.3f} 
                                         and it is {2} than {3:.3f} threshold'''.
-                      format(i, a[0][0], 'SMALLER' if a[0][0] < a_tol else 'LARGER', a_tol))
+                      format(i, a[0][0], 'SMALLER' if abs(a[0][0]) < a_tol else 'LARGER', a_tol))
 
     else:
         print('>Error in filtering: no such method')
@@ -634,31 +634,6 @@ def plot_fft(freq, vals, thr, slope=-2, name='fft'):
     plt.savefig(name+'.svg')
     
     plt.close()
-
-def deconvolve_expavg(vals, alpha=1./200.):
-    """
-    Deconvolve sequence of values produced by exponential averaging and get the original sequence
-
-    Parameters:
-    -----------
-        vals: array_like
-        Original sequence of values obtained after exponential averaging
-        alpha: flot
-        free memory-discounting parameter of exponential averaging
-        a e [0.; 1.] : x[t+1] = a * vals[t+1] + (1.-a) * vals[t]
-
-    Returns:
-        array_like
-        Original sequence of values before exponential averaging
-    """
-
-    xs = np.zeros(vals.shape)
-    
-    xs[1:] = (1./alpha) * vals[1:] - ((1.-alpha) / alpha) * vals[:-1]
-
-    xs[0] = (1./alpha) * vals[0]
-
-    return xs
 
 def compare_gaussian(pdf, domain, moments):
     """
@@ -796,21 +771,6 @@ def discontinuity_check(vals, reltol=5E-2, abstol=10E4, disc_criterion='combined
     
     return cands_glob
 
-def merge_dataframes(dataold, datanew):
-    """
-    Dataold should have columns related to quantities and rows related to different runs, and sereis as elements
-    Function concatenates new series to dataold for every element in datanew
-    """
-    datareturn = dataold.copy()
-
-    for i in datanew.index:
-
-        for c in datanew.columns:
-
-            #datareturn[c].iloc[i] = pd.concat([dataold[c].iloc[i], v], axis=0, ignore_index=True)
-            datareturn[c].iloc[i] = np.concatenate([dataold[c].iloc[i], datanew[c].iloc[i]], axis=0)
-
-    return datareturn
 
 #################################################
 #### MAIN FUNCTION: PIPELINE OF PROCESSING ######
@@ -1296,7 +1256,7 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnumstart=1, runnum=
                         std=scan_df.iloc[runn_loc-runnumstart]['ti_transp_flux_std'],
                         sem=scan_df.iloc[runn_loc-runnumstart]['ti_transp_flux_stem'],
                         foldname=p+'_'+a+'_'+mainfoldernum+'_'+str(runn_loc),
-                        apha_discard=0.15,
+                        alpha_discard=0.15,
                         act=int(len(val_wind_s[runn_loc-runnumstart][0])/scan_df.iloc[runn_loc-runnumstart]['ti_transp_flux_acn']),
                                     )
                 """
@@ -1308,7 +1268,7 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnumstart=1, runnum=
                         val_ev_s[runn_loc-runnumstart][0][:],
                         run_len=150,
                         foldname=p+'_'+a+'_'+mainfoldernum+'_'+str(runn_loc),
-                        apha_discard=0.15,
+                        alpha_discard=0.15,
                                     )
                 """
                 
