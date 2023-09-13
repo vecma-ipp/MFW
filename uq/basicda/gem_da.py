@@ -267,12 +267,13 @@ def profile_evol_plot(value_s, labels=['orig'], file_names=[], name='gem_ti_flux
               ncol=int(np.sqrt(len(labels))) if len(labels) < 25 else 4,
               prop={'size' : 10})
 
-    ax.set_ylim(-5.E+5, 4.5E+6) #TODO either delete or make modifiable
+    #ax.set_ylim(-5.E+5, 4.5E+6) #TODO either delete or make modifiable
+    ax.set_ylim(-5.E+4, .5E+6)
 
     if vertline:
         ax.axvline(vertline, alpha=0.3, color='k', linestyle='--', label='left border of the window')
    
-    plt.savefig(name + '.svg', dpi=1250)
+    plt.savefig(name + '.pdf', dpi=1250)
     plt.close()
 
     #np.savetxt(name + '.csv', np.squeeze(value_s, 0), delimiter =", ", fmt ='% s')
@@ -912,9 +913,10 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnumstart=1, runnum=
             # (this is specific to current naming [new/all]_[8alphanumericals]_[num_macroiter])
             name_pos = mainfoldernum.rfind('_')
             old_num = int(mainfoldernum[name_pos+1:])
-            old_mainfoldernum = mainfoldernum[:name_pos+1]+str(old_num-1)
+            old_mainfoldernum = 'all' + mainfoldernum[3:name_pos+1] + str(old_num-1)
             new_mainfoldernum = 'all' + mainfoldernum[3:]
             if os.path.exists('newtimetracesscan_'+old_mainfoldernum+'.pickle'):
+                print(f"> merging dataframes, found {'newtimetracesscan_'+old_mainfoldernum+'.pickle'}") ###DEBUG
                 dataframe_cpo_old = pd.read_pickle('newtimetracesscan_'+old_mainfoldernum+'.pickle')
                 dataframe_cpo = merge_dataframes(dataframe_cpo_old, dataframe_cpo)
                 dataframe_cpo.to_pickle('newtimetracesscan_'+new_mainfoldernum+'.pickle')

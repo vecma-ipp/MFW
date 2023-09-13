@@ -15,6 +15,7 @@ import pandas as pd
 import math
 
 from da_utils import plot_timetraces_act
+from gem_da import profile_evol_plot
 
 def clean_readings(data, option='repeat'):
     """
@@ -107,7 +108,9 @@ def csv2pickle(campname='csldvnei', num=13, codes=['gem'], profiles=['ti','te','
 
                     for i,c in enumerate(df_loc.columns):
 
-                        df[column_name].iloc[i] = df_loc[c].to_numpy()
+                        array_loc = df_loc[c].to_numpy()
+                        array_loc = array_loc[~np.isnan(array_loc)]
+                        df[column_name].iloc[i] = array_loc
     
         df_name = 'timetracesscan_all_'+campname+'_'+str(num)+'.pickle'
         df.to_pickle(df_name)
@@ -116,7 +119,7 @@ def csv2pickle(campname='csldvnei', num=13, codes=['gem'], profiles=['ti','te','
 
 def plot_series(row=0, campname='csldvnei', num=16, code='gem', profile='ti', attribute='transp', quantity='flux'):
     """
-    Plot time traces for of a QoI for a single case; from dataframe
+    Plots time traces for of a QoI for a single case; from dataframe
     """
 
     df_name = f"timetracesscan_all_{campname}_{num}.pickle"
@@ -136,6 +139,30 @@ def plot_series(row=0, campname='csldvnei', num=16, code='gem', profile='ti', at
     
     return 0
 
+def plot_series_per_app(campname='csldvnei', num=17, code='gem', profile='ti', attribute='transp', quantity='flux'):
+    """
+    Plots time traces for a group of cases, corresponding to a particular campaign 'app' (here: flux tube); from dataframe
+    """
+
+    df_name = f"timetracesscan_all_{campname}_{num}.pickle"
+    df = pd.read_pickle(df_name)
+
+    col = f"{profile}_{attribute}_{quantity}"
+
+    # Number of apps and cases per app
+    n_ft = 8
+    len_ft = 81 # len_ft = len(df.rows) // n_ft
+
+    for i_ft in range(n_ft):
+
+        y_ft = df[col].iloc[i_ft*len_ft : (i_ft+1)*len_ft-1]
+        y_ft_list = [x.reshape(1,-1) for x in y_ft]
+        
+        labels = [f"run_{i}" for i in range(i_ft*len_ft, (i_ft+1)*len_ft-1)]
+
+        profile_evol_plot(y_ft_list, labels=labels, name=f"{code}_{profile}_{attribute}_{quantity}_ft{i_ft}_{campname}_{num}", alignment='start');
+
+    return 0 
 
 def main():
 

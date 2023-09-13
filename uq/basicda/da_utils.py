@@ -778,7 +778,9 @@ def merge_dataframes(dataold, datanew):
         for c in datanew.columns:
 
             #datareturn[c].iloc[i] = pd.concat([dataold[c].iloc[i], v], axis=0, ignore_index=True)
-            datareturn[c].iloc[i] = np.concatenate([dataold[c].iloc[i], datanew[c].iloc[i]], axis=0)
+            array_old = dataold[c].iloc[i][~np.isnan(dataold[c].iloc[i])]
+            array_new = datanew[c].iloc[i][~np.isnan(datanew[c].iloc[i])]
+            datareturn[c].iloc[i] = np.concatenate([array_old, array_new], axis=0)
 
     return datareturn
 
