@@ -335,13 +335,16 @@ ifeq ($(SYS),COBRA)
 export CC = icc
 export CCFLAGS = -g -O3 -fPIC
 export FC90= ifort
-export FC90FLAGS = -g -O3 -fPIC 
+#export FC90FLAGS = -g -O3 -fPIC 
+export FC90FLAGS = -g -O2 -fPIC
+#export FC90FLAGS = -g -O0 -traceback -fPIC # for debugging
 export FC77 = ifort
 export FC77FLAGS = ${FC90FLAGS}
 export MPIF90 = mpiifort
 export MPIFLAGS = ${FC90FLAGS}
 export FPP = fpp
-export FPPFLAGS =  
+#export FPPFLAGS =  
+export FPPFLAGS = -traceback
 export LD = ifort
 export LDFLAGS =
 
