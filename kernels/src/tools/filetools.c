@@ -1,5 +1,6 @@
 #include "filetools.h"
-
+#include <stdio.h>
+#include <stdlib.h>
 
 void dealloc_charbuf(char **data)
 {
@@ -80,7 +81,18 @@ void file2byte(const char *filename, unsigned char **data, int *size)
   size_t ret_size = 0;
   int stop = 0;
 
+  //DEBUG part: 5 lines
+  fprintf(stdout, "Filename = %s \n", filename);
+  int MAX_PATH_LENGTH = 128;
+  char* path[MAX_PATH_LENGTH];
+  getcwd(path, MAX_PATH_LENGTH);
+  fprintf(stdout, "Current Directory = %s \n", path);
+
   f = fopen(filename,"r");
+  //DEBUG part: 2 lines
+  if(f == NULL)
+  {fsprintf(stdout, "Couldn't open the file! \n");}
+
   *data = malloc(tmpsize*sizeof(unsigned char));
 
   while(!stop)  
