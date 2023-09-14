@@ -7,7 +7,7 @@ cd gem_data/
 qs=('te' 'ti' 'ne' 'ni')
 ts=('gem' 'resuq' 'stats' 'fft' 'scan' 'pdf' 'hist' '0_gem' 'timetraces_act' 'lr')
 ns=1
-nf=12
+nf=17
 
 for q in ${qs[@]} ; do
 
@@ -22,7 +22,7 @@ for q in ${qs[@]} ; do
    
       mkdir ${q}/${t}/${n}/
     
-      mv ${t}*${q}*_${n}_* ${q}/${t}/${n}/
+      mv ${t}_${q}*_${n}_*.* ${q}/${t}/${n}/
    
     done
   done

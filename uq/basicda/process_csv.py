@@ -15,7 +15,7 @@ import pandas as pd
 import math
 
 from da_utils import plot_timetraces_act
-from gem_da import profile_evol_plot
+from gem_da import profile_evol_plot, profile_evol_load
 
 def clean_readings(data, option='repeat'):
     """
@@ -117,13 +117,14 @@ def csv2pickle(campname='csldvnei', num=13, codes=['gem'], profiles=['ti','te','
 
     return df
 
-def plot_series(row=0, campname='csldvnei', num=16, code='gem', profile='ti', attribute='transp', quantity='flux'):
+def plot_series(df=None, row=0, campname='csldvnei', num=16, code='gem', profile='ti', attribute='transp', quantity='flux'):
     """
     Plots time traces for of a QoI for a single case; from dataframe
     """
 
-    df_name = f"timetracesscan_all_{campname}_{num}.pickle"
-    df = pd.read_pickle(df_name)
+    if df is None:
+        df_name = f"timetracesscan_all_{campname}_{num}.pickle"
+        df = pd.read_pickle(df_name)
 
     col = f"{profile}_{attribute}_{quantity}"
 
@@ -163,6 +164,13 @@ def plot_series_per_app(campname='csldvnei', num=17, code='gem', profile='ti', a
         profile_evol_plot(y_ft_list, labels=labels, name=f"{code}_{profile}_{attribute}_{quantity}_ft{i_ft}_{campname}_{num}", alignment='start');
 
     return 0 
+
+def read_series_per_camp(campname='csldvnei', num=13, codes=['gem'], profiles=['ti','te','ni','ne'], attributes=['transp'], quantities=['flux']):
+    """
+    Reads time traces that correspnd to chosen code, profile, attribute, quantity for an enitire campaign into a single dataframe
+    """
+
+    return 0
 
 def main():
 

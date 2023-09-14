@@ -244,6 +244,8 @@ def profile_evol_plot(value_s, labels=['orig'], file_names=[], name='gem_ti_flux
 
     fig, ax = plt.subplots(figsize=(24.,8.))
 
+    max_val = min_val = 0.0
+
     for inum, (value, lab) in enumerate(zip(value_s, labels)):
         #print('value.shape = {}'.format(value.shape)) ###DEBUG
 
@@ -257,6 +259,9 @@ def profile_evol_plot(value_s, labels=['orig'], file_names=[], name='gem_ti_flux
         for i in range(value.shape[0]):
              #print('value[{0},:]'.format(i)); print(value[i,:]) ### DEBUG
 
+             max_val = max(max_val, value[i,:].max())
+             min_val = min(min_val, value[i,:].min())
+
              #ax.semilogy(ts, value[i,:], '-', label=lab+'_'+str(i))
              
              #ax.plot(ts, value[i,:], fmt_list[inum], label=lab)
@@ -268,7 +273,7 @@ def profile_evol_plot(value_s, labels=['orig'], file_names=[], name='gem_ti_flux
               prop={'size' : 10})
 
     #ax.set_ylim(-5.E+5, 4.5E+6) #TODO either delete or make modifiable
-    ax.set_ylim(-5.E+4, .5E+6)
+    ax.set_ylim(min_val-0.1*min_val, max_val+0.1*max_val)
 
     if vertline:
         ax.axvline(vertline, alpha=0.3, color='k', linestyle='--', label='left border of the window')

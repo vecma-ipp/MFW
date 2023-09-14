@@ -3,12 +3,12 @@
 campname=csldvnei
 n_runs=648
 
-n_start=3
-n_finish=14
+n_start=2
+n_finish=17
 
 qs=('te' 'ti' 'ne' 'ni')
 
-for ((i=n_start ; i<n_finish ; i++)); do
+for ((i=n_start ; i<n_finish+1 ; i++)); do
 
 	echo "macroiteration number "${i}
 	
@@ -34,7 +34,7 @@ for ((i=n_start ; i<n_finish ; i++)); do
 done
 
 # combine the CSV-s after the last run
-python process_csv.py
+python process_csv.py ${n_finish}
 
 # delete the unnecassary files
 
@@ -46,7 +46,7 @@ for i in `seq ${n_start} ${n_finish}`; do
 			rm gem_${q}_transp_flux_evol_new_${campname}_${i}_${j}.csv
 			#if [ -e gem_${q}_transp_flux_evol_all_${campname}_${i}_${j}.csv ]; then
 			#	rm gem_${q}_transp_flux_evol_all_${campname}_$((${i}-1))_${j}.csv 
-			fi
+			#fi
 		done
 	done
 	rm *_new_${campname}_${i}.*
