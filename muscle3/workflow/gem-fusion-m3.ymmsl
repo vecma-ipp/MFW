@@ -169,15 +169,15 @@ implementations:
       - /u/yyudin/code/MFW/muscle3/bin/COBRA/imp4dv_M3
 
 settings:
-  transport.duration: 0.25
-  transport.dt: 0.00125
+  transport.duration: 1.0
+  transport.dt: 0.01
   # init_cpo_dir: "../../../../../../workflows/AUG_28906_6"
   init_cpo_dir: "../../../../gem_resume_data"
   final_cpo_dir: "./"
   muscle_remote_log_level: "DEBUG"  
   slice_initial_number: 0
   save_slice: true
-  adaptive_timestep: false
+  adaptive_timestep: true
   # turbulence.rho_ind_s: [68.0]
   turbulence.rho_ind_s: [15.0, 31.0, 44.0, 55.0, 66.0, 76.0, 85.0, 94.0]
   turbulence.profs_out: "ti_transp.flux"

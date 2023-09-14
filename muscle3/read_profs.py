@@ -33,6 +33,17 @@ def read_attrib(filename, quantity, attribute, coords, filetype='coreprof'):
         a_s = [a[c] for c in coords]
     return a_s
 
+def read_time(filename, filetype='coreprof'):
+    """
+    Returns time read in the CPO (coreprofile) file
+    """
+
+    cpo_obj = read(filename, filetype)
+
+    t = float(getattr(cpo_obj, 'time'))
+
+    return t
+
 def read_files(foldername, quantity, attribute, coords, filetype='coreprof', date=''):
 
     file_base_tocheck = filetype+'_'
@@ -58,7 +69,7 @@ def read_files(foldername, quantity, attribute, coords, filetype='coreprof', dat
                   ]
     file_names.sort()
 
-    # add the last file, that might be names differently
+    # add the last file, that might be named differently
     last_file_tent_name = 'ets_'+filetype+'_out'+file_ext
     if os.path.exists(os.path.join(foldername, last_file_tent_name)):
         file_names.append(last_file_tent_name)
@@ -66,16 +77,21 @@ def read_files(foldername, quantity, attribute, coords, filetype='coreprof', dat
     #print(file_names) ###DEBUG
 
     attributes = []
+    times = []
 
     for f in file_names:
         a = read_attrib(foldername+f, quantity, attribute, coords, filetype)
         # print(f"a= {a}") ###DEBUG
         attributes.append(a)
 
+        t = read_time(foldername+f, filetype)
+        times.append(t)
+
     # List of lists to a numpy array
     atrributes_array = np.array(attributes)
+    times_array = np.array(times)
 
-    return atrributes_array
+    return atrributes_array, times_array
 
 def read_equil(foldernames):
     """
@@ -190,7 +206,7 @@ def read_profs():
             # TODO: better, first read all data into a single data structure e.g. pandas dataframe, accessing each file onse; then plot 
             data_list = []
             for load_fold_name, date in zip(load_fold_names, dates):
-                data = read_files(
+                data, times = read_files(
                     load_fold_name, quantities[i_q], attributes[j_a], coords=coord_num, filetype=cpo_name, date=date)
                 data_list.append(data)
             data = np.concatenate(data_list, axis=0)
@@ -202,9 +218,8 @@ def read_profs():
 
             # print(f"data shape: {data.shape}") #DEBUG
             n_timesteps = data.shape[0]
+            #print(f"size of data and time readings is the same: {n_timesteps == times.shape[0]}") ###DEBUG
             n_rhos = data.shape[1]
-
-            #n_timesteps = 5
 
             color_list = ['b', 'g', 'r', 'y' , 'm', 'c', 'k']
             line_list = ['-', '--', '-.', ':']
@@ -212,9 +227,14 @@ def read_profs():
             style_lists = [marker_list, line_list, color_list,] 
             fmt_list = [style for style in product(*style_lists)]
 
-            # Plotting an attribute value at a the n_ft-th flux tube against time
+            ### Plotting an attribute value at a the n_ft-th flux tube against time
+            
             fig, ax = plt.subplots()
-            ax.plot(np.linspace(0, n_timesteps, n_timesteps),
+            
+            # x_values = np.linspace(0, n_timesteps, n_timesteps) # option 1: sequential number of time steps starting from 0
+            x_values = times # option 2: timestamp read from coreprofile CPO files
+
+            ax.plot(x_values,
                     data[:n_timesteps, n_ft], '.',
                     label=f"@{n_ft}")
             ax.set_xlabel('${{t}}$, time-steps')
@@ -236,17 +256,22 @@ def read_profs():
                         quantities[i_q]+'_'+attributes[j_a]+'_'+dates[0]+'_'+dates[-1]+'.pdf')
             plt.close()
 
-            # Plotting attribute profile for multiple time-steps
+            ### Plotting attribute profile for multiple time-steps
+            
             n_timesteps_toplot = n_timesteps // 10 if n_timesteps // 10 > 0 else 1
             fig, ax = plt.subplots()
+
+            timestep_iterator = range(0, n_timesteps, n_timesteps_toplot) # option 1: numbers of time steps
+            # timestep_iterator = iter(times[0:n_timesteps:n_timesteps_toplot]) # option 2: times written to coreprof
             
-            for t in range(0, n_timesteps, n_timesteps_toplot):
-                # for t in range(0, 5, 1):
+            for i in timestep_iterator:
+
                 ax.plot(np.array(coord_num),
-                        data[t, :], label=f"t={t}", 
-                        color = fmt_list[t//n_timesteps_toplot][2],
-                        linestyle = fmt_list[t//n_timesteps_toplot][1],
-                        marker=fmt_list[t//n_timesteps_toplot][0],
+                        data[i, :], 
+                        label=f"t={times[i]}", 
+                        color = fmt_list[i//n_timesteps_toplot][2],
+                        linestyle = fmt_list[i//n_timesteps_toplot][1],
+                        marker=fmt_list[i//n_timesteps_toplot][0],
                         #marker='.'
                         )
             
