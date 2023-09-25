@@ -6,6 +6,9 @@ if [ -z "$MUSCLE3_HOME" ] ; then
     exit 1
 fi
 
+export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/cobra/u/yyudin/muscle3/lib
+export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/cobra/u/yyudin/code/json-fortran/build/lib/
+
 echo 'Running gem_surr workflow in Fortran & Python'
 
 #. ~/muscle3_venv/bin/activate
@@ -18,11 +21,6 @@ muscle_manager --start-all gem-surr-mft-fusion.ymmsl &
 echo 'MUSCLE_MANAGER started'
 
 manager_pid=$!
-
-#export LD_LIBRARY_PATH=$MUSCLE3_HOME/lib:$LD_LIBRARY_PATH
-
-#BINDIR=../bin/COBRA/
-#SRCDIR=../src/
 
 #TODO: may be start with no MPI vesion
 #TODO compile wrapper implementations

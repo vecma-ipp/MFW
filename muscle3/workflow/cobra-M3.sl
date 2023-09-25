@@ -48,4 +48,6 @@ export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/cobra/u/yyudin/code/json-fortran/buil
 echo "STARTING MUSCLE3 FROM $PWD"
 #./gem0_workflow.sh	# gem0 workflow (no MPI)
 
-MUSCLE3_HOME=/u/yyudin/muscle3 ./gem_workflow.sh
+# NB: CURRENTLY RUNNING A MULTIPLE IMPLEMENTATION VERSION OF THE WORKFLOW
+#MUSCLE3_HOME=/u/yyudin/muscle3 ./gem_workflow.sh
+MUSCLE3_HOME=/u/yyudin/muscle3 ./gem_multiimpl_workflow.sh
