@@ -9,11 +9,12 @@ fi
 username=yyudin
 
 echo 'Running gem workflow in Fortran'
+python --version
 
 . ~/muscle3/bin/muscle3.env
 
 currdate=$(date +"%Y%m%d")
-run_dir_name=run_fusion_gem_multiimpl_${currdate}
+run_dir_name=run_fusion_gem_multiimpl_${currdate}_criteria
 mkdir ${run_dir_name}
 
 muscle_manager --log-level DEBUG --run-dir ${run_dir_name} --start-all gem-fusion-multiimpl.ymmsl &

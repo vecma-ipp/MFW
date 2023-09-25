@@ -69,7 +69,7 @@ def output_value_to_coretransp(
             coretransp_file, 
             r_s = [0],
             ion = 0,
-            prof_names=['ti_transp', 'te_transp',], #TODO: double check CPO format
+            prof_names=['te_transp', 'ti_transp',], #TODO: double check CPO format
             attributes=['flux',]
                               ):
     """
@@ -125,7 +125,7 @@ def gem_surr_M3():
 
     # Creating a MUSCLE3 instance
     instance = Instance({
-        Operator.O_F:     ['coretransp_out',],
+        Operator.O_F:     ['coretransp_out', 'coretransp_uncertainty_out'],
         Operator.F_INIT: ['coreprof_in', 'equilibrium_in'],
                         },
         #USES_CHECKPOINT_API,
@@ -171,7 +171,7 @@ def gem_surr_M3():
         print('> Got a surrogates from a ES campaign')
 
         #TODO: read target names from campaign
-        output_names = ['ti_transp_flux', 'te_transp_flux']
+        output_names = ['te_transp_flux', 'ti_transp_flux']
         #output_names = ['ti_transp_flux']
 
         input_names_ind_permut = [0,2,1,3]
@@ -241,7 +241,7 @@ def gem_surr_M3():
                                         fluxes_out_dict, 
                                         coretransp_default_file_path, 
                                         r_s = [i for i,r in enumerate(rho_ind_s)],
-                                        prof_names=['ti_transp', 'te_transp'],
+                                        prof_names=['te_transp', 'ti_transp'],
                                         attributes=['flux']
                                                         )
 
@@ -253,15 +253,22 @@ def gem_surr_M3():
         coretransp_str = file_like_profiles_out_data_str.getvalue()
         coretransp_bytes = bytes(coretransp_str, "utf-8")
 
+        # Writing uncertainty information
+        te_transp_flux_cov = fluxes_out_std[0,0] / fluxes_out[0,0]
+        ti_transp_flux_cov = fluxes_out_std[0,1] / fluxes_out[0,1]
+        coretransp_uncertainty = np.array([ti_transp_flux_cov, te_transp_flux_cov])
+
         # Sending a coretransp message
         print('> Gettting ready an outcoming core transp')
         msg_out = Message(num_it, None, coretransp_bytes)
+        msg_unc_out = Message(num_it, None, coretransp_uncertainty)
         print('> Sending an outcoming core transp')
 
         #if instance.should_save_snapshot():
         #    msg_snapshot = Message(num_it, data=fluxes_out_dict) #TODO: check how to save dict
 
         instance.send('coretransp_out', msg_out)
+        instance.send('coretransp_uncertainty_out', msg_unc_out)
         print('> Sent an outcoming core transp')
 
 

@@ -13,14 +13,19 @@ def turbulence_model_selector():
     instance = Instance({
         Operator.O_F:     ['coretransp_out',],
         Operator.F_INIT: ['coreprof_in', 'equilibrium_in'],
-        Operator.S: ['coretransp_fromsim_in', 'coretransp_fromsur_in'],
+        Operator.S: ['coretransp_fromsim_in', 'coretransp_fromsur_in', 'coretransp_uncertainty_fromsur_in'],
         Operator.O_I: ['equilibrium_tosim_out', 'equilibrium_tosur_out', 'coreprof_tosim_out', 'coreprof_tosur_out'],
                         },
                        )
     
     print(f"> Initialised turbulence selector")
 
-    ti_transp_flux_std_reltol = 1e+0
+    coretransp_uncertainty_dict = {
+        'rel_ti_transp_flux_std': 0,
+        'rel_te_transp_flux_std': 1,
+    }
+
+    ti_transp_flux_cov_reltol = 1e+0
 
     bool_call_sim = False
 
@@ -58,19 +63,25 @@ def turbulence_model_selector():
 
         msg_in_coretransp = instance.receive('coretransp_fromsur_in')
 
+        msg_in_coretransp_uncertainty = instance.receive('coretransp_uncertainty_fromsur_in')
+
         print(f"> Received coretransp from TURBULENCE_SUR")
 
         coretransp_bytes = msg_in_coretransp.data
 
-        #TODO!!!: pass uncertainty information in coretransp CPO 
+        coretransp_uncertainty = msg_in_coretransp_uncertainty.data.array.copy()
 
         # 3. Criterion: check if uncertainties exceed threshold
 
-        bool_call_sim = not bool_call_sim 
+        ti_transp_flux_cov = coretransp_uncertainty[coretransp_uncertainty_dict['rel_ti_transp_flux_std']]
+        print(f"< Coefficient of variation against {ti_transp_flux_cov_reltol} is: {{ti_transp_flux_cov}}") ###DEBUG
+
         # NB: stab to check two implementations, just alternate between implementations
 
-        #ti_transp_flux_std > ti_transp_flux_std_reltol:
-        #    bool_call_sim = True
+        if ti_transp_flux_cov > ti_transp_flux_cov_reltol:
+            bool_call_sim = True
+        
+        #bool_call_sim = not bool_call_sim 
 
         # 4. If the criterion is satisfied, pass coreprofile and equilibrium to simulation implementation, 
         #           then get back the coretransp
