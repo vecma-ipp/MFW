@@ -53,6 +53,7 @@ model:
         s:
           - coretransp_fromsim_in
           - coretransp_fromsur_in
+          - coretransp_uncertainty_fromsur_in
         o_i:
           - equilibrium_tosim_out
           - equilibrium_tosur_out
@@ -75,6 +76,7 @@ model:
           - equilibrium_in
         o_f:
           - coretransp_out
+          - coretransp_uncertainty_out
     equilibrium: 
       implementation: chease_impl
       ports:
@@ -104,6 +106,7 @@ model:
     turbulence.coreprof_tosur_out:    turbulence_sur.coreprof_in
     turbulence_sim.coretransp_out:    turbulence.coretransp_fromsim_in
     turbulence_sur.coretransp_out:    turbulence.coretransp_fromsur_in
+    turbulence_sur.coretransp_uncertainty_out: turbulence.coretransp_uncertainty_fromsur_in
     turbulence.coretransp_out:   flux2tcoeff.coretransp_in
     flux2tcoeff.coretransp_out:  transport.coretransp_in
     transport.equilibrium_final: stop.equilibrium_in
@@ -147,12 +150,14 @@ implementations:
   ets_impl:
     executable: /u/yyudin/code/MFW/muscle3/bin/COBRA/ets_M3
   gem_surr_impl:
-    executable: python3 /u/yyudin/code/MFW/muscle3/src/gem_surr_mft_M3.py
+    # virtual_env: 
+    executable: python 
+    args: /u/yyudin/code/MFW/muscle3/src/gem_surr_mft_M3.py
   gem_surr_impl_debug:
     executable: xterm
     args:
       - -e
-      - python3
+      - python
       - -m
       - pdb
       - /u/yyudin/code/MFW/muscle3/src/gem_surr_mft_M3.py
@@ -169,7 +174,9 @@ implementations:
     execution_model: srunmpi
     can_share_resources: false
   turb_selector:
-    executable: python3 /u/yyudin/code/MFW/muscle3/src/turbulence_selector.py
+    # virtual_env:
+    executable: python 
+    args: /u/yyudin/code/MFW/muscle3/src/turbulence_selector.py
   chease_impl:
     executable: /u/yyudin/code/MFW/muscle3/bin/COBRA/chease_M3
   chease_impl_debug:
@@ -191,10 +198,10 @@ settings:
   slice_initial_number: 0
   save_slice: True
   adaptive_timestep: False
-  turbulence.rho_ind_s: [15.0, 31.0, 44.0, 55.0, 66.0, 76.0, 85.0, 94.0]
-  turbulence.profs_out: "ti_transp.flux"
-  turbulence.surrogate_path: "../../../../../../workflows/gem_es_model"
-  turbulence.cortransp_default: "../../../../../../workflows/gem_coretransp_8ft.cpo"
+  turbulence_sur.rho_ind_s: [15.0, 31.0, 44.0, 55.0, 66.0, 76.0, 85.0, 94.0]
+  turbulence_sur.profs_out: "ti_transp.flux"
+  turbulence_sur.surrogate_path: "../../../../../../workflows/gem_es_model"
+  turbulence_sur.cortransp_default: "../../../../../../workflows/gem_coretransp_8ft.cpo"
 
 
 #checkpoints:
