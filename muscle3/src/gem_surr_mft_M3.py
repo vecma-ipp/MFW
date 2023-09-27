@@ -168,7 +168,7 @@ def gem_surr_M3():
                 print('No such model file!')
                 return
             mods.append(camps[-1].surrogate)
-        print('> Got a surrogates from a ES campaign')
+        print('> Got surrogates from a ES campaign')
 
         #TODO: read target names from campaign
         output_names = ['te_transp_flux', 'ti_transp_flux']
@@ -177,15 +177,17 @@ def gem_surr_M3():
         input_names_ind_permut = [0,2,1,3]
 
         # Get a message form equilibrium code: NOT USED HERE!
-        msg_in = instance.receive('equilibrium_in')
+        msg_in_eq = instance.receive('equilibrium_in')
         print('> Got a message from EQUILIBRIUM')
         
         # Get a message from transport code
         msg_in = instance.receive('coreprof_in')
         print('> Got a message from TRANSP')
 
-        # Update timestep number
-        num_it = msg_in.timestamp + 1
+        # # Update timestep number
+        # num_it = msg_in_coreprof.timestamp + 1
+        # Read timestamp
+        num_it = msg_in.timestamp
 
         # Get profile byte array data from the message from TRANSP (and check what's inside)
         coreprof_in_data_bytes = msg_in.data

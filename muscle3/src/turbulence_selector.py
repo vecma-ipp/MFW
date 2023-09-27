@@ -41,8 +41,10 @@ def turbulence_model_selector():
         msg_in_coreprof = instance.receive('coreprof_in')
         print('> Got a message from TRANSP')
 
-        # Update timestep number
-        num_it = msg_in_coreprof.timestamp + 1
+        # # Update timestep number
+        # num_it = msg_in_coreprof.timestamp + 1
+        # Read timestamp
+        num_it = msg_in_coreprof.timestamp
 
         # Get profile and equilibrium byte array data from the messages
         equilibrium_in_data_bytes = msg_in_equilibrium.data
@@ -74,7 +76,7 @@ def turbulence_model_selector():
         # 3. Criterion: check if uncertainties exceed threshold
 
         ti_transp_flux_cov = coretransp_uncertainty[coretransp_uncertainty_dict['rel_ti_transp_flux_std']]
-        print(f"< Coefficient of variation against {ti_transp_flux_cov_reltol} is: {{ti_transp_flux_cov}}") ###DEBUG
+        print(f"< Coefficient of variation against {ti_transp_flux_cov_reltol} is: {ti_transp_flux_cov:.3f}") ###DEBUG
 
         # NB: stab to check two implementations, just alternate between implementations
 
