@@ -165,6 +165,8 @@ def read_profs():
 
     cpo_names = ['coreprof', 'coretransp']
 
+    times_coreprof = []
+
     for cpo_name in cpo_names:
 
         if cpo_name == 'coreprof':
@@ -210,6 +212,12 @@ def read_profs():
                     load_fold_name, quantities[i_q], attributes[j_a], coords=coord_num, filetype=cpo_name, date=date)
                 data_list.append(data)
             data = np.concatenate(data_list, axis=0)
+
+            # coreetransp does not change timestamp correctly, so prefereably use transport (coreprof) time
+            if cpo_name == 'coreprof': 
+                times_coreprof = times
+            elif cpo_name == 'coretransp':
+                times = times_coreprof # does not track which coreprof exactly provides time
 
             data_file_name = save_fold_name+'res_'+codename+'_' + \
                 quantities[i_q]+'_'+attributes[j_a]+'_'+dates[0]+'_'+dates[-1]+'.csv'
