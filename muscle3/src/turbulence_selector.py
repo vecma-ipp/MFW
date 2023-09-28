@@ -2,6 +2,8 @@ import logging
 from libmuscle import Instance, Message, USES_CHECKPOINT_API
 from ymmsl import Operator
 
+import pandas as pd
+
 
 def turbulence_model_selector():
     """
@@ -20,14 +22,21 @@ def turbulence_model_selector():
     
     print(f"> Initialised turbulence selector")
 
+    bool_call_sim = False
+
+    # Ordering of additional parameteres returned by surrogate component
     coretransp_uncertainty_dict = {
         'rel_ti_transp_flux_std': 0,
         'rel_te_transp_flux_std': 1,
     }
 
+    # Threshold for Coefficient of Variation of surrogate output
     ti_transp_flux_cov_reltol = 1e+0
 
-    bool_call_sim = False
+    # Reference training data CSV used to train surrogate
+    #ref_data_filename = 'ref_train_data.csv'
+    ref_data_filename = instance.get_setting('training_dataset_filename', 'str')
+    ref_data = pd.read_csv(ref_data_filename, sep=',')
 
     while instance.reuse_instance():
 
