@@ -153,6 +153,7 @@ def read_profs():
     if 'sur' in codename:
         ref_data_filename = 'ref_train_data.csv'
         ref_data = pd.read_csv(ref_data_filename, sep=',')
+        n_run_per_ft = 81
 
     lookup_names = {
         "ti_value": "$T_{{i}}$",
@@ -169,6 +170,8 @@ def read_profs():
 
     for cpo_name in cpo_names:
 
+        coord_num_fts = [14, 30, 43, 55, 66, 76, 85, 95]
+
         if cpo_name == 'coreprof':
 
             quantities = ['ti', 'te', 'ni', 'ne']
@@ -176,11 +179,12 @@ def read_profs():
             attributes = ['ddrho', 'value', ]
 
             #coord_num = [68]
-            #coord_num = [14, 30, 43, 55, 66, 76, 85, 95]
             coord_num = [x for x in range(0, 100, n_rho_resol)]
 
             #n_ft = 68
-            n_ft = coord_num[0]
+            #n_ft = coord_num[0]
+            n_ft_transp = 0
+            n_ft = coord_num_fts[n_ft_transp] # plot profiles for the innermost flux tube 
 
             i_q_s = [0, 1, 2, 3] # indiced of quantities to go through
             j_a_s = [0, 1] # indiced of attributes to go through
@@ -198,8 +202,8 @@ def read_profs():
                 coord_num = [0, 1, 2, 3, 4, 5, 6, 7]  # if n_fts==8
                 n_ft = coord_num[-1] #0 #4 # number of flux tube to plot for
 
-            i_q_s = [0, 1] # indiced of quantities to go through
-            j_a_s = [0, 1, 2] # indiced of attributes to go through
+            i_q_s = [0, 1] # indices of quantities to go through
+            j_a_s = [0, 1, 2] # indices of attributes to go through
 
         for i_q, j_a in product(i_q_s, j_a_s):
 
@@ -207,17 +211,14 @@ def read_profs():
             # TODO: read data for many folders
             # TODO: better, first read all data into a single data structure e.g. pandas dataframe, accessing each file onse; then plot 
             data_list = []
+            times_list = []
             for load_fold_name, date in zip(load_fold_names, dates):
                 data, times = read_files(
                     load_fold_name, quantities[i_q], attributes[j_a], coords=coord_num, filetype=cpo_name, date=date)
                 data_list.append(data)
+                times_list.append(times)
             data = np.concatenate(data_list, axis=0)
-
-            # coreetransp does not change timestamp correctly, so prefereably use transport (coreprof) time
-            if cpo_name == 'coreprof': 
-                times_coreprof = times
-            elif cpo_name == 'coretransp':
-                times = times_coreprof # does not track which coreprof exactly provides time
+            times = np.concatenate(times_list)
 
             data_file_name = save_fold_name+'res_'+codename+'_' + \
                 quantities[i_q]+'_'+attributes[j_a]+'_'+dates[0]+'_'+dates[-1]+'.csv'
@@ -228,6 +229,24 @@ def read_profs():
             n_timesteps = data.shape[0]
             #print(f"size of data and time readings is the same: {n_timesteps == times.shape[0]}") ###DEBUG
             n_rhos = data.shape[1]
+
+            # Coretransp does not change timestamp correctly, so prefereably use transport (coreprof) time
+            if cpo_name == 'coreprof': 
+                times_coreprof = times
+                n_timereadings = len(times_coreprof)
+            elif cpo_name == 'coretransp':
+                #times = times_coreprof # does not track which coreprof exactly provides time
+                #times = np.linspace(0, n_timesteps, n_timesteps) # last coretransp file is absent
+
+                # Coreprof and Coretransp readings are of different length, so either reduce or enlarge time reading array
+                #  here: extrapolate using the last delta-t
+                times = times_coreprof[:n_timesteps] if n_timesteps <= n_timereadings else \
+                    np.append(times_coreprof, np.arange( 2*times_coreprof[-1]- times_coreprof[-2], 
+                        times_coreprof[-1] + (times_coreprof[-1] - times_coreprof[-2]) 
+                         * (n_timesteps - n_timereadings + 1), times_coreprof[-1] - times_coreprof[-2] ))
+                
+            # Display the array of actual ETS time step lengths
+            print(f"> delta-t array for {quantities[i_q]+'_'+attributes[j_a]}: \n{times[1:]-times[:-1]}")
 
             color_list = ['b', 'g', 'r', 'y' , 'm', 'c', 'k']
             line_list = ['-', '--', '-.', ':']
@@ -252,11 +271,11 @@ def read_profs():
             
             if 'sur' in codename:
                 if quantities[i_q]+'_'+attributes[j_a] in ref_data.columns:
-                    min_val = ref_data[quantities[i_q]+'_'+attributes[j_a]].min()
-                    max_val = ref_data[quantities[i_q]+'_'+attributes[j_a]].max()
-                    ax.hlines(y=min_val, xmin=0, xmax=n_timesteps, color='r',
+                    min_val = ref_data[quantities[i_q]+'_'+attributes[j_a]].iloc[n_run_per_ft*(n_ft_transp):n_run_per_ft*(n_run_per_ft+1)].min()
+                    max_val = ref_data[quantities[i_q]+'_'+attributes[j_a]].iloc[n_run_per_ft*(n_ft_transp):n_run_per_ft*(n_run_per_ft+1)].max()
+                    ax.hlines(y=min_val, xmin=x_values[0], xmax=x_values[-1], color='r',
                             linestyle='--', label='bounds of the training dataset')
-                    ax.hlines(y=max_val, xmin=0, xmax=n_timesteps,
+                    ax.hlines(y=max_val, xmin=x_values[0], xmax=x_values[-1],
                             color='r', linestyle='--')
             
             ax.legend(loc='best')
