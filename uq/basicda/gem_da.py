@@ -823,6 +823,8 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnumstart=1, runnum=
     #print('and modified of len {1}: {0}'.format(runfolder_list_filtered, len(runfolder_list_filtered))) ###DEBUG
     #TODO: check the order of folders and the order of runs!
 
+    n_fts = 8
+
     code_names = ['gem',
 #                 'imp4dv',
            	 ]
@@ -1163,10 +1165,10 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnumstart=1, runnum=
                                  )
             """
 
-            print("-time to plot the MFW histograms only: {0} s".format(time.time()-time_start_tmp))            
-            val_mwf_mean = val_mwf_s[0].mean()
-            val_mwf_min = val_mwf_s[0].min()
-            val_mwf_max = val_mwf_s[0].max()
+            print("-time to plot the MFW histograms only: {0} s".format(time.time()-time_start_tmp))  
+            val_mwf_mean = [val_mwf_s[n_ft].mean() for n_ft in range(n_fts)]
+            val_mwf_min = [val_mwf_s[n_ft].min() for n_ft in range(n_fts)]
+            val_mwf_max = [val_mwf_s[n_ft].max() for n_ft in range(n_fts)]
 
             print("-time to compare with MFW production runs: {0} s".format(time.time()-time_start))
             # 4.4) Apply ARMA model
@@ -1235,7 +1237,7 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnumstart=1, runnum=
                 # For Pandas query: make sure input columns are floats
                 scan_df[param] = scan_df[param].astype('float')
 
-            compare_vals_mfw = (val_mwf_mean, val_mwf_min, val_mwf_max)
+            compare_vals_mfw = [(val_mwf_mean[n_ft], val_mwf_min[n_ft], val_mwf_max[n_ft]) for n_ft in range(n_fts)]
 
             print('plotting cuts starting')
             
@@ -1243,12 +1245,23 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnumstart=1, runnum=
             plot_response_cuts(scan_df, 
                                input_names=runs_input_names_new, 
                                output_names=[p+'_'+a],
-                               compare_vals=compare_vals_mfw, 
+                               compare_vals=compare_vals_mfw[0], 
                                foldname=p+'_'+a+'_'+mainfoldernum,
                                traces=val_ev_s, #val_wind_s,
                                hists=True,
                               )
             """
+            n_r_p_ft = n_runs // n_fts
+            for j in range(n_fts):
+                plot_response_cuts(scan_df.iloc[(j)*n_r_p_ft:(j+1)*n_r_p_ft], 
+                               input_names=runs_input_names_new, 
+                               output_names=[p+'_'+a],
+                               compare_vals=compare_vals_mfw[j], 
+                               foldname=p+'_'+a+'_'+mainfoldernum+'_'+str(j),
+                               #traces=val_ev_s[(j)*n_r_p_ft:(j+1)*n_r_p_ft], #val_wind_s,
+                               #hists=True,
+                              )
+
 
             #4.5.1c) Plotting time traces for one case with its AVG, STD, SEM
             #runn_loc = 6   

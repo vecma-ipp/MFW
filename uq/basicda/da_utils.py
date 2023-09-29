@@ -1142,6 +1142,11 @@ def plot_response_cuts(data, input_names, output_names, compare_vals=None, foldn
         qoi_std_name = qoi_name + '_std'
         qoi_stem_name= qoi_name + '_stem'
 
+        # Defining plotting limits in 0Y
+        y_max = data[qoi_name].max()
+        y_min = data[qoi_name].min()
+        y_lim = (y_min-0.1*abs(y_min), y_max+0.1*abs(y_max))
+
         #print([n_inputs, n_points, n_points_perdim, n_fixvals, n_plots, qoi_name]) ###DEBUG
         #print('n_inputs={0}, n_points={1}, n_ppdim={2}, n_fv={3}, n_pl={4}'.format(n_inputs, n_points, n_points_perdim, n_fixvals, n_plots)) ###DEBUG
         
@@ -1243,7 +1248,8 @@ def plot_response_cuts(data, input_names, output_names, compare_vals=None, foldn
                 ax[i_ip][j_fixval].set_title(r'{}'.format(fixed_ip_val_str), fontsize=10)
         
                 #ax[i_ip][j_fixval].set_ylim(1.5E+6, 3.8E+6) # TODO make limits variable
-                ax[i_ip][j_fixval].set_ylim(-5.E+5, 4.E+6)
+                #ax[i_ip][j_fixval].set_ylim(-5.E+5, 4.E+6)
+                ax[i_ip][j_fixval].set_ylim(*y_lim)
                 #ax[i_ip][j_fixval].legend(loc='best') 
 
                 #Do the same for a combined plot
@@ -1291,7 +1297,7 @@ def plot_response_cuts(data, input_names, output_names, compare_vals=None, foldn
                         ax_tr[i_ip][j_fixval].set_ylabel(r'{0}'.format(qoi_name))
                         ax_tr[i_ip][j_fixval].set_title(r'{0}'.format(fixed_ip_val_str), fontsize=12)
                         
-                        ax_tr[i_ip][j_fixval].set_ylim(-5.E+5, 4.E+6)
+                        ax_tr[i_ip][j_fixval].set_ylim(*y_lim) #(-5.E+5, 4.E+6)
                         ax_tr[i_ip][j_fixval].legend(loc='best', prop={'size':12})
 
                         if hists is not None:
@@ -1315,7 +1321,7 @@ def plot_response_cuts(data, input_names, output_names, compare_vals=None, foldn
             ax_loc.set_xlabel(r'{}'.format(running_ip_name))
             ax_loc.set_ylabel(r'{}'.format(qoi_name))
             ax_loc.set_title(r'Scans for {0}'.format(running_ip_name))
-            ax_loc.set_ylim(-1.E+5, 4.E+6)
+            ax_loc.set_ylim(*y_lim) #(-1.E+5, 4.E+6)
             box_loc = ax_loc.get_position()
             ax_loc.set_position([box_loc.x0, box_loc.y0, box_loc.width*0.6, box_loc.height])
             ax_loc.legend(loc='center left',prop={'size':7},bbox_to_anchor=(1,0.5)) #TEMP -probably an overload for a poster
