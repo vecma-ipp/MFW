@@ -125,9 +125,12 @@ def read_equil(foldernames):
 
 def read_profs():
 
+    prefix_name = 'workflow/run_fusion_'
+    sufix_name = '/instances/transport/workdir/'
+
     if len(sys.argv) < 2 :
         #codename = 'gem_surr'
-        codename = 'gem'
+        codename = 'gem_'
     else:
         codename = str(sys.argv[1])
 
@@ -136,10 +139,10 @@ def read_profs():
     else:
         dates = sys.argv[2:]
 
-    load_fold_names = ['workflow/run_fusion_'+codename + \
-        '_'+date+'/instances/transport/workdir/' for date in dates]
+    load_fold_names = [prefix_name + codename + \
+            date + sufix_name for date in dates]
 
-    save_fold_name = 'workflow/run_fusion_'+codename+'_'+dates[0]+'_'+dates[-1]+'/'
+    save_fold_name = prefix_name + codename+'_'+dates[0]+'_'+dates[-1]+'/'
 
     if not os.path.exists(save_fold_name):
         os.makedirs(save_fold_name)
@@ -317,4 +320,6 @@ if __name__ == '__main__':
     dates = read_profs()
 
     #dates = ['20230818_135913', '20230821_161005', '20230822_150943', '20230823_151955', '20230824', '20230825', '20230828', '20230829', '20230830', '20230831', '20230901']
+    #dates = ['20230918', '20230922']
+    
     #read_equil(dates)
