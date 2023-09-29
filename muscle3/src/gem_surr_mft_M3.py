@@ -7,8 +7,6 @@ from libmuscle import Instance, Message, USES_CHECKPOINT_API
 from ymmsl import Operator
 
 from ascii_cpo import read, read_fstream, write, write_fstream
-import ual
-import base
 
 from ctypes import c_char, string_at
 import io, sys, copy
@@ -17,104 +15,7 @@ import easysurrogate as es
 
 from time import time as t
 
-def coreprof_to_input_value(
-            data, 
-            rho_ind_s, 
-            prof_names=['te', 'ti'], 
-            attrib_names=['value', 'ddrho'],
-                     ):
-    """
-    Transforms coreprof message data into values acceptable by a surrogate model as an input
-    TODO: look up EasyVVUQ cpo element for coreprof
-    TODO: check that all input values are filled with defaults
-    TODO: check if there is an implementation in utils
-    """
-
-    n = len(prof_names)
-    m = len(attrib_names)
-    d = len(rho_ind_s)
-
-    prof_vals = np.zeros((n*m, d))
-    print(f"Entering a function to parse CPO into surrogate input")
-
-    for i, prof_name in enumerate(prof_names):
-
-        prof = getattr(data, prof_name)
-
-        for j, attrib_name in enumerate(attrib_names):
-
-            for r, rho_ind in enumerate(rho_ind_s):
-
-                val_readings = getattr(prof, attrib_name)
-
-                if prof_name[1] == 'i':
-                    # Here: ion profiles are 1D (no species dimension) ...
-                    #val_readings = val_readings[0]
-                    pass
-
-                elif prof_name[1] == 'e':
-                    pass
-                
-                else:
-                    print('Error: Attributes have to belong either to ions or to electrons')
-
-                val_reading = val_readings[rho_ind]
-
-                prof_vals[i*m+j][r] = val_reading
-
-    return prof_vals
-
-def output_value_to_coretransp(
-            fluxes_out, 
-            coretransp_file, 
-            r_s = [0],
-            ion = 0,
-            prof_names=['te_transp', 'ti_transp',], #TODO: double check CPO format
-            attributes=['flux',]
-                              ):
-    """
-    Transforms flux mean values infered by model into a CPO coretransp datastracture
-    """
-    
-    # Casting array elements to strings
-    #fluxes_out_str = {k:np.array([str(v) for v in vs]) for k,vs in fluxes_out.items()}
-    #fluxes_out_str = {k:np.array(['  '+str(v)+'E+00' for v in vs]) for k,vs in fluxes_out.items()} # now assumes that value fits to a zero exponent
-    #print(f"> fluxes_out: {fluxes_out}") ###DEBUG
-
-    coretransp_datastructure = read(coretransp_file, 'coretransp')
-
-    if len(coretransp_datastructure.values[0].ti_transp.flux) != len(r_s):
-        coretransp_datastructure.values[0].ti_transp.flux = np.zeros((1, len(r_s)))
-
-    if len(coretransp_datastructure.values[0].te_transp.flux) != len(r_s):
-        coretransp_datastructure.values[0].te_transp.flux = np.zeros((len(r_s)))                        
-
-    # NB: when this is commented out and will not change the coretransp passed
-    for prof_name in prof_names:
-
-        for attribute in attributes:
-
-            for r in r_s:
-
-                if attribute == 'flux':
-
-                    if prof_name == 'ti_transp':
-                                               
-                        #coretransp_datastructure.values[0].ti_transp.flux = np.zeros((1, len(r_s)))
-                        coretransp_datastructure.values[0].ti_transp.flux[r, 0] = fluxes_out[prof_name+'_'+attribute][r]
-                    
-                    elif prof_name == 'te_transp':
-           
-                        #coretransp_datastructure.values[0].te_transp.flux = np.zeros((len(r_s)))                       
-                        coretransp_datastructure.values[0].te_transp.flux[r] = fluxes_out[prof_name+'_'+attribute][r]
-                                
-                    else:
-                        print('Error: currently only temperatures for two species are supported')
-                
-                else:
-                    print('Erorr: currently only models infering fluxes are supported')
-
-    return coretransp_datastructure
+from utils import coreprof_to_input_value, output_value_to_coretransp, training_data_bounds, check_outof_learned_bounds
 
 def gem_surr_M3():
     """
@@ -132,6 +33,12 @@ def gem_surr_M3():
                        )
     
     print(f"> Initialised turbulence instance") #DEBUG
+
+    # Reference training data CSV used to train surrogate
+    #ref_data_filename = 'ref_train_data.csv'
+    ref_data_filename = instance.get_setting('training_dataset_filename', 'str')
+    ref_data = pd.read_csv(ref_data_filename, sep=',')
+    ref_bounds = training_data_bounds(ref_data)
 
     while instance.reuse_instance():
         # when is the instance constructed and destructed?
@@ -174,7 +81,7 @@ def gem_surr_M3():
         output_names = ['te_transp_flux', 'ti_transp_flux']
         #output_names = ['ti_transp_flux']
 
-        input_names_ind_permut = [0,2,1,3]
+        input_names_ind_permut = [0,2,1,3] # permuation of input names relative to one used in EasySurrogate
 
         # Get a message form equilibrium code: NOT USED HERE!
         msg_in_eq = instance.receive('equilibrium_in')
@@ -221,7 +128,11 @@ def gem_surr_M3():
         #   NB!: Iterate over models and save result into a commod data structure
         fluxes_out     = np.zeros((n_fts, len(output_names)))
         fluxes_out_std = np.zeros((n_fts, len(output_names)))
+
+        # Check if input values are within learned bounds
+        bool_outofbounds = check_outof_learned_bounds(profiles_in, ref_bounds)
         
+        # Infere QoI values for every flux tube
         for n_ft, r in enumerate(rho_ind_s):
             f_o, f_o_std = mods[n_ft].predict(profiles_in[:,n_ft].reshape(-1,1))
             fluxes_out[n_ft,:] = f_o.reshape(-1)
@@ -258,7 +169,8 @@ def gem_surr_M3():
         # Writing uncertainty information
         te_transp_flux_cov = fluxes_out_std[0,0] / fluxes_out[0,0]
         ti_transp_flux_cov = fluxes_out_std[0,1] / fluxes_out[0,1]
-        coretransp_uncertainty = np.array([ti_transp_flux_cov, te_transp_flux_cov])
+        coretransp_uncertainty = [ti_transp_flux_cov, te_transp_flux_cov, bool_outofbounds]
+        coretransp_uncertainty = np.array(coretransp_uncertainty)
 
         # Sending a coretransp message
         print('> Gettting ready an outcoming core transp')

@@ -3,7 +3,7 @@ from libmuscle import Instance, Message, USES_CHECKPOINT_API
 from ymmsl import Operator
 
 import pandas as pd
-
+import numpy as np
 
 def turbulence_model_selector():
     """
@@ -28,15 +28,11 @@ def turbulence_model_selector():
     coretransp_uncertainty_dict = {
         'rel_ti_transp_flux_std': 0,
         'rel_te_transp_flux_std': 1,
+        'bool_outofbounds':       3,
     }
 
     # Threshold for Coefficient of Variation of surrogate output
     ti_transp_flux_cov_reltol = 1e+0
-
-    # Reference training data CSV used to train surrogate
-    #ref_data_filename = 'ref_train_data.csv'
-    ref_data_filename = instance.get_setting('training_dataset_filename', 'str')
-    ref_data = pd.read_csv(ref_data_filename, sep=',')
 
     while instance.reuse_instance():
 
@@ -82,17 +78,23 @@ def turbulence_model_selector():
 
         coretransp_uncertainty = msg_in_coretransp_uncertainty.data.array.copy()
 
-        # 3. Criterion: check if uncertainties exceed threshold
+        # 3. Criterion to run simulation
 
+        # Check if uncertainties exceed threshold
         ti_transp_flux_cov = coretransp_uncertainty[coretransp_uncertainty_dict['rel_ti_transp_flux_std']]
-        print(f"< Coefficient of variation against {ti_transp_flux_cov_reltol} is: {ti_transp_flux_cov:.3f}") ###DEBUG
-
-        # NB: stab to check two implementations, just alternate between implementations
+        print(f"> Coefficient of Variation against {ti_transp_flux_cov_reltol} is: {ti_transp_flux_cov:.3f}") ###DEBUG
 
         if ti_transp_flux_cov > ti_transp_flux_cov_reltol:
             bool_call_sim = True
         
-        #bool_call_sim = not bool_call_sim 
+        #bool_call_sim = not bool_call_sim # stab to simply alternate between two implementations
+
+        # Check if input values are within learned bounds
+        bool_outofbounds = coretransp_uncertainty['bool_outofbounds']
+       
+        if bool_outofbounds:
+            bool_call_sim = True
+            print(f"> Attention: the input profiles are outside of the support of the surrogate!")
 
         # 4. If the criterion is satisfied, pass coreprofile and equilibrium to simulation implementation, 
         #           then get back the coretransp
