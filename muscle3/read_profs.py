@@ -44,9 +44,9 @@ def read_time(filename, filetype='coreprof'):
 
     return t
 
-def read_files(foldername, quantity, attribute, coords, filetype='coreprof', date=''):
+def read_files(foldername, quantity, attribute, coords, filetype='coreprof', date='', basename=''):
 
-    file_base_tocheck = filetype+'_'
+    file_base_tocheck = basename+filetype+'_'
     file_ext = '.cpo'
 
     """
@@ -123,32 +123,16 @@ def read_equil(foldernames):
     fig.savefig(foldername[0]+'_equilibrium.pdf')
     plt.close()
 
-def read_profs():
-
-    prefix_name = 'workflow/run_fusion_'
-    sufix_name = '/instances/transport/workdir/'
-
-    if len(sys.argv) < 2 :
-        #codename = 'gem_surr'
-        codename = 'gem_'
-    else:
-        codename = str(sys.argv[1])
-
-    if len(sys.argv) < 3 :
-        dates = ['20230823_151955']
-    else:
-        dates = sys.argv[2:]
+def read_profs(codename='gem_', dates=['20230823_151955'], prefix_name='workflow/run_fusion_', sufix_name='/instances/transport/workdir/', cpo_filebase='', cpo_names = ['coreprof', 'coretransp']):
 
     load_fold_names = [prefix_name + codename + \
             date + sufix_name for date in dates]
 
-    save_fold_name = prefix_name + codename+'_'+dates[0]+'_'+dates[-1]+'/'
+    save_fold_name = prefix_name+codename+'_'+dates[0]+'_'+dates[-1]+'/'
 
     if not os.path.exists(save_fold_name):
         os.makedirs(save_fold_name)
     
-    #n_run = 10
-    #runnum_list = [r for r in range (n_run)]
     n_rho_resol = 1
 
     # Load reference data for the surrogate training data set
@@ -167,7 +151,7 @@ def read_profs():
         'ti_transp.flux': "$Q_{{i}}$",
     }
 
-    cpo_names = ['coreprof', 'coretransp']
+    #cpo_names = ['coreprof', 'coretransp']
 
     times_coreprof = []
 
@@ -217,7 +201,7 @@ def read_profs():
             times_list = []
             for load_fold_name, date in zip(load_fold_names, dates):
                 data, times = read_files(
-                    load_fold_name, quantities[i_q], attributes[j_a], coords=coord_num, filetype=cpo_name, date=date)
+                    load_fold_name, quantities[i_q], attributes[j_a], coords=coord_num, filetype=cpo_name, date=date, basename=cpo_filebase)
                 data_list.append(data)
                 times_list.append(times)
             data = np.concatenate(data_list, axis=0)
@@ -239,14 +223,17 @@ def read_profs():
                 n_timereadings = len(times_coreprof)
             elif cpo_name == 'coretransp':
                 #times = times_coreprof # does not track which coreprof exactly provides time
-                #times = np.linspace(0, n_timesteps, n_timesteps) # last coretransp file is absent
+                #times = np.linspace(0, n_timesteps, n_timesteps) # last coretransp file is absent (?)
 
                 # Coreprof and Coretransp readings are of different length, so either reduce or enlarge time reading array
                 #  here: extrapolate using the last delta-t
-                times = times_coreprof[:n_timesteps] if n_timesteps <= n_timereadings else \
-                    np.append(times_coreprof, np.arange( 2*times_coreprof[-1]- times_coreprof[-2], 
-                        times_coreprof[-1] + (times_coreprof[-1] - times_coreprof[-2]) 
-                         * (n_timesteps - n_timereadings + 1), times_coreprof[-1] - times_coreprof[-2] ))
+                if len(times_coreprof) > 1 :
+                    times = times_coreprof[:n_timesteps] if n_timesteps <= n_timereadings else \
+                        np.append(times_coreprof, np.arange( 2*times_coreprof[-1]- times_coreprof[-2], 
+                            times_coreprof[-1] + (times_coreprof[-1] - times_coreprof[-2]) 
+                            * (n_timesteps - n_timereadings + 1), times_coreprof[-1] - times_coreprof[-2] ))
+                else:
+                    times = np.linspace(0, n_timesteps, n_timesteps)
                 
             # Display the array of actual ETS time step lengths
             print(f"> delta-t array for {quantities[i_q]+'_'+attributes[j_a]}: \n{times[1:]-times[:-1]}")
@@ -316,10 +303,25 @@ def read_profs():
     return dates
 
 if __name__ == '__main__':
+
+    if len(sys.argv) < 2 :
+        #codename = 'gem_surr'
+        codename = 'gem_'
+    else:
+        codename = str(sys.argv[1])
+
+    if len(sys.argv) < 3 :
+        dates = ['20230823_151955']
+    else:
+        dates = sys.argv[2:]
     
-    dates = read_profs()
+    #dates = read_profs(codename, dates) # to read results of M3-WF run
+    dates = read_profs(codename='', dates=['20230928', '20230929', '20231004'], prefix_name='../standalone/bin/gem_develop_turbulence/', sufix_name='/', cpo_filebase='gem_', cpo_names=['coretransp']) # to read from stanalone runs
+
 
     #dates = ['20230818_135913', '20230821_161005', '20230822_150943', '20230823_151955', '20230824', '20230825', '20230828', '20230829', '20230830', '20230831', '20230901']
     #dates = ['20230918', '20230922']
     
     #read_equil(dates)
+
+
