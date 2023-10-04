@@ -1258,7 +1258,7 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnumstart=1, runnum=
                                output_names=[p+'_'+a],
                                compare_vals=compare_vals_mfw[j], 
                                foldname=p+'_'+a+'_'+mainfoldernum+'_'+str(j),
-                               #traces=val_ev_s[(j)*n_r_p_ft:(j+1)*n_r_p_ft], #val_wind_s,
+                               traces=val_ev_s[(j)*n_r_p_ft:(j+1)*n_r_p_ft], #val_wind_s,
                                #hists=True,
                               )
 

@@ -1280,6 +1280,8 @@ def plot_response_cuts(data, input_names, output_names, compare_vals=None, foldn
                      
                     for k in inds:
 
+                        print(f"> len of traces list={len(traces)}, k={k}") ###DEBUG
+                        
                         n_cur = len(traces[k][0])
 
                         x_io_val = data[running_ip_name].iloc[k]
@@ -1326,7 +1328,7 @@ def plot_response_cuts(data, input_names, output_names, compare_vals=None, foldn
             ax_loc.set_position([box_loc.x0, box_loc.y0, box_loc.width*0.6, box_loc.height])
             ax_loc.legend(loc='center left',prop={'size':7},bbox_to_anchor=(1,0.5)) #TEMP -probably an overload for a poster
             #fig_loc.tight_layout()
-            fig_loc.savefig('scan_comb_{0}_{1}.svg'.format(running_ip_name, foldname))
+            fig_loc.savefig('scan_comb_{0}_{1}.pdf'.format(running_ip_name, foldname))
         
         fig.tight_layout()
         #fig.suptitle('GEM response in {} around profile values'.format(qoi_name)) #TODO: pass names as arguments    
