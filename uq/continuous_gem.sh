@@ -9,7 +9,7 @@
 # nohup ./continuous_gem.sh 2  w468l7ng 1> script_wf_06122022.log 2>&1 &
 # nohup ./continuous_gem.sh 1  rp1pw2y6 1> script_wf_05122022.log 2>&1 &
 # nohup ./continuous_gem.sh 1  1f3hw2ikn 1> script_wf_13122022.log 2>&1 &
-# nohup ./continuous_gem.sh 25  csldvnei 1> script_wf_20230927.log 2>&1 &
+# nohup ./continuous_gem.sh 25  csldvnei 1> script_wf_20230928.log 2>&1 &
 
 #0. State the total number of campaigns to run, and ordinal number of the last campaign in previous sequence
 echo "STARTING THE WORKFLOW"
@@ -26,7 +26,7 @@ LASTRUN=$((${CURRUN}+${NUMRUNS}))
 NUM_FT=8
 POLORDER=2
 INPUT_DIM=4
-#ATTENTION: arbitrary param to set number of core instances - see if needed here e.g. for a bathc of AL samples
+#ATTENTION: arbitrary param to set number of core instances - see if needed here e.g. for a batch of AL samples
 #NUM_CODE_INSTS=6
 
 # batch script to submit a single UQ campaign
@@ -79,15 +79,16 @@ then
   # 0.0. Backing up snapshot files from the last runs
   echo "Backing up existing campaign files"
 
-  BCKP_FILES=('gem_coretransp*.cpo' '*.dat' 'fout_0*' 'stopped')
+  BCKP_FILES=('gem_coretransp*.cpo' 't*.dat' 'h*.dat' 'd*.dat' 'fout_0*' 'stopped')
 
   TMP=${RANDOM}
+  BCKP_NAME=${TMP}_$(date +"%Y%m%d")
   #RUNPATHSHORT=runs/runs_0-100000000/runs_0-1000000/runs_0-10000/runs_0-100
   RUNPATHSHORT=runs/
   RUNPATHTOP=runs_0-100000000/
 
   #mkdir ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/${RUNPATHSHORT}/bckp/
-  mkdir -p ${SCRATCH}/${CAMP_NAME_PREFIX}${ROOTCAMPDIR}/${RUNPATHSHORT}/bckp/${TMP}
+  mkdir -p ${SCRATCH}/${CAMP_NAME_PREFIX}${ROOTCAMPDIR}/${RUNPATHSHORT}/bckp/${BCKP_NAME}
 
   cd ${SCRATCH}/${CAMP_NAME_PREFIX}${ROOTCAMPDIR}/${RUNPATHSHORT}/
 
@@ -118,7 +119,8 @@ then
   for r in $(find ${RUNPATHTOP} -maxdepth 4 -mindepth 4 -type d -name "run_*" | sed "s|^\.\/||"); do 
 
     #cp ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/${RUNPATHSHORT}/dat/${CURRUN}/run_${r}/*.dat ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/${RUNPATHSHORT}/run_${r}/
-    cp dat/${CURRUN}/${r}/*.dat ${r}/
+    cp dat/${CURRUN}/${r}/t*.dat ${r}/
+    cp dat/${CURRUN}/${r}/h*.dat ${r}/
 
     #cp ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/${RUNPATHSHORT}/dat/${CURRUN}/run_${r}/fout_0* ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/${RUNPATHSHORT}/run_${r}/
     cp dat/${CURRUN}/${r}/fout_0* ${r}/

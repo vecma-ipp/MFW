@@ -85,7 +85,9 @@ if [ "${RUN_WITH_CP}" -eq 1 ]; then
       cp ${r}/gem_coretransp*.cpo cpo/${CPONUM}/${r}/
 
       mkdir -p dat/${CPONUM}/${r}
-      cp ${r}/*.dat dat/${CPONUM}/${r}/
+      cp ${r}/t*.dat dat/${CPONUM}/${r}/
+      cp ${r}/h*.dat dat/${CPONUM}/${r}/
+      cp ${r}/d*.dat dat/${CPONUM}/${r}/
       cp ${r}/fout_* dat/${CPONUM}/${r}/
       cp ${r}/stopped dat/${CPONUM}/${r}/
 
