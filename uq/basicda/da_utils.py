@@ -1172,6 +1172,7 @@ def plot_response_cuts(data, input_names, output_names, compare_vals=None, foldn
                                 figsize=(100, 20)
                                         )
 
+        #print(f"Indices in this pandas dataframe: {data.index.to_list()}") ###DEBUG
         # Iterate over all the input dimensions, selecting single one as a running variable
         for i_ip in range(n_inputs):
 
@@ -1280,17 +1281,17 @@ def plot_response_cuts(data, input_names, output_names, compare_vals=None, foldn
                      
                     for k in inds:
 
-                        print(f"> len of traces list={len(traces)}, k={k}") ###DEBUG
+                        #print(f"> len of traces list={len(traces)}, index k={k} out of {inds}") ###DEBUG
                         
-                        n_cur = len(traces[k][0])
+                        n_cur = len(traces[k%n_points][0]) # n_points due to pandas numeration going concecutevely for all flux tubes
 
-                        x_io_val = data[running_ip_name].iloc[k]
+                        x_io_val = data[running_ip_name].iloc[k%n_points]
                         x_io_val_str = '{0}={1}'.format(running_ip_name, x_io_val)
 
                         #print('trace passed to cut plot: {0}'.format(traces[k][:])) ###DEBUG
                         #print('traces have len= {0}'.format(n_cur)) ###DEBUG
 
-                        ax_tr[i_ip][j_fixval].plot(np.arange(n_cur), traces[k][0][:],
+                        ax_tr[i_ip][j_fixval].plot(np.arange(n_cur), traces[k%n_points][0][:],
                                                    #label='time trace for ({})->({}) for {}'.format(running_ip_name, qoi_name, fixed_ip_val_str),
                                                    label=r'{}'.format(x_io_val_str),
                                                   )
@@ -1304,7 +1305,7 @@ def plot_response_cuts(data, input_names, output_names, compare_vals=None, foldn
 
                         if hists is not None:
                             
-                            ax_hs[i_ip][j_fixval].hist(traces[k][0][:],
+                            ax_hs[i_ip][j_fixval].hist(traces[k%n_points][0][:],
                                                        bins=n//64,
                                                        label=r'{}'.format(x_io_val_str),
                                                        alpha=0.75,
