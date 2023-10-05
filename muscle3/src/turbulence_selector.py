@@ -28,7 +28,7 @@ def turbulence_model_selector():
     coretransp_uncertainty_dict = {
         'rel_ti_transp_flux_std': 0,
         'rel_te_transp_flux_std': 1,
-        'bool_outofbounds':       3,
+        'bool_outofbounds':       2,
     }
 
     # Threshold for Coefficient of Variation of surrogate output
@@ -90,7 +90,7 @@ def turbulence_model_selector():
         #bool_call_sim = not bool_call_sim # stab to simply alternate between two implementations
 
         # Check if input values are within learned bounds
-        bool_outofbounds = coretransp_uncertainty['bool_outofbounds']
+        bool_outofbounds = coretransp_uncertainty[coretransp_uncertainty_dict['bool_outofbounds']]
        
         if bool_outofbounds:
             bool_call_sim = True

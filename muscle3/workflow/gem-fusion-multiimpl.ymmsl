@@ -202,7 +202,7 @@ settings:
   turbulence_sur.profs_out: "ti_transp.flux"
   turbulence_sur.surrogate_path: "../../../../../../workflows/gem_es_model"
   turbulence_sur.cortransp_default: "../../../../../../workflows/gem_coretransp_8ft.cpo"
-  turbulence_sur.training_dataset_filename: "../../../../ref_train_data.csv"
+  turbulence_sur.training_dataset_filename: "../../../../../ref_train_data.csv"
 
 
 #checkpoints:

@@ -6,10 +6,10 @@ import logging
 from libmuscle import Instance, Message, USES_CHECKPOINT_API
 from ymmsl import Operator
 
-from ascii_cpo import read, read_fstream, write, write_fstream
+from ascii_cpo import read, write_fstream, read_fstream, write
 
-from ctypes import c_char, string_at
-import io, sys, copy
+#from ctypes import c_char, string_at
+import io
 
 import easysurrogate as es
 

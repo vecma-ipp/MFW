@@ -4,6 +4,8 @@ import numpy as np
 import ual
 import base
 
+from ascii_cpo import read, write_fstream, read_fstream, write
+
 def training_data_bounds(ref_data, input_names=['te_value', 'ti_value', 'te_ddrho', 'ti_ddrho'], n_fts=8, n_run_per_ft=81):
     """
     Produces a dictionary for training parameters, 
