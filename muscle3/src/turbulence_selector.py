@@ -24,6 +24,8 @@ def turbulence_model_selector():
 
     bool_call_sim = False
 
+    COV_CRITERION = False
+
     # Ordering of additional parameteres returned by surrogate component
     coretransp_uncertainty_dict = {
         'rel_ti_transp_flux_std': 0,
@@ -50,6 +52,7 @@ def turbulence_model_selector():
         # num_it = msg_in_coreprof.timestamp + 1
         # Read timestamp
         num_it = msg_in_coreprof.timestamp
+        print(f"> Iteration for time: {num_it}")
 
         # Get profile and equilibrium byte array data from the messages
         equilibrium_in_data_bytes = msg_in_equilibrium.data
@@ -84,7 +87,7 @@ def turbulence_model_selector():
         ti_transp_flux_cov = coretransp_uncertainty[coretransp_uncertainty_dict['rel_ti_transp_flux_std']]
         print(f"> Coefficient of Variation against {ti_transp_flux_cov_reltol} is: {ti_transp_flux_cov:.3f}") ###DEBUG
 
-        if ti_transp_flux_cov > ti_transp_flux_cov_reltol:
+        if ti_transp_flux_cov > ti_transp_flux_cov_reltol and COV_CRITERION:
             bool_call_sim = True
         
         #bool_call_sim = not bool_call_sim # stab to simply alternate between two implementations
