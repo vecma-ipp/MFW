@@ -1124,10 +1124,12 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnumstart=1, runnum=
             # 4.3.2) Plotting single plot with histograms including data from MFW production runs
             time_start = time.time()
 
-            mfw_input_names = ['dTi', 'dTe', 'Ti', 'Te']
+            #mfw_input_names = ['dTi', 'dTe', 'Ti', 'Te']
 
             mfw_data_file = 'AUG_mix-lim_gem_inoutput.txt' # 'AUG_gem_inoutput.txt'
             mfw_ft_s = [1,2,3,4,5,6,7,8] #[5, 6, 7]
+
+            #TODO: make val_mwf reading from MUSCLE3 implementation (CSV files after read_prof.py)
 
             val_mwf = pd.read_table('../data/'+mfw_data_file, delimiter='  *', engine='python') 
             print("-time to load MFW data and set-up stuff: {0} s".format(time.time()-time_start))
@@ -1145,7 +1147,7 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnumstart=1, runnum=
                 #Fall-back option
                 val_mwf_s = [val_mwf['cp-flux-Ti-ft'+str(mfw_ft)].to_numpy().reshape(1,-1) for mfw_ft in mfw_ft_s]
 
-            mfw_input_refval_s = [[val_mwf[input_name+'-ft'+str(mfw_ft)].mean() for mfw_ft in mfw_ft_s] for input_name in mfw_input_names]
+            #mfw_input_refval_s = [[val_mwf[input_name+'-ft'+str(mfw_ft)].mean() for mfw_ft in mfw_ft_s] for input_name in mfw_input_names]
             print("-time to select right columns: {0} s".format(time.time()-time_start_tmp))
             time_start_tmp = time.time()
             
