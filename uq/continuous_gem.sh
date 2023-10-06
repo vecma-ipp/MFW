@@ -98,20 +98,20 @@ then
   for r in $(find ${RUNPATHTOP} -maxdepth 4 -mindepth 4 -type d -name "run_*" | sed "s|^\.\/||"); do 
 
     #mkdir ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/${RUNPATHSHORT}/bckp/${TMP}/run_${r}/
-    mkdir -p bckp/${TMP}/${r}/
+    mkdir -p bckp/${BCKP_NAME}/${r}/
 
     for bckp_f in ${BCKP_FILES[@]} ; do 
 
       #cp ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/${RUNPATHSHORT}/run_${r}/${bckp_f} ${SCRATCH}/VARY_1FT_GEM_NT_${ROOTCAMPDIR}/${RUNPATHSHORT}/bckp/${TMP}/run_${r}/
       
       #echo ${r}/${bckp_f}
-      cp ${r}/${bckp_f} bckp/${TMP}/${r}/
+      cp ${r}/${bckp_f} bckp/${BCKP_NAME}/${r}/
 
     done
 
   done
 
-  cp ${SCRATCH}/${CAMP_NAME_PREFIX}${ROOTCAMPDIR}/campaign.db bckp/${TMP}/
+  cp ${SCRATCH}/${CAMP_NAME_PREFIX}${ROOTCAMPDIR}/campaign.db bckp/${BCKP_NAME}/
 
   # 0.1. Restoring snapshot files to the state of desired last completed run
   #TODO in some cases, when nothing failed during last submission, restoring is not needed
