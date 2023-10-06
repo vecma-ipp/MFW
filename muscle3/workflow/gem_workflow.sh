@@ -58,4 +58,4 @@ wait
 
 # Make plots for the evolution of core profiles
 cd ..
-python read_profs.py gem ${currdate}
+python read_profs.py gem_ ${currdate}
