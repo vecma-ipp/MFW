@@ -191,7 +191,7 @@ implementations:
   
 settings:
   transport.duration: 2.0
-  transport.dt: 0.01
+  transport.dt: 0.00125
   init_cpo_dir: "../../../../../../workflows/AUG_28906_6"
   final_cpo_dir: "./"
   muscle_remote_log_level: "DEBUG"  

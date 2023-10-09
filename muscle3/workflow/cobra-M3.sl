@@ -49,5 +49,5 @@ echo "STARTING MUSCLE3 FROM $PWD"
 #./gem0_workflow.sh	# gem0 workflow (no MPI)
 
 # NB: CURRENTLY RUNNING A MULTIPLE IMPLEMENTATION VERSION OF THE WORKFLOW
-MUSCLE3_HOME=/u/yyudin/muscle3 ./gem_workflow.sh
-#MUSCLE3_HOME=/u/yyudin/muscle3 ./gem_multiimpl_workflow.sh
+#MUSCLE3_HOME=/u/yyudin/muscle3 ./gem_workflow.sh
+MUSCLE3_HOME=/u/yyudin/muscle3 ./gem_multiimpl_workflow.sh
