@@ -1124,9 +1124,8 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnumstart=1, runnum=
             # 4.3.2) Plotting single plot with histograms including data from MFW production runs
             time_start = time.time()
 
-            #mfw_input_names = ['dTi', 'dTe', 'Ti', 'Te']
-
             mfw_data_file = 'AUG_mix-lim_gem_inoutput.txt' # 'AUG_gem_inoutput.txt'
+            mfw_data_file = 'AUG_gem_adtst_YY.txt'
             mfw_ft_s = [1,2,3,4,5,6,7,8] #[5, 6, 7]
 
             #TODO: make val_mwf reading from MUSCLE3 implementation (CSV files after read_prof.py)
@@ -1136,18 +1135,22 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnumstart=1, runnum=
             time_start_tmp = time.time()
             
             if   p+'_'+a == 'ti_transp':
-                val_mwf_s = [val_mwf['cp-flux-Ti-ft'+str(mfw_ft)].to_numpy().reshape(1,-1) for mfw_ft in mfw_ft_s]
+                val_mwf_s = [val_mwf['flux-Ti-ft'+str(mfw_ft)].to_numpy().reshape(1,-1) for mfw_ft in mfw_ft_s]
             elif p+'_'+a == 'te_transp':
-                val_mwf_s = [val_mwf['cp-flux-Te-ft'+str(mfw_ft)].to_numpy().reshape(1,-1) for mfw_ft in mfw_ft_s]
+                val_mwf_s = [val_mwf['flux-Te-ft'+str(mfw_ft)].to_numpy().reshape(1,-1) for mfw_ft in mfw_ft_s]
             elif p+'_'+a == 'ni_transp':
-                val_mwf_s = [val_mwf['cp-flux-ni-ft'+str(mfw_ft)].to_numpy().reshape(1,-1) for mfw_ft in mfw_ft_s]
+                val_mwf_s = [val_mwf['flux-ni-ft'+str(mfw_ft)].to_numpy().reshape(1,-1) for mfw_ft in mfw_ft_s]
             elif p+'_'+a == 'ne_transp':
-                val_mwf_s = [val_mwf['cp-flux-ne-ft'+str(mfw_ft)].to_numpy().reshape(1,-1) for mfw_ft in mfw_ft_s]
+                val_mwf_s = [val_mwf['flux-ne-ft'+str(mfw_ft)].to_numpy().reshape(1,-1) for mfw_ft in mfw_ft_s]
             else:
                 #Fall-back option
-                val_mwf_s = [val_mwf['cp-flux-Ti-ft'+str(mfw_ft)].to_numpy().reshape(1,-1) for mfw_ft in mfw_ft_s]
+                val_mwf_s = [val_mwf['flux-Ti-ft'+str(mfw_ft)].to_numpy().reshape(1,-1) for mfw_ft in mfw_ft_s]
 
-            #mfw_input_refval_s = [[val_mwf[input_name+'-ft'+str(mfw_ft)].mean() for mfw_ft in mfw_ft_s] for input_name in mfw_input_names]
+            # Read the reference values for inputs
+            mwf_input_names = ['Te-ft', 'Ti-ft', 'dTe-ft', 'dTi-ft'] # here we do not the order of inputs explicetely 
+            val_mwf_input_s = [val_mwf[input_name+str(mfw_ft)].to_numpy().reshape(1,-1) for (input_name,mfw_ft) in itertools.product(mwf_input_names, mfw_ft_s)]
+
+            #mfw_input_refval_s = [[val_mwf[input_name+'-ft'+str(mfw_ft)].mean() for mfw_ft in mfw_ft_s] for input_name in mwf_input_names]
             print("-time to select right columns: {0} s".format(time.time()-time_start_tmp))
             time_start_tmp = time.time()
             
@@ -1171,6 +1174,10 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnumstart=1, runnum=
             val_mwf_mean = [val_mwf_s[n_ft].mean() for n_ft in range(n_fts)]
             val_mwf_min = [val_mwf_s[n_ft].min() for n_ft in range(n_fts)]
             val_mwf_max = [val_mwf_s[n_ft].max() for n_ft in range(n_fts)]
+
+            val_mwf_mean_input = [val_mwf_input_s[nn].mean() for nn in range(len(mwf_input_names)*n_fts)]
+            val_mwf_min_input = [val_mwf_input_s[nn].min() for nn in range(len(mwf_input_names)*n_fts)]
+            val_mwf_max_input = [val_mwf_input_s[nn].max() for nn in range(len(mwf_input_names)*n_fts)]
 
             print("-time to compare with MFW production runs: {0} s".format(time.time()-time_start))
             # 4.4) Apply ARMA model
@@ -1239,7 +1246,16 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnumstart=1, runnum=
                 # For Pandas query: make sure input columns are floats
                 scan_df[param] = scan_df[param].astype('float')
 
-            compare_vals_mfw = [(val_mwf_mean[n_ft], val_mwf_min[n_ft], val_mwf_max[n_ft]) for n_ft in range(n_fts)]
+            compare_vals_mfw = [{'avg_out':val_mwf_mean[n_ft], 
+                                 'min_out': val_mwf_min[n_ft], 
+                                 'max_out': val_mwf_max[n_ft],
+                                 'te_value_avg_in': val_mwf_mean[0*len(mwf_input_names)+n_ft],
+                                 'ti_value_avg_in': val_mwf_mean[1*len(mwf_input_names)+n_ft],
+                                 'te_ddrho_avg_in': val_mwf_mean[2*len(mwf_input_names)+n_ft],
+                                 'ti_ddrho_avg_in': val_mwf_mean[3*len(mwf_input_names)+n_ft],
+                                } 
+                                 for n_ft in range(n_fts)]
+
 
             print('plotting cuts starting')
             

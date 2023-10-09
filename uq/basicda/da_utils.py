@@ -1266,13 +1266,22 @@ def plot_response_cuts(data, input_names, output_names, compare_vals=None, foldn
                 # if y values (mean, min, max) to compare are passed, plot the horizontal lines
                 if compare_vals is not None:
                     
-                    ax[i_ip][j_fixval].hlines(y=compare_vals[0], xmin=x_io.min(), xmax=x_io.max(), color='r', linestyle='-' )
-                    ax[i_ip][j_fixval].hlines(y=compare_vals[1], xmin=x_io.min(), xmax=x_io.max(), color='r', linestyle='--')
-                    ax[i_ip][j_fixval].hlines(y=compare_vals[2], xmin=x_io.min(), xmax=x_io.max(), color='r', linestyle='--')
+                    ax[i_ip][j_fixval].hlines(y=compare_vals['avg_out'], xmin=x_io.min(), xmax=x_io.max(), color='r', linestyle='-' )
+                    ax[i_ip][j_fixval].hlines(y=compare_vals['min_out'], xmin=x_io.min(), xmax=x_io.max(), color='r', linestyle='--')
+                    ax[i_ip][j_fixval].hlines(y=compare_vals['max_out'], xmin=x_io.min(), xmax=x_io.max(), color='r', linestyle='--')
 
-                    ax_loc.hlines(y=compare_vals[0], xmin=x_io.min(), xmax=x_io.max(), color='r', linestyle='-',  alpha=0.5)
-                    ax_loc.hlines(y=compare_vals[1], xmin=x_io.min(), xmax=x_io.max(), color='r', linestyle='--', alpha=0.5)
-                    ax_loc.hlines(y=compare_vals[2], xmin=x_io.min(), xmax=x_io.max(), color='r', linestyle='--', alpha=0.5)
+                    ax[i_ip][j_fixval].vlines(x=compare_vals[running_ip_name+'_avg_in'], ymin=y_qoi.min(), ymax=y_qoi.max(), color='r', linestyle='-' )
+                    ax[i_ip][j_fixval].vlines(x=compare_vals[running_ip_name+'_min_in'], ymin=y_qoi.min(), ymax=y_qoi.max(), color='r', linestyle='--')
+                    ax[i_ip][j_fixval].vlines(x=compare_vals[running_ip_name+'_max_in'], ymin=y_qoi.min(), ymax=y_qoi.max(), color='r', linestyle='--')
+
+                    ax_loc.hlines(y=compare_vals['avg_out'], xmin=x_io.min(), xmax=x_io.max(), color='r', linestyle='-',  alpha=0.5)
+                    ax_loc.hlines(y=compare_vals['min_out'], xmin=x_io.min(), xmax=x_io.max(), color='r', linestyle='--', alpha=0.5)
+                    ax_loc.hlines(y=compare_vals['max_out'], xmin=x_io.min(), xmax=x_io.max(), color='r', linestyle='--', alpha=0.5)
+
+                    ax_loc.vlines(x=compare_vals[running_ip_name+'_avg_in'], ymin=x_io.min(), ymax=x_io.max(), color='r', linestyle='-',  alpha=0.5)
+                    ax_loc.vlines(x=compare_vals[running_ip_name+'_min_in'], ymin=x_io.min(), ymax=x_io.max(), color='r', linestyle='--', alpha=0.5)
+                    ax_loc.vlines(x=compare_vals[running_ip_name+'_max_in'], ymin=x_io.min(), ymax=x_io.max(), color='r', linestyle='--', alpha=0.5)
+
 
                 if traces is not None:
 
