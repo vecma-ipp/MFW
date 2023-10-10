@@ -118,7 +118,7 @@ def profile_evol_load(rho=0.7, folder_name='../gem_data/', prof_names=['ti_trans
 
     #file_base_name = 'gem_coretransp'
     #file_base_intermediate = 'coretransp'
-    file_base_tocheck = file_code_name + '_' + file_base_intermediate + '_0' # will avoid gem_coretransp_out.cpo
+    file_base_tocheck = file_code_name + '_' + file_base_intermediate + '_' # will avoid gem_coretransp_out.cpo if '_0'
 
     file_ext = '.cpo'
 
@@ -804,7 +804,7 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnumstart=1, runnum=
 
     # Get the list of folders in the SCRATCH to run over ad get CPOs from
     #   NB1: some runs might be missing
-    #   NB2: order of runs in the DB and in the postprocessing script should be the same
+    #   NB2: order of runs in the DB and in the postprocessing script should be BROUGHT to be the same
     runfolder_list = [f[0] for f in os.walk(foldername) if not f[1]]
     runfolder_list.sort(key=lambda dir: int(dir[dir.rfind('_')+1:]))
     runfolder_list_numbers = [int(r[r.rfind('_')+1:]) for r in runfolder_list]
@@ -825,20 +825,21 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnumstart=1, runnum=
 
     n_fts = 8
 
-    code_names = ['gem',
+    code_names = [#'gem',
+                  'gem0'
 #                 'imp4dv',
            	 ]
     profiles = ['ti_transp', 
                 'te_transp',
-                'ni_transp',
-                'ne_transp'
+                #'ni_transp',
+                #'ne_transp'
                ]
 
     for code_name in code_names:
     
         if code_name == 'imp4dv':
             attributes = ['diff_eff','vconv_eff']
-        elif code_name == 'gem':
+        elif code_name == 'gem' or code_name == 'gem0' :
             attributes = ['flux']
         else:
             print('>Error in start of postprocessing: no such code recognized')
@@ -915,6 +916,7 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnumstart=1, runnum=
             dataframe_cpo = pd.DataFrame(list_cpo, columns=columns)            
             #print(dataframe_cpo) ###DEBUG       
             dataframe_cpo.to_pickle('newtimetracesscan_'+mainfoldernum+'.pickle')
+            print(f"> wrote {'newtimetracesscan_'+mainfoldernum+'.pickle'}") ###DEBUG
 
             # Load the old dataframe, add new readings, and save it
             # (this is specific to current naming [new/all]_[8alphanumericals]_[num_macroiter])
@@ -927,6 +929,7 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnumstart=1, runnum=
                 dataframe_cpo_old = pd.read_pickle('newtimetracesscan_'+old_mainfoldernum+'.pickle')
                 dataframe_cpo = merge_dataframes(dataframe_cpo_old, dataframe_cpo)
                 dataframe_cpo.to_pickle('newtimetracesscan_'+new_mainfoldernum+'.pickle')
+                print(f"> wrote {'newtimetracesscan_'+new_mainfoldernum+'.pickle'}") ###DEBUG
 
         print("time to load cpo files: {0} s".format(time.time()-time_start))
         # 3) Getting the input profiles values, primarily for the plot labels
@@ -1124,16 +1127,38 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnumstart=1, runnum=
             # 4.3.2) Plotting single plot with histograms including data from MFW production runs
             time_start = time.time()
 
-            mfw_data_file = 'AUG_mix-lim_gem_inoutput.txt' # 'AUG_gem_inoutput.txt'
+            # Set up file name for reference data and list of flux tube numbers
+            #mfw_data_file = 'AUG_mix-lim_gem_inoutput.txt' # 'AUG_gem_inoutput.txt' # data from runs by Onnie Luk
             mfw_data_file = 'AUG_gem_adtst_YY.txt'
             mfw_ft_s = [1,2,3,4,5,6,7,8] #[5, 6, 7]
 
-            #TODO: make val_mwf reading from MUSCLE3 implementation (CSV files after read_prof.py)
-
+            # Read data from a reference run
             val_mwf = pd.read_table('../data/'+mfw_data_file, delimiter='  *', engine='python') 
             print("-time to load MFW data and set-up stuff: {0} s".format(time.time()-time_start))
             time_start_tmp = time.time()
-            
+
+            # dictionary of name correspondance between names here and ones by Onnie Luk
+            dict_naming_dict ={
+                "te_transp_flux": "flux-Te-ft",
+                "ti_transp_flux": "flux-Ti-ft",
+                "te_transp_diff_eff": "diff-Te-ft",
+                "ti_transp_diff_eff": "diff-Ti-ft",
+                "te_transp_vconv_eff": "vconv-Te-ft",
+                "ti_transp_vconv_eff": "vconv-Ti-ft",  
+                "te_value": "Te-ft",
+                "ti_value": "Ti-ft",
+                "te_ddrho": "dTe-ft",
+                "ti_ddrho": "dTi-ft",
+                "ne_transp_flux": "flux-ne-ft",
+                "ni_transp_flux": "flux-ni-ft",
+                "ne_value": "ne-ft",
+                "ni_value": "ni-ft",
+                "ne_ddrho": "dne-ft",
+                "ni_ddrho": "dni-ft",
+                            }
+
+            # Read selected columns into a list of numpy arrays
+            """       
             if   p+'_'+a == 'ti_transp':
                 val_mwf_s = [val_mwf['flux-Ti-ft'+str(mfw_ft)].to_numpy().reshape(1,-1) for mfw_ft in mfw_ft_s]
             elif p+'_'+a == 'te_transp':
@@ -1145,6 +1170,9 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnumstart=1, runnum=
             else:
                 #Fall-back option
                 val_mwf_s = [val_mwf['flux-Ti-ft'+str(mfw_ft)].to_numpy().reshape(1,-1) for mfw_ft in mfw_ft_s]
+            """
+
+            val_mwf_s = [val_mwf[dict_naming_dict[p+'_'+a]+str(mfw_ft)].to_numpy().reshape(1,-1) for mfw_ft in mfw_ft_s]
 
             # Read the reference values for inputs
             mwf_input_names = ['Te-ft', 'Ti-ft', 'dTe-ft', 'dTi-ft'] # here we do not the order of inputs explicetely 
@@ -1156,7 +1184,7 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnumstart=1, runnum=
             
             #print(' Shapes of old and new arrays {0} {1}'.format(val_wind_s[0].shape, val_mwf.shape)) ### DEBUG
             #print(' MFW input values are dti={0} dte={1} ti={2} te={3}'.format(tiddrho_mwf_refval_s[0], teddrho_mwf_refval_s[0], ti_mwf_refval_s[0], te_mwf_refval_s[0])) ### DEBUG
-            print('Mean of MFW ft5 QTi={0}'.format(val_mwf['cp-flux-Ti-ft5'].mean())) ###DEBUG
+            #print(' Mean of MFW ft5 QTi={0}'.format(val_mwf['cp-flux-Ti-ft5'].mean())) ###DEBUG
 
             # Mind that here 0 index is considered to be most important to compare: flux tube #5 from MFW run
 
@@ -1171,6 +1199,8 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnumstart=1, runnum=
             """
 
             print("-time to plot the MFW histograms only: {0} s".format(time.time()-time_start_tmp))  
+
+            # Select mean, min, max from the reference data for each quantity and each flux tube
             val_mwf_mean = [val_mwf_s[n_ft].mean() for n_ft in range(n_fts)]
             val_mwf_min = [val_mwf_s[n_ft].min() for n_ft in range(n_fts)]
             val_mwf_max = [val_mwf_s[n_ft].max() for n_ft in range(n_fts)]
@@ -1246,13 +1276,23 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnumstart=1, runnum=
                 # For Pandas query: make sure input columns are floats
                 scan_df[param] = scan_df[param].astype('float')
 
+            # Make a dictionary of avg,min,max values for output and every input value
+            # TODO: make a nested dictionary + comprehension for list of inputs
             compare_vals_mfw = [{'avg_out':val_mwf_mean[n_ft], 
                                  'min_out': val_mwf_min[n_ft], 
                                  'max_out': val_mwf_max[n_ft],
-                                 'te_value_avg_in': val_mwf_mean[0*len(mwf_input_names)+n_ft],
-                                 'ti_value_avg_in': val_mwf_mean[1*len(mwf_input_names)+n_ft],
-                                 'te_ddrho_avg_in': val_mwf_mean[2*len(mwf_input_names)+n_ft],
-                                 'ti_ddrho_avg_in': val_mwf_mean[3*len(mwf_input_names)+n_ft],
+                                 'te_value_avg_in': val_mwf_mean_input[0*len(mwf_input_names)+n_ft],
+                                 'te_value_min_in': val_mwf_min_input[0*len(mwf_input_names)+n_ft],
+                                 'te_value_max_in': val_mwf_max_input[0*len(mwf_input_names)+n_ft],
+                                 'ti_value_avg_in': val_mwf_mean_input[1*len(mwf_input_names)+n_ft],
+                                 'ti_value_min_in': val_mwf_min_input[1*len(mwf_input_names)+n_ft],
+                                 'ti_value_max_in': val_mwf_max_input[1*len(mwf_input_names)+n_ft],
+                                 'te_ddrho_avg_in': val_mwf_mean_input[2*len(mwf_input_names)+n_ft],
+                                 'te_ddrho_min_in': val_mwf_min_input[2*len(mwf_input_names)+n_ft],
+                                 'te_ddrho_max_in': val_mwf_max_input[2*len(mwf_input_names)+n_ft],
+                                 'ti_ddrho_avg_in': val_mwf_mean_input[3*len(mwf_input_names)+n_ft],
+                                 'ti_ddrho_min_in': val_mwf_min_input[3*len(mwf_input_names)+n_ft],
+                                 'ti_ddrho_max_in': val_mwf_max_input[3*len(mwf_input_names)+n_ft],
                                 } 
                                  for n_ft in range(n_fts)]
 
@@ -1317,10 +1357,11 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnumstart=1, runnum=
             # Apply LR to get form of Q=a*t+b
             val_trend_lr_s = []
             for runn in runnum_list:
-                
+                """
                 val_trend_lr, val_residue_lr = filter_trend(val_wind_s[runn-runnumstart], "linear_regression")
                 val_trend_lr_s.append(val_trend_lr.reshape(val_wind_s[runn-runnumstart].shape)) # bad workaround
-                
+                """
+
                 #print('>shapes passed to plot: {} and {}'.
                 #       format(val_wind_s[runn-1].shape, val_trend_lr_s[runn-1].shape)) ###DEBUG
                 

@@ -33,13 +33,16 @@ RUN_NOT_ONLY_ALL=${7:-1}
 # True if the simulation data has to be read from .CSV files
 READ_FROM_CSV=${8:-1}
 
+# Code name suffix
+CODENAME=gem
+
 #DIR='/marconi_scratch/userexternal/yyudin00/VARY_1FT_GEM_NT_qairnbbz' # first run of 16 GEM cases in a script, n_it<=500
 #DIR='/marconi_scratch/userexternal/yyudin00/VARY_1FT_GEM_NT_qpyxg3bb' # first dir with 2 GEM runs
 if [ -n "${CAMP_NAME_PREFIX}" ]; then
   export DIR_PREFIX=${CAMP_NAME_PREFIX}
 else
   #export DIR_PREFIX='VARY_1FT_GEM_NT_' #'VARY_1FT_GEM_'
-  export DIR_PREFIX=UQ_8FTgem_
+  export DIR_PREFIX=UQ_8FT${CODENAME}_
 fi
 DIR=${SCRATCH}'/'${DIR_PREFIX}${UQCAMPDIR}
 
@@ -56,7 +59,7 @@ fi
 
 DIR_CODE=${HOME}'/'${CODEMDIR}'/MFW/uq/basicda/'
 
-DIR_OUTPUT='gem_data'
+DIR_OUTPUT=${CODENAME}'_data'
 
 #1. Transfer output files from the run directories to a separate cpo dir
 
@@ -82,7 +85,7 @@ if [ "${RUN_WITH_CP}" -eq 1 ]; then
       ## this should either be a slower 'cp' or never run for a folder currently used by a code
       ## also never to be thought it's current CPO-s in the stated folder
       
-      cp ${r}/gem_coretransp*.cpo cpo/${CPONUM}/${r}/
+      cp ${r}/${CODENAME}_coretransp*.cpo cpo/${CPONUM}/${r}/
 
       mkdir -p dat/${CPONUM}/${r}
       cp ${r}/t*.dat dat/${CPONUM}/${r}/
@@ -124,7 +127,7 @@ if [ "${RUN_NOT_ONLY_ALL}" -eq 1 ]; then
     # read values of new batch from a CPO files
 
     echo RUNNUM=${RUNRANGE}
-    python3 gem_da.py ${DIR_SRC}/cpo/${CPONUM} 0 1 ${RUNRANGESTART} ${RUNRANGE} 'new_'${UQCAMPDIR}'_'${CPONUM}
+    python3 gem_da.py ${DIR_SRC}/cpo/${CPONUM}/ 0 1 ${RUNRANGESTART} ${RUNRANGE} 'new_'${UQCAMPDIR}'_'${CPONUM}
 
   else
 
@@ -132,13 +135,13 @@ if [ "${RUN_NOT_ONLY_ALL}" -eq 1 ]; then
 
       for q in ${QUANTITIES[@]}; do
 
-        cp ${DIR_OUTPUT}/gem_${q}_transp_flux_evol_new_${UQCAMPDIR}_${CPONUM}_${r}.csv ./
+        cp ${DIR_OUTPUT}/${CODENAME}_${q}_transp_flux_evol_new_${UQCAMPDIR}_${CPONUM}_${r}.csv ./
 
       done
 
     done
 
-    python3 gem_da.py ${DIR_SRC}/cpo/${CPONUM} 1 1 ${RUNRANGESTART} ${RUNRANGE} 'new_'${UQCAMPDIR}'_'${CPONUM}
+    python3 gem_da.py ${DIR_SRC}/cpo/${CPONUM}/ 1 1 ${RUNRANGESTART} ${RUNRANGE} 'new_'${UQCAMPDIR}'_'${CPONUM}
 
   fi
 
@@ -149,9 +152,9 @@ if [ "${RUN_NOT_ONLY_ALL}" -eq 1 ]; then
       
       for q in ${QUANTITIES[@]}; do
 
-        cp ${DIR_OUTPUT}/gem_${q}_transp_flux_evol_all_${UQCAMPDIR}_${CPONUMPR}_${r}.csv ./
+        cp ${DIR_OUTPUT}/${CODENAME}_${q}_transp_flux_evol_all_${UQCAMPDIR}_${CPONUMPR}_${r}.csv ./
 
-        cat gem_${q}_transp_flux_evol_all_${UQCAMPDIR}_${CPONUMPR}_${r}.csv gem_${q}_transp_flux_evol_new_${UQCAMPDIR}_${CPONUM}_${r}.csv > gem_${q}_transp_flux_evol_all_${UQCAMPDIR}_${CPONUM}_${r}.csv
+        cat ${CODENAME}_${q}_transp_flux_evol_all_${UQCAMPDIR}_${CPONUMPR}_${r}.csv ${CODENAME}_${q}_transp_flux_evol_new_${UQCAMPDIR}_${CPONUM}_${r}.csv > ${CODENAME}_${q}_transp_flux_evol_all_${UQCAMPDIR}_${CPONUM}_${r}.csv
       
       done
 
@@ -170,7 +173,7 @@ if [ "${RUN_NOT_ONLY_ALL}" -ne 1 ]; then
 
       for q in ${QUANTITIES[@]}; do
 
-        cp ${DIR_OUTPUT}/gem_${q}_transp_flux_evol_all_${UQCAMPDIR}_${CPONUM}_${r}.csv ./
+        cp ${DIR_OUTPUT}/${CODENAME}_${q}_transp_flux_evol_all_${UQCAMPDIR}_${CPONUM}_${r}.csv ./
 
       done
 
@@ -179,7 +182,7 @@ if [ "${RUN_NOT_ONLY_ALL}" -ne 1 ]; then
 fi
 
 #python3 gem_da.py all_${UQCAMPDIR}_${CPONUM} 1 1 ${RUNRANGE} all_${UQCAMPDIR}_${CPONUM}
-python3 gem_da.py ${DIR_SRC}/cpo/${CPONUM} 1 1 ${RUNRANGESTART} ${RUNRANGE} all_${UQCAMPDIR}_${CPONUM}
+python3 gem_da.py ${DIR_SRC}/cpo/${CPONUM}/ 1 1 ${RUNRANGESTART} ${RUNRANGE} all_${UQCAMPDIR}_${CPONUM}
 
 #5. Put the resulting output files in a separate directory
 if [ "${RUN_WITH_SAVE}" -eq 1 ]; then
@@ -193,9 +196,9 @@ mv ../*${UQCAMPDIR}*.pdf ${UQCAMPDIR}/
   mv ../*${UQCAMPDIR}*.txt ${UQCAMPDIR}/
   mv ../resuq*${UQCAMPDIR}*.csv ${UQCAMPDIR}/
   mv ../stat*${UQCAMPDIR}*.csv ${UQCAMPDIR}/
-  cp ../gem*${UQCAMPDIR}*.csv ${UQCAMPDIR}/
+  cp ../${CODENAME}*${UQCAMPDIR}*.csv ${UQCAMPDIR}/
   
-  mv ../gem*${UQCAMPDIR}*.csv ./
+  mv ../${CODENAME}*${UQCAMPDIR}*.csv ./
 
   # Sort files into folder by quantity, number of run, type of file -> make sure the file is in folder and the ranges are set up!
   cp ../sort_files.sh ${UQCAMPDIR}/
