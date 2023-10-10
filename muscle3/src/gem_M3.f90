@@ -96,6 +96,8 @@ program gem_M3
         call LIBMUSCLE_Message_free(rmsg)
      end if
 
+     print *, "muscle3> t_cur=", t_cur
+
      !print *, "received coreprof_in, now broadcasting" !!!DEBUG
      call MPI_Bcast(coreprof_buf_size, 1, MPI_INT, root_rank, MPI_COMM_WORLD, ierr)
 
