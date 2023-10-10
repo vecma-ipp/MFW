@@ -197,7 +197,7 @@ def write_table_csv(datadict, save_fold_name, coord_num_fts=[14,30,43,55,66,76,8
     # dictionary of correspondance of local quantity naming to the one used by Onnie Luk
     dict_naming_dict ={
         "te_transp_flux": "flux-Te-ft",
-        "ti_transp_flux": "flux-Te-ft",
+        "ti_transp_flux": "flux-Ti-ft",
         "te_transp_diff_eff": "diff-Te-ft",
         "ti_transp_diff_eff": "diff-Ti-ft",
         "te_transp_vconv_eff": "vconv-Te-ft",
@@ -470,7 +470,7 @@ if __name__ == '__main__':
     
     dates = read_profs(codename=codename, dates=dates) # to read results of M3-WF run
     
-    #dates = read_profs(codename='', dates=['20230928', '20230929', '20231004', '20231006', '20231009'], prefix_name='../standalone/bin/gem_develop_turbulence/', sufix_name='/', cpo_filebase='gem_', cpo_names=['coretransp']) # to read from stanalone runs
+    #dates = read_profs(codename='', dates=['20230928', '20230929', '20231004', '20231006', '20231009', '20231010'], prefix_name='../standalone/bin/gem_develop_turbulence/', sufix_name='/', cpo_filebase='gem_', cpo_names=['coretransp']) # to read from stanalone runs
 
 
     #dates = ['20230818_135913', '20230821_161005', '20230822_150943', '20230823_151955', '20230824', '20230825', '20230828', '20230829', '20230830', '20230831', '20230901']

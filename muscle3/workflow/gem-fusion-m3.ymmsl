@@ -170,9 +170,10 @@ implementations:
 
 settings:
   transport.duration: 1.0
-  transport.dt: 0.01
+  transport.dt: 0.00125
   # init_cpo_dir: "../../../../../../workflows/AUG_28906_6"
-  init_cpo_dir: "../../../../gem_resume_data"
+  # init_cpo_dir: "../../../../gem_resume_data"
+  init_cpo_dir: "../../../../../../workflows/AUG_28906_6_8ft_restart"
   final_cpo_dir: "./"
   muscle_remote_log_level: "DEBUG"  
   slice_initial_number: 0
