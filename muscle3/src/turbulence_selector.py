@@ -22,9 +22,9 @@ def turbulence_model_selector():
     
     print(f"> Initialised turbulence selector")
 
-    bool_call_sim = False
+    bool_call_sim = False # initial value of bollean to run simulation
 
-    COV_CRITERION = False
+    COV_CRITERION_USE = False # sets if criteria should concider Coefficent of Variance of model uncertainty
 
     # Ordering of additional parameteres returned by surrogate component
     coretransp_uncertainty_dict = {
@@ -34,7 +34,7 @@ def turbulence_model_selector():
     }
 
     # Threshold for Coefficient of Variation of surrogate output
-    ti_transp_flux_cov_reltol = 1e+0
+    ti_transp_flux_cov_reltol = 1e+0 #TODO: move to settings
 
     while instance.reuse_instance():
 
@@ -87,7 +87,7 @@ def turbulence_model_selector():
         ti_transp_flux_cov = coretransp_uncertainty[coretransp_uncertainty_dict['rel_ti_transp_flux_std']]
         print(f"> Coefficient of Variation against {ti_transp_flux_cov_reltol} is: {ti_transp_flux_cov:.3f}") ###DEBUG
 
-        if ti_transp_flux_cov > ti_transp_flux_cov_reltol and COV_CRITERION:
+        if ti_transp_flux_cov > ti_transp_flux_cov_reltol and COV_CRITERION_USE:
             bool_call_sim = True
         
         #bool_call_sim = not bool_call_sim # stab to simply alternate between two implementations

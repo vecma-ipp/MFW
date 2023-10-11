@@ -24,6 +24,8 @@ def gem_surr_M3():
     Receives messages with coreprof [,equilibrium] and send messages with coretransp 
     """
 
+    input_names_ind_permut = [0,2,1,3] # permuation of input names relative to one used in EasySurrogate
+
     # Creating a MUSCLE3 instance
     instance = Instance({
         Operator.O_F:     ['coretransp_out', 'coretransp_uncertainty_out'],
@@ -40,48 +42,52 @@ def gem_surr_M3():
     ref_data = pd.read_csv(ref_data_filename, sep=',')
     ref_bounds = training_data_bounds(ref_data)
 
+    # Reading setting from a ymmsl file
+    rho_ind_s = instance.get_setting('rho_ind_s', '[float]') #TODO: consider using function to calculate index from rho_tor
+    #prof_out_names = instance.get_setting('profs_out', '[str]') #TODO: figure out how to pass lists of float/strings -> possible: ['float']/['str']
+    model_file_base = instance.get_setting('surrogate_path', 'str')
+    coretransp_default_file_name = instance.get_setting('cortransp_default', 'str')
+    init_cpo_dir = instance.get_setting('init_cpo_dir', 'str')
+
+    # Setting up pathes, dimensionalities
+    #coretransp_default_file_path = init_cpo_dir + '/' + coretransp_default_file_name
+    coretransp_default_file_path = coretransp_default_file_name
+
+    prof_out_names = ["te_transp_flux", "ti_transp_flux"] # MUSCLE3 currently does not support list of stings as a setting
+    n_dim_out = len([prof_out_names])
+
+    rho_ind_s = [int(x) for x in rho_ind_s]
+    n_fts = len(rho_ind_s)
+
+    # Initialising surrogate model
+    #   for a one-shot training case should only be done once in f_init
+
+    #TODO: consider other model initialisation e.g. using just an ML library
+    #TODO: consider single model load per MUSCLE3 Manager run
+
+    # Loading surrogate models
+    print('> Loading ES campaign with surrogates')
+    camps = []
+    mods = []
+
+    for ft in range(n_fts): #TODO: if settings reading can be moved before the main loop, easysurrogates can be initialised once
+        try:
+            camps.append(es.Campaign(load_state=True, file_path=f"{model_file_base}_{ft}.pickle"))
+        except OSError:
+            print('No such model file!')
+            return
+        mods.append(camps[-1].surrogate)
+    print('> Got surrogates from a ES campaign')
+
+    #TODO: read target names from campaign
+    output_names = ['te_transp_flux', 'ti_transp_flux']
+    #output_names = ['ti_transp_flux']
+
+    # Model inference loop / simulation time iteration
     while instance.reuse_instance():
+
         # when is the instance constructed and destructed?
         print(f"> Entering a turbulence model iteration")
-
-        rho_ind_s = instance.get_setting('rho_ind_s', '[float]') #TODO: consider using function to calculate index from rho_tor
-        prof_out_names = instance.get_setting('profs_out', 'str') #TODO: figure out how to pass lists of float/strings -> possible: ['float']/['str']
-        model_file_base = instance.get_setting('surrogate_path', 'str')
-        coretransp_default_file_name = instance.get_setting('cortransp_default', 'str')
-        init_cpo_dir = instance.get_setting('init_cpo_dir', 'str')
-
-        #coretransp_default_file_path = init_cpo_dir + '/' + coretransp_default_file_name
-        coretransp_default_file_path = coretransp_default_file_name
-
-        n_dim_out = len([prof_out_names])
-
-        rho_ind_s = [int(x) for x in rho_ind_s]
-        n_fts = len(rho_ind_s)
-
-        # Initialising surrogate model
-        #   for a one-shot training case should only be done once in f_init
-
-        #TODO: consider other model initialisation e.g. using just an ML library
-        #TODO: consider single model load per MUSCLE3 Manager run
-
-        print('> Loading ES campaign with surrogates')
-        camps = []
-        mods = []
-
-        for ft in range(n_fts): #TODO: if settings reading can be moved before the main loop, easysurrogates can be initialised once
-            try:
-                camps.append(es.Campaign(load_state=True, file_path=f"{model_file_base}_{ft}.pickle"))
-            except OSError:
-                print('No such model file!')
-                return
-            mods.append(camps[-1].surrogate)
-        print('> Got surrogates from a ES campaign')
-
-        #TODO: read target names from campaign
-        output_names = ['te_transp_flux', 'ti_transp_flux']
-        #output_names = ['ti_transp_flux']
-
-        input_names_ind_permut = [0,2,1,3] # permuation of input names relative to one used in EasySurrogate
 
         # Get a message form equilibrium code: NOT USED HERE!
         msg_in_eq = instance.receive('equilibrium_in')
@@ -100,7 +106,7 @@ def gem_surr_M3():
         coreprof_in_data_bytes = msg_in.data
 
         # Save the binary buffer to a file
-        devshm_file = "/dev/shm/ets_coreprof_in.cpo" #TODO: generate and store random name
+        devshm_file = f"/dev/shm/ets_coreprof_in_{num_it:.6f}.cpo" #TODO: generate and store random name
         with open(devshm_file, "wb") as f:
             f.write(coreprof_in_data_bytes)
         start_t = t()
@@ -130,7 +136,7 @@ def gem_surr_M3():
         fluxes_out_std = np.zeros((n_fts, len(output_names)))
 
         # Check if input values are within learned bounds
-        bool_outofbounds = check_outof_learned_bounds(profiles_in, ref_bounds)
+        bool_outofbounds, dict_outofbounds = check_outof_learned_bounds(profiles_in, ref_bounds)
         
         # Infere QoI values for every flux tube
         for n_ft, r in enumerate(rho_ind_s):
@@ -167,10 +173,16 @@ def gem_surr_M3():
         coretransp_bytes = bytes(coretransp_str, "utf-8")
 
         # Writing uncertainty information
-        te_transp_flux_cov = fluxes_out_std[0,0] / fluxes_out[0,0]
-        ti_transp_flux_cov = fluxes_out_std[0,1] / fluxes_out[0,1]
-        coretransp_uncertainty = [ti_transp_flux_cov, te_transp_flux_cov, bool_outofbounds]
-        coretransp_uncertainty = np.array(coretransp_uncertainty)
+        te_transp_flux_cov = fluxes_out_std[:,0] / fluxes_out[:,0]
+        ti_transp_flux_cov = fluxes_out_std[:,1] / fluxes_out[:,1]
+        #coretransp_uncertainty = [ti_transp_flux_cov, te_transp_flux_cov, bool_outofbounds]
+        #coretransp_uncertainty = np.array(coretransp_uncertainty) # array version of uncertainty data to send
+        coretransp_uncertainty = {
+                        'rel_ti_transp_flux_std': ti_transp_flux_cov,
+                        'rel_te_transp_flux_std': te_transp_flux_cov,
+                        'dict_outofbounds': dict_outofbounds,
+                        'bool_outofbounds': bool_outofbounds,
+                                 }
 
         # Sending a coretransp message
         print('> Gettting ready an outcoming core transp')
