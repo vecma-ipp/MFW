@@ -967,7 +967,7 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnumstart=1, runnum=
         #     even if they are in programm memory already      
         val_ev_s = []
 
-        alpha_wind = 0.3 # how much to discard, in fractions of readings
+        alpha_wind = 0.5 # how much to discard, in fractions of readings
 
         print("time to read and set-up basic values: {0} s".format(time.time()-time_start))
         # 4) Iterate over cartesian product of all profiles and their attributes
