@@ -170,7 +170,7 @@ implementations:
 
 settings:
   transport.duration: 1.0
-  transport.dt: 0.00125
+  transport.dt: 0.001
   # init_cpo_dir: "../../../../../../workflows/AUG_28906_6"
   # init_cpo_dir: "../../../../gem_resume_data"
   init_cpo_dir: "../../../../../../workflows/AUG_28906_6_8ft_restart"
@@ -178,10 +178,12 @@ settings:
   muscle_remote_log_level: "DEBUG"  
   slice_initial_number: 0
   save_slice: true
-  adaptive_timestep: true
+  adaptive_timestep: false
   # turbulence.rho_ind_s: [68.0]
   turbulence.rho_ind_s: [15.0, 31.0, 44.0, 55.0, 66.0, 76.0, 85.0, 94.0]
   turbulence.profs_out: "ti_transp.flux"
   turbulence.surrogate_path: "../../../../../../workflows/gem_es_model.pickle"
   turbulence.cortransp_default: "../../../../../../workflows/gem_coretransp.cpo"
+
+# Comment: this runs uses smooth 'restart' core profiles and developed state of turbulence as initial value, and 10 times smaller time step size without adaptation; to check if this tau would be enough not to lead to non-monotonic profiles 
   
