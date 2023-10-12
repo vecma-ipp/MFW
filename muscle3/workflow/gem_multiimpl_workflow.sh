@@ -6,6 +6,10 @@ if [ -z "$MUSCLE3_HOME" ] ; then
     exit 1
 fi
 
+#export LD_LIBRARY_PATH=$MUSCLE3_HOME/lib:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/cobra/u/yyudin/muscle3/lib
+export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/cobra/u/yyudin/code/json-fortran/build/lib/
+
 username=yyudin
 
 echo 'Running gem workflow in Fortran'
@@ -14,7 +18,7 @@ python --version
 . ~/muscle3/bin/muscle3.env
 
 currdate=$(date +"%Y%m%d")
-run_dir_name=run_fusion_gem_multiimpl_${currdate}_criteria
+run_dir_name=run_fusion_gem0_multiimpl_${currdate}
 mkdir ${run_dir_name}
 
 muscle_manager --log-level DEBUG --run-dir ${run_dir_name} --start-all gem-fusion-multiimpl.ymmsl &
@@ -23,7 +27,6 @@ echo 'MUSCLE_MANAGER started'
 
 manager_pid=$!
 
-#export LD_LIBRARY_PATH=$MUSCLE3_HOME/lib:$LD_LIBRARY_PATH
 
 # Next two lines just to get additional info about processes and cores
 sleep 60

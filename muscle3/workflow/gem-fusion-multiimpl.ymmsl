@@ -61,7 +61,8 @@ model:
           - coreprof_tosur_out
         o_f: coretransp_out
     turbulence_sim:
-      implementation: gem_impl_mpi
+      # implementation: gem_impl_mpi
+      implementation: gem0_impl
       ports:
         f_init: 
           - coreprof_in
@@ -128,7 +129,8 @@ resources:
   turbulence_sur:
     threads: 1
   turbulence_sim:
-    mpi_processes: 32
+    # mpi_processes: 32
+    threads: 1
   equilibrium:
     threads: 1
   flux2tcoeff:
@@ -173,6 +175,8 @@ implementations:
     #execution_model: intelmpi
     execution_model: srunmpi
     can_share_resources: false
+  gem0_impl:
+    executable: /u/yyudin/code/MFW/muscle3/bin/COBRA/gem0_M3
   turb_selector:
     # virtual_env:
     executable: python 
@@ -200,7 +204,8 @@ settings:
   adaptive_timestep: False
   turbulence_sur.rho_ind_s: [15.0, 31.0, 44.0, 55.0, 66.0, 76.0, 85.0, 94.0]
   turbulence_sur.profs_out: "ti_transp.flux"
-  turbulence_sur.surrogate_path: "../../../../../../workflows/gem_es_model"
+  #turbulence_sur.surrogate_path: "../../../../../../workflows/gem_es_model"
+  turbulence_sur.surrogate_path: "../../../../../../workflows/gem0_es_model"
   turbulence_sur.cortransp_default: "../../../../../../workflows/gem_coretransp_8ft.cpo"
   turbulence_sur.training_dataset_filename: "../../../../../ref_train_data.csv"
 

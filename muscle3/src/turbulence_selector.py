@@ -79,21 +79,21 @@ def turbulence_model_selector():
 
         coretransp_bytes = msg_in_coretransp.data
 
-        coretransp_uncertainty = msg_in_coretransp_uncertainty.data.array.copy()
+        coretransp_uncertainty = msg_in_coretransp_uncertainty.data #data.array.copy()
 
         # 3. Criterion to run simulation
 
         # Check if uncertainties exceed threshold
-        ti_transp_flux_cov = coretransp_uncertainty[coretransp_uncertainty_dict['rel_ti_transp_flux_std']]
-        print(f"> Coefficient of Variation against {ti_transp_flux_cov_reltol} is: {ti_transp_flux_cov:.3f}") ###DEBUG
+        ti_transp_flux_cov = coretransp_uncertainty['rel_ti_transp_flux_std'].array #[coretransp_uncertainty_dict['rel_ti_transp_flux_std']]
+        print(f"> Coefficient of Variation at ft {0} against {ti_transp_flux_cov_reltol} is: {ti_transp_flux_cov[0]:.3f}") ###DEBUG
 
-        if ti_transp_flux_cov > ti_transp_flux_cov_reltol and COV_CRITERION_USE:
+        if np.any(ti_transp_flux_cov > ti_transp_flux_cov_reltol) and COV_CRITERION_USE:
             bool_call_sim = True
         
         #bool_call_sim = not bool_call_sim # stab to simply alternate between two implementations
 
         # Check if input values are within learned bounds
-        bool_outofbounds = coretransp_uncertainty[coretransp_uncertainty_dict['bool_outofbounds']]
+        bool_outofbounds = coretransp_uncertainty['bool_outofbounds'] #[coretransp_uncertainty_dict['bool_outofbounds']]
        
         if bool_outofbounds:
             bool_call_sim = True
