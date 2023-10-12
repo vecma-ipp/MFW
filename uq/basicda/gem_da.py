@@ -823,8 +823,6 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnumstart=1, runnum=
     #print('and modified of len {1}: {0}'.format(runfolder_list_filtered, len(runfolder_list_filtered))) ###DEBUG
     #TODO: check the order of folders and the order of runs!
 
-    n_fts = 8
-
     code_names = [#'gem',
                   'gem0'
 #                 'imp4dv',
@@ -982,7 +980,7 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnumstart=1, runnum=
 
             # After processing given profile/quantity we are not intersted in values
             val_ev_s = [] # why reduplicated reinitialisation?
-            print("Now running through {0} and {1}".format(p,a))
+            print("Now running through {0}_{1}".format(p,a))
 
             # 4.0) Assuming there are multiple ensembles of runs for this submission 
             #     (corresponding to a global iteration of UQ campaigns) read all the 'runs' of an ensemble 
@@ -1131,6 +1129,7 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnumstart=1, runnum=
             #mfw_data_file = 'AUG_mix-lim_gem_inoutput.txt' # 'AUG_gem_inoutput.txt' # data from runs by Onnie Luk
             mfw_data_file = 'AUG_gem_adtst_YY.txt'
             mfw_ft_s = [1,2,3,4,5,6,7,8] #[5, 6, 7]
+            n_fts = len(mfw_ft_s)
 
             # Read data from a reference run
             val_mwf = pd.read_table('../data/'+mfw_data_file, delimiter='  *', engine='python') 
@@ -1205,9 +1204,11 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnumstart=1, runnum=
             val_mwf_min = [val_mwf_s[n_ft].min() for n_ft in range(n_fts)]
             val_mwf_max = [val_mwf_s[n_ft].max() for n_ft in range(n_fts)]
 
-            val_mwf_mean_input = [val_mwf_input_s[nn].mean() for nn in range(len(mwf_input_names)*n_fts)]
-            val_mwf_min_input = [val_mwf_input_s[nn].min() for nn in range(len(mwf_input_names)*n_fts)]
-            val_mwf_max_input = [val_mwf_input_s[nn].max() for nn in range(len(mwf_input_names)*n_fts)]
+            val_mwf_mean_input = [val_mwf_input_s[n_ft].mean() for n_ft in range(len(mwf_input_names)*n_fts)]
+            val_mwf_min_input = [val_mwf_input_s[n_ft].min() for n_ft in range(len(mwf_input_names)*n_fts)]
+            val_mwf_max_input = [val_mwf_input_s[n_ft].max() for n_ft in range(len(mwf_input_names)*n_fts)]
+
+            print(f">flux @ft8 mean: {val_mwf_mean[0*8+7]}") ###DEBUG
 
             print("-time to compare with MFW production runs: {0} s".format(time.time()-time_start))
             # 4.4) Apply ARMA model
@@ -1281,21 +1282,22 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnumstart=1, runnum=
             compare_vals_mfw = [{'avg_out':val_mwf_mean[n_ft], 
                                  'min_out': val_mwf_min[n_ft], 
                                  'max_out': val_mwf_max[n_ft],
-                                 'te_value_avg_in': val_mwf_mean_input[0*len(mwf_input_names)+n_ft],
-                                 'te_value_min_in': val_mwf_min_input[0*len(mwf_input_names)+n_ft],
-                                 'te_value_max_in': val_mwf_max_input[0*len(mwf_input_names)+n_ft],
-                                 'ti_value_avg_in': val_mwf_mean_input[1*len(mwf_input_names)+n_ft],
-                                 'ti_value_min_in': val_mwf_min_input[1*len(mwf_input_names)+n_ft],
-                                 'ti_value_max_in': val_mwf_max_input[1*len(mwf_input_names)+n_ft],
-                                 'te_ddrho_avg_in': val_mwf_mean_input[2*len(mwf_input_names)+n_ft],
-                                 'te_ddrho_min_in': val_mwf_min_input[2*len(mwf_input_names)+n_ft],
-                                 'te_ddrho_max_in': val_mwf_max_input[2*len(mwf_input_names)+n_ft],
-                                 'ti_ddrho_avg_in': val_mwf_mean_input[3*len(mwf_input_names)+n_ft],
-                                 'ti_ddrho_min_in': val_mwf_min_input[3*len(mwf_input_names)+n_ft],
-                                 'ti_ddrho_max_in': val_mwf_max_input[3*len(mwf_input_names)+n_ft],
+                                 'te_value_avg_in': val_mwf_mean_input[0*n_fts+n_ft],
+                                 'te_value_min_in': val_mwf_min_input[0*n_fts+n_ft],
+                                 'te_value_max_in': val_mwf_max_input[0*n_fts+n_ft],
+                                 'ti_value_avg_in': val_mwf_mean_input[1*n_fts+n_ft],
+                                 'ti_value_min_in': val_mwf_min_input[1*n_fts+n_ft],
+                                 'ti_value_max_in': val_mwf_max_input[1*n_fts+n_ft],
+                                 'te_ddrho_avg_in': val_mwf_mean_input[2*n_fts+n_ft],
+                                 'te_ddrho_min_in': val_mwf_min_input[2*n_fts+n_ft],
+                                 'te_ddrho_max_in': val_mwf_max_input[2*n_fts+n_ft],
+                                 'ti_ddrho_avg_in': val_mwf_mean_input[3*n_fts+n_ft],
+                                 'ti_ddrho_min_in': val_mwf_min_input[3*n_fts+n_ft],
+                                 'ti_ddrho_max_in': val_mwf_max_input[3*n_fts+n_ft],
                                 } 
                                  for n_ft in range(n_fts)]
 
+            print(f">flux @ft8 mean: {compare_vals_mfw[7]['avg_out']}") ###DEBUG
 
             print('plotting cuts starting')
             
