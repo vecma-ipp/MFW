@@ -101,7 +101,7 @@ def turbulence_model_selector():
 
         coretransp_bytes = msg_in_coretransp.data
 
-        coretransp_uncertainty = msg_in_coretransp_uncertainty.data.array.copy()
+        coretransp_uncertainty = msg_in_coretransp_uncertainty.data #array.copy()
         
         # 3. If criterion for combination of surrogate and lo-fi model works, fill in the flux values arrays with data from surr of lofi
 
@@ -131,11 +131,12 @@ def turbulence_model_selector():
             # 3.2 Combine values from surrogate and low-fidelity model: use lo-fi when surrogate is out of its bounds
         
             #   Read relevant coretransp arrays
+            print("> reading coretransp from surr and lofi") ###DEBUG
             #       surrogate datastructure
-            devshm_file_surr = f"/dev/shm/surr_coreprof_in_{num_it:.6f}.cpo" #TODO: generate and store random name
+            devshm_file_surr = f"/dev/shm/surr_coretransp_in_{num_it:.6f}.cpo" #TODO: generate and store random name
             with open(devshm_file_surr, "wb") as f:
                 f.write(coretransp_bytes)
-            coretransp_cpo_obj_surr = read(devshm_file_surr, "coreprof")
+            coretransp_cpo_obj_surr = read(devshm_file_surr, "coretransp")
             coretransp_cpo_array_surr = coreprof_to_input_value(
                                                         coretransp_cpo_obj_surr, 
                                                         rho_ind_s,
@@ -144,10 +145,10 @@ def turbulence_model_selector():
                                                                 )
 
             #       low-fidelity datastructure
-            devshm_file_lofi = f"/dev/shm/lofi_coreprof_in_{num_it:.6f}.cpo" #TODO: generate and store random name
+            devshm_file_lofi = f"/dev/shm/lofi_coretransp_in_{num_it:.6f}.cpo" #TODO: generate and store random name
             with open(devshm_file_lofi, "wb") as f:
                 f.write(coretransp_bytes_lofi)
-            coretransp_cpo_obj_lofi = read(devshm_file_lofi, "coreprof")
+            coretransp_cpo_obj_lofi = read(devshm_file_lofi, "coretransp")
             coretransp_cpo_array_lofi = coreprof_to_input_value(
                                                         coretransp_cpo_obj_lofi, 
                                                         rho_ind_s, 
@@ -156,7 +157,7 @@ def turbulence_model_selector():
                                                                 ) # extract names from the list of output names
 
             #TODO: look up reading functions for coretransp
-
+            print("> filling in arrays from surr and lofi") ###DEBUG
             # Fill in new array with right values
             #   fill in array of bools for every flux tube, True if values are in bounds
             bool_coord_inbounds = np.ones(len(n_rhos), dtype=bool)
@@ -174,6 +175,7 @@ def turbulence_model_selector():
             fluxes_out_dict = {k:fluxes_out[:, i] for i,k in enumerate(output_names)}
 
             # Put the array in new coretransp datastructure
+            print("> creating a new message for coretransp") ###DEBUG
             coretransp_cpo_obj = output_value_to_coretransp(
                                         fluxes_out_dict, 
                                         coretransp_default_file_name, 
@@ -189,16 +191,16 @@ def turbulence_model_selector():
 
         #TODO:
         # 4. Criterion to run simulation / criterion to use high-fidelity model
-
+        print("> checking if hifi should be called") ###DEBUG
         # Criterion 0: stub
         #bool_call_hifi = not bool_call_hifi # stub to simply alternate between two implementations
 
         # Criterion 1: check if uncertainties (QoI CoV) exceed threshold - disabled with COV_USE_CRITERION
-        ti_transp_flux_cov = coretransp_uncertainty['rel_ti_transp_flux_std'] #[coretransp_uncertainty_dict['rel_ti_transp_flux_std']]
-        te_transp_flux_cov = coretransp_uncertainty['rel_te_transp_flux_std'] #[coretransp_uncertainty_dict['rel_te_transp_flux_std']]
+        ti_transp_flux_cov = coretransp_uncertainty['rel_ti_transp_flux_std'].array #[coretransp_uncertainty_dict['rel_ti_transp_flux_std']]
+        te_transp_flux_cov = coretransp_uncertainty['rel_te_transp_flux_std'].array #[coretransp_uncertainty_dict['rel_te_transp_flux_std']]
         #print(f"> Coefficient of Variation against {ti_transp_flux_cov_reltol} is: {ti_transp_flux_cov:.3f}") ###DEBUG
 
-        if ti_transp_flux_cov > ti_transp_flux_cov_reltol and te_transp_flux_cov > te_transp_flux_cov_reltol and COV_USE_CRITERION:
+        if np.any(ti_transp_flux_cov > ti_transp_flux_cov_reltol) and np.any(te_transp_flux_cov > te_transp_flux_cov_reltol) and COV_USE_CRITERION:
             bool_call_hifi = True
 
         # Criterion 2: check if all input values are outside learned bounds

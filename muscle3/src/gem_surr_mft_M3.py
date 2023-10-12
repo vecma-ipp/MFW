@@ -44,7 +44,7 @@ def gem_surr_M3():
 
     # Reading setting from a ymmsl file
     rho_ind_s = instance.get_setting('rho_ind_s', '[float]') #TODO: consider using function to calculate index from rho_tor
-    #prof_out_names = instance.get_setting('profs_out', '[str]') #TODO: figure out how to pass lists of float/strings -> possible: ['float']/['str']
+    #output_names = instance.get_setting('profs_out', '[str]') #TODO: figure out how to pass lists of float/strings -> possible: ['float']/['str']
     model_file_base = instance.get_setting('surrogate_path', 'str')
     coretransp_default_file_name = instance.get_setting('cortransp_default', 'str')
     init_cpo_dir = instance.get_setting('init_cpo_dir', 'str')
@@ -173,8 +173,8 @@ def gem_surr_M3():
         coretransp_bytes = bytes(coretransp_str, "utf-8")
 
         # Writing uncertainty information
-        te_transp_flux_cov = fluxes_out_std[:,0] / fluxes_out[:,0]
-        ti_transp_flux_cov = fluxes_out_std[:,1] / fluxes_out[:,1]
+        te_transp_flux_cov = np.divide(fluxes_out_std[:,0], fluxes_out[:,0])
+        ti_transp_flux_cov = np.divide(fluxes_out_std[:,1], fluxes_out[:,1])
         #coretransp_uncertainty = [ti_transp_flux_cov, te_transp_flux_cov, bool_outofbounds]
         #coretransp_uncertainty = np.array(coretransp_uncertainty) # array version of uncertainty data to send
         coretransp_uncertainty = {

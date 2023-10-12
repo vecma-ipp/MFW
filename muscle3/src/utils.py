@@ -30,17 +30,33 @@ def check_outof_learned_bounds(input, reference):
 
     bool_outofbounds = False
 
+    dict_outofbounds = {}
+
     for i,(k,vs) in enumerate(reference.items()):
+        
+        dict_outofbounds[k] = {
+                               'greater': np.zeros(vs['max'].shape, dtype=bool),
+                               'lesser' : np.zeros(vs['min'].shape, dtype=bool), 
+                               'within' :  np.ones(vs['min'].shape, dtype=bool),
+                               } # OHE; technicaly, 'within' is redundant and we need only 2 bits to encode 3 classes
 
-        for j,v in enumerate(vs['max'].tolist()):
+        for j,v in enumerate(vs['max']): # can use .tolist() to be sure array is converted into a generator
+
             if v < input[i,j]:
-                bool_outofbounds = True
                 
-        for j,v in enumerate(vs['min'].tolist()):
-            if v > input[i,j]: 
                 bool_outofbounds = True
+                dict_outofbounds[k]['greater'][j] = True
+                dict_outofbounds[k]['within'][j]  = False
+                
+        for j,v in enumerate(vs['min']):
 
-    return bool_outofbounds
+            if v > input[i,j]: 
+
+                bool_outofbounds = True
+                dict_outofbounds[k]['lesser'][j] = True
+                dict_outofbounds[k]['within'][j] = False
+
+    return bool_outofbounds, dict_outofbounds
 
 def coreprof_to_input_value(
             data, 
@@ -52,7 +68,7 @@ def coreprof_to_input_value(
     Transforms coreprof message data into values acceptable by a surrogate model as an input
     TODO: look up EasyVVUQ cpo element for coreprof
     TODO: check that all input values are filled with defaults
-    TODO: check if there is an implementation in utils
+    TODO: check if there is an implementation in easyvvuq utils
     """
 
     n = len(prof_names)
@@ -88,6 +104,46 @@ def coreprof_to_input_value(
                 prof_vals[i*m+j][r] = val_reading
 
     return prof_vals
+
+def coretransp_to_value(
+        data,
+        rho_ind_s,
+        prof_names=['te_transp', 'ti_transp'],
+        attrib_names=['flux'],
+                       ):
+    """
+    Transforms coretransp message data into values that could be read and plotted
+    NB!: nearly a duplicate of coreprof_to_input_value(), use that instead
+    """
+
+    n = len(prof_names)
+    m = len(attrib_names)
+    d = len(rho_ind_s)
+
+    transp_vals = np.zeros((n*m, d))
+    print(f"Entering a function to parse CPO into transp data")
+
+    for i, prof_name in enumerate(prof_names):
+
+        prof = getattr(data, prof_name)
+
+        for j, attrib_name in enumerate(attrib_names):
+
+            for r, rho_ind in enumerate(rho_ind_s):
+
+                val_readings = getattr(prof, attrib_name)
+
+                if prof_name[1] == 'i':
+                    val_readings = val_readings[0]
+
+                elif prof_name[1] == 'e':
+                    pass
+
+                val_reading = val_readings[rho_ind]
+
+                transp_vals[i*m+j][r] = val_reading
+
+    return transp_vals
 
 def output_value_to_coretransp(
             fluxes_out, 
