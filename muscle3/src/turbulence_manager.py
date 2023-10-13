@@ -32,6 +32,7 @@ def turbulence_model_manager():
     bool_call_lofi = False
 
     COV_USE_CRITERION = False
+    LOFI_USE = True
 
     # Ordering of additional parameteres returned by surrogate component
     coretransp_uncertainty_dict = {
@@ -125,7 +126,7 @@ def turbulence_model_manager():
         print(f"> checking if lofi should be called: {bool_outofbounds}") ###DEBUG
         bool_call_lofi = bool_outofbounds
         
-        if bool_call_lofi:
+        if bool_call_lofi and LOFI_USE:
 
             print(f"> Attention: some of the input profiles are outside of the support of the surrogate!")
 
@@ -216,8 +217,7 @@ def turbulence_model_manager():
         if np.any(ti_transp_flux_cov > ti_transp_flux_cov_reltol) and np.any(te_transp_flux_cov > te_transp_flux_cov_reltol) and COV_USE_CRITERION:
             bool_call_hifi = True
 
-        # Criterion 2: check if all input values are outside learned bounds
-        
+        # Criterion 2: check if all input values are outside learned bounds   
         bool_outofbounds_total = not sum([sum(v['within'].array) for k,v in dict_outofbounds.items()]) # should be 1 if all values for 'within' were False; could be implemented with AND and without prcessing 'not'
         print(f" All input parameters are outise of bounds: {bool_outofbounds_total}") ###DEBUG
 
@@ -271,4 +271,3 @@ if __name__ == '__main__':
     lofi_count, hifi_count = turbulence_model_manager()
 
     print(f" Counted lofi model times: {lofi_count} \n Counted hifi model times: {hifi_count}")
-    

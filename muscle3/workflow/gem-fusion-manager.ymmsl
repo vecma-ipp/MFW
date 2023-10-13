@@ -208,7 +208,7 @@ implementations:
     executable: /u/yyudin/code/MFW/muscle3/bin/COBRA/imp4dv_M3
   
 settings:
-  transport.duration: 2.0
+  transport.duration: 0.125
   transport.dt: 0.00125
   #init_cpo_dir: ../../../../../../workflows/AUG_28906_6
   init_cpo_dir: ../../../../../../workflows/AUG_28906_6_8ft_restart
