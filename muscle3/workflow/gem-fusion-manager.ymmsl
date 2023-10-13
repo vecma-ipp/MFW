@@ -210,7 +210,8 @@ implementations:
 settings:
   transport.duration: 2.0
   transport.dt: 0.00125
-  init_cpo_dir: ../../../../../../workflows/AUG_28906_6
+  #init_cpo_dir: ../../../../../../workflows/AUG_28906_6
+  init_cpo_dir: ../../../../../../workflows/AUG_28906_6_8ft_restart
   final_cpo_dir: ./
   muscle_remote_log_level: DEBUG
   slice_initial_number: 0
@@ -221,6 +222,7 @@ settings:
   turbulence_surr.surrogate_path: ../../../../../../workflows/gem_es_model
   turbulence_surr.cortransp_default: ../../../../../../workflows/gem_coretransp_8ft.cpo
   turbulence_surr.training_dataset_filename: ../../../../../ref_train_data.csv
+  turbulence_surr.bool_send_uncertainty: True
   turbulence.rho_ind_s: [15.0, 31.0, 44.0, 55.0, 66.0, 76.0, 85.0, 94.0]
   # turbulence.profs_out: [te_transp_flux, ti_transp_flux]
   # turbulence.input_names: [te_value, ti_value, te_ddrho, ti_ddrho]

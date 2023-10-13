@@ -88,6 +88,8 @@ def coreprof_to_input_value(
 
                 val_readings = getattr(prof, attrib_name)
 
+                val_reading = val_readings[rho_ind]
+
                 if prof_name[1] == 'i':
                     # Here: ion profiles are 1D (no species dimension) ...
                     #val_readings = val_readings[0]
@@ -98,8 +100,6 @@ def coreprof_to_input_value(
                 
                 else:
                     print('Error: Attributes have to belong either to ions or to electrons')
-
-                val_reading = val_readings[rho_ind]
 
                 prof_vals[i*m+j][r] = val_reading
 
@@ -123,23 +123,25 @@ def coretransp_to_value(
     transp_vals = np.zeros((n*m, d))
     print(f"Entering a function to parse CPO into transp data")
 
+    prof_val = data.values[0] # a difference from coreprof
+
     for i, prof_name in enumerate(prof_names):
 
-        prof = getattr(data, prof_name)
+        prof = getattr(prof_val, prof_name)
 
         for j, attrib_name in enumerate(attrib_names):
 
+            val_readings = getattr(prof, attrib_name)
+
             for r, rho_ind in enumerate(rho_ind_s):
 
-                val_readings = getattr(prof, attrib_name)
+                val_reading = val_readings[rho_ind]
 
                 if prof_name[1] == 'i':
-                    val_readings = val_readings[0]
-
+                    val_reading = val_reading[0] # a difference from coreprof (should be)
+                    #pass
                 elif prof_name[1] == 'e':
                     pass
-
-                val_reading = val_readings[rho_ind]
 
                 transp_vals[i*m+j][r] = val_reading
 
@@ -148,8 +150,8 @@ def coretransp_to_value(
 def output_value_to_coretransp(
             fluxes_out, 
             coretransp_file, 
-            r_s = [0],
-            ion = 0,
+            r_s=[0], # array of flux tube numbers in coretransp (not rho values!)
+            ion=0, # number of ion species
             prof_names=['te_transp', 'ti_transp',], #TODO: double check CPO format
             attributes=['flux',]
                               ):
@@ -170,7 +172,7 @@ def output_value_to_coretransp(
     if len(coretransp_datastructure.values[0].te_transp.flux) != len(r_s):
         coretransp_datastructure.values[0].te_transp.flux = np.zeros((len(r_s)))                        
 
-    # NB: when this is commented out and will not change the coretransp passed
+    # NB: when this is commented out - will not change the coretransp passed
     for prof_name in prof_names:
 
         for attribute in attributes:

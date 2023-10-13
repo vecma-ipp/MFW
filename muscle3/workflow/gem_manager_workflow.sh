@@ -6,6 +6,10 @@ if [ -z "$MUSCLE3_HOME" ] ; then
     exit 1
 fi
 
+export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/cobra/u/yyudin/muscle3/lib
+export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/cobra/u/yyudin/code/json-fortran/build/lib/
+
+
 username=yyudin
 
 echo 'Running gem workflow in Fortran'
