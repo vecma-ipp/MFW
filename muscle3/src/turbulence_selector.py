@@ -90,7 +90,7 @@ def turbulence_model_selector():
         if np.any(ti_transp_flux_cov > ti_transp_flux_cov_reltol) and COV_CRITERION_USE:
             bool_call_sim = True
         
-        #bool_call_sim = not bool_call_sim # stab to simply alternate between two implementations
+        #bool_call_sim = not bool_call_sim # stub to simply alternate between two implementations
 
         # Check if input values are within learned bounds
         bool_outofbounds = coretransp_uncertainty['bool_outofbounds'] #[coretransp_uncertainty_dict['bool_outofbounds']]

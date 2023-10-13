@@ -1,6 +1,8 @@
 #/* -*- yaml -*- */
 ymmsl_version: v0.1
 
+# COMMENT: OUTDATED FILE!
+
 model:
   name: fusion_gem_surr
 
@@ -115,7 +117,7 @@ implementations:
   ets_impl:
     executable: /u/yyudin/code/MFW/muscle3/bin/COBRA/ets_M3
   gem_surr_impl:
-    executable: python3 /u/yyudin/code/MFW/muscle3/src/gem_surr_M3.py
+    executable: python3 /u/yyudin/code/MFW/muscle3/src/gem_surr_mft_M3.py
   gem_surr_impl_debug:
     executable: xterm
     args:
@@ -123,7 +125,7 @@ implementations:
       - python3
       - -m
       - pdb
-      - /u/yyudin/code/MFW/muscle3/src/gem_surr_M3.py
+      - /u/yyudin/code/MFW/muscle3/src/gem_surr_mft_M3.py
   chease_impl:
     executable: /u/yyudin/code/MFW/muscle3/bin/COBRA/chease_M3
   chease_impl_debug:
@@ -139,15 +141,21 @@ implementations:
 settings:
   transport.duration: 0.05
   transport.dt: 0.01
-  init_cpo_dir: "../../../../../../workflows/AUG_28906_6"
+  #init_cpo_dir: "../../../../../../workflows/AUG_28906_6"
+  init_cpo_dir: "../../../../../../workflows/AUG_28906_6_8ft_restart"
   final_cpo_dir: "./"
   muscle_remote_log_level: "DEBUG"  
   slice_initial_number: 0
   save_slice: True
-  turbulence.rho_ind_s: 68
+  adaptive_timestep: False
+  #turbulence.rho_ind_s: 68
+  turbulence.rho_ind_s: [15.0, 31.0, 44.0, 55.0, 66.0, 76.0, 85.0, 94.0]
   turbulence.profs_out: "ti_transp.flux"
-  turbulence.surrogate_path: "../../../../../../workflows/gem_es_model.pickle"
-  turbulence.cortransp_default: "ets_coretransp_in.cpo"
+  # turbulence.surrogate_path: "../../../../../../workflows/gem_es_model"
+  turbulence.surrogate_path: "../../../../../../workflows/gem0_es_model"
+  #turbulence.cortransp_default: "ets_coretransp_in.cpo"
+  turbulence.cortransp_default: "../../../../../../workflows/gem_coretransp.cpo"
+  turbulence.bool_send_uncertainty: False
 
 
 #checkpoints:

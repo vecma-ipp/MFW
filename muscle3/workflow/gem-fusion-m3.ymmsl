@@ -169,11 +169,11 @@ implementations:
       - /u/yyudin/code/MFW/muscle3/bin/COBRA/imp4dv_M3
 
 settings:
-  transport.duration: 1.0
+  transport.duration: 0.2
   transport.dt: 0.001
   # init_cpo_dir: "../../../../../../workflows/AUG_28906_6"
-  # init_cpo_dir: "../../../../gem_resume_data"
-  init_cpo_dir: "../../../../../../workflows/AUG_28906_6_8ft_restart"
+  init_cpo_dir: "../../../../gem_resume_data"
+  # init_cpo_dir: "../../../../../../workflows/AUG_28906_6_8ft_restart"
   final_cpo_dir: "./"
   muscle_remote_log_level: "DEBUG"  
   slice_initial_number: 0
