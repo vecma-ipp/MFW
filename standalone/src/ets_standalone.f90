@@ -34,6 +34,8 @@ module ets_standalone
   integer, save :: inner_steps_incr_factor = 10 !!! factor to increase inner_steps_counts
   real(8), save :: delTe_limit = 0.2_8          !!! limit value for Te_frac
   real(8), save :: deldTe_limit = 0.1_8         !!! limit value for dTe_frac
+  real(8), save :: delTi_limit = 0.2_8          !!! YY: limit value for Ti_frac
+  real(8), save :: deldTi_limit = 0.1_8         !!! YY: limit value for dTi_frac
 
   real(8), pointer :: d_prof(:) => NULL() ! 1. !(/ ((1/log(i+1.)),i=1,100) /)
   real(8), pointer :: v_prof(:) => NULL() ! 1. !(/ ((1/log(i+1.)),i=1,100) /)
@@ -125,9 +127,11 @@ contains
     integer   :: j                   !!! dummy variable
     real(R8)  :: dtime               !!! incremental time step size
     real      :: rho_tor_max         !!! max tho_tor value
-    real :: Te_dev, dTe_dev
-    real, allocatable :: Te_frac(:)   !!! deviation of Te
+    real :: Te_dev, dTe_dev, Ti_dev, dTi_dev
+    real, allocatable :: Te_frac(:)   !!! deviation of Ty
     real, allocatable :: dTe_frac(:)  !!! deviation of dTe/drho
+    real, allocatable :: Ti_frac(:)   !!! YY: deviation of Ti
+    real, allocatable :: dTi_frac(:)  !!! YY: deviation of dTi/drho
     logical   :: exceeds_limit       !!! have we exceeded these limits?
     ! coreprof relevant to the Te test
     real(R8)  :: control_double_test(6)
@@ -166,7 +170,7 @@ contains
     allocate(equil_iter(1))
     allocate(corep_iter(1))
 
-!allocate(coret_work(1))
+   !allocate(coret_work(1))
     allocate(coret_ext(1))
     allocate(cores_work(1))
 
@@ -275,6 +279,7 @@ contains
 
     print *, "adaptive_timestep= ", adaptive_timestep !!!DEBUG
     
+    ! Check if adaptive timestep is needed !YY
     if (adaptive_timestep) then
       ii              = 1
       inner_steps_cur = inner_steps_init
@@ -282,6 +287,8 @@ contains
       control_double_test(1) = dtime
       allocate(Te_frac(nrho))
       allocate(dTe_frac(nrho))
+      allocate(Ti_frac(nrho)) !!!YY
+      allocate(dTi_frac(nrho)) !!!YY
 
       do while (ii .le. inner_steps_cur)
 
@@ -298,6 +305,12 @@ contains
          dTe_frac = abs( (corep_ref(1)%te%ddrho - corep_new_test(1)%te%ddrho) / (abs(corep_ref(1)%te%ddrho) + corep_ref(1)%te%value / rho_tor_max) )
          dTe_dev = MAXVAL(dTe_frac)
 
+         Ti_frac = abs( (corep_ref(1)%ti%value - corep_new_test(1)%ti%value) / corep_ref(1)%ti%value ) !!!YY
+         Ti_dev = MAXVAL(Ti_frac) !!!YY
+
+         dTi_frac = abs( (corep_ref(1)%ti%ddrho - corep_new_test(1)%ti%ddrho) / (abs(corep_ref(1)%ti%ddrho) + corep_ref(1)%ti%value / rho_tor_max) ) !!!YY
+         dTi_dev = MAXVAL(dTi_frac) !!!YY
+
          if (Te_dev .ge. delTe_limit) then 
             write(*,"('At inner step ',I2,': Te deviates by ',F6.2,'%')") ii, Te_dev*100
             exceeds_limit = .true.
@@ -306,18 +319,28 @@ contains
             write(*,"('At inner step ',I2,': dTe/drho deviates by ',F6.2,'%')") ii, dTe_dev*100
             exceeds_limit = .true.
          end if
+         if (Ti_dev .ge. delTi_limit) then !!!YY
+            write(*,"('At inner step ',I2,': Ti deviates by ',F6.2,'%')") ii, Ti_dev*100
+            exceeds_limit = .true.
+         end if
+         if (dTi_dev .ge. deldTi_limit) then !!!YY 
+            write(*,"('At inner step ',I2,': dTi/drho deviates by ',F6.2,'%')") ii, dTi_dev*100
+            exceeds_limit = .true.
+         end if
 
          if (exceeds_limit) then
             if (ii.eq.1) then
                ! increase number of inner steps and try again (with smaller dtime)
                inner_steps_cur = inner_steps_cur * inner_steps_incr_factor
                if (inner_steps_cur > inner_steps_limit) then
-                  print *,"!!!!!Exceeded inner stepping limit, stopping!!!!!"
+                  print *,"!!!!!Exceeded inner stepping limit, stopping at first timestep adaption iteration!!!!!"
                   write(*,"('inner_steps_cur=',I11,' and inner_steps_limit=',I11)") inner_steps_cur,inner_steps_limit
                   write(*,"('Inner dt=',F15.12,' max deviation Te=',F6.2,'% and dTe=',F6.2,'%')") tau/REAL(inner_steps_cur),Te_dev*100,dTe_dev*100
                   write(*,"('Te_frac = ',100(F6.2))") Te_frac
                   write(*,"('dTe_frac = ',100(F6.2))") dTe_frac
-  !# 444
+                  write(*,"('Ti_frac = ',100(F6.2))") Ti_frac !!!YY
+                  write(*,"('dTi_frac = ',100(F6.2))") dTi_frac !!!YY
+                  !# 444
 
                   STOP
                endif
@@ -325,7 +348,7 @@ contains
                control_double_test(1) = dtime
             else
                ! stop the inner stepping
-               write(*,"('Stops advancing before inner step ',I2,' for total time = ',F9.6,': max deviation for Te = ',F6.2,'% and dTe/drho = ',F6.2,'%')") ii, ii*dtime, Te_dev*100, dTe_dev*100
+               write(*,"('Stops advancing before inner step ',I2,' for total time = ',F9.6,': max deviation for Te = ',F6.2,'% dTe/drho = ',F6.2,'%' Ti = ',F6.2,'%  dTi = ',F6.2,'% )") ii, ii*dtime, Te_dev*100, dTe_dev*100, Ti_dev*100, dTi_dev*100
                EXIT
             end if
          else
@@ -335,10 +358,14 @@ contains
          endif
          
       end do
+   
+    ! End of timestep adaptation - how this can be bertween if and else? !YY 
     call copy_cpo(corep_old_test,corep_out)
 
     deallocate(Te_frac)
     deallocate(dTe_frac)
+    deallocate(Ti_frac) !!!YY
+    deallocate(dTi_frac) !!!YY
 
     write(*,"('Loop#',I4.4,': advanced with inner steps to a total step of ',F9.6,' (targeted tau=',F9.6,')')") init_step+cpt,(ii-1)*dtime,tau
     corep_out(1)%time = time_in + (ii-1)*dtime
@@ -615,18 +642,20 @@ contains
     real :: Te_dev, dTe_dev
     real, allocatable :: Te_frac(:)   !!! deviation of Te
     real, allocatable :: dTe_frac(:)  !!! deviation of dTe/drho
+    real, allocatable :: Ti_frac(:)   !!! deviation of Ti !YY
+    real, allocatable :: dTi_frac(:)  !!! deviation of dTi/drho !YY
     logical   :: exceeds_limit       !!! have we exceeded these limits?
 
     type (type_coreprof), pointer :: corep_old_test(:) => NULL(), corep_iter_test(:) => NULL(), corep_new_test(:) => NULL(), corep_ref(:) => NULL()
-!!! coreprof relevant to the Te test
+    !!! coreprof relevant to the Te test
     real(R8)  :: control_double_test(6)
-!!! control_double that replaces tau with dtime
+    !!! control_double that replaces tau with dtime
 
     character(len=*), intent(in) :: corep_in_file
     character(len=*), intent(in) :: equil_in_file
     character(len=*), intent(in) :: coret_in_file, cores_in_file
     character(len=*), intent(in) :: corei_in_file
-!character(F_STR_SIZE), intent(out) :: corep_out_file, equil_out_file
+   !character(F_STR_SIZE), intent(out) :: corep_out_file, equil_out_file
 
     integer, save :: cpt = 0
     character(4)  :: cptstr
@@ -639,13 +668,13 @@ contains
 
     integer, allocatable :: nzimp(:), ntype(:), ncomp(:)
 
-! hard-coded, usually input of ets_wrapper and set by muscle cxa config file
+   ! hard-coded, usually input of ets_wrapper and set by muscle cxa config file
     control_integer = (/ 4, 0, 0 /)
     control_double = (/ tau_in, 1.0_8, 1.0_8, 1.e0_8, 1.e-4_8, 1.0_8 /) 
 
     tau = control_double(1)
 
-!...  read inputs
+    !...  read inputs
     allocate(corep_old(1))
     allocate(corep_iter(1))
     allocate(equil_old(1))
@@ -654,12 +683,12 @@ contains
     allocate(cores(1))
     allocate(corei(1))
 
-!allocate(coret_work(1))
+    !allocate(coret_work(1))
     allocate(coret_ext(1))
     allocate(cores_work(1))
 
 
-! read CPO file to CPO type
+    ! read CPO file to CPO type
     open (unit = 10, file = corep_in_file, &
          status = 'old', form = 'formatted', &
          action = 'read', iostat = ios)
@@ -746,7 +775,7 @@ contains
     time_in = corep_old(1)%time
 
     print *,"run ets"
-!...  run ETS
+    !...  run ETS
     call fill_param(code_parameters, 'ets.xml', '', 'ets.xsd')
 
     write(cptstr,'(I4.4)') init_step+cpt
@@ -756,7 +785,7 @@ contains
     nimp = 0
     max_nzimp = 0
     
-!! ===> 4.10a <===
+    !! ===> 4.10a <===
     nneut = 0
     nnucl = nion+nimp
     allocate(NZIMP(NIMP))
@@ -766,7 +795,7 @@ contains
     print *,'nrho=',nrho,'nion=',nion
     
     
-!! DO I REALLY NEED THAT LINE ???
+    !! DO I REALLY NEED THAT LINE ???
     CALL ALLOCATE_CORETRANSP_CPO (1, NRHO, NNUCL, NION,  NIMP,  NZIMP, NNEUT, NTYPE, NCOMP, coret_work)
 
     print *,'interpolate_transp'
@@ -790,7 +819,7 @@ contains
              endif
              call copy_cpo(coret_ext(1),coret_old(1))
           endif
-!# 325
+       !# 325
 
           CALL INTERPOLATE_TRANSP(NRHO, NION, corep_old(1)%rho_tor, &
                coret_ext(1), coret_work(1))
@@ -812,25 +841,25 @@ contains
                coret(1), coret_work(1))
           d_limit = tmp_d_bool
           v_limit = tmp_v_bool
-!!!TO BE UPDATE!!! v_limit = .true.
+        !!!TO BE UPDATE!!! v_limit = .true.
        endif
     endif
 
-!!$    !same for sources if some are externals
-!!$    !allocate_coresource_cpo
-!!$    !interpolate_source
-!!$    NRHO                          = SIZE(COREPROF(1)%rho_tor)
-!!$    NION                          = SIZE(COREPROF(1)%ni%value, DIM=2)
-!!$    NIMP                          = SIZE(CORESOURCE(1)%sz%imp, DIM=2)
-!!$    MAX_NZIMP                     = SIZE(CORESOURCE(1)%sz%imp, DIM=3)
-!!$    call deallocate_cpo(coresource)
-!!$    CALL ALLOCATE_CORESOURCE_CPO    (NOCUR, NRHO, NION, NIMP, MAX_NZIMP,  CORESOURCE)
-!!$    CORESOURCE(1)%rho_tor         = COREPROF(1)%rho_tor
-!!$    CALL GET_SOURCE_STATUS          (TIME,  INTERPOL, CORESOURCE,       CORESOURCE_WORK)
-!!$    call interpolate_source(NRHO, NION, NIMP, MAX_NZIMP, COREPROF(1)%rho_tor, &
-!!$         coresource_work(1), coresource_arr(1))
-!!$    call deallocate_cpo(CORESOURCE_WORK)
-!!$
+      !!$    !same for sources if some are externals
+      !!$    !allocate_coresource_cpo
+      !!$    !interpolate_source
+      !!$    NRHO                          = SIZE(COREPROF(1)%rho_tor)
+      !!$    NION                          = SIZE(COREPROF(1)%ni%value, DIM=2)
+      !!$    NIMP                          = SIZE(CORESOURCE(1)%sz%imp, DIM=2)
+      !!$    MAX_NZIMP                     = SIZE(CORESOURCE(1)%sz%imp, DIM=3)
+      !!$    call deallocate_cpo(coresource)
+      !!$    CALL ALLOCATE_CORESOURCE_CPO    (NOCUR, NRHO, NION, NIMP, MAX_NZIMP,  CORESOURCE)
+      !!$    CORESOURCE(1)%rho_tor         = COREPROF(1)%rho_tor
+      !!$    CALL GET_SOURCE_STATUS          (TIME,  INTERPOL, CORESOURCE,       CORESOURCE_WORK)
+      !!$    call interpolate_source(NRHO, NION, NIMP, MAX_NZIMP, COREPROF(1)%rho_tor, &
+      !!$         coresource_work(1), coresource_arr(1))
+      !!$    call deallocate_cpo(CORESOURCE_WORK)
+      !!$
 
 
     print *,'call SPITZER_RESISTIVITY'
@@ -841,10 +870,10 @@ contains
     coret_work(1)%values(1)%sigma = coret_sigma(1)%values(1)%sigma
 
 
-!# 379
-!    call open_write_file(30,"ets_coretransp-work_in_"//cptstr//".cpo")
-!    call write_cpo(coret_work(1),'coretransp')
-!    call close_write_file
+    !# 379
+    !    call open_write_file(30,"ets_coretransp-work_in_"//cptstr//".cpo")
+    !    call write_cpo(coret_work(1),'coretransp')
+    !    call close_write_file
 
     print *,"delTe_limit = ",delTe_limit*100,"%"
     print *,"deldTe_limit = ",deldTe_limit*100,"%"
@@ -896,7 +925,7 @@ contains
 
        if (exceeds_limit) then
           if (ii.eq.1) then
-! increase number of inner steps and try again (with smaller dtime)
+    ! increase number of inner steps and try again (with smaller dtime)
              inner_steps_cur = inner_steps_cur * inner_steps_incr_factor
              if (inner_steps_cur > inner_steps_limit) then
                 print *,"!!!!!Exceeded inner stepping limit, stopping!!!!!"
@@ -904,14 +933,14 @@ contains
                 write(*,"('Inner dt=',F15.12,' max deviation Te=',F6.2,'% and dTe=',F6.2,'%')") tau/REAL(inner_steps_cur),Te_dev*100,dTe_dev*100
                 write(*,"('Te_frac = ',100(F6.2))") Te_frac
                 write(*,"('dTe_frac = ',100(F6.2))") dTe_frac
-!# 444
+    !# 444
 
                 STOP
              endif
              dtime = tau/REAL(inner_steps_cur)
              control_double_test(1) = dtime
           else
-! stop the inner stepping
+    ! stop the inner stepping
              write(*,"('Stops advancing before inner step ',I2,' for total time = ',F9.6,': max deviation for Te = ',F6.2,'% and dTe/drho = ',F6.2,'%')") ii, ii*dtime, Te_dev*100, dTe_dev*100
              EXIT
           end if
@@ -926,7 +955,7 @@ contains
     deallocate(Te_frac)
     deallocate(dTe_frac)
 
-! in all cases we want corep_old_test
+    ! in all cases we want corep_old_test
     call copy_cpo(corep_old_test,corep_new)
 
     write(*,"('Loop#',I4.4,': advanced with inner steps to a total step of ',F9.6,' (targeted tau=',F9.6,')')") init_step+cpt,(ii-1)*dtime,tau
@@ -935,20 +964,20 @@ contains
     write(cptstr,'(I4.4)') init_step+cpt
     cpt = cpt+1
 
-!corep_out_file = 'ets_coreprof_'//cptstr//'.cpo'
-!equil_out_file = 'ets_equilibrium_'//cptstr//'.cpo'
-!corep_out_file = 'ets_coreprof_out.cpo'
-!equil_out_file = 'ets_equilibrium_out.cpo'
+    !corep_out_file = 'ets_coreprof_'//cptstr//'.cpo'
+    !equil_out_file = 'ets_equilibrium_'//cptstr//'.cpo'
+    !corep_out_file = 'ets_coreprof_out.cpo'
+    !equil_out_file = 'ets_equilibrium_out.cpo'
 
-!...  write the results
-!call open_write_file(20,corep_out_file)
-!call write_cpo(corep_new(1),'coreprof')
-!    write(6,*)corep_new(1)%rho_tor_norm
+    !...  write the results
+    !call open_write_file(20,corep_out_file)
+    !call write_cpo(corep_new(1),'coreprof')
+    !    write(6,*)corep_new(1)%rho_tor_norm
     aoutput(:)=corep_new(1)%te%value
-!call close_write_file
-!call open_write_file(21,equil_out_file)
-!call write_cpo(equil_iter(1),'equilibrium')
-!call close_write_file
+    !call close_write_file
+    !call open_write_file(21,equil_out_file)
+    !call write_cpo(equil_iter(1),'equilibrium')
+    !call close_write_file
 
     call deallocate_cpo(corep_old)
     call deallocate_cpo(corep_iter)
@@ -987,6 +1016,8 @@ contains
 
   end subroutine ets2file
   ! -----------------------------------------------------------------------
+
+
 
   ! -----------------------------------------------------------------------
   subroutine interpolate_transp(nrho_out, nion, rho_tor_out, coretransp_in, coretransp_out)
