@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# COMMENT: OUTDATED FILE!
+
 if [ -z "$MUSCLE3_HOME" ] ; then
     echo 'Error: MUSCLE3_HOME is not set.'
     echo "Use 'MUSCLE3_HOME=/path/to/muscle3 $0' to run the example"

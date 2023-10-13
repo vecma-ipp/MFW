@@ -169,8 +169,8 @@ implementations:
       - /u/yyudin/code/MFW/muscle3/bin/COBRA/imp4dv_M3
 
 settings:
-  transport.duration: 0.2
-  transport.dt: 0.001
+  transport.duration: 0.02
+  transport.dt: 0.0001
   # init_cpo_dir: "../../../../../../workflows/AUG_28906_6"
   init_cpo_dir: "../../../../gem_resume_data"
   # init_cpo_dir: "../../../../../../workflows/AUG_28906_6_8ft_restart"
@@ -182,8 +182,8 @@ settings:
   # turbulence.rho_ind_s: [68.0]
   turbulence.rho_ind_s: [15.0, 31.0, 44.0, 55.0, 66.0, 76.0, 85.0, 94.0]
   turbulence.profs_out: "ti_transp.flux"
-  turbulence.surrogate_path: "../../../../../../workflows/gem_es_model.pickle"
+  #turbulence.surrogate_path: "../../../../../../workflows/gem_es_model"
   turbulence.cortransp_default: "../../../../../../workflows/gem_coretransp.cpo"
 
-# Comment: this runs uses smooth 'restart' core profiles and developed state of turbulence as initial value, and 10 times smaller time step size without adaptation; to check if this tau would be enough not to lead to non-monotonic profiles 
+# Comment: this runs uses smooth 'restart' core profiles and developed state of turbulence as initial value, and 100 times smaller time step size without adaptation; to check if this tau would be enough not to lead to non-monotonic profiles 
   

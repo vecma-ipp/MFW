@@ -6,6 +6,7 @@ if [ -z "$MUSCLE3_HOME" ] ; then
     exit 1
 fi
 
+#export LD_LIBRARY_PATH=$MUSCLE3_HOME/lib:$LD_LIBRARY_PATH
 export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/cobra/u/yyudin/muscle3/lib
 export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/cobra/u/yyudin/code/json-fortran/build/lib/
 
@@ -18,7 +19,8 @@ echo 'Running gem workflow in Fortran'
 #source  ~/muscle3/bin/muscle3.env
 
 currdate=$(date +"%Y%m%d")
-run_dir_name=run_fusion_gem_${currdate}
+code_run_name=gem_00001_
+run_dir_name=run_fusion_${code_run_name}${currdate}
 mkdir ${run_dir_name}
 
 #muscle_manager --start-all gem-fusion-m3.ymmsl &
@@ -27,8 +29,6 @@ muscle_manager --log-level DEBUG --run-dir ${run_dir_name} --start-all gem-fusio
 echo 'MUSCLE_MANAGER started'
 
 manager_pid=$!
-
-#export LD_LIBRARY_PATH=$MUSCLE3_HOME/lib:$LD_LIBRARY_PATH
 
 #BINDIR=../bin/COBRA/
 #SRCDIR=../src/
@@ -61,4 +61,4 @@ wait
 
 # Make plots for the evolution of core profiles
 cd ..
-python read_profs.py gem_ ${currdate}
+python read_profs.py ${code_run_name} ${currdate}

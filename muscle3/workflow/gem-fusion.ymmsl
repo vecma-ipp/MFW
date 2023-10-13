@@ -1,6 +1,8 @@
 #/* -*- yaml -*- */
 ymmsl_version: v0.1
 
+# COMMENT: OBSOLETE FILE!
+
 model:
   name: fusion_gem
 
