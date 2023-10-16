@@ -34,7 +34,7 @@ RUN_NOT_ONLY_ALL=${7:-1}
 READ_FROM_CSV=${8:-1}
 
 # Code name suffix
-CODENAME=gem0
+CODENAME=gem
 
 #DIR='/marconi_scratch/userexternal/yyudin00/VARY_1FT_GEM_NT_qairnbbz' # first run of 16 GEM cases in a script, n_it<=500
 #DIR='/marconi_scratch/userexternal/yyudin00/VARY_1FT_GEM_NT_qpyxg3bb' # first dir with 2 GEM runs
