@@ -177,7 +177,10 @@ def turbulence_model_manager():
             for feature,dict_bounds in dict_outofbounds.items():
                 for i,bool_coord in enumerate(dict_bounds['within'].array):
                     bool_coord_inbounds[i] = bool_coord_inbounds[i] and bool_coord
+                    print(f">> {feature} @ft#{i} is in bounds: {bool_coord}")
             
+            print(f"> bool_coord_inbounds = {bool_coord_inbounds}") ###DEBUG
+
             fluxes_out = np.zeros((n_fts, n_outputs), dtype=float)
             for i,bool_coord_ib in enumerate(bool_coord_inbounds):
                 if bool_coord_ib:

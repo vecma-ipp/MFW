@@ -51,7 +51,7 @@ def gem_surr_M3():
     coretransp_default_file_path = coretransp_default_file_name # redundant ATM
 
     prof_out_names = ["te_transp_flux", "ti_transp_flux"] # MUSCLE3 currently does not support list of stings as a setting
-    n_dim_out = len([prof_out_names])
+    n_dim_out = len(prof_out_names)
 
     rho_ind_s = [int(x) for x in rho_ind_s]
     n_fts = len(rho_ind_s)
@@ -203,7 +203,9 @@ def gem_surr_M3():
         int_iteration = int_iteration + 1 
         sys.stdout.flush()
 
-        return int_iteration
+        print(f"> End of iteration {int_iteration-1}")
+
+    return int_iteration
 
 
 if __name__ == '__main__':
