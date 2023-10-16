@@ -458,7 +458,6 @@ def read_profs(codename='gem_', dates=['20230823_151955'], prefix_name='workflow
 if __name__ == '__main__':
 
     if len(sys.argv) < 2 :
-        #codename = 'gem_surr'
         codename = 'gem_'
     else:
         codename = str(sys.argv[1])
@@ -469,13 +468,17 @@ if __name__ == '__main__':
         dates = sys.argv[2:]
     
     dates = read_profs(codename=codename, dates=dates) # to read results of M3-WF run
-    
-    #dates = read_profs(codename='', dates=['20230928', '20230929', '20231004', '20231006', '20231009', '20231010'], prefix_name='../standalone/bin/gem_develop_turbulence/', sufix_name='/', cpo_filebase='gem_', cpo_names=['coretransp']) # to read from stanalone runs
 
 
+    # some set of first GEM-ETS-CHEASE runs with MUSCLE3
     #dates = ['20230818_135913', '20230821_161005', '20230822_150943', '20230823_151955', '20230824', '20230825', '20230828', '20230829', '20230830', '20230831', '20230901']
     #dates = ['20230918', '20230922']
-    
+
+    # plotting for standalone GEM to get good initial turbulence snapshots
+    #dates = ['20230928', '20230929', '20231004', '20231006', '20231009', '20231010', '20231016']
+    #dates = read_profs(codename='', dates=dates, prefix_name='../standalone/bin/gem_develop_turbulence/', sufix_name='/', cpo_filebase='gem_', cpo_names=['coretransp']) # to read from stanalone runs
+
+    # plotting LCFS for the same runs
     #read_equil(dates)
 
 
