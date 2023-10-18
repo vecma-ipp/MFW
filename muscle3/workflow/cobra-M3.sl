@@ -50,6 +50,6 @@ echo "STARTING MUSCLE3 FROM $PWD"
 #./gem0_workflow.sh	# gem0 workflow (no MPI)
 
 # NB: CURRENTLY RUNNING A MULTIPLE IMPLEMENTATION VERSION OF THE WORKFLOW
-MUSCLE3_HOME=/u/yyudin/muscle3 ./gem_workflow.sh # option for a workflow with ETS-CHEASE-GEM
+#MUSCLE3_HOME=/u/yyudin/muscle3 ./gem_workflow.sh # option for a workflow with ETS-CHEASE-GEM
 #MUSCLE3_HOME=/u/yyudin/muscle3 ./gem_multiimpl_workflow.sh # option for a workflow with ETS-CHEASE-[GEM/surrogate]
-#MUSCLE3_HOME=/u/yyudin/muscle3 ./gem_manager_workflow.sh # option for a workflow with ETS-CHEASE-TURB, where TURB is could dynamically be GEM/GEM0/ES
+MUSCLE3_HOME=/u/yyudin/muscle3 ./gem_manager_workflow.sh # option for a workflow with ETS-CHEASE-TURB, where TURB is could dynamically be GEM/GEM0/ES
