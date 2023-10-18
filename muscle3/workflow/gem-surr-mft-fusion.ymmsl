@@ -135,8 +135,8 @@ implementations:
     executable: /u/yyudin/code/MFW/muscle3/bin/COBRA/imp4dv_M3
   
 settings:
-  transport.duration: 2.0
-  transport.dt: 0.01
+  transport.duration: 0.02
+  transport.dt: 0.00001
   #init_cpo_dir: "../../../../../../workflows/AUG_28906_6"
   init_cpo_dir: "../../../../../../workflows/AUG_28906_6_8ft_restart"
   final_cpo_dir: "./"
@@ -145,7 +145,7 @@ settings:
   save_slice: True
   adaptive_timestep: False
   turbulence.rho_ind_s: [15.0, 31.0, 44.0, 55.0, 66.0, 76.0, 85.0, 94.0]
-  turbulence.profs_out: "ti_transp.flux"
+  #turbulence.profs_out: "ti_transp.flux"
   #turbulence.surrogate_path: "../../../../../../workflows/gem_es_model"
   turbulence.surrogate_path: "../../../../../../workflows/gem0_es_model"
   turbulence.cortransp_default: "../../../../../../workflows/gem_coretransp_8ft.cpo"
@@ -159,3 +159,4 @@ settings:
 #  - every 1
 #    start 0
   
+# COMMENT: running ETS+CHEASE+GEM0SUR-WF for dt=10^-5 for 2k steps to see if it (workflow) converge, and to a monotonic profile; 
