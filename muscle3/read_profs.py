@@ -62,10 +62,10 @@ def read_files(foldername, quantity, attribute, coords, filetype='coreprof', dat
     else:
     """
 
-    file_names = [f for f in os.listdir(foldername) if
-                  os.path.isfile(os.path.join(foldername, f)) and
-                  f.endswith(file_ext) and
-                  f.startswith(file_base_tocheck)
+    file_names = [f for f in os.listdir(foldername) if # all files in the directory
+                  os.path.isfile(os.path.join(foldername, f)) and # should be a file
+                  f.endswith(file_ext) and # name should end with a particular extension e.g. .cpo
+                  f.startswith(file_base_tocheck) # name should have particular prefix e.g. gem_coreprof_
                   ]
     file_names.sort()
 
@@ -263,8 +263,9 @@ def read_profs(codename='gem_', dates=['20230823_151955'], prefix_name='workflow
     
     n_rho_resol = 1
 
-    bool_sur_involved = 'sur' in codename or 'multiimpl' in codename
-    bool_sur_involved = True
+    bool_sur_involved = ('sur' or 'multiimpl' or 'manager') in codename 
+    # ('sur' in codename) or ('multiimpl' in codename) or ('manager' in codename)
+    #bool_sur_involved = True
 
     # Load reference data for the surrogate training data set
 
@@ -446,8 +447,8 @@ def read_profs(codename='gem_', dates=['20230823_151955'], prefix_name='workflow
             plt.close()
 
     ### Plotting all quantities against each other
-
-    plot_quantities(datadict=datadict, save_fold_name=save_fold_name, coord_num_fts=coord_num_fts, bool_sur_involved=bool_sur_involved, n_run_per_ft=n_run_per_ft, ref_data=ref_data)
+    if bool_sur_involved:
+        plot_quantities(datadict=datadict, save_fold_name=save_fold_name, coord_num_fts=coord_num_fts, bool_sur_involved=bool_sur_involved, n_run_per_ft=n_run_per_ft, ref_data=ref_data)
 
     ### Write down a single csv for simulation results
 
@@ -475,7 +476,7 @@ if __name__ == '__main__':
     #dates = ['20230918', '20230922']
 
     # plotting for standalone GEM to get good initial turbulence snapshots
-    #dates = ['20230928', '20230929', '20231004', '20231006', '20231009', '20231010', '20231016']
+    #dates = ['20230928', '20230929', '20231004', '20231006', '20231009', '20231010', '20231016',]# '20231017']
     #dates = read_profs(codename='', dates=dates, prefix_name='../standalone/bin/gem_develop_turbulence/', sufix_name='/', cpo_filebase='gem_', cpo_names=['coretransp']) # to read from stanalone runs
 
     # plotting LCFS for the same runs
