@@ -15,23 +15,22 @@ username=yyudin
 echo 'Running gem workflow in Fortran'
 
 #. ~/muscle3_venv/bin/activate
-. ~/muscle3/bin/muscle3.env
 #source  ~/muscle3/bin/muscle3.env
+. ~/muscle3/bin/muscle3.env
 
 currdate=$(date +"%Y%m%d")
 code_run_name=gem0_00001_
 run_dir_name=run_fusion_${code_run_name}${currdate}
-mkdir ${run_dir_name}
+#mkdir ${run_dir_name}
 
 #muscle_manager --start-all gem-fusion-m3.ymmsl &
-muscle_manager --log-level DEBUG --run-dir ${run_dir_name} --start-all gem-fusion-m3.ymmsl &
+#muscle_manager --log-level DEBUG --run-dir ${run_dir_name} --start-all gem-fusion-m3.ymmsl &
+muscle_manager --log-level DEBUG --start-all gem0-fusion-m3.ymmsl &
 
 echo 'MUSCLE_MANAGER started'
 
 manager_pid=$!
 
-#BINDIR=../bin/COBRA/
-#SRCDIR=../src/
 
 #next two lines just to get additional info about processes and cores
 sleep 60
@@ -46,7 +45,7 @@ wait
 # # Copy the results in a folder for the next submission and continuation of the run 
 # folder_to_copy_from=${run_dir_name}
 # folder_to_copy_to=gem_resume_data
-# files_to_copy=('instances/transport/workdir/*_ets_equilibrium_in.cpo' 'instances/transport/workdir/*_ets_coreprof_in.cpo' 'instances/turbulence/workdir/t*.dat')
+# files_to_copy=('instances/transport/workdir/*_ets_equilibrium_out.cpo' 'instances/transport/workdir/*_ets_coreprof_out.cpo' 'instances/turbulence/workdir/t*.dat')
 # # all *.dat files may be added, but the the resulting folder size would be very large
 # files_destination=('ets_equilibrium_in.cpo' 'ets_coreprof_in.cpo')
 
