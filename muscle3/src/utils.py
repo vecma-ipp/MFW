@@ -28,6 +28,9 @@ def check_outof_learned_bounds(input, reference):
     Returns: bool: True if input is outisde of the learned bounds
     """
 
+    print(f"reference:\n{reference}") ###DEBUG
+    print(f"input:\n{input}") ###DEBUG
+
     bool_outofbounds = False
 
     dict_outofbounds = {}
@@ -55,6 +58,8 @@ def check_outof_learned_bounds(input, reference):
                 bool_outofbounds = True
                 dict_outofbounds[k]['lesser'][j] = True
                 dict_outofbounds[k]['within'][j] = False
+
+    print(f"dict_outofbounds:\n{dict_outofbounds}") ###DEBUG
 
     return bool_outofbounds, dict_outofbounds
 
