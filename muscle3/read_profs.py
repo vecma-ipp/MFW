@@ -377,13 +377,15 @@ def read_profs(codename='gem_', dates=['20230823_151955'], prefix_name='workflow
             # Display the array of actual ETS time step lengths
             #print(f"> delta-t array for {quantities[i_q]+'_'+attributes[j_a]}: \n{times[1:]-times[:-1]}")
 
-            color_step = 0.07
+            color_step = 0.08
             #color_list = ['b', 'g', 'r', 'y' , 'm', 'c', 'k']
-            color_list = [(0.0, 1.-color_step*i, color_step*i) for i in range(1,10)]
+            color_list = [(1.-color_step*i, 0.0, color_step*i) for i in range(1,12)]
             line_list = ['-', '--', '-.', ':']
             marker_list = ['', '.', 'o', 'v', '^', '<', '>']
             style_lists = [marker_list, line_list, color_list,] 
             fmt_list = [style for style in product(*style_lists)]
+
+            #TODO: combine scalar-vs-time plots for different qauntities and same flux tube
 
             ### Plotting an attribute value at a the n_ft-th flux tube against time
             
@@ -437,6 +439,9 @@ def read_profs(codename='gem_', dates=['20230823_151955'], prefix_name='workflow
                         marker=fmt_list[i//n_timesteps_toplot][0],
                         #marker='.'
                         )
+
+            # Adding vertical lines to indicate the flux tube locations                      
+            ax.vlines(x=n_fts, ymin=data.min(), ymax=data.max(), color='k', linestyle='--')
             
             # ax.set_yscale('symlog')
             ax.set_xlabel('rho coord')
