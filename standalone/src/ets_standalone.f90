@@ -305,10 +305,10 @@ contains
          dTe_frac = abs( (corep_ref(1)%te%ddrho - corep_new_test(1)%te%ddrho) / (abs(corep_ref(1)%te%ddrho) + corep_ref(1)%te%value / rho_tor_max) )
          dTe_dev = MAXVAL(dTe_frac)
 
-         Ti_frac = abs( (corep_ref(1)%ti%value - corep_new_test(1)%ti%value) / corep_ref(1)%ti%value ) !!!YY
+         Ti_frac = abs( (corep_ref(1)%ti%value(:,1)) - corep_new_test(1)%ti%value(:,1) / corep_ref(1)%ti%value(:,1) ) !!!YY
          Ti_dev = MAXVAL(Ti_frac) !!!YY
 
-         dTi_frac = abs( (corep_ref(1)%ti%ddrho - corep_new_test(1)%ti%ddrho) / (abs(corep_ref(1)%ti%ddrho) + corep_ref(1)%ti%value / rho_tor_max) ) !!!YY
+         dTi_frac = abs( (corep_ref(1)%ti%ddrho(:,1) - corep_new_test(1)%ti%ddrho(:,1)) / (abs(corep_ref(1)%ti%ddrho(:,1)) + corep_ref(1)%ti%value(:,1) / rho_tor_max) ) !!!YY
          dTi_dev = MAXVAL(dTi_frac) !!!YY
 
          if (Te_dev .ge. delTe_limit) then 
@@ -335,7 +335,7 @@ contains
                if (inner_steps_cur > inner_steps_limit) then
                   print *,"!!!!!Exceeded inner stepping limit, stopping at first timestep adaption iteration!!!!!"
                   write(*,"('inner_steps_cur=',I11,' and inner_steps_limit=',I11)") inner_steps_cur,inner_steps_limit
-                  write(*,"('Inner dt=',F15.12,' max deviation Te=',F6.2,'% and dTe=',F6.2,'%')") tau/REAL(inner_steps_cur),Te_dev*100,dTe_dev*100
+                  write(*,"('Inner dt=',F15.12,' max deviation Te=',F6.2,'% , dTe=',F6.2,'%' , Ti=',F6.2,'% , dTi=',F6.2,'% )") tau/REAL(inner_steps_cur),Te_dev*100,dTe_dev*100,Ti_dev*100,dTi_dev*100
                   write(*,"('Te_frac = ',100(F6.2))") Te_frac
                   write(*,"('dTe_frac = ',100(F6.2))") dTe_frac
                   write(*,"('Ti_frac = ',100(F6.2))") Ti_frac !!!YY
