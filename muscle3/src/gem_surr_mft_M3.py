@@ -25,7 +25,7 @@ def gem_surr_M3():
     Receives messages with coreprof [,equilibrium] and send messages with coretransp 
     """
 
-    input_names_ind_permut = [0,2,1,3] # permuation of input names relative to one used in EasySurrogate
+    input_names_ind_permut = [0,2,1,3] # permuation of input names relative to one used in EasySurrogate: ['te_value', 'te_ddrho', 'ti_value', 'ti_ddrho'] -> ['te_value', 'ti_value', 'te_ddrho', 'ti_ddrho']
 
     # Creating a MUSCLE3 instance
     instance = Instance({

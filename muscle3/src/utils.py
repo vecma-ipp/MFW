@@ -14,8 +14,8 @@ def training_data_bounds(ref_data, input_names=['te_value', 'ti_value', 'te_ddrh
 
     train_bounds = {k:{'min':np.zeros(n_fts), 'max':np.zeros(n_fts)} for k in input_names}
 
-    for i in range(n_fts):
-        for input in input_names:
+    for input in input_names:
+        for i in range(n_fts):
             train_bounds[input]['min'][i] = ref_data[input].iloc[n_run_per_ft*(i):n_run_per_ft*(i+1)].min()
             train_bounds[input]['max'][i] = ref_data[input].iloc[n_run_per_ft*(i):n_run_per_ft*(i+1)].max()
 
@@ -23,13 +23,15 @@ def training_data_bounds(ref_data, input_names=['te_value', 'ti_value', 'te_ddrh
 
 def check_outof_learned_bounds(input, reference):
     """
-    input: an array of input values for surrogate of size (n_features, n_coordinates)
+    input: an array of input values for surrogate of size (n_features, n_coordinates) in order 'te_value', 'ti_value', 'te_ddrho', 'ti_ddrho'
     reference: a dictionary of training data bounds in format {feature:{'max':array(n_coords),'min':array(n_coords)}}
     Returns: bool: True if input is outisde of the learned bounds
     """
 
     print(f"reference:\n{reference}") ###DEBUG
     print(f"input:\n{input}") ###DEBUG
+
+    input_order = {'te_value':0, 'ti_value':1, 'te_ddrho':2, 'ti_ddrho':3}
 
     bool_outofbounds = False
 
@@ -45,7 +47,7 @@ def check_outof_learned_bounds(input, reference):
 
         for j,v in enumerate(vs['max']): # can use .tolist() to be sure array is converted into a generator
 
-            if v < input[i,j]:
+            if v < input[input_order[k],j]:
                 
                 bool_outofbounds = True
                 dict_outofbounds[k]['greater'][j] = True
@@ -53,7 +55,7 @@ def check_outof_learned_bounds(input, reference):
                 
         for j,v in enumerate(vs['min']):
 
-            if v > input[i,j]: 
+            if v > input[input_order[k],j]: 
 
                 bool_outofbounds = True
                 dict_outofbounds[k]['lesser'][j] = True
@@ -70,7 +72,7 @@ def coreprof_to_input_value(
             attrib_names=['value', 'ddrho'],
                      ):
     """
-    Transforms coreprof message data into values acceptable by a surrogate model as an input
+    Transforms coreprof message data into values acceptable by a surrogate model as an input in order 'te_value', 'te_ddrho', 'ti_value', 'ti_ddrho'
     TODO: look up EasyVVUQ cpo element for coreprof
     TODO: check that all input values are filled with defaults
     TODO: check if there is an implementation in easyvvuq utils
