@@ -265,7 +265,7 @@ def read_profs(codename='gem_', dates=['20230823_151955'], prefix_name='workflow
 
     bool_sur_involved = ('sur' or 'multiimpl' or 'manager') in codename 
     # ('sur' in codename) or ('multiimpl' in codename) or ('manager' in codename)
-    #bool_sur_involved = True
+    bool_sur_involved = True
 
     # Load reference data for the surrogate training data set
 
@@ -283,6 +283,14 @@ def read_profs(codename='gem_', dates=['20230823_151955'], prefix_name='workflow
         'ti_transp.flux': "$Q_{{i}}$",
     }
 
+    color_step = 0.08
+    color_list = ['b', 'g', 'r', 'y' , 'm', 'c', 'k']
+    color_grad_list = [(1.-color_step*i, 0.0, color_step*i) for i in range(1,12)]
+    line_list = ['-', '--', '-.', ':']
+    marker_list = ['', '.', 'o', 'v', '^', '<', '>']
+    style_lists = [marker_list, line_list, color_grad_list,] 
+    fmt_list = [style for style in product(*style_lists)]
+
     coord_num_fts = [14, 30, 43, 55, 66, 76, 85, 95]
 
     #cpo_names = ['coreprof', 'coretransp']
@@ -295,9 +303,10 @@ def read_profs(codename='gem_', dates=['20230823_151955'], prefix_name='workflow
 
         if cpo_name == 'coreprof':
 
-            quantities = ['ti', 'te', 'ni', 'ne', ]
+            #quantities = ['ti', 'te', 'ni', 'ne', ]
+            quantities = ['ti', 'te',]
 
-            attributes = ['ddrho', 'value', ]
+            attributes = ['value', 'ddrho', ]
 
             #coord_num = [68]
             coord_num = [x for x in range(0, 100, n_rho_resol)]
@@ -308,11 +317,12 @@ def read_profs(codename='gem_', dates=['20230823_151955'], prefix_name='workflow
             n_ft = coord_num_fts[n_ft_transp] # plot profiles for the innermost flux tube 
             n_fts = coord_num_fts
 
-            i_q_s = [0, 1, 2, 3] # indiced of quantities to go through
+            #i_q_s = [0, 1, 2, 3] # indiced of quantities to go through
+            i_q_s = [0, 1,] # indiced of quantities to go through
             j_a_s = [0, 1] # indiced of attributes to go through
 
         if cpo_name == 'coretransp':
-            quantities = ['ti_transp', 'te_transp', ]
+            quantities = ['te_transp', 'ti_transp',]
 
             attributes = ['flux', 'diff_eff', 'vconv_eff', ]
 
@@ -328,7 +338,10 @@ def read_profs(codename='gem_', dates=['20230823_151955'], prefix_name='workflow
             i_q_s = [0, 1] # indices of quantities to go through
             j_a_s = [0, 1, 2] # indices of attributes to go through
 
-        for i_q, j_a in product(i_q_s, j_a_s): # could be just [quantities]x[attributes] instead
+        # Create a plot for all quantities for this CPO type
+        common_fig_ax_list = [plt.subplots() for _ in n_fts]
+
+        for j_a, i_q in product(j_a_s, i_q_s): # could be just [quantities]x[attributes] instead
 
             # Reading data of a particular attribute for all files produced by transport code
             # TODO: read data for many folders
@@ -377,16 +390,6 @@ def read_profs(codename='gem_', dates=['20230823_151955'], prefix_name='workflow
             # Display the array of actual ETS time step lengths
             #print(f"> delta-t array for {quantities[i_q]+'_'+attributes[j_a]}: \n{times[1:]-times[:-1]}")
 
-            color_step = 0.08
-            #color_list = ['b', 'g', 'r', 'y' , 'm', 'c', 'k']
-            color_list = [(1.-color_step*i, 0.0, color_step*i) for i in range(1,12)]
-            line_list = ['-', '--', '-.', ':']
-            marker_list = ['', '.', 'o', 'v', '^', '<', '>']
-            style_lists = [marker_list, line_list, color_list,] 
-            fmt_list = [style for style in product(*style_lists)]
-
-            #TODO: combine scalar-vs-time plots for different qauntities and same flux tube
-
             ### Plotting an attribute value at a the n_ft-th flux tube against time
             
             # Iterate over the flux tube locations
@@ -411,16 +414,41 @@ def read_profs(codename='gem_', dates=['20230823_151955'], prefix_name='workflow
                     if quantities[i_q]+'_'+attributes[j_a] in ref_data.columns:
                         min_val = ref_data[quantities[i_q]+'_'+attributes[j_a]].iloc[n_run_per_ft*(n_ft_transp):n_run_per_ft*(n_run_per_ft+1)].min()
                         max_val = ref_data[quantities[i_q]+'_'+attributes[j_a]].iloc[n_run_per_ft*(n_ft_transp):n_run_per_ft*(n_run_per_ft+1)].max()
+                        median_val = (max_val + min_val) / 2.
+                        diff_val = max_val - min_val
+                        print(f"> For {quantities[i_q]+'_'+attributes[j_a]} @ft#{k}: min={min_val}, max={max_val}") ###DEBUG
+                        
                         ax.hlines(y=min_val, xmin=x_values[0], xmax=x_values[-1], color='r',
-                                linestyle='--', label='bounds of the training dataset')
+                                linestyle='--', label=f"bounds of the training dataset")
                         ax.hlines(y=max_val, xmin=x_values[0], xmax=x_values[-1],
                                 color='r', linestyle='--')
                 
                 ax.legend(loc='best')
                 fig.savefig(save_fold_name+'res_'+codename+
                             quantities[i_q]+'_'+attributes[j_a]+'_ft'+str(n_ft)+'_'+dates[0]+'_'+dates[-1]+'.pdf')
-                plt.close()
+                plt.close(fig)
 
+                # Combine scalar-vs-time plots for different qauntities and same flux tube
+                ax_loc = common_fig_ax_list[k][1] #.twinx()
+                # NB: next uses value read in a double-if clause, so wrong median, min, max values might be used!
+                ax_loc.plot(
+                        x_values,
+                        (data[:n_timesteps, n_ft] - min_val) / diff_val, 
+                        marker='.',
+                        color=color_list[(i_q*len(j_a_s) + j_a)%(len(color_list)-1)],
+                        alpha=0.5,
+                        label=f"{lookup_names[quantities[i_q]+'_'+attributes[j_a]] if (quantities[i_q]+'_'+attributes[j_a] in lookup_names) else quantities[i_q]+'_'+attributes[j_a]} @rho={n_ft}"
+                            ) 
+                ax_loc.hlines(y=(min_val-min_val)/diff_val, xmin=x_values[0], xmax=x_values[-1], color=color_list[(i_q*len(j_a_s) + j_a)%(len(color_list)-1)],
+                                linestyle='--',) # label=f"bounds of the training dataset")
+                ax_loc.hlines(y=(max_val-min_val)/diff_val, xmin=x_values[0], xmax=x_values[-1], color=color_list[(i_q*len(j_a_s) + j_a)%(len(color_list)-1)], 
+                                linestyle='--',)
+                # Find intersection of the plot and bounds of the training dataset and add them as vertical lines
+                x_inters_ind = min([np.min(np.where(data[:n_timesteps, n_ft] < min_val)[0], initial=len(x_values)-1),
+                                    np.min(np.where(data[:n_timesteps, n_ft] > max_val)[0], initial=len(x_values)-1)]) # TODO: add check for no intersection
+                ax_loc.vlines(x=x_values[x_inters_ind], ymin=0., ymax=1., color=color_list[(i_q*len(j_a_s) + j_a)%(len(color_list)-1)], 
+                                linestyle='--',)
+                
             ### Plotting attribute profile for multiple time-steps
             
             n_timesteps_toplot = n_timesteps // 10 if n_timesteps // 10 > 0 else 1
@@ -450,6 +478,15 @@ def read_profs(codename='gem_', dates=['20230823_151955'], prefix_name='workflow
             fig.savefig(save_fold_name+'prof_'+codename+'_' +
                         quantities[i_q]+'_'+attributes[j_a]+'_'+dates[0]+'_'+dates[-1]+'.pdf')
             plt.close()
+
+        for ift,(f,a) in enumerate(common_fig_ax_list):
+            a.legend(loc='best')
+            a.set_xlabel('${{t}}$, s')
+            a.set_title(f"Plots for {cpo_name} @ft{ift}")
+
+            f.savefig(save_fold_name+'prof_'+codename+'_'+cpo_name+
+                        '_common_nft'+str(ift)+'_'+dates[0]+'_'+dates[-1]+'.pdf')
+            plt.close(f)
 
     ### Plotting all quantities against each other
     if bool_sur_involved:
