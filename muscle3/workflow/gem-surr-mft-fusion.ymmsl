@@ -160,4 +160,4 @@ settings:
 #  - every 1
 #    start 0
   
-# COMMENT: running ETS+CHEASE+GEM0SUR-WF for dt=10^-5 for 2k steps to see if it (workflow) converge, and to a monotonic profile; 
+# COMMENT: running ETS+CHEASE+GEM0SUR-WF for dt=10^-5 for 1k steps to see if it (workflow) converge, and to a monotonic profile; 
