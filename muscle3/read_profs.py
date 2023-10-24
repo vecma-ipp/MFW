@@ -214,6 +214,13 @@ def write_table_csv(datadict, save_fold_name, coord_num_fts=[14,30,43,55,66,76,8
         "ni_ddrho": "dni-ft",
     }
 
+    dict_naming_numbers = {
+        "te_value": 0,
+        "ti_value": 1,
+        "te_ddrho": 2,
+        "ti_ddrho": 3,
+    }
+
     t_max = max([v.shape[0] for v in datadict.values()])
 
     #datadict_table = {k+'_'+str(i%len(coord_num_fts)):vi for vi in v.T for k,v in datadict.items()}
@@ -223,7 +230,7 @@ def write_table_csv(datadict, save_fold_name, coord_num_fts=[14,30,43,55,66,76,8
 
     # Iterate over quantities - over flux tube - over time readings
     # write data into np.array[(#quantitites * #flux-tubes) x #readings] and to a dictionary{(quantities x flux-tubes):readings}
-    for i_q,(key,val) in enumerate(datadict.items()):
+    for i_q,(key,val) in enumerate(datadict.items()): #.items() are not ordered!
 
         for n_ft in range(n_fts):
 
@@ -236,7 +243,7 @@ def write_table_csv(datadict, save_fold_name, coord_num_fts=[14,30,43,55,66,76,8
 
             for it in range(val.shape[0]):
 
-                data_table[it, i_q*n_fts+n_ft] = val[it,coord]
+                data_table[it, dict_naming_numbers[key]*n_fts+n_ft] = val[it,coord]
                 data_table_dict[dict_naming_dict[key]+str(n_ft+1)][it] = val[it,coord]
 
     # write CSV file with header of quantities x flux-tubes spearated by 2 spaces
@@ -412,11 +419,11 @@ def read_profs(codename='gem_', dates=['20230823_151955'], prefix_name='workflow
                 
                 if bool_sur_involved:
                     if quantities[i_q]+'_'+attributes[j_a] in ref_data.columns:
-                        min_val = ref_data[quantities[i_q]+'_'+attributes[j_a]].iloc[n_run_per_ft*(n_ft_transp):n_run_per_ft*(n_run_per_ft+1)].min()
-                        max_val = ref_data[quantities[i_q]+'_'+attributes[j_a]].iloc[n_run_per_ft*(n_ft_transp):n_run_per_ft*(n_run_per_ft+1)].max()
+                        min_val = ref_data[quantities[i_q]+'_'+attributes[j_a]].iloc[n_run_per_ft*(n_ft_transp):n_run_per_ft*(n_ft_transp+1)].min()
+                        max_val = ref_data[quantities[i_q]+'_'+attributes[j_a]].iloc[n_run_per_ft*(n_ft_transp):n_run_per_ft*(n_ft_transp+1)].max()
                         median_val = (max_val + min_val) / 2.
                         diff_val = max_val - min_val
-                        print(f"> For {quantities[i_q]+'_'+attributes[j_a]} @ft#{k}: min={min_val}, max={max_val}") ###DEBUG
+                        #print(f"> For {quantities[i_q]+'_'+attributes[j_a]} @ft#{k}: min={min_val}, max={max_val}") ###DEBUG
                         
                         ax.hlines(y=min_val, xmin=x_values[0], xmax=x_values[-1], color='r',
                                 linestyle='--', label=f"bounds of the training dataset")

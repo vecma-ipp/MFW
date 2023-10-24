@@ -37,7 +37,7 @@ def check_outof_learned_bounds(input, reference):
 
     dict_outofbounds = {}
 
-    for i,(k,vs) in enumerate(reference.items()):
+    for i,(k,vs) in enumerate(reference.items()): # dict items are not ordered!
         
         dict_outofbounds[k] = {
                                'greater': np.zeros(vs['max'].shape, dtype=bool),
