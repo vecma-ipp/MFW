@@ -66,9 +66,9 @@ class GEM0Singleton():
         return self.corep_elem.get_value('te.value')[ft], self.corep_elem.get_value('ti.value')[ft], \
                self.corep_elem.get_value('te.ddrho')[ft], self.corep_elem.get_value('ti.ddrho')[ft]
 
-    def update_gradients(self, name, value):
+    def update_gradients(self, name, value, i_ft=69):
         rho = self.corep_elem.get_value('rho_tor_norm')
-        i = 69
+        i = i_ft
 
         values = []
         indices = []
@@ -172,15 +172,15 @@ class GEM0Singleton():
         # return self.corep_elem
 
     def modify_code_ios(self, attrib, new_value, ft=[69]):
-        self.update_gradients(attrib, new_value)
+        self.update_gradients(attrib, new_value, i_ft=ft[0])
 
     def modify_code_params(self, attrib, value):
         self.code_parameters['physical.' + attrib] = value
         #return self.code_parameters
 
-    def gem0_call(self, param):
+    def gem0_call(self, param, rho_inds=[69]):
         for k, v in param.items():
-            self.modify_code_ios(k, v)
+            self.modify_code_ios(k, v, ft=rho_inds)
         coret, tefl, tifl, tedr, tidr = gem(self.equil, self.corep_elem.core, self.coret, self.code_parameters)
         return [tefl, tifl]  #, tedr, tidr
 

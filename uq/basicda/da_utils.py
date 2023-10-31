@@ -34,7 +34,7 @@ from scipy import interpolate
 from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
 from statsmodels.tsa.api import acf, pacf, graphics
 
-#from extcodehelper import ExtCodeHelper
+from extcodehelper import ExtCodeHelper
 #import lhsmdu
 from shutil import copyfileobj
 import re
@@ -124,6 +124,73 @@ def write_gem0_offline(n_samples=1000, n_dim=4, filename='gem0_lhc_res.csv'):
         df['ti.flux'] = y_test[:, 0]
 
     df.to_csv(filename)
+
+def write_gem0_expanded(filename_in, filename_out, expand_factor=1.0):
+    """
+    Reads a file with input values and writes a new one with results for expanded domain
+    """
+    
+    df_in = pd.read_csv(filename_in)
+
+    input_names = ['te_value', 'ti_value', 'te_ddrho', 'ti_ddrho']
+    output_names = ['te_transp_flux', 'ti_transp_flux']
+    
+    nfts = 8
+    n_inputs = len(input_names)
+    n_rows = len(df_in.index)
+    n_p_p_ft = n_rows//nfts
+    n_points_perdim = int(n_p_p_ft ** (1./n_inputs))
+
+    n_p_p_ft_new = (n_points_perdim+2)**n_inputs
+    n_rows_out = nfts*n_p_p_ft_new
+    #print(f"n_p_p_ft={n_p_p_ft}") ###DEBUG
+    df_out = pd.DataFrame(columns=[*input_names, *output_names], index=np.arange(n_rows_out))
+
+    n_fts = [n for n in range(nfts)]
+
+    gem0_helper = ExtCodeHelper(1)
+
+    for n_ft in n_fts:
+
+        x_values = []
+
+        for input_name in input_names:
+
+            x_loc_vals = df_in[input_name].iloc[(n_ft)*n_p_p_ft:(n_ft+1)*n_p_p_ft]
+
+            x_avg = x_loc_vals.mean()
+            x_min = x_loc_vals.min()
+            x_max = x_loc_vals.max()
+
+            x_new_max = x_max + expand_factor*(x_max - x_avg)
+            x_new_min = x_min - expand_factor*(x_avg - x_min)
+
+            #x_loc_new_vals = [x_new_min, *x_loc_vals.tolist(), x_new_max]
+            x_loc_new_vals = [x_new_min, x_min, x_avg, x_max, x_new_max]
+            #print(f"len(x_loc_new_vals)={len(x_loc_new_vals)}") ###DEBUG
+
+            x_values.append(x_loc_new_vals)
+
+    ### Compute the mapping for new input values and write them to a dataframe
+
+        for i_r,x in enumerate(itertools.product(*x_values)):
+
+            x = [np.array(x)]
+            #print(f"x={x}") ###DEBUG
+            print(f"n_r={(n_ft)*n_p_p_ft_new+i_r}") ###DEBUG
+
+            y = gem0_helper.gem0_call_4param2target_array(x)
+            #print(f"y={y}") ###DEBUG
+
+            for i_nu,i_na in enumerate(input_names):
+                df_out[i_na].iloc[(n_ft)*n_p_p_ft_new+i_r] = x[0][i_nu]
+
+            for o_nu,o_na in enumerate(output_names):
+                df_out[o_na].iloc[(n_ft)*n_p_p_ft_new+i_r] = y[0][0][o_nu]
+
+    df_out.to_csv(filename_out)
+
+    return 0
 
 def remove_header_spaces_csv(filename='AUG_gem0_inoutput_v3.txt', DATADIR='MFW"\\uq\\data\\', WORKDIR="c:\\Users\\user\\Documents\\UNI\\MPIPP\\PHD\\code\\"):
     with open(WORKDIR + DATADIR + filename, 'r', newline='') as inputfile:
