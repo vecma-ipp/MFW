@@ -46,7 +46,7 @@ def assign_turb_parameters(code_parameters_filename):
 #    else:
 #        import euitm_xml_parser
 
-    #TODO check what difference doe it make
+    #TODO check what difference does it make
 #    if IMAS == True:
 #        code_parameters = {}
 #        return_status = 0

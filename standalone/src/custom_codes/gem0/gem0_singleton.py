@@ -175,12 +175,18 @@ class GEM0Singleton():
         self.update_gradients(attrib, new_value, i_ft=ft[0])
 
     def modify_code_params(self, attrib, value):
-        self.code_parameters['physical.' + attrib] = value
+        if attrib == 'ra0':
+            self.code_parameters['grid.ra0'] = value
+        else:
+            self.code_parameters['physical.' + attrib] = value
+        # TODO: make dictionary of parameter categories
         #return self.code_parameters
 
     def gem0_call(self, param, rho_inds=[69]):
         for k, v in param.items():
             self.modify_code_ios(k, v, ft=rho_inds)
+        self.modify_code_params('ra0', (rho_inds[0]+1)/100.0) # not accurate?    
+
         coret, tefl, tifl, tedr, tidr = gem(self.equil, self.corep_elem.core, self.coret, self.code_parameters)
         return [tefl, tifl]  #, tedr, tidr
 

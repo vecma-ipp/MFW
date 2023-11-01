@@ -114,7 +114,7 @@ class ExtCodeHelper():
         return np.array(res)
 
 
-    def gem0_call_4param2target_array(self, x):
+    def gem0_call_tefl4params_array(self, x, rho_inds=[69]):
         """
         calls the gem0 code for desired ti.ddrho
         :param x: x[0] is te.value
@@ -122,10 +122,12 @@ class ExtCodeHelper():
         res = []
         for el in x:
             res.append([self.gem0obj.gem0_call({'te.value': el[0], 'ti.value': el[1],
-                                                'te.ddrho': el[2], 'ti.ddrho': el[3]})[0:2]])
+                                                'te.ddrho': el[2], 'ti.ddrho': el[3]},
+                                        rho_inds=rho_inds)[0]])
         return np.array(res)
 
-    def gem0_call_tefl4params_array(self, x):
+
+    def gem0_call_4param2target_array(self, x, rho_inds=[69]):
         """
         calls the gem0 code for desired ti.ddrho
         :param x: x[0] is te.value
@@ -133,8 +135,6 @@ class ExtCodeHelper():
         res = []
         for el in x:
             res.append([self.gem0obj.gem0_call({'te.value': el[0], 'ti.value': el[1],
-                                                'te.ddrho': el[2], 'ti.ddrho': el[3]})[0]])
+                                                'te.ddrho': el[2], 'ti.ddrho': el[3]},
+                                        rho_inds=rho_inds)[0:2]])
         return np.array(res)
-
-
-
