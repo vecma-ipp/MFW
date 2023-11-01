@@ -129,18 +129,23 @@ def write_gem0_expanded(filename_in, filename_out, expand_factor=1.0):
     """
     Reads a file with input values and writes a new one with results for expanded domain
     """
-    
-    df_in = pd.read_csv(filename_in)
 
+    # information not self-contained in the input file - TODO: some of it is actually in the file, read it
     input_names = ['te_value', 'ti_value', 'te_ddrho', 'ti_ddrho']
     output_names = ['te_transp_flux', 'ti_transp_flux']
-    
+    rho_inds =[14, 30, 43, 55, 66, 76, 85, 95] 
     nfts = 8
+
+    # read the original input values file
+    df_in = pd.read_csv(filename_in)
+
+    # derived info - number of input components, number of input values, total number of rows in the input file
     n_inputs = len(input_names)
     n_rows = len(df_in.index)
     n_p_p_ft = n_rows//nfts
     n_points_perdim = int(n_p_p_ft ** (1./n_inputs))
 
+    # derived info for the expanded input space
     n_p_p_ft_new = (n_points_perdim+2)**n_inputs
     n_rows_out = nfts*n_p_p_ft_new
     #print(f"n_p_p_ft={n_p_p_ft}") ###DEBUG
@@ -148,12 +153,14 @@ def write_gem0_expanded(filename_in, filename_out, expand_factor=1.0):
 
     n_fts = [n for n in range(nfts)]
 
-    gem0_helper = ExtCodeHelper(1)
+    # object to call GEM0, '2' is default option to calculte GyroBohm transport
+    gem0_helper = ExtCodeHelper(2)
 
     for n_ft in n_fts:
 
         x_values = []
 
+        # for every input component, get list of possible values, and add more sclaed relative to the extrema
         for input_name in input_names:
 
             x_loc_vals = df_in[input_name].iloc[(n_ft)*n_p_p_ft:(n_ft+1)*n_p_p_ft]
@@ -166,20 +173,22 @@ def write_gem0_expanded(filename_in, filename_out, expand_factor=1.0):
             x_new_min = x_min - expand_factor*(x_avg - x_min)
 
             #x_loc_new_vals = [x_new_min, *x_loc_vals.tolist(), x_new_max]
-            x_loc_new_vals = [x_new_min, x_min, x_avg, x_max, x_new_max]
+            x_loc_new_vals = [x_new_min, x_min, x_avg, x_max, x_new_max] # 5 points for the new values of an input component
             #print(f"len(x_loc_new_vals)={len(x_loc_new_vals)}") ###DEBUG
 
             x_values.append(x_loc_new_vals)
 
     ### Compute the mapping for new input values and write them to a dataframe
 
+        # for a tensor product of all values of each input component, compute the outputSSS
         for i_r,x in enumerate(itertools.product(*x_values)):
 
             x = [np.array(x)]
             #print(f"x={x}") ###DEBUG
-            print(f"n_r={(n_ft)*n_p_p_ft_new+i_r}") ###DEBUG
+            #print(f"n_r={(n_ft)*n_p_p_ft_new+i_r}") ###DEBUG
 
-            y = gem0_helper.gem0_call_4param2target_array(x)
+            # call the GEM0 for 4 input componets and 2 outputs
+            y = gem0_helper.gem0_call_4param2target_array(x, rho_inds=[rho_inds[n_ft]])
             #print(f"y={y}") ###DEBUG
 
             for i_nu,i_na in enumerate(input_names):
@@ -188,6 +197,7 @@ def write_gem0_expanded(filename_in, filename_out, expand_factor=1.0):
             for o_nu,o_na in enumerate(output_names):
                 df_out[o_na].iloc[(n_ft)*n_p_p_ft_new+i_r] = y[0][0][o_nu]
 
+    # save new file, does not have columns for STD, STEM, ACT etc.
     df_out.to_csv(filename_out)
 
     return 0
