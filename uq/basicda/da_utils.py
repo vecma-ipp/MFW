@@ -34,7 +34,7 @@ from scipy import interpolate
 from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
 from statsmodels.tsa.api import acf, pacf, graphics
 
-from extcodehelper import ExtCodeHelper
+#from extcodehelper import ExtCodeHelper
 #import lhsmdu
 from shutil import copyfileobj
 import re

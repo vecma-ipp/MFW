@@ -14,6 +14,8 @@ from ascii_cpo import read
 
 sys.path.append('../uq/basicda')
 from gem_da import profile_evol_load, profile_evol_plot
+from extcodehelper import ExtCodeHelper
+
 
 def read_attrib(filename, quantity, attribute, coords, filetype='coreprof'):
     """
@@ -127,7 +129,7 @@ def read_equil(foldernames):
     fig.savefig(foldername[0]+'_equilibrium.pdf')
     plt.close()
 
-def plot_quantities(datadict, save_fold_name, coord_num_fts=[14,30,43,55,66,76,85,95], bool_sur_involved=False, n_run_per_ft=81, ref_data=None,):
+def plot_quantities(datadict, save_fold_name, times=None, coord_num_fts=[14,30,43,55,66,76,85,95], bool_sur_involved=False, n_run_per_ft=81, ref_data=None,):
     """
     Saves plots for a tensor square of set of all quantities read during simulation
     If bool_sur_involved, then ref_data should be passed to add lines of bounds of quantities extrema values occuring in a different simualtions
@@ -141,7 +143,7 @@ def plot_quantities(datadict, save_fold_name, coord_num_fts=[14,30,43,55,66,76,8
             #print(f"- datadict shapes: {datadict[q_x].shape} {datadict[q_y].shape}") ###DEBUG
 
             #n_fts = min(datadict[q_x].shape[-1], datadict[q_y].shape[-1])
-            n_fts = 8 # extract that's it 8 flux tube from 100 rho coordinates :)
+            n_fts = 8 # extract that's it 8 flux tubes from 100 rho coordinates :)
 
             # Iterate over all flux tubes
             for n_ft in range(n_fts):
@@ -160,10 +162,18 @@ def plot_quantities(datadict, save_fold_name, coord_num_fts=[14,30,43,55,66,76,8
                 else:
                     coord_y = coord_num_fts[n_ft]
 
-                ax.plot(datadict[q_x][:t_min,coord_x], 
-                        datadict[q_y][:t_min,coord_y],
-                        marker='.',
-                        )
+                if times is not None:
+                    ax.plot(datadict[q_x][:t_min,coord_x], 
+                            datadict[q_y][:t_min,coord_y],
+                            c=times[:t_min],
+                            marker='.',
+                            cmap='viridis',
+                            )
+                else:
+                    ax.plot(datadict[q_x][:t_min,coord_x], 
+                            datadict[q_y][:t_min,coord_y],
+                            marker='.',
+                            )
 
                 # Add vertical and horisontal lines from a reference dataset
                 if bool_sur_involved:
@@ -187,6 +197,7 @@ def plot_quantities(datadict, save_fold_name, coord_num_fts=[14,30,43,55,66,76,8
 
                 ax.set_xlabel(q_x)
                 ax.set_ylabel(q_y)
+                ax.set_title(f"Plots for {q_x} vs {q_y} @ft{n_ft}")
 
                 #fig.savefig(save_fold_name+'quant_'+codename+'_' +q_x+'_'+q_y+'_'+'ft'+str(n_ft)+'_'+dates[0]+'_'+dates[-1]+'.pdf')
                 pdf.savefig(fig)
@@ -278,6 +289,64 @@ def write_table_csv(datadict, save_fold_name, coord_num_fts=[14,30,43,55,66,76,8
     
     return 0
 
+def compare_transp(datadict, save_fold_name, times):
+    """
+    Takes a sequence of profile values and estimates transport using several models
+    """
+
+    q_profile_list = ['te_value', 'ti_value', 'te_ddrho', 'ti_ddrho']
+    q_transp_list = ['te_transp_flux', 'ti_transp_flux']
+    coord_num_fts = [14, 30, 43, 55, 66, 76, 85, 95] 
+
+    n_fts = [i for i in range(len(coord_num_fts))]
+    coords = coord_num_fts[n_fts]
+                
+    #t_min = min(len(datadict[q_x][:,n_ft]), len(datadict[q_y][:,n_ft]))
+    t_min = len(times)
+
+    # initialise a model and its evaluation - here: GEM0
+    model = ExtCodeHelper(2)
+    model_call = lambda x,rho: model.gem0_call_4param2target_array([x], [rho])[0][0]
+
+    transp_new = np.zeros((len(q_transp_list), t_min, len(coords)))
+
+    for t in range(t_min):
+
+        for n_ft,rho in zip(n_fts,coords):
+
+            input_data = np.aray([datadict[q_profile][t, rho] for q_profile in q_profile_list])
+
+            transp_new[:, t, n_ft] = model_call(input_data, rho)
+
+    ### Plot transp fluxes vs time for two models alongside each other
+
+    # Get a list of transp value for two models [{transp_quantity:np.array(times)}]
+    transp_list = []
+    transp_list.append({q: datadict[q] for q in q_transp_list})
+    transp_list.append({'te_transp_flux': transp_new[0,:,:], 'ti_transp_flux': transp_new[1,:,:]})
+
+    with PdfPages(save_fold_name+'transp_'+codename+'_'+dates[0]+'_'+dates[-1]+'.pdf') as pdf_transp: 
+        
+        for n_ft in range(n_fts):
+
+            for q_transp in q_transp_list:
+        
+                fig,ax = plt.subplots()
+
+                for n_m,transp_vals in enumerate(transp_list):
+                
+                    ax.plot(times, transp_vals[0,:,n_ft], label=f"model#{n_m} @ft#{n_ft}")
+
+                ax.set_xlabel('time, s')
+                ax.set_ylabel(q_transp)
+                ax.legend(loc='best')
+                ax.set_title(f"Plots for {q_transp} @ft{n_ft}")
+
+                pdf_transp.savefig(fig)
+
+    return 0
+
+
 def read_profs(codename='gem_', dates=['20230823_151955'], prefix_name='workflow/run_fusion_', sufix_name='/instances/transport/workdir/', cpo_filebase='', cpo_names = ['coreprof', 'coretransp']):
 
     load_fold_names = [prefix_name + codename + \
@@ -297,9 +366,14 @@ def read_profs(codename='gem_', dates=['20230823_151955'], prefix_name='workflow
     # Load reference data for the surrogate training data set
 
     if bool_sur_involved:
-        ref_data_filename = 'ref_train_data.csv'
+        #ref_data_filename = 'ref_train_data.csv'
+        #n_run_per_ft = 81
+
+        ref_data_filename = 'ref_train_data_5000.csv'
+        n_run_per_ft = 625
+        
         ref_data = pd.read_csv(ref_data_filename, sep=',')
-        n_run_per_ft = 81
+
 
     lookup_names = {
         "ti_value": "$T_{{i}}$",
@@ -520,6 +594,9 @@ def read_profs(codename='gem_', dates=['20230823_151955'], prefix_name='workflow
                 #f.savefig(save_fold_name+'res_'+codename+'_'+cpo_name+'_common_nft'+str(ift)+'_'+dates[0]+'_'+dates[-1]+'.pdf')
                 pdf.savefig(f)
                 plt.close(f)
+
+    ### Plotting transport fluxes for two models
+    compare_transp(datadict, save_fold_name, times)
 
     ### Plotting all quantities against each other
     if bool_sur_involved:
