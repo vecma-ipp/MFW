@@ -335,7 +335,7 @@ contains
                if (inner_steps_cur > inner_steps_limit) then
                   print *,"!!!!!Exceeded inner stepping limit, stopping at first timestep adaption iteration!!!!!"
                   write(*,"('inner_steps_cur=',I11,' and inner_steps_limit=',I11)") inner_steps_cur,inner_steps_limit
-                  write(*,"('Inner dt=',F15.12,' max deviation Te=',F6.2,'% , dTe=',F6.2,'%' , Ti=',F6.2,'% , dTi=',F6.2,'% )") tau/REAL(inner_steps_cur),Te_dev*100,dTe_dev*100,Ti_dev*100,dTi_dev*100
+                  write(*,"('Inner dt=',F15.12,' max deviation Te=',F6.2,'% , dTe=',F6.2,'% , Ti=',F6.2,'% , dTi=',F6.2,'% ')") tau/REAL(inner_steps_cur),Te_dev*100,dTe_dev*100,Ti_dev*100,dTi_dev*100
                   write(*,"('Te_frac = ',100(F6.2))") Te_frac
                   write(*,"('dTe_frac = ',100(F6.2))") dTe_frac
                   write(*,"('Ti_frac = ',100(F6.2))") Ti_frac !!!YY
@@ -348,7 +348,7 @@ contains
                control_double_test(1) = dtime
             else
                ! stop the inner stepping
-               write(*,"('Stops advancing before inner step ',I2,' for total time = ',F9.6,': max deviation for Te = ',F6.2,'% dTe/drho = ',F6.2,'%' Ti = ',F6.2,'%  dTi = ',F6.2,'% )") ii, ii*dtime, Te_dev*100, dTe_dev*100, Ti_dev*100, dTi_dev*100
+               write(*,"('Stops advancing before inner step ',I2,' for total time = ',F9.6,': max deviation for Te = ',F6.2,'% dTe/drho = ',F6.2,'% Ti = ',F6.2,'%  dTi = ',F6.2,'% ')") ii, ii*dtime, Te_dev*100, dTe_dev*100, Ti_dev*100, dTi_dev*100
                EXIT
             end if
          else

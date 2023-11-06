@@ -33,7 +33,7 @@ program gem_test
 
   character(4) :: itstr
 
-  integer, parameter :: STEPS = 10
+  integer, parameter :: STEPS = 300
   logical, parameter :: TIMETRACE = .TRUE.
 
   call MPI_Init(ierr)
