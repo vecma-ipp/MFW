@@ -133,7 +133,7 @@ def write_gem0_expanded(filename_in, filename_out, expand_factor=1.0):
     # information not self-contained in the input file - TODO: some of it is actually in the file, read it
     input_names = ['te_value', 'ti_value', 'te_ddrho', 'ti_ddrho']
     output_names = ['te_transp_flux', 'ti_transp_flux']
-    rho_inds =[14, 30, 43, 55, 66, 76, 85, 95] 
+    rho_inds = [14, 30, 43, 55, 66, 76, 85, 95] 
     nfts = 8
 
     # read the original input values file

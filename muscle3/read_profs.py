@@ -296,27 +296,30 @@ def compare_transp(datadict, save_fold_name, times):
 
     q_profile_list = ['te_value', 'ti_value', 'te_ddrho', 'ti_ddrho']
     q_transp_list = ['te_transp_flux', 'ti_transp_flux']
-    coord_num_fts = [14, 30, 43, 55, 66, 76, 85, 95] 
+    coords = [0.143587306141853 , 0.309813886880875 , 0.442991137504578 , 0.560640752315521 , 0.668475985527039 , 0.769291400909424 , 0.864721715450287 , 0.955828309059143 ] #TODO double check
+    coord_num_fts = [x-1 for x in [15, 31, 44, 56, 67, 77, 86, 96]]
 
     n_fts = [i for i in range(len(coord_num_fts))]
-    coords = coord_num_fts[n_fts]
+    #coords = coord_num_fts[:]
                 
     #t_min = min(len(datadict[q_x][:,n_ft]), len(datadict[q_y][:,n_ft]))
     t_min = len(times)
 
     # initialise a model and its evaluation - here: GEM0
     model = ExtCodeHelper(2)
-    model_call = lambda x,rho: model.gem0_call_4param2target_array([x], [rho])[0][0]
+    model_call = lambda x,rho_ind,rho: model.gem0_call_4param2target_array([x], [rho_ind], rho)[0][0]
 
-    transp_new = np.zeros((len(q_transp_list), t_min, len(coords)))
+    transp_new = np.zeros((len(q_transp_list), len(times), len(coords)))
 
-    for t in range(t_min):
+    for t_ind in range(t_min):
 
-        for n_ft,rho in zip(n_fts,coords):
+        for n_ft, rho_ind, rho in zip(n_fts, coord_num_fts, coords):
 
-            input_data = np.aray([datadict[q_profile][t, rho] for q_profile in q_profile_list])
+            input_data = np.array([datadict[q_profile][t_ind, rho_ind] for q_profile in q_profile_list])
 
-            transp_new[:, t, n_ft] = model_call(input_data, rho)
+            #print(f"input_data: {input_data}") ###DEBUG
+            transp_new[:, t_ind, n_ft] = model_call(input_data, rho_ind, rho)
+            #print(f"transp_new: {transp_new[:, t_ind, n_ft]}") ###DEBUG
 
     ### Plot transp fluxes vs time for two models alongside each other
 
@@ -327,20 +330,20 @@ def compare_transp(datadict, save_fold_name, times):
 
     with PdfPages(save_fold_name+'transp_'+codename+'_'+dates[0]+'_'+dates[-1]+'.pdf') as pdf_transp: 
         
-        for n_ft in range(n_fts):
+        for n_ft in n_fts:
 
-            for q_transp in q_transp_list:
+            for i_q, q_transp in enumerate(q_transp_list):
         
                 fig,ax = plt.subplots()
 
                 for n_m,transp_vals in enumerate(transp_list):
                 
-                    ax.plot(times, transp_vals[0,:,n_ft], label=f"model#{n_m} @ft#{n_ft}")
+                    ax.plot(times, transp_vals[q_transp][:,n_ft], label=f"model#{n_m} @ft#{n_ft}")
 
                 ax.set_xlabel('time, s')
                 ax.set_ylabel(q_transp)
                 ax.legend(loc='best')
-                ax.set_title(f"Plots for {q_transp} @ft{n_ft}")
+                ax.set_title(f"Plots for {q_transp} @ft#{n_ft} (m1 is original, m2 is python-GEM0)")
 
                 pdf_transp.savefig(fig)
 
