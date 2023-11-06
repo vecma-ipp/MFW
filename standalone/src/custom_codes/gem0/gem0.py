@@ -63,7 +63,7 @@ def gem(eq, coreprof, coretransp, code_parameters):
     hmode = code_parameters['flags.hmode']
 
     nrho_transp = code_parameters['grid.nrho_transp']
-    #nion_prof = code_parameters['grid.nion']
+
     nion = code_parameters['grid.nion']
     nion_prof = code_parameters['grid.nion_prof']
     ra0 = code_parameters['grid.ra0']
@@ -80,8 +80,8 @@ def gem(eq, coreprof, coretransp, code_parameters):
     
     # Write I/O CPOs
     if write_cpos:
-        write(coreprof, 'coreprof')  #TODO check if the same as python interface
-        write(eq, 'equil')
+        print(coreprof, 'coreprof')  #TODO check if the same as python interface
+        print(eq, 'equil')
 
     # Grid size for equilibrium and profiles, ion species nu
 
@@ -126,12 +126,12 @@ def gem(eq, coreprof, coretransp, code_parameters):
 
     if nrho_transp == 1:
         rho = np.array([ra0])
-    elif nrho_transp == (nrho_prof-1)/2:
+    elif nrho_transp == (nrho_prof-1)/2 or nrho_transp == 0:
         rho = rho0[1:nrho_transp-1:2]
     else:
         rho = np.array([((1.0/(2*nrho_transp))*(2*x+1))**0.7 for x in range(nrho_transp)])
 
-    #print('rho: {}'.format(rho))
+    print('rho: {}'.format(rho)) ###DEBUG
 
     gm3 = np.empty(nrho_transp)
 
@@ -182,8 +182,8 @@ def gem(eq, coreprof, coretransp, code_parameters):
             qq0 = coreprof.profiles1d.q.value
             jj0 = coreprof.profiles1d.jtot.value
             qq0[0] = 0.0
-            for i in range(0, nrho_prof):
-                qq0[i] = qq0[i-1] + 0.5*(rho0[i]*rho0[i-1] - rho0[i-1]) * (jj0[i]+jj0[i-1])
+            for i in range(1, nrho_prof):
+                qq0[i] = qq0[i-1] + 0.5*(rho0[i]*rho0[i] - rho0[i-1]*rho0[i-1]) * (jj0[i]+jj0[i-1])
             qq0 = mu_0 * qq0 * r00 / (2.0 * b00)
             qq0[0] = 1.0
             qq0 = rho0 * rho0 / qq0
@@ -213,6 +213,15 @@ def gem(eq, coreprof, coretransp, code_parameters):
     rlnex = rlnex / nnex
     rltex = rltex / ttex
 
+    # Get rho s (effective mass density)
+
+    rhomx = 0.
+    for ion in range(nion):
+        ionmass = coreprof.compositions.nuclei[0].amn
+        nnix = l3interp(coreprof.ni.value[:, ion], rho0, nrho_prof, nnix, rho, nrho_transp) 
+        rhomx = rhomx + ionmass * nnix
+    rhomx = rhomx / nnex
+
     # Species loop
     #print('nion:{} nion_prof:{} nrho_prof:{} nrho_transp:{}'.format(nion, nion_prof, nrho_prof, nrho_transp))
 
@@ -230,7 +239,7 @@ def gem(eq, coreprof, coretransp, code_parameters):
 
         #one flux tube case: get the intepolated gradinets
         tiddrho = rltix
-        #print('\n>>> Trying to get effective gradient sfor the code: ')
+        #print('\n>>> Trying to get effective gradients for the code: ')
         #print('int teddrho?: {} ; int tiddrho?: {}'.format(teddrho, tiddrho))
         #print('cpo teddrho : {} ; cpo tiddrho : {}'.format(cpo_teddrho * rho0_bound, cpo_tiddrho * rho0_bound))
         #print('\n')
@@ -256,15 +265,17 @@ def gem(eq, coreprof, coretransp, code_parameters):
             qq = qqx[i]
             shat = shatx[i]
 
-            # Local parameters
-            # print(tte)  # for last iteration outside gives negative value -> pinpoint
+            # Redefining ion mass as wighted average
+            ionmass = rhomx[i] * itm_amu
 
+            # Local parameters
+            print(tte)  # DEBUG  for last iteration outside gives negative value -> pinpoint
 
             rhos = math.sqrt(cc * cc * ionmass * kb * tte / (ee * ee * b00 * b00))
             cs = math.sqrt(kb * tte / ionmass)
             taui = tti / tte
 
-            #print('some intial params. cc: {}; ionmass: {}; tte: {}; ee:{}; b00: {}; rhos: {}'.format(cc, ionmass, tte, ee, b00, rhos))
+            print('some intial params. cc: {}; ionmass: {}; tte: {}; ee:{}; b00: {}; rhos: {}'.format(cc, ionmass, tte, ee, b00, rhos)) ###DEBUG
 
             beta = mu_0 * nne * kb * tte / (b00 * b00)
             rmue = me / ionmass
@@ -311,13 +322,14 @@ def gem(eq, coreprof, coretransp, code_parameters):
             else:
                 chigb = chix[i]
 
+            
             # Diffusion coefficients in this model 
             # Coefficient is 3/2 due to Poynting flux cancelation
 
             diffe = chigb / chi_d
-            chie = chigb / chi_d  # DANGER: modification by Y
+            chie = chigb # / chi_d  # DANGER: modification by YY
             diffi = diffe
-            chii = chigb * chiratio_phi / chi_d  # DANGER: modification by Y
+            chii = chigb # * chiratio_phi / chi_d  # DANGER: modification by YY
 
             # Basic pinch dynamics
             # Ions set via ambipolarity
@@ -368,17 +380,17 @@ def gem(eq, coreprof, coretransp, code_parameters):
 
     # End species loop
 
-    #print('ti flux value is : {}; from nni : {}, kb: {}, tti: {}, ggi: {}, (chii: {}, rlti: {}),  gm3: {}'.format(
-    #      coretransp.values[0].ti_transp.flux, nni, kb, tti, ggi, chii, rlti, gm3[0]))
+    print('ti flux value is : {}; from nni : {}, kb: {}, tti: {}, ggi: {}, (chii: {}, rlti: {}),  gm3: {}'.format(
+          coretransp.values[0].ti_transp.flux, nni, kb, tti, ggi, chii, rlti, gm3[0])) ###DEBUG
 
-    #print('rho :{}; rho_tor_max: {}'.format(rho, rho_tor_max))
+    print('rho :{}; rho_tor_max: {}'.format(rho, rho_tor_max)) ###DEBUG
 
     # Set transp grid in the CPO
 
     coretransp.values[0].rho_tor_norm = rho
     coretransp.values[0].rho_tor = rho_tor_max * np.array(rho)
 
-    # Set other ion ceofficients with ration switches
+    # Set other ion ceofficients with ratio switches
 
     coretransp.values[0].vtor_transp.diff_eff = chiratio_phi * coretransp.values[0].ti_transp.diff_eff
 
@@ -396,7 +408,7 @@ def gem(eq, coreprof, coretransp, code_parameters):
         # WRITE(10, *)"  rho           Fe         Qe         Fi         Qi"
         for i in range(nrho_transp):
             # WRITE(10, 100)
-            write(
+            print(
             coretransp.values[0].rho_tor_norm[i],
             coretransp.values[0].ne_transp.flux[i],
             coretransp.values[0].te_transp.flux[i],

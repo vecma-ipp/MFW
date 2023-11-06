@@ -1,7 +1,7 @@
 import os
 import importlib.util
 #spec = importlib.util.spec_from_file_location("gem0", "/marconi/home/userexternal/yyudin00/code/MFW/standalone/src/custom_codes/gem0/gem0.py")
-spec = importlib.util.spec_from_file_location("gem0", os.path.abspath("../../../MFW/standalone/src/custom_codes/gem0/gem0.py"))
+spec = importlib.util.spec_from_file_location("gem0", os.path.abspath("../../MFW/standalone/src/custom_codes/gem0/gem0.py"))
 #spec = importlib.util.spec_from_file_location("gem0_singleton", os.path.abspath("C:/Users/user/Documents/UNI/MPIPP/PHD/code/MFW/standalone/src/custom_codes/gem0/gem0.py"))
 gem0 = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(gem0)
@@ -182,10 +182,13 @@ class GEM0Singleton():
         # TODO: make dictionary of parameter categories
         #return self.code_parameters
 
-    def gem0_call(self, param, rho_inds=[69]):
+    def gem0_call(self, param, rho_inds=[69], rho=None):
         for k, v in param.items():
             self.modify_code_ios(k, v, ft=rho_inds)
-        self.modify_code_params('ra0', (rho_inds[0]+1)/100.0) # not accurate?    
+        if rho is not None:
+            self.modify_code_params('ra0', rho)
+        else:
+            self.modify_code_params('ra0', (rho_inds[0]+0)/100.0) # not accurate?    
 
         coret, tefl, tifl, tedr, tidr = gem(self.equil, self.corep_elem.core, self.coret, self.code_parameters)
         return [tefl, tifl]  #, tedr, tidr
