@@ -233,3 +233,28 @@ class GEM0Singleton():
         print("> Writing transport cpo")
         write(coret, self.coret_file_out, 'coretransp')
 
+    def gem0_call_cpo(self, equilibrium=None, coreprof=None, coretransp=None, params=None):
+        """
+        calls the gem0 code for desired te.value, te.ddrho, ti.value, ti.ddrho
+        :params: CPO datastructures for equilibrium, coreprof, coretransp
+        :returns: list of arrays of te_transp_flux, ti_transp_flux, elements are values for each flux tube
+        """
+        if params is None:
+            params = self.code_parameters
+
+        if equilibrium is None:
+            equilibrium = self.equil
+
+        if coreprof is None:    
+            coreprof = self.corep_elem.core
+
+        if coretransp is None:
+            coretransp = self.coret
+        
+        res_coretransp, te_transp_flux, ti_transp_flux, teddrho, tiddrho = gem(equilibrium, coreprof, coretransp, params)
+
+        te_transp_flux_arr = res_coretransp.values[0].te_transp.flux[:]
+        ti_transp_flux_arr = res_coretransp.values[0].ti_transp.flux[:,0] # last dimension is species
+
+        return [te_transp_flux_arr, ti_transp_flux_arr]
+    

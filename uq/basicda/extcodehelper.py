@@ -116,7 +116,7 @@ class ExtCodeHelper():
 
     def gem0_call_tefl4params_array(self, x, rho_inds=[69]):
         """
-        calls the gem0 code for desired ti.ddrho
+        calls the gem0 code for desired 4 parameters
         :param x: x[0] is te.value
         """
         res = []
@@ -129,7 +129,7 @@ class ExtCodeHelper():
 
     def gem0_call_4param2target_array(self, x, rho_inds=[69], rho=None):
         """
-        calls the gem0 code for desired ti.ddrho
+        calls the gem0 code for desired 4 parameters
         :param x: x[0] is te.value
         """
         res = []
@@ -138,3 +138,16 @@ class ExtCodeHelper():
                                                 'te.ddrho': el[2], 'ti.ddrho': el[3]},
                                         rho_inds=rho_inds, rho=rho)[0:2]],)
         return np.array(res)
+
+    def gem0_call_4param2target_cpo(self, equilibrium, coreprof, coretransp, params=None):
+        """
+        Takes equilibrium, coreprof, coretransp CPO datastructures, XML params and 
+        returns np.array(2,#flux-tubes) with te_transp and ti_transp fluxes 
+        """
+
+        res = self.gem0obj.gem0_call_cpo(equilibrium=equilibrium, coreprof=coreprof, coretransp=coretransp, params=params)
+
+        res = np.array(res)
+
+        return res
+    

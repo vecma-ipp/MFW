@@ -168,7 +168,7 @@ def gem(eq, coreprof, coretransp, code_parameters):
     # Q-profile
 
     cases = ["equilibrium", "coreprof", "jtot"]
-    #print('q_choice: {}'.format(q_choice))
+    #print('q_choice: {}'.format(q_choice)) ###DEBUG
 
     if q_choice == "equilibrium":
         qqx = l3interp(eq.profiles_1d.q, rho_eq, npsi, qqx, rho, nrho_transp)
@@ -191,11 +191,11 @@ def gem(eq, coreprof, coretransp, code_parameters):
             qqx = l3interp(qq0, rho0, nrho_prof, qqx, rho, nrho_transp)
             shatx = l3deriv(qq0, rho0, nrho_prof, shatx, rho, nrho_transp)
 
-    #print('qqx: {}'.format(qqx))
+    #print('qqx: {}'.format(qqx)) ###DEBUG
     shatx = shatx * rho / qqx
 
-    #print('nnex size is {}'.format(nnex.shape))
-    #print(coreprof.te.value)
+    #print('nnex size is {}'.format(nnex.shape)) ###DEBUG
+    #print(coreprof.te.value) ###DEBUG
 
     nnex = l3interp(coreprof.ne.value, rho0, nrho_prof, nnex, rho, nrho_transp)
     ttex = l3interp(coreprof.te.value, rho0, nrho_prof, ttex, rho, nrho_transp)
@@ -204,10 +204,10 @@ def gem(eq, coreprof, coretransp, code_parameters):
 
     #cpo_teddrho = l3interp(coreprof.te.ddrho, rho0, nrho_prof, cpo_teddrho, rho, nrho_transp)
 
-    #print('profile te: {}; interpolated te: {}'.format(coreprof.te.value, ttex))
+    #print('profile te: {}; interpolated te: {}'.format(coreprof.te.value, ttex)) ###DEBUG
 
-    #print('nnex: {}'.format(nnex))
-    #print('ttex: {}'.format(ttex))
+    #print('nnex: {}'.format(nnex)) ###DEBUG
+    #print('ttex: {}'.format(ttex)) ###DEBUG
     teddrho = rltex
 
     rlnex = rlnex / nnex
@@ -223,12 +223,12 @@ def gem(eq, coreprof, coretransp, code_parameters):
     rhomx = rhomx / nnex
 
     # Species loop
-    #print('nion:{} nion_prof:{} nrho_prof:{} nrho_transp:{}'.format(nion, nion_prof, nrho_prof, nrho_transp))
+    #print('nion:{} nion_prof:{} nrho_prof:{} nrho_transp:{}'.format(nion, nion_prof, nrho_prof, nrho_transp)) ###DEBUG
 
     for ion in range(nion):
 
         #print('ti value at profile: {}, rho0: {}, nrho_prof: {}, rho: {}, nrho_transp: {}'
-        #      .format(coreprof.ti.value[:, ion], rho0, nrho_prof, rho, nrho_transp))
+        #      .format(coreprof.ti.value[:, ion], rho0, nrho_prof, rho, nrho_transp)) ###DEBUG
 
         nnix = l3interp(coreprof.ni.value[:, ion], rho0, nrho_prof, nnix, rho, nrho_transp)
         ttix = l3interp(coreprof.ti.value[:, ion], rho0, nrho_prof, ttix, rho, nrho_transp)
@@ -240,9 +240,8 @@ def gem(eq, coreprof, coretransp, code_parameters):
         #one flux tube case: get the intepolated gradinets
         tiddrho = rltix
         #print('\n>>> Trying to get effective gradients for the code: ')
-        #print('int teddrho?: {} ; int tiddrho?: {}'.format(teddrho, tiddrho))
-        #print('cpo teddrho : {} ; cpo tiddrho : {}'.format(cpo_teddrho * rho0_bound, cpo_tiddrho * rho0_bound))
-        #print('\n')
+        #print('int teddrho?: {} ; int tiddrho?: {}'.format(teddrho, tiddrho)) ###DEBUG
+        #print('cpo teddrho : {} ; cpo tiddrho : {} \n'.format(cpo_teddrho * rho0_bound, cpo_tiddrho * rho0_bound)) ###DEBUG
 
         rlnix = rlnix / nnix
         rltix = rltix / ttix
@@ -250,6 +249,12 @@ def gem(eq, coreprof, coretransp, code_parameters):
         # Radial grid
 
         for i in range(nrho_transp):
+
+        #    print(f">gem0: ti_value={ttix[i]}")  ###DEBUG
+        #    print(f">gem0: ti_ddrho={rltix[i]}") ###DEBUG
+        #    print(f">gem0: te_value={ttex[i]}") ###DEBUG
+        #    print(f">gem0: te_ddrho={rltex[i]}") ###DEBUG
+        #    print(f">gem0: rhomx={rhomx[i]}") ###DEBUG
 
             nne = nnex[i]
             nni = nnix[i]
@@ -269,13 +274,13 @@ def gem(eq, coreprof, coretransp, code_parameters):
             ionmass = rhomx[i] * itm_amu
 
             # Local parameters
-            print(tte)  # DEBUG  for last iteration outside gives negative value -> pinpoint
+            #print(tte)  # DEBUG  for last iteration outside gives negative value -> pinpoint
 
             rhos = math.sqrt(cc * cc * ionmass * kb * tte / (ee * ee * b00 * b00))
             cs = math.sqrt(kb * tte / ionmass)
             taui = tti / tte
 
-            print('some intial params. cc: {}; ionmass: {}; tte: {}; ee:{}; b00: {}; rhos: {}'.format(cc, ionmass, tte, ee, b00, rhos)) ###DEBUG
+            # print('some intial params. \ncc: {}; \nionmass: {}; \ntte: {}; \nee:{}; \nb00: {}; \nrhos: {}'.format(cc, ionmass, tte, ee, b00, rhos)) ###DEBUG
 
             beta = mu_0 * nne * kb * tte / (b00 * b00)
             rmue = me / ionmass
@@ -284,8 +289,9 @@ def gem(eq, coreprof, coretransp, code_parameters):
 
             # Normalized parameters
 
+            # Three different option for Lperp definition
             # lperp = 1. / max(1. / r00, abs(rlte))
-            lperp = 1.0 / max(1.0 / r00, abs(rlte), abs(rlne))
+            lperp = 1.0 / max(1.0 / r00, abs(rlte), abs(rlne)) # dafault version from the original code
             # lperp = 1. / max(1. / (64. * rhos), abs(rlte), abs(rlne))
 
             epss = qq * r00 / lperp
@@ -306,22 +312,21 @@ def gem(eq, coreprof, coretransp, code_parameters):
                     chigb = rhos * rhos * cs / lperp  # original code choice
 
                 #print('SOME COEFS: {} {} {} {}'.format(1/lperp, (1/r00), max(0.0, (1.0 - thresh / abs((r00 * rlti)))), 
-                #      40.0 / math.sqrt(1.0 + (beta_reduction * beta) ** 2.0)))
+                #      40.0 / math.sqrt(1.0 + (beta_reduction * beta) ** 2.0))) ###DEBUG
 
-                #print('some intial params. nion: {}; nrho_transp: {}; rhos: {}; cs:{}; lperp: {}'.format(nion, nrho_transp, rhos, cs, lperp))
+                #print('some intial params. nion: {}; nrho_transp: {}; rhos: {}; cs:{}; lperp: {}'.format(nion, nrho_transp, rhos, cs, lperp)) ###DEBUG
 
                 if(hmode):
                     # chigb = 0.3 * chigb
                     chigb = 1.0 * chigb
                 else:
                     # chigb = chigb * (1.0 + beta * math.sqrt(rmue))
-                    chigb = chigb * (1.0 + rmue * (beta / rmue + math.sqrt(rnue))) / (1.0 + 0.1 * beta)
+                    chigb = chigb * (1.0 + rmue * (beta / rmue + math.sqrt(rnue))) / (1.0 + 0.1 * beta) # default option from the original code
                     # chigb = chigb * (1.0 +(beta / rmue) * (rmue - 0.1))
 
                 chix[i] = chigb
             else:
                 chigb = chix[i]
-
             
             # Diffusion coefficients in this model 
             # Coefficient is 3/2 due to Poynting flux cancelation
@@ -360,7 +365,7 @@ def gem(eq, coreprof, coretransp, code_parameters):
             if ion == 0:
 
                 #print('ne_transp.diff_eff size: {}; diff_eff : {}'
-                #      .format(coretransp.values[0].ne_transp.diff_eff.shape, diffe.shape))
+                #      .format(coretransp.values[0].ne_transp.diff_eff.shape, diffe.shape)) ###DEBUG
 
                 te_transp_flux = nne * kb * tte * gge * gm3[i]  # TODO: check for multiple flux tubes if it is assigned
                 
@@ -380,10 +385,9 @@ def gem(eq, coreprof, coretransp, code_parameters):
 
     # End species loop
 
-    print('ti flux value is : {}; from nni : {}, kb: {}, tti: {}, ggi: {}, (chii: {}, rlti: {}),  gm3: {}'.format(
-          coretransp.values[0].ti_transp.flux, nni, kb, tti, ggi, chii, rlti, gm3[0])) ###DEBUG
+    #print(f"ti flux value is : {coretransp.values[0].ti_transp.flux}; from\n nni : {nni},\n kb: {kb},\n tti: {tti},\n ggi: {ggi},\n (chii: {chii},\n rlti: {rlti}),\n gm3: {gm3[0]};\n lperp={lperp};\n cs={cs}") ###DEBUG
 
-    print('rho :{}; rho_tor_max: {}'.format(rho, rho_tor_max)) ###DEBUG
+    #print('rho :{}; rho_tor_max: {}'.format(rho, rho_tor_max)) ###DEBUG
 
     # Set transp grid in the CPO
 
@@ -421,4 +425,3 @@ def gem(eq, coreprof, coretransp, code_parameters):
     #    write(coretransp, 'coretransp') # check were it is the same as python interface
 
     return coretransp, te_transp_flux, ti_transp_flux, teddrho, tiddrho
-
