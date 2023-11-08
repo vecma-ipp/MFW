@@ -39,7 +39,8 @@ def gem_surr_M3():
 
     # Reading settings from a ymmsl file
     ref_data_filename = instance.get_setting('training_dataset_filename', 'str')
-    rho_ind_s = instance.get_setting('rho_ind_s', '[float]') #TODO: consider using function to calculate index from rho_tor; also can be read from the first coretranp received
+    rho_ind_s = instance.get_setting('rho_ind_s', '[float]') #TODO : consider using function to calculate index from rho_tor; also can be read from the first coretranp received
+    rho_tor_norm = instance.get_setting('rho_tor_norm', '[float]') #TODO: use interpolation on these, or ones from coretransp
     #output_names = instance.get_setting('profs_out', '[str]') #TODO: figure out how to pass lists of float/strings -> possible: ['float']/['str'] - not supported ATM
     model_file_base = instance.get_setting('surrogate_path', 'str') # prefix of a path to files with surrogate model
     coretransp_default_file_name = instance.get_setting('cortransp_default', 'str')
@@ -114,7 +115,12 @@ def gem_surr_M3():
         print (f"> Reading CPO file {devshm_file} took {t()-start_t} s")
 
         # After reading the profile from temporary file, make an array
-        profiles_in = coreprof_to_input_value(coreprof_cpo_obj, rho_ind_s,)
+        profiles_in = coreprof_to_input_value(coreprof_cpo_obj,
+                                              rho_ind_s=rho_ind_s,
+                                              rho_tor_norm=rho_tor_norm,
+                                              )
+
+
         profiles_in = profiles_in[input_names_ind_permut] #TODO: either fix original order, or store permutation separately
         print(f"> Read incoming core profile \n {profiles_in}") ###DEBUG
 

@@ -246,6 +246,12 @@ SUBROUTINE GEM(eq, coreprof, coretransp, code_parameters)
 
   DO i=1,nrho
 
+     print *, ">gem0: ti_value=", ttix(i)  !!!DEBUG
+     print *, ">gem0: ti_ddrho=", rltix(i) !!!DEBUG
+     print *, ">gem0: te_value=", ttex(i)  !!!DEBUG
+     print *, ">gem0: te_ddrho=", rltex(i) !!!DEBUG
+     print *, ">gem0: rhomx=",    rhomx(i) !!!DEBUG
+
      nne=nnex(i)
      nni=nnix(i)
      tte=ttex(i)
@@ -325,7 +331,7 @@ SUBROUTINE GEM(eq, coreprof, coretransp, code_parameters)
      print *, ">gem0: cc   (nft=", i,")=  ", cc    !!!DEBUG
      print *, ">gem0: kb   (nft=", i,")=  ", kb    !!!DEBUG
      print *, ">gem0: ee   (nft=", i,")=  ", ee    !!!DEBUG
-     print *, ">gem0: ionmass(nft=", i,")=  ", ionmass !!!DEBUG
+     print *, ">gem0: ionm (nft=", i,")=  ", ionmass !!!DEBUG
     
      print *, ">gem0: cs   (nft=", i,")=  ", cs    !!!DEBUG
      print *, ">gem0: lperp(nft=", i,")=  ", lperp !!!DEBUG

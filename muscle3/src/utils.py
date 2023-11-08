@@ -68,6 +68,7 @@ def check_outof_learned_bounds(input, reference):
 def coreprof_to_input_value(
             data, 
             rho_ind_s, 
+            rho_tor_norm=None, # rho_tor_nor of coretransp flux tubes
             prof_names=['te', 'ti'], 
             attrib_names=['value', 'ddrho'],
                      ):
@@ -82,6 +83,11 @@ def coreprof_to_input_value(
     m = len(attrib_names)
     d = len(rho_ind_s)
 
+    d_tot = 100
+
+    #rad_grid = np.linspace(0., 1., d_tot)
+    rad_grid = data.rho_tor_norm # rho_tor_norm of coreprof radial grid points
+
     prof_vals = np.zeros((n*m, d))
     print(f"Entering a function to parse CPO into surrogate input")
 
@@ -91,24 +97,32 @@ def coreprof_to_input_value(
 
         for j, attrib_name in enumerate(attrib_names):
 
-            for r, rho_ind in enumerate(rho_ind_s):
+            val_readings = getattr(prof, attrib_name)
 
-                val_readings = getattr(prof, attrib_name)
+            if rho_tor_norm is None:
 
-                val_reading = val_readings[rho_ind]
+                for r, rho_ind in enumerate(rho_ind_s):
 
-                if prof_name[1] == 'i':
-                    # Here: ion profiles are 1D (no species dimension) ...
-                    #val_readings = val_readings[0]
-                    pass
+                    val_reading = val_readings[rho_ind]
 
-                elif prof_name[1] == 'e':
-                    pass
-                
-                else:
-                    print('Error: Attributes have to belong either to ions or to electrons')
+                    if prof_name[1] == 'i':
+                        # Here: ion profiles are 1D (no species dimension) ...
+                        #val_readings = val_readings[0]
+                        pass
 
-                prof_vals[i*m+j][r] = val_reading
+                    elif prof_name[1] == 'e':
+                        pass
+                    
+                    else:
+                        print('Error: Attributes have to belong either to ions or to electrons')
+
+                    prof_vals[i*m+j][r] = val_reading
+            
+            else:
+
+                val_readings_interp = l3interp(y_in=val_readings, x_in=rad_grid, x_out=rho_tor_norm)
+
+                prof_vals[i*m+j,:] = val_readings_interp
 
     return prof_vals
 
@@ -205,3 +219,137 @@ def output_value_to_coretransp(
                     print('Erorr: currently only models infering fluxes are supported')
 
     return coretransp_datastructure
+
+def l3interp(y_in, x_in, nr_in=None, y_out=None, x_out=None, nr_out=None):
+    """
+    Interpolation function
+    perfroms Lagrange interpolation of degree 3 for values y_in on x_in 
+    for points at x_out and writes the values at y_out
+    """
+
+    #print("> Interpolation, nr_in:{} nr_out:{}".format(nr_in, nr_out))
+    #print('x_in[{}]: {}; x_in[0]: {}'.format(nr_in, x_in[nr_in - 1], x_in[0]))
+    #print('x_out: {}'.format(x_out))
+
+    if nr_in is None:
+        nr_in = len(x_in)
+    if x_out is None:
+        x_out = x_in
+    if nr_out is None:
+        nr_out = len(x_out)
+    if y_out is None:
+        y_out = np.zeros(nr_out)
+
+    if x_in[nr_in - 1] > x_in[0]:
+        jstart = 2
+        jfirst = 0
+        jlast = nr_out - 1 
+        jstep = 1
+    else:
+        jstart = nr_out - 3
+        jfirst = nr_out - 1
+        jlast = 0
+        jstep = -1
+
+    j1 = jstart
+
+    #print('y_out size is {}'.format(y_out.shape))
+    #print('the iteration for interpolation is over {}; {}; {}; {}'.format(jstart, jfirst, jlast, jstep))
+
+    for j in range(jfirst, jlast + 1, jstep):
+        #print('j:{}'.format(j))
+        x = x_out[j]
+        while x >= x_in[j1] and nr_in - 2 > j1 > 1:
+            j1 = j1 + jstep
+
+        #print('j1:{}'.format(j1))
+        j2 = j1 + jstep
+        j0 = j1 - jstep
+        jm = j1 - 2 * jstep
+
+        #print('j2: {}; j1:{}, j0: {}; jm: {}'.format(j2, j1, j0, jm))
+
+        # Extrapolate inside out
+
+        x2 = x_in[j2]
+        x1 = x_in[j1]
+        x0 = x_in[j0]
+        xm = x_in[jm]
+
+        aintm = (x - x0) * (x - x1) * (x - x2) / ((xm - x0) * (xm - x1) * (xm - x2))
+        aint0 = (x - xm) * (x - x1) * (x - x2) / ((x0 - xm) * (x0 - x1) * (x0 - x2))
+        aint1 = (x - xm) * (x - x0) * (x - x2) / ((x1 - xm) * (x1 - x0) * (x1 - x2))
+        aint2 = (x - xm) * (x - x0) * (x - x1) / ((x2 - xm) * (x2 - x0) * (x2 - x1))
+
+        #print('interpol ref points : {} {} {} {} {}'.format(x0, x1, x2, xm, x))
+        #print('interpol coefs : {} {} {} {}'.format(aintm, aint0, aint1, aint2))
+
+        y_out[j] = aintm * y_in[jm] + aint0 * y_in[j0] + aint1 * y_in[j1] + aint2 * y_in[j2]
+
+        #print ('y vals: {} {} {} {}'.format(y_in[j0], y_in[j1], y_in[j2], y_in[jm]))
+        #print('y_out : {}, res len:{}'.format(y_out[j], len(y_out)))
+
+    return y_out
+
+def l3deriv(y_in, x_in, nr_in=None, dydx_out=None, x_out=None, nr_out=None):
+    """
+    Derivative on interpolated values
+    """
+
+    #print("> Derivative on inter., nr_in:{} nr_out:{}".format(nr_in, nr_out))
+    
+    if nr_in is None:
+        nr_in = len(x_in)
+    if x_out is None:
+        x_out = x_in
+    if nr_out is None:
+        nr_out = len(x_out)
+    if y_out is None:
+        y_out = np.zeros(nr_out)
+
+    if x_in[nr_in - 1] > x_in[0]:
+        jstart = 2
+        jfirst = 0
+        jlast = nr_out - 1
+        jstep = 1
+    else:
+        jstart = nr_out - 3
+        jfirst = nr_out - 1
+        jlast = 0
+        jstep = -1
+
+    j1 = jstart
+
+    #print('the iteration for interpolation is over {}; {}; {}; {}'.format(jstart, jfirst, jlast, jstep))
+
+    for j in range(jfirst, jlast + 1, jstep):
+        x = x_out[j]
+        while x >= x_in[j1] and nr_in - 2 > j1 > 1:
+            j1 = j1 + jstep
+
+        j2 = j1 + jstep
+        j0 = j1 - jstep
+        jm = j1 - 2 * jstep
+
+        #print('j2: {}; j1:{}, j0: {}; jm: {}'.format(j2, j1, j0, jm))
+
+        # Extrapolate inside out
+
+        x2 = x_in[j2]
+        x1 = x_in[j1]
+        x0 = x_in[j0]
+        xm = x_in[jm]
+
+        aintm = ((x - x1) * (x - x2) + (x - x0) * (x - x2) + (x - x0) * (x - x1)) / ((xm - x0) * (xm - x1) * (xm - x2))
+        aint0 = ((x - x1) * (x - x2) + (x - xm) * (x - x2) + (x - xm) * (x - x1)) / ((x0 - xm) * (x0 - x1) * (x0 - x2))
+        aint1 = ((x - x0) * (x - x2) + (x - xm) * (x - x2) + (x - xm) * (x - x0)) / ((x1 - xm) * (x1 - x0) * (x1 - x2))
+        aint2 = ((x - x0) * (x - x1) + (x - xm) * (x - x1) + (x - xm) * (x - x0)) / ((x2 - xm) * (x2 - x0) * (x2 - x1))
+
+        #print('interpol ref points : {} {} {} {} {}'.format(x0, x1, x2, xm, x))
+
+        dydx_out[j] = aintm * y_in[jm] + aint0 * y_in[j0] + aint1 * y_in[j1] + aint2 * y_in[j2]
+
+        #print('y vals: {} {} {} {}'.format(y_in[jm], y_in[j0], y_in[j1], y_in[j2]))
+        #print('y_out : {}, res len:{}'.format(dydx_out[j], len(dydx_out)))
+
+    return dydx_out

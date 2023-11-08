@@ -131,7 +131,7 @@ def gem(eq, coreprof, coretransp, code_parameters):
     else:
         rho = np.array([((1.0/(2*nrho_transp))*(2*x+1))**0.7 for x in range(nrho_transp)])
 
-    print('rho: {}'.format(rho)) ###DEBUG
+    #print('rho: {}'.format(rho)) ###DEBUG
 
     gm3 = np.empty(nrho_transp)
 
