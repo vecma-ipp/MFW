@@ -287,7 +287,7 @@ def write_table_csv(datadict, save_fold_name, coord_num_fts=[14,30,43,55,66,76,8
 
             writer.writerow(r)
     
-    return 0
+    return 0 
 
 def compare_transp(datadict, save_fold_name, times, input_folder_base='', coord_num_fts=None, option=1):
     """
@@ -352,9 +352,9 @@ def compare_transp(datadict, save_fold_name, times, input_folder_base='', coord_
 
                 input_data = np.array([datadict[q_profile][t_ind, rho_ind] for q_profile in q_profile_list])
 
-                print(f"input_data: {input_data}") ###DEBUG
+                #print(f"input_data: {input_data}") ###DEBUG
                 transp_new[:, t_ind, n_ft] = model_call(input_data, rho_ind, rho) #option 1   
-                print(f"transp_new: {transp_new[:, t_ind, n_ft]}") ###DEBUG
+                #print(f"transp_new: {transp_new[:, t_ind, n_ft]}") ###DEBUG
 
     ### Plot transp fluxes vs time for two models alongside each other
 
@@ -414,12 +414,13 @@ def read_profs(codename='gem_', dates=['20230823_151955'], prefix_name='workflow
 
 
     lookup_names = {
-        "ti_value": "$T_{{i}}$",
-        "te_value": "$T_{{e}}$",
-        "ti_ddrho": "$\\nabla T_{{i}}$",
-        "te_ddrho": "$\\nabla T_{{e}}$",
-        'te_transp.flux': "$Q_{{e}}$",
-        'ti_transp.flux': "$Q_{{i}}$",
+        "ti_value": "$T_{{i}}, eV$",
+        "te_value": "$T_{{e}}, eV$",
+        "ti_ddrho": "$\\nabla T_{{i}}, eV/m$",
+        "te_ddrho": "$\\nabla T_{{e}}, eV/m$",
+        "te_transp_flux": "$Q_{{e}}, W/m^{{2}}$",
+        "ti_transp_flux": "$Q_{{i}}$, W/m^{{2}}",
+        "rho": "$\\rho_{{tor}}^{{norm}}$"
     }
 
     color_step = 0.08
@@ -431,7 +432,7 @@ def read_profs(codename='gem_', dates=['20230823_151955'], prefix_name='workflow
     fmt_list = [style for style in product(*style_lists)]
 
     coord_num_fts = [14, 30, 43, 55, 66, 76, 85, 95]
-
+    coords_transp_gem = [0.143587306141853, 0.309813886880875, 0.442991137504578, 0.560640752315521, 0.668475985527039, 0.769291400909424, 0.864721715450287, 0.955828309059143]
     #cpo_names = ['coreprof', 'coretransp']
 
     times_coreprof = []
@@ -602,9 +603,9 @@ def read_profs(codename='gem_', dates=['20230823_151955'], prefix_name='workflow
                 
                 for i in timestep_iterator:
 
-                    ax.plot(np.array(coord_num),
+                    ax.plot(np.array(coord_num)/100.,
                             data[i, :], 
-                            label=f"t={times[i]}", 
+                            label=f"t={times[i]},s", 
                             color = fmt_list[i//n_timesteps_toplot][2],
                             linestyle = fmt_list[i//n_timesteps_toplot][1],
                             marker=fmt_list[i//n_timesteps_toplot][0],
@@ -612,11 +613,11 @@ def read_profs(codename='gem_', dates=['20230823_151955'], prefix_name='workflow
                             )
 
                 # Adding vertical lines to indicate the flux tube locations                      
-                ax.vlines(x=n_fts, ymin=data.min(), ymax=data.max(), color='k', linestyle='--')
+                ax.vlines(x=coords_transp_gem, ymin=data.min(), ymax=data.max(), color='k', linestyle='--', label='flux tubes')
                 
                 # ax.set_yscale('symlog')
-                ax.set_xlabel('rho coord')
-                ax.set_ylabel(quantities[i_q]+'_'+attributes[j_a])
+                ax.set_xlabel(lookup_names['rho'])
+                ax.set_ylabel(lookup_names[quantities[i_q]+'_'+attributes[j_a]] if quantities[i_q]+'_'+attributes[j_a] in lookup_names else quantities[i_q]+'_'+attributes[j_a])
                 ax.legend(loc='best')
 
                 #fig.savefig(save_fold_name+'prof_'+codename+'_' +quantities[i_q]+'_'+attributes[j_a]+'_'+dates[0]+'_'+dates[-1]+'.pdf')

@@ -173,6 +173,8 @@ def output_value_to_coretransp(
             coretransp_file, 
             r_s=[0], # array of flux tube numbers in coretransp (not rho values!)
             ion=0, # number of ion species
+            rho_tor_norm_sur=None,
+            rho_tor_norm_sim=None,
             prof_names=['te_transp', 'ti_transp',], #TODO: double check CPO format
             attributes=['flux',]
                               ):
@@ -191,7 +193,13 @@ def output_value_to_coretransp(
         coretransp_datastructure.values[0].ti_transp.flux = np.zeros((1, len(r_s)))
 
     if len(coretransp_datastructure.values[0].te_transp.flux) != len(r_s):
-        coretransp_datastructure.values[0].te_transp.flux = np.zeros((len(r_s)))                        
+        coretransp_datastructure.values[0].te_transp.flux = np.zeros((len(r_s)))     
+
+    # if flux tube coordinates from surrogate and code are different, interpolate
+    if rho_tor_norm_sur is not None and rho_tor_norm_sim is not None:
+        for prof_name in prof_names:
+            for attribute in attributes:
+                fluxes_out[prof_name+'_'+attribute] = l3interp(y_in=fluxes_out[prof_name+'_'+attribute], x_in=rho_tor_norm_sur, x_out=rho_tor_norm_sim)
 
     # NB: when this is commented out - will not change the coretransp passed
     for prof_name in prof_names:
@@ -234,7 +242,7 @@ def l3interp(y_in, x_in, nr_in=None, y_out=None, x_out=None, nr_out=None):
     if nr_in is None:
         nr_in = len(x_in)
     if x_out is None:
-        x_out = x_in
+        x_out = x_in # should be identity then - in practice, could work differently
     if nr_out is None:
         nr_out = len(x_out)
     if y_out is None:
@@ -301,11 +309,11 @@ def l3deriv(y_in, x_in, nr_in=None, dydx_out=None, x_out=None, nr_out=None):
     if nr_in is None:
         nr_in = len(x_in)
     if x_out is None:
-        x_out = x_in
+        x_out = x_in # should be identity then
     if nr_out is None:
         nr_out = len(x_out)
-    if y_out is None:
-        y_out = np.zeros(nr_out)
+    if dydx_out is None:
+        dydx_out = np.zeros(nr_out)
 
     if x_in[nr_in - 1] > x_in[0]:
         jstart = 2

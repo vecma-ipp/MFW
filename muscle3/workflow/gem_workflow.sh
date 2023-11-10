@@ -61,4 +61,4 @@ wait
 
 # Make plots for the evolution of core profiles
 cd ..
-python read_profs.py ${code_run_name} ${currdate}
+#python read_profs.py ${code_run_name} ${currdate}

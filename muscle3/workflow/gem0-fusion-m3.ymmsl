@@ -170,7 +170,7 @@ implementations:
 
 settings:
   transport.duration: 0.1
-  transport.dt: 0.0001
+  transport.dt: 0.001
   # init_cpo_dir: "../../../../../../workflows/AUG_28906_6"
   init_cpo_dir: "../../../../gem_resume_data"
   #init_cpo_dir: "../../../../../../workflows/AUG_28906_6_8ft_restart"
@@ -185,5 +185,5 @@ settings:
   #turbulence.surrogate_path: "../../../../../../workflows/gem_es_model"
   turbulence.cortransp_default: "../../../../../../workflows/gem_coretransp.cpo"
 
-# Comment: this is run of GEM0-WF with dt=10^-5 and run_fusion_gem0_20231020_17[0-9]{2} initial profiles, for 1k steps
+# Comment: this is run of GEM0-WF with dt=10^-3 AUG_28906_6_8ft_restart initial profiles, for 0.1 seconds / 100 steps
   
