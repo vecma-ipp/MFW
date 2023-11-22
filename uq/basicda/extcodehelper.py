@@ -4,7 +4,7 @@ import numpy as np
 #TODO: make a new package + install / or get relative paths consistent
 sys.path.append(os.path.join(os.getcwd(), "standalone/src/custom_codes/gem0"))
 import importlib.util  # TODO windows path does not understand '..' notation
-spec = importlib.util.spec_from_file_location("gem0_singleton", os.path.abspath("../../MFW/standalone/src/custom_codes/gem0/gem0_singleton.py"))
+spec = importlib.util.spec_from_file_location("gem0_singleton", os.path.abspath("../../standalone/src/custom_codes/gem0/gem0_singleton.py"))
 #spec = importlib.util.spec_from_file_location("gem0_singleton", os.path.abspath("C:/Users/user/Documents/UNI/MPIPP/PHD/code/MFW/standalone/src/custom_codes/gem0/gem0_singleton.py"))
 gem0_singleton = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(gem0_singleton)
