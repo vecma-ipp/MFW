@@ -136,7 +136,7 @@ implementations:
   
 settings:
   transport.duration: 0.1
-  transport.dt: 0.0001
+  transport.dt: 0.001
   #init_cpo_dir: "../../../../../../workflows/AUG_28906_6"
   #init_cpo_dir: "../../../../../../workflows/AUG_28906_6_8ft_restart"
   init_cpo_dir: "../../../../gem0_surr_resume_data"
@@ -162,4 +162,4 @@ settings:
 #  - every 1
 #    start 0
   
-# COMMENT: running ETS+CHEASE+GEM0SUR-WF for dt=10^-4 for 3k steps to see if it (workflow) converge, and to a monotonic profile; 
+# COMMENT: running ETS+CHEASE+GEM0SUR-WF for dt=10^-3 for 100 steps to see if it (workflow) converge, and to a monotonic profile; 
