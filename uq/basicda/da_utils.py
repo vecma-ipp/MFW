@@ -34,7 +34,7 @@ from scipy import interpolate
 from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
 from statsmodels.tsa.api import acf, pacf, graphics
 
-#from extcodehelper import ExtCodeHelper
+from extcodehelper import ExtCodeHelper
 #import lhsmdu
 from shutil import copyfileobj
 import re
@@ -133,7 +133,9 @@ def write_gem0_expanded(filename_in, filename_out, expand_factor=1.0):
     # information not self-contained in the input file - TODO: some of it is actually in the file, read it
     input_names = ['te_value', 'ti_value', 'te_ddrho', 'ti_ddrho']
     output_names = ['te_transp_flux', 'ti_transp_flux']
-    rho_inds = [14, 30, 43, 55, 66, 76, 85, 95] 
+    # rho_inds      = [14, 30, 43, 55, 66, 76, 85, 95] 
+    rho_inds = [15, 31, 44, 55, 66, 76, 85, 94]
+    ftube_rhos    = [0.14, 0.31, 0.44, 0.56, 0.67, 0.77, 0.86, 0.95]
     nfts = 8
 
     # read the original input values file
@@ -180,7 +182,7 @@ def write_gem0_expanded(filename_in, filename_out, expand_factor=1.0):
 
     ### Compute the mapping for new input values and write them to a dataframe
 
-        # for a tensor product of all values of each input component, compute the outputSSS
+        # for a tensor product of all values of each input component, compute the output
         for i_r,x in enumerate(itertools.product(*x_values)):
 
             x = [np.array(x)]
@@ -188,7 +190,7 @@ def write_gem0_expanded(filename_in, filename_out, expand_factor=1.0):
             #print(f"n_r={(n_ft)*n_p_p_ft_new+i_r}") ###DEBUG
 
             # call the GEM0 for 4 input componets and 2 outputs
-            y = gem0_helper.gem0_call_4param2target_array(x, rho_inds=[rho_inds[n_ft]])
+            y = gem0_helper.gem0_call_4param2target_array(x, rho_inds=[rho_inds[n_ft]], rho=[ftube_rhos[n_ft]])
             #print(f"y={y}") ###DEBUG
 
             for i_nu,i_na in enumerate(input_names):
@@ -201,6 +203,71 @@ def write_gem0_expanded(filename_in, filename_out, expand_factor=1.0):
     df_out.to_csv(filename_out)
 
     return 0
+
+def plot_gem0_scan(X_orig, input_number=0, output_number=0, file_name_suf=''):
+    """
+    Takes original input data, and for central a cut of the data writes a .pdf file
+    with a highly resolved plot of GEM0 responce
+    """
+
+    extend_factor = 0.2
+    n_points_new = 1000
+
+    # Global info about data
+    xlabels = ['te_value', 'ti_value', 'te_ddrho', 'ti_ddrho']
+    ylabels = ['te_transp_flux', 'ti_transp_flux']
+    rho_inds = [15, 31, 44, 55, 66, 76, 85, 94]
+    ftube_rhos = [0.14, 0.31, 0.44, 0.56, 0.67, 0.77, 0.86, 0.95]
+    nfts = 8
+    n_inputs = 4
+
+    # derived info - number of input components, number of input values, total number of rows in the input file
+    n_rows = X_orig.shape[0]
+    n_p_p_ft = n_rows//nfts
+    #n_points_perdim = int(n_p_p_ft ** (1./n_inputs))
+
+    # object to call GEM0, '2' is default option to calculte GyroBohm transport
+    gem0_helper = ExtCodeHelper(2)
+
+    # loop over all the flux tubes, produce n_inputs*n_fluxtubes plots
+    for n_ft in range(nfts):
+
+        fig,ax = plt.subplots(figsize=[7, 7])
+
+        # Take the input component according to input_name
+        # Select a range of values for this component
+        # Make an fine resolved array of values for this component
+        # Make a new array with all components
+        # Predict the QoI for this array
+        # Plot the QoI vs the input component
+        
+        X_orig_loc = X_orig[(n_ft)*n_p_p_ft:(n_ft+1)*n_p_p_ft]
+
+        x_values = X_orig_loc[:, input_number] # check the order of axis
+        #print(x_values) ###DEBUG
+
+        x_values_new = np.linspace(x_values.min() - extend_factor * abs(x_values.min()) , 
+                                    x_values.max() + extend_factor * abs(x_values.max()), n_points_new)
+        
+        x_remainder = np.delete(X_orig_loc, input_number, axis=1)
+        x_remainder_value = x_remainder.mean(axis=0)
+
+        X_new = np.zeros((x_values_new.shape[0], X_orig_loc.shape[1]))
+        X_new[:, input_number] = x_values_new
+        for j in range(X_new.shape[0]):
+            X_new[j, np.arange(X_orig.shape[1]) != input_number] = x_remainder_value
+        
+        #print(gem0_helper.gem0_call_4param2target_array([X_new[0,:]], rho_inds=[rho_inds[n_ft]], rho=[ftube_rhos[n_ft]])) ###DEBUG
+        y = [gem0_helper.gem0_call_4param2target_array([X_new[j,:]], rho_inds=[rho_inds[n_ft]], rho=[ftube_rhos[n_ft]])[0][0][output_number] for j in range(X_new.shape[0])]
+
+        ax.plot(x_values_new, y, label=f"{xlabels[input_number]}->{ylabels[output_number]}(@ft#{n_ft})")
+
+        ax.set_xlabel(xlabels[input_number])
+        ax.set_ylabel(ylabels[output_number])
+        ax.set_title(f"{xlabels[input_number]}->{ylabels[output_number]}(@ft#{n_ft})")
+        fig.savefig('scan_gem0_'+'i'+str(input_number)+'o'+str(output_number)+'f'+str(n_ft)+'.pdf')
+
+    return  0
 
 def remove_header_spaces_csv(filename='AUG_gem0_inoutput_v3.txt', DATADIR='MFW"\\uq\\data\\', WORKDIR="c:\\Users\\user\\Documents\\UNI\\MPIPP\\PHD\\code\\"):
     with open(WORKDIR + DATADIR + filename, 'r', newline='') as inputfile:

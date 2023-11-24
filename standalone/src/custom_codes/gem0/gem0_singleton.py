@@ -1,7 +1,7 @@
 import os
 import importlib.util
 #spec = importlib.util.spec_from_file_location("gem0", "/marconi/home/userexternal/yyudin00/code/MFW/standalone/src/custom_codes/gem0/gem0.py")
-spec = importlib.util.spec_from_file_location("gem0", os.path.abspath("../../standalone/src/custom_codes/gem0/gem0.py"))
+spec = importlib.util.spec_from_file_location("gem0", os.path.abspath("../standalone/src/custom_codes/gem0/gem0.py"))
 #spec = importlib.util.spec_from_file_location("gem0_singleton", os.path.abspath("C:/Users/user/Documents/UNI/MPIPP/PHD/code/MFW/standalone/src/custom_codes/gem0/gem0.py"))
 gem0 = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(gem0)
