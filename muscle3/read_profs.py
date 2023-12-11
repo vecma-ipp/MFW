@@ -197,7 +197,7 @@ def plot_quantities(datadict, save_fold_name, times=None, coord_num_fts=[14,30,4
 
                 ax.set_xlabel(q_x)
                 ax.set_ylabel(q_y)
-                ax.set_title(f"Plots for {q_x} vs {q_y} @ft{n_ft}")
+                ax.set_title(f"Plots for {q_x} vs {q_y} @f.t.#{n_ft}")
 
                 #fig.savefig(save_fold_name+'quant_'+codename+'_' +q_x+'_'+q_y+'_'+'ft'+str(n_ft)+'_'+dates[0]+'_'+dates[-1]+'.pdf')
                 pdf.savefig(fig)
@@ -378,7 +378,7 @@ def compare_transp(datadict, save_fold_name, times, input_folder_base='', coord_
                 ax.set_xlabel('time, s')
                 ax.set_ylabel(q_transp)
                 ax.legend(loc='best')
-                ax.set_title(f"Plots for {q_transp} @ft#{n_ft} (m1 is original, m2 is python-GEM0)")
+                ax.set_title(f"Plots for {q_transp} @f.t.#{n_ft} (m1 is original, m2 is python-GEM0)")
 
                 pdf_transp.savefig(fig)
 
@@ -404,14 +404,16 @@ def read_profs(codename='gem_', dates=['20230823_151955'], prefix_name='workflow
     # Load reference data for the surrogate training data set
 
     if bool_sur_involved:
-        #ref_data_filename = 'ref_train_data.csv'
-        #n_run_per_ft = 81
+        
+        # option 1 for reference data: 8*(3**4) samples
+        ref_data_filename = 'ref_train_data.csv'
+        n_run_per_ft = 81
 
-        ref_data_filename = 'ref_train_data_5000.csv'
-        n_run_per_ft = 625
+        # option 2 for reference data: 8*(5**4) samples
+        #ref_data_filename = 'ref_train_data_5000.csv'
+        #n_run_per_ft = 625
         
         ref_data = pd.read_csv(ref_data_filename, sep=',')
-
 
     lookup_names = {
         "ti_value": "$T_{{i}}, eV$",
@@ -422,6 +424,17 @@ def read_profs(codename='gem_', dates=['20230823_151955'], prefix_name='workflow
         "ti_transp_flux": "$Q_{{i}}$, W/m^{{2}}",
         "rho": "$\\rho_{{tor}}^{{norm}}$"
     }
+
+    lookup_names_short = {
+        "ti_value": "$T_{{i}}$",
+        "te_value": "$T_{{e}}$",
+        "ti_ddrho": "$\\nabla T_{{i}}$",
+        "te_ddrho": "$\\nabla T_{{e}}$",
+        "te_transp_flux": "$Q_{{e}}$",
+        "ti_transp_flux": "$Q_{{i}}$",
+        "rho": "$\\rho_{{tor}}^{{norm}}$"
+    }
+
 
     color_step = 0.08
     color_list = ['b', 'g', 'r', 'y' , 'm', 'c', 'k']
@@ -451,6 +464,8 @@ def read_profs(codename='gem_', dates=['20230823_151955'], prefix_name='workflow
             #coord_num = [68]
             coord_num = [x for x in range(0, 100, n_rho_resol)]
 
+            coord_rho_tor_norm = np.array(coord_num)/100.
+
             #n_ft = 68
             #n_ft = coord_num[0]
             n_ft_transp = 0 # number of flux tube of interest
@@ -466,7 +481,8 @@ def read_profs(codename='gem_', dates=['20230823_151955'], prefix_name='workflow
 
             attributes = ['flux', 'diff_eff', 'vconv_eff', ]
 
-            if codename == 'gem_surr':
+            #if codename == 'gem_surr':
+            if 'sur' in codename:
                 #coord_num = [0]  # if n_fts==1
                 coord_num = [0, 1, 2, 3, 4, 5, 6, 7] 
                 n_ft = coord_num[-1]
@@ -474,6 +490,8 @@ def read_profs(codename='gem_', dates=['20230823_151955'], prefix_name='workflow
                 coord_num = [0, 1, 2, 3, 4, 5, 6, 7]  # if n_fts==8
                 n_ft = coord_num[-1] #0 #4 # number of flux tube to plot for
             n_fts = coord_num
+
+            coord_rho_tor_norm = coords_transp_gem
 
             i_q_s = [0, 1] # indices of quantities to go through
             j_a_s = [0, 1, 2] # indices of attributes to go through
@@ -581,7 +599,8 @@ def read_profs(codename='gem_', dates=['20230823_151955'], prefix_name='workflow
                             marker='.',
                             color=color_list[(i_q*len(j_a_s) + j_a)%(len(color_list)-1)],
                             alpha=0.5,
-                            label=f"{lookup_names[quantities[i_q]+'_'+attributes[j_a]] if (quantities[i_q]+'_'+attributes[j_a] in lookup_names) else quantities[i_q]+'_'+attributes[j_a]} @rho={n_ft}"
+                            label=f"{lookup_names_short[quantities[i_q]+'_'+attributes[j_a]] if (quantities[i_q]+'_'+attributes[j_a] in lookup_names_short) else quantities[i_q]+'_'+attributes[j_a]}",
+#                            , {lookup_names_short['rho']}={n_ft/100.}",
                                 ) 
                     ax_loc.hlines(y=(min_val-min_val)/diff_val, xmin=x_values[0], xmax=x_values[-1], color=color_list[(i_q*len(j_a_s) + j_a)%(len(color_list)-1)],
                                     linestyle='--',) # label=f"bounds of the training dataset")
@@ -603,7 +622,9 @@ def read_profs(codename='gem_', dates=['20230823_151955'], prefix_name='workflow
                 
                 for i in timestep_iterator:
 
-                    ax.plot(np.array(coord_num)/100.,
+                    ax.plot(
+                            #np.array(coord_num)/100.,
+                            coord_rho_tor_norm,
                             data[i, :], 
                             label=f"t={times[i]},s", 
                             color = fmt_list[i//n_timesteps_toplot][2],
@@ -628,7 +649,7 @@ def read_profs(codename='gem_', dates=['20230823_151955'], prefix_name='workflow
             for ift,(f,a) in enumerate(common_fig_ax_list):
                 a.legend(loc='best')
                 a.set_xlabel('${{t}}$, s')
-                a.set_title(f"Plots for {cpo_name} @ft{ift}")
+                a.set_title(f"Plots for {cpo_name} @f.t.#{ift} ({lookup_names_short['rho']}={n_fts[ift]/100.})")
 
                 #f.savefig(save_fold_name+'res_'+codename+'_'+cpo_name+'_common_nft'+str(ift)+'_'+dates[0]+'_'+dates[-1]+'.pdf')
                 pdf.savefig(f)
