@@ -24,6 +24,7 @@ params = { #"text.usetex": True,
           }
 plt.rcParams.update(params)
 import matplotlib.tri as mtri
+from matplotlib.backends.backend_pdf import PdfPages
 
 from mpl_toolkits.mplot3d import Axes3D
 from mpl_toolkits.axes_grid1 import make_axes_locatable
@@ -145,13 +146,15 @@ def write_gem0_expanded(filename_in, filename_out, expand_factor=1.0):
     n_inputs = len(input_names)
     n_rows = len(df_in.index)
     n_p_p_ft = n_rows//nfts
-    n_points_perdim = int(n_p_p_ft ** (1./n_inputs))
+    n_points_perdim = round(n_p_p_ft ** (1./n_inputs))
+    print(f"n_points_perdim={n_points_perdim}") ###DEBUG
 
     # derived info for the expanded input space
     n_p_p_ft_new = (n_points_perdim+2)**n_inputs
     n_rows_out = nfts*n_p_p_ft_new
-    #print(f"n_p_p_ft={n_p_p_ft}") ###DEBUG
-    df_out = pd.DataFrame(columns=[*input_names, *output_names], index=np.arange(n_rows_out))
+    print(f"n_p_p_ft_new={n_p_p_ft_new}") ###DEBUG
+    
+    df_out = pd.DataFrame(columns=[*input_names, *output_names, 'ft'], index=np.arange(n_rows_out))
 
     n_fts = [n for n in range(nfts)]
 
@@ -199,6 +202,8 @@ def write_gem0_expanded(filename_in, filename_out, expand_factor=1.0):
             for o_nu,o_na in enumerate(output_names):
                 df_out[o_na].iloc[(n_ft)*n_p_p_ft_new+i_r] = y[0][0][o_nu]
 
+            df_out['ft'].iloc[(n_ft)*n_p_p_ft_new+i_r] = n_ft
+
     # save new file, does not have columns for STD, STEM, ACT etc.
     df_out.to_csv(filename_out)
 
@@ -228,6 +233,8 @@ def plot_gem0_scan(X_orig, input_number=0, output_number=0, file_name_suf=''):
 
     # object to call GEM0, '2' is default option to calculte GyroBohm transport
     gem0_helper = ExtCodeHelper(2)
+
+    data = {}
 
     # loop over all the flux tubes, produce n_inputs*n_fluxtubes plots
     for n_ft in range(nfts):
@@ -267,7 +274,85 @@ def plot_gem0_scan(X_orig, input_number=0, output_number=0, file_name_suf=''):
         ax.set_title(f"{xlabels[input_number]}->{ylabels[output_number]}(@ft#{n_ft})")
         fig.savefig('scan_gem0_'+'i'+str(input_number)+'o'+str(output_number)+'f'+str(n_ft)+'.pdf')
 
-    return  0
+        data[(f"ft{n_ft}", 'x')] = x_values_new
+        data[(f"ft{n_ft}", 'y')] = y
+
+    return data
+
+def plot_diff(x1, x2, y1, y2, norm='L2', file_name_suf='', save_obj=None):
+    """
+    Saves a .PDF of a difference of norm(y1(x1),y2(x2)) 
+    """
+
+    fig,ax = plt.subplots(figsize=[7, 7])
+
+    metrics = lambda x1,x2: np.sqrt(np.power(x1-x2,2))
+    y_label = r"$\sqrt{\sum_i (y_1(x_i)-y_2(x_i))^2}$"
+    if   norm == 'L2':
+        pass # L2 is default
+    elif norm == 'L1':
+        metrics = lambda x1,x2: np.abs(x1-x2)
+    elif norm == 'Linf':
+        metrics = lambda x1,x2: np.max(np.abs(x1-x2))
+    elif norm == 'diff':
+        metrics = lambda x1,x2: x1-x2
+    elif norm == 'rel':
+        metrics = lambda x1,x2: (x1-x2)/np.abs(x1)
+        y_label = r"$\frac{y_1(x_i)-y_2(x_i)}{|y_1(x_i)|}$"
+    elif norm == 'rel_max':
+        metrics = lambda x1,x2: (x1-x2)/np.max(np.abs(x1))
+        y_label = r"$\frac{y_1(x_i)-y_2(x_i)}{max|y_1(x_i)|}$"
+    else:
+        print(f"Norm {norm} not supported yet!")
+
+    if len(x1) != len(x2):
+        print(f"Different support grid, interpolation not supported yet!")
+
+    y_diff = metrics(y1, y2)
+
+    ax.plot(x1, y_diff, label=f"{norm} difference")
+
+    ax.set_title(file_name_suf)
+    ax.set_ylabel(y_label)
+
+    if save_obj is not None:
+        save_obj.savefig(fig)
+    else:
+        fig.savefig("diff_" + file_name_suf + ".pdf")
+
+    return 0
+
+def plot_diff_all(file_pref_1='scan_gem0surr_ft', file_pref_2='scan_gem0_dict_ft', save_file='diff_gem0vssurr.pdf', metrics='L2'):
+    """
+    Save a multi-page .pdf file with plot of difference between two codes (GEM/0 and surrogate) for cuts in different inputs
+    """
+    
+    #file_pref_1 = 'scan_gem0surr_ft'
+    #file_pref_2 = 'scan_gem0_dict_ft'
+
+    n_fts = 8
+    #metrics = 'rel'
+    file_pref = 'gem0vssurr_ft'
+    xlabels = ['te_value', 'ti_value', 'te_ddrho', 'ti_ddrho']
+    ylabels = ['te_transp_flux', 'ti_transp_flux']
+
+    with PdfPages(save_file) as pdf_obj: 
+
+        for n_ft in range(n_fts): 
+
+            s1 = pd.read_csv(f"{file_pref_1}{n_ft}.csv", header=[0,1])
+            s2 = pd.read_csv(f"{file_pref_2}{n_ft}.csv", header=[0,1])  
+
+            for x,y in itertools.product(xlabels,ylabels):
+
+                x1 = s1[(x+'_'+y,'x')]
+                x2 = s2[(x+'_'+y,'x')]
+                y1 = s1[(x+'_'+y,'y')]
+                y2 = s2[(x+'_'+y,'y')]
+
+                plot_diff(x1,x2,y1,y2,metrics,f"{file_pref}{n_ft}_{x}_{y}",pdf_obj)
+    
+    return 0
 
 def remove_header_spaces_csv(filename='AUG_gem0_inoutput_v3.txt', DATADIR='MFW"\\uq\\data\\', WORKDIR="c:\\Users\\user\\Documents\\UNI\\MPIPP\\PHD\\code\\"):
     with open(WORKDIR + DATADIR + filename, 'r', newline='') as inputfile:
