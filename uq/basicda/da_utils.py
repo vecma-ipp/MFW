@@ -215,7 +215,7 @@ def plot_gem0_scan(X_orig, input_number=0, output_number=0, file_name_suf=''):
     with a highly resolved plot of GEM0 responce
     """
 
-    extend_factor = 0.2
+    extend_factor = 0.5
     n_points_new = 1000
 
     # Global info about data
@@ -320,11 +320,37 @@ def plot_diff(x1, x2, y1, y2, norm='L2', file_name_suf='', save_obj=None):
     else:
         fig.savefig("diff_" + file_name_suf + ".pdf")
 
+    plt.close(fig)
     return 0
 
-def plot_diff_all(file_pref_1='scan_gem0surr_ft', file_pref_2='scan_gem0_dict_ft', save_file='diff_gem0vssurr.pdf', metrics='L2'):
+def plot_comparison(x_list, y_list, name_list, file_name_suf='', save_obj=None):
+    """
+    Plots two (or more) responce cuts for different models on the same graph
+    """
+
+    fig,ax = plt.subplots(figsize=[7, 7])
+
+    n_mods = len(x_list)
+
+    for i in range(n_mods):
+        ax.plot(x_list[i], y_list[i], label=f"model {name_list[i]}")
+
+    ax.set_title(file_name_suf)
+    #ax.set_ylabel(y_label)
+    ax.legend(loc='best')
+
+    if save_obj is not None:
+        save_obj.savefig(fig)
+    else:
+        fig.savefig("comp_" + file_name_suf + ".pdf")
+
+    plt.close(fig)
+    return 0
+
+def plot_diff_all(file_pref_1='scan_gem0surr_ft', file_pref_2='scan_gem0_dict_ft', save_file='gem0vssurr.pdf', metrics='L2'):
     """
     Save a multi-page .pdf file with plot of difference between two codes (GEM/0 and surrogate) for cuts in different inputs
+    Also saves plots for comaprison of two codes for different cuts
     """
     
     #file_pref_1 = 'scan_gem0surr_ft'
@@ -336,7 +362,7 @@ def plot_diff_all(file_pref_1='scan_gem0surr_ft', file_pref_2='scan_gem0_dict_ft
     xlabels = ['te_value', 'ti_value', 'te_ddrho', 'ti_ddrho']
     ylabels = ['te_transp_flux', 'ti_transp_flux']
 
-    with PdfPages(save_file) as pdf_obj: 
+    with PdfPages(f"diff_{save_file}") as pdf_obj_diff, PdfPages(f"comp_{save_file}") as pdf_obj_comp: 
 
         for n_ft in range(n_fts): 
 
@@ -350,7 +376,11 @@ def plot_diff_all(file_pref_1='scan_gem0surr_ft', file_pref_2='scan_gem0_dict_ft
                 y1 = s1[(x+'_'+y,'y')]
                 y2 = s2[(x+'_'+y,'y')]
 
-                plot_diff(x1,x2,y1,y2,metrics,f"{file_pref}{n_ft}_{x}_{y}",pdf_obj)
+                print(f"x1[0]={x1[0]};x2[0]={x2[0]}") ###DEBUG
+
+                plot_diff(x1,x2,y1,y2,metrics,f"{file_pref}{n_ft}_{x}_{y}",pdf_obj_diff)
+
+                plot_comparison([x1,x2],[y1,y2],["gem0surr","gem0py"],f"{file_pref}{n_ft}_{x}_{y}",pdf_obj_comp)
     
     return 0
 
