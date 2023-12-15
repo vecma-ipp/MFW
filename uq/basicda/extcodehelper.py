@@ -4,7 +4,7 @@ import numpy as np
 #TODO: make a new package + install / or get relative paths consistent
 sys.path.append(os.path.join(os.getcwd(), "standalone/src/custom_codes/gem0"))
 import importlib.util  # TODO windows path does not understand '..' notation
-spec = importlib.util.spec_from_file_location("gem0_singleton", os.path.abspath("../standalone/src/custom_codes/gem0/gem0_singleton.py"))
+spec = importlib.util.spec_from_file_location("gem0_singleton", os.path.abspath("../../standalone/src/custom_codes/gem0/gem0_singleton.py"))
 #spec = importlib.util.spec_from_file_location("gem0_singleton", os.path.abspath("C:/Users/user/Documents/UNI/MPIPP/PHD/code/MFW/standalone/src/custom_codes/gem0/gem0_singleton.py"))
 gem0_singleton = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(gem0_singleton)
@@ -133,11 +133,16 @@ class ExtCodeHelper():
         :param x: x[0] is te.value
         """
         res = []
+        inputs_new = []
         for el in x:
-            res.append([self.gem0obj.gem0_call({'te.value': el[0], 'ti.value': el[1],
+
+            fluxes, input = self.gem0obj.gem0_call({'te.value': el[0], 'ti.value': el[1],
                                                 'te.ddrho': el[2], 'ti.ddrho': el[3]},
-                                        rho_inds=rho_inds, rho=rho)[0:2]],)
-        return np.array(res)
+                                        rho_inds=rho_inds, rho=rho)[0:2]
+            res.append([fluxes],)
+            inputs_new.append([input],)
+
+        return np.array(res), np.array(inputs_new)
 
     def gem0_call_4param2target_cpo(self, equilibrium, coreprof, coretransp, params=None):
         """

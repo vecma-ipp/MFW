@@ -135,8 +135,8 @@ def write_gem0_expanded(filename_in, filename_out, expand_factor=1.0):
     input_names = ['te_value', 'ti_value', 'te_ddrho', 'ti_ddrho']
     output_names = ['te_transp_flux', 'ti_transp_flux']
     # rho_inds      = [14, 30, 43, 55, 66, 76, 85, 95] 
-    rho_inds = [15, 31, 44, 55, 66, 76, 85, 94]
-    ftube_rhos    = [0.14, 0.31, 0.44, 0.56, 0.67, 0.77, 0.86, 0.95]
+    rho_inds   = [15, 31, 44, 55, 66, 76, 85, 94]
+    ftube_rhos = [0.14, 0.31, 0.44, 0.56, 0.67, 0.77, 0.86, 0.95] # everything should be written down for flux tubes on this grid
     nfts = 8
 
     # read the original input values file
@@ -188,16 +188,19 @@ def write_gem0_expanded(filename_in, filename_out, expand_factor=1.0):
         # for a tensor product of all values of each input component, compute the output
         for i_r,x in enumerate(itertools.product(*x_values)):
 
-            x = [np.array(x)]
-            #print(f"x={x}") ###DEBUG
+            #x = [np.array(x)]
+            print(f"x={x}") ###DEBUG
             #print(f"n_r={(n_ft)*n_p_p_ft_new+i_r}") ###DEBUG
 
             # call the GEM0 for 4 input componets and 2 outputs
-            y = gem0_helper.gem0_call_4param2target_array(x, rho_inds=[rho_inds[n_ft]], rho=[ftube_rhos[n_ft]])
+            y, x_new = gem0_helper.gem0_call_4param2target_array(x, rho_inds=[rho_inds[n_ft]], rho=[ftube_rhos[n_ft]])
             #print(f"y={y}") ###DEBUG
+            #print(f"x_new={x_new}") ###DEBUG
+
+            x_new = [np.array(x_new).reshape(-1)]
 
             for i_nu,i_na in enumerate(input_names):
-                df_out[i_na].iloc[(n_ft)*n_p_p_ft_new+i_r] = x[0][i_nu]
+                df_out[i_na].iloc[(n_ft)*n_p_p_ft_new+i_r] = x_new[0][i_nu]
 
             for o_nu,o_na in enumerate(output_names):
                 df_out[o_na].iloc[(n_ft)*n_p_p_ft_new+i_r] = y[0][0][o_nu]
@@ -333,7 +336,7 @@ def plot_comparison(x_list, y_list, name_list, file_name_suf='', save_obj=None):
     n_mods = len(x_list)
 
     for i in range(n_mods):
-        ax.plot(x_list[i], y_list[i], label=f"model {name_list[i]}")
+        ax.plot(x_list[i], y_list[i], label=f"model {name_list[i]}", alpha=0.5)
 
     ax.set_title(file_name_suf)
     #ax.set_ylabel(y_label)
@@ -347,17 +350,12 @@ def plot_comparison(x_list, y_list, name_list, file_name_suf='', save_obj=None):
     plt.close(fig)
     return 0
 
-def plot_diff_all(file_pref_1='scan_gem0surr_ft', file_pref_2='scan_gem0_dict_ft', save_file='gem0vssurr.pdf', metrics='L2'):
+def plot_diff_all(file_pref_1='scan_gem0surr_ft', file_pref_2='scan_gem0_dict_ft', save_file='gem0vssurr.pdf', metrics='L2',n_fts=8):
     """
     Save a multi-page .pdf file with plot of difference between two codes (GEM/0 and surrogate) for cuts in different inputs
     Also saves plots for comaprison of two codes for different cuts
     """
-    
-    #file_pref_1 = 'scan_gem0surr_ft'
-    #file_pref_2 = 'scan_gem0_dict_ft'
 
-    n_fts = 8
-    #metrics = 'rel'
     file_pref = 'gem0vssurr_ft'
     xlabels = ['te_value', 'ti_value', 'te_ddrho', 'ti_ddrho']
     ylabels = ['te_transp_flux', 'ti_transp_flux']
@@ -376,7 +374,7 @@ def plot_diff_all(file_pref_1='scan_gem0surr_ft', file_pref_2='scan_gem0_dict_ft
                 y1 = s1[(x+'_'+y,'y')]
                 y2 = s2[(x+'_'+y,'y')]
 
-                print(f"x1[0]={x1[0]};x2[0]={x2[0]}") ###DEBUG
+                #print(f"x1[0]={x1[0]};x2[0]={x2[0]}") ###DEBUG
 
                 plot_diff(x1,x2,y1,y2,metrics,f"{file_pref}{n_ft}_{x}_{y}",pdf_obj_diff)
 
