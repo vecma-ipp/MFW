@@ -1,7 +1,7 @@
 import os
 import importlib.util
 #spec = importlib.util.spec_from_file_location("gem0", "/marconi/home/userexternal/yyudin00/code/MFW/standalone/src/custom_codes/gem0/gem0.py")
-spec = importlib.util.spec_from_file_location("gem0", os.path.abspath("../standalone/src/custom_codes/gem0/gem0.py"))
+spec = importlib.util.spec_from_file_location("gem0", os.path.abspath("../../standalone/src/custom_codes/gem0/gem0.py"))
 #spec = importlib.util.spec_from_file_location("gem0_singleton", os.path.abspath("C:/Users/user/Documents/UNI/MPIPP/PHD/code/MFW/standalone/src/custom_codes/gem0/gem0.py"))
 gem0 = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(gem0)
@@ -190,8 +190,8 @@ class GEM0Singleton():
         else:
             self.modify_code_params('ra0', (rho_inds[0]+0)/100.0) # not accurate?    
 
-        coret, tefl, tifl, tedr, tidr = gem(self.equil, self.corep_elem.core, self.coret, self.code_parameters)
-        return [tefl, tifl]  #, tedr, tidr
+        coret, tefl, tifl, tedr, tidr, te, ti, rho_new = gem(self.equil, self.corep_elem.core, self.coret, self.code_parameters)
+        return [tefl, tifl], [te, ti, tedr, tidr]  #, tedr, tidr
 
     def gem0_fit_call(self,
                       xs,

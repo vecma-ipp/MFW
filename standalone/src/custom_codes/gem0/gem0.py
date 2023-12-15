@@ -128,6 +128,8 @@ def gem(eq, coreprof, coretransp, code_parameters):
         rho = np.array([ra0])
     elif nrho_transp == (nrho_prof-1)/2 or nrho_transp == 0:
         rho = rho0[1:nrho_transp-1:2]
+    elif nrho_transp == 8: #YY
+        rho = np.array([[0.14, 0.31, 0.44, 0.56, 0.67, 0.77, 0.86, 0.95]])
     else:
         rho = np.array([((1.0/(2*nrho_transp))*(2*x+1))**0.7 for x in range(nrho_transp)])
 
@@ -424,4 +426,4 @@ def gem(eq, coreprof, coretransp, code_parameters):
     #    # open_write_file(12, 'cout_000') # ???
     #    write(coretransp, 'coretransp') # check were it is the same as python interface
 
-    return coretransp, te_transp_flux, ti_transp_flux, teddrho, tiddrho
+    return coretransp, te_transp_flux, ti_transp_flux, teddrho, tiddrho, ttex, ttix, rho
