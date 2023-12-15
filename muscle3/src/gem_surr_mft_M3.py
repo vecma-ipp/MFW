@@ -27,6 +27,8 @@ def gem_surr_M3():
 
     input_names_ind_permut = [0,2,1,3] # permuation of input names relative to one used in EasySurrogate: ['te_value', 'te_ddrho', 'ti_value', 'ti_ddrho'] -> ['te_value', 'ti_value', 'te_ddrho', 'ti_ddrho']
 
+    model_type = 'ann'
+
     # Creating a MUSCLE3 instance
     instance = Instance({
         Operator.O_F:     ['coretransp_out', 'coretransp_uncertainty_out'],
@@ -145,7 +147,13 @@ def gem_surr_M3():
         
         # Infere QoI values for every flux tube
         for n_ft, r in enumerate(rho_ind_s):
-            f_o, f_o_std = mods[n_ft].predict(profiles_in[:,n_ft].reshape(-1,1))
+            
+            if model_type == 'ann':
+                f_o = mods[n_ft].predict(profiles_in[:,n_ft])
+                f_o_std = np.zeros(f_o.shape)
+            else:
+                f_o, f_o_std = mods[n_ft].predict(profiles_in[:,n_ft].reshape(-1,1))
+            
             fluxes_out[n_ft,:] = f_o.reshape(-1)
             fluxes_out_std[n_ft,:] = f_o_std.reshape(-1)
         
