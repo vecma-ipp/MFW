@@ -212,7 +212,7 @@ def write_gem0_expanded(filename_in, filename_out, expand_factor=1.0):
 
     return 0
 
-def plot_gem0_scan(X_orig, input_number=0, output_number=0, file_name_suf=''):
+def plot_gem0_scan(X_orig, input_number=0, output_number=0, file_name_suf='', flag_plot=True):
     """
     Takes original input data, and for central a cut of the data writes a .pdf file
     with a highly resolved plot of GEM0 responce
@@ -242,8 +242,6 @@ def plot_gem0_scan(X_orig, input_number=0, output_number=0, file_name_suf=''):
     # loop over all the flux tubes, produce n_inputs*n_fluxtubes plots
     for n_ft in range(nfts):
 
-        fig,ax = plt.subplots(figsize=[7, 7])
-
         # Take the input component according to input_name
         # Select a range of values for this component
         # Make an fine resolved array of values for this component
@@ -268,17 +266,22 @@ def plot_gem0_scan(X_orig, input_number=0, output_number=0, file_name_suf=''):
             X_new[j, np.arange(X_orig.shape[1]) != input_number] = x_remainder_value
         
         #print(gem0_helper.gem0_call_4param2target_array([X_new[0,:]], rho_inds=[rho_inds[n_ft]], rho=[ftube_rhos[n_ft]])) ###DEBUG
-        y = [gem0_helper.gem0_call_4param2target_array([X_new[j,:]], rho_inds=[rho_inds[n_ft]], rho=[ftube_rhos[n_ft]])[0][0][output_number] for j in range(X_new.shape[0])]
-
-        ax.plot(x_values_new, y, label=f"{xlabels[input_number]}->{ylabels[output_number]}(@ft#{n_ft})")
-
-        ax.set_xlabel(xlabels[input_number])
-        ax.set_ylabel(ylabels[output_number])
-        ax.set_title(f"{xlabels[input_number]}->{ylabels[output_number]}(@ft#{n_ft})")
-        fig.savefig('scan_gem0_'+'i'+str(input_number)+'o'+str(output_number)+'f'+str(n_ft)+'.pdf')
+        y = [gem0_helper.gem0_call_4param2target_array([X_new[j,:]], rho_inds=[rho_inds[n_ft]], rho=[ftube_rhos[n_ft]])[0][0][0][output_number] for j in range(X_new.shape[0])]
 
         data[(f"ft{n_ft}", 'x')] = x_values_new
         data[(f"ft{n_ft}", 'y')] = y
+
+        if flag_plot:
+            
+            fig,ax = plt.subplots(figsize=[7, 7])
+
+            ax.plot(x_values_new, y, label=f"{xlabels[input_number]}->{ylabels[output_number]}(@ft#{n_ft})")
+
+            ax.set_xlabel(xlabels[input_number])
+            ax.set_ylabel(ylabels[output_number])
+            ax.set_title(f"{xlabels[input_number]}->{ylabels[output_number]}(@ft#{n_ft})")
+            fig.savefig('scan_gem0_'+'i'+str(input_number)+'o'+str(output_number)+'f'+str(n_ft)+'.pdf')
+
 
     return data
 
@@ -350,7 +353,7 @@ def plot_comparison(x_list, y_list, name_list, file_name_suf='', save_obj=None):
     plt.close(fig)
     return 0
 
-def plot_diff_all(file_pref_1='scan_gem0surr_ft', file_pref_2='scan_gem0_dict_ft', save_file='gem0vssurr.pdf', metrics='L2',n_fts=8):
+def plot_diff_all(file_pref_1='gem0surr', file_pref_2='gem0py', save_file='gem0vssurr.pdf', metrics='L2',n_fts=8):
     """
     Save a multi-page .pdf file with plot of difference between two codes (GEM/0 and surrogate) for cuts in different inputs
     Also saves plots for comaprison of two codes for different cuts
@@ -364,8 +367,8 @@ def plot_diff_all(file_pref_1='scan_gem0surr_ft', file_pref_2='scan_gem0_dict_ft
 
         for n_ft in range(n_fts): 
 
-            s1 = pd.read_csv(f"{file_pref_1}{n_ft}.csv", header=[0,1])
-            s2 = pd.read_csv(f"{file_pref_2}{n_ft}.csv", header=[0,1])  
+            s1 = pd.read_csv(f"scan_{file_pref_1}_ft{n_ft}.csv", header=[0,1])
+            s2 = pd.read_csv(f"scan_{file_pref_2}_ft{n_ft}.csv", header=[0,1])  
 
             for x,y in itertools.product(xlabels,ylabels):
 
@@ -378,7 +381,7 @@ def plot_diff_all(file_pref_1='scan_gem0surr_ft', file_pref_2='scan_gem0_dict_ft
 
                 plot_diff(x1,x2,y1,y2,metrics,f"{file_pref}{n_ft}_{x}_{y}",pdf_obj_diff)
 
-                plot_comparison([x1,x2],[y1,y2],["gem0surr","gem0py"],f"{file_pref}{n_ft}_{x}_{y}",pdf_obj_comp)
+                plot_comparison([x1,x2],[y1,y2],[file_pref_1,file_pref_2],f"{file_pref}{n_ft}_{x}_{y}",pdf_obj_comp)
     
     return 0
 
