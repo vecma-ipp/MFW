@@ -257,8 +257,15 @@ def plot_gem0_scan(X_orig, input_number=0, output_number=0, file_name_suf='', fl
         x_values_new = np.linspace(x_values.min() - extend_factor * abs(x_values.min()) , 
                                     x_values.max() + extend_factor * abs(x_values.max()), n_points_new)
         
+        # Choice of the location of the other input components
         x_remainder = np.delete(X_orig_loc, input_number, axis=1)
-        x_remainder_value = x_remainder.mean(axis=0)
+        # Option 1: Mean of every other dimension / center of existing sample
+        #x_remainder_value = x_remainder.mean(axis=0)
+        # Option 2: Mode of values among existing sample closest to the median for every other dimension
+        x_remainder_value = np.median(x_remainder, axis=0)
+        # Option 3: read from file
+
+        print(f"for {xlabels[input_number]} @ft#{n_ft} remainder values are: {x_remainder_value}") ###DEBUG
 
         X_new = np.zeros((x_values_new.shape[0], X_orig_loc.shape[1]))
         X_new[:, input_number] = x_values_new
@@ -281,7 +288,6 @@ def plot_gem0_scan(X_orig, input_number=0, output_number=0, file_name_suf='', fl
             ax.set_ylabel(ylabels[output_number])
             ax.set_title(f"{xlabels[input_number]}->{ylabels[output_number]}(@ft#{n_ft})")
             fig.savefig('scan_gem0_'+'i'+str(input_number)+'o'+str(output_number)+'f'+str(n_ft)+'.pdf')
-
 
     return data
 
