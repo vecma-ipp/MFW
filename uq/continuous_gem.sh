@@ -10,11 +10,12 @@
 # nohup ./continuous_gem.sh 1  rp1pw2y6 1> script_wf_05122022.log 2>&1 &
 # nohup ./continuous_gem.sh 1  1f3hw2ikn 1> script_wf_13122022.log 2>&1 &
 # nohup ./continuous_gem.sh 39 csldvnei 1> script_wf_20231117.log 2>&1 &
+# 
 
 #0. State the total number of campaigns to run, and ordinal number of the last campaign in previous sequence
 echo "STARTING THE WORKFLOW"
 # number of runs
-NUMRUNS=4
+NUMRUNS=3
 # no of current run, which is the last finished submission
 CURRUN=${1:-0}
 # no of the first run in the new sequence
@@ -24,6 +25,8 @@ LASTRUN=$((${CURRUN}+${NUMRUNS}))
 
 # polynomial order - current parameter regulating total number of code instances
 NUM_FT=8
+# next line: for running only the first slow flux tube
+NUM_FT=1
 POLORDER=2
 INPUT_DIM=4
 #ATTENTION: arbitrary param to set number of core instances - see if needed here e.g. for a batch of AL samples

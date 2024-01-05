@@ -13,7 +13,9 @@
 #SBATCH --time=24:00:00
 
 ## number of nodes and tasks per node
-#SBATCH --nodes=27
+###SBATCH --nodes=27
+# next line: for running only the first slow flux tube
+#SBATCH --nodes=4
 #SBATCH --ntasks-per-node=40
 ###SBATCH --ntasks-per-core=1
 ###SBATCH --cpus-per-task=8

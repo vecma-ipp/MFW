@@ -430,7 +430,12 @@ if __name__ == "__main__":
     #pprint.pprint(my_campaign.list_runs()) ###DEBUG
     #pprint.pprint(my_campaign.campaign_db.get_run_status(run_ids)) ###DEBUG
 
-    for i in range(len(ftube_indices_list)):
+    # option 1: run all flux tubes
+    n_fts = len(ftube_indices_list)
+    # option 2: run only the fisrt flux tube
+    n_fts = 1
+    
+    for i in range(n_fts):
 
         app_name_loc = 'gem_FT' + str(i)
         my_campaign.set_app(app_name_loc)
