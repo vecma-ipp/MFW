@@ -94,6 +94,7 @@ def write_gem0_offline(n_samples=1000, n_dim=4, filename='gem0_lhc_res.csv'):
 
     if n_dim == 4:
         function = lambda x: np.array(gem0_helper.gem0_call_4param2target_array(x))
+        function = lambda x: np.array(gem0_helper.gem0_call_4param2target_array(x, rho_inds=[rho_inds[n_ft]], rho=[ftube_rhos[n_ft]]))
         x_param = [[500., 2400, 16], [500., 2400, 16], [-5000., -1000., 16], [-5000., -1000., 16]]
     elif n_dim == 2:
         function = lambda x: np.array(gem0_helper.gem0_call_tefltegradtigrad_array(x))
@@ -239,6 +240,8 @@ def plot_gem0_scan(X_orig, input_number=0, output_number=0, file_name_suf='', fl
 
     data = {}
 
+    data_remainder = {}
+
     # loop over all the flux tubes, produce n_inputs*n_fluxtubes plots
     for n_ft in range(nfts):
 
@@ -266,6 +269,7 @@ def plot_gem0_scan(X_orig, input_number=0, output_number=0, file_name_suf='', fl
         # Option 3: read from file
 
         print(f"for {xlabels[input_number]} @ft#{n_ft} remainder values are: {x_remainder_value}") ###DEBUG
+        data_remainder[(f"ft{n_ft}", xlabels[input_number])] = x_remainder_value
 
         X_new = np.zeros((x_values_new.shape[0], X_orig_loc.shape[1]))
         X_new[:, input_number] = x_values_new
@@ -288,6 +292,9 @@ def plot_gem0_scan(X_orig, input_number=0, output_number=0, file_name_suf='', fl
             ax.set_ylabel(ylabels[output_number])
             ax.set_title(f"{xlabels[input_number]}->{ylabels[output_number]}(@ft#{n_ft})")
             fig.savefig('scan_gem0_'+'i'+str(input_number)+'o'+str(output_number)+'f'+str(n_ft)+'.pdf')
+
+    data_remainder = pd.DataFrame(data_remainder)
+    data_remainder.to_csv(f"scan_gem0_remainder_{xlabels[input_number]}.csv")
 
     return data
 
