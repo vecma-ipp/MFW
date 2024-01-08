@@ -36,9 +36,12 @@ from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
 from statsmodels.tsa.api import acf, pacf, graphics
 
 from extcodehelper import ExtCodeHelper
-#import lhsmdu
+
 from shutil import copyfileobj
 import re
+
+import lhsmdu
+from scipy.stats import qmc
 
 #latexplotlib
 import latexplotlib as lpl
@@ -48,6 +51,10 @@ plt.rcParams.update({
     "font.family": "sans-serif", 
     "text.usetex": False
             })
+
+# random seed
+rand_seed = 123
+np.random.seed(rand_seed)
 
 def exponential_model(x, theta=[1.0, 1.0, 1.0]):
     """
@@ -85,47 +92,163 @@ def walklevel(some_dir, level=1):
         if num_sep + level <= num_sep_this:
             del dirs[:]
 
-def write_gem0_offline(n_samples=1000, n_dim=4, filename='gem0_lhc_res.csv'):
+def write_gem0_offline(n_samples=1000, n_dim=4, filename='gem0_lhc_ft', n_ft=0, file_in="gem0_new_data_20231215.csv"):
     # Get data from GEM0 for offline training
+    # use LHS sampling
+    
+    # Attention: workaround for interpolating into negattive values of Ti (happens at ft=3, sample i=35 with seed=123): reduce expantion factor
+    expand_factor = 0.2 #0.5
+
+    rho_inds   = [15, 31, 44, 55, 66, 76, 85, 94]
+    ftube_rhos = [0.14, 0.31, 0.44, 0.56, 0.67, 0.77, 0.86, 0.95]
+
+    xlabels = ['te_value', 'ti_value', 'te_ddrho', 'ti_ddrho']
+    ylabels = ['te_transp_flux', 'ti_transp_flux']
+
+    dict_param_ranges = {
+                        'ft0':{
+                                'te_value': [500., 2400.], 
+                                'ti_value': [500., 2400.], 
+                                'te_ddrho': [-5000., -1000.], 
+                                'ti_ddrho': [-5000., -1000.]
+                              },
+                        'ft1':{
+                                'te_value': [500., 2400.], 
+                                'ti_value': [500., 2400.], 
+                                'te_ddrho': [-5000., -1000.], 
+                                'ti_ddrho': [-5000., -1000.]
+                              },
+                        'ft2':{
+                                'te_value': [500., 2400.], 
+                                'ti_value': [500., 2400.], 
+                                'te_ddrho': [-5000., -1000.], 
+                                'ti_ddrho': [-5000., -1000.]
+                              },
+                        'ft3':{
+                                'te_value': [500., 2400.], 
+                                'ti_value': [500., 2400.], 
+                                'te_ddrho': [-5000., -1000.], 
+                                'ti_ddrho': [-5000., -1000.]
+                              },
+                        'ft4':{
+                                'te_value': [500., 2400.], 
+                                'ti_value': [500., 2400.], 
+                                'te_ddrho': [-5000., -1000.], 
+                                'ti_ddrho': [-5000., -1000.]
+                              },
+                        'ft5':{
+                                'te_value': [500., 2400.], 
+                                'ti_value': [500., 2400.], 
+                                'te_ddrho': [-5000., -1000.], 
+                                'ti_ddrho': [-5000., -1000.]
+                              },
+                        'ft6':{
+                                'te_value': [500., 2400.], 
+                                'ti_value': [500., 2400.], 
+                                'te_ddrho': [-5000., -1000.], 
+                                'ti_ddrho': [-5000., -1000.]
+                              },
+                        'ft7':{
+                                'te_value': [500., 2400.], 
+                                'ti_value': [500., 2400.], 
+                                'te_ddrho': [-5000., -1000.], 
+                                'ti_ddrho': [-5000., -1000.]
+                              },
+                        }
+
+    # Read the reference data and define the regions for all the parameteres
+    ref_dataframe = pd.read_csv(file_in)
+    ref_data = ref_dataframe[ref_dataframe['ft']==n_ft]
+    for x_name in xlabels:
+        avg_val = ref_data[x_name].mean()
+        min_val = ref_data[x_name].min()
+        max_val = ref_data[x_name].max()
+        dict_param_ranges[f'ft{n_ft}'][x_name] = [min_val - expand_factor*(avg_val - min_val), max_val + expand_factor*(max_val - avg_val)]
+        if (x_name == 'te_value' or x_name == 'ti_value') and dict_param_ranges[f'ft{n_ft}'][x_name][0] < 0.:
+            dict_param_ranges[f'ft{n_ft}'][x_name][0] = 0.
+        if (x_name == 'te_ddrho' or x_name == 'ti_ddrho') and dict_param_ranges[f'ft{n_ft}'][x_name][0] > 0.:
+            # might actually still be physical!
+            dict_param_ranges[f'ft{n_ft}'][x_name][0] = 0.
 
     st = t.time()
     gem0_helper = ExtCodeHelper(1)
     print(f'time to create extcodehelper: {t.time()-st}')
 
+    # Define how to call pyGEM0: create a lambda function with the right signature
     if n_dim == 4:
-        function = lambda x: np.array(gem0_helper.gem0_call_4param2target_array(x))
-        function = lambda x: np.array(gem0_helper.gem0_call_4param2target_array(x, rho_inds=[rho_inds[n_ft]], rho=[ftube_rhos[n_ft]]))
-        x_param = [[500., 2400, 16], [500., 2400, 16], [-5000., -1000., 16], [-5000., -1000., 16]]
+        #function = lambda x: np.array(gem0_helper.gem0_call_4param2target_array(x))
+        function = lambda x: np.array(gem0_helper.gem0_call_4param2target_array(x, rho_inds=[rho_inds[n_ft]], rho=[ftube_rhos[n_ft]]))[0]
+        x_param = [v for k,v in dict_param_ranges[f'ft{n_ft}'].items()]
     elif n_dim == 2:
-        function = lambda x: np.array(gem0_helper.gem0_call_tefltegradtigrad_array(x))
+        function = lambda x: np.array(gem0_helper.gem0_call_tefltegradtigrad_array(x)) #TODO convert to location-aware implementation
         x_param = [[-5000., -1000., 16], [-5000., -1000., 16]]
 
+    # Crete LHS samples
+    #print(f"x_param={x_param}") ###DEBUG
     st = t.time()
-    x_domain = lhsmdu.sample(n_dim, n_samples).reshape(-1, n_dim)
-    for dim in range(len(x_param)):
-        x_domain[:, dim] = x_param[dim][0] + x_domain[:, dim] * (x_param[dim][1] - x_param[dim][0])
+    # Option 1: use lhsmdu
+    #x_sample = lhsmdu.sample(n_dim, n_samples).reshape(-1, n_dim)
+    # Option 2: use scipy
+    lhc_sampler = qmc.LatinHypercube(d=n_dim, seed=rand_seed)
+    x_sample = lhc_sampler.random(n=n_samples)
+    
+    # Scale the LHS samples to the right ranges
+    # Option 1: manual scaling from [0.,1.]^d
+    #for dim in range(len(x_param)):
+    #    x_sample[:, dim] = x_param[dim][0] + x_sample[:, dim] * (x_param[dim][1] - x_param[dim][0])
+    # Option 2: using scipy.stats.qmc.scale() 
+    l_b = [x_param[dim][0] for dim in range(len(x_param))]
+    u_b = [x_param[dim][1] for dim in range(len(x_param))]
+    x_sample_scaled = qmc.scale(x_sample, l_b, u_b)
+    x_sample = x_sample_scaled
+
     print(f'time to create LHC-S: {t.time() - st}')
+    x_sample = np.array(x_sample)
+    #print(f"x_sample.shape={x_sample.shape}") ###DEBUG 
+    #print(f"x_sample[0]=\n{x_sample[:,0]}") ###DEBUG 
+    print(f"negative Ti:\n{np.where(x_sample[:,1]<0.)[0]}") ###DEBUG 
 
-    x_domain = np.array(x_domain)
+    # Create function evaluations for the LHS samples
+    st = t.time()
+    # Option 1: use a lambda function
+    #y_test = function(x_sample)
+    # Option 2: use list comprehension
+    #y_test = [function([x_sample[j,:]])[0][0][0][:] for j in range(x_sample.shape[0])
+    #y_test = np.array(y_test)
+    # Option 3: use helper object directly
+    y_test = np.zeros((n_samples, len(ylabels)))
+    for o_num in range(len(ylabels)):
+        #print(f"o_num={o_num}") ###DEBUG
+        #y_test[:, o_num] = [gem0_helper.gem0_call_4param2target_array([x_sample[j,:]], rho_inds=[rho_inds[n_ft]], rho=[ftube_rhos[n_ft]])[0][0][0][o_num] for j in range(x_sample.shape[0])]
+        for i in range(n_samples):
+            #print(f"i={i}") ###DEBUG
+            y_test[i, o_num] = gem0_helper.gem0_call_4param2target_array([x_sample[i,:]], rho_inds=[rho_inds[n_ft]], rho=[ftube_rhos[n_ft]])[0][0][0][o_num]
 
-    y_test = function(x_domain)
+    #print(f"y_test.shape={y_test.shape}") ###DEBUG
     y_test = y_test.reshape(y_test.shape[0], y_test.shape[-1])
 
+    print(f'time to evaluate GEM0: {t.time() - st}')
+
+    # Fill in the results into a dataframe and save it to a file
+    st = t.time()
     df = pd.DataFrame()
 
     if n_dim == 4:
-        df['te.value'] = x_domain[:, 0]
-        df['ti.value'] = x_domain[:, 1]
-        df['te.ddrho'] = x_domain[:, 2]
-        df['ti.ddrho'] = x_domain[:, 3]
-        df['te.flux'] = y_test[:, 0]
-        df['ti.flux'] = y_test[:, 1]
+        df['te_value'] = x_sample[:, 0]
+        df['ti_value'] = x_sample[:, 1]
+        df['te_ddrho'] = x_sample[:, 2]
+        df['ti_ddrho'] = x_sample[:, 3]
+        df['te_transp_flux'] = y_test[:, 0]
+        df['ti_transp_flux'] = y_test[:, 1]
     elif n_dim == 2:
-        df['te.ddrho'] = x_domain[:, 0]
-        df['ti.ddrho'] = x_domain[:, 1]
+        df['te.ddrho'] = x_sample[:, 0]
+        df['ti.ddrho'] = x_sample[:, 1]
         df['ti.flux'] = y_test[:, 0]
 
-    df.to_csv(filename)
+    df.to_csv(f"{filename}{n_ft}.csv")
+    print(f'time to save GEM0: {t.time() - st}')
+
+    return df
 
 def write_gem0_expanded(filename_in, filename_out, expand_factor=1.0):
     """
