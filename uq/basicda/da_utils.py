@@ -171,7 +171,7 @@ def write_gem0_offline(n_samples=1000, n_dim=4, filename='gem0_lhc_ft', n_ft=0, 
             dict_param_ranges[f'ft{n_ft}'][x_name][0] = 0.
 
     st = t.time()
-    gem0_helper = ExtCodeHelper(1)
+    gem0_helper = ExtCodeHelper(2)
     print(f'time to create extcodehelper: {t.time()-st}')
 
     # Define how to call pyGEM0: create a lambda function with the right signature
@@ -216,13 +216,18 @@ def write_gem0_offline(n_samples=1000, n_dim=4, filename='gem0_lhc_ft', n_ft=0, 
     #y_test = [function([x_sample[j,:]])[0][0][0][:] for j in range(x_sample.shape[0])
     #y_test = np.array(y_test)
     # Option 3: use helper object directly
+    x_test = np.zeros((n_samples, len(xlabels)))
     y_test = np.zeros((n_samples, len(ylabels)))
-    for o_num in range(len(ylabels)):
-        #print(f"o_num={o_num}") ###DEBUG
-        #y_test[:, o_num] = [gem0_helper.gem0_call_4param2target_array([x_sample[j,:]], rho_inds=[rho_inds[n_ft]], rho=[ftube_rhos[n_ft]])[0][0][0][o_num] for j in range(x_sample.shape[0])]
-        for i in range(n_samples):
-            #print(f"i={i}") ###DEBUG
-            y_test[i, o_num] = gem0_helper.gem0_call_4param2target_array([x_sample[i,:]], rho_inds=[rho_inds[n_ft]], rho=[ftube_rhos[n_ft]])[0][0][0][o_num]
+    #print(f"o_num={o_num}") ###DEBUG
+    #y_test[:, o_num] = [gem0_helper.gem0_call_4param2target_array([x_sample[j,:]], rho_inds=[rho_inds[n_ft]], rho=[ftube_rhos[n_ft]])[0][0][0][o_num] for j in range(x_sample.shape[0])]
+    for i in range(n_samples):
+        #print(f"i={i}") ###DEBUG
+        y,x = gem0_helper.gem0_call_4param2target_array([x_sample[i,:]], rho_inds=[rho_inds[n_ft]], rho=[ftube_rhos[n_ft]])
+        for out_num in range(len(ylabels)):
+            y_test[i, out_num] = y[0][0][out_num]
+        x = np.array(x).reshape(-1)
+        for in_num in range(len(xlabels)):
+             x_test[i, in_num] = x[in_num]
 
     #print(f"y_test.shape={y_test.shape}") ###DEBUG
     y_test = y_test.reshape(y_test.shape[0], y_test.shape[-1])
@@ -234,10 +239,10 @@ def write_gem0_offline(n_samples=1000, n_dim=4, filename='gem0_lhc_ft', n_ft=0, 
     df = pd.DataFrame()
 
     if n_dim == 4:
-        df['te_value'] = x_sample[:, 0]
-        df['ti_value'] = x_sample[:, 1]
-        df['te_ddrho'] = x_sample[:, 2]
-        df['ti_ddrho'] = x_sample[:, 3]
+        df['te_value'] = x_test[:, 0]
+        df['ti_value'] = x_test[:, 1]
+        df['te_ddrho'] = x_test[:, 2]
+        df['ti_ddrho'] = x_test[:, 3]
         df['te_transp_flux'] = y_test[:, 0]
         df['ti_transp_flux'] = y_test[:, 1]
     elif n_dim == 2:
@@ -416,8 +421,9 @@ def plot_gem0_scan(X_orig, input_number=0, output_number=0, file_name_suf='', fl
             ax.set_title(f"{xlabels[input_number]}->{ylabels[output_number]}(@ft#{n_ft})")
             fig.savefig('scan_gem0_'+'i'+str(input_number)+'o'+str(output_number)+'f'+str(n_ft)+'.pdf')
 
+    # Store and save the remainder input values i.e. the coordinates of the cut
     data_remainder = pd.DataFrame(data_remainder)
-    data_remainder.to_csv(f"scan_gem0_remainder_{xlabels[input_number]}.csv")
+    data_remainder.to_csv(f"scan_gem0_remainder_{xlabels[input_number]}_{file_name_suf}.csv")
 
     return data
 
@@ -468,6 +474,7 @@ def plot_diff(x1, x2, y1, y2, norm='L2', file_name_suf='', save_obj=None):
 def plot_comparison(x_list, y_list, name_list, file_name_suf='', save_obj=None):
     """
     Plots two (or more) responce cuts for different models on the same graph
+        x_list: list of x values for each model
     """
 
     fig,ax = plt.subplots(figsize=[7, 7])
