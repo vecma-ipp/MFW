@@ -166,9 +166,9 @@ def write_gem0_offline(n_samples=1000, n_dim=4, filename='gem0_lhc_ft', n_ft=0, 
         dict_param_ranges[f'ft{n_ft}'][x_name] = [min_val - expand_factor*(avg_val - min_val), max_val + expand_factor*(max_val - avg_val)]
         if (x_name == 'te_value' or x_name == 'ti_value') and dict_param_ranges[f'ft{n_ft}'][x_name][0] < 0.:
             dict_param_ranges[f'ft{n_ft}'][x_name][0] = 0.
-        if (x_name == 'te_ddrho' or x_name == 'ti_ddrho') and dict_param_ranges[f'ft{n_ft}'][x_name][0] > 0.:
-            # might actually still be physical!
-            dict_param_ranges[f'ft{n_ft}'][x_name][0] = 0.
+        # if (x_name == 'te_ddrho' or x_name == 'ti_ddrho') and dict_param_ranges[f'ft{n_ft}'][x_name][1] > 0.:
+        #     # might actually still be physical!
+        #     dict_param_ranges[f'ft{n_ft}'][x_name][1] = 0.
 
     st = t.time()
     gem0_helper = ExtCodeHelper(2)
@@ -341,14 +341,14 @@ def write_gem0_expanded(filename_in, filename_out, expand_factor=1.0):
 
     return 0
 
-def plot_gem0_scan(X_orig, input_number=0, output_number=0, file_name_suf='', flag_plot=True):
+def plot_gem0_scan(X_orig, input_number=0, output_number=0, file_name_suf='', flag_plot=True, **kwargs):
     """
     Takes original input data, and for central a cut of the data writes a .pdf file
     with a highly resolved plot of GEM0 responce
     """
 
-    extend_factor = 0.5
-    n_points_new = 1000
+    extend_factor = kwargs['extend_factor'] if 'extend_factor' in kwargs else 0.5
+    n_points_new = kwargs['n_samples'] if 'n_samples' in kwargs else 1000
 
     # Global info about data
     xlabels = ['te_value', 'ti_value', 'te_ddrho', 'ti_ddrho']
@@ -363,7 +363,7 @@ def plot_gem0_scan(X_orig, input_number=0, output_number=0, file_name_suf='', fl
     n_p_p_ft = n_rows//nfts
     #n_points_perdim = int(n_p_p_ft ** (1./n_inputs))
 
-    # object to call GEM0, '2' is default option to calculte GyroBohm transport
+    # object to call GEM0, '2' is default option to calculate GyroBohm transport
     gem0_helper = ExtCodeHelper(2)
 
     data = {}
@@ -385,8 +385,16 @@ def plot_gem0_scan(X_orig, input_number=0, output_number=0, file_name_suf='', fl
         x_values = X_orig_loc[:, input_number] # check the order of axis
         #print(x_values) ###DEBUG
 
-        x_values_new = np.linspace(x_values.min() - extend_factor * abs(x_values.min()) , 
-                                    x_values.max() + extend_factor * abs(x_values.max()), n_points_new)
+        x_val_min_new = x_values.min() - extend_factor * abs(x_values.min())
+        x_val_max_new = x_values.max() + extend_factor * abs(x_values.max())
+
+        if (input_number == 0 or input_number == 1) and x_val_min_new < 0.:
+            x_val_min_new = 0.
+        # if (input_number == 2 or input_number == 3) and x_val_max_new > 0.:
+        #     # might actually still be physical!
+        #     x_val_max_new = 0.
+
+        x_values_new = np.linspace(x_val_min_new, x_val_max_new, n_points_new)
         
         # Choice of the location of the other input components
         x_remainder = np.delete(X_orig_loc, input_number, axis=1)
@@ -404,8 +412,10 @@ def plot_gem0_scan(X_orig, input_number=0, output_number=0, file_name_suf='', fl
         for j in range(X_new.shape[0]):
             X_new[j, np.arange(X_orig.shape[1]) != input_number] = x_remainder_value
         
+        st = t.time()
         #print(gem0_helper.gem0_call_4param2target_array([X_new[0,:]], rho_inds=[rho_inds[n_ft]], rho=[ftube_rhos[n_ft]])) ###DEBUG
         y = [gem0_helper.gem0_call_4param2target_array([X_new[j,:]], rho_inds=[rho_inds[n_ft]], rho=[ftube_rhos[n_ft]])[0][0][0][output_number] for j in range(X_new.shape[0])]
+        print(f"time to evaluate GEM0 for i{input_number}o{output_number}f{n_ft}: {t.time() - st}")
 
         data[(f"ft{n_ft}", 'x')] = x_values_new
         data[(f"ft{n_ft}", 'y')] = y
