@@ -823,8 +823,8 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnumstart=1, runnum=
     #print('and modified of len {1}: {0}'.format(runfolder_list_filtered, len(runfolder_list_filtered))) ###DEBUG
     #TODO: check the order of folders and the order of runs!
 
-    code_names = [#'gem',
-                  'gem0'
+    code_names = ['gem',
+                  #'gem0'
 #                 'imp4dv',
            	 ]
     profiles = ['ti_transp', 
@@ -1128,7 +1128,7 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnumstart=1, runnum=
             # Set up file name for reference data and list of flux tube numbers
             #mfw_data_file = 'AUG_mix-lim_gem_inoutput.txt' # 'AUG_gem_inoutput.txt' # data from runs by Onnie Luk
             mfw_data_file = 'AUG_gem_adtst_YY.txt'
-            mfw_ft_s = [1,2,3,4,5,6,7,8] #[5, 6, 7]
+            mfw_ft_s = [1] #[1,2,3,4,5,6,7,8] #[5, 6, 7] #ATTENTION: only for continutation of the 1st f.t.!
             n_fts = len(mfw_ft_s)
 
             # Read data from a reference run
@@ -1208,7 +1208,7 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnumstart=1, runnum=
             val_mwf_min_input = [val_mwf_input_s[n_ft].min() for n_ft in range(len(mwf_input_names)*n_fts)]
             val_mwf_max_input = [val_mwf_input_s[n_ft].max() for n_ft in range(len(mwf_input_names)*n_fts)]
 
-            print(f">flux @ft8 mean: {val_mwf_mean[0*8+7]}") ###DEBUG
+            #print(f">flux @ft8 mean: {val_mwf_mean[0*8+7]}") ###DEBUG
 
             print("-time to compare with MFW production runs: {0} s".format(time.time()-time_start))
             # 4.4) Apply ARMA model
@@ -1297,7 +1297,7 @@ def main(foldername=False, runforbatch=False, coordnum=1, runnumstart=1, runnum=
                                 } 
                                  for n_ft in range(n_fts)]
 
-            print(f">flux @ft8 mean: {compare_vals_mfw[7]['avg_out']}") ###DEBUG
+            #print(f">flux @ft8 mean: {compare_vals_mfw[7]['avg_out']}") ###DEBUG
 
             print('plotting cuts starting')
             

@@ -10,7 +10,7 @@
 # nohup ./continuous_gem.sh 1  rp1pw2y6 1> script_wf_05122022.log 2>&1 &
 # nohup ./continuous_gem.sh 1  1f3hw2ikn 1> script_wf_13122022.log 2>&1 &
 # nohup ./continuous_gem.sh 39 csldvnei 1> script_wf_20231117.log 2>&1 &
-# 
+# nohup ./continuous_gem.sh 46 csldvnei 1> script_wf_20240111.log 2>&1 &
 
 #0. State the total number of campaigns to run, and ordinal number of the last campaign in previous sequence
 echo "STARTING THE WORKFLOW"
