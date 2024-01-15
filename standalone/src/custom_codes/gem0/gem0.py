@@ -277,6 +277,10 @@ def gem(eq, coreprof, coretransp, code_parameters):
 
             # Local parameters
             #print(tte)  # DEBUG  for last iteration outside gives negative value -> pinpoint
+            
+            # Check for negative temperatures (that should not happen) 
+            if tte < 0.0 or tti < 0.0:
+                print(f">>! temperature is negative!: \ntte={tte}\ntti={tti}")
 
             rhos = math.sqrt(cc * cc * ionmass * kb * tte / (ee * ee * b00 * b00))
             cs = math.sqrt(kb * tte / ionmass)
