@@ -397,13 +397,28 @@ def plot_gem0_scan(X_orig, input_number=0, output_number=0, file_name_suf='', fl
         x_values_new = np.linspace(x_val_min_new, x_val_max_new, n_points_new)
         
         # Choice of the location of the other input components
+        cut_option = kwargs['cut_option'] if 'cut_option' in kwargs else 'median'
         x_remainder = np.delete(X_orig_loc, input_number, axis=1)
-        # Option 1: Mean of every other dimension / center of existing sample
-        #x_remainder_value = x_remainder.mean(axis=0)
-        # Option 2: Mode of values among existing sample closest to the median for every other dimension
-        x_remainder_value = np.median(x_remainder, axis=0)
-        # Option 3: read from file
 
+        # Option 1: Mean of every other dimension / center of existing sample
+        if cut_option == 'mean':
+            x_remainder_value = x_remainder.mean(axis=0)
+        # Option 2: Mode of values among existing sample closest to the median for every other dimension
+        elif cut_option == 'median':
+            x_remainder_value = np.median(x_remainder, axis=0)
+        # Option 3: read from file
+        elif cut_option == 'file':
+            if 'remainder_values' in kwargs:
+                file_remainder_values = kwargs['remainder_values']
+                #nft = kwargs['nft']
+                df_remainder_values = pd.read_csv(f"{file_remainder_values}_ft{n_ft}.csv", header=[0, 1], index_col=0,) # tupleize_cols=True)
+                x_remainder_value = df_remainder_values[(f"ft{n_ft}", xlabels[input_number])]
+                x_remainder_value = np.array(x_remainder_value)
+        # Fall-back error option
+        else:
+            print(f"Cut option {cut_option} not supported yet!")
+        
+        # Write (and display) remiander values of the cut location
         print(f"for {xlabels[input_number]} @ft#{n_ft} remainder values are: {x_remainder_value}") ###DEBUG
         data_remainder[(f"ft{n_ft}", xlabels[input_number])] = x_remainder_value
 
