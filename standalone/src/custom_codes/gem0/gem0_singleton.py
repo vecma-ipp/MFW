@@ -1,12 +1,14 @@
 import os
 import importlib.util
-#spec = importlib.util.spec_from_file_location("gem0", "/marconi/home/userexternal/yyudin00/code/MFW/standalone/src/custom_codes/gem0/gem0.py")
-spec = importlib.util.spec_from_file_location("gem0", os.path.abspath("../../standalone/src/custom_codes/gem0/gem0.py"))
-#spec = importlib.util.spec_from_file_location("gem0_singleton", os.path.abspath("C:/Users/user/Documents/UNI/MPIPP/PHD/code/MFW/standalone/src/custom_codes/gem0/gem0.py"))
+
+#gem0path="/marconi/home/userexternal/yyudin00/code/MFW/standalone/src/custom_codes/gem0/gem0.py"
+#gem0path="C:/Users/user/Documents/UNI/MPIPP/PHD/code/MFW/standalone/src/custom_codes/gem0/gem0.py"
+gem0path="../standalone/src/custom_codes/gem0/gem0.py"
+spec = importlib.util.spec_from_file_location("gem0", os.path.abspath(gem0path))
 gem0 = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(gem0)
-
 from gem0 import gem
+
 from assign_turb_parameters import assign_turb_parameters
 
 import sys
@@ -50,12 +52,15 @@ def get_code_ios(equil_file_in="gem0_equilibrium_in.cpo", corep_file_in="gem0_co
 
 class GEM0Singleton():
 
-    def __init__(self, option=4):
+    def __init__(self, option=4., **kwargs):
+        
         self.equil_file_in = "gem0_equilibrium_in.cpo"
         self.corep_file_in ="gem0_coreprof_in.cpo"
         self.coret_file_out = "gem0_coretransp_out.cpo"
 
-        self.code_parameters = get_code_params()
+        self.xml_file = kwargs.get('xml_file') if 'xml_file' in kwargs else 'gem0.xml'
+
+        self.code_parameters = get_code_params(xml_file_name=self.xml_file)
         self.code_parameters['chigb_option'] = option
         self.equil, self.corep_elem, self.coret = get_code_ios(self.equil_file_in, self.corep_file_in, self.coret_file_out)
         

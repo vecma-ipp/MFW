@@ -1,21 +1,29 @@
 import sys
 import os
 import numpy as np
+
+import importlib.util  # TODO windows path does not understand '..' notation
+
 #TODO: make a new package + install / or get relative paths consistent
 sys.path.append(os.path.join(os.getcwd(), "standalone/src/custom_codes/gem0"))
-import importlib.util  # TODO windows path does not understand '..' notation
-spec = importlib.util.spec_from_file_location("gem0_singleton", os.path.abspath("../../standalone/src/custom_codes/gem0/gem0_singleton.py"))
-#spec = importlib.util.spec_from_file_location("gem0_singleton", os.path.abspath("C:/Users/user/Documents/UNI/MPIPP/PHD/code/MFW/standalone/src/custom_codes/gem0/gem0_singleton.py"))
+#gem0path = "C:/Users/user/Documents/UNI/MPIPP/PHD/code/MFW/standalone/src/custom_codes/gem0/gem0_singleton.py"
+gem0path = os.path.abspath("../standalone/src/custom_codes/gem0/gem0_singleton.py")
+spec = importlib.util.spec_from_file_location("gem0_singleton", os.path.abspath(gem0path))
 gem0_singleton = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(gem0_singleton)
+
 from gem0_singleton import GEM0Singleton
 
 class ExtCodeHelper():
 
-    def __init__(self, option=2):
+    def __init__(self, option=2., **kwargs):
+        
         if option not in [1, 2]:
             option = 2
-        self.gem0obj = GEM0Singleton(option)
+        
+        xml_file = kwargs['xml_file'] if 'xml_file' in kwargs else 'gem0.xml'
+
+        self.gem0obj = GEM0Singleton(option, xml_file=xml_file)
 
     def gem0_call_tefltevltegrad(self, x): # TODO np.vectorize?
         """
