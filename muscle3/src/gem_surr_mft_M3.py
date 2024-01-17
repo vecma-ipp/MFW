@@ -27,8 +27,6 @@ def gem_surr_M3():
 
     input_names_ind_permut = [0,2,1,3] # permuation of input names relative to one used in EasySurrogate: ['te_value', 'te_ddrho', 'ti_value', 'ti_ddrho'] -> ['te_value', 'ti_value', 'te_ddrho', 'ti_ddrho']
 
-    model_type = 'ann'
-
     # Creating a MUSCLE3 instance
     instance = Instance({
         Operator.O_F:     ['coretransp_out', 'coretransp_uncertainty_out'],
@@ -49,6 +47,7 @@ def gem_surr_M3():
     coretransp_default_file_name = instance.get_setting('cortransp_default', 'str')
     init_cpo_dir = instance.get_setting('init_cpo_dir', 'str')
     bool_send_uncertainty = instance.get_setting('bool_send_uncertainty', 'bool') # bool for all any of the inputs for any of the locations to be outside of reference data
+    model_type = instance.get_setting('surrogate_type', 'str') # 'ann' or 'gpr
 
     # Setting up pathes, dimensionalities etc.
     #coretransp_default_file_path = init_cpo_dir + '/' + coretransp_default_file_name
