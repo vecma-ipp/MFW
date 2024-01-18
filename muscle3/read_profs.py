@@ -322,13 +322,13 @@ def compare_transp(datadict, save_fold_name, times, input_folder_base='', coord_
     # choose how to call GEM0
     if option == 1:
         # option 1: pass te,ti,te_ddrho,ti_ddrho and rho_tor_norm
-        model_call = lambda x,rho_ind,rho: model.gem0_call_4param2target_array([x], [rho_ind], rho)[0][0]
+        model_call = lambda x,rho_ind,rho: model.gem0_call_4param2target_array([x], [rho_ind], rho)
     else:
         # option 2: pass equilibrium, coreprof, coretransp
         model_call = lambda eq,prof,transp: model.gem0_call_4param2target_cpo(eq,prof,transp)
 
     profile_corrected = np.zeros((len(q_profile_list), len(times), len(coords)))
-    transp_new = np.zeros((len(q_transp_list), len(times), len(coords)))
+    transp_new        = np.zeros( (len(q_transp_list), len(times), len(coords)))
 
     # for reading from CPO files directly
     if option == 2:
@@ -344,12 +344,18 @@ def compare_transp(datadict, save_fold_name, times, input_folder_base='', coord_
 
         # for option 1
         if option == 1:
+
             for n_ft, rho_ind, rho in zip(n_fts, coord_num_fts, coords):
 
                 input_data = np.array([datadict[q_profile][t_ind, rho_ind] for q_profile in q_profile_list])
 
                 #print(f"input_data: {input_data}") ###DEBUG
-                transp_new[:, t_ind, n_ft], profile_corrected[:, t_ind, n_ft] = model_call(input_data, rho_ind, rho) #option 1   
+                retval = model_call(input_data, rho_ind, rho) #option 1   
+                #print(f"retval: {retval}") ###DEBUG
+                
+                transp_new[:, t_ind, n_ft] = retval[0][0][0]
+                profile_corrected[:, t_ind, n_ft] = retval[1][0][0].reshape(-1)
+                
                 #print(f"transp_new: {transp_new[:, t_ind, n_ft]}") ###DEBUG
 
         # for option 2
@@ -379,12 +385,12 @@ def compare_transp(datadict, save_fold_name, times, input_folder_base='', coord_
 
                 for n_m,transp_vals in enumerate(transp_list):
                 
-                    ax.plot(times, transp_vals[q_transp][:,n_ft], label=f"model#{n_m} @ft#{n_ft}")
+                    ax.plot(times, transp_vals[q_transp][:,n_ft], label=f"model#{n_m} @ft#{n_ft}", marker='.', alpha=0.25)
 
                 ax.set_xlabel('time, s')
                 ax.set_ylabel(q_transp)
                 ax.legend(loc='best')
-                ax.set_title(f"Plots for {q_transp} @f.t.#{n_ft} (m1 is original, m2 is python-GEM0)")
+                ax.set_title(f"Plots for {q_transp} @f.t.#{n_ft} (m0 is original, m1 is pyGEM0)")
 
                 pdf_transp.savefig(fig)
 
@@ -662,7 +668,7 @@ def read_profs(codename='gem_', dates=['20230823_151955'], prefix_name='workflow
                 plt.close(f)
 
     ### Plotting transport fluxes for two models
-    compare_transp(datadict, save_fold_name, times, input_folder_base=load_fold_names[0], coord_num_fts=coord_num_fts)
+    compare_transp(datadict, save_fold_name, times, input_folder_base=load_fold_names[0], coord_num_fts=coord_num_fts, option=1)
 
     ### Plotting all quantities against each other
     if bool_sur_involved:
