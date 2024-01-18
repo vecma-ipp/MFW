@@ -48,6 +48,7 @@ def gem_surr_M3():
     init_cpo_dir = instance.get_setting('init_cpo_dir', 'str')
     bool_send_uncertainty = instance.get_setting('bool_send_uncertainty', 'bool') # bool for all any of the inputs for any of the locations to be outside of reference data
     model_type = instance.get_setting('surrogate_type', 'str') # 'ann' or 'gpr
+    retrain_distance = instance.get_setting('retrain_distance', 'float') # distance to move outside of reference data to retrain surrogate
 
     # Setting up pathes, dimensionalities etc.
     #coretransp_default_file_path = init_cpo_dir + '/' + coretransp_default_file_name
@@ -211,6 +212,31 @@ def gem_surr_M3():
         if bool_send_uncertainty:
             print(f"> In this configuration: sending uncertainty info")
             instance.send('coretransp_uncertainty_out', msg_unc_out)
+
+        # Write down a file with suggested points for surrogate retraining
+        file_retrain_name = f"new_surrogate_points_it{str(int_iteration).zfill(5)}.csv"
+
+        new_surrogate_sample = []
+
+        for i_n,(k,vs) in enumerate(dict_outofbounds.items()):
+            for ft in range(n_fts):
+                if vs['greater'][ft]:
+                    new_sample = {'ft': ft}
+                    for i_m, k in enumerate(ref_bounds):
+                        new_sample[k] = profiles_in[i_m, ft]
+                    new_sample[k] = new_sample[k] + retrain_distance * abs( new_sample[k] - 0.5*(ref_bounds[k]['max'][ft]+ref_bounds[k]['min'][ft]) )
+                    new_surrogate_sample.append(new_sample)
+                if vs['lesser'][ft]:
+                    new_sample = {'ft': ft}
+                    for i_m, k in enumerate(ref_bounds):
+                        new_sample[k] = profiles_in[i_m, ft]
+                    new_sample[k] = new_sample[k] - retrain_distance * abs(new_sample[k] - 0.5*(ref_bounds[k]['max'][ft]+ref_bounds[k]['min'][ft]) )
+                    new_surrogate_sample.append(new_sample)
+        
+        new_surrogate_sample = pd.DataFrame(new_surrogate_sample)
+        new_surrogate_sample.to_csv(file_retrain_name)
+
+        # Sending a coretransp message (the results of a surrogate)
 
         instance.send('coretransp_out', msg_out)
         print(f"> Sent an outcoming core transp")

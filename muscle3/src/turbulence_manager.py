@@ -221,12 +221,15 @@ def turbulence_model_manager():
             bool_call_hifi = True
 
         # Criterion 2: check if all input values are outside learned bounds   
-        bool_outofbounds_total = not sum([sum(v['within'].array) for k,v in dict_outofbounds.items()]) # should be 1 if all values for 'within' were False; could be implemented with AND and without prcessing 'not'
+        bool_outofbounds_total = not sum([sum(v['within'].array) for k,v in dict_outofbounds.items()]) # should be 1 if all values for 'within' were False; could be implemented with AND and without processing 'not'
         print(f" All input parameters are outise of bounds: {bool_outofbounds_total}") ###DEBUG
 
         if bool_outofbounds_total:
             bool_call_hifi = True # redundant, could be replaced by RHS value and print moved tp the next IF
             print(f"> Attention: all input profiles are outside of the support of the surrogate!")
+
+        # OVERRIDE: never call hifi
+        bool_call_hifi = False
 
         # 5. If the criterion is satisfied, pass coreprofile and equilibrium to simulation implementation, 
         #           then get back the coretransp - does not use any information from the low-fidelity model does not chose between two
