@@ -150,6 +150,8 @@ class ExtCodeHelper():
             res.append([fluxes],)
             inputs_new.append([input],)
 
+        #print(f"from gem0_call_4param2target_array we are returning:{np.array(res)}, {np.array(inputs_new)}") ###DEBUG
+
         return np.array(res), np.array(inputs_new)
 
     def gem0_call_4param2target_cpo(self, equilibrium, coreprof, coretransp, params=None):
@@ -158,9 +160,10 @@ class ExtCodeHelper():
         returns np.array(2,#flux-tubes) with te_transp and ti_transp fluxes 
         """
 
-        res = self.gem0obj.gem0_call_cpo(equilibrium=equilibrium, coreprof=coreprof, coretransp=coretransp, params=params)
+        res, input = self.gem0obj.gem0_call_cpo(equilibrium=equilibrium, coreprof=coreprof, coretransp=coretransp, params=params)
 
         res = np.array(res)
+        input = np.array(input)
 
-        return res
+        return res, input
     

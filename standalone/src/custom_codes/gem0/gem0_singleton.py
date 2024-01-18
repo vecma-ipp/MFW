@@ -218,7 +218,7 @@ class GEM0Singleton():
                 #self.modify_code_ios(k, v)
                 self.modify_code_ios(feat, x_dict[feat])
 
-            coret, tefl, tifl, tedr, tidr = gem(self.equil, self.corep_elem.core, self.coret, self.code_parameters)
+            coret, tefl, tifl, tedr, tidr, te, ti, rho_new = gem(self.equil, self.corep_elem.core, self.coret, self.code_parameters)
             y_res.append({'te.transp.flux': tefl, 'ti.transp.flux': tifl})
 
         return y_res
@@ -231,7 +231,7 @@ class GEM0Singleton():
         #corep_elem = modify_code_ios(corep_elem, 'ti.value', 0)
 
         print("> Run gem0 routine")
-        coret, tefl, tifl, tedr, tidr = gem(self.equil, self.corep_elem.core, self.coret, self.code_parameters)
+        coret, tefl, tifl, tedr, tidr, te, ti, rho_new = gem(self.equil, self.corep_elem.core, self.coret, self.code_parameters)
         print('ti_transp_flux is: {}'.format(tifl))
 
         # Transfer CPO to buffer / write file
@@ -256,7 +256,7 @@ class GEM0Singleton():
         if coretransp is None:
             coretransp = self.coret
         
-        res_coretransp, te_transp_flux, ti_transp_flux, teddrho, tiddrho = gem(equilibrium, coreprof, coretransp, params)
+        res_coretransp, te_transp_flux, ti_transp_flux, teddrho, tiddrho, te, ti, rho_new = gem(equilibrium, coreprof, coretransp, params)
 
         te_transp_flux_arr = res_coretransp.values[0].te_transp.flux[:]
         ti_transp_flux_arr = res_coretransp.values[0].ti_transp.flux[:,0] # last dimension is species
