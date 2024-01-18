@@ -93,6 +93,10 @@ def walklevel(some_dir, level=1):
             del dirs[:]
 
 def write_gem0_offline(n_samples=1000, n_dim=4, filename='gem0_lhc_ft', n_ft=0, file_in="gem0_new_data_20231215.csv"):
+    """
+    Write a CSV files which samples GEM0 for a given number of samples, a given number of flux tubes, a given number of coreprof input parameters
+        around the reference data in the file_in
+    """
     # Get data from GEM0 for offline training
     # use LHS sampling
     
