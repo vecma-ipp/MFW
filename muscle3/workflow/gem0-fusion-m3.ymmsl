@@ -177,13 +177,15 @@ settings:
   final_cpo_dir: "./"
   muscle_remote_log_level: "DEBUG"  
   slice_initial_number: 0
-  save_slice: true
-  adaptive_timestep: false
+  save_slice: True
+  adaptive_timestep: False
   # turbulence.rho_ind_s: [68.0]
   turbulence.rho_ind_s: [15.0, 31.0, 44.0, 55.0, 66.0, 76.0, 85.0, 94.0]
-  turbulence.profs_out: "ti_transp.flux"
-  #turbulence.surrogate_path: "../../../../../../workflows/gem_es_model"
-  turbulence.cortransp_default: "../../../../../../workflows/gem_coretransp.cpo"
+  turbulence.rho_tor_norm_sur: [0.14, 0.31, 0.44, 0.56, 0.67, 0.77, 0.86, 0.95] # surogate predicts fluxes for this coordinates
+  turbulence.rho_tor_norm_sim: [0.143587306141853, 0.309813886880875, 0.442991137504578, 0.560640752315521, 0.668475985527039, 0.769291400909424, 0.864721715450287, 0.955828309059143] # GEM/GEM0 wants flux tubes here
+  #turbulence.profs_out: "ti_transp.flux"
+  #turbulence.surrogate_path: "../../../../../../workflows/surrogate_for_workflow/gem_es_model"
+  turbulence.cortransp_default: "../../../../../../workflows/gem_coretransp_8ft.cpo"
 
 # Comment: this is run of GEM0-WF with dt=10^-3 AUG_28906_6_8ft_restart initial profiles, for 0.1 seconds / 100 steps
   

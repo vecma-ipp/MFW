@@ -1,6 +1,8 @@
 #/* -*- yaml -*- */
 ymmsl_version: v0.1
 
+#ATTENTION: here hifi model if overloaded to be GEM0, hifi selection criterion is overloaded to be FALSE
+
 model:
   name: fusion_gem_surr
 
@@ -64,7 +66,8 @@ model:
           - coreprof_to_surr_out
         o_f: coretransp_out
     turbulence_hifi:
-      implementation: gem_impl_mpi
+      #implementation: gem_impl_mpi
+      implementation: gem0_impl
       ports:
         f_init: 
           - coreprof_in
@@ -142,7 +145,8 @@ resources:
   turbulence_surr:
     threads: 1
   turbulence_hifi:
-    mpi_processes: 32
+    #mpi_processes: 32
+    threads:
   turbulence_lofi:
     threads: 1
   equilibrium:
@@ -209,19 +213,23 @@ implementations:
   
 settings:
   transport.duration: 0.01
-  transport.dt: 0.00001
+  transport.dt: 0.001
   #init_cpo_dir: ../../../../../../workflows/AUG_28906_6
-  init_cpo_dir: ../../../../../../workflows/AUG_28906_6_8ft_restart
+  #init_cpo_dir: ../../../../../../workflows/AUG_28906_6_8ft_restart
+  init_cpo_dir: "../../../../gem0_surr_resume_data"
   final_cpo_dir: ./
   muscle_remote_log_level: DEBUG
   slice_initial_number: 0
   save_slice: True
   adaptive_timestep: False
   turbulence_surr.rho_ind_s: [15.0, 31.0, 44.0, 55.0, 66.0, 76.0, 85.0, 94.0]
+  turbulence_surr.rho_tor_norm_sur: [0.14, 0.31, 0.44, 0.56, 0.67, 0.77, 0.86, 0.95] # surogate predicts fluxes for this coordinates
+  turbulence_surr.rho_tor_norm_sim: [0.143587306141853, 0.309813886880875, 0.442991137504578, 0.560640752315521, 0.668475985527039, 0.769291400909424, 0.864721715450287, 0.955828309059143] # GEM/GEM0 wants flux tubes here
   # turbulence_surr.profs_out: [te_transp_flux, ti_transp_flux]
-  turbulence_surr.surrogate_path: ../../../../../../workflows/gem_es_model
+  turbulence_surr.surrogate_type: "gpr"
+  turbulence_surr.surrogate_path: ../../../../../../workflows/surrogate_for_workflow/gem_es_model
   turbulence_surr.cortransp_default: ../../../../../../workflows/gem_coretransp_8ft.cpo
-  turbulence_surr.training_dataset_filename: ../../../../../ref_train_data.csv
+  turbulence_surr.training_dataset_filename: ../../../../../ref_train_data_5000.csv
   turbulence_surr.bool_send_uncertainty: True
   turbulence.rho_ind_s: [15.0, 31.0, 44.0, 55.0, 66.0, 76.0, 85.0, 94.0]
   # turbulence.profs_out: [te_transp_flux, ti_transp_flux]
