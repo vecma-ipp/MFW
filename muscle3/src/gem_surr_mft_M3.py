@@ -44,7 +44,7 @@ def gem_surr_M3():
     rho_tor_norm_sur = instance.get_setting('rho_tor_norm_sur', '[float]')
     #output_names = instance.get_setting('profs_out', '[str]') #TODO: figure out how to pass lists of float/strings -> possible: ['float']/['str'] - not supported ATM
     model_file_base = instance.get_setting('surrogate_path', 'str') # prefix of a path to files with surrogate model
-    coretransp_default_file_name = instance.get_setting('cortransp_default', 'str')
+    coretransp_default_file_name = instance.get_setting('coretransp_default', 'str')
     init_cpo_dir = instance.get_setting('init_cpo_dir', 'str')
     bool_send_uncertainty = instance.get_setting('bool_send_uncertainty', 'bool') # bool for all any of the inputs for any of the locations to be outside of reference data
     model_type = instance.get_setting('surrogate_type', 'str') # 'ann' or 'gpr
@@ -62,7 +62,7 @@ def gem_surr_M3():
 
     # Reference training data CSV used to train surrogate
     ref_data = pd.read_csv(ref_data_filename, sep=',')
-    ref_bounds = training_data_bounds(ref_data)
+    ref_bounds = training_data_bounds(ref_data, n_fts=n_fts)
 
     # Initialising surrogate model
     #   for a one-shot training case should only be done once in f_init

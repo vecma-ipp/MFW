@@ -6,18 +6,24 @@ import base
 
 from ascii_cpo import read, write_fstream, read_fstream, write
 
-def training_data_bounds(ref_data, input_names=['te_value', 'ti_value', 'te_ddrho', 'ti_ddrho'], n_fts=8, n_run_per_ft=81):
+def training_data_bounds(ref_data, input_names=['te_value', 'ti_value', 'te_ddrho', 'ti_ddrho'], n_fts=8, n_run_per_ft=81, option='ft_col'):
     """
     Produces a dictionary for training parameters, 
     each having an array of min and max values occuring in the dataset 
+        option: whether to use 'ft' column in the reference data or not
+    
     """
 
     train_bounds = {k:{'min':np.zeros(n_fts), 'max':np.zeros(n_fts)} for k in input_names}
 
     for input in input_names:
         for i in range(n_fts):
-            train_bounds[input]['min'][i] = ref_data[input].iloc[n_run_per_ft*(i):n_run_per_ft*(i+1)].min()
-            train_bounds[input]['max'][i] = ref_data[input].iloc[n_run_per_ft*(i):n_run_per_ft*(i+1)].max()
+            if option == 'ft_col':
+                train_bounds[input]['min'][i] = ref_data[ref_data['ft'==i]][input].min()
+                train_bounds[input]['max'][i] = ref_data[ref_data['ft'==i]][input].max()
+            else:
+                train_bounds[input]['min'][i] = ref_data[input].iloc[n_run_per_ft*(i):n_run_per_ft*(i+1)].min()
+                train_bounds[input]['max'][i] = ref_data[input].iloc[n_run_per_ft*(i):n_run_per_ft*(i+1)].max()
 
     return train_bounds
 
