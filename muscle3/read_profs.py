@@ -418,12 +418,12 @@ def read_profs(codename='gem_', dates=['20230823_151955'], prefix_name='workflow
     if bool_sur_involved:
         
         # option 1 for reference data: 8*(3**4) samples
-        ref_data_filename = 'ref_train_data.csv'
-        n_run_per_ft = 81
+        # ref_data_filename = 'ref_train_data.csv'
+        # n_run_per_ft = 81
 
         # option 2 for reference data: 8*(5**4) samples
-        #ref_data_filename = 'ref_train_data_5000.csv'
-        #n_run_per_ft = 625
+        ref_data_filename = 'ref_train_data_5000.csv'
+        n_run_per_ft = 625
         
         ref_data = pd.read_csv(ref_data_filename, sep=',')
 
