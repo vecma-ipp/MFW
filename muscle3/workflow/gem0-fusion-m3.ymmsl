@@ -44,7 +44,8 @@ model:
           - coreimpur_final
           - toroidfield_final
     turbulence:
-      implementation: gem0_impl
+      #implementation: gem0_impl
+      implementation: gem0_python_impl
       ports:
         o_f: coretransp_out
         f_init: 
@@ -139,6 +140,8 @@ implementations:
       - gdb
       - --args
       - /u/yyudin/code/MFW/muscle3/bin/COBRA/gem0_M3
+  gem0_python_impl:
+    executable: python3 /u/yyudin/code/MFW/muscle3/src/gem0_M3.py
   gem_surr_impl:
     executable: python3 /u/yyudin/code/MFW/muscle3/src/gem_surr_M3.py
   gem_surr_impl_debug:
@@ -172,8 +175,8 @@ settings:
   transport.duration: 0.1
   transport.dt: 0.001
   # init_cpo_dir: "../../../../../../workflows/AUG_28906_6"
-  init_cpo_dir: "../../../../gem_resume_data"
   #init_cpo_dir: "../../../../../../workflows/AUG_28906_6_8ft_restart"
+  init_cpo_dir: "../../../../gem_resume_data"
   final_cpo_dir: "./"
   muscle_remote_log_level: "DEBUG"  
   slice_initial_number: 0
@@ -185,7 +188,10 @@ settings:
   turbulence.rho_tor_norm_sim: [0.143587306141853, 0.309813886880875, 0.442991137504578, 0.560640752315521, 0.668475985527039, 0.769291400909424, 0.864721715450287, 0.955828309059143] # GEM/GEM0 wants flux tubes here
   #turbulence.profs_out: "ti_transp.flux"
   #turbulence.surrogate_path: "../../../../../../workflows/surrogate_for_workflow/gem_es_model"
-  turbulence.cortransp_default: "../../../../../../workflows/gem_coretransp_8ft.cpo"
+  turbulence.coretransp_default: "../../../../../../workflows/gem_coretransp_8ft.cpo"
+  turbulence.equilibrium_default: "../../../../../gem0_equilibrium_in.cpo"
+  turbulence.coreprof_default: "../../../../../gem0_coreprof_in.cpo"
+  turbulence.xml_default: "../../../../../gem0.xml"
 
 # Comment: this is run of GEM0-WF with dt=10^-3 AUG_28906_6_8ft_restart initial profiles, for 0.1 seconds / 100 steps
   

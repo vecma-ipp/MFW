@@ -152,7 +152,7 @@ settings:
   turbulence.surrogate_type: "gpr"
   #turbulence.surrogate_path: "../../../../../../workflows/gem_es_model"
   turbulence.surrogate_path: "../../../../../../workflows/surrogate_for_workflow/gem0_es_model"
-  turbulence.cortransp_default: "../../../../../../workflows/gem_coretransp_8ft.cpo"
+  turbulence.coretransp_default: "../../../../../../workflows/gem_coretransp_8ft.cpo"
   turbulence.training_dataset_filename: "../../../../../ref_train_data_5000.csv"
   turbulence.retrain_distance: 0.25
   turbulence.bool_send_uncertainty: True
