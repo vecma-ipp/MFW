@@ -1,18 +1,22 @@
-import os
+import os, sys
 import importlib.util
 
-#gem0path="/marconi/home/userexternal/yyudin00/code/MFW/standalone/src/custom_codes/gem0/gem0.py"
-#gem0path="C:/Users/user/Documents/UNI/MPIPP/PHD/code/MFW/standalone/src/custom_codes/gem0/gem0.py"
-gem0path="../standalone/src/custom_codes/gem0/gem0.py"
+# -- load pyGEM0 code files - via importlib
+# #gem0path="/marconi/home/userexternal/yyudin00/code/MFW/standalone/src/custom_codes/gem0/gem0.py"
+# #gem0path="C:/Users/user/Documents/UNI/MPIPP/PHD/code/MFW/standalone/src/custom_codes/gem0/gem0.py"
+# gem0path="../standalone/src/custom_codes/gem0/gem0.py"
+gem0path = "/u/yyudin/code/MFW/standalone/src/custom_codes/gem0/gem0.py"
 spec = importlib.util.spec_from_file_location("gem0", os.path.abspath(gem0path))
 gem0 = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(gem0)
+# -- load pyGEM0 code files - via sys
+#sys.path.append('c:\\Users\\user\\Documents\\UNI\\MPIPP\\PHD\\code\\MFW\\ual\\')
+sys.path.append(gem0path)
+
 from gem0 import gem
 
 from assign_turb_parameters import assign_turb_parameters
 
-import sys
-#sys.path.append('c:\\Users\\user\\Documents\\UNI\\MPIPP\\PHD\\code\\MFW\\ual\\')
 from ascii_cpo import read, write
 
 from ual.coreprof import coreprof
@@ -54,9 +58,9 @@ class GEM0Singleton():
 
     def __init__(self, option=4., **kwargs):
         
-        self.equil_file_in = "gem0_equilibrium_in.cpo"
-        self.corep_file_in ="gem0_coreprof_in.cpo"
-        self.coret_file_out = "gem0_coretransp_out.cpo"
+        self.equil_file_in = kwargs['equilibrium'] if 'equilibrium' in kwargs else "gem0_equilibrium_in.cpo"
+        self.corep_file_in = kwargs['coreprof'] if 'coreprof' in kwargs else "gem0_coreprof_in.cpo"
+        self.coret_file_out = kwargs['coretransp'] if 'coretransp' in kwargs else "gem0_coretransp_out.cpo"
 
         self.xml_file = kwargs.get('xml_file') if 'xml_file' in kwargs else 'gem0.xml'
 
@@ -196,7 +200,7 @@ class GEM0Singleton():
             self.modify_code_params('ra0', (rho_inds[0]+0)/100.0) # not accurate?    
 
         coret, tefl, tifl, tedr, tidr, te, ti, rho_new = gem(self.equil, self.corep_elem.core, self.coret, self.code_parameters)
-        return [tefl, tifl], [te, ti, tedr, tidr]  #, tedr, tidr
+        return [tefl, tifl], [te, ti, tedr, tidr]
 
     def gem0_fit_call(self,
                       xs,
@@ -256,10 +260,10 @@ class GEM0Singleton():
         if coretransp is None:
             coretransp = self.coret
         
-        res_coretransp, te_transp_flux, ti_transp_flux, teddrho, tiddrho, te, ti, rho_new = gem(equilibrium, coreprof, coretransp, params)
+        res_coretransp, te_transp_flux, ti_transp_flux, teddrho, tiddrho, tevalue, tivalue, rho_new = gem(equilibrium, coreprof, coretransp, params)
 
         te_transp_flux_arr = res_coretransp.values[0].te_transp.flux[:]
         ti_transp_flux_arr = res_coretransp.values[0].ti_transp.flux[:,0] # last dimension is species
 
-        return [te_transp_flux_arr, ti_transp_flux_arr]
+        return [te_transp_flux_arr, ti_transp_flux_arr], [tevalue, tivalue, teddrho, tiddrho], res_coretransp
     

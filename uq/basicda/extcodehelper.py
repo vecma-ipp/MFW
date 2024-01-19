@@ -5,12 +5,19 @@ import numpy as np
 import importlib.util  # TODO windows path does not understand '..' notation
 
 #TODO: make a new package + install / or get relative paths consistent
-sys.path.append(os.path.join(os.getcwd(), "standalone/src/custom_codes/gem0"))
+# -- load pyGEM0 code files - via importlib
 #gem0path = "C:/Users/user/Documents/UNI/MPIPP/PHD/code/MFW/standalone/src/custom_codes/gem0/gem0_singleton.py"
-gem0path = os.path.abspath("../standalone/src/custom_codes/gem0/gem0_singleton.py")
-spec = importlib.util.spec_from_file_location("gem0_singleton", os.path.abspath(gem0path))
+#gem0path = os.path.abspath("../standalone/src/custom_codes/gem0/gem0_singleton.py")
+gem0path = "/u/yyudin/code/MFW/standalone/src/custom_codes/gem0/gem0.py"
+gem0singpath = "/u/yyudin/code/MFW/standalone/src/custom_codes/gem0/gem0_singleton.py"
+#pec = importlib.util.spec_from_file_location("gem0_singleton", os.path.abspath(gem0path))
+spec = importlib.util.spec_from_file_location("gem0_singleton", gem0singpath)
 gem0_singleton = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(gem0_singleton)
+# -- load pyGEM0 code files - via sys
+sys.path.append(os.path.join(os.getcwd(), "standalone/src/custom_codes/gem0"))
+sys.path.append(gem0path)
+sys.path.append(gem0singpath)
 
 from gem0_singleton import GEM0Singleton
 
@@ -22,8 +29,12 @@ class ExtCodeHelper():
             option = 2
         
         xml_file = kwargs['xml_file'] if 'xml_file' in kwargs else 'gem0.xml'
+        
+        equilibrium_file = kwargs['equilibrium_file'] if 'equilibrium_file' in kwargs else "gem0_equilibrium_in.cpo"
+        coreprof_file = kwargs['coreprof_file'] if 'coreprof_file' in kwargs else "gem0_coreprof_in.cpo"
+        coretransp_file = kwargs['coretransp_file'] if 'coretransp_file' in kwargs else "gem0_coretransp_in.cpo"
 
-        self.gem0obj = GEM0Singleton(option, xml_file=xml_file)
+        self.gem0obj = GEM0Singleton(option, xml_file=xml_file, equilibrium=equilibrium_file, coreprof=coreprof_file, coretransp=coretransp_file)
 
     def gem0_call_tefltevltegrad(self, x): # TODO np.vectorize?
         """
@@ -121,7 +132,6 @@ class ExtCodeHelper():
             res.append([self.gem0obj.gem0_call({'ti.value': el[0], 'ti.ddrho': el[1]})[1]])
         return np.array(res)
 
-
     def gem0_call_tefl4params_array(self, x, rho_inds=[69]):
         """
         calls the gem0 code for desired 4 parameters
@@ -133,7 +143,6 @@ class ExtCodeHelper():
                                                 'te.ddrho': el[2], 'ti.ddrho': el[3]},
                                         rho_inds=rho_inds)[0]])
         return np.array(res)
-
 
     def gem0_call_4param2target_array(self, x, rho_inds=[69], rho=None):
         """
@@ -154,16 +163,16 @@ class ExtCodeHelper():
 
         return np.array(res), np.array(inputs_new)
 
-    def gem0_call_4param2target_cpo(self, equilibrium, coreprof, coretransp, params=None):
+    def gem0_call_4param2target_cpo(self, equilibrium=None, coreprof=None, coretransp=None, params=None):
         """
         Takes equilibrium, coreprof, coretransp CPO datastructures, XML params and 
         returns np.array(2,#flux-tubes) with te_transp and ti_transp fluxes 
         """
 
-        res, input = self.gem0obj.gem0_call_cpo(equilibrium=equilibrium, coreprof=coreprof, coretransp=coretransp, params=params)
+        output, input, res_coretransp = self.gem0obj.gem0_call_cpo(equilibrium=equilibrium, coreprof=coreprof, coretransp=coretransp, params=params)
 
-        res = np.array(res)
+        output = np.array(output)
         input = np.array(input)
 
-        return res, input
+        return output, input, res_coretransp
     

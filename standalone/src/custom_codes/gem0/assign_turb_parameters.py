@@ -6,6 +6,8 @@ from distutils.util import strtobool
 
 from turb_coeff import write_diags, write_cpos, hmode, q_choice, nrho_transp, nion_prof, nion, thresh, beta_reduction, etae_pinch, chi_d, chiratio_phi, ra0
 
+#import os ### DEBUG
+
 def get_value(param_name, xml_root, xsd_root):
     param_path = "./" + param_name.replace(".", "/")
     elem = xml_root.find(param_path)
@@ -76,6 +78,8 @@ def assign_turb_parameters(code_parameters_filename):
 #        imas_xml_parse(code_parameters, nparm, parameter_list)
 #    else:
 #        euitm_xml_parse(code_parameters, nparm, parameter_list)
+    
+    #print(f" >>> current dir: {os.getcwd()}") ###DEBUG
 
     parameters = ET.parse(code_parameters_filename)
     xsd_root = ET.parse(code_parameters_filename.replace(".xml", ".xsd")).getroot()

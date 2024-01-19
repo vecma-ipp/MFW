@@ -4,9 +4,13 @@ import copy
 
 import sys
 import os
-#sys.path.append(os.path.abspath("/marconi/home/userexternal/yyudin00/code/MFW/standalone/src/custom_codes/gem0/"))
-sys.path.append(os.path.abspath("/cobra/u/yyudin/code/MFW/standalone/src/custom_codes/gem0/"))
-#sys.path.append(os.path.abspath("C:/Users/user/Documents/UNI/MPIPP/PHD/code/MFW/standalone/src/custom_codes/gem0/"))
+
+# gem0path = "/marconi/home/userexternal/yyudin00/code/MFW/standalone/src/custom_codes/gem0/"
+# gem0path = "C:/Users/user/Documents/UNI/MPIPP/PHD/code/MFW/standalone/src/custom_codes/gem0/"
+gem0path = "/cobra/u/yyudin/code/MFW/standalone/src/custom_codes/gem0/"
+
+sys.path.append(os.path.abspath(gem0path))
+
 
 from turb_constructor import turb_constructor
 import assign_turb_parameters
@@ -128,8 +132,8 @@ def gem(eq, coreprof, coretransp, code_parameters):
         rho = np.array([ra0])
     elif nrho_transp == (nrho_prof-1)/2 or nrho_transp == 0:
         rho = rho0[1:nrho_transp-1:2]
-    elif nrho_transp == 8: #YY
-        rho = np.array([[0.14, 0.31, 0.44, 0.56, 0.67, 0.77, 0.86, 0.95]])
+    # elif nrho_transp == 8: #YY
+    #     rho = np.array([0.14, 0.31, 0.44, 0.56, 0.67, 0.77, 0.86, 0.95])
     else:
         rho = np.array([((1.0/(2*nrho_transp))*(2*x+1))**0.7 for x in range(nrho_transp)])
 

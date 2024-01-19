@@ -7,10 +7,9 @@ def l3interp(y_in, x_in, nr_in, y_out, x_out, nr_out):
     """
 
     #print("> Interpolation, nr_in:{} nr_out:{}".format(nr_in, nr_out))
-    #print('x_in[{}]: {}; x_in[0]: {}'.format(nr_in, x_in[nr_in - 1], x_in[0]))
-    #print('x_out: {}'.format(x_out))
+    #print('x_in[{}]: {}; x_in[0]: {}'.format(nr_in, x_in[nr_in - 1], x_in[0])) ###DEBUG
+    #print('x_out: {}'.format(x_out)) ###DEBUG
     
-
     if x_in[nr_in - 1] > x_in[0]:
         jstart = 2
         jfirst = 0
@@ -30,6 +29,7 @@ def l3interp(y_in, x_in, nr_in, y_out, x_out, nr_out):
     for j in range(jfirst, jlast + 1, jstep):
         #print('j:{}'.format(j))
         x = x_out[j]
+        #print(f"x={x} ; x_in[j1]={x_in[j1]}") ###DEBUG
         while x >= x_in[j1] and nr_in - 2 > j1 > 1:
             j1 = j1 + jstep
 
