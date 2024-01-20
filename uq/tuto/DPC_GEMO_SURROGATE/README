@@ -1,0 +1,36 @@
+import pandas as pd
+import matplotlib
+matplotlib.use('TkAgg')
+import matplotlib.pyplot as plt
+import pickle
+
+D = pd.read_csv('result_gem0surrogate_workflow_20240118_161029.csv', sep=' ')
+
+F = pd.read_csv('../YY_2023-12-16/gem0_new_data_20231208.csv', sep=',')
+
+fits = pickle.load(open('../YY_2023-12-16/fits.pickle', 'br'))
+
+def find(name, data=D): return [ s for s in np.array(data.columns) if re.findall(name, s) ]
+
+plt.ion()
+
+D[find('diff-Te')].plot()
+D[find('diff-Ti')].plot()
+D[find('vconv-Te')].plot()
+D[find('vconv-Ti')].plot()
+(D[find('flux-Te')]+D[find('flux-Ti')]).plot()
+
+ft=6
+X = np.array(F[F.ft==ft][x_labels])
+Y = np.array(F[F.ft==ft][y_labels])
+X_mean = X.mean(axis=0)
+X_std = X.std(axis=0)
+X_norm = (X-X_mean)/X_std
+Y_mean = Y.mean(axis=0)
+Y_std = Y.std(axis=0)
+Y_norm = (Y-Y_mean)/Y_std
+plt.clf()
+plt.plot(D[find(f'flux-T.-ft{ft+1}')], label=find(f'flux-T.-ft{ft+1}'))
+plt.plot(list(range(100)), fits[ft].predict((D[np.array(Data)[:,ft]]-X_mean)/X_std)*Y_std+Y_mean, label=y_labels)
+plt.legend(loc=0)
+plt.title(f"flux tube {ft} (counting from 0)")
