@@ -14,13 +14,17 @@ def training_data_bounds(ref_data, input_names=['te_value', 'ti_value', 'te_ddrh
     
     """
 
+    #print(f"ref_data : \n{ref_data.describe()}")###DEBUG
+
     train_bounds = {k:{'min':np.zeros(n_fts), 'max':np.zeros(n_fts)} for k in input_names}
 
     for input in input_names:
         for i in range(n_fts):
             if option == 'ft_col':
-                train_bounds[input]['min'][i] = ref_data[ref_data['ft'==i]][input].min()
-                train_bounds[input]['max'][i] = ref_data[ref_data['ft'==i]][input].max()
+                mask = ref_data['ft']==i
+                ref_data_ft = ref_data[mask]
+                train_bounds[input]['min'][i] = ref_data_ft[input].min()
+                train_bounds[input]['max'][i] = ref_data_ft[input].max()
             else:
                 train_bounds[input]['min'][i] = ref_data[input].iloc[n_run_per_ft*(i):n_run_per_ft*(i+1)].min()
                 train_bounds[input]['max'][i] = ref_data[input].iloc[n_run_per_ft*(i):n_run_per_ft*(i+1)].max()
@@ -73,7 +77,7 @@ def check_outof_learned_bounds(input, reference):
 
 def coreprof_to_input_value(
             data, 
-            rho_ind_s, 
+            rho_ind_s, # used only if rho_tor_norm is None
             rho_tor_norm=None, # rho_tor_nor of coretransp flux tubes
             prof_names=['te', 'ti'], 
             attrib_names=['value', 'ddrho'],

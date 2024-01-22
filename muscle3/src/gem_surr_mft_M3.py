@@ -41,11 +41,11 @@ def gem_surr_M3():
     ref_data_filename = instance.get_setting('training_dataset_filename', 'str')
     rho_ind_s = instance.get_setting('rho_ind_s', '[float]') #TODO : consider using function to calculate index from rho_tor; also can be read from the first coretranp received
     rho_tor_norm_sim = instance.get_setting('rho_tor_norm_sim', '[float]') #TODO: use interpolation on these, or ones from coretransp
-    rho_tor_norm_sur = instance.get_setting('rho_tor_norm_sur', '[float]')
+    rho_tor_norm_sur = instance.get_setting('rho_tor_norm_sur', '[float]') #ATTENTION: for the GEM0 data generated after 15.12.2023 the 'sim' grid is used
     #output_names = instance.get_setting('profs_out', '[str]') #TODO: figure out how to pass lists of float/strings -> possible: ['float']/['str'] - not supported ATM
     model_file_base = instance.get_setting('surrogate_path', 'str') # prefix of a path to files with surrogate model
     coretransp_default_file_name = instance.get_setting('coretransp_default', 'str')
-    init_cpo_dir = instance.get_setting('init_cpo_dir', 'str')
+    #init_cpo_dir = instance.get_setting('init_cpo_dir', 'str')
     bool_send_uncertainty = instance.get_setting('bool_send_uncertainty', 'bool') # bool for all any of the inputs for any of the locations to be outside of reference data
     model_type = instance.get_setting('surrogate_type', 'str') # 'ann' or 'gpr
     retrain_distance = instance.get_setting('retrain_distance', 'float') # distance to move outside of reference data to retrain surrogate
@@ -119,8 +119,8 @@ def gem_surr_M3():
 
         # After reading the profile from temporary file, make an array
         profiles_in = coreprof_to_input_value(coreprof_cpo_obj,
-                                              rho_ind_s=rho_ind_s,
-                                              #rho_tor_norm=rho_tor_norm, # flux tube locations in coretransp
+                                              rho_ind_s=rho_ind_s, # not used if rho_tor_norm_sur is passed!
+                                              rho_tor_norm=rho_tor_norm_sim, # flux tube locations in coretransp
                                               )
 
         profiles_in = profiles_in[input_names_ind_permut] #TODO: either fix original order, or store permutation separately
@@ -157,7 +157,7 @@ def gem_surr_M3():
             fluxes_out[n_ft,:] = f_o.reshape(-1)
             fluxes_out_std[n_ft,:] = f_o_std.reshape(-1)
         
-        print(f"> Used a surrogate at rho_ind={rho_ind_s} to predict new Q_e,i={fluxes_out}")
+        print(f"> Used a surrogate at rho_ind={rho_tor_norm_sur} to predict new Q_e,i={fluxes_out}")
         print(f"> Predicted STDs of new Q_e,i={fluxes_out_std}")
 
         #TODO: in principle with large scale separation local t_cur does not play role,
