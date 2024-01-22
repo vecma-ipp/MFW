@@ -146,7 +146,8 @@ settings:
   save_slice: True
   adaptive_timestep: False
   turbulence.rho_ind_s: [15., 31., 44., 55., 66., 76., 85., 94.] # surrogate takes profiles read from these (integer) indices of radial grid
-  turbulence.rho_tor_norm_sur: [0.14, 0.31, 0.44, 0.56, 0.67, 0.77, 0.86, 0.95] # surogate predicts fluxes for this coordinates
+  #turbulence.rho_tor_norm_sur: [0.14, 0.31, 0.44, 0.56, 0.67, 0.77, 0.86, 0.95] # surogate predicts fluxes for this coordinates - not true since Jan2024
+  turbulence.rho_tor_norm_sur: [0.143587306141853, 0.309813886880875, 0.442991137504578, 0.560640752315521, 0.668475985527039, 0.769291400909424, 0.864721715450287, 0.955828309059143] # with new pyGEM0 calling, surrogate takes core profiles and produces flux values on 'coretransp' grid for both
   turbulence.rho_tor_norm_sim: [0.143587306141853, 0.309813886880875, 0.442991137504578, 0.560640752315521, 0.668475985527039, 0.769291400909424, 0.864721715450287, 0.955828309059143] # GEM/GEM0 wants flux tubes here
   #turbulence.profs_out: "ti_transp.flux"
   turbulence.surrogate_type: "gpr"

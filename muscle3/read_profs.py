@@ -307,6 +307,11 @@ def compare_transp(datadict, save_fold_name, times, input_folder_base='', coord_
     else:
         coords = [0.143587306141853 , 0.309813886880875 , 0.442991137504578 , 0.560640752315521 , 0.668475985527039 , 0.769291400909424 , 0.864721715450287 , 0.955828309059143 ] #TODO double check
     
+    if option == 0:
+        xml_file = 'gem0.xml'
+    else:
+        xml_file = 'gem0_1ft.xml'
+
     if coord_num_fts is None:
         coord_num_fts = [x-1 for x in [15, 31, 44, 56, 67, 77, 86, 96]]
 
@@ -317,13 +322,16 @@ def compare_transp(datadict, save_fold_name, times, input_folder_base='', coord_
     t_min = len(times)
 
     # initialise a model and its evaluation - here: GEM0
-    model = ExtCodeHelper(2, xml_file='gem0_1ft.xml')
+    model = ExtCodeHelper(2, xml_file=xml_file)
 
     # choose how to call GEM0
-    if option == 1:
+    if option == 0:
+        # option 0: pass te,ti,te_ddrho,ti_ddrho at 1D grids of length 100
+        model_call = lambda x: model.gem0_call_4param2target_fullarray(x)
+    elif option == 1:
         # option 1: pass te,ti,te_ddrho,ti_ddrho and rho_tor_norm
         model_call = lambda x,rho_ind,rho: model.gem0_call_4param2target_array([x], [rho_ind], rho)
-    else:
+    elif option == 2:
         # option 2: pass equilibrium, coreprof, coretransp
         model_call = lambda eq,prof,transp: model.gem0_call_4param2target_cpo(eq,prof,transp)
 
@@ -342,7 +350,16 @@ def compare_transp(datadict, save_fold_name, times, input_folder_base='', coord_
     # Iterate over the time step indices
     for t_ind in range(t_min):
 
-        # for option 1
+        # for option 0: use a single call to pyGEM0, pass entire coreprof and get eniter coretransp array
+        if option == 0:
+
+            gem0_dict = {k:datadict[k][t_ind,:] for k in q_profile_list}
+
+            tr, pr = model_call(gem0_dict)
+
+            transp_new[:, t_ind, :] = tr
+
+        # for option 1: call for given values, per flux tube
         if option == 1:
 
             for n_ft, rho_ind, rho in zip(n_fts, coord_num_fts, coords):
@@ -358,7 +375,7 @@ def compare_transp(datadict, save_fold_name, times, input_folder_base='', coord_
                 
                 #print(f"transp_new: {transp_new[:, t_ind, n_ft]}") ###DEBUG
 
-        # for option 2
+        # for option 2: pass the CPO objects
         if option == 2:
             eq = read(input_folder+eq_filename+str(t_ind).zfill(5)+cpo_extension, 'equilibrium')
             prof = read(input_folder+prof_filename+str(t_ind).zfill(5)+cpo_extension, 'coreprof')
@@ -585,6 +602,7 @@ def read_profs(codename='gem_', dates=['20230823_151955'], prefix_name='workflow
                     
                     if bool_sur_involved:
                         if quantities[i_q]+'_'+attributes[j_a] in ref_data.columns:
+                            #TODO: use 'ft' column to split reference data
                             min_val = ref_data[quantities[i_q]+'_'+attributes[j_a]].iloc[n_run_per_ft*(n_ft_transp):n_run_per_ft*(n_ft_transp+1)].min()
                             max_val = ref_data[quantities[i_q]+'_'+attributes[j_a]].iloc[n_run_per_ft*(n_ft_transp):n_run_per_ft*(n_ft_transp+1)].max()
                             median_val = (max_val + min_val) / 2.
@@ -668,7 +686,7 @@ def read_profs(codename='gem_', dates=['20230823_151955'], prefix_name='workflow
                 plt.close(f)
 
     ### Plotting transport fluxes for two models
-    compare_transp(datadict, save_fold_name, times, input_folder_base=load_fold_names[0], coord_num_fts=coord_num_fts, option=1)
+    compare_transp(datadict, save_fold_name, times, input_folder_base=load_fold_names[0], coord_num_fts=coord_num_fts, option=0) #option 0 should use the whole profile to interpolate on coretransp grid later
 
     ### Plotting all quantities against each other
     if bool_sur_involved:
