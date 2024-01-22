@@ -148,6 +148,9 @@ class ExtCodeHelper():
         """
         calls the gem0 code for desired 4 parameters
         :param x: x[0] is te.value
+                  x[1] is ti.value
+                  x[2] is te.ddrho
+                  x[3] is ti.ddrho
         """
         res = []
         inputs_new = []
@@ -155,7 +158,7 @@ class ExtCodeHelper():
 
             fluxes, input = self.gem0obj.gem0_call({'te.value': el[0], 'ti.value': el[1],
                                                 'te.ddrho': el[2], 'ti.ddrho': el[3]},
-                                        rho_inds=rho_inds, rho=rho)[0:2]
+                                        rho_inds=rho_inds, rho=rho)#[0:2]
             res.append([fluxes],)
             inputs_new.append([input],)
 
@@ -176,3 +179,15 @@ class ExtCodeHelper():
 
         return output, input, res_coretransp
     
+    def gem0_call_4param2target_fullarray(self, core_prof_dict):
+        """
+        Takes a dictionary of core profiles for Te/i,gradTe/i and returns fluxes 
+        TODO: check if dictionary elements are of same length as default coreprof grid
+        """
+
+        fluxes, newprofiles, _ = self.gem0obj.gem0_call_profile(core_prof_dict)
+
+        output = np.array(fluxes)
+        input = np.array(newprofiles)
+
+        return output, input

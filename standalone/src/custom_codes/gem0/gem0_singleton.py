@@ -202,6 +202,40 @@ class GEM0Singleton():
         coret, tefl, tifl, tedr, tidr, te, ti, rho_new = gem(self.equil, self.corep_elem.core, self.coret, self.code_parameters)
         return [tefl, tifl], [te, ti, tedr, tidr]
 
+    def gem0_call_profile(self, coreprof):
+        """
+        calls GEM0 when four core profile are known
+            coreprof: dictionary, each element is array of length nrho (usually 100)
+            returns: triplet of (fluxes, inputs, coretransp) where fluxes is list of Qe/i, inputs is list of Te/i,gradTe/i, and coretransp is CPO object
+        """
+
+        for k,prof in coreprof.items():
+
+            # if k == 'te_value':
+            #     self.corep_elem.te.value = prof
+            # if k == 'ti_value':
+            #     self.corep_elem.ti.value = prof
+            # if k == 'te_ddrho':
+            #     self.corep_elem.te.ddrho = prof
+            # if k == 'ti_ddrho':
+            #     self.corep_elem.ti.ddrho = prof
+            # else:
+            
+            nrho = len(prof)
+            inds = [i for i in range(nrho)]
+            profname = k.split('_')[0]
+            attribname = k.split('_')[-1]
+            self.corep_elem.set_value(f"{profname}.{attribname}", prof.tolist(), inds)
+
+            #print(f"> core profile of {k} is not supported!")
+
+        coret, tefl, tifl, tedr, tidr, te, ti, rho_new = gem(self.equil, self.corep_elem.core, self.coret, self.code_parameters)
+
+        te_transp_flux = coret.values[0].te_transp.flux[:]
+        ti_transp_flux = coret.values[0].ti_transp.flux[:,0]
+
+        return [te_transp_flux, ti_transp_flux], [te, ti, tedr, tidr], coret
+
     def gem0_fit_call(self,
                       xs,
                       params,
