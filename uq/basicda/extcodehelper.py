@@ -40,7 +40,7 @@ class ExtCodeHelper():
         """
         :param x: x is a 1D array; x[0] is Te, x[1] is gradTe 
         """
-        return gem0obj.gem0_call({'te.value': x[0], 'te.ddrho': x[1]})[0]
+        return self.gem0obj.gem0_call({'te.value': x[0], 'te.ddrho': x[1]})[0]
 
     def gem0_call_teflteval_array(self, x):
         res = []
@@ -190,4 +190,17 @@ class ExtCodeHelper():
         output = np.array(fluxes)
         input = np.array(newprofiles)
 
+        return output, input
+    
+    def gem0_call_4param2target_array_coretransp(self, core_prof_dict, rho):
+        """
+        Takes a dictionary of core profiles values for Te/i,gradTe/i(rho) and returns fluxes 
+
+        """
+
+        fluxes, newprofiles, coretransp = self.gem0obj.gem0_call_coretransp(core_prof_dict, rho_tor_norm=rho)
+
+        output = np.array(fluxes)
+        input = np.array(newprofiles)
+        
         return output, input

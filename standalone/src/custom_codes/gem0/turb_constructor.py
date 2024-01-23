@@ -4,7 +4,7 @@
 #import Euitm_schemas
 
 import sys
-sys.path.append('C:\\Users\\user\\Documents\\UNI\\MPIPP\\PHD\\code\\MFW\\uq\\tuto\\DPC\\ASCII_UAL')
+#sys.path.append('C:\\Users\\user\\Documents\\UNI\\MPIPP\\PHD\\code\\MFW\\uq\\tuto\\DPC\\ASCII_UAL')
 from ual.coretransp import coretransp
 from ual.coretransp import valuesstruct_arraycoretransp_valuesObj
 

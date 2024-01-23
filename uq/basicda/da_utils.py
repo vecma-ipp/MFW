@@ -259,7 +259,7 @@ def write_gem0_offline(n_samples=1000, n_dim=4, filename='gem0_lhc_ft', n_ft=0, 
 
     return df
 
-def write_gem0_expanded(filename_in, filename_out, expand_factor=1.0):
+def write_gem0_expanded(filename_in, filename_out, expand_factor=1.0, newps_pside=1):
     """
     Reads a file with input values and writes a new one with results for expanded domain
     """
@@ -267,10 +267,14 @@ def write_gem0_expanded(filename_in, filename_out, expand_factor=1.0):
     # information not self-contained in the input file - TODO: some of it is actually in the file, read it
     input_names = ['te_value', 'ti_value', 'te_ddrho', 'ti_ddrho']
     output_names = ['te_transp_flux', 'ti_transp_flux']
-    # rho_inds      = [14, 30, 43, 55, 66, 76, 85, 95] 
+
+    # rho_inds   = [14, 30, 43, 55, 66, 76, 85, 95] 
     rho_inds   = [15, 31, 44, 55, 66, 76, 85, 94]
-    ftube_rhos = [0.14, 0.31, 0.44, 0.56, 0.67, 0.77, 0.86, 0.95] # everything should be written down for flux tubes on this grid
-    nfts = 8
+
+    #ftube_rhos = [0.14, 0.31, 0.44, 0.56, 0.67, 0.77, 0.86, 0.95] # everything should be written down for flux tubes on this grid
+    ftube_rhos = [0.143587306141853 , 0.309813886880875 , 0.442991137504578 , 0.560640752315521 , 0.668475985527039 , 0.769291400909424 , 0.864721715450287 , 0.955828309059143 ] #TODO double check
+    
+    nfts = len(rho_inds)
 
     # read the original input values file
     df_in = pd.read_csv(filename_in)
@@ -283,7 +287,7 @@ def write_gem0_expanded(filename_in, filename_out, expand_factor=1.0):
     print(f"n_points_perdim={n_points_perdim}") ###DEBUG
 
     # derived info for the expanded input space
-    n_p_p_ft_new = (n_points_perdim+2)**n_inputs
+    n_p_p_ft_new = (n_points_perdim+2*newps_pside)**n_inputs
     n_rows_out = nfts*n_p_p_ft_new
     print(f"n_p_p_ft_new={n_p_p_ft_new}") ###DEBUG
     
@@ -322,11 +326,11 @@ def write_gem0_expanded(filename_in, filename_out, expand_factor=1.0):
         for i_r,x in enumerate(itertools.product(*x_values)):
 
             #x = [np.array(x)]
-            print(f"x={x}") ###DEBUG
+            #print(f"x={x}") ###DEBUG
             #print(f"n_r={(n_ft)*n_p_p_ft_new+i_r}") ###DEBUG
 
             # call the GEM0 for 4 input componets and 2 outputs
-            y, x_new = gem0_helper.gem0_call_4param2target_array(x, rho_inds=[rho_inds[n_ft]], rho=[ftube_rhos[n_ft]])
+            y, x_new = gem0_helper.gem0_call_4param2target_array([x], rho_inds=[rho_inds[n_ft]], rho=[ftube_rhos[n_ft]])
             #print(f"y={y}") ###DEBUG
             #print(f"x_new={x_new}") ###DEBUG
 
@@ -345,6 +349,54 @@ def write_gem0_expanded(filename_in, filename_out, expand_factor=1.0):
 
     return 0
 
+def write_gem0_fromfile(filename_in, filename_out):
+    """
+    write a CSV file of Qe/i computed by pyGEM using input profile at a point from filename_in CSV file
+    requires knowking rho_tor_norm of the flux tube locations
+    """
+
+    #TODO: input names are actualy columns in the input CSV file
+    input_names = ['te_value', 'ti_value', 'te_ddrho', 'ti_ddrho']
+    output_names = ['te_transp_flux', 'ti_transp_flux']
+
+    rho_inds   = [15, 31, 44, 55, 66, 76, 85, 94]
+    ftube_rhos = [0.143587306141853 , 0.309813886880875 , 0.442991137504578 , 0.560640752315521 , 0.668475985527039 , 0.769291400909424 , 0.864721715450287 , 0.955828309059143 ] #TODO double check
+    
+    nfts = len(ftube_rhos)
+
+    # read the original input values file
+    df_in = pd.read_csv(filename_in)
+
+    # prepare a dataframe for output
+    df_out = df_in.copy()
+    for o in output_names:
+        df_out[o] = None
+
+    #TODO: pyGEM0 can return profile values at coretransp grid but cannot accept tehm at inputs (it still modofies inpus on basis of coreprof grid values)
+    #TODO: perform pyGEM0 calling solving linear equation to get such linear profiles, such that values at coretransp grid are exact
+
+    gem0helper = ExtCodeHelper(2, xml_file="gem0.xml")
+
+    # run through evey set of new input values
+    for i,df_row in df_in.iterrows():
+
+        ft = int(df_row['ft'])
+        rho = ftube_rhos[ft]
+        x = {k:df_row[k] for k in input_names}
+
+        y,x_new = gem0helper.gem0_call_4param2target_array_coretransp(x, rho)
+
+        # fill in the output dataframe
+        for j in range(len(input_names)):
+            df_out[input_names[j]].iloc[i] = x_new[j]        
+        for j in range(len(output_names)):
+            df_out[output_names[j]].iloc[i] = y[j]
+
+    # save a new CSV file
+    df_out.to_csv(filename_out)
+
+    return 0
+
 def plot_gem0_scan(X_orig, input_number=0, output_number=0, file_name_suf='', flag_plot=True, **kwargs):
     """
     Takes original input data, and for central a cut of the data writes a .pdf file
@@ -358,7 +410,8 @@ def plot_gem0_scan(X_orig, input_number=0, output_number=0, file_name_suf='', fl
     xlabels = ['te_value', 'ti_value', 'te_ddrho', 'ti_ddrho']
     ylabels = ['te_transp_flux', 'ti_transp_flux']
     rho_inds = [15, 31, 44, 55, 66, 76, 85, 94]
-    ftube_rhos = [0.14, 0.31, 0.44, 0.56, 0.67, 0.77, 0.86, 0.95]
+    #ftube_rhos = [0.14, 0.31, 0.44, 0.56, 0.67, 0.77, 0.86, 0.95]
+    ftube_rhos = [0.143587306141853 , 0.309813886880875 , 0.442991137504578 , 0.560640752315521 , 0.668475985527039 , 0.769291400909424 , 0.864721715450287 , 0.955828309059143 ]
     nfts = 8
     n_inputs = 4
 
@@ -587,11 +640,11 @@ def load_wf_csv_file(data_dir = "c:\\Users\\user\\Documents\\UNI\\MPIPP\\PHD\\co
     # return input_samples.to_numpy()[:, 1:], output_samples.to_numpy()[:]
     return input_samples, output_samples, time
 
-def read_data_totensor(folder):
-    Tes, Tis, Tegs, Tigs, Tefs, Tifs = get_camp_data(folder)
-    X = pd.DataFrame(list(zip(Tes, Tis, Tigs, Tegs)))
-    Xmat = np.array([np.unique(X[:, i]) for i in range(X.shape[1])]) 
-    return X, Xmat
+# def read_data_totensor(folder):
+#     Tes, Tis, Tegs, Tigs, Tefs, Tifs = get_camp_data(folder)
+#     X = pd.DataFrame(list(zip(Tes, Tis, Tigs, Tegs)))
+#     Xmat = np.array([np.unique(X[:, i]) for i in range(X.shape[1])]) 
+#     return X, Xmat
 
 #def get_slice(Xmat, n_slice = [3]):
 #     Xsl = np.array([i for i in itertools.product([],[],[],np.linspace(Xmat))

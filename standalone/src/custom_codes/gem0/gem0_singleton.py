@@ -9,6 +9,7 @@ gem0path = "/u/yyudin/code/MFW/standalone/src/custom_codes/gem0/gem0.py"
 spec = importlib.util.spec_from_file_location("gem0", os.path.abspath(gem0path))
 gem0 = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(gem0)
+
 # -- load pyGEM0 code files - via sys
 #sys.path.append('c:\\Users\\user\\Documents\\UNI\\MPIPP\\PHD\\code\\MFW\\ual\\')
 sys.path.append(gem0path)
@@ -175,10 +176,58 @@ class GEM0Singleton():
         # self.corep_elem.set_value(attrib, [new_value], ft)
 
         # TODO: for gradients: read the coreprof cpo-s, get the gradient by interpolation
-        # for new inputs re-wrtie gradients at cpo, always write the new gradients?
+        # for new inputs re-write gradients at cpo, always write the new gradients?
         # move to ONLY modifying gradients i.e. temperature has to be interpolated?
 
         # return self.corep_elem
+
+    def update_values_coretransp(self, value_dict, rho_tor_norm):
+        """
+        - Gets a dictionary of values of profile at a point at rho_tor_norm value (at coretransp grid)
+        - A profile and its gradient should always be passed together
+        - Finds the closest six points at original (coreprof) grid (three from each side) and substitutes with linear profile 
+            such that values and gradient at passed point are exact
+        """
+
+        rho_grid_corep = self.corep_elem.get_value('rho_tor_norm')
+
+        quantities = ['t']
+        speciess = ['i', 'e']
+        attributes = ['value', 'ddrho']
+
+        # indices around the pivot index to extrapolate to
+        delta_ind = [-3,-2,-1,0,1,2]
+   
+        # Find indices of neibouring points ar coreprof grid
+        i_coreprof = 0
+        for i in range(len(rho_grid_corep)):
+            if rho_grid_corep[i] >= rho_tor_norm:
+                i_coreprof = i
+                break
+
+        # the first point at coreprof grid outer than rho_tor_norm
+        print(f"> pivot index at coreprof gird: {i_coreprof}") ###DEBUG
+        # TODO could be done in a one line; possibly, there is a build-in function
+
+        # Extrapolate the values
+        for quantity in quantities:
+            for species in speciess:
+                if f"{quantity}{species}_value" in value_dict:
+
+                    q_value = value_dict[f"{quantity}{species}_value"]
+                    q_ddrho = value_dict[f"{quantity}{species}_ddrho"]
+
+                    # fill in the values and indices around teh pivot index
+                    values = []
+                    for d_i in delta_ind:
+                        values.append(q_ddrho*(rho_grid_corep[i_coreprof+d_i] - rho_tor_norm) + q_value)
+                    
+                    indices = [i_coreprof+d_i for d_i in delta_ind]
+
+                    self.corep_elem.set_value(f"{quantity}{species}.value", values, indices)
+                    self.corep_elem.set_value(f"{quantity}{species}.ddrho", [q_ddrho]*len(indices), indices)
+
+        return 0
 
     def modify_code_ios(self, attrib, new_value, ft=[69]):
         self.update_gradients(attrib, new_value, i_ft=ft[0])
@@ -228,6 +277,21 @@ class GEM0Singleton():
             self.corep_elem.set_value(f"{profname}.{attribname}", prof.tolist(), inds)
 
             #print(f"> core profile of {k} is not supported!")
+
+        coret, tefl, tifl, tedr, tidr, te, ti, rho_new = gem(self.equil, self.corep_elem.core, self.coret, self.code_parameters)
+
+        te_transp_flux = coret.values[0].te_transp.flux[:]
+        ti_transp_flux = coret.values[0].ti_transp.flux[:,0]
+
+        return [te_transp_flux, ti_transp_flux], [te, ti, tedr, tidr], coret
+
+    def gem0_call_coretransp(self, coreprof, rho_tor_norm):
+        """
+        - Gets a dictionary of values of profile P at a point R at rho_tor_norm value (at coretransp grid)
+        - Retruns Qe/i(<P_i(R)>) : flux values as a function of profiles at the given rho_tor_norm value
+        """
+
+        self.update_values_coretransp(value_dict=coreprof, rho_tor_norm=rho_tor_norm)
 
         coret, tefl, tifl, tedr, tidr, te, ti, rho_new = gem(self.equil, self.corep_elem.core, self.coret, self.code_parameters)
 
