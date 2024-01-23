@@ -293,8 +293,9 @@ def compare_transp(datadict, save_fold_name, times, input_folder_base='', coord_
     """
     Takes a sequence of profile values and estimates transport using several models
     """
+    # option 0 - model is called for all flux tube using a dictionary of core profiles (GEM flux tube rho_tor_norm locations are used)
     # option 1 - model is called per flux tube (single flux tube was used, custom rho_tor_norm for flux tubes were defined)
-    # option 2 - model is called for all flux tubes (GEM flux tube rho_tor_norm locations are used)
+    # option 2 - model is called for all flux tubes using CPO objects (GEM flux tube rho_tor_norm locations are used)
 
     q_profile_list = ['te_value', 'ti_value', 'te_ddrho', 'ti_ddrho']
     q_transp_list = ['te_transp_flux', 'ti_transp_flux']
@@ -307,7 +308,7 @@ def compare_transp(datadict, save_fold_name, times, input_folder_base='', coord_
     else:
         coords = [0.143587306141853 , 0.309813886880875 , 0.442991137504578 , 0.560640752315521 , 0.668475985527039 , 0.769291400909424 , 0.864721715450287 , 0.955828309059143 ] #TODO double check
     
-    if option == 0:
+    if option == 0 or option == 2:
         xml_file = 'gem0.xml'
     else:
         xml_file = 'gem0_1ft.xml'
