@@ -206,7 +206,7 @@ class GEM0Singleton():
                 break
 
         # the first point at coreprof grid outer than rho_tor_norm
-        print(f"> pivot index at coreprof gird: {i_coreprof}") ###DEBUG
+        #print(f"> pivot index at coreprof gird: {i_coreprof}") ###DEBUG
         # TODO could be done in a one line; possibly, there is a build-in function
 
         # Extrapolate the values
