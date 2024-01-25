@@ -14,9 +14,16 @@ echo 'Running gem_surr workflow in Fortran & Python'
 #. ~/muscle3_venv/bin/activate
 . ~/muscle3/bin/muscle3.env
 
+runlabel='_0'
+
+currdate=$(date +"%Y%m%d")
+code_run_name=gem0_surr_
+
+run_dir_name=run_fusion_${code_run_name}${currdate}${runlabel}
 
 #muscle_manager --start-all gem-surr-fusion.ymmsl &
-muscle_manager --start-all gem-surr-mft-fusion.ymmsl &
+#muscle_manager --start-all gem-surr-mft-fusion.ymmsl &
+muscle_manager --log-level DEBUG --run-dir ${run_dir_name} --start-all gem-surr-mft-fusion.ymmsl &
 
 echo 'MUSCLE_MANAGER started'
 
@@ -33,6 +40,10 @@ tail -f muscle3_manager.log --pid=${manager_pid}
 
 wait
 
-# # Make plots for the evolution of core profiles
-#cd ..
-#python read_profs.py gem_surr ${currdate}
+# Make plots for the evolution of core profiles
+cd ..
+python read_profs.py ${code_run_name} ${currdate}${runlabel}
+
+# Save the results of the run and postprocessing
+tar -czvf run_fusion_${code_run_name}${currdate}${runlabel}.tar.gz --exclude=*.cpo --exclude=*.dat run_fusion_${code_run_name}${currdate}${runlabel}/ run_fusion_${code_run_name}${currdate}${runlabel}_${currdate}${runlabel}/
+mv run_fusion_${code_run_name}${currdate}${runlabel}.tar.gz ../../..

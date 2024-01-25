@@ -44,8 +44,8 @@ model:
           - coreimpur_final
           - toroidfield_final
     turbulence:
-      # implementation: gem0_impl
-      implementation: gem0_python_impl
+      implementation: gem0_impl
+      # implementation: gem0_python_impl
       ports:
         o_f: coretransp_out
         f_init: 
