@@ -1,6 +1,8 @@
 import os, sys
 import importlib.util
 
+import bisect
+
 # -- load pyGEM0 code files - via importlib
 # #gem0path="/marconi/home/userexternal/yyudin00/code/MFW/standalone/src/custom_codes/gem0/gem0.py"
 # #gem0path="C:/Users/user/Documents/UNI/MPIPP/PHD/code/MFW/standalone/src/custom_codes/gem0/gem0.py"
@@ -199,16 +201,18 @@ class GEM0Singleton():
         delta_ind = [-3,-2,-1,0,1,2]
    
         # Find indices of neibouring points ar coreprof grid
+        #  - The first point at coreprof grid outer than rho_tor_norm
         i_coreprof = 0
-        for i in range(len(rho_grid_corep)):
-            if rho_grid_corep[i] >= rho_tor_norm:
-                i_coreprof = i
-                break
+        
+        # for i in range(len(rho_grid_corep)):
+        #     if rho_grid_corep[i] >= rho_tor_norm:
+        #         i_coreprof = i
+        #         break
 
-        # the first point at coreprof grid outer than rho_tor_norm
+        # Use bicection #TODO test
+        i_coreprof = bisect.bisect_right(rho_grid_corep, rho_tor_norm)
+
         #print(f"> pivot index at coreprof gird: {i_coreprof}") ###DEBUG
-        # TODO could be done in a one line; possibly, there is a build-in function
-
         # Extrapolate the values
         for quantity in quantities:
             for species in speciess:
@@ -217,9 +221,10 @@ class GEM0Singleton():
                     q_value = value_dict[f"{quantity}{species}_value"]
                     q_ddrho = value_dict[f"{quantity}{species}_ddrho"]
 
-                    # fill in the values and indices around teh pivot index
+                    # fill in the values and indices around the pivot index
                     values = []
                     for d_i in delta_ind:
+                        # linear extrapolation using value and gradient at the point, and distance to the new point
                         values.append(q_ddrho*(rho_grid_corep[i_coreprof+d_i] - rho_tor_norm) + q_value)
                     
                     indices = [i_coreprof+d_i for d_i in delta_ind]
@@ -242,6 +247,7 @@ class GEM0Singleton():
 
     def gem0_call(self, param, rho_inds=[69], rho=None):
         for k, v in param.items():
+            # the modification of profile itself does no account for rho value
             self.modify_code_ios(k, v, ft=rho_inds)
         if rho is not None:
             self.modify_code_params('ra0', rho)
