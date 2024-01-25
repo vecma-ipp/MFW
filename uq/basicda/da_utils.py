@@ -92,7 +92,7 @@ def walklevel(some_dir, level=1):
         if num_sep + level <= num_sep_this:
             del dirs[:]
 
-def write_gem0_offline(n_samples=1000, n_dim=4, filename='gem0_lhc_ft', n_ft=0, file_in="gem0_new_data_20231215.csv"):
+def write_gem0_offline(n_samples=1000, n_dim=4, filename='gem0_lhc_ft', n_ft=0, file_in="gem0_new_data_20231215.csv", **kwargs):
     """
     Write a CSV files which samples GEM0 for a given number of samples, a given number of flux tubes, a given number of coreprof input parameters
         around the reference data in the file_in
@@ -101,10 +101,11 @@ def write_gem0_offline(n_samples=1000, n_dim=4, filename='gem0_lhc_ft', n_ft=0, 
     # use LHS sampling
     
     # Attention: workaround for interpolating into negattive values of Ti (happens at ft=3, sample i=35 with seed=123): reduce expantion factor
-    expand_factor = 0.2 #0.5
+    expand_factor = kwargs['expand_factor'] if 'expand_factor' in kwargs else 0.05 #0.2 #0.5
 
     rho_inds   = [15, 31, 44, 55, 66, 76, 85, 94]
-    ftube_rhos = [0.14, 0.31, 0.44, 0.56, 0.67, 0.77, 0.86, 0.95]
+    #ftube_rhos = [0.14, 0.31, 0.44, 0.56, 0.67, 0.77, 0.86, 0.95]
+    ftube_rhos = [0.143587306141853 , 0.309813886880875 , 0.442991137504578 , 0.560640752315521 , 0.668475985527039 , 0.769291400909424 , 0.864721715450287 , 0.955828309059143 ] #TODO double check
 
     xlabels = ['te_value', 'ti_value', 'te_ddrho', 'ti_ddrho']
     ylabels = ['te_transp_flux', 'ti_transp_flux']
@@ -296,7 +297,7 @@ def write_gem0_expanded(filename_in, filename_out, expand_factor=1.0, newps_psid
     n_fts = [n for n in range(nfts)]
 
     # object to call GEM0, '2' is default option to calculte GyroBohm transport
-    gem0_helper = ExtCodeHelper(2)
+    gem0_helper = ExtCodeHelper(2, xml_file='gem0_1ft.xml')
 
     for n_ft in n_fts:
 
@@ -314,8 +315,12 @@ def write_gem0_expanded(filename_in, filename_out, expand_factor=1.0, newps_psid
             x_new_max = x_max + expand_factor*(x_max - x_avg)
             x_new_min = x_min - expand_factor*(x_avg - x_min)
 
-            #x_loc_new_vals = [x_new_min, *x_loc_vals.tolist(), x_new_max]
-            x_loc_new_vals = [x_new_min, x_min, x_avg, x_max, x_new_max] # 5 points for the new values of an input component
+            if ('value' in input_name) and (x_new_min < 0.0):
+                x_new_min = 0.0
+
+            x_loc_new_vals = [x_new_min, *x_loc_vals.tolist(), x_new_max]
+            #x_loc_new_vals = [x_new_min, x_min, x_avg, x_max, x_new_max] # 5 points for the new values of an input component
+            
             #print(f"len(x_loc_new_vals)={len(x_loc_new_vals)}") ###DEBUG
 
             x_values.append(x_loc_new_vals)
@@ -417,11 +422,11 @@ def plot_gem0_scan(X_orig, input_number=0, output_number=0, file_name_suf='', fl
 
     # derived info - number of input components, number of input values, total number of rows in the input file
     n_rows = X_orig.shape[0]
-    n_p_p_ft = n_rows//nfts
+    n_p_p_ft = n_rows // nfts
     #n_points_perdim = int(n_p_p_ft ** (1./n_inputs))
 
     # object to call GEM0, '2' is default option to calculate GyroBohm transport
-    gem0_helper = ExtCodeHelper(2)
+    gem0_helper = ExtCodeHelper(2, xml_file='gem0_1ft.xml')
 
     data = {}
 
@@ -476,7 +481,7 @@ def plot_gem0_scan(X_orig, input_number=0, output_number=0, file_name_suf='', fl
             print(f"Cut option {cut_option} not supported yet!")
         
         # Write (and display) remiander values of the cut location
-        print(f"for {xlabels[input_number]} @ft#{n_ft} remainder values are: {x_remainder_value}") ###DEBUG
+        #print(f"for {xlabels[input_number]} @ft#{n_ft} remainder values are: {x_remainder_value}") ###DEBUG
         data_remainder[(f"ft{n_ft}", xlabels[input_number])] = x_remainder_value
 
         X_new = np.zeros((x_values_new.shape[0], X_orig_loc.shape[1]))
@@ -484,9 +489,20 @@ def plot_gem0_scan(X_orig, input_number=0, output_number=0, file_name_suf='', fl
         for j in range(X_new.shape[0]):
             X_new[j, np.arange(X_orig.shape[1]) != input_number] = x_remainder_value
         
+        # Call pyGEM0 for all samples
         st = t.time()
+        n_samp = X_new.shape[0]
         #print(gem0_helper.gem0_call_4param2target_array([X_new[0,:]], rho_inds=[rho_inds[n_ft]], rho=[ftube_rhos[n_ft]])) ###DEBUG
-        y = [gem0_helper.gem0_call_4param2target_array([X_new[j,:]], rho_inds=[rho_inds[n_ft]], rho=[ftube_rhos[n_ft]])[0][0][0][output_number] for j in range(X_new.shape[0])]
+        y = np.zeros((n_samp))
+        x_new = np.zeros((n_samp))
+        for j in range(n_samp):
+            #y = gem0_helper.gem0_call_4param2target_array([X_new[j,:]], rho_inds=[rho_inds[n_ft]], rho=[ftube_rhos[n_ft]])[0][0][0][output_number]
+            y_loc, x_new_loc = gem0_helper.gem0_call_4param2target_array([X_new[j,:]], rho_inds=[rho_inds[n_ft]], rho=[ftube_rhos[n_ft]])
+            y[j] = y_loc[0][0][output_number]
+            #print(f"x_new_loc = {x_new_loc[0][input_number]}") ###DEBUG
+            x_new[j] = np.array(x_new_loc).reshape(-1)[input_number]
+        x_values_new = x_new # TODO test the dimesnionality
+
         print(f"time to evaluate GEM0 for i{input_number}o{output_number}f{n_ft}: {t.time() - st}")
 
         data[(f"ft{n_ft}", 'x')] = x_values_new
@@ -1242,14 +1258,40 @@ def read_sobols_from_logs(labels=['te_val', 'ti_val', 'te_grad', 'ti_grad']):
 
     return sob_list_list
 
+def merge_result_csv(basepath="gem0py_lhc_", date="20241123", output_name="gem0_py_new_"):
+    """
+    Find all CSV files satisfying basepath pattern, cooresponding to different flux tubes, 
+        read and merge them in single CSV file wiht output_name prefix
+    """
+
+    path = f"{basepath}{date}_ft*.csv" 
+
+    all_files = glob.glob(path)
+    df_from_each_file = [pd.read_csv(f) for f in all_files]
+
+    # add flux tube column to each dataframe
+    for i in range(len(df_from_each_file)):
+        df_from_each_file[i]['ft'] = i
+
+    df_merged = pd.concat(df_from_each_file, ignore_index=True, sort=False)
+    df_merged.to_csv( f"{output_name}{date}_all.csv")
+
+    return 0
+
 def merge_result_csv(file_list, output_name='resuq_extended'):
     """
     Takes a list of filenames of CSVs with turbulence code results and saves a CSV which is a combination of all runs
     """
 
-    df = pd.concat([pd.read_csv(f, delimiter=',', engine='python') for f in file_list])
+    # Assumes theres is already an 'ft' column in each CSV
 
-    df.to_csv(output_name + '.csv')
+    #df = pd.concat([pd.read_csv(f, delimiter=',', engine='python') for f in file_list])
+    df = pd.concat([pd.read_csv(f, delimiter=',', engine='python') for f in file_list], ignore_index=True, sort=False)
+
+    #df.to_csv(output_name + '.csv')
+    df.to_csv(output_name)
+
+    return 0
 
 def merge_dataframes(dataold, datanew):
     """
