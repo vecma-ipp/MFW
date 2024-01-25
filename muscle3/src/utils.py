@@ -93,7 +93,8 @@ def coreprof_to_input_value(
     m = len(attrib_names)
     d = len(rho_ind_s)
 
-    d_tot = 100
+    # d_tot = 100
+    d_tot = len(data.rho_tor_norm)
 
     #rad_grid = np.linspace(0., 1., d_tot)
     rad_grid = data.rho_tor_norm # rho_tor_norm of coreprof radial grid points

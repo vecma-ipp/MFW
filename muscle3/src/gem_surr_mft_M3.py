@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 
 import logging
+import pickle
 
 from libmuscle import Instance, Message, USES_CHECKPOINT_API
 from ymmsl import Operator
@@ -74,14 +75,25 @@ def gem_surr_M3():
     camps = []
     mods = []
 
-    for ft in range(n_fts): #TODO: if settings reading can be moved before the main loop, easysurrogates can be initialised once
-        try:
-            camps.append(es.Campaign(load_state=True, file_path=f"{model_file_base}_{ft}.pickle"))
-        except OSError:
-            print(f"No such model file!")
-            return
-        mods.append(camps[-1].surrogate)
-    print(f"> Got surrogates from a ES campaign")
+    if model_type in ['gpr', 'ann']:
+        for ft in range(n_fts): #TODO: if settings reading can be moved before the main loop, easysurrogates can be initialised once
+            try:
+                camps.append(es.Campaign(load_state=True, file_path=f"{model_file_base}_{ft}.pickle"))
+            except OSError:
+                print(f"No such model file!")
+                return
+            mods.append(camps[-1].surrogate)
+        print(f"> Got surrogates from a ES campaign")
+    elif model_type in ['scikit_regression']:
+        for ft in range(n_fts):
+            try:
+                mods.append(pickle.load(open(f"{model_file_base}_{ft}.pickle", 'br')))
+            except OSError:
+                print(f"No such model file!")
+                return
+        print(f"> Got surrogates from a scikitlearn pickle files")
+    else:
+        ValueError(f"This type of models is not supported")
 
     #TODO: read target names from campaign / database
     output_names = ['te_transp_flux', 'ti_transp_flux']
@@ -118,6 +130,7 @@ def gem_surr_M3():
         print (f"> Reading CPO file {devshm_file} took {t()-start_t} s")
 
         # After reading the profile from temporary file, make an array
+        #   returns profiles in order [te_value, te_ddrho, ti_value, ti_ddrho]
         profiles_in = coreprof_to_input_value(coreprof_cpo_obj,
                                               rho_ind_s=rho_ind_s, # not used if rho_tor_norm_sur is passed!
                                               rho_tor_norm=rho_tor_norm_sim, # flux tube locations in coretransp
@@ -151,8 +164,12 @@ def gem_surr_M3():
             if model_type == 'ann':
                 f_o = mods[n_ft].predict(profiles_in[:,n_ft])
                 f_o_std = np.zeros(f_o.shape)
-            else:
+            elif model_type == 'gpr':
                 f_o, f_o_std = mods[n_ft].predict(profiles_in[:,n_ft].reshape(-1,1))
+            elif model_type =='scikit_regression':
+                f_o, f_o_std = mods[n_ft].predict(profiles_in[:,n_ft].reshape(1,-1), return_std=True)
+            else:
+                ValueError(f"This type of model is not supported")
             
             fluxes_out[n_ft,:] = f_o.reshape(-1)
             fluxes_out_std[n_ft,:] = f_o_std.reshape(-1)

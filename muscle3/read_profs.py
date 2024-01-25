@@ -382,7 +382,7 @@ def compare_transp(datadict, save_fold_name, times, input_folder_base='', coord_
             prof = read(input_folder+prof_filename+str(t_ind).zfill(5)+cpo_extension, 'coreprof')
             transp = read(input_folder+transp_filename+str(t_ind).zfill(5)+cpo_extension, 'coretransp')
 
-            tr, pr = model_call(eq, prof, transp) # option 2
+            tr, pr, coret = model_call(eq, prof, transp) # option 2
             #print(f"tr={tr}") ###DEBUG
             transp_new[:, t_ind, :] = tr
         
@@ -415,7 +415,7 @@ def compare_transp(datadict, save_fold_name, times, input_folder_base='', coord_
     return 0
 
 
-def read_profs(codename='gem_', dates=['20230823_151955'], prefix_name='workflow/run_fusion_', sufix_name='/instances/transport/workdir/', cpo_filebase='', cpo_names = ['coreprof', 'coretransp']):
+def read_profs(codename='gem_', dates=['20230823_151955'], prefix_name='workflow/run_fusion_', sufix_name='/instances/transport/workdir/', cpo_filebase='', cpo_names = ['coreprof', 'coretransp'], **kwargs):
 
     load_fold_names = [prefix_name + codename + \
             date + sufix_name for date in dates]
@@ -435,14 +435,19 @@ def read_profs(codename='gem_', dates=['20230823_151955'], prefix_name='workflow
 
     if bool_sur_involved:
         
-        # option 1 for reference data: 8*(3**4) samples
+        # # option 1 for reference data: 8*(3**4) samples
         # ref_data_filename = 'ref_train_data.csv'
         # n_run_per_ft = 81
 
-        # option 2 for reference data: 8*(5**4) samples
-        ref_data_filename = 'ref_train_data_5000.csv'
-        n_run_per_ft = 625
-        
+        # # option 2 for reference data: 8*(5**4) samples
+        # ref_data_filename = 'ref_train_data_5000.csv'
+        # n_run_per_ft = 625
+
+        # TODO replace offset with mask according to 'ft' column everywhere in this file...
+        # option 3 for reference data: LHC sample
+        ref_data_filename = kwargs['ref_data_filename'] if 'ref_data_filename' in kwargs else 'ref_train_data_12000.csv'
+        n_run_per_ft = 1500
+
         ref_data = pd.read_csv(ref_data_filename, sep=',')
 
     lookup_names = {
@@ -687,7 +692,8 @@ def read_profs(codename='gem_', dates=['20230823_151955'], prefix_name='workflow
                 plt.close(f)
 
     ### Plotting transport fluxes for two models
-    compare_transp(datadict, save_fold_name, times, input_folder_base=load_fold_names[0], coord_num_fts=coord_num_fts, option=0) #option 0 should use the whole profile to interpolate on coretransp grid later
+    #option 0 should use the whole profile to interpolate on coretransp grid later, option 2 should use all CPO files from /workdir/
+    compare_transp(datadict, save_fold_name, times, input_folder_base=load_fold_names[0], coord_num_fts=coord_num_fts, option=2) 
 
     ### Plotting all quantities against each other
     if bool_sur_involved:

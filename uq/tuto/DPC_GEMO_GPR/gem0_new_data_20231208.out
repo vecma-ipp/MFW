@@ -1,0 +1,40 @@
+
+Fitting flux tube 0
+Fitting took 30.77 seconds
+GP.kernel_ = 19.8**2 * RBF(length_scale=[2.03, 1e+03, 1.32, 77.5])
+GP.log_marginal_likelihood_value_ = 11215.953252182924
+
+Fitting flux tube 1
+Fitting took 16.20 seconds
+GP.kernel_ = 15.3**2 * RBF(length_scale=[1.76, 1e+03, 1.59, 71.1])
+GP.log_marginal_likelihood_value_ = 11281.846362357503
+
+Fitting flux tube 2
+Fitting took 9.82 seconds
+GP.kernel_ = 42.1**2 * RBF(length_scale=[2.62, 1e+03, 10.8, 42.9])
+GP.log_marginal_likelihood_value_ = 11761.584866287605
+
+Fitting flux tube 3
+Fitting took 17.42 seconds
+GP.kernel_ = 55.4**2 * RBF(length_scale=[2.22, 1e+03, 13.9, 47.6])
+GP.log_marginal_likelihood_value_ = 11728.230950979278
+
+Fitting flux tube 4
+Fitting took 16.25 seconds
+GP.kernel_ = 55.4**2 * RBF(length_scale=[2.74, 1e+03, 7.1, 63.8])
+GP.log_marginal_likelihood_value_ = 11715.082405929646
+
+Fitting flux tube 5
+Fitting took 19.96 seconds
+GP.kernel_ = 50.3**2 * RBF(length_scale=[2.23, 1e+03, 16.7, 40])
+GP.log_marginal_likelihood_value_ = 11775.036774799302
+
+Fitting flux tube 6
+Fitting took 14.67 seconds
+GP.kernel_ = 42.4**2 * RBF(length_scale=[2.19, 1e+03, 11.3, 48.9])
+GP.log_marginal_likelihood_value_ = 11755.553924076461
+
+Fitting flux tube 7
+Fitting took 17.12 seconds
+GP.kernel_ = 26.1**2 * RBF(length_scale=[2.39, 1e+03, 6.06, 44.6])
+GP.log_marginal_likelihood_value_ = 11682.081702562613
