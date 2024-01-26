@@ -204,15 +204,17 @@ class GEM0Singleton():
         #  - The first point at coreprof grid outer than rho_tor_norm
         i_coreprof = 0
         
+        # location option 1: slide along the array
         # for i in range(len(rho_grid_corep)):
         #     if rho_grid_corep[i] >= rho_tor_norm:
         #         i_coreprof = i
         #         break
 
-        # Use bicection #TODO test
+        # location option2 : use bicection
         i_coreprof = bisect.bisect_right(rho_grid_corep, rho_tor_norm)
 
         #print(f"> pivot index at coreprof gird: {i_coreprof}") ###DEBUG
+
         # Extrapolate the values
         for quantity in quantities:
             for species in speciess:
@@ -298,6 +300,8 @@ class GEM0Singleton():
         """
 
         self.update_values_coretransp(value_dict=coreprof, rho_tor_norm=rho_tor_norm)
+
+        self.modify_code_params('ra0', rho_tor_norm)
 
         coret, tefl, tifl, tedr, tidr, te, ti, rho_new = gem(self.equil, self.corep_elem.core, self.coret, self.code_parameters)
 
