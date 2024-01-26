@@ -260,7 +260,7 @@ def write_gem0_offline(n_samples=1000, n_dim=4, filename='gem0_lhc_ft', n_ft=0, 
 
     return df
 
-def write_gem0_expanded(filename_in, filename_out, expand_factor=1.0, newps_pside=1):
+def write_gem0_expanded(filename_in, filename_out, expand_factor=1.0, newps_pside=1, **kwargs):
     """
     Reads a file with input values and writes a new one with results for expanded domain
     """
@@ -276,6 +276,9 @@ def write_gem0_expanded(filename_in, filename_out, expand_factor=1.0, newps_psid
     ftube_rhos = [0.143587306141853 , 0.309813886880875 , 0.442991137504578 , 0.560640752315521 , 0.668475985527039 , 0.769291400909424 , 0.864721715450287 , 0.955828309059143 ] #TODO double check
     
     nfts = len(rho_inds)
+
+    # option which grid to call pyGEM0 on: 1 - coreprof, 2 - coretransp
+    calloption = kwargs['calloption'] if 'calloption' in kwargs else 1
 
     # read the original input values file
     df_in = pd.read_csv(filename_in)
@@ -307,6 +310,7 @@ def write_gem0_expanded(filename_in, filename_out, expand_factor=1.0, newps_psid
         for input_name in input_names:
 
             x_loc_vals = df_in[input_name].iloc[(n_ft)*n_p_p_ft:(n_ft+1)*n_p_p_ft]
+            x_loc_vals_unique = np.unique(x_loc_vals)
 
             x_avg = x_loc_vals.mean()
             x_min = x_loc_vals.min()
@@ -318,9 +322,12 @@ def write_gem0_expanded(filename_in, filename_out, expand_factor=1.0, newps_psid
             if ('value' in input_name) and (x_new_min < 0.0):
                 x_new_min = 0.0
 
-            x_loc_new_vals = [x_new_min, *x_loc_vals.tolist(), x_new_max]
+            # expantion option 1: get all unique values + two new extremes
+            x_loc_new_vals = [x_new_min, *x_loc_vals_unique.tolist(), x_new_max]
+            # expantion option 2: get 5 values per input feature
             #x_loc_new_vals = [x_new_min, x_min, x_avg, x_max, x_new_max] # 5 points for the new values of an input component
             
+            #print(f"x_loc_new_vals = {x_loc_new_vals}") ###DEBUG
             #print(f"len(x_loc_new_vals)={len(x_loc_new_vals)}") ###DEBUG
 
             x_values.append(x_loc_new_vals)
@@ -335,7 +342,17 @@ def write_gem0_expanded(filename_in, filename_out, expand_factor=1.0, newps_psid
             #print(f"n_r={(n_ft)*n_p_p_ft_new+i_r}") ###DEBUG
 
             # call the GEM0 for 4 input componets and 2 outputs
-            y, x_new = gem0_helper.gem0_call_4param2target_array([x], rho_inds=[rho_inds[n_ft]], rho=[ftube_rhos[n_ft]])
+            if calloption == 1:
+                y, x_new = gem0_helper.gem0_call_4param2target_array([x], rho_inds=[rho_inds[n_ft]], rho=[ftube_rhos[n_ft]])
+            elif calloption == 2:
+                x_in = {input_names[i_o]:x[i_o] for i_o in range(n_inputs)}
+                #print(f"x_in = {x_in}") ###DEBUG
+                y, x_new = gem0_helper.gem0_call_4param2target_array_coretransp(x_in, ftube_rhos[n_ft])
+                print(f"x_new = {x_new}") ###DEBUG
+                y = y.reshape(1,1,-1)
+            else:
+                ValueError(f"> calloption {calloption} not supported!")
+            
             #print(f"y={y}") ###DEBUG
             #print(f"x_new={x_new}") ###DEBUG
 
