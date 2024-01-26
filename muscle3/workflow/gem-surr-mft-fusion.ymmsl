@@ -154,17 +154,17 @@ settings:
   turbulence.rho_tor_norm_sim: [0.143587306141853, 0.309813886880875, 0.442991137504578, 0.560640752315521, 0.668475985527039, 0.769291400909424, 0.864721715450287, 0.955828309059143] # GEM/GEM0 wants flux tubes here
   
   #turbulence.profs_out: "ti_transp.flux"
-  #turbulence.surrogate_type: "gpr"
-  turbulence.surrogate_type: "scikit_regression"
+  turbulence.surrogate_type: "gpr"
+  #turbulence.surrogate_type: "scikit_regression"
   
   #turbulence.surrogate_path: "../../../../../../workflows/gem_es_model"
-  #turbulence.surrogate_path: "../../../../../../workflows/surrogate_for_workflow/gem0_es_model"
-  turbulence.surrogate_path: "../../../../../../workflows/surrogate_for_workflow/fits" # Raw Scikit-Learn GPR models
+  turbulence.surrogate_path: "../../../../../../workflows/surrogate_for_workflow/gem0_es_model"
+  #turbulence.surrogate_path: "../../../../../../workflows/surrogate_for_workflow/fits" # Raw Scikit-Learn GPR models
   
   turbulence.coretransp_default: "../../../../../../workflows/gem_coretransp_8ft.cpo"
-  #turbulence.training_dataset_filename: "../../../../../ref_train_data_5000.csv"
   
-  turbulence.training_dataset_filename: "../../../../../ref_train_data_12000.csv"
+  turbulence.training_dataset_filename: "../../../../../ref_train_data_5000.csv"
+  #turbulence.training_dataset_filename: "../../../../../ref_train_data_12000.csv"
   turbulence.retrain_distance: 0.25
   turbulence.bool_send_uncertainty: True
 
@@ -175,4 +175,4 @@ settings:
 #    start 0
   
 # COMMENT: running ETS+CHEASE+GEM0SUR-WF for dt=10^-3 for 100 steps to see if it (workflow) converge, and to a monotonic profile; 
-#         surrogate is GPR trained on 2024.01.17 on pyGEM0-5k(corrected): scilearn, RBF, norm-lh
+#         surrogate is GPR trained on 2024.01.26 on pyGEM0-5k(fully on coretransp grid): scilearn, RBF, norm-lh

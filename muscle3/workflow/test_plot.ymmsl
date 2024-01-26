@@ -1,0 +1,26 @@
+ymmsl_version: v0.1
+
+model:
+  name: fusion
+  components:
+    init: init_M3
+    stop: stop_M3
+    transport: ets_M3
+    turbulence: gem0_M3
+    equilibrium: chease_M3
+  conduits:
+    init.equilibrium_init: transport.equilibrium_init
+    init.coreprof_init: transport.coreprof_init
+    init.coresource_init: transport.coresource_init
+    init.coreimpur_init: transport.coreimpur_init
+    init.toroidfield_init: transport.toroidfield_init
+    transport.coreprof_out: turbulence.coreprof_in
+    transport.equilibrium_out: equilibrium.equilibrium_in
+    equilibrium.equilibrium_out: transport.equilibrium_in
+    equilibrium.equilibrium_out: turbulence.equilibrium_in
+    turbulence.coretransp_out: transport.coretransp_in
+    transport.equilibrium_final: stop.equilibrium_in
+    transport.coreprof_final: stop.coreprof_in
+    transport.coresource_final: stop.coresource_in
+    #transport.coreimpur_final: stop.coreimpur_in
+    #transport.toroidfield_final: stop.toroidfield_in  

@@ -20,6 +20,7 @@ currdate=$(date +"%Y%m%d")
 code_run_name=gem0_surr_
 
 run_dir_name=run_fusion_${code_run_name}${currdate}${runlabel}
+mkdir ${run_dir_name}
 
 #muscle_manager --start-all gem-surr-fusion.ymmsl &
 #muscle_manager --start-all gem-surr-mft-fusion.ymmsl &
@@ -45,5 +46,5 @@ cd ..
 python read_profs.py ${code_run_name} ${currdate}${runlabel}
 
 # Save the results of the run and postprocessing
-tar -czvf run_fusion_${code_run_name}${currdate}${runlabel}.tar.gz --exclude=*.cpo --exclude=*.dat run_fusion_${code_run_name}${currdate}${runlabel}/ run_fusion_${code_run_name}${currdate}${runlabel}_${currdate}${runlabel}/
+tar -czvf ${run_dir_name}.tar.gz --exclude=*.cpo --exclude=*.dat ${run_dir_name}/ ${run_dir_name}_${currdate}${runlabel}/
 mv run_fusion_${code_run_name}${currdate}${runlabel}.tar.gz ../../..
