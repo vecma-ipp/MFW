@@ -163,7 +163,7 @@ settings:
   
   turbulence.coretransp_default: "../../../../../../workflows/gem_coretransp_8ft.cpo"
   
-  turbulence.training_dataset_filename: "../../../../../ref_train_data_5000.csv"
+  turbulence.training_dataset_filename: "../../../../../ref_train_data_5010.csv"
   #turbulence.training_dataset_filename: "../../../../../ref_train_data_12000.csv"
   turbulence.retrain_distance: 0.25
   turbulence.bool_send_uncertainty: True

@@ -191,7 +191,7 @@ settings:
   turbulence.rho_tor_norm_sim: [0.143587306141853, 0.309813886880875, 0.442991137504578, 0.560640752315521, 0.668475985527039, 0.769291400909424, 0.864721715450287, 0.955828309059143] # GEM/GEM0 wants flux tubes here
   #turbulence.profs_out: "ti_transp.flux"
   #turbulence.surrogate_path: "../../../../../../workflows/gem_es_model"
-  turbulence.cortransp_default: "../../../../../../workflows/gem_coretransp_8ft.cpo"
+  turbulence.coretransp_default: "../../../../../../workflows/gem_coretransp_8ft.cpo"
 
 ### Comment: this is run of GEM0-WF with dt=10^-5 and AUG_28906_6_8ft_restart initial profiles, for 2k steps
 # Comment: this is run of GEM0-WF with dt=10^-3 and AUG_28906_6_8ft_restart initial profiles, for 100 steps
