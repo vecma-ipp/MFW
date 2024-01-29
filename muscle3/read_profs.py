@@ -6,6 +6,7 @@ import pandas as pd
 from itertools import product
 
 import datetime
+import time as t
 
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
@@ -135,6 +136,8 @@ def plot_quantities(datadict, save_fold_name, times=None, coord_num_fts=[14,30,4
     If bool_sur_involved, then ref_data should be passed to add lines of bounds of quantities extrema values occuring in a different simualtions
     """
 
+    ref_option = 'ft_col'
+
     with PdfPages(save_fold_name+'quant_'+codename+'_'+dates[0]+'_'+dates[-1]+'.pdf') as pdf:
     
         # Iterate over all pairs of quantity names
@@ -179,16 +182,29 @@ def plot_quantities(datadict, save_fold_name, times=None, coord_num_fts=[14,30,4
                 if bool_sur_involved:
 
                     if q_y in ref_data.columns:
-                        y_min_val = ref_data[q_y].iloc[n_run_per_ft*(n_ft):n_run_per_ft*(n_ft+1)].min()
-                        y_max_val = ref_data[q_y].iloc[n_run_per_ft*(n_ft):n_run_per_ft*(n_ft+1)].max()
+                        
+                        if ref_option == 'ft_col':
+                            mask = ref_data['ft'] == n_ft
+                            y_min_val = ref_data[mask][q_y].min()
+                            y_max_val = ref_data[mask][q_y].max()
+                        else:
+                            y_min_val = ref_data[q_y].iloc[n_run_per_ft*(n_ft):n_run_per_ft*(n_ft+1)].min()
+                            y_max_val = ref_data[q_y].iloc[n_run_per_ft*(n_ft):n_run_per_ft*(n_ft+1)].max()
+                        
                         ax.hlines(y=y_min_val, xmin=datadict[q_x][:,coord_x].min(), xmax=datadict[q_x][:,coord_x].max(), 
                                 color='r', linestyle='--', label='bounds of the training dataset')
                         ax.hlines(y=y_max_val, xmin=datadict[q_x][:,coord_x].min(), xmax=datadict[q_x][:,coord_x].max(),
                                 color='r', linestyle='--')
                     
                     if q_x in ref_data.columns:
-                        x_min_val = ref_data[q_x].iloc[n_run_per_ft*(n_ft):n_run_per_ft*(n_ft+1)].min()
-                        x_max_val = ref_data[q_x].iloc[n_run_per_ft*(n_ft):n_run_per_ft*(n_ft+1)].max()
+                        
+                        if ref_option == 'ft_col':
+                            mask = ref_data['ft'] == n_ft
+                            x_min_val = ref_data[mask][q_x].min()
+                            x_max_val = ref_data[mask][q_x].max()
+                        else:
+                            x_min_val = ref_data[q_x].iloc[n_run_per_ft*(n_ft):n_run_per_ft*(n_ft+1)].min()
+                            x_max_val = ref_data[q_x].iloc[n_run_per_ft*(n_ft):n_run_per_ft*(n_ft+1)].max()
                     
                         ax.vlines(x=x_min_val, ymin=datadict[q_y][:,coord_y].min(), ymax=datadict[q_y][:,coord_y].max(), 
                                 color='r', linestyle='--',)
@@ -304,9 +320,8 @@ def compare_transp(datadict, save_fold_name, times, input_folder_base='', coord_
         #coords = [0.14, 0.31, 0.44, 0.56, 0.67, 0.77, 0.86, 0.95]
         # actually, both surrogate and code should write flux value on 'transport' grid
         coords = [0.143587306141853 , 0.309813886880875 , 0.442991137504578 , 0.560640752315521 , 0.668475985527039 , 0.769291400909424 , 0.864721715450287 , 0.955828309059143 ] #TODO double check
-
     else:
-        coords = [0.143587306141853 , 0.309813886880875 , 0.442991137504578 , 0.560640752315521 , 0.668475985527039 , 0.769291400909424 , 0.864721715450287 , 0.955828309059143 ] #TODO double check
+        coords = [0.143587306141853 , 0.309813886880875 , 0.442991137504578 , 0.560640752315521 , 0.668475985527039 , 0.769291400909424 , 0.864721715450287 , 0.955828309059143 ]
     
     if option == 0 or option == 2:
         xml_file = 'gem0.xml'
@@ -378,6 +393,7 @@ def compare_transp(datadict, save_fold_name, times, input_folder_base='', coord_
 
         # for option 2: pass the CPO objects
         if option == 2:
+
             eq = read(input_folder+eq_filename+str(t_ind).zfill(5)+cpo_extension, 'equilibrium')
             prof = read(input_folder+prof_filename+str(t_ind).zfill(5)+cpo_extension, 'coreprof')
             transp = read(input_folder+transp_filename+str(t_ind).zfill(5)+cpo_extension, 'coretransp')
@@ -425,7 +441,9 @@ def read_profs(codename='gem_', dates=['20230823_151955'], prefix_name='workflow
     if not os.path.exists(save_fold_name):
         os.makedirs(save_fold_name)
     
-    n_rho_resol = 1
+    n_rho_resol = kwargs['n_rho_resol'] if 'n_rho_resol' in kwargs else 1
+
+    ref_option = kwargs['ref_option'] if 'ref_option' in kwargs else 'ft_col'
 
     bool_sur_involved = ('sur' or 'multiimpl' or 'manager') in codename 
     # ('sur' in codename) or ('multiimpl' in codename) or ('manager' in codename)
@@ -443,9 +461,8 @@ def read_profs(codename='gem_', dates=['20230823_151955'], prefix_name='workflow
         # ref_data_filename = 'ref_train_data_5000.csv'
         # n_run_per_ft = 625
 
-        # TODO replace offset with mask according to 'ft' column everywhere in this file...
         # option 3 for reference data: LHC sample
-        ref_data_filename = kwargs['ref_data_filename'] if 'ref_data_filename' in kwargs else 'ref_train_data_12000.csv'
+        ref_data_filename = kwargs['ref_data_filename'] if 'ref_data_filename' in kwargs else 'ref_train_data_5000.csv'
         n_run_per_ft = 1500
 
         ref_data = pd.read_csv(ref_data_filename, sep=',')
@@ -539,9 +556,8 @@ def read_profs(codename='gem_', dates=['20230823_151955'], prefix_name='workflow
 
             for j_a, i_q in product(j_a_s, i_q_s): # could be just [quantities]x[attributes] instead
 
-                # Reading data of a particular attribute for all files produced by transport code
-                # TODO: read data for many folders
-                # TODO: better, first read all data into a single data structure e.g. pandas dataframe, accessing each file onse; then plot 
+                # Reading data of a particular attribute for all files produced by transport codes
+                # TODO: better, first read all data into a single data structure e.g. pandas dataframe, accessing each file once; then plot 
                 data_list = []
                 times_list = []
                 for load_fold_name, date in zip(load_fold_names, dates):
@@ -608,9 +624,15 @@ def read_profs(codename='gem_', dates=['20230823_151955'], prefix_name='workflow
                     
                     if bool_sur_involved:
                         if quantities[i_q]+'_'+attributes[j_a] in ref_data.columns:
-                            #TODO: use 'ft' column to split reference data
-                            min_val = ref_data[quantities[i_q]+'_'+attributes[j_a]].iloc[n_run_per_ft*(n_ft_transp):n_run_per_ft*(n_ft_transp+1)].min()
-                            max_val = ref_data[quantities[i_q]+'_'+attributes[j_a]].iloc[n_run_per_ft*(n_ft_transp):n_run_per_ft*(n_ft_transp+1)].max()
+                            
+                            if ref_option == 'ft_col':
+                                mask = ref_data['ft'] == n_ft_transp
+                                min_val = ref_data[mask][quantities[i_q]+'_'+attributes[j_a]].min()
+                                max_val = ref_data[mask][quantities[i_q]+'_'+attributes[j_a]].max()
+                            else:
+                                min_val = ref_data[quantities[i_q]+'_'+attributes[j_a]].iloc[n_run_per_ft*(n_ft_transp):n_run_per_ft*(n_ft_transp+1)].min()
+                                max_val = ref_data[quantities[i_q]+'_'+attributes[j_a]].iloc[n_run_per_ft*(n_ft_transp):n_run_per_ft*(n_ft_transp+1)].max()
+                            
                             median_val = (max_val + min_val) / 2.
                             diff_val = max_val - min_val
                             #print(f"> For {quantities[i_q]+'_'+attributes[j_a]} @ft#{k}: min={min_val}, max={max_val}") ###DEBUG
@@ -697,7 +719,10 @@ def read_profs(codename='gem_', dates=['20230823_151955'], prefix_name='workflow
 
     ### Plotting all quantities against each other
     if bool_sur_involved:
-        plot_quantities(datadict=datadict, save_fold_name=save_fold_name, coord_num_fts=coord_num_fts, bool_sur_involved=bool_sur_involved, n_run_per_ft=n_run_per_ft, ref_data=ref_data)
+        st = t.time()
+        ### ATTENTION - commented out
+        #plot_quantities(datadict=datadict, save_fold_name=save_fold_name, coord_num_fts=coord_num_fts, bool_sur_involved=bool_sur_involved, n_run_per_ft=n_run_per_ft, ref_data=ref_data)
+        print(f"> time to plot quantities against each other is: {t.time()-st} s")
 
     ### Write down a single csv for simulation results
 
@@ -716,8 +741,10 @@ if __name__ == '__main__':
         dates = ['20230823_151955']
     else:
         dates = sys.argv[2:]
+
+    ref_data_filename = 'ref_train_data_5010.csv'
     
-    dates = read_profs(codename=codename, dates=dates) # to read results of M3-WF run
+    dates = read_profs(codename=codename, dates=dates, ref_data_filename=ref_data_filename) # to read results of M3-WF run
 
 
     # some set of first GEM-ETS-CHEASE runs with MUSCLE3

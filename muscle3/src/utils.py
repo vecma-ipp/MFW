@@ -21,7 +21,7 @@ def training_data_bounds(ref_data, input_names=['te_value', 'ti_value', 'te_ddrh
     for input in input_names:
         for i in range(n_fts):
             if option == 'ft_col':
-                mask = ref_data['ft']==i
+                mask = ref_data['ft'] == i
                 ref_data_ft = ref_data[mask]
                 train_bounds[input]['min'][i] = ref_data_ft[input].min()
                 train_bounds[input]['max'][i] = ref_data_ft[input].max()
