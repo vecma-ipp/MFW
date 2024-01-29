@@ -1,0 +1,204 @@
+ymmsl_version: v0.1
+
+model:
+  name: fusion_gem0
+  
+  components:
+    init:        
+      implementation: init_impl
+      ports: 
+        o_f: 
+          - equilibrium_init
+          - coreprof_init
+          - coresource_init
+          - coreimpur_init
+          - toroidfield_init
+    stop:        
+      implementation: stop_impl
+      ports:
+        f_init:
+          - equilibrium_in
+          - coreprof_in
+          - coresource_in
+          - coreimpur_in
+          - toroidfield_in
+    transport:   
+      implementation: ets_impl
+      ports:
+        f_init:
+          - equilibrium_init
+          - coreprof_init
+          - coresource_init
+          - coreimpur_init
+          - toroidfield_init
+        o_i:
+          - coreprof_out
+          - equilibrium_out
+        s:
+          - equilibrium_in
+          - coretransp_in
+        o_f:
+          - coreprof_final
+          - equilibrium_final
+          - coresource_final
+          - coreimpur_final
+          - toroidfield_final
+    turbulence:
+      # implementation: gem_impl_mpi
+      implementation: gem0_impl
+      # implementation: gem0_python_impl
+      # implementation: gem_surr_impl
+      ports:
+        o_f: coretransp_out
+        f_init: 
+          - coreprof_in
+          - equilibrium_in
+    # equilibrium: 
+    #   implementation: chease_impl
+    #   ports:
+    #     o_f: equilibrium_out
+    #     f_init: equilibrium_in
+
+  conduits:
+    init.equilibrium_init:       transport.equilibrium_init
+    init.coreprof_init:          transport.coreprof_init
+    init.coresource_init:        transport.coresource_init
+    init.coreimpur_init:         transport.coreimpur_init
+    init.toroidfield_init:       transport.toroidfield_init
+    #transport.equilibrium_out:   equilibrium.equilibrium_in
+    transport.equilibrium_out:   turbulence.equilibrium_in
+    transport.coreprof_out:      turbulence.coreprof_in
+    #equilibrium.equilibrium_out: [turbulence.equilibrium_in, transport.equilibrium_in]
+    turbulence.coretransp_out:   transport.coretransp_in
+    transport.equilibrium_final: stop.equilibrium_in
+    transport.coreprof_final:    stop.coreprof_in
+    transport.coresource_final:  stop.coresource_in
+    transport.coreimpur_final:   stop.coreimpur_in
+    transport.toroidfield_final: stop.toroidfield_in
+
+resources:
+  init:
+    threads: 1
+  stop:
+    threads: 1
+  transport:
+    threads: 1
+  turbulence:
+    # mpi_processes: 32
+    threads: 1
+  equilibrium:
+    threads: 1
+
+implementations:
+  init_impl:
+    executable: /u/yyudin/code/MFW/muscle3/bin/COBRA/init_M3
+  init_impl_debug:
+    executable: xterm
+    args:
+      - -e
+      - gdb
+      - --args
+      - /u/yyudin/code/MFW/muscle3/bin/COBRA/init_M3
+  stop_impl:
+    executable: /u/yyudin/code/MFW/muscle3/bin/COBRA/stop_M3
+  ets_impl:
+    executable: /u/yyudin/code/MFW/muscle3/bin/COBRA/ets_M3
+  ets_impl_debug:
+    executable: xterm
+    args:
+      - -e
+      - gdb
+      - --args
+      - /u/yyudin/code/MFW/muscle3/bin/COBRA/ets_M3
+  gem_impl_mpi:
+    env:
+      I_MPI_DEBUG: 4
+      SLURM_CPU_BIND: verbose
+      KMP_AFFINITY: verbose,compact
+      I_MPI_PIN_RESPECT_CPUSET: enable
+      OMP_PLACES: cores
+      OMP_PROC_BIND: spread
+    executable: /u/yyudin/code/MFW/muscle3/bin/COBRA/gem_M3
+    #execution_model: intelmpi
+    execution_model: srunmpi
+    can_share_resources: false
+  # gem_impl:
+  #  executable: mpirun
+  #  args:
+  #    - -n
+  #    - 8
+  #    - /u/yyudin/code/MFW/muscle3/bin/COBRA/gem_M3
+  gem_impl_debug:
+    executable: xterm
+    args:
+      - -e
+      - gdb
+      - --args
+      - /u/yyudin/code/MFW/muscle3/bin/COBRA/gem_M3
+  gem0_impl:
+    executable: /u/yyudin/code/MFW/muscle3/bin/COBRA/gem0_M3
+  gem0_impl_debug:
+    executable: xterm
+    args:
+      - -e
+      - gdb
+      - --args
+      - /u/yyudin/code/MFW/muscle3/bin/COBRA/gem0_M3
+  gem0_python_impl:
+    executable: python3 /u/yyudin/code/MFW/muscle3/bin/COBRA/gem0_M3.py
+  gem_surr_impl:
+    executable: python3 /u/yyudin/code/MFW/muscle3/src/gem_surr_mft_M3.py
+  gem_surr_impl_debug:
+    executable: xterm
+    args:
+      - -e
+      - python3
+      - -m
+      - pdb
+      - /u/yyudin/code/MFW/muscle3/src/gem_surr_mft_M3.py
+  chease_impl:
+    executable: /u/yyudin/code/MFW/muscle3/bin/COBRA/chease_M3
+  chease_impl_debug:
+    executable: xterm
+    args:
+      - -e
+      - gdb
+      - --args
+      - /u/yyudin/code/MFW/muscle3/bin/COBRA/chease_M3
+  imp4dv_impl:
+    executable: /u/yyudin/code/MFW/muscle3/bin/COBRA/imp4dv_M3
+  imp4dv_impl_debug:
+    executable: xterm
+    args:
+      - -e
+      - gdb
+      - --args
+      - /u/yyudin/code/MFW/muscle3/bin/COBRA/imp4dv_M3
+
+settings:
+  transport.duration: 0.5
+  transport.dt: 0.001
+  transport.nonstationary_equilibrium: False
+  init_cpo_dir: "../../../../gem_resume_data"
+  final_cpo_dir: "./"
+  muscle_remote_log_level: "DEBUG"  
+  slice_initial_number: 0
+  save_slice: True
+  adaptive_timestep: False
+  turbulence.rho_ind_s: [15.0, 31.0, 44.0, 55.0, 66.0, 76.0, 85.0, 94.0]
+  turbulence.rho_tor_norm_sur: [0.143587306141853, 0.309813886880875, 0.442991137504578, 0.560640752315521, 0.668475985527039, 0.769291400909424, 0.864721715450287, 0.955828309059143]
+  turbulence.rho_tor_norm_sim: [0.143587306141853, 0.309813886880875, 0.442991137504578, 0.560640752315521, 0.668475985527039, 0.769291400909424, 0.864721715450287, 0.955828309059143] # GEM/GEM0 wants flux tubes here
+  #turbulence.profs_out: "ti_transp.flux"
+  turbulence.coretransp_default: "../../../../../../workflows/gem_coretransp_8ft.cpo"
+  turbulence.equilibrium_default: "../../../../../gem0_equilibrium_in.cpo"
+  turbulence.coreprof_default: "../../../../../gem0_coreprof_in.cpo"
+  turbulence.xml_default: "../../../../../gem0.xml"
+
+  turbulence.surrogate_path: "../../../../../../workflows/surrogate_for_workflow/gem0_es_model"
+  turbulence.surrogate_type: "gpr"
+  turbulence.training_dataset_filename: "../../../../../ref_train_data_5010.csv"
+  turbulence.retrain_distance: 0.25
+  turbulence.bool_send_uncertainty: True
+
+
+  ### Comment: this is run of GEM0-WF (without evolving equilibrium!!!) with dt=10^-3 and AUG_28906_6_8ft_restart initial profiles, for 100 steps
