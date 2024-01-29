@@ -20,6 +20,7 @@ program ets_M3
   real(kind=LIBMUSCLE_real8) :: t_init, t_current, t_duration, dt_max
   logical :: save_slice
   logical :: adaptive_timestep_loc
+  logical :: nonstationary_equilibrium
   integer(kind=LIBMUSCLE_int8) :: slice_init
 
   ! code specific
@@ -38,6 +39,8 @@ program ets_M3
 
   type(json_core):: json
   type(json_value),pointer :: json_param
+
+  nonstationary_equilibrium = .true.
 
   call system('cp ../../../../ets.xml ets.xml')
   call system('cp ../../../../ets.xsd ets.xsd')
@@ -82,6 +85,7 @@ program ets_M3
      slice_init = LIBMUSCLE_Instance_get_setting_as_int8(instance, 'slice_initial_number')
      save_slice = LIBMUSCLE_Instance_get_setting_as_logical(instance, 'save_slice')
      adaptive_timestep_loc = LIBMUSCLE_Instance_get_setting_as_logical(instance, 'adaptive_timestep')
+     nonstationary_equilibrium = LIBMUSCLE_Instance_get_setting_as_logical(instance, 'nonstationary_equilibrium')
 
      ! filling in parameters for this run
      call json%initialize()
@@ -90,6 +94,7 @@ program ets_M3
      call json%add(json_param, 'adaptive_timestep', adaptive_timestep_loc) 
      
      print *, ">receiving equilibrium_init" !!!DEBUG
+
      ! recv init equilibrium
      rmsg = LIBMUSCLE_Instance_receive(instance, 'equilibrium_init')
      rdata = LIBMUSCLE_Message_get_data(rmsg)
@@ -97,6 +102,7 @@ program ets_M3
      call LIBMUSCLE_DataConstRef_as_byte_array(rdata, equilibrium_in_buf)
      call LIBMUSCLE_DataConstRef_free(rdata)
      call LIBMUSCLE_Message_free(rmsg)
+
      ! recv init coreprof
      rmsg = LIBMUSCLE_Instance_receive(instance, 'coreprof_init')
      rdata = LIBMUSCLE_Message_get_data(rmsg)
@@ -105,6 +111,7 @@ program ets_M3
      call LIBMUSCLE_DataConstRef_free(rdata)
      t_init = LIBMUSCLE_Message_timestamp(rmsg)
      call LIBMUSCLE_Message_free(rmsg)
+
      ! recv init coresource
      rmsg = LIBMUSCLE_Instance_receive(instance, 'coresource_init')
      rdata = LIBMUSCLE_Message_get_data(rmsg)
@@ -112,6 +119,7 @@ program ets_M3
      call LIBMUSCLE_DataConstRef_as_byte_array(rdata, coresource_in_buf)
      call LIBMUSCLE_DataConstRef_free(rdata)
      call LIBMUSCLE_Message_free(rmsg)
+
      ! recv init coreimpur
      rmsg = LIBMUSCLE_Instance_receive(instance, 'coreimpur_init')
      rdata = LIBMUSCLE_Message_get_data(rmsg)
@@ -119,6 +127,7 @@ program ets_M3
      call LIBMUSCLE_DataConstRef_as_byte_array(rdata, coreimpur_in_buf)
      call LIBMUSCLE_DataConstRef_free(rdata)
      call LIBMUSCLE_Message_free(rmsg)
+
      ! recv init toroidfield
      rmsg = LIBMUSCLE_Instance_receive(instance, 'toroidfield_init')
      rdata = LIBMUSCLE_Message_get_data(rmsg)
@@ -172,17 +181,23 @@ program ets_M3
         nullify(coreprof_out_buf)
 
         !###  S  #################################!
-        if (associated(equilibrium_in_buf)) deallocate(equilibrium_in_buf)
-        if (associated(coretransp_in_buf)) deallocate(coretransp_in_buf)
+        !if (associated(equilibrium_in_buf)) deallocate(equilibrium_in_buf) !YY: moved to the if-block for non statioanry equilibrium case
+        !if (associated(coretransp_in_buf)) deallocate(coretransp_in_buf)   !YY: moved to coretransp block
+
         ! recv equilibrium
-        print *, 'receiving equilibrium_in'
-        rmsg = LIBMUSCLE_Instance_receive(instance, 'equilibrium_in')
-        rdata = LIBMUSCLE_Message_get_data(rmsg)
-        allocate (equilibrium_in_buf(LIBMUSCLE_DataConstRef_size(rdata)))
-        call LIBMUSCLE_DataConstRef_as_byte_array(rdata, equilibrium_in_buf)
-        call LIBMUSCLE_DataConstRef_free(rdata)
-        call LIBMUSCLE_Message_free(rmsg)
+        if (nonstationary_equilibrium) then
+          if (associated(equilibrium_in_buf)) deallocate(equilibrium_in_buf)
+          print *, 'receiving equilibrium_in'
+          rmsg = LIBMUSCLE_Instance_receive(instance, 'equilibrium_in')
+          rdata = LIBMUSCLE_Message_get_data(rmsg)
+          allocate (equilibrium_in_buf(LIBMUSCLE_DataConstRef_size(rdata)))
+          call LIBMUSCLE_DataConstRef_as_byte_array(rdata, equilibrium_in_buf)
+          call LIBMUSCLE_DataConstRef_free(rdata)
+          call LIBMUSCLE_Message_free(rmsg)
+        endif
+
         ! recv coretransp
+        if (associated(coretransp_in_buf)) deallocate(coretransp_in_buf) 
         print *, 'receiving coretransp_in'
         rmsg = LIBMUSCLE_Instance_receive(instance, 'coretransp_in')
         rdata = LIBMUSCLE_Message_get_data(rmsg)
@@ -230,30 +245,35 @@ program ets_M3
 
 
      !###  O_F  #################################!
+
      ! send equilibrium
      sdata = LIBMUSCLE_Data_create_byte_array(equilibrium_out_buf)
      smsg = LIBMUSCLE_Message_create(t_current, sdata)
      call LIBMUSCLE_Instance_send(instance, 'equilibrium_final', smsg)
      call LIBMUSCLE_Message_free(smsg)
      call LIBMUSCLE_Data_free(sdata)
+
      ! send coreprof
      sdata = LIBMUSCLE_Data_create_byte_array(coreprof_out_buf)
      smsg = LIBMUSCLE_Message_create(t_current, sdata)
      call LIBMUSCLE_Instance_send(instance, 'coreprof_final', smsg)
      call LIBMUSCLE_Message_free(smsg)
      call LIBMUSCLE_Data_free(sdata)
+
      ! send coresource
      sdata = LIBMUSCLE_Data_create_byte_array(coresource_in_buf)
      smsg = LIBMUSCLE_Message_create(t_current, sdata)
      call LIBMUSCLE_Instance_send(instance, 'coresource_final', smsg)
      call LIBMUSCLE_Message_free(smsg)
      call LIBMUSCLE_Data_free(sdata)
+
      ! send coreimpur
      sdata = LIBMUSCLE_Data_create_byte_array(coreimpur_in_buf)
      smsg = LIBMUSCLE_Message_create(t_current, sdata)
      call LIBMUSCLE_Instance_send(instance, 'coreimpur_final', smsg)
      call LIBMUSCLE_Message_free(smsg)
      call LIBMUSCLE_Data_free(sdata)
+
      ! send toroidfield
      sdata = LIBMUSCLE_Data_create_byte_array(toroidfield_in_buf)
      smsg = LIBMUSCLE_Message_create(t_current, sdata)
