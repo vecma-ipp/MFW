@@ -419,6 +419,82 @@ def write_gem0_fromfile(filename_in, filename_out):
 
     return 0
 
+def write_gem0_fromfile_grid(filename_in, filename_out, num_steps=1, **kwargs):
+    """
+    Takes a point in core profile space (indepdendet variables of values of Te/i, gradTe/i for a number of flux tubes)
+    Creates a new points around (making n steps L each colinearly to every independent variables)
+    And saves it into a new CSV file with the table of values
+    """
+
+    ftube_rhos = [0.143587306141853 , 0.309813886880875 , 0.442991137504578 , 0.560640752315521 , 0.668475985527039 , 0.769291400909424 , 0.864721715450287 , 0.955828309059143 ] #TODO double check
+
+    # Read the point around which evaluations should be taken
+    df_in = pd.read_csv(filename_in)
+
+    # Get the number of flux tubes - optional now!
+    #  - option 1 - default
+    nfts = len(ftube_rhos)
+    nfts_list = [f for f in range(nfts)]
+    #  - option 2 - from the dataframe
+    nfts_list = df_in['ft'].unique() #int(df_in['ft'].max() - df_in['ft'].min())
+    nfts = len(nfts_list)
+
+    # Get the list of independent variables
+    # - option 1 - default
+    input_names  = ['te_value', 'ti_value', 'te_ddrho', 'ti_ddrho']
+    output_names = ['te_transp_flux', 'ti_transp_flux']
+    # - option 2 - from the dataframe
+    column_names = df_in.columns.tolist()
+    input_names  = [n for n in column_names if 'value' in n or 'ddrho' in n]
+    output_names = [n for n in column_names if 'transp' in n]
+
+
+    # Prepare structures to write
+    #df_out = pd.DataFrame(columns=[*input_names, *output_names, 'ft'],)
+    data_new = []
+
+    # Asure for every input and flux tube the expantion step is defined
+    exp_factor = 0.25
+    grid_step = kwargs['grid_step'] if 'grid_step' in kwargs else \
+        {input_name:{nft:df_in[df_in['ft']==nft][input_name].mean()*exp_factor for nft in nfts_list} for input_name in input_names}
+
+    # - option 1 - Iterate over flux tube ---
+    #for nft in nfts_list:
+    # - option 2 - Iterate over points in dataframe
+    for i,df_row in df_in.iterrows():
+
+        # - option 1 - For every flux tube, define its point
+        #df_in_ft = df_in[df_in['ft']==nft]
+        #vals_loc = df_in_ft[input_names].iloc[0] # TODO: iterate over multiple points, if there is more than one per flux tube
+        # - option 2 - For every row, define its flux tube and values
+        nft = int(df_row['ft'])
+        vals_loc = df_row[input_names]
+
+        rho = ftube_rhos[nft]
+        x = {k:df_row[k] for k in input_names}
+
+        # Iterate over parameters
+        vals_new = []
+        for input in input_names:
+
+            # For every parameter, make its grid
+            val_loc_inp = x[input]
+            vals_loc_inp_new = [val_loc_inp+j*grid_step[input][nft] for j in range(-num_steps, +num_steps+1)]
+            vals_new.append(vals_loc_inp_new)
+
+        # Make a product of grids
+        for val_new in itertools.product(*vals_new):
+
+            x_new = {input:val_new[j] for j,input in enumerate(input_names)}
+            x_new['ft'] = nft
+            data_new.append(x_new)
+
+    # Save the grid
+    df_out = pd.DataFrame(data_new)
+    df_out.to_csv(filename_out)
+
+    return 0
+
 def plot_gem0_scan(X_orig, input_number=0, output_number=0, file_name_suf='', flag_plot=True, **kwargs):
     """
     Takes original input data, and for central a cut of the data writes a .pdf file
