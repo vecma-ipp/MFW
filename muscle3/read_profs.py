@@ -27,8 +27,8 @@ def read_attrib(filename, quantity, attribute, coords, filetype='coreprof'):
     
     if filetype == 'coretransp':
         q = cpo_obj.values[0]
-    elif filetype == 'equilibrium':
-        q = cpo_obj.eqgeometry
+    elif filetype == 'equilibrium' or 'coreprof':
+        q = cpo_obj
 
     q = getattr(q, quantity)
     a = getattr(q, attribute)
@@ -56,7 +56,9 @@ def read_files(foldername, quantity, attribute, coords, filetype='coreprof', dat
     file_base_tocheck = basename+filetype+'_'
     file_ext = '.cpo'
 
+    #TODO for the same type of CPOs, read a file once and return a dictionary of all quantities x attributes
     """
+    # Block to read from a list foldername's
     if foldername is list:
         file_names = [[f for f in os.listdir(d) if
                   os.path.isfile(os.path.join(d, f)) and
@@ -87,6 +89,7 @@ def read_files(foldername, quantity, attribute, coords, filetype='coreprof', dat
     times = []
 
     for f in file_names:
+        #TODO: iterate over a list of quantities
         a = read_attrib(foldername+f, quantity, attribute, coords, filetype)
         # print(f"a= {a}") ###DEBUG
         attributes.append(a)
@@ -100,11 +103,61 @@ def read_files(foldername, quantity, attribute, coords, filetype='coreprof', dat
 
     return atrributes_array, times_array
 
+def read_equil_1d(foldername):
+    """
+    Reads %profiles_1d% from all equilibrium CPO files in a folder
+    """
+
+    n_coord = 100
+    coords = [x for x in range(n_coord)]
+
+    quantity = 'profiles_1d'
+    attributes = ['q',]
+
+
+    filetype = 'equilibrium'
+    basename=''
+    file_base_tocheck = basename+filetype+'_'
+    file_ext = '.cpo'
+
+    file_names = [f for f in os.listdir(foldername) if # all files in the directory
+                  os.path.isfile(os.path.join(foldername, f)) and # should be a file
+                  f.endswith(file_ext) and # name should end with a particular extension e.g. .cpo
+                  f.startswith(file_base_tocheck) # name should have particular prefix e.g. gem_coreprof_
+                  ]
+    
+    file_names.sort()
+
+    # add the last file, that might be named differently
+    last_file_tent_name = 'ets_'+filetype+'_out'+file_ext
+    if os.path.exists(os.path.join(foldername, last_file_tent_name)):
+        file_names.append(last_file_tent_name)
+
+    attribute_vals = []
+    times = []
+
+    for f in file_names:
+        for attribute in attributes:
+            v = read_attrib(foldername+f, quantity, attribute, coords, filetype)
+            # print(f"v= {v}") ###DEBUG
+            attribute_vals.append(v)
+
+        t = read_time(foldername+f, filetype)
+        times.append(t)
+
+    # List of lists to a numpy array
+    atrributes_array = np.array(attribute_vals)
+    times_array = np.array(times)
+
+    return atrributes_array, times_array
+
 def read_equil(foldernames):
     """
     Reads equilibrium file and plots last closed flux surface 
     foldername: list of names of form: [year-month-day] e.g. 20230901
     """
+
+    # TODO iterate over files in folder, read %profiles_1d% !!!
 
     filetype = "equilibrium"
     quantity = "boundary"
@@ -333,9 +386,11 @@ def compare_transp(datadict, save_fold_name, times, input_folder_base='', coord_
 
     n_fts = [i for i in range(len(coords))]
     #coords = coord_num_fts[:] # if coords are in coretransp notation i.e. flux tube numbers
-                
+
+    # due to different naming for the final state
+    del_tstep = -1            
     #t_min = min(len(datadict[q_x][:,n_ft]), len(datadict[q_y][:,n_ft]))
-    t_min = len(times)
+    t_min = len(times) + del_tstep
 
     # initialise a model and its evaluation - here: GEM0
     model = ExtCodeHelper(2, xml_file=xml_file)
@@ -430,6 +485,43 @@ def compare_transp(datadict, save_fold_name, times, input_folder_base='', coord_
 
     return 0
 
+def plot_prof_time(data, pdf_prof, coord_rho_tor_norm, coords_transp_gem, times, n_timesteps, fmt_list, lookup_names, quantity_name, attribute_name):
+
+    ### Plotting attribute profile for multiple time-steps
+    
+    n_timesteps_toplot = n_timesteps // 10 if n_timesteps // 10 > 0 else 1
+    fig, ax = plt.subplots()
+
+    timestep_iterator = range(0, n_timesteps, n_timesteps_toplot) # option 1: numbers of time steps
+    # timestep_iterator = iter(times[0:n_timesteps:n_timesteps_toplot]) # option 2: times written to coreprof
+    
+    for i in timestep_iterator:
+
+        ax.plot(
+                #np.array(coord_num)/100.,
+                coord_rho_tor_norm,
+                data[i, :], 
+                label=f"t={times[i]},s", 
+                color = fmt_list[i//n_timesteps_toplot][2],
+                linestyle = fmt_list[i//n_timesteps_toplot][1],
+                marker=fmt_list[i//n_timesteps_toplot][0],
+                alpha=0.5,
+                #marker='.'
+                )
+
+    # Adding vertical lines to indicate the flux tube locations                      
+    ax.vlines(x=coords_transp_gem, ymin=data.min(), ymax=data.max(), color='k', linestyle='--', label='flux tubes')
+    
+    # ax.set_yscale('symlog')
+    ax.set_xlabel(lookup_names['rho'])
+    ax.set_ylabel(lookup_names[quantity_name+'_'+attribute_name] if quantity_name+'_'+attribute_name in lookup_names else quantity_name+'_'+attribute_name)
+    ax.legend(loc='best')
+
+    #fig.savefig(save_fold_name+'prof_'+codename+'_' +quantities[i_q]+'_'+attributes[j_a]+'_'+dates[0]+'_'+dates[-1]+'.pdf')
+    pdf_prof.savefig(fig)
+    plt.close(fig)
+
+    return 0
 
 def read_profs(codename='gem_', dates=['20230823_151955'], prefix_name='workflow/run_fusion_', sufix_name='/instances/transport/workdir/', cpo_filebase='', cpo_names = ['coreprof', 'coretransp'], **kwargs):
 
@@ -474,7 +566,9 @@ def read_profs(codename='gem_', dates=['20230823_151955'], prefix_name='workflow
         "te_ddrho": "$\\nabla T_{{e}}, eV/m$",
         "te_transp_flux": "$Q_{{e}}, W/m^{{2}}$",
         "ti_transp_flux": "$Q_{{i}}$, W/m^{{2}}",
-        "rho": "$\\rho_{{tor}}^{{norm}}$"
+        "rho": "$\\rho_{{tor}}^{{norm}}$",
+        "q" : "$q$",
+        "gm3" : "$gm^{{3}}$",
     }
 
     lookup_names_short = {
@@ -484,9 +578,22 @@ def read_profs(codename='gem_', dates=['20230823_151955'], prefix_name='workflow
         "te_ddrho": "$\\nabla T_{{e}}$",
         "te_transp_flux": "$Q_{{e}}$",
         "ti_transp_flux": "$Q_{{i}}$",
-        "rho": "$\\rho_{{tor}}^{{norm}}$"
+        "rho": "$\\rho_{{tor}}^{{norm}}$",
+        "q": "$q$",
+        "gm3" : "$gm^{{3}}$",
     }
 
+    lookup_units = {
+        "ti_value": "$eV$",
+        "te_value": "$eV$",
+        "ti_ddrho": "$eV/m$",
+        "te_ddrho": "$eV/m$",
+        "te_transp_flux": "$W/m^{{2}}$",
+        "ti_transp_flux": "$W/m^{{2}}",
+        "rho": "",
+        "q" : "",
+        "gm3" : "",
+    }
 
     color_step = 0.08
     color_list = ['b', 'g', 'r', 'y' , 'm', 'c', 'k']
@@ -498,7 +605,6 @@ def read_profs(codename='gem_', dates=['20230823_151955'], prefix_name='workflow
 
     coord_num_fts = [14, 30, 43, 55, 66, 76, 85, 95]
     coords_transp_gem = [0.143587306141853, 0.309813886880875, 0.442991137504578, 0.560640752315521, 0.668475985527039, 0.769291400909424, 0.864721715450287, 0.955828309059143]
-    #cpo_names = ['coreprof', 'coretransp']
 
     times_coreprof = []
 
@@ -516,6 +622,7 @@ def read_profs(codename='gem_', dates=['20230823_151955'], prefix_name='workflow
             #coord_num = [68]
             coord_num = [x for x in range(0, 100, n_rho_resol)]
 
+            #TODO: not true, should be read from CPO %rho_tor_norm !
             coord_rho_tor_norm = np.array(coord_num)/100.
 
             #n_ft = 68
@@ -529,6 +636,7 @@ def read_profs(codename='gem_', dates=['20230823_151955'], prefix_name='workflow
             j_a_s = [0, 1] # indiced of attributes to go through
 
         if cpo_name == 'coretransp':
+
             quantities = ['te_transp', 'ti_transp',]
 
             attributes = ['flux', 'diff_eff', 'vconv_eff', ]
@@ -548,16 +656,29 @@ def read_profs(codename='gem_', dates=['20230823_151955'], prefix_name='workflow
             i_q_s = [0, 1] # indices of quantities to go through
             j_a_s = [0, 1, 2] # indices of attributes to go through
 
+        if cpo_name == 'equilibrium':
+
+            quantities = ['profiles_1d']
+            attributes = ['q' , 'gm3']
+
+            coord_num = [x for x in range(0, 100, n_rho_resol)]
+            coord_rho_tor_norm = np.array(coord_num)/100.
+            n_fts = coord_num_fts
+
+            i_q_s = [0,] 
+            j_a_s = [0, 1]
+
         # Create a plot for all quantities for this CPO type
         common_fig_ax_list = [plt.subplots() for _ in n_fts]
 
-        with PdfPages(save_fold_name+'res_' +codename+'_'+cpo_name+'_'+dates[0]+'_'+dates[-1]+'.pdf') as pdf_evol, \
+        with PdfPages(save_fold_name+'res_'+codename+'_'+cpo_name+'_'+dates[0]+'_'+dates[-1]+'.pdf') as pdf_evol, \
              PdfPages(save_fold_name+'prof_'+codename+'_'+cpo_name+'_'+dates[0]+'_'+dates[-1]+'.pdf') as pdf_prof:
 
             for j_a, i_q in product(j_a_s, i_q_s): # could be just [quantities]x[attributes] instead
 
                 # Reading data of a particular attribute for all files produced by transport codes
                 # TODO: better, first read all data into a single data structure e.g. pandas dataframe, accessing each file once; then plot 
+                st = t.time()
                 data_list = []
                 times_list = []
                 for load_fold_name, date in zip(load_fold_names, dates):
@@ -574,18 +695,21 @@ def read_profs(codename='gem_', dates=['20230823_151955'], prefix_name='workflow
                 data_file_name = save_fold_name+'res_'+codename+'_' + \
                     quantities[i_q]+'_'+attributes[j_a]+'_'+dates[0]+'_'+dates[-1]+'.csv'
                 np.savetxt(data_file_name, np.array(data), delimiter=',')
-                # data = np.genfromtxt(data_file_name, delimiter=',')[::2].reshape(-1, 1) # ::2 due to two calls of printing from e.g. GEM0
+                #data = np.genfromtxt(data_file_name, delimiter=',')[::2].reshape(-1, 1) # ::2 due to two calls of printing from e.g. GEM0
 
-                # print(f"data shape: {data.shape}") #DEBUG
+                print(f"Reading CPOs and writing CSVs for {quantities[i_q]}.{attributes[j_a]} took {t.time()-st:.3f} s")
+
+                # Read the dimensions: time and radial coordiante
+                #print(f"data shape: {data.shape}") ###DEBUG
                 n_timesteps = data.shape[0]
                 #print(f"size of data and time readings is the same: {n_timesteps == times.shape[0]}") ###DEBUG
-                n_rhos = data.shape[1]
+                #n_rhos = data.shape[1]
 
                 # Coretransp does not change timestamp correctly, so prefereably use transport (coreprof) time
                 if cpo_name == 'coreprof': 
                     times_coreprof = times
                     n_timereadings = len(times_coreprof)
-                elif cpo_name == 'coretransp':
+                elif cpo_name == 'coretransp' or 'equilibrium':
                     #times = times_coreprof # does not track which coreprof exactly provides time
                     #times = np.linspace(0, n_timesteps, n_timesteps) # last coretransp file is absent (?)
 
@@ -600,7 +724,7 @@ def read_profs(codename='gem_', dates=['20230823_151955'], prefix_name='workflow
                         times = np.linspace(0, n_timesteps, n_timesteps)
                     
                 # Display the array of actual ETS time step lengths
-                #print(f"> delta-t array for {quantities[i_q]+'_'+attributes[j_a]}: \n{times[1:]-times[:-1]}")
+                #print(f"> delta-t array for {quantities[i_q]+'_'+attributes[j_a]}: \n{times[1:]-times[:-1]}") ###DEBUG
 
                 ### Plotting an attribute value at a the n_ft-th flux tube against time
                 
@@ -609,22 +733,22 @@ def read_profs(codename='gem_', dates=['20230823_151955'], prefix_name='workflow
 
                     n_ft_transp = k
 
-                    fig, ax = plt.subplots()
+                    #fig, ax = plt.subplots()
                     
-                    # x_values = np.linspace(0, n_timesteps, n_timesteps) # option 1: sequential number of time steps starting from 0
-                    x_values = times # option 2: timestamp read from coreprofile CPO files
+                    # - option 1: sequential number of time steps starting from 0
+                    #x_values = np.linspace(0, n_timesteps, n_timesteps)
+                    # - option 2: timestamp read from coreprofile CPO files
+                    x_values = times
 
-                    ax.plot(x_values,
-                            data[:n_timesteps, n_ft], '.',
-                            label=f"@{n_ft}")
-                    ax.set_xlabel('${{t}}$, time-steps')
-                    # TODO: display integer numbers of time steps
-                    ax.set_ylabel(lookup_names[quantities[i_q]+'_'+attributes[j_a]] if (
-                        quantities[i_q]+'_'+attributes[j_a] in lookup_names) else quantities[i_q]+'_'+attributes[j_a])
-                    
+                    ### Combine scalar-vs-time plots for different quantities and same flux tube
+                    ax_loc = common_fig_ax_list[k][1] #.twinx()
+                    fig_loc = common_fig_ax_list[k][0]
+
+                    # Plot the bound of the reference data for this parameter (horisontal lines)
                     if bool_sur_involved:
                         if quantities[i_q]+'_'+attributes[j_a] in ref_data.columns:
-                            
+                            #print(f"Plotting bounds for {quantities[i_q]+'_'+attributes[j_a]}") ###DEBUG
+
                             if ref_option == 'ft_col':
                                 mask = ref_data['ft'] == n_ft_transp
                                 min_val = ref_data[mask][quantities[i_q]+'_'+attributes[j_a]].min()
@@ -633,100 +757,79 @@ def read_profs(codename='gem_', dates=['20230823_151955'], prefix_name='workflow
                                 min_val = ref_data[quantities[i_q]+'_'+attributes[j_a]].iloc[n_run_per_ft*(n_ft_transp):n_run_per_ft*(n_ft_transp+1)].min()
                                 max_val = ref_data[quantities[i_q]+'_'+attributes[j_a]].iloc[n_run_per_ft*(n_ft_transp):n_run_per_ft*(n_ft_transp+1)].max()
                             
-                            median_val = (max_val + min_val) / 2.
+                            #median_val = (max_val + min_val) / 2.
                             diff_val = max_val - min_val
-                            #print(f"> For {quantities[i_q]+'_'+attributes[j_a]} @ft#{k}: min={min_val}, max={max_val}") ###DEBUG
-                            
-                            ax.hlines(y=min_val, xmin=x_values[0], xmax=x_values[-1], color='r',
-                                    linestyle='--', label=f"bounds of the training dataset")
-                            ax.hlines(y=max_val, xmin=x_values[0], xmax=x_values[-1],
-                                    color='r', linestyle='--')
-                    
-                    ax.legend(loc='best')
-                    
-                    #fig.savefig(save_fold_name+'res_'+codename+quantities[i_q]+'_'+attributes[j_a]+'_ft'+str(n_ft)+'_'+dates[0]+'_'+dates[-1]+'.pdf')
-                    pdf_evol.savefig(fig)
-                    plt.close(fig)
 
-                    ### Combine scalar-vs-time plots for different qauntities and same flux tube
-                    ax_loc = common_fig_ax_list[k][1] #.twinx()
-                    # NB: next uses value read in a double-if clause, so wrong median, min, max values might be used!
+                            #print(f"> For {quantities[i_q]+'_'+attributes[j_a]} @ft#{k}: min={min_val}, max={max_val}") ###DEBUG
+                        
+                            ax_loc.hlines(y=(min_val-min_val)/diff_val, xmin=x_values[0], xmax=x_values[-1], color=color_list[(i_q*len(j_a_s) + j_a)%(len(color_list)-1)],
+                                            linestyle='--',) # label=f"bounds of the training dataset")
+                            ax_loc.hlines(y=(max_val-min_val)/diff_val, xmin=x_values[0], xmax=x_values[-1], color=color_list[(i_q*len(j_a_s) + j_a)%(len(color_list)-1)], 
+                                            linestyle='--',)
+                            
+                            # Find intersection of the plot and bounds of the training dataset and add them as vertical lines
+                            x_inters_ind = min([np.min(np.where(data[:n_timesteps, n_ft] < min_val)[0], initial=len(x_values)-1),
+                                                np.min(np.where(data[:n_timesteps, n_ft] > max_val)[0], initial=len(x_values)-1)]) # TODO: add check for no intersection
+                            ax_loc.vlines(x=x_values[x_inters_ind], ymin=0., ymax=1., color=color_list[(i_q*len(j_a_s) + j_a)%(len(color_list)-1)], 
+                                            linestyle='--',)
+                    
+                        else:
+                            min_val = 0.0
+                            max_val = data[:n_timesteps, n_ft].max()
+                            #median_val = (max_val + min_val) / 2.
+                            diff_val = 1.0
+
                     ax_loc.plot(
                             x_values,
                             (data[:n_timesteps, n_ft] - min_val) / diff_val, 
                             marker='.',
                             color=color_list[(i_q*len(j_a_s) + j_a)%(len(color_list)-1)],
                             alpha=0.5,
-                            label=f"{lookup_names_short[quantities[i_q]+'_'+attributes[j_a]] if (quantities[i_q]+'_'+attributes[j_a] in lookup_names_short) else quantities[i_q]+'_'+attributes[j_a]}",
-#                            , {lookup_names_short['rho']}={n_ft/100.}",
-                                ) 
-                    ax_loc.hlines(y=(min_val-min_val)/diff_val, xmin=x_values[0], xmax=x_values[-1], color=color_list[(i_q*len(j_a_s) + j_a)%(len(color_list)-1)],
-                                    linestyle='--',) # label=f"bounds of the training dataset")
-                    ax_loc.hlines(y=(max_val-min_val)/diff_val, xmin=x_values[0], xmax=x_values[-1], color=color_list[(i_q*len(j_a_s) + j_a)%(len(color_list)-1)], 
-                                    linestyle='--',)
-                    # Find intersection of the plot and bounds of the training dataset and add them as vertical lines
-                    x_inters_ind = min([np.min(np.where(data[:n_timesteps, n_ft] < min_val)[0], initial=len(x_values)-1),
-                                        np.min(np.where(data[:n_timesteps, n_ft] > max_val)[0], initial=len(x_values)-1)]) # TODO: add check for no intersection
-                    ax_loc.vlines(x=x_values[x_inters_ind], ymin=0., ymax=1., color=color_list[(i_q*len(j_a_s) + j_a)%(len(color_list)-1)], 
-                                    linestyle='--',)
+                            label=f"{lookup_names_short[quantities[i_q]+'_'+attributes[j_a]] if (quantities[i_q]+'_'+attributes[j_a] in lookup_names_short) else quantities[i_q]+'_'+attributes[j_a]}, ${min_val:.2f}+{diff_val:.2f} \\cdot x$, {lookup_units[quantities[i_q]+'_'+attributes[j_a]] if (quantities[i_q]+'_'+attributes[j_a] in lookup_units) else ''}",
+                            # , {lookup_names_short['rho']}={n_ft/100.}",
+                                )
+
+                    # Set up axis name, title, legend etc.
+                    #ax_loc.set_ylabel(lookup_names[quantities[i_q]+'_'+attributes[j_a]] if (
+                    #     quantities[i_q]+'_'+attributes[j_a] in lookup_names) else quantities[i_q]+'_'+attributes[j_a])
                     
                 ### Plotting attribute profile for multiple time-steps
-                
-                n_timesteps_toplot = n_timesteps // 10 if n_timesteps // 10 > 0 else 1
-                fig, ax = plt.subplots()
+                st = t.time()
+                plot_prof_time(data, pdf_prof, coord_rho_tor_norm, coords_transp_gem, times, n_timesteps, fmt_list, lookup_names, quantities[i_q], attributes[j_a])
+                print(f"Plotting entire profiles with time for {quantities[i_q]}.{attributes[j_a]} took {t.time()-st:.3f} s")
 
-                timestep_iterator = range(0, n_timesteps, n_timesteps_toplot) # option 1: numbers of time steps
-                # timestep_iterator = iter(times[0:n_timesteps:n_timesteps_toplot]) # option 2: times written to coreprof
-                
-                for i in timestep_iterator:
-
-                    ax.plot(
-                            #np.array(coord_num)/100.,
-                            coord_rho_tor_norm,
-                            data[i, :], 
-                            label=f"t={times[i]},s", 
-                            color = fmt_list[i//n_timesteps_toplot][2],
-                            linestyle = fmt_list[i//n_timesteps_toplot][1],
-                            marker=fmt_list[i//n_timesteps_toplot][0],
-                            #marker='.'
-                            )
-
-                # Adding vertical lines to indicate the flux tube locations                      
-                ax.vlines(x=coords_transp_gem, ymin=data.min(), ymax=data.max(), color='k', linestyle='--', label='flux tubes')
-                
-                # ax.set_yscale('symlog')
-                ax.set_xlabel(lookup_names['rho'])
-                ax.set_ylabel(lookup_names[quantities[i_q]+'_'+attributes[j_a]] if quantities[i_q]+'_'+attributes[j_a] in lookup_names else quantities[i_q]+'_'+attributes[j_a])
-                ax.legend(loc='best')
-
-                #fig.savefig(save_fold_name+'prof_'+codename+'_' +quantities[i_q]+'_'+attributes[j_a]+'_'+dates[0]+'_'+dates[-1]+'.pdf')
-                pdf_prof.savefig(fig)
-                plt.close(fig)
-
-        with PdfPages(save_fold_name+'res_'+codename+'_'+cpo_name+'_'+dates[0]+'_'+dates[-1]+'.pdf') as pdf:
+        # Due to first iterating over quantities and then over flux-tube, saving block has to be separately
+        with PdfPages(save_fold_name+'res_'+codename+'_'+cpo_name+'_'+dates[0]+'_'+dates[-1]+'.pdf') as pdf_evol:
             for ift,(f,a) in enumerate(common_fig_ax_list):
+                # TODO: display integer numbers of time steps
                 a.legend(loc='best')
                 a.set_xlabel('${{t}}$, s')
                 a.set_title(f"Plots for {cpo_name} @f.t.#{ift} ({lookup_names_short['rho']}={n_fts[ift]/100.})")
 
                 #f.savefig(save_fold_name+'res_'+codename+'_'+cpo_name+'_common_nft'+str(ift)+'_'+dates[0]+'_'+dates[-1]+'.pdf')
-                pdf.savefig(f)
+                pdf_evol.savefig(f)
                 plt.close(f)
 
     ### Plotting transport fluxes for two models
-    #option 0 should use the whole profile to interpolate on coretransp grid later, option 2 should use all CPO files from /workdir/
+    # - option 0 should use the whole profile to interpolate on coretransp grid later
+    # - option 1 should use calls to pyGEM0 per coreprof point
+    # - option 2 should use all CPO files from /workdir/ - prefered, includes changing equilibrium !
+    st = t.time()
     compare_transp(datadict, save_fold_name, times, input_folder_base=load_fold_names[0], coord_num_fts=coord_num_fts, option=2) 
+    print(f"> time to plot transport for two models is: {t.time()-st:.3f} s")
 
     ### Plotting all quantities against each other
     if bool_sur_involved:
-        st = t.time()
         ### ATTENTION - commented out
+        pass
+        #st = t.time()
         #plot_quantities(datadict=datadict, save_fold_name=save_fold_name, coord_num_fts=coord_num_fts, bool_sur_involved=bool_sur_involved, n_run_per_ft=n_run_per_ft, ref_data=ref_data)
-        print(f"> time to plot quantities against each other is: {t.time()-st} s")
+        #print(f"> time to plot quantities against each other is: {t.time()-st:.3f} s")
 
     ### Write down a single csv for simulation results
-
+    st = t.time()
     write_table_csv(datadict=datadict, save_fold_name=save_fold_name)
+    print(f"> time to write CSVs down is: {t.time()-st:.3f} s")
 
     return dates
 
@@ -742,10 +845,21 @@ if __name__ == '__main__':
     else:
         dates = sys.argv[2:]
 
-    ref_data_filename = 'ref_train_data_5010.csv'
-    
-    dates = read_profs(codename=codename, dates=dates, ref_data_filename=ref_data_filename) # to read results of M3-WF run
+    if len(sys.argv) < 4 :
+        # NOW WOULDN'T WORK!
+        ref_data_filename = 'ref_train_data_5000.csv'
+    else:
+        ref_data_filename = sys.argv[-1]
+    ref_data_filename = 'ref_train_data_5000.csv'
 
+    print(f"> Now postprocessing a MUSCLE3 workflow run")
+    
+    st = t.time()
+
+    cpo_names = ['coreprof', 'coretransp',] # 'equilibrium']
+    dates = read_profs(codename=codename, dates=dates, ref_data_filename=ref_data_filename, cpo_names=cpo_names) # to read results of M3-WF run
+
+    print(f"Postrprocessing finished, totally took {t.time()-st:.3f} s")
 
     # some set of first GEM-ETS-CHEASE runs with MUSCLE3
     #dates = ['20230818_135913', '20230821_161005', '20230822_150943', '20230823_151955', '20230824', '20230825', '20230828', '20230829', '20230830', '20230831', '20230901']
@@ -757,5 +871,4 @@ if __name__ == '__main__':
 
     # plotting LCFS for the same runs
     #read_equil(dates)
-
 
