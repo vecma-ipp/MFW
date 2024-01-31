@@ -176,7 +176,7 @@ implementations:
       - /u/yyudin/code/MFW/muscle3/bin/COBRA/imp4dv_M3
 
 settings:
-  transport.duration: 0.5
+  transport.duration: 0.3
   transport.dt: 0.001
   transport.nonstationary_equilibrium: False
   init_cpo_dir: "../../../../gem_resume_data"
@@ -196,9 +196,9 @@ settings:
 
   turbulence.surrogate_path: "../../../../../../workflows/surrogate_for_workflow/gem0_es_model"
   turbulence.surrogate_type: "gpr"
-  turbulence.training_dataset_filename: "../../../../../ref_train_data_5010.csv"
+  turbulence.training_dataset_filename: "../../../../../ref_train_data_5000.csv"
   turbulence.retrain_distance: 0.25
   turbulence.bool_send_uncertainty: True
 
 
-  ### Comment: this is run of GEM0-WF (without evolving equilibrium!!!) with dt=10^-3 and AUG_28906_6_8ft_restart initial profiles, for 100 steps
+  ### Comment: this is run of GEM0-WF (without evolving equilibrium!!!) with dt=10^-3 and AUG_28906_6 //_8ft_restart// initial profiles, for 300 steps

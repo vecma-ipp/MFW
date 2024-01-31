@@ -145,7 +145,7 @@ implementations:
   gem0_python_impl:
     executable: python3 /u/yyudin/code/MFW/muscle3/bin/COBRA/gem0_M3.py
   gem_surr_impl:
-    executable: python3 /u/yyudin/code/MFW/muscle3/src/gem_surr_M3.py
+    executable: python3 /u/yyudin/code/MFW/muscle3/src/gem_surr_mft_M3.py
   gem_surr_impl_debug:
     executable: xterm
     args:
@@ -153,7 +153,7 @@ implementations:
       - python3
       - -m
       - pdb
-      - /u/yyudin/code/MFW/muscle3/src/gem_surr_M3.py
+      - /u/yyudin/code/MFW/muscle3/src/gem_surr_mft_M3.py
   chease_impl:
     executable: /u/yyudin/code/MFW/muscle3/bin/COBRA/chease_M3
   chease_impl_debug:
@@ -174,24 +174,37 @@ implementations:
       - /u/yyudin/code/MFW/muscle3/bin/COBRA/imp4dv_M3
 
 settings:
-  transport.duration: 0.1
+  transport.duration: 0.3
   transport.dt: 0.001
+  transport.nonstationary_equilibrium: True
+
   # init_cpo_dir: "../../../../../../workflows/AUG_28906_6"
   # init_cpo_dir: "../../../../../../workflows/AUG_28906_6_8ft_restart"
   init_cpo_dir: "../../../../gem_resume_data"
   final_cpo_dir: "./"
+
   muscle_remote_log_level: "DEBUG"  
   slice_initial_number: 0
   save_slice: True
   adaptive_timestep: False
-  # turbulence.rho_ind_s: [68.0]
+
+  #turbulence.rho_ind_s: [68.0]
   turbulence.rho_ind_s: [15.0, 31.0, 44.0, 55.0, 66.0, 76.0, 85.0, 94.0]
   #turbulence.rho_tor_norm_sur: [0.14, 0.31, 0.44, 0.56, 0.67, 0.77, 0.86, 0.95] # surogate predicts fluxes for this coordinates
   turbulence.rho_tor_norm_sur: [0.143587306141853, 0.309813886880875, 0.442991137504578, 0.560640752315521, 0.668475985527039, 0.769291400909424, 0.864721715450287, 0.955828309059143]
   turbulence.rho_tor_norm_sim: [0.143587306141853, 0.309813886880875, 0.442991137504578, 0.560640752315521, 0.668475985527039, 0.769291400909424, 0.864721715450287, 0.955828309059143] # GEM/GEM0 wants flux tubes here
-  #turbulence.profs_out: "ti_transp.flux"
-  #turbulence.surrogate_path: "../../../../../../workflows/gem_es_model"
-  turbulence.coretransp_default: "../../../../../../workflows/gem_coretransp_8ft.cpo"
+  
+  # turbulence.profs_out: "ti_transp.flux"
 
-### Comment: this is run of GEM0-WF with dt=10^-5 and AUG_28906_6_8ft_restart initial profiles, for 2k steps
-# Comment: this is run of GEM0-WF with dt=10^-3 and AUG_28906_6_8ft_restart initial profiles, for 100 steps
+  turbulence.coretransp_default: "../../../../../../workflows/gem_coretransp_8ft.cpo"
+  turbulence.equilibrium_default: "../../../../../gem0_equilibrium_in.cpo"
+  turbulence.coreprof_default: "../../../../../gem0_coreprof_in.cpo"
+  turbulence.xml_default: "../../../../../gem0.xml"
+
+  # turbulence.surrogate_path: "../../../../../../workflows/surrogate_for_workflow/gem0_es_model"
+  # turbulence.surrogate_type: "gpr"
+  # turbulence.training_dataset_filename: "../../../../../ref_train_data_5000.csv"
+  # turbulence.retrain_distance: 0.25
+  # turbulence.bool_send_uncertainty: True
+
+### Comment: this is run of GEM0-WF with dt=10^-3 and AUG_28906_6 initial profiles, for 100 steps

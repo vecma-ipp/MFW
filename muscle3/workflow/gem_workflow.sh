@@ -21,7 +21,7 @@ echo 'Running gem workflow in Fortran'
 . ~/muscle3/bin/muscle3.env
 
 ### Define the working directory
-runlabel='_1'
+runlabel='_0'
 
 currdate=$(date +"%Y%m%d")
 code_run_name=gem0_
@@ -31,9 +31,9 @@ mkdir ${run_dir_name}
 
 ### Launch the workflow
 #muscle_manager --start-all gem-fusion-m3.ymmsl &
-#muscle_manager --log-level DEBUG --run-dir ${run_dir_name} --start-all gem-fusion-m3.ymmsl &
+muscle_manager --log-level DEBUG --run-dir ${run_dir_name} --start-all gem-fusion-m3.ymmsl &
 #muscle_manager --log-level DEBUG --start-all gem0-fusion-m3.ymmsl &
-muscle_manager --log-level DEBUG --run-dir ${run_dir_name} --start-all gem-fusion-noeq-m3.ymmsl &
+#muscle_manager --log-level DEBUG --run-dir ${run_dir_name} --start-all gem-fusion-noeq-m3.ymmsl &
 
 echo 'MUSCLE_MANAGER started'
 
