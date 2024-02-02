@@ -77,7 +77,7 @@ def check_outof_learned_bounds(input, reference):
 
 def coreprof_to_input_value(
             data, 
-            rho_ind_s, # used only if rho_tor_norm is None
+            rho_ind_s=None, # used only if rho_tor_norm is None
             rho_tor_norm=None, # rho_tor_nor of coretransp flux tubes
             prof_names=['te', 'ti'], 
             attrib_names=['value', 'ddrho'],
@@ -91,13 +91,14 @@ def coreprof_to_input_value(
 
     n = len(prof_names)
     m = len(attrib_names)
-    d = len(rho_ind_s)
+    d = len(rho_ind_s) if rho_ind_s is not None else len(rho_tor_norm)
 
     # d_tot = 100
     d_tot = len(data.rho_tor_norm)
 
     #rad_grid = np.linspace(0., 1., d_tot)
     rad_grid = data.rho_tor_norm # rho_tor_norm of coreprof radial grid points
+    #ATTENTION: for gradients GEM/GEM0 uses rho_tor_norm and ETS uses rho_tor
 
     prof_vals = np.zeros((n*m, d))
     print(f"Entering a function to parse CPO into surrogate input")
@@ -108,10 +109,20 @@ def coreprof_to_input_value(
 
         for j, attrib_name in enumerate(attrib_names):
 
-            val_readings = getattr(prof, attrib_name)
+            if attrib_name != 'ddrho':
+                val_readings = getattr(prof, attrib_name)
+                val_readings_interp = l3interp(y_in=val_readings, x_in=rad_grid, x_out=rho_tor_norm)
+            else:
+                # GEM/GEM0/SURR are accepting the ddrho definition on rho_tor_norm only!
+                val_prime_readings = getattr(prof, 'value')
+                val_readings_interp = l3deriv(y_in=val_prime_readings, x_in=rad_grid, x_out=rho_tor_norm)
 
-            if rho_tor_norm is None:
+            if rho_tor_norm is not None:
 
+                prof_vals[i*m+j,:] = val_readings_interp
+            
+            else:
+            # TODO: ideally, should not be used any more!; will fail for ddrho if rho_tor_norm is None
                 for r, rho_ind in enumerate(rho_ind_s):
 
                     val_reading = val_readings[rho_ind]
@@ -120,20 +131,12 @@ def coreprof_to_input_value(
                         # Here: ion profiles are 1D (no species dimension) ...
                         #val_readings = val_readings[0]
                         pass
-
                     elif prof_name[1] == 'e':
                         pass
-                    
                     else:
                         print('Error: Attributes have to belong either to ions or to electrons')
 
                     prof_vals[i*m+j][r] = val_reading
-            
-            else:
-
-                val_readings_interp = l3interp(y_in=val_readings, x_in=rad_grid, x_out=rho_tor_norm)
-
-                prof_vals[i*m+j,:] = val_readings_interp
 
     return prof_vals
 

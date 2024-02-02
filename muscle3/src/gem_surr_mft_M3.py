@@ -159,7 +159,7 @@ def gem_surr_M3():
         bool_outofbounds, dict_outofbounds = check_outof_learned_bounds(profiles_in, ref_bounds)
         
         # Infere QoI values for every flux tube
-        for n_ft, r in enumerate(rho_ind_s):
+        for n_ft, r in enumerate(rho_ind_s): # actual value not used!
             
             if model_type == 'ann':
                 f_o = mods[n_ft].predict(profiles_in[:,n_ft])
@@ -189,7 +189,7 @@ def gem_surr_M3():
         coretransp_cpo_obj = output_value_to_coretransp(
                                         fluxes_out_dict, 
                                         coretransp_default_file_path, 
-                                        r_s=[i for i,r in enumerate(rho_ind_s)],
+                                        r_s=[i for i,r in enumerate(rho_ind_s)], # actual value is not used!
                                         rho_tor_norm_sim=rho_tor_norm_sim,
                                         rho_tor_norm_sur=rho_tor_norm_sur,
                                         prof_names=['te_transp', 'ti_transp'],
