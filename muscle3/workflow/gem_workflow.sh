@@ -21,7 +21,7 @@ echo 'Running gem workflow in Fortran'
 . ~/muscle3/bin/muscle3.env
 
 ### Define the working directory
-runlabel='_0'
+runlabel='_1'
 
 currdate=$(date +"%Y%m%d")
 code_run_name=gem0_

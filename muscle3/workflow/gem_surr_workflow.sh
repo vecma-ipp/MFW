@@ -14,9 +14,16 @@ echo 'Running gem_surr workflow in Fortran & Python'
 #. ~/muscle3_venv/bin/activate
 . ~/muscle3/bin/muscle3.env
 
-runlabel='_0'
+iternum=${1:-2}
 
-currdate=$(date +"%Y%m%d")
+runlabel='_'${iternum}
+
+if [ "$1" ]; then
+    currdate=$1
+else
+    currdate=$(date +"%Y%m%d")
+fi
+
 code_run_name=gem0_surr_
 
 run_dir_name=run_fusion_${code_run_name}${currdate}${runlabel}
