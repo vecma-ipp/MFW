@@ -47,6 +47,8 @@ def get_code_ios(equil_file_in="gem0_equilibrium_in.cpo", corep_file_in="gem0_co
     #coret = {}
     ios = 0
 
+    print(f"> pyGEM0 loads CPOs from {os.getcwd()}") ###DEBUG
+
     # Read CPO file and write structures
     equil = read(equil_file_in, "equilibrium")
     #corep = read(corep_file_in, "coreprof")
@@ -223,11 +225,13 @@ class GEM0Singleton():
                     q_value = value_dict[f"{quantity}{species}_value"]
                     q_ddrho = value_dict[f"{quantity}{species}_ddrho"]
 
-                    # fill in the values and indices around the pivot index
-                    values = []
-                    for d_i in delta_ind:
-                        # linear extrapolation using value and gradient at the point, and distance to the new point
-                        values.append(q_ddrho*(rho_grid_corep[i_coreprof+d_i] - rho_tor_norm) + q_value)
+                    # Fill in the values and indices around the pivot index
+                    values = [q_ddrho*(rho_grid_corep[i_coreprof+d_i] - rho_tor_norm) + q_value for d_i in delta_ind]
+                    
+                    # values = [] # fill-in via a loop...
+                    # for d_i in delta_ind:
+                    #     # linear extrapolation using value and gradient at the point, and distance to the new point
+                    #     values.append(q_ddrho*(rho_grid_corep[i_coreprof+d_i] - rho_tor_norm) + q_value)
                     
                     indices = [i_coreprof+d_i for d_i in delta_ind]
 
