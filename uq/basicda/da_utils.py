@@ -37,6 +37,8 @@ from statsmodels.tsa.api import acf, pacf, graphics
 
 from extcodehelper import ExtCodeHelper
 
+from ascii_cpo import read, write
+
 from shutil import copyfileobj
 import re
 
@@ -389,6 +391,9 @@ def write_gem0_fromfile(filename_in, filename_out):
     # read the original input values file
     df_in = pd.read_csv(filename_in)
 
+    #print(f"filename_in : {filename_in}") ###DEBUG
+    #print(df_in.describe()) ###DEBUG
+
     # prepare a dataframe for output
     df_out = df_in.copy()
     for o in output_names:
@@ -397,7 +402,7 @@ def write_gem0_fromfile(filename_in, filename_out):
     #TODO: pyGEM0 can return profile values at coretransp grid but cannot accept tehm at inputs (it still modofies inpus on basis of coreprof grid values)
     #TODO: perform pyGEM0 calling solving linear equation to get such linear profiles, such that values at coretransp grid are exact
 
-    gem0helper = ExtCodeHelper(2, xml_file="gem0.xml")
+    gem0helper = ExtCodeHelper(2, xml_file="gem0_1ft.xml")
 
     # run through evey set of new input values
     for i,df_row in df_in.iterrows():
@@ -419,7 +424,21 @@ def write_gem0_fromfile(filename_in, filename_out):
 
     return 0
 
-def write_gem0_fromfile_grid(filename_in, filename_out, num_steps=1, **kwargs):
+def write_gem0_fromcpo(coreprof_in, equilibrium_in, coretransp_out):
+
+    gem0helper = ExtCodeHelper(2, xml_file="gem0.xml")
+
+    pr = read(coreprof_in, 'coreprof')
+    eq = read(equilibrium_in, 'equilibrium')
+    tr = read(coretransp_out, 'coretransp')
+
+    y,x,coretransp = gem0helper.gem0_call_4param2target_cpo(coreprof=pr,equilibrium=eq,coretransp=tr)
+
+    print(f"y = {y}")
+
+    return 0
+
+def write_profs_fromfile_grid(filename_in, filename_out, num_steps=1, **kwargs):
     """
     Takes a point in core profile space (indepdendet variables of values of Te/i, gradTe/i for a number of flux tubes)
     Creates a new points around (making n steps L each colinearly to every independent variables)

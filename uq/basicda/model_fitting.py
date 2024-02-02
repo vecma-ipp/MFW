@@ -3,7 +3,7 @@ import numpy as np
 import sklearn
 from scipy.optimize import curve_fit
 
-from da_utils import exponential_model_sp, linear_model_sp
+from .da_utils import exponential_model_sp, linear_model_sp
 
 #from ascii_cpo import read
 
