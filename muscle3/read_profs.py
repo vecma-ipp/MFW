@@ -13,6 +13,10 @@ from matplotlib.backends.backend_pdf import PdfPages
 
 from ascii_cpo import read
 
+from src.utils import coreprof_to_input_value, l3deriv
+
+import easysurrogate as es
+
 sys.path.append('../uq/basicda')
 from gem_da import profile_evol_load, profile_evol_plot
 from extcodehelper import ExtCodeHelper
@@ -26,18 +30,28 @@ def read_attrib(filename, quantity, attribute, coords, filetype='coreprof'):
     q = cpo_obj
     
     if filetype == 'coretransp':
-        q = cpo_obj.values[0]
+        c = cpo_obj.values[0]
     elif filetype == 'equilibrium' or 'coreprof':
-        q = cpo_obj
+        c = cpo_obj
 
-    q = getattr(q, quantity)
-    a = getattr(q, attribute)
+    q = getattr(c, quantity)
 
-    if quantity[1] == 'i':
+    if attribute != 'ddrho':
+        a = getattr(q, attribute)
+    # A hack to always get gradients on the required grid!
+    else:
+        rho_grid_orig = c.rho_tor
+        # rho_tor_norm from a CPO could still be different from GEM/GEM0!
+        rho_grid = c.rho_tor_norm
+        a_prime = getattr(q, 'value')
+        a = l3deriv(y_in=a_prime, x_in=rho_grid, x_out=rho_grid)
+
+    if quantity[1] == 'i' and attribute != 'ddrho':
         # ..[0] for ions, if it is the first ion species
         a_s = [a[c][0] for c in coords]
     else:
         a_s = [a[c] for c in coords]
+    
     return a_s
 
 def read_time(filename, filetype='coreprof'):
@@ -56,7 +70,7 @@ def read_files(foldername, quantity, attribute, coords, filetype='coreprof', dat
     file_base_tocheck = basename+filetype+'_'
     file_ext = '.cpo'
 
-    #TODO for the same type of CPOs, read a file once and return a dictionary of all quantities x attributes
+    #TODO for the same type of CPOs, read a file once and return a dictionary of all [quantities] x [attributes]
     """
     # Block to read from a list foldername's
     if foldername is list:
@@ -325,6 +339,7 @@ def write_table_csv(datadict, save_fold_name, coord_num_fts=[14,30,43,55,66,76,8
 
     data_table_dict ={}
     data_table = np.zeros((t_max, len(datadict.keys())*n_fts))
+    #TODO: after introduction of equilibrium parsing, the size of the table row is larger than number of columns!
 
     # Iterate over quantities - over flux tube - over time readings
     # write data into np.array[(#quantitites * #flux-tubes) x #readings] and to a dictionary{(quantities x flux-tubes):readings}
@@ -358,7 +373,7 @@ def write_table_csv(datadict, save_fold_name, coord_num_fts=[14,30,43,55,66,76,8
     
     return 0 
 
-def compare_transp(datadict, save_fold_name, times, input_folder_base='', coord_num_fts=None, option=1):
+def compare_transp(datadict, save_fold_name, times, input_folder_base='', coord_num_fts=None, option=1, modeltype='gem0py'):
     """
     Takes a sequence of profile values and estimates transport using several models
     """
@@ -369,6 +384,7 @@ def compare_transp(datadict, save_fold_name, times, input_folder_base='', coord_
     q_profile_list = ['te_value', 'ti_value', 'te_ddrho', 'ti_ddrho']
     q_transp_list = ['te_transp_flux', 'ti_transp_flux']
 
+    coord_inds = [14, 30, 43, 55, 66, 76, 85, 95]
     if option == 1:
         #coords = [0.14, 0.31, 0.44, 0.56, 0.67, 0.77, 0.86, 0.95]
         # actually, both surrogate and code should write flux value on 'transport' grid
@@ -384,30 +400,42 @@ def compare_transp(datadict, save_fold_name, times, input_folder_base='', coord_
     if coord_num_fts is None:
         coord_num_fts = [x-1 for x in [15, 31, 44, 56, 67, 77, 86, 96]]
 
-    n_fts = [i for i in range(len(coords))]
+    nfts = len(coords)
+    n_fts = [i for i in range(nfts)]
     #coords = coord_num_fts[:] # if coords are in coretransp notation i.e. flux tube numbers
 
-    # due to different naming for the final state
-    del_tstep = -1            
+    # due to different naming for the final state - could be an issue
+    del_tstep = 0            
     #t_min = min(len(datadict[q_x][:,n_ft]), len(datadict[q_y][:,n_ft]))
     t_min = len(times) + del_tstep
 
     # initialise a model and its evaluation - here: GEM0
-    model = ExtCodeHelper(2, xml_file=xml_file)
+    if modeltype == 'gem0py':
+        model = ExtCodeHelper(2, xml_file=xml_file)
+    elif modeltype == 'esurr':
+        input_names_ind_permut = [0,2,1,3]
+        model_file_base = '../workflows/surrogate_for_workflow/gem0_es_model'
+        model = []
+        for ft in n_fts:
+            model.append(es.Campaign(load_state=True, file_path=f"{model_file_base}_{ft}.pickle").surrogate)
+        option = 2 # ATTENTION: override the option for surrogate!
 
     # choose how to call GEM0
-    if option == 0:
-        # option 0: pass te,ti,te_ddrho,ti_ddrho at 1D grids of length 100
-        model_call = lambda x: model.gem0_call_4param2target_fullarray(x)
-    elif option == 1:
-        # option 1: pass te,ti,te_ddrho,ti_ddrho and rho_tor_norm
-        model_call = lambda x,rho_ind,rho: model.gem0_call_4param2target_array([x], [rho_ind], rho)
-    elif option == 2:
-        # option 2: pass equilibrium, coreprof, coretransp
-        model_call = lambda eq,prof,transp: model.gem0_call_4param2target_cpo(eq,prof,transp)
+    if modeltype == 'gem0py':
+        if option == 0:
+            # option 0: pass te,ti,te_ddrho,ti_ddrho at 1D grids of length 100
+            model_call = lambda x: model.gem0_call_4param2target_fullarray(x)
+        elif option == 1:
+            # option 1: pass te,ti,te_ddrho,ti_ddrho and rho_tor_norm
+            model_call = lambda x,rho_ind,rho: model.gem0_call_4param2target_array([x], [rho_ind], rho)
+        elif option == 2:
+            # option 2: pass equilibrium, coreprof, coretransp
+            model_call = lambda eq,prof,transp: model.gem0_call_4param2target_cpo(eq,prof,transp)
+    elif modeltype == 'esurr':
+            model_call = lambda prof: [model[ft].predict(coreprof_to_input_value(prof,rho_ind_s=coord_inds,rho_tor_norm=coords)[input_names_ind_permut][:,ft].reshape(-1,1))[0] for ft in n_fts]
 
-    profile_corrected = np.zeros((len(q_profile_list), len(times), len(coords)))
-    transp_new        = np.zeros( (len(q_transp_list), len(times), len(coords)))
+    profile_corrected = np.zeros((len(q_profile_list), t_min, nfts))
+    transp_new        = np.zeros( (len(q_transp_list), t_min, nfts))
 
     # for reading from CPO files directly
     if option == 2:
@@ -421,40 +449,57 @@ def compare_transp(datadict, save_fold_name, times, input_folder_base='', coord_
     # Iterate over the time step indices
     for t_ind in range(t_min):
 
-        # for option 0: use a single call to pyGEM0, pass entire coreprof and get eniter coretransp array
-        if option == 0:
+        if modeltype == 'gem0py':
+            # for option 0: use a single call to pyGEM0, pass entire coreprof and get eniter coretransp array
+            if option == 0:
 
-            gem0_dict = {k:datadict[k][t_ind,:] for k in q_profile_list}
+                gem0_dict = {k:datadict[k][t_ind,:] for k in q_profile_list}
 
-            tr, pr = model_call(gem0_dict)
+                tr, pr = model_call(gem0_dict)
 
-            transp_new[:, t_ind, :] = tr
+                transp_new[:, t_ind, :] = tr
 
-        # for option 1: call for given values, per flux tube
-        if option == 1:
+            # for option 1: call for given values, per flux tube
+            if option == 1:
 
-            for n_ft, rho_ind, rho in zip(n_fts, coord_num_fts, coords):
+                for n_ft, rho_ind, rho in zip(n_fts, coord_num_fts, coords):
 
-                input_data = np.array([datadict[q_profile][t_ind, rho_ind] for q_profile in q_profile_list])
+                    input_data = np.array([datadict[q_profile][t_ind, rho_ind] for q_profile in q_profile_list])
 
-                #print(f"input_data: {input_data}") ###DEBUG
-                retval = model_call(input_data, rho_ind, rho) #option 1   
-                #print(f"retval: {retval}") ###DEBUG
+                    #print(f"input_data: {input_data}") ###DEBUG
+                    retval = model_call(input_data, rho_ind, rho) #option 1   
+                    #print(f"retval: {retval}") ###DEBUG
+                    
+                    transp_new[:, t_ind, n_ft] = retval[0][0][0]
+                    profile_corrected[:, t_ind, n_ft] = retval[1][0][0].reshape(-1)
+                    
+                    #print(f"transp_new: {transp_new[:, t_ind, n_ft]}") ###DEBUG
+
+            # for option 2: pass the CPO objects
+            if option == 2:
+
+                eq = read(input_folder+eq_filename+str(t_ind).zfill(5)+cpo_extension, 'equilibrium')
+                prof = read(input_folder+prof_filename+str(t_ind).zfill(5)+cpo_extension, 'coreprof')
+                transp = read(input_folder+transp_filename+str(t_ind).zfill(5)+cpo_extension, 'coretransp')
+
+                tr, pr, coret = model_call(eq, prof, transp) # option 2
                 
-                transp_new[:, t_ind, n_ft] = retval[0][0][0]
-                profile_corrected[:, t_ind, n_ft] = retval[1][0][0].reshape(-1)
+                #print(f"tr={tr}") ###DEBUG
                 
-                #print(f"transp_new: {transp_new[:, t_ind, n_ft]}") ###DEBUG
+                transp_new[:, t_ind, :] = tr
 
-        # for option 2: pass the CPO objects
-        if option == 2:
-
-            eq = read(input_folder+eq_filename+str(t_ind).zfill(5)+cpo_extension, 'equilibrium')
+        if modeltype == 'esurr':
+            
+            #eq = read(input_folder+eq_filename+str(t_ind).zfill(5)+cpo_extension, 'equilibrium')
             prof = read(input_folder+prof_filename+str(t_ind).zfill(5)+cpo_extension, 'coreprof')
-            transp = read(input_folder+transp_filename+str(t_ind).zfill(5)+cpo_extension, 'coretransp')
+            #transp = read(input_folder+transp_filename+str(t_ind).zfill(5)+cpo_extension, 'coretransp')
 
-            tr, pr, coret = model_call(eq, prof, transp) # option 2
-            #print(f"tr={tr}") ###DEBUG
+            tr = model_call(prof)
+
+            #print(f"tr out: {tr}") ###DEBUG
+
+            tr = np.array([t.reshape(-1) for t in tr]).transpose()
+
             transp_new[:, t_ind, :] = tr
         
     ### Plot transp fluxes vs time for two models alongside each other
@@ -464,7 +509,7 @@ def compare_transp(datadict, save_fold_name, times, input_folder_base='', coord_
     transp_list.append({q: datadict[q] for q in q_transp_list})
     transp_list.append({'te_transp_flux': transp_new[0,:,:], 'ti_transp_flux': transp_new[1,:,:]})
 
-    with PdfPages(save_fold_name+'transp_'+codename+'_'+dates[0]+'_'+dates[-1]+'.pdf') as pdf_transp: 
+    with PdfPages(save_fold_name+'transp_'+codename+'_'+modeltype+'_'+dates[0]+'_'+dates[-1]+'.pdf') as pdf_transp: 
         
         for n_ft in n_fts:
 
@@ -479,7 +524,7 @@ def compare_transp(datadict, save_fold_name, times, input_folder_base='', coord_
                 ax.set_xlabel('time, s')
                 ax.set_ylabel(q_transp)
                 ax.legend(loc='best')
-                ax.set_title(f"Plots for {q_transp} @f.t.#{n_ft} (m0 is original, m1 is pyGEM0)")
+                ax.set_title(f"Plots for {q_transp} @f.t.#{n_ft} (m0 is WF, m1 is {modeltype})")
 
                 pdf_transp.savefig(fig)
 
@@ -487,6 +532,9 @@ def compare_transp(datadict, save_fold_name, times, input_folder_base='', coord_
 
 def plot_prof_time(data, pdf_prof, coord_rho_tor_norm, coords_transp_gem, times, n_timesteps, fmt_list, lookup_names, quantity_name, attribute_name):
 
+    """
+    Plot profiles Y(rho_tor_norm), one plot every n_timestep
+    """
     ### Plotting attribute profile for multiple time-steps
     
     n_timesteps_toplot = n_timesteps // 10 if n_timesteps // 10 > 0 else 1
@@ -501,7 +549,7 @@ def plot_prof_time(data, pdf_prof, coord_rho_tor_norm, coords_transp_gem, times,
                 #np.array(coord_num)/100.,
                 coord_rho_tor_norm,
                 data[i, :], 
-                label=f"t={times[i]},s", 
+                label=f"t={times[i]:.5f},s", 
                 color = fmt_list[i//n_timesteps_toplot][2],
                 linestyle = fmt_list[i//n_timesteps_toplot][1],
                 marker=fmt_list[i//n_timesteps_toplot][0],
@@ -565,7 +613,7 @@ def read_profs(codename='gem_', dates=['20230823_151955'], prefix_name='workflow
         "ti_ddrho": "$\\nabla T_{{i}}, eV/m$",
         "te_ddrho": "$\\nabla T_{{e}}, eV/m$",
         "te_transp_flux": "$Q_{{e}}, W/m^{{2}}$",
-        "ti_transp_flux": "$Q_{{i}}$, W/m^{{2}}",
+        "ti_transp_flux": "$Q_{{i}}$, W/m^{{2}}$",
         "rho": "$\\rho_{{tor}}^{{norm}}$",
         "q" : "$q$",
         "gm3" : "$gm^{{3}}$",
@@ -579,8 +627,8 @@ def read_profs(codename='gem_', dates=['20230823_151955'], prefix_name='workflow
         "te_transp_flux": "$Q_{{e}}$",
         "ti_transp_flux": "$Q_{{i}}$",
         "rho": "$\\rho_{{tor}}^{{norm}}$",
-        "q": "$q$",
-        "gm3" : "$gm^{{3}}$",
+        "profiles_1d_q": "$q$",
+        "profiles_1d_gm3" : "$gm^{{3}}$",
     }
 
     lookup_units = {
@@ -589,10 +637,10 @@ def read_profs(codename='gem_', dates=['20230823_151955'], prefix_name='workflow
         "ti_ddrho": "$eV/m$",
         "te_ddrho": "$eV/m$",
         "te_transp_flux": "$W/m^{{2}}$",
-        "ti_transp_flux": "$W/m^{{2}}",
+        "ti_transp_flux": "$W/m^{{2}}$",
         "rho": "",
-        "q" : "",
-        "gm3" : "",
+        "profiles_1d_q" : "",
+        "profiles_1d_gm3" : "",
     }
 
     color_step = 0.08
@@ -659,7 +707,7 @@ def read_profs(codename='gem_', dates=['20230823_151955'], prefix_name='workflow
         if cpo_name == 'equilibrium':
 
             quantities = ['profiles_1d']
-            attributes = ['q' , 'gm3']
+            attributes = ['q', 'gm3']
 
             coord_num = [x for x in range(0, 100, n_rho_resol)]
             coord_rho_tor_norm = np.array(coord_num)/100.
@@ -815,7 +863,7 @@ def read_profs(codename='gem_', dates=['20230823_151955'], prefix_name='workflow
     # - option 1 should use calls to pyGEM0 per coreprof point
     # - option 2 should use all CPO files from /workdir/ - prefered, includes changing equilibrium !
     st = t.time()
-    compare_transp(datadict, save_fold_name, times, input_folder_base=load_fold_names[0], coord_num_fts=coord_num_fts, option=2) 
+    compare_transp(datadict, save_fold_name, times, input_folder_base=load_fold_names[0], coord_num_fts=coord_num_fts, option=2, modeltype='gem0py') 
     print(f"> time to plot transport for two models is: {t.time()-st:.3f} s")
 
     ### Plotting all quantities against each other
@@ -856,7 +904,7 @@ if __name__ == '__main__':
     
     st = t.time()
 
-    cpo_names = ['coreprof', 'coretransp',] # 'equilibrium']
+    cpo_names = ['coreprof', 'coretransp', 'equilibrium']
     dates = read_profs(codename=codename, dates=dates, ref_data_filename=ref_data_filename, cpo_names=cpo_names) # to read results of M3-WF run
 
     print(f"Postrprocessing finished, totally took {t.time()-st:.3f} s")
