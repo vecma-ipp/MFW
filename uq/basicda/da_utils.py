@@ -94,6 +94,122 @@ def walklevel(some_dir, level=1):
         if num_sep + level <= num_sep_this:
             del dirs[:]
 
+def l3interp(y_in, x_in, nr_in=None, y_out=None, x_out=None, nr_out=None):
+    """
+    Interpolation function
+    perfroms Lagrange interpolation of degree 3 for values y_in on x_in 
+    for points at x_out and writes the values at y_out
+    """
+
+    if nr_in is None:
+        nr_in = len(x_in)
+    if x_out is None:
+        x_out = x_in # should be identity then - in practice, could work differently
+    if nr_out is None:
+        nr_out = len(x_out)
+    if y_out is None:
+        y_out = np.zeros(nr_out)
+
+    if x_in[nr_in - 1] > x_in[0]:
+        jstart = 2
+        jfirst = 0
+        jlast = nr_out - 1
+        jstep = 1
+    else:
+        jstart = nr_out - 3
+        jfirst = nr_out - 1
+        jlast = 0
+        jstep = -1
+
+    j1 = jstart
+
+    for j in range(jfirst, jlast + 1, jstep):
+        #print('j:{}'.format(j))
+        x = x_out[j]
+        while x >= x_in[j1] and nr_in - 2 > j1 > 1:
+            j1 = j1 + jstep
+
+        #print('j1:{}'.format(j1))
+        j2 = j1 + jstep
+        j0 = j1 - jstep
+        jm = j1 - 2 * jstep
+
+        #print('j2: {}; j1:{}, j0: {}; jm: {}'.format(j2, j1, j0, jm))
+
+        # Extrapolate inside out
+
+        x2 = x_in[j2]
+        x1 = x_in[j1]
+        x0 = x_in[j0]
+        xm = x_in[jm]
+
+        aintm = (x - x0) * (x - x1) * (x - x2) / ((xm - x0) * (xm - x1) * (xm - x2))
+        aint0 = (x - xm) * (x - x1) * (x - x2) / ((x0 - xm) * (x0 - x1) * (x0 - x2))
+        aint1 = (x - xm) * (x - x0) * (x - x2) / ((x1 - xm) * (x1 - x0) * (x1 - x2))
+        aint2 = (x - xm) * (x - x0) * (x - x1) / ((x2 - xm) * (x2 - x0) * (x2 - x1))
+
+        y_out[j] = aintm * y_in[jm] + aint0 * y_in[j0] + aint1 * y_in[j1] + aint2 * y_in[j2]
+
+        return y_out
+
+def l3deriv(y_in, x_in, nr_in=None, dydx_out=None, x_out=None, nr_out=None):
+    """
+    Derivative on interpolated values
+    """
+
+    if nr_in is None:
+        nr_in = len(x_in)
+    if x_out is None:
+        x_out = x_in # should be identity then
+    if nr_out is None:
+        nr_out = len(x_out)
+    if dydx_out is None:
+        dydx_out = np.zeros(nr_out)
+
+    if x_in[nr_in - 1] > x_in[0]:
+        jstart = 2
+        jfirst = 0
+        jlast = nr_out - 1
+        jstep = 1
+    else:
+        jstart = nr_out - 3
+        jfirst = nr_out - 1
+        jlast = 0
+        jstep = -1
+
+    j1 = jstart
+
+    #print('the iteration for interpolation is over {}; {}; {}; {}'.format(jstart, jfirst, jlast, jstep))
+
+    for j in range(jfirst, jlast + 1, jstep):
+        x = x_out[j]
+        while x >= x_in[j1] and nr_in - 2 > j1 > 1:
+            j1 = j1 + jstep
+
+        j2 = j1 + jstep
+        j0 = j1 - jstep
+        jm = j1 - 2 * jstep
+
+        #print('j2: {}; j1:{}, j0: {}; jm: {}'.format(j2, j1, j0, jm))
+
+        # Extrapolate inside out
+
+        x2 = x_in[j2]
+        x1 = x_in[j1]
+        x0 = x_in[j0]
+        xm = x_in[jm]
+
+        aintm = ((x - x1) * (x - x2) + (x - x0) * (x - x2) + (x - x0) * (x - x1)) / ((xm - x0) * (xm - x1) * (xm - x2))
+        aint0 = ((x - x1) * (x - x2) + (x - xm) * (x - x2) + (x - xm) * (x - x1)) / ((x0 - xm) * (x0 - x1) * (x0 - x2))
+        aint1 = ((x - x0) * (x - x2) + (x - xm) * (x - x2) + (x - xm) * (x - x0)) / ((x1 - xm) * (x1 - x0) * (x1 - x2))
+        aint2 = ((x - x0) * (x - x1) + (x - xm) * (x - x1) + (x - xm) * (x - x0)) / ((x2 - xm) * (x2 - x0) * (x2 - x1))
+
+        #print('interpol ref points : {} {} {} {} {}'.format(x0, x1, x2, xm, x))
+
+        dydx_out[j] = aintm * y_in[jm] + aint0 * y_in[j0] + aint1 * y_in[j1] + aint2 * y_in[j2]
+
+    return dydx_out
+
 def write_gem0_offline(n_samples=1000, n_dim=4, filename='gem0_lhc_ft', n_ft=0, file_in="gem0_new_data_20231215.csv", **kwargs):
     """
     Write a CSV files which samples GEM0 for a given number of samples, a given number of flux tubes, a given number of coreprof input parameters
@@ -373,10 +489,10 @@ def write_gem0_expanded(filename_in, filename_out, expand_factor=1.0, newps_psid
 
     return 0
 
-def write_gem0_fromfile(filename_in, filename_out):
+def write_gem0_fromfile(csv_in, filename_out):
     """
-    write a CSV file of Qe/i computed by pyGEM using input profile at a point from filename_in CSV file
-    requires knowking rho_tor_norm of the flux tube locations
+    write a CSV file of Qe/i computed by pyGEM0 using input profile at a point from filename_in CSV file
+    requires knowing rho_tor_norm of the flux tube locations
     """
 
     #TODO: input names are actualy columns in the input CSV file
@@ -389,7 +505,11 @@ def write_gem0_fromfile(filename_in, filename_out):
     nfts = len(ftube_rhos)
 
     # read the original input values file
-    df_in = pd.read_csv(filename_in)
+    if isinstance(csv_in, str):
+        df_in = pd.read_csv(csv_in)
+    else:
+        # assumes that default is passing a pandas dataframe
+        df_in = csv_in
 
     #print(f"filename_in : {filename_in}") ###DEBUG
     #print(df_in.describe()) ###DEBUG
@@ -422,7 +542,7 @@ def write_gem0_fromfile(filename_in, filename_out):
     # save a new CSV file
     df_out.to_csv(filename_out)
 
-    return 0
+    return df_out
 
 def write_gem0_fromcpo(coreprof_in, equilibrium_in, coretransp_out):
 
@@ -436,9 +556,9 @@ def write_gem0_fromcpo(coreprof_in, equilibrium_in, coretransp_out):
 
     print(f"y = {y}")
 
-    return 0
+    return y,x
 
-def write_profs_fromfile_grid(filename_in, filename_out, num_steps=1, **kwargs):
+def write_profs_fromfile_grid(point_in, filename_out, num_steps=1, **kwargs):
     """
     Takes a point in core profile space (indepdendet variables of values of Te/i, gradTe/i for a number of flux tubes)
     Creates a new points around (making n steps L each colinearly to every independent variables)
@@ -448,7 +568,13 @@ def write_profs_fromfile_grid(filename_in, filename_out, num_steps=1, **kwargs):
     ftube_rhos = [0.143587306141853 , 0.309813886880875 , 0.442991137504578 , 0.560640752315521 , 0.668475985527039 , 0.769291400909424 , 0.864721715450287 , 0.955828309059143 ] #TODO double check
 
     # Read the point around which evaluations should be taken
-    df_in = pd.read_csv(filename_in)
+    if isinstance(point_in, str):
+        df_in = pd.read_csv(filename_in)
+    else:
+        # assumes that by default point_in is a dataframe
+        df_in = point_in
+
+    #print(df_in) ###DEBUG
 
     # Get the number of flux tubes - optional now!
     #  - option 1 - default
@@ -512,7 +638,156 @@ def write_profs_fromfile_grid(filename_in, filename_out, num_steps=1, **kwargs):
     df_out = pd.DataFrame(data_new)
     df_out.to_csv(filename_out)
 
-    return 0
+    return df_out
+
+def read_attrib(cpo, quantity, attribute, coords, filetype='coreprof'):
+    """
+    Returns list of attribute values, for every given coordinate number
+    """
+    if isinstance(cpo, str):
+        cpo_obj = read(cpo, filetype)
+    else:
+        cpo_obj = cpo
+    
+    if filetype == 'coretransp':
+        c = cpo_obj.values[0]
+    elif filetype == 'equilibrium' or 'coreprof':
+        c = cpo_obj
+
+    q = getattr(c, quantity)
+
+    if attribute != 'ddrho':
+        a = getattr(q, attribute)
+    # A hack to always get gradients on the required grid!
+    else:
+        rho_grid_orig = c.rho_tor
+        # rho_tor_norm from a CPO could still be different from GEM/GEM0!
+        rho_grid = c.rho_tor_norm
+        a_prime = getattr(q, 'value')
+        a = l3deriv(y_in=a_prime, x_in=rho_grid, x_out=rho_grid)
+
+    if quantity[1] == 'i' and attribute != 'ddrho':
+        # ..[0] for ions, if it is the first ion species
+        a_s = [a[c][0] for c in coords]
+    else:
+        a_s = [a[c] for c in coords]
+    
+    return a_s
+
+def read_cpo_file(foldername, prof_names, attrib_names, coords, filetype='coreprof', date='', basename='', **kwargs):
+
+    file_base_tocheck = basename+filetype+'_'
+    file_ext = '.cpo'
+
+    """
+    # Block to read from a list foldername's
+    if foldername is list:
+        file_names = [[f for f in os.listdir(d) if
+                  os.path.isfile(os.path.join(d, f)) and
+                  f.endswith(file_ext) and
+                  f.startswith(file_base_tocheck)
+                  ] for d in foldername]
+        file_names = [fs.sort() for fs in file_names]
+        #TODO turn into a single list of [foldername]/[filename]
+        file_names = [foldername[i]+f for f in fs for i,fs in enumerate(file_names)]    
+    else:
+    """
+
+    """
+    # Block to read all files from a foldername
+    file_names = [f for f in os.listdir(foldername) if # all files in the directory
+                  os.path.isfile(os.path.join(foldername, f)) and # should be a file
+                  f.endswith(file_ext) and # name should end with a particular extension e.g. .cpo
+                  f.startswith(file_base_tocheck) # name should have particular prefix e.g. gem_coreprof_
+                  ]
+    file_names.sort()
+    """
+
+    # ATTENTION: here we read only the last file in the folder (/instances/transport/workdir/)
+    file_names = []
+    # add the last file, that might be named differently
+    last_file_tent_name = kwargs['filename'] if 'filename' in kwargs else 'ets_'+filetype+'_out'+file_ext
+    if os.path.exists(os.path.join(foldername, last_file_tent_name)):
+        file_names.append(last_file_tent_name)
+
+    print(file_names)
+
+    n = len(prof_names)
+    m = len(attrib_names)
+    f = len(file_names)
+    d = len(coords)
+
+    value_s = np.zeros((n*m,d,f))
+    
+    naming_dict = {}
+
+    # Iterate over passed list of file names
+    for k, file_name in enumerate(file_names):
+   
+        cpo = read(os.path.join(foldername, file_name), filetype)
+
+        # Iterate over speicified profiles in each CPO file
+        for i, profname in enumerate(prof_names):
+
+            if filetype == 'coretransp':
+                prof = getattr(cpo.values[0], profname)
+            else: 
+                prof = getattr(cpo, profname)
+
+            # Iterate over each chosen attibute of each profile
+            for j, attrib in enumerate(attrib_names):
+
+                # The resulting readings should be interpolated from rho_tor_norm onto the coord
+                rho_tor_norm = cpo.rho_tor_norm
+
+                if attrib != 'ddrho':
+                    val_reading = getattr(prof, attrib)
+                    val_reading_interp = l3interp(y_in=val_reading, x_in=rho_tor_norm, x_out=coords)
+                else:
+                    # special treatment of gradients to always be w.r.t. rho_tor_norm
+                    val_prime_reading = getattr(prof, 'value')
+                    val_reading_interp = l3deriv(y_in=val_prime_reading, x_in=rho_tor_norm, x_out=coords)
+
+                # Saving the order of the names 
+                naming_dict[f"{profname}_{attrib}"]=i*m+j
+            
+                # Iterate over flux-tubes at different rho coordinates
+                for ft, coord in enumerate(coords):
+    
+                     # Chose profiles for ions, it is possible to have many species, so profiles are always are list
+                     if profname[1] == 'i':
+                         value_s[i*m+j][ft][k] = val_reading[ft][0]
+                     # Choose profiles for electrons, it is always a single species
+                     elif profname[1] == 'e':
+                         value_s[i*m+j][ft][k] = val_reading[ft]
+                     else:
+                         print('Error: Attributes have to belong either to ions or electrons')
+                   
+    """
+    # Iterate over the carthesian product of all profiles and their attributes, for each save a csv with the value list
+    for i,(prof,attrib) in enumerate(itertools.product(prof_names, attrib_names)):
+
+        #np.savetxt(file_code_name + '_' + prof + '_' + attrib  + '_evol' + name_postfix +'.csv',
+        #           value_s[i].T, delimiter =", ", fmt ='% s')
+
+        #if len(value_s.shape) == 3 and value_s.shape[2] > 0: # fallable, better need to check for emptines etc
+        #    print('Last value (num. {1}) is: {0}'.format(value_s[i,:,-1], value_s.shape[2]))
+    """
+
+    attributes_list = []
+    k=-1
+    # Write new 'coreprof state points' in format [{'prof_attrib':val, ..., 'ft':ft}]
+    for ft, coord in enumerate(coords):
+    # ATTENTION: each attributes_list entry has to be a 'point': flux tube number + core profile values
+         # assuming there is only one 'point' per flux tube !
+         attributes_dict_loc = {}
+         for ij,(profname,attrib) in enumerate(itertools.product(prof_names, attrib_names)):
+             attributes_dict_loc[f"{profname}_{attrib}"] = value_s[ij][ft][k]
+         attributes_dict_loc['ft'] = ft
+         attributes_list.append(attributes_dict_loc)
+
+    attributes_df = pd.DataFrame(attributes_list)
+    return attributes_df
 
 def plot_gem0_scan(X_orig, input_number=0, output_number=0, file_name_suf='', flag_plot=True, **kwargs):
     """
