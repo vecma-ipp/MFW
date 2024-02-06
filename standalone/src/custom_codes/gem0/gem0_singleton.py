@@ -47,7 +47,7 @@ def get_code_ios(equil_file_in="gem0_equilibrium_in.cpo", corep_file_in="gem0_co
     #coret = {}
     ios = 0
 
-    print(f"> pyGEM0 loads CPOs from {os.getcwd()}") ###DEBUG
+    #print(f"> pyGEM0 loads CPOs from {os.getcwd()}") ###DEBUG
 
     # Read CPO file and write structures
     equil = read(equil_file_in, "equilibrium")

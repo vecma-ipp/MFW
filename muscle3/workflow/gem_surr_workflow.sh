@@ -14,19 +14,22 @@ echo 'Running gem_surr workflow in Fortran & Python'
 #. ~/muscle3_venv/bin/activate
 . ~/muscle3/bin/muscle3.env
 
-iternum=${1:-2}
+iternum=${2:-2}
 
 runlabel='_'${iternum}
 
 if [ "$1" ]; then
-    currdate=$1
+    curr_id=$1
 else
-    currdate=$(date +"%Y%m%d")
+    curr_id=$(date +"%Y%m%d")
 fi
+
+#itnum=${2:-1}
+#curr_id=${curr_id}_${itnum}
 
 code_run_name=gem0_surr_
 
-run_dir_name=run_fusion_${code_run_name}${currdate}${runlabel}
+run_dir_name=run_fusion_${code_run_name}${curr_id}${runlabel}
 mkdir ${run_dir_name}
 
 #muscle_manager --start-all gem-surr-fusion.ymmsl &
@@ -50,10 +53,10 @@ wait
 
 # Make plots for the evolution of core profiles
 cd ..
-python read_profs.py ${code_run_name} ${currdate}${runlabel}
+python read_profs.py ${code_run_name} ${curr_id}${runlabel}
 
 # Save the results of the run and postprocessing
 cd workflow/
-tar -czvf ${run_dir_name}.tar.gz --exclude=*.cpo --exclude=*.dat ${run_dir_name}/ ${run_dir_name}_${currdate}${runlabel}/
-mv run_fusion_${code_run_name}${currdate}${runlabel}.tar.gz ../../..
+tar -czvf ${run_dir_name}.tar.gz --exclude=*.cpo --exclude=*.dat ${run_dir_name}/ ${run_dir_name}_${curr_id}${runlabel}/
+mv run_fusion_${code_run_name}${curr_id}${runlabel}.tar.gz ../../..
 

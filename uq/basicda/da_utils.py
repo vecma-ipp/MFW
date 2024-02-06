@@ -101,6 +101,8 @@ def l3interp(y_in, x_in, nr_in=None, y_out=None, x_out=None, nr_out=None):
     for points at x_out and writes the values at y_out
     """
 
+    #print(f"x_out={x_out}") ###DEBUG
+
     if nr_in is None:
         nr_in = len(x_in)
     if x_out is None:
@@ -143,6 +145,8 @@ def l3interp(y_in, x_in, nr_in=None, y_out=None, x_out=None, nr_out=None):
         x0 = x_in[j0]
         xm = x_in[jm]
 
+        #print('interpol ref points : {} {} {} {} {}'.format(x0, x1, x2, xm, x)) ###DEBUG
+
         aintm = (x - x0) * (x - x1) * (x - x2) / ((xm - x0) * (xm - x1) * (xm - x2))
         aint0 = (x - xm) * (x - x1) * (x - x2) / ((x0 - xm) * (x0 - x1) * (x0 - x2))
         aint1 = (x - xm) * (x - x0) * (x - x2) / ((x1 - xm) * (x1 - x0) * (x1 - x2))
@@ -150,7 +154,9 @@ def l3interp(y_in, x_in, nr_in=None, y_out=None, x_out=None, nr_out=None):
 
         y_out[j] = aintm * y_in[jm] + aint0 * y_in[j0] + aint1 * y_in[j1] + aint2 * y_in[j2]
 
-        return y_out
+        #print ('y vals: {} {} {} {}'.format(y_in[j0], y_in[j1], y_in[j2], y_in[jm])) ###DEBUG
+
+    return y_out
 
 def l3deriv(y_in, x_in, nr_in=None, dydx_out=None, x_out=None, nr_out=None):
     """
@@ -519,9 +525,6 @@ def write_gem0_fromfile(csv_in, filename_out):
     for o in output_names:
         df_out[o] = None
 
-    #TODO: pyGEM0 can return profile values at coretransp grid but cannot accept tehm at inputs (it still modofies inpus on basis of coreprof grid values)
-    #TODO: perform pyGEM0 calling solving linear equation to get such linear profiles, such that values at coretransp grid are exact
-
     gem0helper = ExtCodeHelper(2, xml_file="gem0_1ft.xml")
 
     # run through evey set of new input values
@@ -593,17 +596,16 @@ def write_profs_fromfile_grid(point_in, filename_out, num_steps=1, **kwargs):
     input_names  = [n for n in column_names if 'value' in n or 'ddrho' in n]
     output_names = [n for n in column_names if 'transp' in n]
 
-
     # Prepare structures to write
     #df_out = pd.DataFrame(columns=[*input_names, *output_names, 'ft'],)
     data_new = []
 
-    # Asure for every input and flux tube the expantion step is defined
+    # Assure for every input and flux tube the expantion step is defined
     exp_factor = 0.25
     grid_step = kwargs['grid_step'] if 'grid_step' in kwargs else \
         {input_name:{nft:df_in[df_in['ft']==nft][input_name].mean()*exp_factor for nft in nfts_list} for input_name in input_names}
 
-    # - option 1 - Iterate over flux tube ---
+    # - option 1 - Iterate over flux tubes ---
     #for nft in nfts_list:
     # - option 2 - Iterate over points in dataframe
     for i,df_row in df_in.iterrows():
@@ -625,6 +627,10 @@ def write_profs_fromfile_grid(point_in, filename_out, num_steps=1, **kwargs):
             # For every parameter, make its grid
             val_loc_inp = x[input]
             vals_loc_inp_new = [val_loc_inp+j*grid_step[input][nft] for j in range(-num_steps, +num_steps+1)]
+            # Filter values: 
+            # - 1) Temperature cannot be negative
+            if 'value' in input:
+                vals_loc_inp_new = [0. if v<0. else v for v in vals_loc_inp_new ]
             vals_new.append(vals_loc_inp_new)
 
         # Make a product of grids
@@ -674,8 +680,11 @@ def read_attrib(cpo, quantity, attribute, coords, filetype='coreprof'):
     
     return a_s
 
-def read_cpo_file(foldername, prof_names, attrib_names, coords, filetype='coreprof', date='', basename='', **kwargs):
-
+def read_cpo_file(foldername, prof_names=['te','ti'], attrib_names=['value','ddrho'], coords=[0.,], filetype='coreprof', date='', basename='', **kwargs):
+    """
+    Reads CPO files from a folder and returns a DataFrame with [prof_names x attrib_name]s as columns and [coords x file_names] as rows
+    ATTENTION: currently reads only the last file in the folder, by the name in last_file_tent_name in kwargs
+    """
     file_base_tocheck = basename+filetype+'_'
     file_ext = '.cpo'
 
@@ -715,7 +724,7 @@ def read_cpo_file(foldername, prof_names, attrib_names, coords, filetype='corepr
     n = len(prof_names)
     m = len(attrib_names)
     f = len(file_names)
-    d = len(coords)
+    d = len(coords)#; print(f"d={d}")###DEBUG
 
     value_s = np.zeros((n*m,d,f))
     
@@ -747,23 +756,30 @@ def read_cpo_file(foldername, prof_names, attrib_names, coords, filetype='corepr
                     # special treatment of gradients to always be w.r.t. rho_tor_norm
                     val_prime_reading = getattr(prof, 'value')
                     val_reading_interp = l3deriv(y_in=val_prime_reading, x_in=rho_tor_norm, x_out=coords)
-
+                
+                #print(f"value_s[i*m+j,:,k]={value_s[i*m+j,:,k]}")###DEBUG
+                
                 # Saving the order of the names 
                 naming_dict[f"{profname}_{attrib}"]=i*m+j
-            
-                # Iterate over flux-tubes at different rho coordinates
-                for ft, coord in enumerate(coords):
-    
-                     # Chose profiles for ions, it is possible to have many species, so profiles are always are list
-                     if profname[1] == 'i':
-                         value_s[i*m+j][ft][k] = val_reading[ft][0]
-                     # Choose profiles for electrons, it is always a single species
-                     elif profname[1] == 'e':
-                         value_s[i*m+j][ft][k] = val_reading[ft]
-                     else:
-                         print('Error: Attributes have to belong either to ions or electrons')
-                   
+      
+                # For coretransp reading (separate treatment for ions is essential, coordinate iteration can be got rid of)
+                if filetype == 'coretransp':
+                     # Iterate over flux-tubes at different rho coordinates
+                     for ft, coord in enumerate(coords):
+                         # Chose profiles for ions, it is possible to have many species, so profiles are always are list
+                         if profname[1] == 'i':
+                             value_s[i*m+j,ft,k] = val_reading_interp[ft][0]
+                         # Choose profiles for electrons, it is always a single species
+                         elif profname[1] == 'e':
+                             value_s[i*m+j,ft,k] = val_reading_interp[ft]
+                         else:
+                             print('Error: Attributes have to belong either to ions or electrons')
+                else:
+                    #print(f"val_reading_interp={val_reading_interp}")###DEBUG
+                    value_s[i*m+j,:,k] = val_reading_interp
+
     """
+    # Block for saving a CSV for time evolution of every quantity
     # Iterate over the carthesian product of all profiles and their attributes, for each save a csv with the value list
     for i,(prof,attrib) in enumerate(itertools.product(prof_names, attrib_names)):
 

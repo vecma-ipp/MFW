@@ -194,7 +194,8 @@ class ExtCodeHelper():
     
     def gem0_call_4param2target_array_coretransp(self, core_prof_dict, rho):
         """
-        Takes a dictionary of core profiles values for Te/i,gradTe/i(rho) and returns fluxes 
+        Takes a dictionary of core profiles values for Te/i,gradTe/i(rho) and returns fluxes
+        Linearly exttapolates on coreprof grid using a value and a gradient at a point of coretransp (or arbitrarty) grid 
         """
 
         fluxes, newprofiles, coretransp = self.gem0obj.gem0_call_coretransp(core_prof_dict, rho_tor_norm=rho)
