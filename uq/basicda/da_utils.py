@@ -779,7 +779,7 @@ def read_cpo_files(foldername, prof_names=['te','ti'], attrib_names=['value','dd
     if os.path.exists(os.path.join(foldername, last_file_tent_name)):
         file_names.append(last_file_tent_name)
 
-    print(file_names)
+    #print(f"reading CPO files from: {file_names}") ###DEBUG
 
     n = len(prof_names)
     m = len(attrib_names)

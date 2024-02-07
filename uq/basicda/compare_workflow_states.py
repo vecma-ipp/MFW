@@ -1,6 +1,6 @@
 import sys
 
-sys.path.append('../../muscle/')
+sys.path.append('../../muscle3/')
 
 from read_profs import compare_states
 
