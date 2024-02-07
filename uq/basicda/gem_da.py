@@ -42,7 +42,7 @@ sys.excepthook = ultratb.FormattedTB(mode='Verbose', color_scheme='Linux', call_
 def func_from_data(x, data):
     return data[1, (np.abs(data[0,:] - x)).argmin()]
 
-def AUG_GM_date_explore(filename='AUG_gem_inoutput.txt'):
+def AUG_GEM_date_explore(filename='AUG_gem_inoutput.txt'):
     """
     :param filename: a csv file with the sim data
     :return:
