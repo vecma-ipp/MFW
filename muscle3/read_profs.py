@@ -19,6 +19,7 @@ import easysurrogate as es
 
 sys.path.append('../uq/basicda')
 from gem_da import profile_evol_load, profile_evol_plot
+from da_utils import read_cpo_file
 from extcodehelper import ExtCodeHelper
 
 
@@ -196,6 +197,51 @@ def read_equil(foldernames):
     ax.legend(loc='best')
     fig.savefig(foldername[0]+'_equilibrium.pdf')
     plt.close()
+
+def compare_states(state_1, state_2, cpo_types=['coreprof']):
+    """
+    Compare two plasma states - TODO: >2 states (how? pairwise?), >2 CPOs each
+     - described via a list of CPO files [coreprof, equilibrium]
+     - state is a dictionary {cpo_type: file_name}
+     - returns: a metrics value (d e R^0+)
+    """
+    ds = []
+    for cpo_type in cpo_types:
+        cpo_name_1 = state_1[cpo_type]
+        cpo_name_2 = state_2[cpo_type]
+        d = compare_cpo(cpo_name_1, cpo_name_2)
+        ds.append(d)
+    d_comp = ds.sum() / len(ds) # TODO differences have to be comparable
+    return 0
+
+def compare_cpo(cpo_name_1, cpo_name_2, profiles=['te', 'ti'], attributes=['value', 'ddrho']):
+    """
+    Compare two CPO files by the list of quantities of interest
+    - uses a list of 1d profiles - TODO: scalars, 1D profiles, 2D fields
+    """
+    coords = [0.143587306141853 , 0.309813886880875 , 0.442991137504578 , 0.560640752315521 , 0.668475985527039 , 0.769291400909424 , 0.864721715450287 , 0.955828309059143 ] # any number of coordinates in rho_tor_norm
+    ds = []
+
+    cpo_1 = read_cpo_file(cpo_name_1, profiles, attributes, coords)
+    cpo_2 = read_cpo_file(cpo_name_2, profiles, attributes, coords)
+
+    for p,a in itertools.product(profiles, attributes):
+        q1 = cpo_1[f"{p}_{a}"]
+        q2 = cpo_2[f"{p}_{a}"]
+        d = compare_profiles(q1, q2, 'L2')
+        ds.append(d)
+    
+    d_comp = ds.sum() / len(ds)
+    return d
+
+def compare_profiles(prof_list, criterion):
+    """
+    Compares two (1D) profiles by given criterion
+    - TODO list of profiles, criteria is a lambda/function c(.,.)->R^+
+    """
+    if criterion == 'L2':
+        d = (np.sqrt(np.pow(x1-x2,2))).mean() # TODO check if it does pointwise comparison in l2, thens sum 
+    return d
 
 def plot_quantities(datadict, save_fold_name, times=None, coord_num_fts=[14,30,43,55,66,76,85,95], bool_sur_involved=False, n_run_per_ft=81, ref_data=None,):
     """
@@ -894,11 +940,12 @@ if __name__ == '__main__':
         dates = sys.argv[2:]
 
     if len(sys.argv) < 4 :
-        # NOW WOULDN'T WORK!
+        # NOW WOULDN'T WORK!: the script accepts an arbitrary long list of 'dates' as input
         ref_data_filename = 'ref_train_data_5000.csv'
     else:
         ref_data_filename = sys.argv[-1]
-    ref_data_filename = 'ref_train_data_5000.csv'
+    # ATTENTION: overload for now
+    ref_data_filename = 'ref_train_data.csv'
 
     print(f"> Now postprocessing a MUSCLE3 workflow run")
     
