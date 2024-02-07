@@ -15,6 +15,7 @@ lastequilibriumcpo=equilupdate_equilibrium_out.cpo
 prepare_op=prepare_gem0_sample.py
 surrogate_op=process_gpr.sh
 simulation_op=gem_surr_workflow.sh
+compare_op=compare_workflow_states.py
 
 # Define the starting point of the loop - and prepare the first iteration
 #runid_prev=20240202_2
@@ -30,7 +31,7 @@ origdir=$(pwd)
 curr_id=${datenow}
 
 itnum_min=0
-itnum_max=2
+itnum_max=1
 
 for((itnum=${itnum_min};itnum<${itnum_max};itnum++)); do
   
@@ -63,7 +64,7 @@ for((itnum=${itnum_min};itnum<${itnum_max};itnum++)); do
   rm -r ${runprefix}${datenow}_${itnum} 
 
   # Prepare the necessary files
-  cp ${orig_dir}/gem0py_new_${curr_id}_${itnum}.csv ${muscledir}/ref_train_data.csv
+  cp ${origdir}/gem0py_new_${curr_id}_${itnum}.csv ${muscledir}/ref_train_data.csv
   # Original state for the new M3-WF run - two options:
   # 	1) Same inial state (~ from AUG shot)
   # 	2) Final state of the WF from the previous iteration
@@ -72,11 +73,14 @@ for((itnum=${itnum_min};itnum<${itnum_max};itnum++)); do
   ./${simulation_op} ${datenow} ${itnum}
 
   ### Collect the data from the M3-WF run and compare resulting profiles with the last iteration
+  prev_state_name=ets_coreprof_out_last.cpo
+  mv ${origdir}/${lastcoreprofcpo} ${origdir}/${prev_state_name}
   cp ${runprefix}${datenow}_${itnum}${runsufix}/${lastcoreprofcpo} ${origdir}/
   cd ${origdir}
 
-  #TODO analyse the 'final state' of the iteration
-  #conv=$(python compare_coreprof.py ${itnum})
+  state1=${prev_state_name}
+  state2=${lastcoreprofcpo}
+  conv=$(python ${compare_op} ${state1} ${state2})
   
   ### Prepare for the next iteration
   runid_prev=${datenow}_${itnum}

@@ -4,7 +4,7 @@ import sys
 import numpy as np
 import pandas as pd
 
-from da_utils import read_cpo_file, write_gem0_fromfile, write_profs_fromfile_grid
+from da_utils import read_cpo_files, write_gem0_fromfile, write_profs_fromfile_grid
 
 
 if __name__ == '__main__':
@@ -21,7 +21,7 @@ if __name__ == '__main__':
     ft_rho_tor_norm = [0.143587306141853 , 0.309813886880875 , 0.442991137504578 , 0.560640752315521 , 0.668475985527039 , 0.769291400909424 , 0.864721715450287 , 0.955828309059143]
 
     # Read the last 'point' (in 'core profile' space) for the workflow run
-    final_point = read_cpo_file(folder_in, prof_names=quantities, attrib_names=attributes, coords=ft_rho_tor_norm, filename=f"ets_coreprof_out.cpo")
+    final_point = read_cpo_files(folder_in, prof_names=quantities, attrib_names=attributes, coords=ft_rho_tor_norm, filename=f"ets_coreprof_out.cpo")
     final_point.to_csv(f"final_point_{wf_id}_{itnum}.csv")
     #print(f"final_point=\n{final_point}")###DEBUG
 
