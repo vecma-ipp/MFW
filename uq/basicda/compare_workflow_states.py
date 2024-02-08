@@ -1,7 +1,6 @@
 import sys
 
 sys.path.append('../../muscle3/')
-
 from read_profs import compare_states
 
 if __name__ == "__main__":
@@ -14,5 +13,5 @@ if __name__ == "__main__":
 
     d = compare_states(state_1, state_2)
 
-    print(f" !> distance between two iterations is : {d}")
+    print(f" !> distance between {coreprof_1} and {coreprof_2} is : {d}")
 

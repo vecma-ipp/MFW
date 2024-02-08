@@ -572,7 +572,7 @@ def write_profs_fromfile_grid(point_in, filename_out, num_steps=1, **kwargs):
 
     # Read the point around which evaluations should be taken
     if isinstance(point_in, str):
-        df_in = pd.read_csv(filename_in)
+        df_in = pd.read_csv(point_in)
     else:
         # assumes that by default point_in is a dataframe
         df_in = point_in

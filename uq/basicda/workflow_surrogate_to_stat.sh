@@ -52,7 +52,7 @@ for((itnum=${itnum_min};itnum<${itnum_max};itnum++)); do
   ### Compare initial state and ground-truth stationary state
   echo "Comparing intial iteration state with ground-truth stationary state"
   
-  ${compare_op} ${lastequilibriumcpo} ${state_gtst}
+  python ${compare_op} ${lastcoreprofcpo} ${state_gtst}
 
   ### Prepare run folder:
   # 	 final coreprof CPO -> final plasma state -> grid around final state -> pyGEM0 dataset around final state
@@ -85,7 +85,7 @@ for((itnum=${itnum_min};itnum<${itnum_max};itnum++)); do
   ./${simulation_op} ${datenow} ${itnum}
 
   ### Collect the data from the M3-WF run and compare resulting profiles with the last iteration
-  echo ">>> Comparing this and precious iteration states"
+  echo ">>> Comparing this and previous iteration states"
   
   prev_state_name=ets_coreprof_out_last.cpo
   mv ${origdir}/${lastcoreprofcpo} ${origdir}/${prev_state_name}
@@ -94,7 +94,7 @@ for((itnum=${itnum_min};itnum<${itnum_max};itnum++)); do
 
   state1=${lastcoreprofcpo}
   state2=${prev_state_name}
-  conv=$(python ${compare_op} ${state1} ${state2})
+  python ${compare_op} ${state1} ${state2}
 
   ### Compare resulting profiles with a stored 'ground truth' stationary profile
   echo ">>> Comparing this iteration state with ground-truth stationary state"

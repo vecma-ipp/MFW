@@ -13,14 +13,17 @@ from matplotlib.backends.backend_pdf import PdfPages
 
 from ascii_cpo import read
 
-from src.utils import coreprof_to_input_value, l3deriv
-
 import easysurrogate as es
 
-sys.path.append('../uq/basicda')
+uqbasicdadir = '~/code/MFW/uq/basicda'
+sys.path.append(uqbasicdadir)
 from gem_da import profile_evol_load, profile_evol_plot
 from da_utils import read_cpo_file
 from extcodehelper import ExtCodeHelper
+
+muscle3srcdir = '~/code/MFW/muscle3/src'
+sys.path.append(muscle3srcdir)
+from src.utils import coreprof_to_input_value, l3deriv
 
 
 def read_attrib(filename, quantity, attribute, coords, filetype='coreprof'):
@@ -251,6 +254,9 @@ def compare_profiles(x1, x2, criterion):
         d = (x1-x2).mean() #?
     elif criterion == 'Linf':
         d = (x1-x2).max()
+    else: 
+        ValueError("Unknown criterion for 1D profiles comparison") 
+        #TODO: consider Wasserstein distance: for Te/i ~ Heat capacity, for ne/ni ~ mass, for gradients ~ diffusivity(?, total?)
     return d
 
 def plot_quantities(datadict, save_fold_name, times=None, coord_num_fts=[14,30,43,55,66,76,85,95], bool_sur_involved=False, n_run_per_ft=81, ref_data=None,):
@@ -962,10 +968,16 @@ if __name__ == '__main__':
     st = t.time()
 
     cpo_names = ['coreprof', 'coretransp', 'equilibrium']
-    dates = read_profs(codename=codename, dates=dates, ref_data_filename=ref_data_filename, cpo_names=cpo_names) # to read results of M3-WF run
+    
+    # Run the postprocessing function
+
+    #dates = read_profs(codename=codename, dates=dates, ref_data_filename=ref_data_filename, cpo_names=cpo_names) # to read results of M3-WF run
+    dates = read_profs(codename=codename, dates=dates, ref_data_filename=ref_data_filename, cpo_names=cpo_names, prefix_name='run_fusion_') # for the WF independent of its root directory location
+
 
     print(f"Postrprocessing finished, totally took {t.time()-st:.3f} s")
 
+    #########
     # some set of first GEM-ETS-CHEASE runs with MUSCLE3
     #dates = ['20230818_135913', '20230821_161005', '20230822_150943', '20230823_151955', '20230824', '20230825', '20230828', '20230829', '20230830', '20230831', '20230901']
     #dates = ['20230918', '20230922']
