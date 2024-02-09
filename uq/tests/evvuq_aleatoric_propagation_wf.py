@@ -3,6 +3,10 @@ import os
 import numpy as np
 import pandas as pd
 
+from itertools import product
+
+import chaospy as cp
+
 # from easyvvuq
 import easyvvuq as uq
 from easyvvuq.actions import Encode, Decode, Actions, CreateRunDirectory, ExecuteQCGPJ, ExecuteLocal, ExecuteSLURM, QCGPJPool
@@ -15,7 +19,7 @@ from base.evvuq_partemplate_wenv import EasyVVUQParallelTemplateWithEnv
 from base.transport_csv_encoder import TransportCSVEncoder
 from base.profile_cpo_decoder import ProfileCPODecoder
 
-def input_params_stub(nfts=8):
+def input_params_stub_perft(nfts=8):
     """
     Define the uncertain parameters
     Returns:   dict: uncertain parameters
@@ -27,6 +31,36 @@ def input_params_stub(nfts=8):
                 "Qi": {"dist": "Normal", "mu": 2.5E4+1.5E4*i, "sigma": 2.5E3}
                                     }
                           for i in range(nfts)}
+
+    return input_params_dict
+
+def input_params_stub_batch(nfts=8):
+    """
+    Define the uncertain parameters
+    Returns:   dict: uncertain parameters
+        Creates default parameters for heat flux value distribution: N(mu, sigma)
+    """
+    species = ['e', 'i']
+    fts = [i for i in range(nfts)]
+
+    input_params_dict = {
+                "Q{sp}_{ft}": {"dist": "Normal", "mu": 2.5E4+1.5E4*ft, "sigma": 2.5E3}
+                        for ft,sp in product(range(nfts), species)}
+
+    return input_params_dict
+
+def input_params_stub_relative(nfts=8):
+    """
+    Define the uncertain parameters
+    Returns:   dict: uncertain parameters
+        Creates default parameters for heat flux value distribution: N(mu, sigma)
+    """
+    species = ['e', 'i']
+    fts = [i for i in range(nfts)]
+
+    input_params_dict = {
+                "Q{sp}_{ft}": {"dist": "Normal", "mu":0.0, "sigma": 0.5*(ft+1)*1E-1}
+                        for ft,sp in product(range(nfts), species)}
 
     return input_params_dict
 
@@ -73,20 +107,32 @@ def prepare_results(result, output_columns):
 if __name__ == "__main__":
 
     # Global params
+    print(f"> Reading environment variables")
     SYS = os.environ['SYS']
     mpi_instance =  os.environ['MPICMD']
     mpi_model = os.environ['MPIMOD']
     wrk_dir = tmp_dir = os.environ['SCRATCH']
 
-    p = 3
+    # - option 1 - use PCE
+    #p = int(os.environ['POLORDER'])
+    # - option 2 - use MC
+    n_samples = int(os.environ['NSAMPLES'])
 
     base_dataset_filename = "gem0py_new_basedata.csv"
+    target_dataset_filename = "gem0py_new_local.csv"
     output_filename = "ets_coreprof_out.cpo"
+
+    test_script_dir = "tests"
 
     ### Uncertain input definition
     # 2[fluxes] * 8[flux-tubes] (flux tubes are independent!)
     # Normal PDF for each: mu, sigma
-    input_params = input_params_stub()
+    print(f"> Making UQ run parameters: i/o, parallelisation")
+    # Choice: do not have tensor product over flux tubes, treat them in batch
+    input_params = input_params_stub_relative()
+    
+    # TODO assumes discription["dist"] == "Normal"
+    vary = {key: cp.Normal(description['mu'], description['sigma']) for key,description in input_params.items()}
 
     ft_coords = [0.143587306141853 , 0.309813886880875 , 0.442991137504578 , 0.560640752315521 , 0.668475985527039 , 0.769291400909424 , 0.864721715450287 , 0.955828309059143]
 
@@ -96,22 +142,72 @@ if __name__ == "__main__":
     ### Define parallelisation paramaters
     #    e.g. surrogate: t_s ~= 10m. ; workflow t_w ~= 10m. ; buffer/overhead: t_b ~= 10m 
     #    t_wf ~= 0.5h, nodes:1 , cores:40, t_tot = 24h
+    if SYS == 'MARCONI':
+        n_cores_p_node = 48
+    elif SYS == 'COBRA':
+        n_cores_p_node = 40
+    else:
+        n_cores_p_node = 32
+        print("HPC Machine unknown, assuming {n_cores_p_node} cores per node")
+
     nnodes = 1
     ncores = 40
+
+    nparams = 2
+
+    # - option 1 - PCE
+    #nruns = p**2
+    # - option 2 - MC
+    nruns = n_samples
+
+    nnodes_tot = nnodes
+    ncores_tot = nnodes * n_cores_p_node
+
+    print('> {2} Runs requiring totally {0} cores at {1} nodes'.format(ncores_tot, nnodes_tot, nruns))
+
+    ### Pepare the campaign: crate the campaign object, copy the right files to the right places
+ 
+    # Create a new campaign
+    print(f"> Creating a new campaign")
+    campaign = uq.Campaign(name='UQ_8FTGEM0_WF_AL_', work_dir=wrk_dir)
+
+    common_dir = campaign.campaign_dir +"/common/"
+
+    # baseline training dataset (and other surrogate files)
+    print(f"> Copying data for surrogates")
+    surrogate_data_dir = os.path.abspath("basicda")
+    os.system(f"cp {surrogate_data_dir}/gem0py_new_baseline.csv {common_dir}/")
+    surrogate_scripts = ['process_gpr_ind.sh', 'gem_data_ind.py', 'train_model_ind.py', 'test_model_ind.py']
+    os.system(f"") #TODO
+
+    # initial state for the M3WF (this is done inside *.sh file)
+    print(f"> Copying data for simulations")
+    simulation_data_dir  = os.path.abspath("../muscle3")
+    os.system(f"cp {simulation_data_dir}/read_profs.py {common_dir}/")
+    init_cpo_list = ['ets_coreprof_in.cpo', 'ets_equilibrium_in.cpo', 'ets_coretransp_in.cpo', 'ets_toroidfield_in.cpo', 'ets_coresource_in.cpo', 'ets_coreimpur_in.cpo']
+    simulation_cpo_dir = "workflow/gem0_surr_resume_data"
+    for initcpo in init_cpo_list:
+        os.system(f"cp {simulation_data_dir}/{simulation_cpo_dir} {common_dir}/")
 
     ### Encoders
     # Sample from PDF: flux perturbation [Ind. variable] -> code of turbulence model variation
     # TODO consider two options: overwrighting flux values completely or using value in the file to modify it
-    encoder = TransportCSVEncoder(csv_filename=base_dataset_filename)
+    print("> Creating Encoder")
+    encoder = TransportCSVEncoder(csv_filename=base_dataset_filename, 
+                                  input_dir=common_dir,
+                                  target_filename=target_dataset_filename)
 
     ### Decoders
     # Code of M3-WF run (foldername) -> [QoI] (ion) temperature @rho_tor_norm=0
-    decoder = ProfileCPODecoder(cpo_filname=output_filename)
+    print("> Creating Decoder")
+    decoder = ProfileCPODecoder(cpo_filename=output_filename, output_columns=output_columns)
 
     ### Actions
     # Shell script to: flux perturbation -> labels for data set -> traning data -> surrogate -> M3-WF run -> final CPO files
+    print("> Creating Actions")
     exec_code = "workflow.sh" #TODO modify the retrainer script
-    exec_path = f"./{exec_code}"
+    os.system(f"cp {test_script_dir}/{exec_code} {common_dir}/")
+    exec_path = os.path.join(common_dir, exec_code)
     exec_path_comm = exec_path
 
     actions = Actions(
@@ -122,36 +218,24 @@ if __name__ == "__main__":
                      )
 
     # Sampler
-    sampler = uq.sampling.PCESampler(vary=input_params, polynomial_order=p)
+    print("> Creating Sampler")
+    # - option 1 - PCE
+    #sampler = uq.sampling.PCESampler(vary=input_params, polynomial_order=p)
+    # - option 2 - MC 
+    sampler = uq.sampling.MCSampler(vary=input_params, n_mc_samples=n_samples,)
 
     # Analysis
-    analysis = uq.analysis.PCEAnalysis(sampler=sampler, qoi_cols=output_columns)
-
-    ### Pepare the campaign: crate the campaign object, copy the right files to the right places
- 
-    # Create a new campaign
-    campaign = uq.Campaign(name='UQ_8FTGEM0_WF_AL_', work_dir=wrk_dir)
-
-    common_dir = campaign.campaign_dir +"/common/"
-
-    # baseline training dataset (and other surrogate files)
-    surrogate_data_dir = os.path.abspath("basicda")
-    os.system(f"cp {surrogate_data_dir}/gem0py_new_baseline.csv {common_dir}/")
-    surrogate_scripts = ['process_gpr_ind.sh', 'gem_data_ind.py', 'train_model_ind.py', 'test_model_ind.py']
-    os.system(f"") #TODO
-
-    # initial state for the M3WF (this is done inside *.sh file)
-    simulation_data_dir  = os.path.abspath("../muscle3")
-    os.system(f"cp {simulation_data_dir}/read_profs.py {common_dir}/")
-    init_cpo_list = ['ets_coreprof_in.cpo', 'ets_equilibrium_in.cpo', 'ets_coretransp_in.cpo', 'ets_toroidfield_in.cpo', 'ets_coresource_in.cpo', 'ets_coreimpur_in.cpo']
-    simulation_cpo_dir = "workflow/gem0_surr_resume_data"
-    for initcpo in init_cpo_list:
-        os.system(f"cp {simulation_data_dir}/{simulation_cpo_dir} {common_dir}/")
+    print("> Creating Analysis")
+    # - option 1 - PCE
+    #analysis = uq.analysis.PCEAnalysis(sampler=sampler, qoi_cols=output_columns)
+    # - option 2 - MC
+    analysis = uq.analysis.BasicStats()
 
     ### Run EasyVVUQ campaign
 
     # QCJ-PG specs
     # eUQ campaign
+    print(f"> Setting Campaign parameters")
     camp_name = "UQ_8FTGEM0_WF_AL_"
 
     campaign.add_app(name=camp_name,
@@ -161,9 +245,11 @@ if __name__ == "__main__":
     campaign.set_app(camp_name)
     campaign.set_sampler(sampler)
 
+    print("> Exectung the Actions!")
     exec_res = exec_pj(campaign, exec_path_comm, ncores, nnodes, mpi_instance)
 
     ### Result analysis
+    print(f"> Performing Analysis")
     campaign.apply_analysis(analysis)
     result = campaign.get_last_analysis()
 

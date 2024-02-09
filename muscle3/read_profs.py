@@ -234,7 +234,7 @@ def compare_cpo(cpo_name_1, cpo_name_2, profiles=['te', 'ti'], attributes=['valu
     for p,a in product(profiles, attributes):
         q1 = cpo_1[f"{p}_{a}"]
         q2 = cpo_2[f"{p}_{a}"]
-        d = compare_profiles(q1, q2, 'RMSE')
+        d = compare_profiles(q1, q2, 'sRRMSE')
         ds.append(d)
     
     d_comp = sum(ds) / len(ds)
@@ -246,8 +246,12 @@ def compare_profiles(x1, x2, criterion):
     - TODO list of profiles, criteria is a lambda/function c(.,.)->R^+
     """
     # TODO: consider RMSE - 0-abs-value issue; consider log-scale
-    if criterion == 'RMSE':
+    if criterion == 'RRMSE':
+        # relative root mean square error
         d  = np.sqrt((np.power(x1-x2,2)/np.abs(x1)).mean())
+    elif criterion == 'SRRMSE':
+        # symmetrised relative root mean square error
+        d = np.sqrt( (np.power(x1-x2,2) / 0.5*(np.abs(x1)+np.abs(x2))).mean() )
     elif criterion == 'L2':
         d = np.sqrt(np.power(x1-x2,2).mean()) # this is not L2, as mean is ./n
     elif criterion == 'L1':
