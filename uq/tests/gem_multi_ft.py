@@ -238,7 +238,6 @@ if __name__ == "__main__":
 
         params, encoder, decoder, sampler, stats = setup_gem(ft_index, common_dir, input_params, output_columns, xml=gemxml, pol_order=pol_order)
 
-
         actions = Actions(
                             CreateRunDirectory('/runs'),
                             Encode(encoder),

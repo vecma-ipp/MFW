@@ -1,7 +1,9 @@
 import sys
 
-sys.path.append('../../muscle3/')
-#sys.path.append('~/code/MFW/muscle3')
+#muscle3path='../../muscle3/'
+#muscle3path='~/code/MFW/muscle3'
+muscle3path='/u/yyudin/code/MFW/muscle3'
+sys.path.append(muscle3path)
 from read_profs import compare_states
 
 if __name__ == "__main__":

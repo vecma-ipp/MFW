@@ -142,7 +142,7 @@ settings:
   init_cpo_dir: "../../../../"
   final_cpo_dir: "./"
 
-  muscle_remote_log_level: "" #"DEBUG"  
+  muscle_remote_log_level: "DEBUG"  
   slice_initial_number: 0
   save_slice: True
   adaptive_timestep: False
@@ -154,7 +154,7 @@ settings:
   #turbulence.profs_out: "ti_transp.flux"
   turbulence.surrogate_type: "gpr" #"scikit_regression"
 
-  turbulence.surrogate_path: "../../../../easysurrogate/forworkflow/gem0_es_model"
+  turbulence.surrogate_path: "../../../../forworkflow/gem0_es_model"
   
   turbulence.coretransp_default: "../../../../ets_coretransp_in.cpo"
   
