@@ -42,6 +42,9 @@ wait
 #cd ..
 python read_profs.py ${code_run_name} ${curr_id}${runlabel}
 
+# Copy the resulting core profile to the root directory
+# -> done in parent workflow.sh
+
 # Save the results of the run and postprocessing
 # cd workflow/
 # tar -czvf ${run_dir_name}.tar.gz --exclude=*.cpo --exclude=*.dat ${run_dir_name}/ ${run_dir_name}_${curr_id}${runlabel}/

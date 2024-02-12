@@ -15,13 +15,15 @@ from ascii_cpo import read
 
 import easysurrogate as es
 
-uqbasicdadir = '~/code/MFW/uq/basicda'
+#uqbasicdadir = '~/code/MFW/uq/basicda'
+uqbasicdadir = '/u/yyudin/code/MFW/uq/basicda'
 sys.path.append(uqbasicdadir)
 from gem_da import profile_evol_load, profile_evol_plot
 from da_utils import read_cpo_file
 from extcodehelper import ExtCodeHelper
 
-muscle3srcdir = '~/code/MFW/muscle3/src'
+#muscle3srcdir = '~/code/MFW/muscle3/src'
+muscle3srcdir = '/u/yyudin/code/MFW/muscle3/src'
 sys.path.append(muscle3srcdir)
 from src.utils import coreprof_to_input_value, l3deriv
 
