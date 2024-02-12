@@ -9,7 +9,7 @@ from .cpo_element import CPOElement
 
 class ProfileCPODecoder:
 
-    def __init__(self, cpo_filename, cpo_name='coreprof', output_columns=["te_value_0", "ti_value_0"]):
+    def __init__(self, cpo_filename, cpo_path, cpo_name='coreprof', output_columns=["te_value_0", "ti_value_0"]):
 
         if cpo_filename is None:
             msg = (f"cpo_filename must be set for ProfileCPODecoder. This should be"
@@ -33,6 +33,7 @@ class ProfileCPODecoder:
             raise Exception(msg)
 
         self.cpo_filename = cpo_filename
+        self.cpo_path = cpo_path
         self.cpo_name = cpo_name
         self.output_columns = output_columns
 
@@ -60,7 +61,9 @@ class ProfileCPODecoder:
         
     def parse_sim_output(self, run_info={}):
 
-        out_path = self._get_output_path(run_info, self.cpo_filename)
+        self.cpo_file_full_path = os.path.join(self.cpo_path, self.cpo_filename)
+
+        out_path = self._get_output_path(run_info, self.cpo_file_full_path)
 
         cpo = CPOElement(out_path, self.cpo_name)
         #TODO old CPOElement does no consider interpolation on arbitrary grids!

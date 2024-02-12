@@ -11,7 +11,9 @@ muscleworkdir=workflow
 runprefix=run_fusion_gem0_surr_
 runsufix=/instances/transport/workdir
 
-commondir=/common
+#commondir=/common
+commondir=../../../../../../common
+#TODO make an absolute common path
 
 easysurrogatedir=~/code/EasySurrogate/tests/gem_gp
 
@@ -27,76 +29,81 @@ lastequilibriumcpo=equilupdate_equilibrium_out.cpo
 
 ### Define script file names of each operation
 # TODO: make these scripts work at any directory -> should be already possible
-surrogate_op=process_gpr.sh
+surrogate_op=process_gpr_ind.sh
 simulation_op=gem_surr_workflow_independent.sh
 compare_op=compare_workflow_states.py
 
+#copy_op="cp " # - option 1 - actually copy files
+copy_op="ln -s "
+
 ### Start the workflow
-locdir=${pwd}
+locdir=$(pwd)
 itnum=0
 #locid=${locdir} #TODO define identifier according to the UQ case
+#echo "locdir is ${locdir}" ###DEBUG
 
 ### Surrogate preparation
 echo ">>> Making a new surrogate for simulation workflow"
 # Copy the necessary files from common folder - the dataset CSV should already be there
 surrogate_files=( ${surrogate_op} gem_data_ind.py train_model_ind.py test_model_ind.py )
+surdata=gem0py_new_local.csv
 
 locsurrogatedir=easysurrogate
 mkdir ${locsurrogatedir}
 
+${copy_op} ../${surdata} ${locdir}/${locsurrogatedir}/gem0py_new_${locid}_${itnum}.csv
+
 for surr_file in ${surrogate_files[@]}; do
-  cp ${commondir}/${surr_file} ${locdir}/${locsurrogatedir}/
+  ${copy_op} ../${commondir}/${surr_file} ${locdir}/${locsurrogatedir}/${surr_file}
 done
 
 cd ${locsurrogatedir}
 # Run the surrogate script - should already copy the surrogates
 ./${surrogate_op} ${locid} ${itnum} # TODO: Should accept arbitrary id, read right files, copy files in a subfolder here
 
-refsurdata={gem0py_new_training.csv}
 ### Run the M3 workflow
+cd ..
 echo ">>> Running a new simulation workflow"
 # Copy the initial state for the simulation, also postprocessing script
-simulation_files=( ${initcoreprofcpo} ${initequilibriumcpo} ${initcoretranspcpo} ${inittoroidfieldcpo} ${initcoresourcecpo} ${initcoreimpurcpo} read_profs.py)
+simulation_files=( ${simulation_op} ${compare_op} ${initcoreprofcpo} ${initequilibriumcpo} ${initcoretranspcpo} ${inittoroidfieldcpo} ${initcoresourcecpo} ${initcoreimpurcpo} read_profs.py gem-surr-mft-fusion-independent.ymmsl )
 
 locsimulationdir=muscle3
 mkdir ${locsimulationdir}
 
 for sim_file in ${simulation_files[@]}; do
-  cp ${commondir}/${sim_file} ${locdir}/${locsimulationdir}/
+  ${copy_op} ../${commondir}/${sim_file} ${locdir}/${locsimulationdir}/${sim_file} 
 done
 
-cp ${refsurdata} ${locdir}/${locsimulationdir}/ref_train_data.csv
+${copy_op} ../${surdata} ${locdir}/${locsimulationdir}/ref_train_data.csv
 
-cd ${locsimulationdir}/
+cd ${locsimulationdir}
 # Run the M3 workflow
-./${simulation_op} ${locid} ${itnum} # YYMSL file has to know the local file location, script to accpet arbitrary id
+./${simulation_op} ${locid} ${itnum} # YMMSL file has to know the local file location, script to accpet arbitrary id
+
+# the folder with simulation results
+simworkdir=${runprefix}${locid}_${itnum}${runsufix}
 
 ### Compare resulting profiles with a stored 'ground truth' stationary profile, and with the initial profile
 echo ">>> Comparing the final state with ground-truth stationary state"
-statelast=/${runsufix}/${lastcoreprofcpo}
+statelast=${simworkdir}/${lastcoreprofcpo}
+state_gtst=../${commondir}/ets_coreprof_stst.cpo
 python ${compare_op} ${statelast} ${state_gtst} 
 
 echo ">>> Comparing the final state with the initial state"
-stateinit=${commondir}/${initcoreprofcpo}
+stateinit=../${commondir}/${initcoreprofcpo}
 python ${compare_op} ${statelast} ${stateinit} 
+
+# Copy the resulting core profile to the root directory
+cp ${statelast} ../../
 
 echo ">>> Finished the surrogate workflow!"
 ##################################################################
 
-# ### Define the starting point of the loop 
-# echo ">>> Preparing initial state: filenames"
 # sourcedir=${muscledir}/${muscleworkdir}/gem0_surr_resume_data/
-# state_gtst=gem0wf_stst/${lastcoreprofcpo}
 
 # datenow=$(date +"%Y%m%d")
-# #origdir=$(pwd)
 # origdir=~/code/MFW/uq/basicda
 # curr_id=${datenow}
   
-# ### Prepare data for an iteration: CPOs 
-# echo ">>> Preparing data for iteration "${itnum}
-
-# locdir=$(pwd)
-
 # cp ${sourcedir}/${initequilibriumcpo} ${locdir}/
 # cp ${sourcedir}/${initcoreprofcpo} ${locdir}/

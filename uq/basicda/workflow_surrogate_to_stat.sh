@@ -87,7 +87,7 @@ for((itnum=${itnum_min};itnum<${itnum_max};itnum++)); do
   ### Collect the data from the M3-WF run and compare resulting profiles with the last iteration
   echo ">>> Comparing this and previous iteration states"
   
-  prev_state_name=ets_coreprof_out_last.cpo
+  prev_state_name=ets_coreprof_out_last_${itnum}.cpo
   mv ${origdir}/${lastcoreprofcpo} ${origdir}/${prev_state_name}
   cp ${runprefix}${datenow}_${itnum}${runsufix}/${lastcoreprofcpo} ${origdir}/
   cd ${origdir}

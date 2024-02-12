@@ -10,6 +10,7 @@ import chaospy as cp
 # from easyvvuq
 import easyvvuq as uq
 from easyvvuq.actions import Encode, Decode, Actions, CreateRunDirectory, ExecuteQCGPJ, ExecuteLocal, ExecuteSLURM, QCGPJPool
+from easyvvuq.actions.execute_qcgpj import EasyVVUQParallelTemplate
 
 # form qcg-pj
 from qcg.pilotjob.executor_api.qcgpj_executor import QCGPJExecutor
@@ -59,8 +60,8 @@ def input_params_stub_relative(nfts=8):
     fts = [i for i in range(nfts)]
 
     input_params_dict = {
-                "Q{sp}_{ft}": {"dist": "Normal", "mu":0.0, "sigma": 0.5*(ft+1)*1E-1}
-                        for ft,sp in product(range(nfts), species)}
+                f"Q{sp}_{ft}": {"dist": "Normal", "mu":0.0, "sigma": 0.5*(ft+1)*1E-1}
+                        for ft,sp in product(fts, species)}
 
     return input_params_dict
 
@@ -94,6 +95,31 @@ def exec_pj(campaign, exec_path, ncores, nnodes=1, mpi_instance='mpiexec', log_l
     
     return exec_res
 
+def exec_pj_no_templ(campaign,):
+
+    exec_res = 0
+
+    try:
+        print(">> Creating resource pool")
+
+        with QCGPJPool(
+                #qcgpj_executor=QCGPJExecutor(),
+                template=EasyVVUQParallelTemplate(),
+                template_params={'numCores':1},
+                ) as qcgpj:
+            
+            print(f">> Executing on a HPC machine and collating results")
+            
+            campaign.execute(pool=qcgpj).collate()
+            exec_res = campaign.get_collation_result()
+
+    except Exception as e:
+        
+        print('!>> Exception during batch execution! :')
+        print(e)
+    
+    return exec_res
+
 def prepare_results(result, output_columns):
 
     moment_list = ['mean', 'std', 'skewnewss', 'kurtosis'] # TODO lookup eUQ docu
@@ -118,7 +144,7 @@ if __name__ == "__main__":
     # - option 2 - use MC
     n_samples = int(os.environ['NSAMPLES'])
 
-    base_dataset_filename = "gem0py_new_basedata.csv"
+    base_dataset_filename = "gem0py_new_baseline.csv"
     target_dataset_filename = "gem0py_new_local.csv"
     output_filename = "ets_coreprof_out.cpo"
 
@@ -129,10 +155,20 @@ if __name__ == "__main__":
     # Normal PDF for each: mu, sigma
     print(f"> Making UQ run parameters: i/o, parallelisation")
     # Choice: do not have tensor product over flux tubes, treat them in batch
-    input_params = input_params_stub_relative()
+    input_params_propr = input_params_stub_relative()
     
     # TODO assumes discription["dist"] == "Normal"
-    vary = {key: cp.Normal(description['mu'], description['sigma']) for key,description in input_params.items()}
+    # Turn input param description into 'vary'
+    vary = {key: cp.Normal(description['mu'], description['sigma']) for key,description in input_params_propr.items()}
+
+    # Turn input param description into eUQ param dict
+    sigma_lim = 3.0
+    input_params = {key: {
+        "type": "float", 
+        "default": description['mu'],
+        #"min": description['mu'] - sigma_lim*description['sigma'],
+        #"max": description['mu'] + sigma_lim*description['sigma'],
+                       } for key,description in input_params_propr.items()}
 
     ft_coords = [0.143587306141853 , 0.309813886880875 , 0.442991137504578 , 0.560640752315521 , 0.668475985527039 , 0.769291400909424 , 0.864721715450287 , 0.955828309059143]
 
@@ -172,22 +208,32 @@ if __name__ == "__main__":
     campaign = uq.Campaign(name='UQ_8FTGEM0_WF_AL_', work_dir=wrk_dir)
 
     common_dir = campaign.campaign_dir +"/common/"
+    os.mkdir(common_dir)
 
     # baseline training dataset (and other surrogate files)
     print(f"> Copying data for surrogates")
     surrogate_data_dir = os.path.abspath("basicda")
-    os.system(f"cp {surrogate_data_dir}/gem0py_new_baseline.csv {common_dir}/")
+    os.system(f"cp {surrogate_data_dir}/{base_dataset_filename} {common_dir}/{base_dataset_filename}")
+    surrogate_script_dir = os.path.abspath("../../EasySurrogate/tests/gem_gp")
     surrogate_scripts = ['process_gpr_ind.sh', 'gem_data_ind.py', 'train_model_ind.py', 'test_model_ind.py']
-    os.system(f"") #TODO
+    for filename in surrogate_scripts:
+        os.system(f"cp {surrogate_script_dir}/{filename} {common_dir}/") 
+        #TODO else?
 
     # initial state for the M3WF (this is done inside *.sh file)
     print(f"> Copying data for simulations")
     simulation_data_dir  = os.path.abspath("../muscle3")
     os.system(f"cp {simulation_data_dir}/read_profs.py {common_dir}/")
+    os.system(f"cp {simulation_data_dir}/workflow/gem_surr_workflow_independent.sh {common_dir}/")
+    os.system(f"cp {simulation_data_dir}/workflow/gem-surr-mft-fusion-independent.ymmsl {common_dir}/")
+
+    os.system(f"cp {surrogate_data_dir}/compare_workflow_states.py {common_dir}/")
+    os.system(f"cp {surrogate_data_dir}/gem0wf_stst/ets_coreprof_out.cpo {common_dir}/ets_coreprof_stst.cpo")
+
     init_cpo_list = ['ets_coreprof_in.cpo', 'ets_equilibrium_in.cpo', 'ets_coretransp_in.cpo', 'ets_toroidfield_in.cpo', 'ets_coresource_in.cpo', 'ets_coreimpur_in.cpo']
     simulation_cpo_dir = "workflow/gem0_surr_resume_data"
     for initcpo in init_cpo_list:
-        os.system(f"cp {simulation_data_dir}/{simulation_cpo_dir} {common_dir}/")
+        os.system(f"cp {simulation_data_dir}/{simulation_cpo_dir}/{initcpo} {common_dir}/")
 
     ### Encoders
     # Sample from PDF: flux perturbation [Ind. variable] -> code of turbulence model variation
@@ -200,7 +246,10 @@ if __name__ == "__main__":
     ### Decoders
     # Code of M3-WF run (foldername) -> [QoI] (ion) temperature @rho_tor_norm=0
     print("> Creating Decoder")
-    decoder = ProfileCPODecoder(cpo_filename=output_filename, output_columns=output_columns)
+    output_cpo_path = ''
+    decoder = ProfileCPODecoder(cpo_filename=output_filename, 
+                                cpo_path=output_cpo_path,
+                                output_columns=output_columns)
 
     ### Actions
     # Shell script to: flux perturbation -> labels for data set -> traning data -> surrogate -> M3-WF run -> final CPO files
@@ -222,7 +271,8 @@ if __name__ == "__main__":
     # - option 1 - PCE
     #sampler = uq.sampling.PCESampler(vary=input_params, polynomial_order=p)
     # - option 2 - MC 
-    sampler = uq.sampling.MCSampler(vary=input_params, n_mc_samples=n_samples,)
+    print(f">>> Using {n_samples} samples") ###DEBUG
+    sampler = uq.sampling.MCSampler(vary=vary, n_mc_samples=n_samples,)
 
     # Analysis
     print("> Creating Analysis")
@@ -246,7 +296,9 @@ if __name__ == "__main__":
     campaign.set_sampler(sampler)
 
     print("> Exectung the Actions!")
-    exec_res = exec_pj(campaign, exec_path_comm, ncores, nnodes, mpi_instance)
+    #TODO are ncores and nnodes needed for one job or all jobs?
+    #exec_res = exec_pj(campaign, exec_path_comm, ncores, nnodes, mpi_instance)
+    exec_res = exec_pj_no_templ(campaign)
 
     ### Result analysis
     print(f"> Performing Analysis")
@@ -254,8 +306,4 @@ if __name__ == "__main__":
     result = campaign.get_last_analysis()
 
     # Moments of QoI: AVG, STD, SCW, KRT
-
-
-
-
-
+    print(result)

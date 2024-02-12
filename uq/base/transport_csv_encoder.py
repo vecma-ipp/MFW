@@ -18,6 +18,7 @@ class TransportCSVEncoder:
 
         self.data_filename = csv_filename
         self.input_dir = input_dir
+        self.input_params = input_params
         self.target_filename = target_filename if target_filename is not None else csv_filename
 
     def encode(self, params={}, target_dir=''):
