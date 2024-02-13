@@ -56,7 +56,7 @@ cd ..
 python read_profs.py ${code_run_name} ${curr_id}${runlabel}
 
 # Save the results of the run and postprocessing
+mv ${run_dir_name}_${curr_id}${runlabel}/ workflow/
 cd workflow/
 tar -czvf ${run_dir_name}.tar.gz --exclude=*.cpo --exclude=*.dat ${run_dir_name}/ ${run_dir_name}_${curr_id}${runlabel}/
 mv run_fusion_${code_run_name}${curr_id}${runlabel}.tar.gz ../../..
-

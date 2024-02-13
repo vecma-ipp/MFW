@@ -24,6 +24,21 @@ code_run_name=gem0_surr_
 run_dir_name=run_fusion_${code_run_name}${curr_id}${runlabel}
 mkdir ${run_dir_name}
 
+echo PATH:
+echo ${PATH}
+
+echo PYTHONPATH:
+echo ${PYTHONPATH}
+
+echo "running the workflow with a root at "$(pwd)
+
+# #DEBUG - script doomed to fail:
+# python3 /u/yyudin/code/MFW/muscle3/src/gem_surr_mft_M3.py
+
+#TODO: (a) modify the YMMSL beforehand
+#      (b) pass id to muscle_manager: M3 'implementation' of gem_sur_imp has to accept arguments
+#      (c) generate a sufficiently long (16 digits?) inside the M3 'implementation' -> done
+
 muscle_manager --log-level DEBUG --run-dir ${run_dir_name} --start-all gem-surr-mft-fusion-independent.ymmsl &
 
 echo 'MUSCLE_MANAGER started'

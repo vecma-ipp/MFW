@@ -1,6 +1,13 @@
 import numpy as np
 import pandas as pd
 
+#from ctypes import c_char, string_at
+import io
+import sys
+
+import random as r
+from time import time as t
+
 import logging
 import pickle
 
@@ -9,17 +16,11 @@ from ymmsl import Operator
 
 from ascii_cpo import read, write_fstream, read_fstream, write
 
-#from ctypes import c_char, string_at
-import io
-import sys
-
 import easysurrogate as es
 
-from time import time as t
+from muscle_utils.utils import coreprof_to_input_value, output_value_to_coretransp, training_data_bounds, check_outof_learned_bounds
 
-from utils import coreprof_to_input_value, output_value_to_coretransp, training_data_bounds, check_outof_learned_bounds
-
-def gem_surr_M3():
+def gem_surr_M3(id=0):
     """
     MUSCLE3 implementation of GEM surrogate
     Creates an ML model from a .pickle file
@@ -122,7 +123,7 @@ def gem_surr_M3():
         coreprof_in_data_bytes = msg_in.data
 
         # Save the binary buffer to a file
-        devshm_file = f"/dev/shm/ets_coreprof_in_{num_it:.6f}.cpo" #TODO: generate and store random name
+        devshm_file = f"/dev/shm/ets_coreprof_in_{id}_{num_it:.6f}.cpo" #TODO: generate and store random name
         with open(devshm_file, "wb") as f:
             f.write(coreprof_in_data_bytes)
         start_t = t()
@@ -271,4 +272,6 @@ if __name__ == '__main__':
     logging.basicConfig()
     logging.getLogger().setLevel(logging.INFO)
 
-    iter_count = gem_surr_M3()
+    run_id = sys.argv[1] if len(sys.argv)>1 else r.randint(1000_0000, 9999_9999)
+
+    iter_count = gem_surr_M3(id=run_id)

@@ -1,10 +1,13 @@
 import sys
 
 #muscle3path='../../muscle3/'
-#muscle3path='~/code/MFW/muscle3'
-muscle3path='/u/yyudin/code/MFW/muscle3'
+#muscle3path='~/code/MFW/muscle3/'
+#muscle3path='/u/yyudin/code/MFW/muscle3/'
+muscle3path='/u/yyudin/code/MFW/muscle3/src/'
 sys.path.append(muscle3path)
-from read_profs import compare_states
+
+#from read_profs import compare_states
+from muscle_utils.utils import compare_states
 
 if __name__ == "__main__":
 
