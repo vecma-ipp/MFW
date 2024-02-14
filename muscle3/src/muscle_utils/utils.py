@@ -9,6 +9,7 @@ from itertools import product
 
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
+import matplotlib.ticker as ticker
 
 import easysurrogate as es
 
@@ -55,8 +56,8 @@ def check_outof_learned_bounds(input, reference):
     Returns: bool: True if input is outisde of the learned bounds
     """
 
-    print(f"reference:\n{reference}") ###DEBUG
-    print(f"input:\n{input}") ###DEBUG
+    #print(f"reference:\n{reference}") ###DEBUG
+    #print(f"input:\n{input}") ###DEBUG
 
     input_order = {'te_value':0, 'ti_value':1, 'te_ddrho':2, 'ti_ddrho':3}
 
@@ -88,7 +89,7 @@ def check_outof_learned_bounds(input, reference):
                 dict_outofbounds[k]['lesser'][j] = True
                 dict_outofbounds[k]['within'][j] = False
 
-    print(f"dict_outofbounds:\n{dict_outofbounds}") ###DEBUG
+    #print(f"dict_outofbounds:\n{dict_outofbounds}") ###DEBUG
 
     return bool_outofbounds, dict_outofbounds
 
@@ -118,7 +119,7 @@ def coreprof_to_input_value(
     #ATTENTION: for gradients GEM/GEM0 uses rho_tor_norm and ETS uses rho_tor
 
     prof_vals = np.zeros((n*m, d))
-    print(f"Entering a function to parse CPO into surrogate input")
+    #print(f"Entering a function to parse CPO into surrogate input") ###DEBUG
 
     for i, prof_name in enumerate(prof_names):
 
@@ -173,7 +174,7 @@ def coretransp_to_value(
     d = len(rho_ind_s)
 
     transp_vals = np.zeros((n*m, d))
-    print(f"Entering a function to parse CPO into transp data")
+    #print(f"Entering a function to parse CPO into transp data") ###DEBUG
 
     prof_val = data.values[0] # a difference from coreprof
 
@@ -630,14 +631,14 @@ def compare_profiles(x1, x2, criterion):
         #TODO: consider Wasserstein distance: for Te/i ~ Heat capacity, for ne/ni ~ mass, for gradients ~ diffusivity(?, total?)
     return d
 
-def plot_state_conv(data, filename, metric_name='srRMSE'):
+def plot_state_conv(data, filename, metric_name='srRMSE', normalised=True):
     """
     Plots convergence of metrics for pairs of states with a simulation for a given metric
     """
 
     col_name_dict = {
-        'd_prevfin_gtstst': "d(fin-1,g.t.st.st)",
-        'd_fin_gtststs': "d(fin-1,g.t.st.st)",
+        'd_prevfin_gtstst': "d(fin-1, g.t.st.st)",
+        'd_fin_gtststs': "d(fin, g.t.st.st)",
         'd_prevfin_fin': "d(fin, fin-1)"
     }
 
@@ -648,21 +649,25 @@ def plot_state_conv(data, filename, metric_name='srRMSE'):
     for col_name in data.columns:
         if col_name in col_name_dict.keys():
 
-            norm = data[col_name].max()
+            norm = data[col_name].max() if normalised else 1.
 
             ax.plot(t, 
                     data[col_name] / norm,
                     alpha=0.8,
+                    marker='.',
                     label=col_name_dict[col_name]
                     )
 
     ax.set_yscale("log")
-
     ax.legend(loc='best')
+
+    ax.xaxis.set_major_locator(ticker.MultipleLocator(1))
+    ax.yaxis.set_major_locator(ticker.LogLocator(base=10,))
+    ax.grid(visible=True)
 
     ax.set_xlabel(f"Algorithm iterations $i$")
     ax.set_ylabel(f"{metric_name}, a.u.")
-    ax.set_title(f"$D(s_{{i}},s_{{i-1}}), norm-d to 1st it-n")
+    ax.set_title(f"$D(s_{{i}},s_{{i-1}})${', norm-d to 1st it-n' if normalised else ''}")
 
     fig.savefig(f"{filename}.pdf")
 
