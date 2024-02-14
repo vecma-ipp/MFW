@@ -113,6 +113,7 @@ implementations:
   ets_impl:
     executable: /u/yyudin/code/MFW/muscle3/bin/COBRA/ets_M3
   gem_surr_impl:
+    modules: anaconda/3/2021.11
     executable: python3 /u/yyudin/code/MFW/muscle3/src/gem_surr_mft_M3.py
     # args:
     #   - 0
@@ -137,7 +138,8 @@ implementations:
     executable: /u/yyudin/code/MFW/muscle3/bin/COBRA/imp4dv_M3
   
 settings:
-  transport.duration: 0.1
+  # COMMENT: all paths should be w.r.t the /workdir/ of the instances!
+  transport.duration: 0.002 # ATTENTION: originally was 0.1, but 0.03 should be enough for GEM0 convergence
   transport.dt: 0.001
   transport.nonstationary_equilibrium: True
   
@@ -156,11 +158,11 @@ settings:
   #turbulence.profs_out: "ti_transp.flux"
   turbulence.surrogate_type: "gpr" #"scikit_regression"
 
-  turbulence.surrogate_path: "../../../../forworkflow/gem0_es_model"
+  turbulence.surrogate_path: "../../../../../forworkflow/gem0_es_model"
   
   turbulence.coretransp_default: "../../../../ets_coretransp_in.cpo"
   
-  turbulence.training_dataset_filename: "../../../../../ref_train_data.csv"
+  turbulence.training_dataset_filename: "../../../../ref_train_data.csv"
   turbulence.retrain_distance: 0.25
   turbulence.bool_send_uncertainty: True
 

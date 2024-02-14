@@ -24,16 +24,18 @@ code_run_name=gem0_surr_
 run_dir_name=run_fusion_${code_run_name}${curr_id}${runlabel}
 mkdir ${run_dir_name}
 
+# DEBUG and checking section
 echo PATH:
 echo ${PATH}
 
 echo PYTHONPATH:
 echo ${PYTHONPATH}
 
+which python3
+
 echo "running the workflow with a root at "$(pwd)
 
-# #DEBUG - script doomed to fail:
-# python3 /u/yyudin/code/MFW/muscle3/src/gem_surr_mft_M3.py
+# python3 /u/yyudin/code/MFW/muscle3/src/gem_surr_mft_M3.py #DEBUG - script doomed to fail:
 
 #TODO: (a) modify the YMMSL beforehand
 #      (b) pass id to muscle_manager: M3 'implementation' of gem_sur_imp has to accept arguments
@@ -45,6 +47,10 @@ echo 'MUSCLE_MANAGER started'
 
 manager_pid=$!
 
+# # Next two lines just to get additional info about processes and cores
+# sleep 60
+# ps -u yyudin -o user,pid,pcpu,rss,vsz,psr,args
+
 touch muscle3_manager.log
 
 echo '> Now launching the manager'
@@ -54,6 +60,7 @@ wait
 
 # Make plots for the evolution of core profiles
 # TODO makle read_profs.py work independently of locations
+echo "> Simulation finished, now postprocessing"
 #cd ..
 python read_profs.py ${code_run_name} ${curr_id}${runlabel}
 

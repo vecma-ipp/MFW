@@ -2,6 +2,8 @@
 
 locid=${1:-0}
 
+#source activate ${HOME}/conda-envs/python3114
+
 ### Define fixed folder and file names
 echo ">>> Surrogate workflow: Setting up names"
 
@@ -28,7 +30,6 @@ lastcoreprofcpo=ets_coreprof_out.cpo
 lastequilibriumcpo=equilupdate_equilibrium_out.cpo
 
 ### Define script file names of each operation
-# TODO: make these scripts work at any directory -> should be already possible
 surrogate_op=process_gpr_ind.sh
 simulation_op=gem_surr_workflow_independent.sh
 compare_op=compare_workflow_states.py
@@ -59,13 +60,13 @@ done
 
 cd ${locsurrogatedir}
 # Run the surrogate script - should already copy the surrogates
-./${surrogate_op} ${locid} ${itnum} # TODO: Should accept arbitrary id, read right files, copy files in a subfolder here
+./${surrogate_op} ${locid} ${itnum} # TODO: Should accept arbitrary id
 
 ### Run the M3 workflow
 cd ..
 echo ">>> Running a new simulation workflow"
 # Copy the initial state for the simulation, also postprocessing script
-simulation_files=( ${simulation_op} ${compare_op} ${initcoreprofcpo} ${initequilibriumcpo} ${initcoretranspcpo} ${inittoroidfieldcpo} ${initcoresourcecpo} ${initcoreimpurcpo} read_profs.py gem-surr-mft-fusion-independent.ymmsl )
+simulation_files=( ${simulation_op} ${compare_op} ${initcoreprofcpo} ${initequilibriumcpo} ${initcoretranspcpo} ${inittoroidfieldcpo} ${initcoresourcecpo} ${initcoreimpurcpo} read_profs.py gem-surr-mft-fusion-independent.ymmsl ets.xml ets.xsd chease.xml chease.xsd gem0.xml gem0.xsd )
 
 locsimulationdir=muscle3
 mkdir ${locsimulationdir}
@@ -78,7 +79,7 @@ ${copy_op} ../${surdata} ${locdir}/${locsimulationdir}/ref_train_data.csv
 
 cd ${locsimulationdir}
 # Run the M3 workflow
-./${simulation_op} ${locid} ${itnum} # YMMSL file has to know the local file location, script to accpet arbitrary id
+./${simulation_op} ${locid} ${itnum} # TODO: YMMSL file has to know the local file location, script to accpet arbitrary id
 
 # the folder with simulation results
 simworkdir=${runprefix}${locid}_${itnum}${runsufix}
@@ -94,16 +95,11 @@ stateinit=../${commondir}/${initcoreprofcpo}
 python ${compare_op} ${statelast} ${stateinit} 
 
 # Copy the resulting core profile to the root directory
-cp ${statelast} ../../
+cp ${statelast} ../
 
 echo ">>> Finished the surrogate workflow!"
 ##################################################################
 
-# sourcedir=${muscledir}/${muscleworkdir}/gem0_surr_resume_data/
-
 # datenow=$(date +"%Y%m%d")
-# origdir=~/code/MFW/uq/basicda
-# curr_id=${datenow}
-  
 # cp ${sourcedir}/${initequilibriumcpo} ${locdir}/
 # cp ${sourcedir}/${initcoreprofcpo} ${locdir}/

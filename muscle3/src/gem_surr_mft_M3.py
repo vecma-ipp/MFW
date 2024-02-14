@@ -4,6 +4,7 @@ import pandas as pd
 #from ctypes import c_char, string_at
 import io
 import sys
+import os
 
 import random as r
 from time import time as t
@@ -138,7 +139,7 @@ def gem_surr_M3(id=0):
                                               )
 
         profiles_in = profiles_in[input_names_ind_permut] #TODO: either fix original order, or store permutation separately
-        print(f"> Read incoming core profile \n {profiles_in}") ###DEBUG
+        #print(f"> Read incoming core profile \n {profiles_in}") ###DEBUG
 
         # Get (n_features, n_samples) from surrogate from (n_features, n_radial_points)
         # TODO should be (n_features, n_radial_points) -> (n_features, n_radial_points, n_samples)
@@ -185,7 +186,7 @@ def gem_surr_M3(id=0):
 
         fluxes_out_dict = {k:fluxes_out[:, i] for i,k in enumerate(output_names)}
 
-        print(f"fluxes_out_dict: \n{fluxes_out_dict}") ###DEBUG
+        #print(f"fluxes_out_dict: \n{fluxes_out_dict}") ###DEBUG
         
         coretransp_cpo_obj = output_value_to_coretransp(
                                         fluxes_out_dict, 
@@ -268,10 +269,12 @@ def gem_surr_M3(id=0):
 
 
 if __name__ == '__main__':
+
+    print(f"{os.getcwd()}") ###DEBUG
     
     logging.basicConfig()
     logging.getLogger().setLevel(logging.INFO)
 
-    run_id = sys.argv[1] if len(sys.argv)>1 else r.randint(1000_0000, 9999_9999)
+    run_id = sys.argv[1] if len(sys.argv)>1 else r.randint(1000_0000_0000, 9999_9999_9999)
 
     iter_count = gem_surr_M3(id=run_id)

@@ -31,7 +31,9 @@
 
 #module load anaconda/3/2021.11 intel/21.5.0 mkl impi/2021.5 fftw-mpi/3.3.10
 
-source activate ${HOME}/conda-envs/python3114
+module load anaconda/3/2021.11
+
+#source activate ${HOME}/conda-envs/python3114
 
 export SYS=COBRA
 export SCRATCH=${SCRATCH}
@@ -52,7 +54,7 @@ export EASYPJ_CONFIG=conf.sh
 export MPIMOD=default #srunmpi
 
 if [ -z "${NSAMPLES}" ]; then
-    export NSAMPLES=100
+    export NSAMPLES=50
 fi
 
 if [ -z "${POLORDER}" ]; then

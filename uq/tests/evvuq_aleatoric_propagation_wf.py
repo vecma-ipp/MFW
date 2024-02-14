@@ -222,14 +222,21 @@ if __name__ == "__main__":
 
     # initial state for the M3WF (this is done inside *.sh file)
     print(f"> Copying data for simulations")
+
     simulation_data_dir  = os.path.abspath("../muscle3")
     os.system(f"cp {simulation_data_dir}/read_profs.py {common_dir}/")
-    os.system(f"cp {simulation_data_dir}/workflow/gem_surr_workflow_independent.sh {common_dir}/")
-    os.system(f"cp {simulation_data_dir}/workflow/gem-surr-mft-fusion-independent.ymmsl {common_dir}/")
 
+    # files for configuration of workflow and its componenrts
+    sim_nec_dir = 'workflow'
+    sim_nec_files = ['gem_surr_workflow_independent.sh', 'gem-surr-mft-fusion-independent.ymmsl', 'ets.xml', 'ets.xsd', 'chease.xml', 'chease.xsd', 'gem0.xml', 'gem0.xsd']
+    for filename in sim_nec_files:
+        os.system(f"cp {simulation_data_dir}/{sim_nec_dir}/{filename} {common_dir}/") 
+
+    # files for comparison of states
     os.system(f"cp {surrogate_data_dir}/compare_workflow_states.py {common_dir}/")
     os.system(f"cp {surrogate_data_dir}/gem0wf_stst/ets_coreprof_out.cpo {common_dir}/ets_coreprof_stst.cpo")
 
+    # files for 'initial conditions' of the workflow
     init_cpo_list = ['ets_coreprof_in.cpo', 'ets_equilibrium_in.cpo', 'ets_coretransp_in.cpo', 'ets_toroidfield_in.cpo', 'ets_coresource_in.cpo', 'ets_coreimpur_in.cpo']
     simulation_cpo_dir = "workflow/gem0_surr_resume_data"
     for initcpo in init_cpo_list:
