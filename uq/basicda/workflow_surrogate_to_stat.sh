@@ -33,7 +33,7 @@ origdir=$(pwd)
 curr_id=${datenow}
 
 itnum_min=0
-itnum_max=3
+itnum_max=5
 
 echo ">>> Entering the loop"
 for((itnum=${itnum_min};itnum<${itnum_max};itnum++)); do

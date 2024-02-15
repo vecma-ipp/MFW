@@ -1,6 +1,11 @@
-#!bin/bash/
+#!/bin/bash
 
-folder=UQ_8FTgem0_abcd1234/
+#gotoscr
+cd /ptmp/yyudin/
 
-find ${folder}/ -type f -exec touch {} +
+folders=( UQ_8FTgem0_abcd1234/ UQ_8FTgem_csldvnei/ )
+
+for folder in ${folders[@]}; do
+  find ${folder}/ -type f -exec touch {} +
+done
 
