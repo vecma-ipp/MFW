@@ -54,7 +54,7 @@ export EASYPJ_CONFIG=conf.sh
 export MPIMOD=default #srunmpi
 
 if [ -z "${NSAMPLES}" ]; then
-    export NSAMPLES=50
+    export NSAMPLES=2
 fi
 
 if [ -z "${POLORDER}" ]; then

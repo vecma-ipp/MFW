@@ -368,7 +368,6 @@ if __name__ == '__main__':
     
     dates = read_profs(codename=codename, dates=dates, ref_data_filename=ref_data_filename, cpo_names=cpo_names, prefix_name='run_fusion_') # for the WF independent of its root directory location
 
-
     print(f"Postrprocessing finished, totally took {t.time()-st:.3f} s")
 
     #########

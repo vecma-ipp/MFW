@@ -5,6 +5,8 @@ import pandas as pd
 
 from itertools import product
 
+import pickle
+
 import chaospy as cp
 
 # from easyvvuq
@@ -19,6 +21,8 @@ from qcg.pilotjob.executor_api.qcgpj_executor import QCGPJExecutor
 from base.evvuq_partemplate_wenv import EasyVVUQParallelTemplateWithEnv
 from base.transport_csv_encoder import TransportCSVEncoder
 from base.profile_cpo_decoder import ProfileCPODecoder
+from base.plots import plot_moments, plot_sobols
+from base.utils import cpo_inputs, ftube_indices
 
 def input_params_stub_perft(nfts=8):
     """
@@ -130,6 +134,43 @@ def prepare_results(result, output_columns):
 
     return moments
 
+def plot_results(result, input_params, output_columns):
+
+    # To store Statistics and Sobols
+    means = {qoi: [] for qoi in output_columns}
+    stds = {qoi: [] for qoi in output_columns}
+    sob1 = {qoi: [] for qoi in output_columns}
+    sobt = {qoi: [] for qoi in output_columns}
+
+    # Store results - TODO has to be done on per f.t. basis
+    for qoi in output_columns:
+        means[qoi].append(result.describe(qoi, 'mean'))
+        stds[qoi].append(result.describe(qoi, 'std'))
+        s1 = {}
+        st = {}
+        for par in list(input_params.keys()):
+            s1.update({par: result.sobols_first(qoi)[par]})
+            st.update({par: result.sobols_total(qoi)[par]})
+        sob1[qoi].append(s1)
+        sobt[qoi].append(st)
+
+    # Plot the results
+    for i, qoi in enumerate(output_columns):
+        plot_moments(means[qoi], stds[qoi],
+                     xlabel="Flux tubes", ylabel=qoi,
+                     ftitle="GEM0SUR-WF: descriptive statistics for "+qoi,
+                     fname="aleatoric_stats"+str(i)+".png")
+
+        for j in range(8):
+                plot_sobols(sob1[qoi][j],
+                            xlabel="Uncertain parameters", ylabel="First sobol",
+                            ftitle='GEM0SUR-WF: First sobol indices \n Flux tube: '+str(j+1)+' - QoI: '+qoi,
+                            fname='gem0surrwf_al_sob1_'+str(i)+str(j)+'.png')
+                plot_sobols(sobt[qoi][j],
+                            xlabel="Uncertain parameters", ylabel="Total sobol",
+                            ftitle='GEM0SUR-WF: Total sobol indices \n Flux tube: '+str(j+1)+' - QoI: '+qoi,
+                            fname='gem0surrwf_al_sobt_'+str(i)+str(j)+'.png')
+
 if __name__ == "__main__":
 
     # Global params
@@ -228,7 +269,9 @@ if __name__ == "__main__":
 
     # files for configuration of workflow and its componenrts
     sim_nec_dir = 'workflow'
-    sim_nec_files = ['gem_surr_workflow_independent.sh', 'gem-surr-mft-fusion-independent.ymmsl', 'ets.xml', 'ets.xsd', 'chease.xml', 'chease.xsd', 'gem0.xml', 'gem0.xsd']
+    sim_nec_files = ['gem_surr_workflow_independent.sh', 'gem-surr-mft-fusion-independent.ymmsl', 
+                      'ets.xml', 'ets.xsd', 'chease.xml', 'chease.xsd', 'gem0.xml', 'gem0.xsd', 
+                      'gem0_equilibrium_in.cpo', 'gem0_coreprof_in.cpo']
     for filename in sim_nec_files:
         os.system(f"cp {simulation_data_dir}/{sim_nec_dir}/{filename} {common_dir}/") 
 
@@ -285,8 +328,9 @@ if __name__ == "__main__":
     print("> Creating Analysis")
     # - option 1 - PCE
     #analysis = uq.analysis.PCEAnalysis(sampler=sampler, qoi_cols=output_columns)
-    # - option 2 - MC
-    analysis = uq.analysis.BasicStats()
+    # - option 2 - MC: default analysis class would be QMCAnalysis
+    #analysis = uq.analysis.BasicStats()
+    analysis = uq.analysis.QMCAnalysis(sampler=sampler)
 
     ### Run EasyVVUQ campaign
 
@@ -314,3 +358,9 @@ if __name__ == "__main__":
 
     # Moments of QoI: AVG, STD, SCW, KRT
     print(result)
+    
+    pickle_filename = "result_aleatoric_wf.pickle"
+    with open(pickle_filename, "bw") as file_pickle:
+        pickle.dump(result, file_pickle)
+
+    plot_results(result, input_params, output_columns)

@@ -24,18 +24,14 @@ code_run_name=gem0_surr_
 run_dir_name=run_fusion_${code_run_name}${curr_id}${runlabel}
 mkdir ${run_dir_name}
 
-# DEBUG and checking section
-echo PATH:
-echo ${PATH}
-
-echo PYTHONPATH:
-echo ${PYTHONPATH}
-
-which python3
-
-echo "running the workflow with a root at "$(pwd)
-
-# python3 /u/yyudin/code/MFW/muscle3/src/gem_surr_mft_M3.py #DEBUG - script doomed to fail:
+# # DEBUG and checking section
+# echo PATH:
+# echo ${PATH}
+# echo PYTHONPATH:
+# echo ${PYTHONPATH}
+# which python3
+# echo "running the workflow with a root at "$(pwd)
+# #python3 /u/yyudin/code/MFW/muscle3/src/gem_surr_mft_M3.py #DEBUG - script doomed to fail:
 
 #TODO: (a) modify the YMMSL beforehand
 #      (b) pass id to muscle_manager: M3 'implementation' of gem_sur_imp has to accept arguments
@@ -47,16 +43,16 @@ echo 'MUSCLE_MANAGER started'
 
 manager_pid=$!
 
-# # Next two lines just to get additional info about processes and cores
-# sleep 60
-# ps -u yyudin -o user,pid,pcpu,rss,vsz,psr,args
+# Next two lines just to get additional info about processes and cores
+sleep 30
+ps -u yyudin -o user,pid,pcpu,rss,vsz,psr,args
 
+# Next four lines are originally not commented out 
 touch muscle3_manager.log
-
 echo '> Now launching the manager'
 tail -f muscle3_manager.log --pid=${manager_pid}
+wait ${manager_pid}
 
-wait
 
 # Make plots for the evolution of core profiles
 # TODO makle read_profs.py work independently of locations
@@ -64,10 +60,9 @@ echo "> Simulation finished, now postprocessing"
 #cd ..
 python read_profs.py ${code_run_name} ${curr_id}${runlabel}
 
-# Copy the resulting core profile to the root directory
-# -> done in parent workflow.sh
-
 # Save the results of the run and postprocessing
 # cd workflow/
 # tar -czvf ${run_dir_name}.tar.gz --exclude=*.cpo --exclude=*.dat ${run_dir_name}/ ${run_dir_name}_${curr_id}${runlabel}/
 # mv run_fusion_${code_run_name}${curr_id}${runlabel}.tar.gz ../../..
+
+echo "> Last line of simulation workflow shell script"

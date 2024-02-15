@@ -9,7 +9,7 @@ from .cpo_element import CPOElement
 
 class ProfileCPODecoder:
 
-    def __init__(self, cpo_filename, cpo_path, cpo_name='coreprof', output_columns=["te_value_0", "ti_value_0"]):
+    def __init__(self, cpo_filename, cpo_path='', cpo_name='coreprof', output_columns=["te_value_0", "ti_value_0"]):
 
         if cpo_filename is None:
             msg = (f"cpo_filename must be set for ProfileCPODecoder. This should be"
@@ -80,7 +80,7 @@ class ProfileCPODecoder:
             coord = int(qoi_coord)
 
             value = cpo.get_value(f"{qoi_core}.{qoi_name}")
-            qoi_values[qoi] = value[coord]
+            qoi_values[f"{qoi}_{coord}"] = value[coord]
 
         return qoi_values
 

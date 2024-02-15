@@ -34,8 +34,8 @@ surrogate_op=process_gpr_ind.sh
 simulation_op=gem_surr_workflow_independent.sh
 compare_op=compare_workflow_states.py
 
-#copy_op="cp " # - option 1 - actually copy files
-copy_op="ln -s "
+#copy_op="cp "   # - option 1 - actually copy files
+copy_op="ln -s " # - option 2 - sim-link to /common/ folder
 
 ### Start the workflow
 locdir=$(pwd)
@@ -66,7 +66,7 @@ cd ${locsurrogatedir}
 cd ..
 echo ">>> Running a new simulation workflow"
 # Copy the initial state for the simulation, also postprocessing script
-simulation_files=( ${simulation_op} ${compare_op} ${initcoreprofcpo} ${initequilibriumcpo} ${initcoretranspcpo} ${inittoroidfieldcpo} ${initcoresourcecpo} ${initcoreimpurcpo} read_profs.py gem-surr-mft-fusion-independent.ymmsl ets.xml ets.xsd chease.xml chease.xsd gem0.xml gem0.xsd )
+simulation_files=( ${simulation_op} ${compare_op} ${initcoreprofcpo} ${initequilibriumcpo} ${initcoretranspcpo} ${inittoroidfieldcpo} ${initcoresourcecpo} ${initcoreimpurcpo} read_profs.py gem-surr-mft-fusion-independent.ymmsl ets.xml ets.xsd chease.xml chease.xsd gem0.xml gem0.xsd gem0_equilibrium_in.cpo gem0_coreprof_in.cpo )
 
 locsimulationdir=muscle3
 mkdir ${locsimulationdir}
@@ -101,5 +101,3 @@ echo ">>> Finished the surrogate workflow!"
 ##################################################################
 
 # datenow=$(date +"%Y%m%d")
-# cp ${sourcedir}/${initequilibriumcpo} ${locdir}/
-# cp ${sourcedir}/${initcoreprofcpo} ${locdir}/
