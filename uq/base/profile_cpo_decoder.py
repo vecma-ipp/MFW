@@ -72,15 +72,15 @@ class ProfileCPODecoder:
 
         for qoi in self.output_columns:
 
-            qoi_core = qoi.split('_')[0]
+            qoi_quantity = qoi.split('_')[0]
             qoi_name = qoi.split('_')[1]
             qoi_coord = qoi.split('_')[2]
 
-            qoi = f"{qoi_core}_{qoi_name}"
+            qoi_short = f"{qoi_quantity}_{qoi_name}"
             coord = int(qoi_coord)
 
-            value = cpo.get_value(f"{qoi_core}.{qoi_name}")
-            qoi_values[f"{qoi}_{coord}"] = value[coord]
+            value = cpo.get_value(f"{qoi_quantity}.{qoi_name}")
+            qoi_values[f"{qoi}"] = value[coord]
 
         return qoi_values
 

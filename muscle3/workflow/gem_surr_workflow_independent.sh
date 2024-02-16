@@ -37,22 +37,36 @@ mkdir ${run_dir_name}
 #      (b) pass id to muscle_manager: M3 'implementation' of gem_sur_imp has to accept arguments
 #      (c) generate a sufficiently long (16 digits?) inside the M3 'implementation' -> done
 
-muscle_manager --log-level DEBUG --run-dir ${run_dir_name} --start-all gem-surr-mft-fusion-independent.ymmsl &
+timeouttime='15m'
+
+#muscle_manager --log-level DEBUG --run-dir ${run_dir_name} --start-all gem-surr-mft-fusion-independent.ymmsl &
+timeout ${timeouttime} muscle_manager --log-level DEBUG --run-dir ${run_dir_name} --start-all gem-surr-mft-fusion-independent.ymmsl &
 
 echo 'MUSCLE_MANAGER started'
 
 manager_pid=$!
 
-# Next two lines just to get additional info about processes and cores
+# # Next 1 lines: time out the workflow in case it halts in the very end
+# timeout ${timeouttime} bash -c "sleep ${timeouttime} && kill -s SIGTERM ${manager_pid}" &
+
+# Next 2 lines: just to get additional info about processes and cores
 sleep 30
 ps -u yyudin -o user,pid,pcpu,rss,vsz,psr,args
 
-# Next four lines are originally not commented out 
+# Next 4 lines are originally not commented out 
 touch muscle3_manager.log
 echo '> Now launching the manager'
 tail -f muscle3_manager.log --pid=${manager_pid}
 wait ${manager_pid}
+exit_status=$!
 
+# check the termination cause
+# kill %1
+if [ $exit_status -eq 0 ]; then
+    echo "Workflow completed successfully"
+else
+    echo "Workflow was killed after "${timeouttime}
+fi
 
 # Make plots for the evolution of core profiles
 # TODO makle read_profs.py work independently of locations

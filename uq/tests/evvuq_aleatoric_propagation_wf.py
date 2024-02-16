@@ -54,7 +54,7 @@ def input_params_stub_batch(nfts=8):
 
     return input_params_dict
 
-def input_params_stub_relative(nfts=8):
+def input_params_stub_relative(nfts=8,):
     """
     Define the uncertain parameters
     Returns:   dict: uncertain parameters
@@ -63,9 +63,34 @@ def input_params_stub_relative(nfts=8):
     species = ['e', 'i']
     fts = [i for i in range(nfts)]
 
+    # sigma in fact means coefficient of variation here
     input_params_dict = {
-                f"Q{sp}_{ft}": {"dist": "Normal", "mu":0.0, "sigma": 0.5*(ft+1)*1E-1}
+                f"Q{sp}_{ft}": {"dist": "Normal", "mu": 0.0, "sigma": 0.5*(ft+1)*1E-1}
                         for ft,sp in product(fts, species)}
+
+    return input_params_dict
+
+def input_params_gem_scan(nfts=8):
+    """
+    Define the uncertain parameters
+    Uses data from GEM UQ campaign run 'csldevnei'
+    Returns:   dict: uncertain parameters
+        Creates default parameters for heat flux value distribution: N(mu, sigma)
+    """
+
+    species = ['e', 'i']
+    fts = [i for i in range(nfts)]
+
+    # Next list is taken as AVERAGES from recorded analysis of resuq_main_ti_transp_flux_all_csldvnei_43.csv (GEM data for 8ft*4params*3abcissas)
+    gem_transp_flux_covs = {
+    'ti': [0.2370463147118546, 0.042502557708595665, 0.08202910452564564, 0.04455334874318351, 0.04031436777758668, 0.04840126342067821, 0.06963293699469307, 0.11072505485271966],
+    'te': [0.2370463147118546, 0.042502557708595665, 0.08202910452564564, 0.04455334874318351, 0.04031436777758668, 0.04840126342067821, 0.06963293699469307, 0.11072505485271966]
+    }
+
+    # sigma in fact means coefficient of variation here
+    input_params_dict = {
+                f"Q{sp}_{ft}": {"dist": "Normal", "mu": 0.0, "sigma": gem_transp_flux_covs[f"t{sp}"][ft]}
+                        for ft,sp in product(range(nfts), species)}
 
     return input_params_dict
 
@@ -196,10 +221,11 @@ if __name__ == "__main__":
     # Normal PDF for each: mu, sigma
     print(f"> Making UQ run parameters: i/o, parallelisation")
     # Choice: do not have tensor product over flux tubes, treat them in batch
-    input_params_propr = input_params_stub_relative()
+    #input_params_propr = input_params_stub_relative()
+    input_params_propr = input_params_gem_scan()
     
     # TODO assumes discription["dist"] == "Normal"
-    # Turn input param description into 'vary'
+    # Turn input param description into 'vary' - it has to be in the flux-average scale, so STD should in fact be CoV
     vary = {key: cp.Normal(description['mu'], description['sigma']) for key,description in input_params_propr.items()}
 
     # Turn input param description into eUQ param dict
