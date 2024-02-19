@@ -1,7 +1,7 @@
 #!/bin/bash -l
 
 ## job name
-#SBATCH --job-name=UQ_8FTGEM0_
+#SBATCH --job-name=UQ_8FTGEM0_SCAN_
 
 ## stdout and stderr files
 #SBATCH --output=test-aleatoric-out.%j
@@ -10,7 +10,7 @@
 #SBATCH --no-requeue
 
 ## wall time in format (HOURS):MINUTES:SECONDS
-#SBATCH --time=1:00:00
+#SBATCH --time=4:00:00
 
 ## number of nodes and tasks per node
 # next line: for running only the first slow flux tube
@@ -57,27 +57,34 @@ if [ -z "${NSAMPLES}" ]; then
     export NSAMPLES=16
 fi
 
-if [ -z "${POLORDER}" ]; then
-    export POLORDER=2
-fi
+# if [ -z "${POLORDER}" ]; then
+#     export POLORDER=2
+# fi
 
-if [ -z "${CAMP_NAME_PREFIX}" ]; then
-    export CAMP_NAME_PREFIX=UQ_8FTGEM0_
-fi
+# if [ -z "${CAMP_NAME_PREFIX}" ]; then
+#     export CAMP_NAME_PREFIX=UQ_8FTGEM0_
+# fi
 
-echo -e '> In this run: use ExecuteLocal only + QCGPJ pool + '${MPIMOD}' exec mode + '${SLURM_NNODES}\
-' nodes + 2 QoIs + 8 flux tubes + pol-order '${POLORDER}' + commandline passed with '${MPICMD}' \n'
+echo -e '> For each of these scan runs: use ExecuteLocal only + QCGPJ pool + '${MPIMOD}' exec mode + '${SLURM_NNODES}\
+' nodes + 2 QoIs + 8 flux tubes + n_samples '${NSAMPLES}' + commandline passed with '${MPICMD}' \n'
 
 ####################################
-# Run the UQ code
+# Run the UQ code - scan
 
-# Echo SLURM environmental variables
-scontrol show --detail job ${SLURM_JOBID}
+INPUTCOVLIST=( 0.05 0.1 0.25 )
 
-echo "> Starting a UQ SLURM job!"
+#TODO completely parallelisable!
+for INPUTCOV in ${INPUTCOVLIST[@]}; do
 
-python3 tests/evvuq_aleatoric_propagation_wf.py ${OLDCAMP}> test-aleatoric-log.${SLURM_JOBID}
+    # Echo SLURM environmental variables
+    scontrol show --detail job ${SLURM_JOBID}
 
-echo "> Finished a UQ SLURM job!"
+    echo "> Starting a UQ SLURM job for CoV[Q]="${INPUTCOV}
+
+    python3 tests/evvuq_aleatoric_propagation_wf.py > test-aleatoric-log.${SLURM_JOBID}
+
+    echo "> Finished a UQ SLURM for CoV[Q]="${INPUTCOV}
+
+done
 
 # Run postprocessing?

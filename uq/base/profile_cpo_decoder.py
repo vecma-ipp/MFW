@@ -82,6 +82,9 @@ class ProfileCPODecoder:
             value = cpo.get_value(f"{qoi_quantity}.{qoi_name}")
             qoi_values[f"{qoi}"] = value[coord]
 
+            #print(f"{qoi}={value[coord]}") ###DEBUG
+        print(qoi_values)
+
         return qoi_values
 
     def get_restart_dict(self):

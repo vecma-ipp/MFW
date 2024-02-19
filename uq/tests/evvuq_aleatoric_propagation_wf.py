@@ -70,6 +70,23 @@ def input_params_stub_relative(nfts=8,):
 
     return input_params_dict
 
+def input_params_scan_relative(nfts=8, cov=0.1):
+    """
+    Define the uncertain parameters
+    Accept CoV of the (aleatoric flux) uncertainties as input argument
+    Returns:   dict: uncertain parameters
+        Creates default parameters for heat flux value distribution: N(mu, sigma)
+    """
+    species = ['e', 'i']
+    fts = [i for i in range(nfts)]
+
+    # sigma in fact means coefficient of variation here
+    input_params_dict = {
+                f"Q{sp}_{ft}": {"dist": "Normal", "mu": 0.0, "sigma": cov}
+                        for ft,sp in product(fts, species)}
+
+    return input_params_dict
+
 def input_params_gem_scan(nfts=8):
     """
     Define the uncertain parameters
@@ -83,8 +100,8 @@ def input_params_gem_scan(nfts=8):
 
     # Next list is taken as AVERAGES from recorded analysis of resuq_main_ti_transp_flux_all_csldvnei_43.csv (GEM data for 8ft*4params*3abcissas)
     gem_transp_flux_covs = {
-    'ti': [0.2370463147118546, 0.042502557708595665, 0.08202910452564564, 0.04455334874318351, 0.04031436777758668, 0.04840126342067821, 0.06963293699469307, 0.11072505485271966],
-    'te': [0.2370463147118546, 0.042502557708595665, 0.08202910452564564, 0.04455334874318351, 0.04031436777758668, 0.04840126342067821, 0.06963293699469307, 0.11072505485271966]
+    'ti': [0.2500634474332664, 0.0450563453261807, 0.09314760909732511, 0.04813051952201777, 0.0409145110215701, 0.04812928853007205, 0.06868580222134828, 0.11021902993747867],
+    'te': [0.2370463147118546, 0.042502557708595665, 0.08202910452564564, 0.04455334874318351, 0.04031436777758668, 0.04840126342067821, 0.06963293699469307, 0.11072505485271966],
     }
 
     # sigma in fact means coefficient of variation here
@@ -210,6 +227,14 @@ if __name__ == "__main__":
     # - option 2 - use MC
     n_samples = int(os.environ['NSAMPLES'])
 
+    # input variable: CoV of Q variation - to perfrom scan in level oa aleatrocic uncertainty
+    if "INPUTCOV" in os.environ:
+        input_cov = os.environ['INPUTCOV']
+        print(f">> Using input C.o.V. of {input_cov}")
+    else:
+        input_cov = 0.1
+        print(f">> Using DEFAULT input C.o.V. of {input_cov}")
+
     base_dataset_filename = "gem0py_new_baseline.csv"
     target_dataset_filename = "gem0py_new_local.csv"
     output_filename = "ets_coreprof_out.cpo"
@@ -220,9 +245,11 @@ if __name__ == "__main__":
     # 2[fluxes] * 8[flux-tubes] (flux tubes are independent!)
     # Normal PDF for each: mu, sigma
     print(f"> Making UQ run parameters: i/o, parallelisation")
+
     # Choice: do not have tensor product over flux tubes, treat them in batch
     #input_params_propr = input_params_stub_relative()
-    input_params_propr = input_params_gem_scan()
+    #input_params_propr = input_params_gem_scan()
+    input_params_propr = input_params_scan_relative(cov=input_cov)
     
     # TODO assumes discription["dist"] == "Normal"
     # Turn input param description into 'vary' - it has to be in the flux-average scale, so STD should in fact be CoV
@@ -241,6 +268,7 @@ if __name__ == "__main__":
 
     # Output columns
     output_columns = ["te_value_0", "ti_value_0"]
+    #TODO add more points on rho - this does not depend on run number and increase of analysis cost should be small
 
     ### Define parallelisation paramaters
     #    e.g. surrogate: t_s ~= 10m. ; workflow t_w ~= 10m. ; buffer/overhead: t_b ~= 10m 
@@ -259,8 +287,8 @@ if __name__ == "__main__":
     nparams = 2
 
     # - option 1 - PCE
-    #nruns = p**2
-    # - option 2 - MC
+    #nruns = p**nparams
+    # - option 2 - MC: with Saltelli sampling total nruns=nsamples*(ninputs+2)
     nruns = n_samples
 
     nnodes_tot = nnodes
@@ -356,7 +384,7 @@ if __name__ == "__main__":
     #analysis = uq.analysis.PCEAnalysis(sampler=sampler, qoi_cols=output_columns)
     # - option 2 - MC: default analysis class would be QMCAnalysis
     #analysis = uq.analysis.BasicStats()
-    analysis = uq.analysis.QMCAnalysis(sampler=sampler)
+    analysis = uq.analysis.QMCAnalysis(sampler=sampler, qoi_cols=output_columns)
 
     ### Run EasyVVUQ campaign
 
@@ -380,13 +408,15 @@ if __name__ == "__main__":
     ### Result analysis
     print(f"> Performing Analysis")
     campaign.apply_analysis(analysis)
-    result = campaign.get_last_analysis()
+    analysis = campaign.get_last_analysis()
 
     # Moments of QoI: AVG, STD, SCW, KRT
-    print(result)
-    
+    print(analysis.describe())
+
     pickle_filename = "result_aleatoric_wf.pickle"
     with open(pickle_filename, "bw") as file_pickle:
-        pickle.dump(result, file_pickle)
+        pickle.dump(analysis, file_pickle)
 
-    plot_results(result, input_params, output_columns)
+    #result.to_csv("result_aleatoric_wf.csv")
+
+    plot_results(analysis, input_params, output_columns)

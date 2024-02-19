@@ -14,7 +14,7 @@ def plot_moments(mean, std, per=None, x=None, xlabel=None, ylabel=None,
     # qoi is a scalar: bar plot with error bars
     if x is None:
         x = np.arange(1, len(mean)+1)
-        ax.bar(x, mean, yerr=std, align='center', alpha=0.5,
+        ax.bar(x, mean, yerr=std, width=0.8, align='center', alpha=0.5,
                 ecolor='black', capsize=10)
         ax.grid(True, axis='y')
     # qoi is a vector: profile with mean +- std
