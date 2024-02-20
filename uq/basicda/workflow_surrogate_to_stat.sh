@@ -76,7 +76,7 @@ for((itnum=${itnum_min};itnum<${itnum_max};itnum++)); do
   rm -r ${runprefix}${datenow}_${itnum} 
 
   # Prepare the necessary files
-  cp ${origdir}/gem0py_new_${curr_id}_${itnum}.csv ${muscledir}/ref_train_data.csv
+  cp ${origdir}/gem0py_new_${curr_id}_${itnum}.csv ${muscledir}/${muscleworkdir}/ref_train_data.csv
   # Original state for the new M3-WF run - two options:
   # 	1) Same inial state (~ from AUG shot)
   # 	2) Final state of the WF from the previous iteration
