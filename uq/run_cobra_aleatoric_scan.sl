@@ -10,14 +10,14 @@
 #SBATCH --no-requeue
 
 ## wall time in format (HOURS):MINUTES:SECONDS
-#SBATCH --time=4:00:00
+#SBATCH --time=6:00:00
 
 ## number of nodes and tasks per node
 # next line: for running only the first slow flux tube
-#SBATCH --nodes=1
+#SBATCH --nodes=4
 #SBATCH --ntasks-per-node=40
 ###SBATCH --ntasks-per-core=1
-###SBATCH --cpus-per-task=8
+###SBATCH --cpus-per-task=8?
 
 #SBATCH --partition=medium
 ###SBATCH --qos=
@@ -54,7 +54,7 @@ export EASYPJ_CONFIG=conf.sh
 export MPIMOD=default #srunmpi
 
 if [ -z "${NSAMPLES}" ]; then
-    export NSAMPLES=16
+    export NSAMPLES=64
 fi
 
 # if [ -z "${POLORDER}" ]; then
@@ -71,7 +71,7 @@ echo -e '> For each of these scan runs: use ExecuteLocal only + QCGPJ pool + '${
 ####################################
 # Run the UQ code - scan
 
-INPUTCOVLIST=( 0.05 0.1 0.25 )
+INPUTCOVLIST=( 0.01 0.05 0.1 0.2 0.25 0.5 )
 
 #TODO completely parallelisable!
 for INPUTCOV in ${INPUTCOVLIST[@]}; do
@@ -81,7 +81,7 @@ for INPUTCOV in ${INPUTCOVLIST[@]}; do
 
     echo "> Starting a UQ SLURM job for CoV[Q]="${INPUTCOV}
 
-    python3 tests/evvuq_aleatoric_propagation_wf.py > test-aleatoric-log.${SLURM_JOBID}
+    python3 tests/evvuq_aleatoric_propagation_wf.py ${INPUTCOV} >> test-aleatoric-log.${SLURM_JOBID}
 
     echo "> Finished a UQ SLURM for CoV[Q]="${INPUTCOV}
 

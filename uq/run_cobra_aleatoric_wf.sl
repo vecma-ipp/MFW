@@ -10,7 +10,7 @@
 #SBATCH --no-requeue
 
 ## wall time in format (HOURS):MINUTES:SECONDS
-#SBATCH --time=1:00:00
+#SBATCH --time=6:00:00
 
 ## number of nodes and tasks per node
 # next line: for running only the first slow flux tube
@@ -54,7 +54,7 @@ export EASYPJ_CONFIG=conf.sh
 export MPIMOD=default #srunmpi
 
 if [ -z "${NSAMPLES}" ]; then
-    export NSAMPLES=16
+    export NSAMPLES=64
 fi
 
 if [ -z "${POLORDER}" ]; then

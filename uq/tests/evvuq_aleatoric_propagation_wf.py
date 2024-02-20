@@ -1,4 +1,5 @@
 import os
+import sys
 
 import numpy as np
 import pandas as pd
@@ -203,6 +204,8 @@ def plot_results(result, input_params, output_columns):
                      ftitle="GEM0SUR-WF: descriptive statistics for "+qoi,
                      fname="aleatoric_stats"+str(i)+".png")
 
+        #TODO: for radially well-resolved quantities, plot mean+shaded ~2*sigma
+        #TODO: if KDE exists, plot KDE for ti_value_0, te_value_0
         for j in range(8):
                 plot_sobols(sob1[qoi][j],
                             xlabel="Uncertain parameters", ylabel="First sobol",
@@ -221,6 +224,7 @@ if __name__ == "__main__":
     mpi_instance =  os.environ['MPICMD']
     mpi_model = os.environ['MPIMOD']
     wrk_dir = tmp_dir = os.environ['SCRATCH']
+    slurm_nodes = os.environ['SLURM_NNODES']
 
     # - option 1 - use PCE
     #p = int(os.environ['POLORDER'])
@@ -228,12 +232,16 @@ if __name__ == "__main__":
     n_samples = int(os.environ['NSAMPLES'])
 
     # input variable: CoV of Q variation - to perfrom scan in level oa aleatrocic uncertainty
-    if "INPUTCOV" in os.environ:
-        input_cov = os.environ['INPUTCOV']
-        print(f">> Using input C.o.V. of {input_cov}")
-    else:
-        input_cov = 0.1
-        print(f">> Using DEFAULT input C.o.V. of {input_cov}")
+    # # - option 1 - read from environmental variable
+    # if 'INPUTCOV' in os.environ:
+    #     input_cov = os.environ['INPUTCOV']
+    #     print(f">> Using input C.o.V. of {input_cov}")
+    # else:
+    #     input_cov = 0.1
+    #     print(f">> Using DEFAULT input C.o.V. of {input_cov}")
+    # - option 2 - read from script argument
+    input_cov = float(sys.argv[1]) if len(sys.argv) > 1 else 0.1
+    print(f">> Using input C.o.V. of {input_cov}")
 
     base_dataset_filename = "gem0py_new_baseline.csv"
     target_dataset_filename = "gem0py_new_local.csv"
@@ -267,8 +275,10 @@ if __name__ == "__main__":
     ft_coords = [0.143587306141853 , 0.309813886880875 , 0.442991137504578 , 0.560640752315521 , 0.668475985527039 , 0.769291400909424 , 0.864721715450287 , 0.955828309059143]
 
     # Output columns
-    output_columns = ["te_value_0", "ti_value_0"]
-    #TODO add more points on rho - this does not depend on run number and increase of analysis cost should be small
+    #output_columns = ["te_value_0", "ti_value_0"]
+    output_columns = ["te_value_0", "te_value_15", "te_value_30", "te_value_45", "te_value_57", "te_value_67", "te_value_77", "te_value_87", "te_value_95", 
+                      "ti_value_0", "ti_value_15", "ti_value_30", "ti_value_45", "ti_value_57", "ti_value_67", "ti_value_77", "ti_value_87", "ti_value_95",]
+    #TODO add more points on rho - this does not depend on run number and increase of analysis cost should be small - probably an more flexible/visual way to decribe profile QoIs?
 
     ### Define parallelisation paramaters
     #    e.g. surrogate: t_s ~= 10m. ; workflow t_w ~= 10m. ; buffer/overhead: t_b ~= 10m 
@@ -279,22 +289,25 @@ if __name__ == "__main__":
         n_cores_p_node = 40
     else:
         n_cores_p_node = 32
-        print("HPC Machine unknown, assuming {n_cores_p_node} cores per node")
+        print(f"HPC Machine unknown, assuming {n_cores_p_node} cores per node")
 
-    nnodes = 1
-    ncores = 40
+    nnodes = slurm_nodes
+    ncores = nnodes * n_cores_p_node
 
-    nparams = 2
+    nfts = len(ft_coords)
+    n_params = 2
+    n_params = n_params*nfts
 
     # - option 1 - PCE
     #nruns = p**nparams
-    # - option 2 - MC: with Saltelli sampling total nruns=nsamples*(ninputs+2)
-    nruns = n_samples
+    # - option 2 - MC: with Saltelli sampling total number of runs is: 
+    nruns = n_samples*(n_params + 2)
+    #nruns = n_samples
 
     nnodes_tot = nnodes
     ncores_tot = nnodes * n_cores_p_node
 
-    print('> {2} Runs requiring totally {0} cores at {1} nodes'.format(ncores_tot, nnodes_tot, nruns))
+    print(f"> {nruns} runs requiring totally {ncores_tot} cores at {nnodes_tot} nodes")
 
     ### Pepare the campaign: crate the campaign object, copy the right files to the right places
  
@@ -317,13 +330,11 @@ if __name__ == "__main__":
 
     # initial state for the M3WF (this is done inside *.sh file)
     print(f"> Copying data for simulations")
-
     simulation_data_dir  = os.path.abspath("../muscle3")
-    os.system(f"cp {simulation_data_dir}/read_profs.py {common_dir}/")
 
     # files for configuration of workflow and its componenrts
     sim_nec_dir = 'workflow'
-    sim_nec_files = ['gem_surr_workflow_independent.sh', 'gem-surr-mft-fusion-independent.ymmsl', 
+    sim_nec_files = ['read_profs.py', 'gem_surr_workflow_independent.sh', 'gem-surr-mft-fusion-independent.ymmsl', 
                       'ets.xml', 'ets.xsd', 'chease.xml', 'chease.xsd', 'gem0.xml', 'gem0.xsd', 
                       'gem0_equilibrium_in.cpo', 'gem0_coreprof_in.cpo']
     for filename in sim_nec_files:
@@ -385,6 +396,7 @@ if __name__ == "__main__":
     # - option 2 - MC: default analysis class would be QMCAnalysis
     #analysis = uq.analysis.BasicStats()
     analysis = uq.analysis.QMCAnalysis(sampler=sampler, qoi_cols=output_columns)
+    # TODO: get percentiles (and 3rd&4th moments if possible), also perfrom KDE fit?
 
     ### Run EasyVVUQ campaign
 
@@ -408,15 +420,23 @@ if __name__ == "__main__":
     ### Result analysis
     print(f"> Performing Analysis")
     campaign.apply_analysis(analysis)
-    analysis = campaign.get_last_analysis()
+    analysis_result = campaign.get_last_analysis()
 
     # Moments of QoI: AVG, STD, SCW, KRT
-    print(analysis.describe())
+    print(analysis_result.describe())
 
-    pickle_filename = "result_aleatoric_wf.pickle"
+    pickle_filename = f"result_aleatoric_wf_cv{input_cov}.pickle"
     with open(pickle_filename, "bw") as file_pickle:
-        pickle.dump(analysis, file_pickle)
+        pickle.dump(analysis_result, file_pickle)
+
+    # pickle_filename = "result_raw_data_aleatoric_wf.pickle"
+    # with open(pickle_filename, "bw") as file_pickle:
+    #     pickle.dump(analysis_result.raw_data, file_pickle)
+
+    # pickle_filename = "result_samples_aleatoric_wf.pickle"
+    # with open(pickle_filename, "bw") as file_pickle:
+    #     pickle.dump(analysis_result.samples, file_pickle)
 
     #result.to_csv("result_aleatoric_wf.csv")
 
-    plot_results(analysis, input_params, output_columns)
+    plot_results(analysis_result, input_params, output_columns)
