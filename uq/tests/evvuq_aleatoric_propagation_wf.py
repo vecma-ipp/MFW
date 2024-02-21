@@ -224,7 +224,7 @@ if __name__ == "__main__":
     mpi_instance =  os.environ['MPICMD']
     mpi_model = os.environ['MPIMOD']
     wrk_dir = tmp_dir = os.environ['SCRATCH']
-    slurm_nodes = os.environ['SLURM_NNODES']
+    slurm_nodes = int(os.environ['SLURM_NNODES'])
 
     # - option 1 - use PCE
     #p = int(os.environ['POLORDER'])
@@ -305,7 +305,7 @@ if __name__ == "__main__":
     #nruns = n_samples
 
     nnodes_tot = nnodes
-    ncores_tot = nnodes * n_cores_p_node
+    ncores_tot = nnodes_tot * n_cores_p_node
 
     print(f"> {nruns} runs requiring totally {ncores_tot} cores at {nnodes_tot} nodes")
 

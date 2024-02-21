@@ -37,7 +37,7 @@ mkdir ${run_dir_name}
 #      (b) pass id to muscle_manager: M3 'implementation' of gem_sur_imp has to accept arguments
 #      (c) generate a sufficiently long (16 digits?) inside the M3 'implementation' -> done
 
-timeouttime='15m' #TODO should be dependent on the number of iterations
+timeouttime='30m' #TODO should be dependent on the number of iterations
 starting_op='timeout '${timeouttime} #TODO HAS TO BE FIXED
 
 #muscle_manager --log-level DEBUG --run-dir ${run_dir_name} --start-all gem-surr-mft-fusion-independent.ymmsl &

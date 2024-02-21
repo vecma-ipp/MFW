@@ -54,7 +54,7 @@ export EASYPJ_CONFIG=conf.sh
 export MPIMOD=default #srunmpi
 
 if [ -z "${NSAMPLES}" ]; then
-    export NSAMPLES=64
+    export NSAMPLES=32
 fi
 
 # if [ -z "${POLORDER}" ]; then
@@ -71,7 +71,7 @@ echo -e '> For each of these scan runs: use ExecuteLocal only + QCGPJ pool + '${
 ####################################
 # Run the UQ code - scan
 
-INPUTCOVLIST=( 0.01 0.05 0.1 0.2 0.25 0.5 )
+INPUTCOVLIST=( 0.01 0.05 ) # 0.1 0.2 0.25 0.5 )
 
 #TODO completely parallelisable!
 for INPUTCOV in ${INPUTCOVLIST[@]}; do
