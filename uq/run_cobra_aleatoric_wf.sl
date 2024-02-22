@@ -10,11 +10,11 @@
 #SBATCH --no-requeue
 
 ## wall time in format (HOURS):MINUTES:SECONDS
-#SBATCH --time=6:00:00
+#SBATCH --time=3:00:00
 
 ## number of nodes and tasks per node
 # next line: for running only the first slow flux tube
-#SBATCH --nodes=1
+#SBATCH --nodes=6
 #SBATCH --ntasks-per-node=40
 ###SBATCH --ntasks-per-core=1
 ###SBATCH --cpus-per-task=8
@@ -70,6 +70,8 @@ echo -e '> In this run: use ExecuteLocal only + QCGPJ pool + '${MPIMOD}' exec mo
 
 ####################################
 # Run the UQ code
+
+INPUTCOV=0.1
 
 # Echo SLURM environmental variables
 scontrol show --detail job ${SLURM_JOBID}

@@ -226,24 +226,32 @@ if __name__ == "__main__":
     wrk_dir = tmp_dir = os.environ['SCRATCH']
     slurm_nodes = int(os.environ['SLURM_NNODES'])
 
-    # - option 1 - use PCE
+    # - option 1.1 - use PCE
     #p = int(os.environ['POLORDER'])
-    # - option 2 - use MC
+    # - option 1.2 - use MC
     n_samples = int(os.environ['NSAMPLES'])
+    print(f">> Using number of samples: {n_samples}")
 
-    # input variable: CoV of Q variation - to perfrom scan in level oa aleatrocic uncertainty
-    # # - option 1 - read from environmental variable
+    # Input variable: CoV of Q variation - to perfrom scan in level oa aleatrocic uncertainty
+    # # - option 2.1 - read from environmental variable
     # if 'INPUTCOV' in os.environ:
     #     input_cov = os.environ['INPUTCOV']
     #     print(f">> Using input C.o.V. of {input_cov}")
     # else:
     #     input_cov = 0.1
     #     print(f">> Using DEFAULT input C.o.V. of {input_cov}")
-    # - option 2 - read from script argument
+  
+    # - option 2.2 - read from script argument
     input_cov = float(sys.argv[1]) if len(sys.argv) > 1 else 0.1
     print(f">> Using input C.o.V. of {input_cov}")
 
+    species = ['e', 'i']
+
+    # - option 3.1 - use pyGEM0 data
     base_dataset_filename = "gem0py_new_baseline.csv"
+    # # - option 3.2 - use GEM data
+    # base_dataset_filename = "gem_new_baseline.csv"
+    
     target_dataset_filename = "gem0py_new_local.csv"
     output_filename = "ets_coreprof_out.cpo"
 
@@ -255,9 +263,12 @@ if __name__ == "__main__":
     print(f"> Making UQ run parameters: i/o, parallelisation")
 
     # Choice: do not have tensor product over flux tubes, treat them in batch
+    # - option 4.1 - use stub input parameters
     #input_params_propr = input_params_stub_relative()
-    #input_params_propr = input_params_gem_scan()
+    # - option 4.2 - use variable CoV QoI
     input_params_propr = input_params_scan_relative(cov=input_cov)
+    # - option 4.3 - use mean QoI from GEM scan
+    #input_params_propr = input_params_gem_scan()
     
     # TODO assumes discription["dist"] == "Normal"
     # Turn input param description into 'vary' - it has to be in the flux-average scale, so STD should in fact be CoV
@@ -273,12 +284,16 @@ if __name__ == "__main__":
                        } for key,description in input_params_propr.items()}
 
     ft_coords = [0.143587306141853 , 0.309813886880875 , 0.442991137504578 , 0.560640752315521 , 0.668475985527039 , 0.769291400909424 , 0.864721715450287 , 0.955828309059143]
+    prof_coord_inds = [i for i in range(100)]
 
     # Output columns
+    # # - option 5.1 - read only axis values
     #output_columns = ["te_value_0", "ti_value_0"]
-    output_columns = ["te_value_0", "te_value_15", "te_value_30", "te_value_45", "te_value_57", "te_value_67", "te_value_77", "te_value_87", "te_value_95", 
-                      "ti_value_0", "ti_value_15", "ti_value_30", "ti_value_45", "ti_value_57", "ti_value_67", "ti_value_77", "ti_value_87", "ti_value_95",]
-    #TODO add more points on rho - this does not depend on run number and increase of analysis cost should be small - probably an more flexible/visual way to decribe profile QoIs?
+    # # - option 5.2 - read values around flux tube locations
+    # output_columns = ["te_value_0", "te_value_15", "te_value_30", "te_value_45", "te_value_57", "te_value_67", "te_value_77", "te_value_87", "te_value_95", 
+    #                   "ti_value_0", "ti_value_15", "ti_value_30", "ti_value_45", "ti_value_57", "ti_value_67", "ti_value_77", "ti_value_87", "ti_value_95",]
+    # - option 5.3 - read all core profile values
+    output_columns = [f"t{sp}_value_{coord}" for sp,coord in zip(species, prof_coord_inds)]
 
     ### Define parallelisation paramaters
     #    e.g. surrogate: t_s ~= 10m. ; workflow t_w ~= 10m. ; buffer/overhead: t_b ~= 10m 
@@ -298,9 +313,9 @@ if __name__ == "__main__":
     n_params = 2
     n_params = n_params*nfts
 
-    # - option 1 - PCE
+    # - option 1.1 - PCE
     #nruns = p**nparams
-    # - option 2 - MC: with Saltelli sampling total number of runs is: 
+    # - option 1.2 - MC: with Saltelli sampling total number of runs is: 
     nruns = n_samples*(n_params + 2)
     #nruns = n_samples
 
@@ -383,17 +398,17 @@ if __name__ == "__main__":
 
     # Sampler
     print("> Creating Sampler")
-    # - option 1 - PCE
+    # - option 1.1 - PCE
     #sampler = uq.sampling.PCESampler(vary=input_params, polynomial_order=p)
-    # - option 2 - MC 
+    # - option 1.2 - MC 
     print(f">>> Using {n_samples} samples") ###DEBUG
     sampler = uq.sampling.MCSampler(vary=vary, n_mc_samples=n_samples,)
 
     # Analysis
     print("> Creating Analysis")
-    # - option 1 - PCE
+    # - option 1.1 - PCE
     #analysis = uq.analysis.PCEAnalysis(sampler=sampler, qoi_cols=output_columns)
-    # - option 2 - MC: default analysis class would be QMCAnalysis
+    # - option 1.2 - MC: default analysis class would be QMCAnalysis
     #analysis = uq.analysis.BasicStats()
     analysis = uq.analysis.QMCAnalysis(sampler=sampler, qoi_cols=output_columns)
     # TODO: get percentiles (and 3rd&4th moments if possible), also perfrom KDE fit?

@@ -10,7 +10,7 @@
 #SBATCH --no-requeue
 
 ## wall time in format (HOURS):MINUTES:SECONDS
-#SBATCH --time=6:00:00
+#SBATCH --time=8:00:00
 
 ## number of nodes and tasks per node
 # next line: for running only the first slow flux tube
@@ -71,7 +71,8 @@ echo -e '> For each of these scan runs: use ExecuteLocal only + QCGPJ pool + '${
 ####################################
 # Run the UQ code - scan
 
-INPUTCOVLIST=( 0.01 0.05 ) # 0.1 0.2 0.25 0.5 )
+#INPUTCOVLIST=( 0.01 0.05 ) # 0.1 0.2 0.25 0.5 )
+INPUTCOVLIST=( 0.3 0.5 )
 
 #TODO completely parallelisable!
 for INPUTCOV in ${INPUTCOVLIST[@]}; do
