@@ -204,3 +204,17 @@ class ExtCodeHelper():
         input = np.array(newprofiles)
         
         return output, input
+
+    def gem0_call_4param2target_array_params(self, params_dict):
+        """
+        Takes a dictionary of core profiles values for Te/i,gradTe/i(rho), as well as possibly equilibrium values q/gm3
+        If a value is not passed, uses default one.
+        Linearly extrapolates on coreprof grid using a value and a gradient at a point of coretransp (or arbitrarty) grid 
+        Returns numpy array fluxes, and numpy array of input values
+        """
+
+        # TODO: in this configuration, this function is of no use and leads to spagetti code only
+
+        fluxes, newprofiles, coretransp = self.gem0obj.gem0_call_params(params_dict)
+        
+        return np.array(fluxes), np.array(newprofiles)

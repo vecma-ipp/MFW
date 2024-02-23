@@ -2,6 +2,7 @@ import os, sys
 import importlib.util
 
 import bisect
+import itertools
 
 # -- load pyGEM0 code files - via importlib
 # #gem0path="/marconi/home/userexternal/yyudin00/code/MFW/standalone/src/custom_codes/gem0/gem0.py"
@@ -240,6 +241,57 @@ class GEM0Singleton():
 
         return 0
 
+    def update_values_equilibrium(self, value_dict, rho_tor_norm):
+        """
+        - Gets a dictionary of values of equilibrium at a point at rho_tor_norm value (at coretransp grid)
+        - Finds the closest six points at original (equilibrium) grid (three from each side) and substitutes with linear profile 
+            such that values and gradient at passed point are exact
+        """
+
+        #rho_grid_equil = self.equil.get_value('profiles_1s.rho_tor')
+        rho_grid_equil = self.corep_elem.get_value('rho_tor_norm')
+
+        datastructures = ['profiles_1d']
+        quantities = ['q', 'gm3']
+        attributes = ['value'] #, 'ddrho']
+
+        # indices around the pivot index to extrapolate to
+        delta_ind = [-3,-2,-1,0,1,2]
+   
+        # Find indices of neibouring points ar coreprof grid 
+        #   to find the location use bicection
+        i_coreprof = bisect.bisect_right(rho_grid_equil, rho_tor_norm)
+
+        # Extrapolate the values
+        for data in datastructures:
+
+            data_obj = getattr(self.equil, data)
+
+            for quantity,attribute in itertools.product(quantities,attributes):
+
+                quantity_obj = getattr(data_obj, quantity)
+
+                if f"{quantity}_{attribute}" in value_dict:
+
+                    q_value = value_dict[f"{quantity}_{attribute}"]
+
+                    # TODO: ddrho of q is shear ; gm3 has no ddrho in CPO - make a dictionary for f,f' ???
+                    q_ddrho = value_dict[f"{quantity}_ddrho"] if "{quantity}_ddrho" in value_dict else 1.0
+
+                    # Fill in the values and indices around the pivot index
+                    #    linear extrapolation using value and gradient at the point, and distance to the new point
+                    values = [q_ddrho*(rho_grid_equil[i_coreprof+d_i] - rho_tor_norm) + q_value for d_i in delta_ind]
+                    
+                    indices = [i_coreprof+d_i for d_i in delta_ind]
+
+                    quantity_obj[indices] = values
+
+                    # if quantity == 'q':
+                    #     quantity_ddrho_obj = getattr(data_obj, "shear")
+                    #     quantity_ddrho_obj[indices] = [q_ddrho]*len(indices)
+
+        return 0
+
     def modify_code_ios(self, attrib, new_value, ft=[69]):
         self.update_gradients(attrib, new_value, i_ft=ft[0])
 
@@ -299,13 +351,32 @@ class GEM0Singleton():
 
     def gem0_call_coretransp(self, coreprof, rho_tor_norm):
         """
-        - Gets a dictionary of values of profile P at a point R at rho_tor_norm value (at coretransp grid)
+        - Gets a dictionary of values of profiles (coreprof or equilibrium) P at a point R at rho_tor_norm value (at coretransp grid)
         - Retruns Qe/i(<P_i(R)>) : flux values as a function of profiles at the given rho_tor_norm value
         """
 
         self.update_values_coretransp(value_dict=coreprof, rho_tor_norm=rho_tor_norm)
 
         self.modify_code_params('ra0', rho_tor_norm)
+
+        coret, tefl, tifl, tedr, tidr, te, ti, rho_new = gem(self.equil, self.corep_elem.core, self.coret, self.code_parameters)
+
+        te_transp_flux = coret.values[0].te_transp.flux[:]
+        ti_transp_flux = coret.values[0].ti_transp.flux[:,0]
+
+        return [te_transp_flux, ti_transp_flux], [te, ti, tedr, tidr], coret
+    
+    def gem0_call_params(self, params_dict):
+        """
+        - Gets a dictionary of values of profile P at a point R at rho_tor_norm value (at coretransp grid)
+        - Retruns Qe/i(<P_i(R)>) : flux values as a function of profiles at the given rho_tor_norm value
+        """
+
+        self.update_values_coretransp(value_dict=params_dict, rho_tor_norm=params_dict['rho_tor_norm'])
+
+        self.update_values_equilibrium(value_dict=params_dict, rho_tor_norm=params_dict['rho_tor_norm'])
+
+        self.modify_code_params('ra0', params_dict['rho_tor_norm'])
 
         coret, tefl, tifl, tedr, tidr, te, ti, rho_new = gem(self.equil, self.corep_elem.core, self.coret, self.code_parameters)
 

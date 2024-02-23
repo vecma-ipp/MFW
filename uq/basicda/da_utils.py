@@ -534,7 +534,11 @@ def write_gem0_fromfile(csv_in, filename_out):
         rho = ftube_rhos[ft]
         x = {k:df_row[k] for k in input_names}
 
+        # - option 1 - accept only changes in coreprof
         y,x_new = gem0helper.gem0_call_4param2target_array_coretransp(x, rho)
+        # # - option 2 - accept changes inequilibrium as well
+        # x['rho_tor_norm'] = rho
+        # y,x_new = gem0helper.gem0_call_4param2target_array_params(x)
 
         # fill in the output dataframe
         for j in range(len(input_names)):
@@ -560,6 +564,19 @@ def write_gem0_fromcpo(coreprof_in, equilibrium_in, coretransp_out):
     print(f"y = {y}")
 
     return y,x
+
+def cpo_to_csv(cpo_filename_in, csv_filename_out, quantities, rho_tor_norm, cpo_type='coreprof'):
+    """
+    Read a CPO file, gets required quantities values interpolated on rho_tor_norm and writes a CSV file (values x locations)
+    """
+
+    #ATTENTION: Functionality fully covered by final_point; see prepare_gem0_sample.py
+
+    cpo_obj = read(cpo_filename_in, cpo_type)
+
+    #data.to_csv(csv_filename_out)
+
+    return 0
 
 def write_profs_fromfile_grid(point_in, filename_out, num_steps=1, **kwargs):
     """
