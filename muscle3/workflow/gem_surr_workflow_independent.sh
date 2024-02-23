@@ -63,7 +63,8 @@ exit_status=$!
 
 # check the termination cause
 # kill %1
-if [ $exit_status -eq 0 ]; then
+echo "WF EXIT CODE: "${exit_status}
+if [ ${exit_status} -eq 0 ]; then
     echo "Workflow completed successfully"
 else
     echo "Workflow was killed after "${timeouttime}

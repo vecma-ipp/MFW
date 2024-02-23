@@ -229,7 +229,10 @@ if __name__ == "__main__":
     # - option 1.1 - use PCE
     #p = int(os.environ['POLORDER'])
     # - option 1.2 - use MC
-    n_samples = int(os.environ['NSAMPLES'])
+    # # - option 1.2.1 - read environmental variable
+    # n_samples = int(os.environ['NSAMPLES'])
+    # - option 1.2.2 - read script argument
+    n_samples = sys.argv[2] if len(sys.argv) > 2 else 32
     print(f">> Using number of samples: {n_samples}")
 
     # Input variable: CoV of Q variation - to perfrom scan in level oa aleatrocic uncertainty
@@ -247,10 +250,10 @@ if __name__ == "__main__":
 
     species = ['e', 'i']
 
-    # - option 3.1 - use pyGEM0 data
-    base_dataset_filename = "gem0py_new_baseline.csv"
-    # # - option 3.2 - use GEM data
-    # base_dataset_filename = "gem_new_baseline.csv"
+    # # - option 3.1 - use pyGEM0 data
+    # base_dataset_filename = "gem0py_new_baseline.csv"
+    # - option 3.2 - use GEM data
+    base_dataset_filename = "gem_new_baseline.csv"
     
     target_dataset_filename = "gem0py_new_local.csv"
     output_filename = "ets_coreprof_out.cpo"
@@ -266,9 +269,9 @@ if __name__ == "__main__":
     # - option 4.1 - use stub input parameters
     #input_params_propr = input_params_stub_relative()
     # - option 4.2 - use variable CoV QoI
-    input_params_propr = input_params_scan_relative(cov=input_cov)
+    # input_params_propr = input_params_scan_relative(cov=input_cov)
     # - option 4.3 - use mean QoI from GEM scan
-    #input_params_propr = input_params_gem_scan()
+    input_params_propr = input_params_gem_scan()
     
     # TODO assumes discription["dist"] == "Normal"
     # Turn input param description into 'vary' - it has to be in the flux-average scale, so STD should in fact be CoV
@@ -440,7 +443,7 @@ if __name__ == "__main__":
     # Moments of QoI: AVG, STD, SCW, KRT
     print(analysis_result.describe())
 
-    pickle_filename = f"result_aleatoric_wf_cv{input_cov}.pickle"
+    pickle_filename = f"result_aleatoric_wf_ns{n_samples}_cv{input_cov}.pickle"
     with open(pickle_filename, "bw") as file_pickle:
         pickle.dump(analysis_result, file_pickle)
 

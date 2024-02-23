@@ -10,11 +10,11 @@
 #SBATCH --no-requeue
 
 ## wall time in format (HOURS):MINUTES:SECONDS
-#SBATCH --time=8:00:00
+#SBATCH --time=10:00:00
 
 ## number of nodes and tasks per node
 # next line: for running only the first slow flux tube
-#SBATCH --nodes=4
+#SBATCH --nodes=5
 #SBATCH --ntasks-per-node=40
 ###SBATCH --ntasks-per-core=1
 ###SBATCH --cpus-per-task=8?
@@ -53,9 +53,9 @@ export EASYPJ_CONFIG=conf.sh
 # Define some global variables to configure UQ software
 export MPIMOD=default #srunmpi
 
-if [ -z "${NSAMPLES}" ]; then
-    export NSAMPLES=32
-fi
+# if [ -z "${NSAMPLES}" ]; then
+#     export NSAMPLES=32
+# fi
 
 # if [ -z "${POLORDER}" ]; then
 #     export POLORDER=2
@@ -65,24 +65,29 @@ fi
 #     export CAMP_NAME_PREFIX=UQ_8FTGEM0_
 # fi
 
-echo -e '> For each of these scan runs: use ExecuteLocal only + QCGPJ pool + '${MPIMOD}' exec mode + '${SLURM_NNODES}\
-' nodes + 2 QoIs + 8 flux tubes + n_samples '${NSAMPLES}' + commandline passed with '${MPICMD}' \n'
-
 ####################################
 # Run the UQ code - scan
 
-#INPUTCOVLIST=( 0.01 0.05 ) # 0.1 0.2 0.25 0.5 )
-INPUTCOVLIST=( 0.3 0.5 )
+#INPUTCOVLIST=( 0.01 0.05 ) # 0.1 0.2 0.25 0.5 ) # ( 0.3 0.5 )
+#INPUTCOVLIST=( 0.3 0.5 )
+INPUTCOV=0.1
+
+NSAMPLESLIST=( 8 16 32 64 )
 
 #TODO completely parallelisable!
-for INPUTCOV in ${INPUTCOVLIST[@]}; do
+
+#for INPUTCOV in ${INPUTCOVLIST[@]}; do
+for NSAMPLES in ${NSAMPLESLIST[@]}; do
+
+    echo -e '> For each of these scan runs: use ExecuteLocal only + QCGPJ pool + '${MPIMOD}' exec mode + '${SLURM_NNODES}\
+    ' nodes + 2 QoIs + 8 flux tubes + n_samples '${NSAMPLES}' + commandline passed with '${MPICMD}' \n'
 
     # Echo SLURM environmental variables
     scontrol show --detail job ${SLURM_JOBID}
 
     echo "> Starting a UQ SLURM job for CoV[Q]="${INPUTCOV}
 
-    python3 tests/evvuq_aleatoric_propagation_wf.py ${INPUTCOV} >> test-aleatoric-log.${SLURM_JOBID}
+    python3 tests/evvuq_aleatoric_propagation_wf.py ${INPUTCOV} ${NSAMPLES} >> test-aleatoric-log.${SLURM_JOBID}
 
     echo "> Finished a UQ SLURM for CoV[Q]="${INPUTCOV}
 

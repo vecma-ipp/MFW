@@ -112,6 +112,13 @@ implementations:
     executable: /u/yyudin/code/MFW/muscle3/bin/COBRA/stop_M3
   ets_impl:
     executable: /u/yyudin/code/MFW/muscle3/bin/COBRA/ets_M3
+  ets_impl_debug:
+    executable: xterm
+    args:
+      - -e
+      - gdb
+      - --args
+      - /u/yyudin/code/MFW/muscle3/bin/COBRA/ets_M3
   gem_surr_impl:
     modules: anaconda/3/2021.11
     executable: python3 /u/yyudin/code/MFW/muscle3/src/gem_surr_mft_M3.py
@@ -139,7 +146,7 @@ implementations:
   
 settings:
   # COMMENT: all paths should be w.r.t the /workdir/ of the instances!
-  transport.duration: 0.032 # ATTENTION: originally was 0.1, but 0.03 should be enough for GEM0 convergence
+  transport.duration: 0.048 # ATTENTION: originally was 0.1, but 0.03 should be enough for GEM0 convergence
   transport.dt: 0.001
   transport.nonstationary_equilibrium: True
   
@@ -172,4 +179,4 @@ settings:
 #  - every 1
 #    start 0
   
-# COMMENT: running ETS+CHEASE+GEM0SUR-WF for dt=10^-3 for 100 steps
+# COMMENT: running ETS+CHEASE+GEM0SUR-WF for dt=10^-3 for 48 steps

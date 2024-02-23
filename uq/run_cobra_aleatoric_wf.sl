@@ -78,7 +78,7 @@ scontrol show --detail job ${SLURM_JOBID}
 
 echo "> Starting a UQ SLURM job!"
 
-python3 tests/evvuq_aleatoric_propagation_wf.py ${OLDCAMP}> test-aleatoric-log.${SLURM_JOBID}
+python3 tests/evvuq_aleatoric_propagation_wf.py ${INPUTCOV}> test-aleatoric-log.${SLURM_JOBID}
 
 echo "> Finished a UQ SLURM job!"
 
