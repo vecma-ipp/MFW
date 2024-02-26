@@ -610,7 +610,8 @@ def write_profs_fromfile_grid(point_in, filename_out, num_steps=1, **kwargs):
     output_names = ['te_transp_flux', 'ti_transp_flux']
     # - option 2 - from the dataframe
     column_names = df_in.columns.tolist()
-    input_names  = [n for n in column_names if 'value' in n or 'ddrho' in n]
+    input_names_adm_ends = ['value', 'ddrho', 'gm3', 'q']
+    input_names  = [n for n in column_names if any([x in n for x in input_names_adm_ends])]
     output_names = [n for n in column_names if 'transp' in n]
 
     # Prepare structures to write
@@ -618,7 +619,7 @@ def write_profs_fromfile_grid(point_in, filename_out, num_steps=1, **kwargs):
     data_new = []
 
     # Assure for every input and flux tube the expantion step is defined
-    exp_factor = 0.25
+    exp_factor = kwargs['exp_factor'] if 'exp_factor' in kwargs else 0.25
     grid_step = kwargs['grid_step'] if 'grid_step' in kwargs else \
         {input_name:{nft:df_in[df_in['ft']==nft][input_name].mean()*exp_factor for nft in nfts_list} for input_name in input_names}
 
@@ -667,6 +668,11 @@ def read_attrib(cpo, quantity, attribute, coords, filetype='coreprof'):
     """
     Returns list of attribute values, for every given coordinate number
     """
+
+    naming_dict = {
+        "coreprof": "value"
+    }
+
     if isinstance(cpo, str):
         cpo_obj = read(cpo, filetype)
     else:
@@ -681,7 +687,7 @@ def read_attrib(cpo, quantity, attribute, coords, filetype='coreprof'):
 
     if attribute != 'ddrho':
         a = getattr(q, attribute)
-    # A hack to always get gradients on the required grid!
+    # Always get gradients on the required grid!
     else:
         rho_grid_orig = c.rho_tor
         # rho_tor_norm from a CPO could still be different from GEM/GEM0!
@@ -725,14 +731,22 @@ def read_cpo_file(filename, prof_names, attrib_names, coords, filetype):
         for j, attrib in enumerate(attrib_names):
 
             # The resulting readings should be interpolated from rho_tor_norm onto the coord
-            rho_tor_norm = cpo.rho_tor_norm
+            if filetype == 'equilibrium':
+                rho_tor = cpo.profiles_1d.rho_tor
+                rho_tor_max = abs(rho_tor.max()) # should not be 0 e.g. if goes -a..0, should be |.|
+                rho_tor_norm = rho_tor / rho_tor_max
+            else:
+                rho_tor_norm = cpo.rho_tor_norm
 
             if attrib != 'ddrho':
                 val_reading = getattr(prof, attrib)
                 val_reading_interp = l3interp(y_in=val_reading, x_in=rho_tor_norm, x_out=coords) 
             else:    
                 # special treatment of gradients to always be w.r.t. rho_tor_norm
-                val_prime_reading = getattr(prof, 'value')
+                if filetype == 'equilibrium':
+                    val_prime_reading = getattr(prof, attrib)
+                else:
+                    val_prime_reading = getattr(prof, 'value')
                 val_reading_interp = l3deriv(y_in=val_prime_reading, x_in=rho_tor_norm, x_out=coords)
 
             # Saving the order of the names 

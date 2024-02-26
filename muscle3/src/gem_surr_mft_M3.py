@@ -19,7 +19,7 @@ from ascii_cpo import read, write_fstream, read_fstream, write
 
 import easysurrogate as es
 
-from muscle_utils.utils import coreprof_to_input_value, output_value_to_coretransp, training_data_bounds, check_outof_learned_bounds
+from muscle_utils.utils import coreprof_to_input_value, output_value_to_coretransp, training_data_bounds, check_outof_learned_bounds, equilibrium_to_input_value, make_new_training_sample
 
 def gem_surr_M3(id=0):
     """
@@ -29,6 +29,7 @@ def gem_surr_M3(id=0):
     """
 
     input_names_ind_permut = [0,2,1,3] # permuation of input names relative to one used in EasySurrogate: ['te_value', 'te_ddrho', 'ti_value', 'ti_ddrho'] -> ['te_value', 'ti_value', 'te_ddrho', 'ti_ddrho']
+    input_eq_names_ind_permut = [0,1]
 
     # Creating a MUSCLE3 instance
     instance = Instance({
@@ -52,13 +53,11 @@ def gem_surr_M3(id=0):
     bool_send_uncertainty = instance.get_setting('bool_send_uncertainty', 'bool') # bool for all any of the inputs for any of the locations to be outside of reference data
     model_type = instance.get_setting('surrogate_type', 'str') # 'ann' or 'gpr
     retrain_distance = instance.get_setting('retrain_distance', 'float') # distance to move outside of reference data to retrain surrogate
+    use_equilibrium = instance.get_setting('use_equilibrium', 'bool') # boolean whether the surrogate needs new equilibrium data to infer transport
 
     # Setting up pathes, dimensionalities etc.
     #coretransp_default_file_path = init_cpo_dir + '/' + coretransp_default_file_name
     coretransp_default_file_path = coretransp_default_file_name # redundant ATM
-
-    prof_out_names = ["te_transp_flux", "ti_transp_flux"] # MUSCLE3 currently does not support list of stings as a setting
-    n_dim_out = len(prof_out_names)
 
     rho_ind_s = [int(x) for x in rho_ind_s]
     n_fts = len(rho_ind_s)
@@ -97,8 +96,9 @@ def gem_surr_M3(id=0):
     else:
         ValueError(f"This type of models is not supported")
 
-    #TODO: read target names from campaign / database
-    output_names = ['te_transp_flux', 'ti_transp_flux']
+    #TODO: read target names from campaign / database / m3-setting
+    output_names = ['te_transp_flux', 'ti_transp_flux'] # MUSCLE3 currently does not support list of stings as a setting
+    n_dim_out = len(output_names)
 
     int_iteration = 0
     # Model inference loop / simulation time iteration
@@ -115,6 +115,8 @@ def gem_surr_M3(id=0):
         msg_in = instance.receive('coreprof_in')
         print('> Got a message from TRANSP')
 
+        ## Treat incoming COREPROF
+
         # Read timestamp
         num_it = msg_in.timestamp
         # # Update timestep number - this is done in transport component only here
@@ -124,12 +126,12 @@ def gem_surr_M3(id=0):
         coreprof_in_data_bytes = msg_in.data
 
         # Save the binary buffer to a file
-        devshm_file = f"/dev/shm/ets_coreprof_in_{id}_{num_it:.6f}.cpo" #TODO: generate and store random name
+        devshm_file = f"/dev/shm/ets_coreprof_in_{id}_{num_it:.6f}.cpo"
         with open(devshm_file, "wb") as f:
             f.write(coreprof_in_data_bytes)
         start_t = t()
         coreprof_cpo_obj = read(devshm_file, "coreprof")
-        print (f"> Reading CPO file {devshm_file} took {t()-start_t} s")
+        print (f">> Reading CPO file {devshm_file} took {t()-start_t} s")
 
         # After reading the profile from temporary file, make an array
         #   returns profiles in order [te_value, te_ddrho, ti_value, ti_ddrho]
@@ -152,7 +154,32 @@ def gem_surr_M3(id=0):
         #                   a. dictionary with keys being names of profiles and values being numpy arrays or lists
         #                   b+. numpy array of shape==(n_sample, n_profiles_dim, [n_rad_points]) and dtype=float
 
-        # Infer a mean flux value using a surrogate
+        ## Treat incoming EQUILIBRIUM
+        if use_equilibrium:
+            
+            equilibrium_in_data_bytes = msg_in_eq.data
+
+            # Save the equilibrium binary buffer to a file
+            devshm_eq_file = f"/dev/shm/ets_equilibrium_in_{id}_{num_it:.6f}.cpo"
+            with open(devshm_eq_file, "wb") as f:
+                f.write(equilibrium_in_data_bytes)
+            start_t = t()
+            equilibrium_cpo_obj = read(devshm_eq_file, "equilibrium")
+            print (f">> Reading CPO file {devshm_eq_file} took {t()-start_t} s")
+
+            # After reading the equilibrium from temporary file, make an array of values
+            #   returns in order [q, gm3]
+            equilibrium_in = equilibrium_to_input_value(equilibrium_cpo_obj,
+                                                rho_tor_norm=rho_tor_norm_sim, # flux tube locations in coretransp
+                                                )
+
+            equilibrium_in = equilibrium_in[input_eq_names_ind_permut]
+            #print(f"> Read incoming equilibrium \n {equilibrium_in}") ###DEBUG
+
+            # Combine coreprof and equilibrium (append latter to profiles_in)
+            profiles_in = np.concatenate([profiles_in, equilibrium_in], axis=0)
+
+        ## Infer a mean flux value using a surrogate
         #   NB!: Iterate over models and save result into a common data structure
         fluxes_out     = np.zeros((n_fts, n_dim_out))
         fluxes_out_std = np.zeros((n_fts, n_dim_out))
@@ -233,26 +260,11 @@ def gem_surr_M3(id=0):
             instance.send('coretransp_uncertainty_out', msg_unc_out)
 
         # Write down a file with suggested points for surrogate retraining
+            
         file_retrain_name = f"new_surrogate_points_it{str(int_iteration).zfill(5)}.csv"
 
-        new_surrogate_sample = []
+        new_surrogate_sample = make_new_training_sample(profiles_in, dict_outofbounds, ref_bounds, retrain_distance, n_fts)
 
-        for i_n,(k,vs) in enumerate(dict_outofbounds.items()):
-            for ft in range(n_fts):
-                if vs['greater'][ft]:
-                    new_sample = {'ft': ft}
-                    for i_m, k in enumerate(ref_bounds):
-                        new_sample[k] = profiles_in[i_m, ft]
-                    new_sample[k] = new_sample[k] + retrain_distance * abs( new_sample[k] - 0.5*(ref_bounds[k]['max'][ft]+ref_bounds[k]['min'][ft]) )
-                    new_surrogate_sample.append(new_sample)
-                if vs['lesser'][ft]:
-                    new_sample = {'ft': ft}
-                    for i_m, k in enumerate(ref_bounds):
-                        new_sample[k] = profiles_in[i_m, ft]
-                    new_sample[k] = new_sample[k] - retrain_distance * abs(new_sample[k] - 0.5*(ref_bounds[k]['max'][ft]+ref_bounds[k]['min'][ft]) )
-                    new_surrogate_sample.append(new_sample)
-        
-        new_surrogate_sample = pd.DataFrame(new_surrogate_sample)
         new_surrogate_sample.to_csv(file_retrain_name)
 
         # Sending a coretransp message (the results of a surrogate)

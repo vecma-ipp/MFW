@@ -24,241 +24,6 @@ from gem_da import profile_evol_load, profile_evol_plot
 from da_utils import read_cpo_file
 from extcodehelper import ExtCodeHelper
 
-def training_data_bounds(ref_data, input_names=['te_value', 'ti_value', 'te_ddrho', 'ti_ddrho'], n_fts=8, n_run_per_ft=81, option='ft_col'):
-    """
-    Produces a dictionary for training parameters, 
-    each having an array of min and max values occuring in the dataset 
-        option: whether to use 'ft' column in the reference data or not
-    
-    """
-
-    #print(f"ref_data : \n{ref_data.describe()}")###DEBUG
-
-    train_bounds = {k:{'min':np.zeros(n_fts), 'max':np.zeros(n_fts)} for k in input_names}
-
-    for input in input_names:
-        for i in range(n_fts):
-            if option == 'ft_col':
-                mask = ref_data['ft'] == i
-                ref_data_ft = ref_data[mask]
-                train_bounds[input]['min'][i] = ref_data_ft[input].min()
-                train_bounds[input]['max'][i] = ref_data_ft[input].max()
-            else:
-                train_bounds[input]['min'][i] = ref_data[input].iloc[n_run_per_ft*(i):n_run_per_ft*(i+1)].min()
-                train_bounds[input]['max'][i] = ref_data[input].iloc[n_run_per_ft*(i):n_run_per_ft*(i+1)].max()
-
-    return train_bounds
-
-def check_outof_learned_bounds(input, reference):
-    """
-    input: an array of input values for surrogate of size (n_features, n_coordinates) in order 'te_value', 'ti_value', 'te_ddrho', 'ti_ddrho'
-    reference: a dictionary of training data bounds in format {feature:{'max':array(n_coords),'min':array(n_coords)}}
-    Returns: bool: True if input is outisde of the learned bounds
-    """
-
-    #print(f"reference:\n{reference}") ###DEBUG
-    #print(f"input:\n{input}") ###DEBUG
-
-    input_order = {'te_value':0, 'ti_value':1, 'te_ddrho':2, 'ti_ddrho':3}
-
-    bool_outofbounds = False
-
-    dict_outofbounds = {}
-
-    for i,(k,vs) in enumerate(reference.items()): # dict items are not ordered!
-        
-        dict_outofbounds[k] = {
-                               'greater': np.zeros(vs['max'].shape, dtype=bool),
-                               'lesser' : np.zeros(vs['min'].shape, dtype=bool), 
-                               'within' :  np.ones(vs['min'].shape, dtype=bool),
-                               } # OHE; technicaly, 'within' is redundant and we need only 2 bits to encode 3 classes
-
-        for j,v in enumerate(vs['max']): # can use .tolist() to be sure array is converted into a generator
-
-            if v < input[input_order[k],j]:
-                
-                bool_outofbounds = True
-                dict_outofbounds[k]['greater'][j] = True
-                dict_outofbounds[k]['within'][j]  = False
-                
-        for j,v in enumerate(vs['min']):
-
-            if v > input[input_order[k],j]: 
-
-                bool_outofbounds = True
-                dict_outofbounds[k]['lesser'][j] = True
-                dict_outofbounds[k]['within'][j] = False
-
-    #print(f"dict_outofbounds:\n{dict_outofbounds}") ###DEBUG
-
-    return bool_outofbounds, dict_outofbounds
-
-def coreprof_to_input_value(
-            data, 
-            rho_ind_s=None, # used only if rho_tor_norm is None
-            rho_tor_norm=None, # rho_tor_nor of coretransp flux tubes
-            prof_names=['te', 'ti'], 
-            attrib_names=['value', 'ddrho'],
-                     ):
-    """
-    Transforms coreprof message data into values acceptable by a surrogate model as an input in order 'te_value', 'te_ddrho', 'ti_value', 'ti_ddrho'
-    TODO: look up EasyVVUQ cpo element for coreprof
-    TODO: check that all input values are filled with defaults
-    TODO: check if there is an implementation in easyvvuq utils
-    """
-
-    n = len(prof_names)
-    m = len(attrib_names)
-    d = len(rho_ind_s) if rho_ind_s is not None else len(rho_tor_norm)
-
-    # d_tot = 100
-    d_tot = len(data.rho_tor_norm)
-
-    #rad_grid = np.linspace(0., 1., d_tot)
-    rad_grid = data.rho_tor_norm # rho_tor_norm of coreprof radial grid points
-    #ATTENTION: for gradients GEM/GEM0 uses rho_tor_norm and ETS uses rho_tor
-
-    prof_vals = np.zeros((n*m, d))
-    #print(f"Entering a function to parse CPO into surrogate input") ###DEBUG
-
-    for i, prof_name in enumerate(prof_names):
-
-        prof = getattr(data, prof_name)
-
-        for j, attrib_name in enumerate(attrib_names):
-
-            if attrib_name != 'ddrho':
-                val_readings = getattr(prof, attrib_name)
-                val_readings_interp = l3interp(y_in=val_readings, x_in=rad_grid, x_out=rho_tor_norm)
-            else:
-                # GEM/GEM0/SURR are accepting the ddrho definition on rho_tor_norm only!
-                val_prime_readings = getattr(prof, 'value')
-                val_readings_interp = l3deriv(y_in=val_prime_readings, x_in=rad_grid, x_out=rho_tor_norm)
-
-            if rho_tor_norm is not None:
-
-                prof_vals[i*m+j,:] = val_readings_interp
-            
-            else:
-            # TODO: ideally, should not be used any more!; will fail for ddrho if rho_tor_norm is None
-                for r, rho_ind in enumerate(rho_ind_s):
-
-                    val_reading = val_readings[rho_ind]
-
-                    if prof_name[1] == 'i':
-                        # Here: ion profiles are 1D (no species dimension) ...
-                        #val_readings = val_readings[0]
-                        pass
-                    elif prof_name[1] == 'e':
-                        pass
-                    else:
-                        print('Error: Attributes have to belong either to ions or to electrons')
-
-                    prof_vals[i*m+j][r] = val_reading
-
-    return prof_vals
-
-def coretransp_to_value(
-        data,
-        rho_ind_s,
-        prof_names=['te_transp', 'ti_transp'],
-        attrib_names=['flux'],
-                       ):
-    """
-    Transforms coretransp message data into values that could be read and plotted
-    NB!: nearly a duplicate of coreprof_to_input_value(), use that instead
-    """
-
-    n = len(prof_names)
-    m = len(attrib_names)
-    d = len(rho_ind_s)
-
-    transp_vals = np.zeros((n*m, d))
-    #print(f"Entering a function to parse CPO into transp data") ###DEBUG
-
-    prof_val = data.values[0] # a difference from coreprof
-
-    for i, prof_name in enumerate(prof_names):
-
-        prof = getattr(prof_val, prof_name)
-
-        for j, attrib_name in enumerate(attrib_names):
-
-            val_readings = getattr(prof, attrib_name)
-
-            for r, rho_ind in enumerate(rho_ind_s):
-
-                val_reading = val_readings[rho_ind]
-
-                if prof_name[1] == 'i':
-                    val_reading = val_reading[0] # a difference from coreprof (should be)
-                    #pass
-                elif prof_name[1] == 'e':
-                    pass
-
-                transp_vals[i*m+j][r] = val_reading
-
-    return transp_vals
-
-def output_value_to_coretransp(
-            fluxes_out, 
-            coretransp_file, 
-            r_s=[0], # array of flux tube numbers in coretransp (not rho values!)
-            ion=0, # number of ion species
-            rho_tor_norm_sur=None,
-            rho_tor_norm_sim=None,
-            prof_names=['te_transp', 'ti_transp',], #TODO: double check CPO format
-            attributes=['flux',]
-                              ):
-    """
-    Transforms flux mean values infered by model into a CPO coretransp datastracture
-    """
-    
-    # Casting array elements to strings
-    #fluxes_out_str = {k:np.array([str(v) for v in vs]) for k,vs in fluxes_out.items()}
-    #fluxes_out_str = {k:np.array(['  '+str(v)+'E+00' for v in vs]) for k,vs in fluxes_out.items()} # now assumes that value fits to a zero exponent
-    #print(f"> fluxes_out: {fluxes_out}") ###DEBUG
-
-    coretransp_datastructure = read(coretransp_file, 'coretransp')
-
-    if len(coretransp_datastructure.values[0].ti_transp.flux) != len(r_s):
-        coretransp_datastructure.values[0].ti_transp.flux = np.zeros((1, len(r_s)))
-
-    if len(coretransp_datastructure.values[0].te_transp.flux) != len(r_s):
-        coretransp_datastructure.values[0].te_transp.flux = np.zeros((len(r_s)))     
-
-    # if flux tube coordinates from surrogate and code are different, interpolate
-    if rho_tor_norm_sur is not None and rho_tor_norm_sim is not None:
-        for prof_name in prof_names:
-            for attribute in attributes:
-                fluxes_out[prof_name+'_'+attribute] = l3interp(y_in=fluxes_out[prof_name+'_'+attribute], x_in=rho_tor_norm_sur, x_out=rho_tor_norm_sim)
-
-    # NB: when this is commented out - will not change the coretransp passed
-    for prof_name in prof_names:
-
-        for attribute in attributes:
-
-            for r in r_s:
-
-                if attribute == 'flux':
-
-                    if prof_name == 'ti_transp':
-                                               
-                        #coretransp_datastructure.values[0].ti_transp.flux = np.zeros((1, len(r_s)))
-                        coretransp_datastructure.values[0].ti_transp.flux[r, 0] = fluxes_out[prof_name+'_'+attribute][r]
-                    
-                    elif prof_name == 'te_transp':
-           
-                        #coretransp_datastructure.values[0].te_transp.flux = np.zeros((len(r_s)))                       
-                        coretransp_datastructure.values[0].te_transp.flux[r] = fluxes_out[prof_name+'_'+attribute][r]
-                                
-                    else:
-                        print('Error: currently only temperatures for two species are supported')
-                
-                else:
-                    print('Erorr: currently only models infering fluxes are supported')
-
-    return coretransp_datastructure
 
 def l3interp(y_in, x_in, nr_in=None, y_out=None, x_out=None, nr_out=None):
     """
@@ -393,6 +158,315 @@ def l3deriv(y_in, x_in, nr_in=None, dydx_out=None, x_out=None, nr_out=None):
         #print('y_out : {}, res len:{}'.format(dydx_out[j], len(dydx_out)))
 
     return dydx_out
+
+def training_data_bounds(ref_data, input_names=['te_value', 'ti_value', 'te_ddrho', 'ti_ddrho', 'q', 'gm3'], n_fts=8, n_run_per_ft=81, option='ft_col'):
+    """
+    Produces a dictionary for training parameters, 
+    each having an array of min and max values occuring in the dataset 
+        option: whether to use 'ft' column in the reference data or not
+    
+    """
+
+    #print(f"ref_data : \n{ref_data.describe()}")###DEBUG
+
+    train_bounds = {k:{'min':np.zeros(n_fts), 'max':np.zeros(n_fts)} for k in input_names}
+
+    for input in input_names:
+        if input in ref_data.columns:
+            for i in range(n_fts):
+                if option == 'ft_col':
+                    mask = ref_data['ft'] == i
+                    ref_data_ft = ref_data[mask]
+                    train_bounds[input]['min'][i] = ref_data_ft[input].min()
+                    train_bounds[input]['max'][i] = ref_data_ft[input].max()
+                else:
+                    train_bounds[input]['min'][i] = ref_data[input].iloc[n_run_per_ft*(i):n_run_per_ft*(i+1)].min()
+                    train_bounds[input]['max'][i] = ref_data[input].iloc[n_run_per_ft*(i):n_run_per_ft*(i+1)].max()
+
+    return train_bounds
+
+def check_outof_learned_bounds(input, reference):
+    """
+    input: an array of input values for surrogate of size (n_features, n_coordinates) in order 'te_value', 'ti_value', 'te_ddrho', 'ti_ddrho'
+    reference: a dictionary of training data bounds in format {feature:{'max':array(n_coords),'min':array(n_coords)}}
+    Returns: bool: True if input is outisde of the learned bounds
+    """
+
+    #print(f"reference:\n{reference}") ###DEBUG
+    #print(f"input:\n{input}") ###DEBUG
+
+    input_order = {'te_value':0, 'ti_value':1, 'te_ddrho':2, 'ti_ddrho':3, 'q':4, 'gm3':5}
+
+    bool_outofbounds = False
+
+    dict_outofbounds = {}
+
+    for i,(k,vs) in enumerate(reference.items()): # dict items are not ordered!
+        
+        dict_outofbounds[k] = {
+                               'greater': np.zeros(vs['max'].shape, dtype=bool),
+                               'lesser' : np.zeros(vs['min'].shape, dtype=bool), 
+                               'within' :  np.ones(vs['min'].shape, dtype=bool),
+                               } # OHE; technicaly, 'within' is redundant and we need only 2 bits to encode 3 classes
+
+        for j,v in enumerate(vs['max']): # can use .tolist() to be sure array is converted into a generator
+
+            if v < input[input_order[k],j]:
+                
+                bool_outofbounds = True
+                dict_outofbounds[k]['greater'][j] = True
+                dict_outofbounds[k]['within'][j]  = False
+                
+        for j,v in enumerate(vs['min']):
+
+            if v > input[input_order[k],j]: 
+
+                bool_outofbounds = True
+                dict_outofbounds[k]['lesser'][j] = True
+                dict_outofbounds[k]['within'][j] = False
+
+    #print(f"dict_outofbounds:\n{dict_outofbounds}") ###DEBUG
+
+    return bool_outofbounds, dict_outofbounds
+
+def make_new_training_sample(profiles_in, dict_outofbounds, ref_bounds, retrain_distance=0.25, n_fts=8,):
+    """
+    Based on the a plasma state sample (serving as an input to transport model) and bounds of a plasma state dataset
+    suggest a new plasma state to train on
+    """
+    new_surrogate_sample = []
+
+    for i_n,(k,vs) in enumerate(dict_outofbounds.items()):
+        for ft in range(n_fts):
+            if vs['greater'][ft]:
+                new_sample = {'ft': ft}
+                for i_m, k in enumerate(ref_bounds):
+                    new_sample[k] = profiles_in[i_m, ft]
+                new_sample[k] = new_sample[k] + retrain_distance * abs( new_sample[k] - 0.5*(ref_bounds[k]['max'][ft]+ref_bounds[k]['min'][ft]) )
+                new_surrogate_sample.append(new_sample)
+            if vs['lesser'][ft]:
+                new_sample = {'ft': ft}
+                for i_m, k in enumerate(ref_bounds):
+                    new_sample[k] = profiles_in[i_m, ft]
+                new_sample[k] = new_sample[k] - retrain_distance * abs(new_sample[k] - 0.5*(ref_bounds[k]['max'][ft]+ref_bounds[k]['min'][ft]) )
+                new_surrogate_sample.append(new_sample)
+    
+    new_surrogate_sample = pd.DataFrame(new_surrogate_sample)
+
+    return new_surrogate_sample
+
+def coreprof_to_input_value(
+            data, 
+            rho_ind_s=None, # used only if rho_tor_norm is None
+            rho_tor_norm=None, # rho_tor_nor of coretransp flux tubes
+            prof_names=['te', 'ti'], 
+            attrib_names=['value', 'ddrho'],
+                     ):
+    """
+    Transforms coreprof message data into values acceptable by a surrogate model as an input in order 'te_value', 'te_ddrho', 'ti_value', 'ti_ddrho'
+    TODO: look up EasyVVUQ cpo element for coreprof
+    TODO: check that all input values are filled with defaults
+    TODO: check if there is an implementation in easyvvuq utils
+    """
+
+    n = len(prof_names)
+    m = len(attrib_names)
+    d = len(rho_ind_s) if rho_ind_s is not None else len(rho_tor_norm)
+
+    # d_tot = 100
+    d_tot = len(data.rho_tor_norm)
+
+    #rad_grid = np.linspace(0., 1., d_tot)
+    rad_grid = data.rho_tor_norm # rho_tor_norm of coreprof radial grid points
+    #ATTENTION: for gradients GEM/GEM0 uses rho_tor_norm and ETS uses rho_tor
+
+    prof_vals = np.zeros((n*m, d))
+    #print(f"Entering a function to parse CPO into surrogate input") ###DEBUG
+
+    for i, prof_name in enumerate(prof_names):
+
+        prof = getattr(data, prof_name)
+
+        for j, attrib_name in enumerate(attrib_names):
+
+            if attrib_name != 'ddrho':
+                val_readings = getattr(prof, attrib_name)
+                val_readings_interp = l3interp(y_in=val_readings, x_in=rad_grid, x_out=rho_tor_norm)
+            else:
+                # GEM/GEM0/SURR are accepting the ddrho definition on rho_tor_norm only!
+                val_prime_readings = getattr(prof, 'value')
+                val_readings_interp = l3deriv(y_in=val_prime_readings, x_in=rad_grid, x_out=rho_tor_norm)
+
+            if rho_tor_norm is not None:
+
+                prof_vals[i*m+j,:] = val_readings_interp
+            
+            else:
+            # TODO: ideally, should not be used any more!; will fail for ddrho if rho_tor_norm is None
+                for r, rho_ind in enumerate(rho_ind_s):
+
+                    val_reading = val_readings[rho_ind]
+
+                    if prof_name[1] == 'i':
+                        # Here: ion profiles are 1D (no species dimension) ...
+                        #val_readings = val_readings[0]
+                        pass
+                    elif prof_name[1] == 'e':
+                        pass
+                    else:
+                        print('Error: Attributes have to belong either to ions or to electrons')
+
+                    prof_vals[i*m+j][r] = val_reading
+
+    return prof_vals
+
+def equilibrium_to_input_value(
+            data, 
+            rho_tor_norm=None, # rho_tor_nor of coretransp flux tubes
+            prof_names=['profiles_1d'], 
+            attrib_names=['q', 'gm3'],
+                              ):
+    """
+    Transforms equilibrium message data into values acceptable by a surrogate model as an input in order 'q', 'gm3'
+    TODO: check that all input values are filled with defaults
+    """
+
+    n = len(prof_names)
+    m = len(attrib_names)
+    d = len(rho_tor_norm)
+
+    rad_grid = data.profiles_1d.rho_tor
+    rad_grid_norm = rad_grid.max()
+    rad_grid = rad_grid / rad_grid_norm
+    #ATTENTION: for gradients GEM/GEM0 uses rho_tor_norm and ETS uses rho_tor
+
+    #d_tot = len(rad_grid)
+
+    if rho_tor_norm is None:
+        rho_tor_norm = rad_grid
+
+    equil_vals = np.zeros((n*m, d))
+    #print(f"Entering a function to parse CPO into surrogate input") ###DEBUG
+
+    for i, prof_name in enumerate(prof_names):
+
+        prof = getattr(data, prof_name)
+
+        for j, attrib_name in enumerate(attrib_names):
+
+            if attrib_name != 'ddrho':
+                val_readings = getattr(prof, attrib_name)
+                val_readings_interp = l3interp(y_in=val_readings, x_in=rad_grid, x_out=rho_tor_norm)
+            else:
+                # GEM/GEM0/SURR are accepting the ddrho definition on rho_tor_norm only!
+                val_prime_readings = getattr(prof, attrib_name)
+                val_readings_interp = l3deriv(y_in=val_prime_readings, x_in=rad_grid, x_out=rho_tor_norm)
+
+            equil_vals[i*m+j,:] = val_readings_interp
+
+    return equil_vals
+
+def coretransp_to_value(
+        data,
+        rho_ind_s,
+        prof_names=['te_transp', 'ti_transp'],
+        attrib_names=['flux'],
+                       ):
+    """
+    Transforms coretransp message data into values that could be read and plotted
+    NB!: nearly a duplicate of coreprof_to_input_value(), use that instead
+    """
+
+    n = len(prof_names)
+    m = len(attrib_names)
+    d = len(rho_ind_s)
+
+    transp_vals = np.zeros((n*m, d))
+    #print(f"Entering a function to parse CPO into transp data") ###DEBUG
+
+    prof_val = data.values[0] # a difference from coreprof
+
+    for i, prof_name in enumerate(prof_names):
+
+        prof = getattr(prof_val, prof_name)
+
+        for j, attrib_name in enumerate(attrib_names):
+
+            val_readings = getattr(prof, attrib_name)
+
+            for r, rho_ind in enumerate(rho_ind_s):
+
+                val_reading = val_readings[rho_ind]
+
+                if prof_name[1] == 'i':
+                    val_reading = val_reading[0] # a difference from coreprof (should be)
+                    #pass
+                elif prof_name[1] == 'e':
+                    pass
+
+                transp_vals[i*m+j][r] = val_reading
+
+    return transp_vals
+
+def output_value_to_coretransp(
+            fluxes_out, 
+            coretransp_file, 
+            r_s=[0], # array of flux tube numbers in coretransp (not rho values!)
+            ion=0, # number of ion species
+            rho_tor_norm_sur=None,
+            rho_tor_norm_sim=None,
+            prof_names=['te_transp', 'ti_transp',], #TODO: double check CPO format
+            attributes=['flux',]
+                              ):
+    """
+    Transforms flux mean values infered by model into a CPO coretransp datastracture
+    """
+    
+    # Casting array elements to strings
+    #fluxes_out_str = {k:np.array([str(v) for v in vs]) for k,vs in fluxes_out.items()}
+    #fluxes_out_str = {k:np.array(['  '+str(v)+'E+00' for v in vs]) for k,vs in fluxes_out.items()} # now assumes that value fits to a zero exponent
+    #print(f"> fluxes_out: {fluxes_out}") ###DEBUG
+
+    coretransp_datastructure = read(coretransp_file, 'coretransp')
+
+    if len(coretransp_datastructure.values[0].ti_transp.flux) != len(r_s):
+        coretransp_datastructure.values[0].ti_transp.flux = np.zeros((1, len(r_s)))
+
+    if len(coretransp_datastructure.values[0].te_transp.flux) != len(r_s):
+        coretransp_datastructure.values[0].te_transp.flux = np.zeros((len(r_s)))     
+
+    # if flux tube coordinates from surrogate and code are different, interpolate
+    if rho_tor_norm_sur is not None and rho_tor_norm_sim is not None:
+        for prof_name in prof_names:
+            for attribute in attributes:
+                fluxes_out[prof_name+'_'+attribute] = l3interp(y_in=fluxes_out[prof_name+'_'+attribute], x_in=rho_tor_norm_sur, x_out=rho_tor_norm_sim)
+
+    # NB: when this is commented out - will not change the coretransp passed
+    for prof_name in prof_names:
+
+        for attribute in attributes:
+
+            for r in r_s:
+
+                if attribute == 'flux':
+
+                    if prof_name == 'ti_transp':
+                                               
+                        #coretransp_datastructure.values[0].ti_transp.flux = np.zeros((1, len(r_s)))
+                        coretransp_datastructure.values[0].ti_transp.flux[r, 0] = fluxes_out[prof_name+'_'+attribute][r]
+                    
+                    elif prof_name == 'te_transp':
+           
+                        #coretransp_datastructure.values[0].te_transp.flux = np.zeros((len(r_s)))                       
+                        coretransp_datastructure.values[0].te_transp.flux[r] = fluxes_out[prof_name+'_'+attribute][r]
+                                
+                    else:
+                        print('Error: currently only temperatures for two species are supported')
+                
+                else:
+                    print('Erorr: currently only models infering fluxes are supported')
+
+    return coretransp_datastructure
 
 def read_attrib(filename, quantity, attribute, coords, filetype='coreprof'):
     """
@@ -576,12 +650,19 @@ def compare_states(state_1, state_2, cpo_types=['coreprof']):
      - state is a dictionary {cpo_type: file_name}
      - returns: a metrics value (d e R^0+)
     """
+
+    cpo_dict = {
+        'coreprof':    {'profiles':   ['te', 'ti'],
+                        'attributes': ['value', 'ddrho'],},
+        'equilibrium': {'profiles':   ['profiles_1d'],
+                        'attributes': ['q', 'gm3'],},
+    }
     
     ds = []
     for cpo_type in cpo_types:
         cpo_name_1 = state_1[cpo_type]
         cpo_name_2 = state_2[cpo_type]
-        d = compare_cpo(cpo_name_1, cpo_name_2, cpo_type=cpo_type)
+        d = compare_cpo(cpo_name_1, cpo_name_2, profiles=cpo_dict[cpo_type]['profiles'], attributes=cpo_dict[cpo_type]['attributes'], cpo_type=cpo_type)
         ds.append(d)
 
     d_comp = sum(ds) / len(ds) # TODO differences have to be comparable

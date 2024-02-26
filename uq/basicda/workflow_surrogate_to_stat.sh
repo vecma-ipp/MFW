@@ -24,6 +24,7 @@ sourcedir=${muscledir}/${muscleworkdir}/gem0_surr_resume_data/
 cp ${sourcedir}/ets_coreprof_in.cpo ${sourcedir}/${lastcoreprofcpo}
 cp ${sourcedir}/ets_equilibrium_in.cpo ${sourcedir}/${lastequilibriumcpo}
 state_gtst=gem0wf_stst/${lastcoreprofcpo}
+state_eq_gtst=gem0wf_stst/${lastequilibriumcpo}
 
 datenow=$(date +"%Y%m%d")
 
@@ -33,7 +34,10 @@ origdir=$(pwd)
 curr_id=${datenow}
 
 itnum_min=0
-itnum_max=5
+itnum_max=1
+
+# to use equilibrium data or not
+useequil=1
 
 echo ">>> Entering the loop"
 for((itnum=${itnum_min};itnum<${itnum_max};itnum++)); do
@@ -52,13 +56,23 @@ for((itnum=${itnum_min};itnum<${itnum_max};itnum++)); do
   ### Compare initial state and ground-truth stationary state
   echo "Comparing intial iteration state with ground-truth stationary state"
   
-  python ${compare_op} ${lastcoreprofcpo} ${state_gtst}
+  if [ ${useequil} == 1 ]
+  then
+    python ${compare_op} ${lastcoreprofcpo} ${state_gtst} ${lastequilibriumcpo} ${state_eq_gtst}
+  else
+    python ${compare_op} ${lastcoreprofcpo} ${state_gtst}
+  fi
 
   ### Prepare run folder:
   # 	 final coreprof CPO -> final plasma state -> grid around final state -> pyGEM0 dataset around final state
   echo ">>> Preparing new training data set around iteration initial state"
 
-  python ${prepare_op} ${itdir} ${curr_id} ${itnum}
+  if [ ${useequil} == 1  ]
+  then
+    python ${prepare_op} ${itdir} ${curr_id} ${itnum} ${useequil} ${lastequilibriumcpo}
+  else
+    python ${prepare_op} ${itdir} ${curr_id} ${itnum}
+  fi
 
   ### Prepare new surrogate with new data
   echo ">>> Making a new surrogate for simualtion workflow"
@@ -68,7 +82,7 @@ for((itnum=${itnum_min};itnum<${itnum_max};itnum++)); do
   ./${surrogate_op} ${datenow} ${itnum} 
 
   ### Run M3-WF with the new surrogate
-  echo ">>> Running a new simulation workdflow"
+  echo ">>> Running a new simulation workkflow"
 
   cd ${muscledir}/${muscleworkdir}/
  
@@ -88,18 +102,38 @@ for((itnum=${itnum_min};itnum<${itnum_max};itnum++)); do
   echo ">>> Comparing this and previous iteration states"
   
   prev_state_name=ets_coreprof_out_last_${itnum}.cpo
+  prev_state_eq_name=equilupdate_equilibrium_out_last_${itnum}.cpo
+
   mv ${origdir}/${lastcoreprofcpo} ${origdir}/${prev_state_name}
   cp ${runprefix}${datenow}_${itnum}${runsufix}/${lastcoreprofcpo} ${origdir}/
+
+  mv ${origdir}/${lastequilibriumcpo} ${origdir}/${prev_state_eq_name}
+  cp ${runprefix}${datenow}_${itnum}${runsufix}/${lastequilibriumcpo} ${origdir}/
+
   cd ${origdir}
 
   state1=${lastcoreprofcpo}
   state2=${prev_state_name}
+
+  state_eq1=${lastequilibriumcpo}
+  state_eq2=${prev_state_eq_name}
+
+  if [ ${useequil} == 1 ]
+  then
+    python ${compare_op} ${state1} ${state2} ${state_eq1} ${state_eq2}
+  else
   python ${compare_op} ${state1} ${state2}
+  fi
 
   ### Compare resulting profiles with a stored 'ground truth' stationary profile
   echo ">>> Comparing this iteration state with ground-truth stationary state"
   
-  python ${compare_op} ${state1} ${state_gtst} 
+  if [ ${useequil} == 1 ]
+  then
+    python ${compare_op} ${state1} ${state_gtst} ${state_eq1} ${state_eq_gtst}
+  else
+    python ${compare_op} ${state1} ${state_gtst} 
+  fi
 
   ### Prepare for the next iteration
   echo ">>> Preparing for the next iteration"

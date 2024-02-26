@@ -232,7 +232,7 @@ if __name__ == "__main__":
     # # - option 1.2.1 - read environmental variable
     # n_samples = int(os.environ['NSAMPLES'])
     # - option 1.2.2 - read script argument
-    n_samples = sys.argv[2] if len(sys.argv) > 2 else 32
+    n_samples = int(sys.argv[2]) if len(sys.argv) > 2 else 32
     print(f">> Using number of samples: {n_samples}")
 
     # Input variable: CoV of Q variation - to perfrom scan in level oa aleatrocic uncertainty

@@ -170,6 +170,8 @@ settings:
   turbulence.retrain_distance: 0.25
   turbulence.bool_send_uncertainty: True
 
+  turbulence.use_equilibrium: True
+
 #checkpoints:
 #  at_end:True
 #  simulation_time:
