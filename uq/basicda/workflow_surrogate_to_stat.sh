@@ -2,9 +2,11 @@
 
 ### Define fixed folder and file names
 echo ">>> Retraining workflow: Setting up names"
+codenameshort=gem0
+codename=${codenameshort}py
 muscledir=~/code/MFW/muscle3
 muscleworkdir=workflow
-runprefix=run_fusion_gem0_surr_
+runprefix=run_fusion_${codenameshort}_surr_
 runsufix=/instances/transport/workdir
 
 easysurrogatedir=~/code/EasySurrogate/tests/gem_gp
@@ -14,17 +16,16 @@ lastequilibriumcpo=equilupdate_equilibrium_out.cpo
 
 ### Define script file names of each operation
 prepare_op=prepare_gem0_sample.py
-surrogate_op=process_gpr.sh
-simulation_op=gem_surr_workflow.sh
+surrogate_op=process_gpr_ind.sh
+simulation_op=gem_surr_workflow_independent.sh
 compare_op=compare_workflow_states.py
 
 ### Define the starting point of the loop - and prepare the first iteration
 echo ">>> Preparing initial state"
-sourcedir=${muscledir}/${muscleworkdir}/gem0_surr_resume_data/
-cp ${sourcedir}/ets_coreprof_in.cpo ${sourcedir}/${lastcoreprofcpo}
-cp ${sourcedir}/ets_equilibrium_in.cpo ${sourcedir}/${lastequilibriumcpo}
-state_gtst=gem0wf_stst/${lastcoreprofcpo}
-state_eq_gtst=gem0wf_stst/${lastequilibriumcpo}
+
+sourcedir=${muscledir}/${muscleworkdir}/${codenameshort}_surr_resume_data/
+state_gtst=${codenameshort}wf_stst/${lastcoreprofcpo}
+state_eq_gtst=${codenameshort}wf_stst/${lastequilibriumcpo}
 
 datenow=$(date +"%Y%m%d")
 
@@ -34,10 +35,19 @@ origdir=$(pwd)
 curr_id=${datenow}
 
 itnum_min=0
-itnum_max=1
+itnum_max=5
+
+# to start iteration from scratch or to continue
+if [ ${itnum_min} == 0 ]
+then
+  echo ">> Copying initial state CPOs from: "${sourcedir}
+  cp ${sourcedir}/ets_coreprof_in.cpo    ${sourcedir}/${lastcoreprofcpo}
+  cp ${sourcedir}/ets_equilibrium_in.cpo    ${sourcedir}/${lastequilibriumcpo}
+fi
 
 # to use equilibrium data or not
-useequil=1
+useequil=0
+useequil_tocomp=1
 
 echo ">>> Entering the loop"
 for((itnum=${itnum_min};itnum<${itnum_max};itnum++)); do
@@ -50,13 +60,13 @@ for((itnum=${itnum_min};itnum<${itnum_max};itnum++)); do
   itdir=${PWD}
   #mkdir ${itdir}
 
-  cp ${sourcedir}/${lastequilibriumcpo} ${itdir}/
-  cp ${sourcedir}/${lastcoreprofcpo} ${itdir}/
+  cp ${sourcedir}/${lastequilibriumcpo}    ${itdir}/
+  cp ${sourcedir}/${lastcoreprofcpo}    ${itdir}/
 
   ### Compare initial state and ground-truth stationary state
   echo "Comparing intial iteration state with ground-truth stationary state"
   
-  if [ ${useequil} == 1 ]
+  if [ ${useequil_tocomp} == 1 ]
   then
     python ${compare_op} ${lastcoreprofcpo} ${state_gtst} ${lastequilibriumcpo} ${state_eq_gtst}
   else
@@ -75,13 +85,16 @@ for((itnum=${itnum_min};itnum<${itnum_max};itnum++)); do
   fi
 
   ### Prepare new surrogate with new data
-  echo ">>> Making a new surrogate for simualtion workflow"
+  echo ">>> Making a new surrogate for simulation workflow"
+
+  cp ${codename}_new_${curr_id}_${itnum}.csv ${easysurrogatedir}
 
   cd ${easysurrogatedir}
  
-  ./${surrogate_op} ${datenow} ${itnum} 
+  ./${surrogate_op} ${datenow} ${itnum} ${easysurrogatedir} ${muscledir}
 
   ### Run M3-WF with the new surrogate
+  # TODO unlike surrogate, switch to use equilibrium needs a change in YMMSL file
   echo ">>> Running a new simulation workkflow"
 
   cd ${muscledir}/${muscleworkdir}/
@@ -90,7 +103,7 @@ for((itnum=${itnum_min};itnum<${itnum_max};itnum++)); do
   rm -r ${runprefix}${datenow}_${itnum} 
 
   # Prepare the necessary files
-  cp ${origdir}/gem0py_new_${curr_id}_${itnum}.csv ${muscledir}/${muscleworkdir}/ref_train_data.csv
+  cp ${origdir}/${codenameshort}py_new_${curr_id}_${itnum}.csv    ${muscledir}/${muscleworkdir}/ref_train_data.csv
   # Original state for the new M3-WF run - two options:
   # 	1) Same inial state (~ from AUG shot)
   # 	2) Final state of the WF from the previous iteration
@@ -101,14 +114,14 @@ for((itnum=${itnum_min};itnum<${itnum_max};itnum++)); do
   ### Collect the data from the M3-WF run and compare resulting profiles with the last iteration
   echo ">>> Comparing this and previous iteration states"
   
-  prev_state_name=ets_coreprof_out_last_${itnum}.cpo
-  prev_state_eq_name=equilupdate_equilibrium_out_last_${itnum}.cpo
+  prev_state_name=ets_coreprof_out_last_${datenow}_${itnum}.cpo
+  prev_state_eq_name=equilupdate_equilibrium_out_last_${datenow}_${itnum}.cpo
 
-  mv ${origdir}/${lastcoreprofcpo} ${origdir}/${prev_state_name}
-  cp ${runprefix}${datenow}_${itnum}${runsufix}/${lastcoreprofcpo} ${origdir}/
+  mv ${origdir}/${lastcoreprofcpo}    ${origdir}/${prev_state_name}
+  cp ${runprefix}${datenow}_${itnum}${runsufix}/${lastcoreprofcpo}    ${origdir}/
 
-  mv ${origdir}/${lastequilibriumcpo} ${origdir}/${prev_state_eq_name}
-  cp ${runprefix}${datenow}_${itnum}${runsufix}/${lastequilibriumcpo} ${origdir}/
+  mv ${origdir}/${lastequilibriumcpo}    ${origdir}/${prev_state_eq_name}
+  cp ${runprefix}${datenow}_${itnum}${runsufix}/${lastequilibriumcpo}    ${origdir}/
 
   cd ${origdir}
 
@@ -118,7 +131,7 @@ for((itnum=${itnum_min};itnum<${itnum_max};itnum++)); do
   state_eq1=${lastequilibriumcpo}
   state_eq2=${prev_state_eq_name}
 
-  if [ ${useequil} == 1 ]
+  if [ ${useequil_tocomp} == 1 ]
   then
     python ${compare_op} ${state1} ${state2} ${state_eq1} ${state_eq2}
   else
@@ -128,7 +141,7 @@ for((itnum=${itnum_min};itnum<${itnum_max};itnum++)); do
   ### Compare resulting profiles with a stored 'ground truth' stationary profile
   echo ">>> Comparing this iteration state with ground-truth stationary state"
   
-  if [ ${useequil} == 1 ]
+  if [ ${useequil_tocomp} == 1 ]
   then
     python ${compare_op} ${state1} ${state_gtst} ${state_eq1} ${state_eq_gtst}
   else
@@ -143,5 +156,8 @@ for((itnum=${itnum_min};itnum<${itnum_max};itnum++)); do
 
 done
 
-echo ">>> Finished the retraining workflow!"
+# Renaming the results of the las iteration
+mv ${origdir}/${lastcoreprofcpo}    ${origdir}/ets_coreprof_out_last_${datenow}_${itnum_max}.cpo
+mv ${origdir}/${lastequilibriumcpo}    ${origdir}/equilupdate_equilibrium_out_last_${datenow}_${itnum_max}.cpo
 
+echo ">>> Finished the retraining workflow!"

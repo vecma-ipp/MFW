@@ -173,7 +173,7 @@ settings:
   turbulence.retrain_distance: 0.25
   turbulence.bool_send_uncertainty: True
 
-  turbulence.use_equilibrium: True
+  turbulence.use_equilibrium: False
 
 #checkpoints:
 #  at_end:True
