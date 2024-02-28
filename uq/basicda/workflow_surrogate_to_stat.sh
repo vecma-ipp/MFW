@@ -34,8 +34,8 @@ origdir=$(pwd)
 
 curr_id=${datenow}
 
-itnum_min=0
-itnum_max=5
+itnum_min=5
+itnum_max=7
 
 # to start iteration from scratch or to continue
 if [ ${itnum_min} == 0 ]
@@ -43,10 +43,12 @@ then
   echo ">> Copying initial state CPOs from: "${sourcedir}
   cp ${sourcedir}/ets_coreprof_in.cpo    ${sourcedir}/${lastcoreprofcpo}
   cp ${sourcedir}/ets_equilibrium_in.cpo    ${sourcedir}/${lastequilibriumcpo}
+else
+  sourcedir=${origdir}
 fi
 
 # to use equilibrium data or not
-useequil=0
+useequil=1
 useequil_tocomp=1
 
 echo ">>> Entering the loop"

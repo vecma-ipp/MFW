@@ -169,18 +169,19 @@ def training_data_bounds(ref_data, input_names=['te_value', 'ti_value', 'te_ddrh
 
     #print(f"ref_data : \n{ref_data.describe()}")###DEBUG
 
-    train_bounds = {k:{'min':np.zeros(n_fts), 'max':np.zeros(n_fts)} for k in ref_data.columns}
+    train_bounds = {k:{'min':np.zeros(n_fts), 'max':np.zeros(n_fts)} for k in input_names if k in ref_data.columns}
 
-    for input in ref_data.columns: 
-        for i in range(n_fts):
-            if option == 'ft_col':
-                mask = ref_data['ft'] == i
-                ref_data_ft = ref_data[mask]
-                train_bounds[input]['min'][i] = ref_data_ft[input].min()
-                train_bounds[input]['max'][i] = ref_data_ft[input].max()
-            else:
-                train_bounds[input]['min'][i] = ref_data[input].iloc[n_run_per_ft*(i):n_run_per_ft*(i+1)].min()
-                train_bounds[input]['max'][i] = ref_data[input].iloc[n_run_per_ft*(i):n_run_per_ft*(i+1)].max()
+    for input in input_names: 
+        if input in ref_data.columns:
+            for i in range(n_fts):
+                if option == 'ft_col':
+                    mask = ref_data['ft'] == i
+                    ref_data_ft = ref_data[mask]
+                    train_bounds[input]['min'][i] = ref_data_ft[input].min()
+                    train_bounds[input]['max'][i] = ref_data_ft[input].max()
+                else:
+                    train_bounds[input]['min'][i] = ref_data[input].iloc[n_run_per_ft*(i):n_run_per_ft*(i+1)].min()
+                    train_bounds[input]['max'][i] = ref_data[input].iloc[n_run_per_ft*(i):n_run_per_ft*(i+1)].max()
 
     return train_bounds
 
@@ -711,32 +712,45 @@ def compare_profiles(x1, x2, criterion):
         #TODO: consider Wasserstein distance: for Te/i ~ Heat capacity, for ne/ni ~ mass, for gradients ~ diffusivity(?, total?)
     return d
 
-def plot_state_conv(data, filename, metric_name='srRMSE', normalised=True):
+def plot_state_conv(datas, filename, metric_name='srRMSE', normalised=True, label_sufixes=None):
     """
     Plots convergence of metrics for pairs of states with a simulation for a given metric
     """
 
     col_name_dict = {
-        'd_prevfin_gtstst': "d(fin-1, g.t.st.st)",
-        'd_fin_gtststs': "d(fin, g.t.st.st)",
-        'd_prevfin_fin': "d(fin, fin-1)"
+        'd_prevfin_gtstst': f"d(fin-1, g.t.st.st)",
+        'd_fin_gtstst': f"d(fin, g.t.st.st)",
+        'd_fin_prevfin': f"d(fin, fin-1)"
     }
 
     fig, ax = plt.subplots()
 
-    t = data['it']
+    if label_sufixes is None:
+        label_sufixes = [f"{i}" for i,_ in enumerate(datas)]
 
-    for col_name in data.columns:
-        if col_name in col_name_dict.keys():
+    approx_slope = []
+    slope_col = 'd_fin_prevfin'
 
-            norm = data[col_name].max() if normalised else 1.
+    for i,data in enumerate(datas):
 
-            ax.plot(t, 
-                    data[col_name] / norm,
-                    alpha=0.8,
-                    marker='.',
-                    label=col_name_dict[col_name]
-                    )
+        t = data['it']
+        n_it = len(t)
+
+        for col_name in data.columns:
+            if col_name in col_name_dict.keys():
+
+                norm = data[col_name].max() if normalised else 1.
+
+                # allign time by the first iteration
+                ax.plot(t, 
+                        data[col_name][:n_it] / norm,
+                        alpha=0.8,
+                        marker='.',
+                        label=f"{col_name_dict[col_name]} for {label_sufixes[i]}"
+                        )
+        
+        if slope_col in data.columns:
+            approx_slope.append( (np.log10(data[slope_col].iloc[-2]) - np.log10(data[slope_col].iloc[0])) / (t.iloc[-2] - t.iloc[0]) )
 
     ax.set_yscale("log")
     ax.legend(loc='best')
@@ -747,11 +761,11 @@ def plot_state_conv(data, filename, metric_name='srRMSE', normalised=True):
 
     ax.set_xlabel(f"Algorithm iterations $i$")
     ax.set_ylabel(f"{metric_name}, a.u.")
-    ax.set_title(f"$D(s_{{i}},s_{{i-1}})${', norm-d to 1st it-n' if normalised else ''}")
+    ax.set_title(f"$d(s_{{i}},s_{{j}})${', norm-d to 1st it-n' if normalised else ''}")
 
     fig.savefig(f"{filename}.pdf")
 
-    return 0
+    return approx_slope
 
 def plot_quantities(datadict, save_fold_name, codename=None, dates=None, times=None, coord_num_fts=[14,30,43,55,66,76,85,95], bool_sur_involved=False, n_run_per_ft=81, ref_data=None,):
     """
