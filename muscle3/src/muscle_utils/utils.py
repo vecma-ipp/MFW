@@ -643,52 +643,6 @@ def read_equil(foldernames):
     fig.savefig(foldername[0]+'_equilibrium.pdf')
     plt.close()
 
-def compare_states(state_1, state_2, cpo_types=['coreprof']):
-    """
-    Compare two plasma states - TODO: >2 states (how? pairwise?), >2 CPOs each
-     - described via a list of CPO files [coreprof, equilibrium]
-     - state is a dictionary {cpo_type: file_name}
-     - returns: a metrics value (d e R^0+)
-    """
-
-    cpo_dict = {
-        'coreprof':    {'profiles':   ['te', 'ti'],
-                        'attributes': ['value', 'ddrho'],},
-        'equilibrium': {'profiles':   ['profiles_1d'],
-                        'attributes': ['q', 'gm3'],},
-    }
-    
-    ds = []
-    for cpo_type in cpo_types:
-        cpo_name_1 = state_1[cpo_type]
-        cpo_name_2 = state_2[cpo_type]
-        d = compare_cpo(cpo_name_1, cpo_name_2, profiles=cpo_dict[cpo_type]['profiles'], attributes=cpo_dict[cpo_type]['attributes'], cpo_type=cpo_type)
-        ds.append(d)
-
-    d_comp = sum(ds) / len(ds) # TODO differences have to be comparable
-    return d_comp
-
-def compare_cpo(cpo_name_1, cpo_name_2, profiles=['te', 'ti'], attributes=['value', 'ddrho'], cpo_type='coreprof'):
-    """
-    Compare two CPO files by the list of quantities of interest
-    - uses a list of 1d profiles - TODO: scalars, 1D profiles, 2D fields
-    """
-
-    coords = [0.143587306141853 , 0.309813886880875 , 0.442991137504578 , 0.560640752315521 , 0.668475985527039 , 0.769291400909424 , 0.864721715450287 , 0.955828309059143 ] # any number of coordinates in rho_tor_norm
-    ds = []
-
-    _,cpo_1 = read_cpo_file(cpo_name_1, profiles, attributes, coords, cpo_type)
-    _,cpo_2 = read_cpo_file(cpo_name_2, profiles, attributes, coords, cpo_type)
-
-    for p,a in product(profiles, attributes):
-        q1 = cpo_1[f"{p}_{a}"]
-        q2 = cpo_2[f"{p}_{a}"]
-        d = compare_profiles(q1, q2, 'srRMSE')
-        ds.append(d)
-    
-    d_comp = sum(ds) / len(ds)
-    return d_comp
-
 def compare_profiles(x1, x2, criterion):
     """
     Compares two (1D) profiles by given criterion
@@ -711,6 +665,52 @@ def compare_profiles(x1, x2, criterion):
         ValueError("Unknown criterion for 1D profiles comparison") 
         #TODO: consider Wasserstein distance: for Te/i ~ Heat capacity, for ne/ni ~ mass, for gradients ~ diffusivity(?, total?)
     return d
+
+def compare_cpo(cpo_name_1, cpo_name_2, profiles=['te', 'ti'], attributes=['value', 'ddrho'], cpo_type='coreprof', crit='srRMSE'):
+    """
+    Compare two CPO files by the list of quantities of interest
+    - uses a list of 1d profiles - TODO: scalars, 1D profiles, 2D fields
+    """
+
+    coords = [0.143587306141853 , 0.309813886880875 , 0.442991137504578 , 0.560640752315521 , 0.668475985527039 , 0.769291400909424 , 0.864721715450287 , 0.955828309059143 ] # any number of coordinates in rho_tor_norm
+    ds = []
+
+    _,cpo_1 = read_cpo_file(cpo_name_1, profiles, attributes, coords, cpo_type)
+    _,cpo_2 = read_cpo_file(cpo_name_2, profiles, attributes, coords, cpo_type)
+
+    for p,a in product(profiles, attributes):
+        q1 = cpo_1[f"{p}_{a}"]
+        q2 = cpo_2[f"{p}_{a}"]
+        d = compare_profiles(q1, q2, crit)
+        ds.append(d)
+    
+    d_comp = sum(ds) / len(ds)
+    return d_comp
+
+def compare_states(state_1, state_2, cpo_types=['coreprof'], crit='srRMSE'):
+    """
+    Compare two plasma states - TODO: >2 states (how? pairwise?), >2 CPOs each
+     - described via a list of CPO files [coreprof, equilibrium]
+     - state is a dictionary {cpo_type: file_name}
+     - returns: a metrics value (d e R^0+)
+    """
+
+    cpo_dict = {
+        'coreprof':    {'profiles':   ['te', 'ti'],
+                        'attributes': ['value', 'ddrho'],},
+        'equilibrium': {'profiles':   ['profiles_1d'],
+                        'attributes': ['q', 'gm3'],},
+    }
+    
+    ds = []
+    for cpo_type in cpo_types:
+        cpo_name_1 = state_1[cpo_type]
+        cpo_name_2 = state_2[cpo_type]
+        d = compare_cpo(cpo_name_1, cpo_name_2, profiles=cpo_dict[cpo_type]['profiles'], attributes=cpo_dict[cpo_type]['attributes'], cpo_type=cpo_type, crit=crit)
+        ds.append(d)
+
+    d_comp = sum(ds) / len(ds) # TODO differences have to be comparable
+    return d_comp
 
 def plot_state_conv(datas, filename, metric_name='srRMSE', normalised=True, label_sufixes=None):
     """
