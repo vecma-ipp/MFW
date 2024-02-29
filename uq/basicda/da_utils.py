@@ -597,18 +597,18 @@ def write_profs_fromfile_grid(point_in, filename_out, num_steps=1, **kwargs):
     #print(df_in) ###DEBUG
 
     # Get the number of flux tubes - optional now!
-    #  - option 1 - default
-    nfts = len(ftube_rhos)
-    nfts_list = [f for f in range(nfts)]
-    #  - option 2 - from the dataframe
+    # #  - option 1.1 - default
+    # nfts = len(ftube_rhos)
+    # nfts_list = [f for f in range(nfts)]
+    #  - option 1.2 - from the dataframe
     nfts_list = df_in['ft'].unique() #int(df_in['ft'].max() - df_in['ft'].min())
     nfts = len(nfts_list)
 
     # Get the list of independent variables
-    # - option 1 - default
-    input_names  = ['te_value', 'ti_value', 'te_ddrho', 'ti_ddrho']
-    output_names = ['te_transp_flux', 'ti_transp_flux']
-    # - option 2 - from the dataframe
+    # # - option 2.1 - default
+    # input_names  = ['te_value', 'ti_value', 'te_ddrho', 'ti_ddrho']
+    # output_names = ['te_transp_flux', 'ti_transp_flux']
+    # - option 2.2 - from the dataframe
     column_names = df_in.columns.tolist()
     input_names_adm_ends = ['value', 'ddrho', 'gm3', 'q']
     input_names  = [n for n in column_names if any([x in n for x in input_names_adm_ends])]
@@ -623,15 +623,15 @@ def write_profs_fromfile_grid(point_in, filename_out, num_steps=1, **kwargs):
     grid_step = kwargs['grid_step'] if 'grid_step' in kwargs else \
         {input_name:{nft:df_in[df_in['ft']==nft][input_name].mean()*exp_factor for nft in nfts_list} for input_name in input_names}
 
-    # - option 1 - Iterate over flux tubes ---
+    # - option 3.1 - Iterate over flux tubes ---
     #for nft in nfts_list:
-    # - option 2 - Iterate over points in dataframe
+    # - option 3.2 - Iterate over points in dataframe
     for i,df_row in df_in.iterrows():
 
-        # - option 1 - For every flux tube, define its point
+        # - option 4.1 - For every flux tube, define its point
         #df_in_ft = df_in[df_in['ft']==nft]
         #vals_loc = df_in_ft[input_names].iloc[0] # TODO: iterate over multiple points, if there is more than one per flux tube
-        # - option 2 - For every row, define its flux tube and values
+        # - option 4.2 - For every row, define its flux tube and values
         nft = int(df_row['ft'])
         vals_loc = df_row[input_names]
 
@@ -646,8 +646,10 @@ def write_profs_fromfile_grid(point_in, filename_out, num_steps=1, **kwargs):
             val_loc_inp = x[input]
             vals_loc_inp_new = [val_loc_inp+j*grid_step[input][nft] for j in range(-num_steps, +num_steps+1)]
             # Filter values: 
-            # - 1) Temperature cannot be negative
-            if 'value' in input:
+            # - 1) Temperature cannot be negative 
+            # # if 'value' in input:
+            # - 2) gm3 cannot be negative 
+            if any([ input_end in input for input_end in ['value', 'gm3']]):
                 vals_loc_inp_new = [0. if v<0. else v for v in vals_loc_inp_new ]
             vals_new.append(vals_loc_inp_new)
 
