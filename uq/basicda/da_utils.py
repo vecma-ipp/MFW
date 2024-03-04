@@ -648,7 +648,7 @@ def write_profs_fromfile_grid(point_in, filename_out, num_steps=1, **kwargs):
             # Filter values: 
             # - 1) Temperature cannot be negative 
             # # if 'value' in input:
-            # - 2) gm3 cannot be negative 
+            # - 2) gm3 cannot be negative also 
             if any([ input_end in input for input_end in ['value', 'gm3']]):
                 vals_loc_inp_new = [0. if v<0. else v for v in vals_loc_inp_new ]
             vals_new.append(vals_loc_inp_new)

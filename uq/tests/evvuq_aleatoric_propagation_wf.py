@@ -10,20 +10,20 @@ import pickle
 
 import chaospy as cp
 
-# from easyvvuq
+### From easyvvuq
 import easyvvuq as uq
-from easyvvuq.actions import Encode, Decode, Actions, CreateRunDirectory, ExecuteQCGPJ, ExecuteLocal, ExecuteSLURM, QCGPJPool
-from easyvvuq.actions.execute_qcgpj import EasyVVUQParallelTemplate
+from easyvvuq.actions import Encode, Decode, Actions, CreateRunDirectory, ExecuteLocal, QCGPJPool  #, ExecuteSLURM, ExecuteQCGPJ
+# from easyvvuq.actions.execute_qcgpj import EasyVVUQParallelTemplate
 
-# form qcg-pj
-from qcg.pilotjob.executor_api.qcgpj_executor import QCGPJExecutor
+### Form qcg-pj
+# from qcg.pilotjob.executor_api.qcgpj_executor import QCGPJExecutor
 
-# from current package
-from base.evvuq_partemplate_wenv import EasyVVUQParallelTemplateWithEnv
+### From current package
+# from base.evvuq_partemplate_wenv import EasyVVUQParallelTemplateWithEnv
 from base.transport_csv_encoder import TransportCSVEncoder
 from base.profile_cpo_decoder import ProfileCPODecoder
 from base.plots import plot_moments, plot_sobols
-from base.utils import cpo_inputs, ftube_indices
+# from base.utils import cpo_inputs, ftube_indices
 
 def input_params_stub_perft(nfts=8):
     """
@@ -71,7 +71,7 @@ def input_params_stub_relative(nfts=8,):
 
     return input_params_dict
 
-def input_params_scan_relative(nfts=8, cov=0.1):
+def input_params_scan_relative(nfts=8, cv=0.1):
     """
     Define the uncertain parameters
     Accept CoV of the (aleatoric flux) uncertainties as input argument
@@ -83,7 +83,7 @@ def input_params_scan_relative(nfts=8, cov=0.1):
 
     # sigma in fact means coefficient of variation here
     input_params_dict = {
-                f"Q{sp}_{ft}": {"dist": "Normal", "mu": 0.0, "sigma": cov}
+                f"Q{sp}_{ft}": {"dist": "Normal", "mu": 0.0, "sigma": cv}
                         for ft,sp in product(fts, species)}
 
     return input_params_dict
@@ -100,19 +100,22 @@ def input_params_gem_scan(nfts=8):
     fts = [i for i in range(nfts)]
 
     # Next list is taken as AVERAGES from recorded analysis of resuq_main_ti_transp_flux_all_csldvnei_43.csv (GEM data for 8ft*4params*3abcissas)
-    gem_transp_flux_covs = {
+    gem_transp_flux_cvs = {
     'ti': [0.2500634474332664, 0.0450563453261807, 0.09314760909732511, 0.04813051952201777, 0.0409145110215701, 0.04812928853007205, 0.06868580222134828, 0.11021902993747867],
     'te': [0.2370463147118546, 0.042502557708595665, 0.08202910452564564, 0.04455334874318351, 0.04031436777758668, 0.04840126342067821, 0.06963293699469307, 0.11072505485271966],
     }
 
     # sigma in fact means coefficient of variation here
     input_params_dict = {
-                f"Q{sp}_{ft}": {"dist": "Normal", "mu": 0.0, "sigma": gem_transp_flux_covs[f"t{sp}"][ft]}
+                f"Q{sp}_{ft}": {"dist": "Normal", "mu": 0.0, "sigma": gem_transp_flux_cvs[f"t{sp}"][ft]}
                         for ft,sp in product(range(nfts), species)}
 
     return input_params_dict
 
 def exec_pj(campaign, exec_path, ncores, nnodes=1, mpi_instance='mpiexec', log_level="debug"):
+
+    from qcg.pilotjob.executor_api.qcgpj_executor import QCGPJExecutor
+    from base.evvuq_partemplate_wenv import EasyVVUQParallelTemplateWithEnv
 
     exec_res = 0
 
@@ -144,13 +147,14 @@ def exec_pj(campaign, exec_path, ncores, nnodes=1, mpi_instance='mpiexec', log_l
 
 def exec_pj_no_templ(campaign,):
 
+    from easyvvuq.actions.execute_qcgpj import EasyVVUQParallelTemplate
+
     exec_res = 0
 
     try:
         print(">> Creating resource pool")
 
         with QCGPJPool(
-                #qcgpj_executor=QCGPJExecutor(),
                 template=EasyVVUQParallelTemplate(),
                 template_params={'numCores':1},
                 ) as qcgpj:
@@ -165,6 +169,42 @@ def exec_pj_no_templ(campaign,):
         print('!>> Exception during batch execution! :')
         print(e)
     
+    return exec_res
+
+def exec_dask(local=True):
+    """
+    Execute EasyVVUQ jobs using dask
+    """
+    
+    from dask.distributed import Client
+
+    if local:
+
+        client = Client(processes=True, threads_per_worker=1)
+
+    else:
+
+        from dask_jobqueue import SLURMCluster
+
+        cluster = SLURMCluster(
+                job_extra=[
+                    #    "--qos=p.tok.openmp.2h",
+                        "--mail-type=end",
+                    #    "--mail-user=yehor.yudin@ipp.mpg.de"
+                          ],
+                #queue="p.tok.openmp",
+                cores=8,
+                memory="8 GB",
+                processes=8
+            )
+        cluster.scale(32)
+
+        client = Client(cluster)
+
+
+    campaign.execute(pool=client).collate()
+    exec_res = campaign.get_collation_result()
+
     return exec_res
 
 def prepare_results(result, output_columns):
@@ -226,6 +266,10 @@ if __name__ == "__main__":
     wrk_dir = tmp_dir = os.environ['SCRATCH']
     slurm_nodes = int(os.environ['SLURM_NNODES'])
 
+    species = ['e', 'i']
+    ft_coords = [0.143587306141853 , 0.309813886880875 , 0.442991137504578 , 0.560640752315521 , 0.668475985527039 , 0.769291400909424 , 0.864721715450287 , 0.955828309059143]
+    prof_coord_inds = [i for i in range(100)]
+
     # - option 1.1 - use PCE
     #p = int(os.environ['POLORDER'])
     # - option 1.2 - use MC
@@ -238,26 +282,28 @@ if __name__ == "__main__":
     # Input variable: CoV of Q variation - to perfrom scan in level oa aleatrocic uncertainty
     # # - option 2.1 - read from environmental variable
     # if 'INPUTCOV' in os.environ:
-    #     input_cov = os.environ['INPUTCOV']
-    #     print(f">> Using input C.o.V. of {input_cov}")
+    #     input_cv = os.environ['INPUTCOV']
+    #     print(f">> Using input C.o.V. of {input_cv}")
     # else:
-    #     input_cov = 0.1
-    #     print(f">> Using DEFAULT input C.o.V. of {input_cov}")
+    #     input_cv = 0.1
+    #     print(f">> Using DEFAULT input C.o.V. of {input_cv}")
   
     # - option 2.2 - read from script argument
-    input_cov = float(sys.argv[1]) if len(sys.argv) > 1 else 0.1
-    print(f">> Using input C.o.V. of {input_cov}")
+    input_cv = float(sys.argv[1]) if len(sys.argv) > 3 else 0.1
+    print(f">> Using input C.o.V. of {input_cv}")
 
-    species = ['e', 'i']
+    codename = sys.argv[1] if len(sys.argv) > 4 else 'gem0'
+    print(f">> Using data from code {input_cv}")
 
     # # - option 3.1 - use pyGEM0 data
-    # base_dataset_filename = "gem0py_new_baseline.csv"
+    if codename == 'gem0':
+        base_dataset_filename = "gem0py_new_baseline.csv"
     # - option 3.2 - use GEM data
-    base_dataset_filename = "gem_new_baseline.csv"
+    elif codename == 'gem':
+        base_dataset_filename = "gem_new_baseline.csv"
     
     target_dataset_filename = "gem0py_new_local.csv"
     output_filename = "ets_coreprof_out.cpo"
-
     test_script_dir = "tests"
 
     ### Uncertain input definition
@@ -267,15 +313,20 @@ if __name__ == "__main__":
 
     # Choice: do not have tensor product over flux tubes, treat them in batch
     # - option 4.1 - use stub input parameters
-    #input_params_propr = input_params_stub_relative()
+    # input_params_propr = input_params_stub_relative()
     # - option 4.2 - use variable CoV QoI
-    # input_params_propr = input_params_scan_relative(cov=input_cov)
+    if codename == 'gem0':
+        input_params_propr = input_params_scan_relative(cv=input_cv)
     # - option 4.3 - use mean QoI from GEM scan
-    input_params_propr = input_params_gem_scan()
+    elif codename == 'gem':
+        input_params_propr = input_params_gem_scan()
     
-    # TODO assumes discription["dist"] == "Normal"
-    # Turn input param description into 'vary' - it has to be in the flux-average scale, so STD should in fact be CoV
-    vary = {key: cp.Normal(description['mu'], description['sigma']) for key,description in input_params_propr.items()}
+    # TODO make a look-up table between string as ChaosPy classes
+    # Turn input param description into 'vary' - it has to be in the flux-average scale, so STD should in fact be CV
+    vary = {
+            key: cp.Normal(description['mu'], description['sigma']) 
+            for key,description in input_params_propr.items() if description["dist"]=="Normal" 
+           }
 
     # Turn input param description into eUQ param dict
     sigma_lim = 3.0
@@ -285,9 +336,6 @@ if __name__ == "__main__":
         #"min": description['mu'] - sigma_lim*description['sigma'],
         #"max": description['mu'] + sigma_lim*description['sigma'],
                        } for key,description in input_params_propr.items()}
-
-    ft_coords = [0.143587306141853 , 0.309813886880875 , 0.442991137504578 , 0.560640752315521 , 0.668475985527039 , 0.769291400909424 , 0.864721715450287 , 0.955828309059143]
-    prof_coord_inds = [i for i in range(100)]
 
     # Output columns
     # # - option 5.1 - read only axis values
@@ -361,6 +409,7 @@ if __name__ == "__main__":
     # files for comparison of states
     os.system(f"cp {surrogate_data_dir}/compare_workflow_states.py {common_dir}/")
     os.system(f"cp {surrogate_data_dir}/gem0wf_stst/ets_coreprof_out.cpo {common_dir}/ets_coreprof_stst.cpo")
+    os.system(f"cp {surrogate_data_dir}/gem0wf_stst/equilupdate_equilibrium_out.cpo {common_dir}/equilupdate_equilibrium_stst.cpo")
 
     # files for 'initial conditions' of the workflow
     init_cpo_list = ['ets_coreprof_in.cpo', 'ets_equilibrium_in.cpo', 'ets_coretransp_in.cpo', 'ets_toroidfield_in.cpo', 'ets_coresource_in.cpo', 'ets_coreimpur_in.cpo']
@@ -443,7 +492,7 @@ if __name__ == "__main__":
     # Moments of QoI: AVG, STD, SCW, KRT
     print(analysis_result.describe())
 
-    pickle_filename = f"result_aleatoric_wf_ns{n_samples}_cv{input_cov}.pickle"
+    pickle_filename = f"result_aleatoric_wf_ns{n_samples}_cv{input_cv}.pickle"
     with open(pickle_filename, "bw") as file_pickle:
         pickle.dump(analysis_result, file_pickle)
 

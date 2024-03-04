@@ -7,7 +7,7 @@ import pandas as pd
 from da_utils import read_cpo_files, write_gem0_fromfile, write_profs_fromfile_grid
 
 
-if __name__ == '__main__':
+def main():
 
     # Get the run and iteration identifiers
     folder_in = sys.argv[1]
@@ -42,14 +42,20 @@ if __name__ == '__main__':
 
     # Create a grid (in 'core profile' space) around the 'point' read
     grid_file = f"grid_it_{wf_id}_{itnum}.csv"
-    if include_equilibrium:
-        num_steps = 1
-        exp_factor = 0.33
+
+    if len(sys.argv)>7:
+        num_steps = int(sys.argv[6])
+        exp_factor = int(sys.argv[7])
     else:
-        # num_steps = 2
-        # exp_factor = 0.25
-        num_steps = 1
-        exp_factor = 0.33
+        if include_equilibrium:
+            num_steps = 1
+            exp_factor = 0.33
+        else:
+            # num_steps = 2
+            # exp_factor = 0.25
+            num_steps = 1
+            exp_factor = 0.33
+
     param_grid = write_profs_fromfile_grid(final_point, filename_out=grid_file, num_steps=num_steps, exp_factor=exp_factor)
     #print(f"param_grid[-1]=\n{param_grid.iloc[-1]}")###DEBUG
 
@@ -58,3 +64,8 @@ if __name__ == '__main__':
     write_gem0_fromfile(param_grid, gem0_file)
 
     ###
+
+
+if __name__ == '__main__':
+
+    main()
