@@ -151,12 +151,14 @@ def exec_pj_no_templ(campaign,):
 
     exec_res = 0
 
+    n_c_p_j = 4
+
     try:
         print(">> Creating resource pool")
 
         with QCGPJPool(
                 template=EasyVVUQParallelTemplate(),
-                template_params={'numCores':1},
+                template_params={'numCores':n_c_p_j},
                 ) as qcgpj:
             
             print(f">> Executing on a HPC machine and collating results")

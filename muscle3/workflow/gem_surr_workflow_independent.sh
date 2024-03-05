@@ -37,7 +37,7 @@ mkdir ${run_dir_name}
 #      (b) pass id to muscle_manager: M3 'implementation' of gem_sur_imp has to accept arguments
 #      (c) generate a sufficiently long (16 digits?) inside the M3 'implementation' -> done
 
-timeouttime='30m' #TODO should be dependent on the number of iterations
+timeouttime='20m' #TODO should be dependent on the number of iterations
 starting_op='timeout '${timeouttime} #TODO HAS TO BE FIXED
 
 #muscle_manager --log-level DEBUG --run-dir ${run_dir_name} --start-all gem-surr-mft-fusion-independent.ymmsl &
@@ -51,8 +51,8 @@ manager_pid=$!
 # timeout ${timeouttime} bash -c "sleep ${timeouttime} && kill -s SIGTERM ${manager_pid}" &
 
 # Next 2 lines: just to get additional info about processes and cores
-sleep 30
-ps -u yyudin -o user,pid,pcpu,rss,vsz,psr,args
+# sleep 30
+# ps -u yyudin -o user,pid,pcpu,rss,vsz,psr,args
 
 # Next 4 lines are originally not commented out 
 touch muscle3_manager.log

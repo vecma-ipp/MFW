@@ -42,8 +42,9 @@ locid=${1:-0}
 # commondir=../../../../../../common
 
 locsimulationdir=muscle3
+scratchdir=/ptmp/yyudin/
 
-rerun_script_orig_folder=/u/yyudin/code/MFW/uq/tests/
+rerun_script_orig_folder=/u/yyudin/code/MFW/uq/
 
 # initcoreprofcpo=ets_coreprof_in.cpo
 # initequilibriumcpo=ets_equilibrium_in.cpo
@@ -64,39 +65,61 @@ copy_op="ln -s " # - option 2 - sim-link to /common/ folder
 
 ### Start the execution
 
-camp_file_dir=${1:-'UQ_8FTGEM0_WF_AL_6e6xj7ju'}
+camp_file_dir=${1:-'UQ_8FTGEM0_WF_AL_lmebz6lt'}
 
-cd /ptmp/yyudin/${camp_file_dir}
+cd ${scratchdir}/${camp_file_dir}
 
 locdir=$(pwd)
 echo "locdir: "${locdir}
 
+# remove broken links
+find . -xtype l -delete
+
 ### Run the M3 workflow instances
 
 #################################
-# find all the run directories 
-run_folder_list=$( find ./ -maxdepth 6 -mindepth 6 -type d '!' -exec test -e "{}/ets_coreprof_out.cpo" ';' -print  | sed "s|^\.\/||")
+# find all the run directories without the final output file
+run_folder_list=$( find ./ -maxdepth 6 -mindepth 6 -type d '!' -exec test -e "{}/"${lastcoreprofcpo} ';' -print  | sed "s|^\.\/||" )
+echo "number of runs to restart: " "${#run_folder_list[@]}"
 
 # TODO find all the unfinished runs: 
 #     a. by the presence of ets_coreprof_out.cpo +
 #     b. by the status in the EasyVVUQ campaign DB
 
 # TODO thread-parallelise ? run multiple SLURM jobs asking for 1 core each?
-# TODO run inside a SLURM job: and detach from job every time?
+# TODO run inside a SLURM job: and detach from job every time? +
 
+#counter=1
+pids=()
 # go to each directory
 for run_folder in ${run_folder_list[@]}; do
 
   # go to the M3 local folder  #${runprefix}_${locid}_${itnum}/
-  cd ${run_folder}/${locsimulationdir}/
+  cd ${scratchdir}/${camp_file_dir}/${run_folder}/${locsimulationdir}/
+  #echo "now in: "$(pwd) ###DEBUG
 
-  # copy/link the new executable script
-  ${copy_op} ${rerun_script_orig_folder}/${rerun_m3wf_op} ./
+  # copy/link the new executable script - will not work if a link already exists
+  ${copy_op} ${rerun_script_orig_folder}/${rerun_m3wf_op}    ./${rerun_m3wf_op}
 
   # launch the M3WF again from scratch
   ./${rerun_m3wf_op} &
+  locpid=$!
+  # touch execm3.log 
+  # tail -f execm3.log --pid=${locpid}
+  echo "launched the job "${locpid}" for: "${run_folder}
+
+  # store the pid
+  pids+=(${locpid})
+  #$((counter++))
 
 done
+
+# wait until the end of all jobs
+# for pid in ${pids[@]}; do
+#   wait ${pid}
+#   echo "finished "${pid} 
+# done
+wait
 
 echo ">>> Finished the executing all the jobs!"
 ##################################################################
