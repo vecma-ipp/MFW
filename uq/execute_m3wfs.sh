@@ -1,7 +1,9 @@
 #!/bin/bash -l
 
+##################################
+
 ## job name
-#SBATCH --job-name=UQ_8FTGEM_
+#SBATCH --job-name=UQ_AL_SURR_RESTART_
 
 ## stdout and stderr files
 #SBATCH --output=test-aleatoric-restart-out.%j
@@ -60,8 +62,12 @@ lastequilibriumcpo=equilupdate_equilibrium_out.cpo
 simulation_op=gem_surr_workflow_independent.sh
 rerun_m3wf_op=execute_m3wf_single.sh
 
-#copy_op="cp "   # - option 1 - actually copy files
-copy_op="ln -s " # - option 2 - sim-link to /common/ folder
+# how to start execution of each job
+# launch_op="./"       # - option 1.1 - shell script
+launch_op="sbatch " # -option 1.2 - SLURM script
+
+#copy_op="cp "   # - option 2.1 - actually copy files
+copy_op="ln -s " # - option 2.2 - sim-link to /common/ folder
 
 ### Start the execution
 
@@ -102,7 +108,8 @@ for run_folder in ${run_folder_list[@]}; do
   ${copy_op} ${rerun_script_orig_folder}/${rerun_m3wf_op}    ./${rerun_m3wf_op}
 
   # launch the M3WF again from scratch
-  ./${rerun_m3wf_op} &
+  sleep 1
+  ${launch_op}${rerun_m3wf_op} &
   locpid=$!
   # touch execm3.log 
   # tail -f execm3.log --pid=${locpid}

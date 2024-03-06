@@ -1,5 +1,37 @@
 #!/bin/sh
 
+##################################
+
+## job name
+#SBATCH --job-name=SURR_WF_RESTART_
+## stdout and stderr files
+#SBATCH --output=test-aleatoric-restart-singlejob-out.%j
+#SBATCH --error=test-aleatoric-restart-singlejob-err.%j
+
+#SBATCH --no-requeue
+
+## wall time in format (HOURS):MINUTES:SECONDS
+#SBATCH --time=0:30:00
+
+## number of nodes and tasks per node
+# next line: for running only the first slow flux tube
+###SBATCH --nodes=1
+#SBATCH --ntasks=1
+###SBATCH --ntasks-per-node=1
+#SBATCH --ntasks-per-core=1
+###SBATCH --cpus-per-task=1
+#SBATCH --mem=4096
+
+#SBATCH --partition=medium
+###SBATCH --qos=
+
+## grant
+###SBATCH --account=
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=yyudin@ipp.mpg.de
+
+####################################
+
 ### Define fixed folder and file names
 echo ">>> Workflow: Setting up names"
 
@@ -17,7 +49,7 @@ simulation_op=gem_surr_workflow_independent.sh
 compare_op=compare_workflow_states.py
 
 #copy_op="cp "    # - option 1 - actually copy files
-#copy_op="ln -s " # - option 2 - sy:qm-link to /common/ folder
+#copy_op="ln -s " # - option 2 - sym-link to /common/ folder
 
 ### Start the execution
 locdir=$(pwd)
@@ -26,7 +58,8 @@ locid=${1:-0}
 itnum=${2:-0}
 
 # rename the old M3-WF directory
-mv ${runprefix}${locid}_${itnum} ${runprefix}${locid}_${itnum}_orig
+time_now=$(date +"%Y%m%d_%H%M%S")
+mv ${runprefix}${locid}_${itnum} ${runprefix}${locid}_${itnum}_${time_now}
 
 ### Run the M3 workflow single instance
 
