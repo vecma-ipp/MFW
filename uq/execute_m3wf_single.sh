@@ -16,10 +16,10 @@
 ## number of nodes and tasks per node
 # next line: for running only the first slow flux tube
 ###SBATCH --nodes=1
-#SBATCH --ntasks=1
-###SBATCH --ntasks-per-node=1
+#SBATCH --ntasks=8
+#SBATCH --ntasks-per-node=8
 #SBATCH --ntasks-per-core=1
-###SBATCH --cpus-per-task=1
+#SBATCH --cpus-per-task=1
 #SBATCH --mem=4096
 
 #SBATCH --partition=medium

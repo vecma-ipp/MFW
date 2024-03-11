@@ -73,5 +73,3 @@ python read_profs.py ${code_run_name} ${currdate}${runlabel}
 cd workflow/
 tar -czvf ${run_dir_name}.tar.gz --exclude=*.cpo --exclude=*.dat ${run_dir_name}/ ${run_dir_name}_${currdate}${runlabel}/
 mv run_fusion_${code_run_name}${currdate}${runlabel}.tar.gz ../../..
-
-

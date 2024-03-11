@@ -4,8 +4,8 @@
 #SBATCH --job-name=UQ_8FTGEM0_
 
 ## stdout and stderr files
-#SBATCH --output=test-aleatoric-out.%j
-#SBATCH --error=test-aleatoric-err.%j
+#SBATCH --output=test-aleatoric-out.%A_%a
+#SBATCH --error=test-aleatoric-err.%A_%a
 
 #SBATCH --no-requeue
 
