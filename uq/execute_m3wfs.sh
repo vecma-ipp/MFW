@@ -86,7 +86,15 @@ find . -xtype l -delete
 #################################
 # find all the run directories without the final output file
 run_folder_list=$( find ./ -maxdepth 6 -mindepth 6 -type d '!' -exec test -e "{}/"${lastcoreprofcpo} ';' -print  | sed "s|^\.\/||" )
-echo "number of runs to restart: " "${#run_folder_list[@]}"
+
+run_folder_array=( )
+# same run directories to an array
+while IFS=  read -r -d $'\0'; do 
+  run_folder_array+=("$REPLY")
+done < <(find ./ -maxdepth 6 -mindepth 6 -type d '!' -exec test -e "{}/"${lastcoreprofcpo} ';' -print0  | 
+sed "s|^\.\/||")
+
+echo "number of runs to restart: " "${#run_folder_array[@]}"
 
 # TODO find all the unfinished runs: 
 #     a. by the presence of ets_coreprof_out.cpo +
@@ -96,9 +104,14 @@ echo "number of runs to restart: " "${#run_folder_list[@]}"
 # TODO run inside a SLURM job: and detach from job every time? +
 
 #counter=1
+countermax=4
 pids=()
 # go to each directory
-for run_folder in ${run_folder_list[@]}; do
+#for run_folder in ${run_folder_list[@]}; 
+for((i=0;i<${countermax};i++));
+
+do
+  run_folder=${run_folder_array[i]}
 
   # go to the M3 local folder  #${runprefix}_${locid}_${itnum}/
   cd ${scratchdir}/${camp_file_dir}/${run_folder}/${locsimulationdir}/

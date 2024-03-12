@@ -22,9 +22,9 @@
 
 ###SBATCH --nodes=1
 ###SBATCH --ntasks-per-node=40
-###SBATCH --ntasks-per-core=1
+#SBATCH --ntasks-per-core=1
 ###SBATCH --cpus-per-task=1
-###SBATCH --ntasks=1
+#SBATCH --ntasks=8
 
 ##SBATCH --mem-per-cpu=2048MB
 #SBATCH --mem=2GB
@@ -60,10 +60,9 @@ launch_op="./"       # - option 1.1 - shell script
 #launch_op="sbatch " # -option 1.2 - SLURM script
 
 #copy_op="cp "   # - option 2.1 - actually copy files
-copy_op="ln -s " # - option 2.2 - sim-link to /common/ folder
+copy_op="ln -s " # - option 2.2 - sym-link to /common/ folder
 
 ### Start the execution
-
 camp_file_dir=${1:-'UQ_8FTGEM0_WF_AL_lmebz6lt'}
 
 cd ${scratchdir}/${camp_file_dir}
@@ -84,7 +83,7 @@ while IFS=  read -r -d $'\0'; do
   run_folder_list+=("$REPLY")
 done < <(find ./ -maxdepth 6 -mindepth 6 -type d '!' -exec test -e "{}/"${lastcoreprofcpo} ';' -print0  | 
 sed "s|^\.\/||")
-#echo "first element of run_folder_list : "${run_folder_list}
+#echo "first element of run_folder_list : "${run_folder_list} ###DEBUG
 
 #echo "number of runs to restart: " "${#run_folder_list[@]}"
 
@@ -111,7 +110,7 @@ locpid=$!
 echo "launched the job "${locpid}" for: "${run_folder}
 
 # store the pid
-pids+=(${locpid})
+#pids+=(${locpid})
 #$((counter++))
 
 echo ">>> Finished the executing all the jobs!"
