@@ -12,6 +12,7 @@ from muscle_utils.utils import compare_states
 if __name__ == "__main__":
     
     crit = 'srRMSE'
+    plot_diff = False
 
     # Prepare a pair of core profile states
     coreprof_1 = sys.argv[1] if len(sys.argv)>1 else 'ets_coreprof_in.cpo'
@@ -31,7 +32,7 @@ if __name__ == "__main__":
             state_2['equilibrium'] = equilibrium_2
             cpo_types.append('equilibrium')
 
-    d = compare_states(state_1, state_2, cpo_types=cpo_types)
+    d = compare_states(state_1, state_2, cpo_types=cpo_types, plot_diff=plot_diff)
 
     print(f" !> distance {crit} between {coreprof_1} and {coreprof_2} is: {d:.5f}")
 

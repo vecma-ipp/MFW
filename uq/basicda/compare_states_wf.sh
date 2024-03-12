@@ -1,5 +1,8 @@
 #!/bin/sh
 
+workdir=${1:-'retraining_algo_withequil_20240227'}
+origdir=$(pwd)
+
 ### Define fixed folder and file names
 echo ">>> Loop to compare workflow plasma states"
 codenameshort=gem0
@@ -18,25 +21,26 @@ lastequilibriumcpo=equilupdate_equilibrium_out.cpo
 #prepare_op=prepare_gem0_sample.py
 #surrogate_op=process_gpr_ind.sh
 #simulation_op=gem_surr_workflow_independent.sh
-compare_op=compare_workflow_states.py
+compare_op=${origdir}/compare_workflow_states.py
 
 ### Define the starting point of the loop - and prepare the first iteration
 echo ">>> Setting up data"
 
 #sourcedir=${muscledir}/${muscleworkdir}/${codenameshort}_surr_resume_data/
-state_gtst=${codenameshort}wf_stst/${lastcoreprofcpo}
-state_eq_gtst=${codenameshort}wf_stst/${lastequilibriumcpo}
+state_gtst=${origdir}/${codenameshort}wf_stst/${lastcoreprofcpo}
+state_eq_gtst=${origdir}/${codenameshort}wf_stst/${lastequilibriumcpo}
 
 #datenow=$(date +"%Y%m%d")
-datenow=20240213
+datenow=20240228
 echo ">> Checking for the run on "${datenow}
 
-origdir=$(pwd)
+echo "workdir: "${workdir} ###DEBUG 
+cd ${workdir}
 
 curr_id=${datenow}
 
-itnum_min=0
-itnum_max=4
+itnum_min=5
+itnum_max=7
 
 # to use equilibrium data or not
 useequil=1
@@ -75,9 +79,9 @@ for((itnum=${itnum_min};itnum<${itnum_max};itnum++)); do
   state_eq1=${this_state_eq_name}
   state_eq2=${next_state_eq_name}
 
-  # NEXT IF THESE FILES ARE STILL NOT IN THE CURRENT FOLDER
-  cp ${muscledir}/${muscleworkdir}/${runprefix}${datenow}_${itnum}${runsufix}/${lastequilibriumcpo}  ${state_eq1} 
-  cp ${muscledir}/${muscleworkdir}/${runprefix}${datenow}_$(( ${itnum}+1 ))${runsufix}/${lastequilibriumcpo}  ${state_eq2} 
+  # # NEXT IF THESE FILES ARE STILL NOT IN THE CURRENT FOLDER
+  # cp ${muscledir}/${muscleworkdir}/${runprefix}${datenow}_${itnum}${runsufix}/${lastequilibriumcpo}  ${state_eq1} 
+  # cp ${muscledir}/${muscleworkdir}/${runprefix}${datenow}_$(( ${itnum}+1 ))${runsufix}/${lastequilibriumcpo}  ${state_eq2} 
 
   if [ ${useequil} == 1 ]
   then
