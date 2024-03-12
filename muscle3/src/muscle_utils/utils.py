@@ -651,22 +651,31 @@ def compare_profiles(x1, x2, criterion):
     # TODO: consider RMSE - 0-abs-value issue; consider log-scale
     if criterion == 'rRMSE':
         # relative root mean square error
+        ds = np.sqrt(np.power(x1-x2,2)/np.abs(x1))
         d  = np.sqrt((np.power(x1-x2,2)/np.abs(x1)).mean())
+    elif criterion == 'srRMSE-old':
+        # symmetrised relative root mean square error
+        ds = np.sqrt(np.power(x1-x2,2) / 0.5*(np.abs(x1)+np.abs(x2)))
+        d = np.sqrt((np.power(x1-x2,2) / 0.5*(np.abs(x1)+np.abs(x2))).mean())
     elif criterion == 'srRMSE':
         # symmetrised relative root mean square error
-        d = np.sqrt( (np.power(x1-x2,2) / 0.5*(np.abs(x1)+np.abs(x2))).mean() )
+        ds = 2*(x1-x2) / (np.abs(x1)+np.abs(x2))
+        d = np.sqrt(np.power(2*(x1-x2) / (np.abs(x1)+np.abs(x2)), 2).mean())
     elif criterion == 'L2':
+        ds = x1-x2
         d = np.sqrt(np.power(x1-x2,2).mean()) # this is not L2, as mean is ./n
     elif criterion == 'L1':
+        ds = x1-x2
         d = (x1-x2).mean() #?
     elif criterion == 'Linf':
+        ds = x1-x2
         d = (x1-x2).max()
     else: 
         ValueError("Unknown criterion for 1D profiles comparison") 
         #TODO: consider Wasserstein distance: for Te/i ~ Heat capacity, for ne/ni ~ mass, for gradients ~ diffusivity(?, total?)
-    return d
+    return d, ds
 
-def compare_cpo(cpo_name_1, cpo_name_2, profiles=['te', 'ti'], attributes=['value', 'ddrho'], cpo_type='coreprof', crit='srRMSE'):
+def compare_cpo(cpo_name_1, cpo_name_2, profiles=['te', 'ti'], attributes=['value', 'ddrho'], cpo_type='coreprof', crit='srRMSE', ):
     """
     Compare two CPO files by the list of quantities of interest
     - uses a list of 1d profiles - TODO: scalars, 1D profiles, 2D fields
@@ -674,6 +683,7 @@ def compare_cpo(cpo_name_1, cpo_name_2, profiles=['te', 'ti'], attributes=['valu
 
     coords = [0.143587306141853 , 0.309813886880875 , 0.442991137504578 , 0.560640752315521 , 0.668475985527039 , 0.769291400909424 , 0.864721715450287 , 0.955828309059143 ] # any number of coordinates in rho_tor_norm
     ds = []
+    d_lists = {}
 
     _,cpo_1 = read_cpo_file(cpo_name_1, profiles, attributes, coords, cpo_type)
     _,cpo_2 = read_cpo_file(cpo_name_2, profiles, attributes, coords, cpo_type)
@@ -681,13 +691,54 @@ def compare_cpo(cpo_name_1, cpo_name_2, profiles=['te', 'ti'], attributes=['valu
     for p,a in product(profiles, attributes):
         q1 = cpo_1[f"{p}_{a}"]
         q2 = cpo_2[f"{p}_{a}"]
-        d = compare_profiles(q1, q2, crit)
+        d,d_list = compare_profiles(q1, q2, crit)
         ds.append(d)
+        d_lists[f"{p}_{a}"] = d_list
     
     d_comp = sum(ds) / len(ds)
-    return d_comp
+    return d_comp, d_lists
 
-def compare_states(state_1, state_2, cpo_types=['coreprof'], crit='srRMSE'):
+def plot_state_diff(d_lists, state_name_1, state_name_2, yscale='linear'):
+    """
+    Plot a contributions to the distance between states
+    d_lists is a dictionary of channel names and arrays with distance values indexed by flux tube number
+    """
+
+    fig,ax = plt.subplots()
+
+    for name,d_list in d_lists.items():
+
+        n_loc = len(d_list)
+
+        ax.plot(np.arange(n_loc), 
+                d_list, 
+                label=name,
+                marker='.',
+                alpha=0.75,
+                ) 
+
+    # Plotting the sum of contributions
+    #   using last n_loc as len
+    d_sum = [sum([v[i] for k,v in d_lists.items()]) for i in range(n_loc)]
+    ax.plot(np.arange(n_loc), 
+            d_sum, 
+            label='sum',
+            marker='.',
+            alpha=0.9,
+            ) 
+
+    ax.set_yscale(yscale)
+
+    ax.legend()
+    ax.set_title('Contribution to the distance between states \n for different channels and flux tubes')
+    ax.set_xlabel('f.t. num.')
+    ax.set_ylabel('distance')
+
+    fig.savefig(f"{state_name_1}_{state_name_2}.pdf")
+
+    return 0
+
+def compare_states(state_1, state_2, cpo_types=['coreprof'], crit='srRMSE', **kwargs):
     """
     Compare two plasma states - TODO: >2 states (how? pairwise?), >2 CPOs each
      - described via a list of CPO files [coreprof, equilibrium]
@@ -703,13 +754,23 @@ def compare_states(state_1, state_2, cpo_types=['coreprof'], crit='srRMSE'):
     }
     
     ds = []
+    d_lists = {}
     for cpo_type in cpo_types:
         cpo_name_1 = state_1[cpo_type]
         cpo_name_2 = state_2[cpo_type]
-        d = compare_cpo(cpo_name_1, cpo_name_2, profiles=cpo_dict[cpo_type]['profiles'], attributes=cpo_dict[cpo_type]['attributes'], cpo_type=cpo_type, crit=crit)
+        d, d_list = compare_cpo(cpo_name_1, cpo_name_2, profiles=cpo_dict[cpo_type]['profiles'], attributes=cpo_dict[cpo_type]['attributes'], cpo_type=cpo_type, crit=crit)
         ds.append(d)
+        d_lists.update(d_list)
 
-    d_comp = sum(ds) / len(ds) # TODO differences have to be comparable
+    d_comp = sum(ds) / len(ds)
+
+    # Plotting the results per quantity and flux tube
+    if 'plot_diff' in kwargs:
+        if kwargs['plot_diff']:
+            yscale_plot = kwargs['yscale_plot'] if 'yscale_plot' in kwargs else 'linear'
+            
+            plot_state_diff(d_lists, state_1['coreprof'].split('/')[-1].split('.')[-2], state_2['coreprof'].split('/')[-1].split('.')[-2], yscale=yscale_plot)
+
     return d_comp
 
 def plot_state_conv(datas, filename, metric_name='srRMSE', normalised=True, label_sufixes=None):
