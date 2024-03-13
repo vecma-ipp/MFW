@@ -34,8 +34,8 @@ origdir=$(pwd)
 
 curr_id=${datenow}
 
-itnum_min=5
-itnum_max=7
+itnum_min=0
+itnum_max=8
 
 # to start iteration from scratch or to continue
 if [ ${itnum_min} == 0 ]
@@ -70,7 +70,8 @@ for((itnum=${itnum_min};itnum<${itnum_max};itnum++)); do
   
   if [ ${useequil_tocomp} == 1 ]
   then
-    python ${compare_op} ${lastcoreprofcpo} ${state_gtst} ${lastequilibriumcpo} ${state_eq_gtst}
+    title_plot="Distances between simulation and reference stationary states"
+    python ${compare_op} ${lastcoreprofcpo} ${state_gtst} ${lastequilibriumcpo} ${state_eq_gtst} "${title_plot}"
   else
     python ${compare_op} ${lastcoreprofcpo} ${state_gtst}
   fi
@@ -79,9 +80,10 @@ for((itnum=${itnum_min};itnum<${itnum_max};itnum++)); do
   # 	 final coreprof CPO -> final plasma state -> grid around final state -> pyGEM0 dataset around final state
   echo ">>> Preparing new training data set around iteration initial state"
 
-  if [ ${useequil} == 1  ]
+  if [ ${useequil_tocomp} == 1  ]
   then
-    python ${prepare_op} ${itdir} ${curr_id} ${itnum} ${useequil} ${lastequilibriumcpo}
+    title_plot="Distances between simulation initial and final states"
+    python ${prepare_op} ${itdir} ${curr_id} ${itnum} ${useequil} ${lastequilibriumcpo} "${title_plot}"
   else
     python ${prepare_op} ${itdir} ${curr_id} ${itnum}
   fi
@@ -97,7 +99,7 @@ for((itnum=${itnum_min};itnum<${itnum_max};itnum++)); do
 
   ### Run M3-WF with the new surrogate
   # TODO unlike surrogate, switch to use equilibrium needs a change in YMMSL file
-  echo ">>> Running a new simulation workkflow"
+  echo ">>> Running a new simulation workflow"
 
   cd ${muscledir}/${muscleworkdir}/
  
@@ -135,7 +137,8 @@ for((itnum=${itnum_min};itnum<${itnum_max};itnum++)); do
 
   if [ ${useequil_tocomp} == 1 ]
   then
-    python ${compare_op} ${state1} ${state2} ${state_eq1} ${state_eq2}
+    title_plot="Distances between final states of simulations using consecutive surrogate iterations"
+    python ${compare_op} ${state1} ${state2} ${state_eq1} ${state_eq2} "${title_plot}"
   else
   python ${compare_op} ${state1} ${state2}
   fi
@@ -145,7 +148,8 @@ for((itnum=${itnum_min};itnum<${itnum_max};itnum++)); do
   
   if [ ${useequil_tocomp} == 1 ]
   then
-    python ${compare_op} ${state1} ${state_gtst} ${state_eq1} ${state_eq_gtst}
+    title_plot="Distances between simulation final and reference stationary states"
+    python ${compare_op} ${state1} ${state_gtst} ${state_eq1} ${state_eq_gtst} "${title_plot}"
   else
     python ${compare_op} ${state1} ${state_gtst} 
   fi

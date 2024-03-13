@@ -534,17 +534,17 @@ def write_gem0_fromfile(csv_in, filename_out):
         rho = ftube_rhos[ft]
         x = {k:df_row[k] for k in input_names}
 
-        # - option 1 - accept only changes in coreprof
-        y,x_new = gem0helper.gem0_call_4param2target_array_coretransp(x, rho)
-        # # - option 2 - accept changes inequilibrium as well
-        # x['rho_tor_norm'] = rho
-        # y,x_new = gem0helper.gem0_call_4param2target_array_params(x)
+        # # - option 1 - accept only changes in coreprof
+        # y,x_new = gem0helper.gem0_call_4param2target_array_coretransp(x, rho)
+        # - option 2 - accept changes in equilibrium as well
+        x['rho_tor_norm'] = rho
+        y,x_new = gem0helper.gem0_call_4param2target_array_params(x)
 
         # fill in the output dataframe
         for j in range(len(input_names)):
             df_out.loc[i, input_names[j]] = x_new[j]        
         for j in range(len(output_names)):
-            df_out.loc[i, output_names[j]] = y[j]
+            df_out.loc[i, output_names[j]] = y[j][0] # returning array should not happen?
 
     # save a new CSV file
     df_out.to_csv(filename_out)
