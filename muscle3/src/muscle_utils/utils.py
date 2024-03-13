@@ -659,7 +659,7 @@ def compare_profiles(x1, x2, criterion):
         d = np.sqrt((np.power(x1-x2,2) / 0.5*(np.abs(x1)+np.abs(x2))).mean())
     elif criterion == 'srRMSE':
         # symmetrised relative root mean square error
-        ds = 2*(x1-x2) / (np.abs(x1)+np.abs(x2))
+        ds = np.abs(2*(x1-x2) / (np.abs(x1)+np.abs(x2)))
         d = np.sqrt(np.power(2*(x1-x2) / (np.abs(x1)+np.abs(x2)), 2).mean())
     elif criterion == 'L2':
         ds = x1-x2
@@ -698,41 +698,67 @@ def compare_cpo(cpo_name_1, cpo_name_2, profiles=['te', 'ti'], attributes=['valu
     d_comp = sum(ds) / len(ds)
     return d_comp, d_lists
 
-def plot_state_diff(d_lists, state_name_1, state_name_2, yscale='linear'):
+def plot_state_diff(d_lists, state_name_1, state_name_2, yscale='linear', **kwargs):
     """
     Plot a contributions to the distance between states
     d_lists is a dictionary of channel names and arrays with distance values indexed by flux tube number
     """
 
+    coords = [0.143587306141853 , 0.309813886880875 , 0.442991137504578 , 0.560640752315521 , 0.668475985527039 , 0.769291400909424 , 0.864721715450287 , 0.955828309059143 ] # any number of coordinates in rho_tor_norm
+
+    lookup_names_short = {
+        "ti_value": "$T_{{i}}$",
+        "te_value": "$T_{{e}}$",
+        "ti_ddrho": "$\\nabla T_{{i}}$",
+        "te_ddrho": "$\\nabla T_{{e}}$",
+        "te_transp_flux": "$Q_{{e}}$",
+        "ti_transp_flux": "$Q_{{i}}$",
+        "rho": "$\\rho_{{tor}}^{{norm}}$",
+        "profiles_1d_q": "$q$",
+        "profiles_1d_gm3" : "$gm_{{3}}$",
+    }
+
     fig,ax = plt.subplots()
+    
+    title = f"Contribution to the distance between states \n for different channels and flux tubes"
+    if 'title_plot' in kwargs:
+          if kwargs['title_plot'] is not None:
+            title = kwargs['title_plot'] 
 
     for name,d_list in d_lists.items():
 
         n_loc = len(d_list)
 
-        ax.plot(np.arange(n_loc), 
+        ax.plot(
+                #np.arange(n_loc), 
+                coords,
                 d_list, 
-                label=name,
+                label=lookup_names_short[name],
                 marker='.',
-                alpha=0.75,
+                alpha=0.6,
                 ) 
 
     # Plotting the sum of contributions
     #   using last n_loc as len
     d_sum = [sum([v[i] for k,v in d_lists.items()]) for i in range(n_loc)]
-    ax.plot(np.arange(n_loc), 
+    ax.plot(
+            #np.arange(n_loc), 
+            coords,
             d_sum, 
-            label='sum',
+            label="$\\Sigma$",
             marker='.',
-            alpha=0.9,
+            alpha=0.8,
             ) 
 
     ax.set_yscale(yscale)
+    #ax.grid()
+    ax.set_ylim(ymin=1E-8, ymax=1E+1)
 
-    ax.legend()
-    ax.set_title('Contribution to the distance between states \n for different channels and flux tubes')
-    ax.set_xlabel('f.t. num.')
-    ax.set_ylabel('distance')
+    ax.legend(loc='best')
+    ax.set_title(title)
+    ax.set_ylabel('Distance, fraction of average')
+    #ax.set_xlabel('f.t. num.')
+    ax.set_xlabel(f"$\\rho_{{tor}}^{{norm}}$")
 
     fig.savefig(f"{state_name_1}_{state_name_2}.pdf")
 
@@ -767,9 +793,12 @@ def compare_states(state_1, state_2, cpo_types=['coreprof'], crit='srRMSE', **kw
     # Plotting the results per quantity and flux tube
     if 'plot_diff' in kwargs:
         if kwargs['plot_diff']:
+            print(f">>> Plotting state difference")
+
             yscale_plot = kwargs['yscale_plot'] if 'yscale_plot' in kwargs else 'linear'
+            title_plot = kwargs['title_plot'] if 'title_plot' in kwargs else None
             
-            plot_state_diff(d_lists, state_1['coreprof'].split('/')[-1].split('.')[-2], state_2['coreprof'].split('/')[-1].split('.')[-2], yscale=yscale_plot)
+            plot_state_diff(d_lists, state_1['coreprof'].split('/')[-1].split('.')[-2], state_2['coreprof'].split('/')[-1].split('.')[-2], yscale=yscale_plot, title_plot=title_plot)
 
     return d_comp
 

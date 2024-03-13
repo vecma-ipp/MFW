@@ -9,15 +9,13 @@ sys.path.append(muscle3path)
 #from read_profs import compare_states
 from muscle_utils.utils import compare_states
 
-if __name__ == "__main__":
-    
+def comp_states_fromcli(coreprof_1, coreprof_2, plot_diff=True):
+      
     crit = 'srRMSE'
-    plot_diff = False
+
+    yscale_plot ='log'
 
     # Prepare a pair of core profile states
-    coreprof_1 = sys.argv[1] if len(sys.argv)>1 else 'ets_coreprof_in.cpo'
-    coreprof_2 = sys.argv[2] if len(sys.argv)>2 else 'ets_coreprof_out.cpo'
-
     state_1 = {'coreprof': coreprof_1}
     state_2 = {'coreprof': coreprof_2}
 
@@ -32,7 +30,19 @@ if __name__ == "__main__":
             state_2['equilibrium'] = equilibrium_2
             cpo_types.append('equilibrium')
 
-    d = compare_states(state_1, state_2, cpo_types=cpo_types, plot_diff=plot_diff)
+            title_plot = str(sys.argv[5]) if len(sys.argv)>5 else None  
 
-    print(f" !> distance {crit} between {coreprof_1} and {coreprof_2} is: {d:.5f}")
+    d = compare_states(state_1, state_2, cpo_types=cpo_types, plot_diff=plot_diff, yscale_plot=yscale_plot, title_plot=title_plot)
 
+    print(f" !> distance {crit} between {coreprof_1} and {coreprof_2} is: \n{d:.12f}\n")
+
+    return 0
+
+if __name__ == "__main__":
+
+        plot_diff = True
+    
+        coreprof_1 = sys.argv[1] if len(sys.argv)>1 else 'ets_coreprof_in.cpo'
+        coreprof_2 = sys.argv[2] if len(sys.argv)>2 else 'ets_coreprof_out.cpo'
+            
+        comp_states_fromcli(coreprof_1, coreprof_2, plot_diff=plot_diff,)

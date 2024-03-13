@@ -31,7 +31,7 @@ state_gtst=${origdir}/${codenameshort}wf_stst/${lastcoreprofcpo}
 state_eq_gtst=${origdir}/${codenameshort}wf_stst/${lastequilibriumcpo}
 
 #datenow=$(date +"%Y%m%d")
-datenow=20240228
+datenow=20240227
 echo ">> Checking for the run on "${datenow}
 
 echo "workdir: "${workdir} ###DEBUG 
@@ -39,8 +39,8 @@ cd ${workdir}
 
 curr_id=${datenow}
 
-itnum_min=5
-itnum_max=7
+itnum_min=0
+itnum_max=5
 
 # to use equilibrium data or not
 useequil=1
@@ -85,7 +85,9 @@ for((itnum=${itnum_min};itnum<${itnum_max};itnum++)); do
 
   if [ ${useequil} == 1 ]
   then
-    python ${compare_op} ${state1} ${state2} ${state_eq1} ${state_eq2}
+    #title_plot="Contribution to the distance between simulation initial and final states \n for different channels and flux tubes"
+    title_plot="Distances between simulation initial and final states"
+    python ${compare_op} ${state1} ${state2} ${state_eq1} ${state_eq2} "${title_plot}"
   else
   python ${compare_op} ${state1} ${state2}
   fi
@@ -95,7 +97,9 @@ for((itnum=${itnum_min};itnum<${itnum_max};itnum++)); do
   
   if [ ${useequil} == 1 ]
   then
-    python ${compare_op} ${state1} ${state_gtst} ${state_eq1} ${state_eq_gtst}
+    #title_plot="Contribution to the distance between simulation final and reference stationary states \n for different channels and flux tubes"
+    title_plot="Distances between simulation final and reference stationary states"
+    python ${compare_op} ${state1} ${state_gtst} ${state_eq1} ${state_eq_gtst} "${title_plot}"
   else
     python ${compare_op} ${state1} ${state_gtst} 
   fi
