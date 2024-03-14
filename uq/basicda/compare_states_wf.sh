@@ -1,6 +1,8 @@
 #!/bin/sh
 
-workdir=${1:-'retraining_algo_withequil_20240227'}
+#workdir=${1:-'retraining_algo_withequil_20240227'}
+workdir=''
+
 origdir=$(pwd)
 
 ### Define fixed folder and file names
@@ -31,7 +33,7 @@ state_gtst=${origdir}/${codenameshort}wf_stst/${lastcoreprofcpo}
 state_eq_gtst=${origdir}/${codenameshort}wf_stst/${lastequilibriumcpo}
 
 #datenow=$(date +"%Y%m%d")
-datenow=20240227
+datenow=20240313
 echo ">> Checking for the run on "${datenow}
 
 echo "workdir: "${workdir} ###DEBUG 
@@ -40,9 +42,9 @@ cd ${workdir}
 curr_id=${datenow}
 
 itnum_min=0
-itnum_max=5
+itnum_max=9
 
-# to use equilibrium data or not
+# to use equilibrium data or no
 useequil=1
 
 echo ">>> Entering the loop"
