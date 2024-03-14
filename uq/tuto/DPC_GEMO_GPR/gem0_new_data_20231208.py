@@ -5,7 +5,7 @@ import numpy as np
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import RBF
 import matplotlib
-matplotlib.use('TkAgg')
+#matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 import pickle
 import time
@@ -70,3 +70,7 @@ for ft in range(8):
     plt.savefig(f'flux_tube_{ft}.pdf')
     
 pickle.dump(fits, open('fits.pickle','bw'))
+
+for i in range(8):
+    pickle.dump(fits[i], open(f"fits_{i}.pickle", 'bw'))
+
