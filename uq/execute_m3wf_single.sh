@@ -32,6 +32,9 @@
 
 ####################################
 
+echo "SLURM_JOB_CPUS_PER_NODE: "${SLURM_JOB_CPUS_PER_NODE}
+scontrol show -o --detail job ${SLURM_JOB_ID}
+
 ### Define fixed folder and file names
 echo ">>> Workflow: Setting up names"
 

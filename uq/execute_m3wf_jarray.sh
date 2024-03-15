@@ -3,7 +3,7 @@
 ##################################
 
 ## job array
-#SBATCH --array=1-4
+#SBATCH --array=1-128
 
 ## job name
 #SBATCH --job-name=UQ_AL_SURR_RESTART_
@@ -15,14 +15,14 @@
 #SBATCH --no-requeue
 
 ## wall time in format (HOURS):MINUTES:SECONDS
-#SBATCH --time=0:30:00
+#SBATCH --time=0:14:00
 
 ## number of nodes and tasks per node
 # next line: for running only the first slow flux tube
 
 ###SBATCH --nodes=1
-###SBATCH --ntasks-per-node=40
-#SBATCH --ntasks-per-core=1
+#SBATCH --ntasks-per-node=40
+#SBATCH --ntasks-per-core=1 # should disable hyperthreading
 ###SBATCH --cpus-per-task=1
 #SBATCH --ntasks=8
 
@@ -75,7 +75,17 @@ find . -xtype l -delete
 
 ### Run the M3 workflow instances
 
+echo "slurm env vars : "
+echo "SLURM_JOB_CPUS_PER_NODE: "${SLURM_JOB_CPUS_PER_NODE}
+echo "SLURM_CPUS_ON_NODE: "${SLURM_CPUS_ON_NODE}
+echo "SLURM_CPUS_PER_TASK: "${SLURM_CPUS_PER_TASK} 
+echo "SLURM_NTASKS_PER_CORE: "${SLURM_NTASKS_PER_CORE}
+echo "SLURM_NTASKS_PER_NODE: "${SLURM_NTASKS_PER_NODE}
+echo "SLURM_TASKS_PER_NODE: "${SLURM_TASKS_PER_NODE}
+echo "SLURM_NTASKS: "${SLURM_NTASKS}
+
 echo "job array env vars : " $SLURM_ARRAY_JOB_ID $SLURM_ARRAY_TASK_ID $SLURM_ARRAY_TASK_MIN $SLURM_ARRAY_TASK_MAX $SLURM_ARRAY_TASK_COUNT
+scontrol show -o --detail job ${SLURM_JOB_ID}
 #################################
 run_folder_list=( )
 # find all the run directories without the final output file
