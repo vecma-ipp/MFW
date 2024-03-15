@@ -87,12 +87,17 @@ simworkdir=${runprefix}${locid}_${itnum}${runsufix}
 ### Compare resulting profiles with a stored 'ground truth' stationary profile, and with the initial profile
 echo ">>> Comparing the final state with ground-truth stationary state"
 statelast=${simworkdir}/${lastcoreprofcpo}
+statelast_eq=${simworkdir}/${lastequilibriumcpo}
+
 state_gtst=../${commondir}/ets_coreprof_stst.cpo
-python ${compare_op} ${statelast} ${state_gtst} 
+state_gtst_eq=../${commondir}/equilupdate_equilibrium_stst.cpo
+
+python ${compare_op} ${statelast} ${state_gtst} ${statelast_eq} ${state_gtst_eq}
 
 echo ">>> Comparing the final state with the initial state"
 stateinit=../${commondir}/${initcoreprofcpo}
-python ${compare_op} ${statelast} ${stateinit} 
+stateinit_eq=../${commondir}/${initequilibriumcpo}
+python ${compare_op} ${statelast} ${stateinit} ${statelast_eq} ${stateinit_eq}
 
 # Copy the resulting core profile to the root directory
 cp ${statelast} ../

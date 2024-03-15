@@ -1,6 +1,8 @@
 import os
 import sys
 
+import time as t
+
 import numpy as np
 import pandas as pd
 
@@ -295,7 +297,7 @@ if __name__ == "__main__":
     print(f">> Using input C.o.V. of {input_cv}")
 
     codename = sys.argv[1] if len(sys.argv) > 4 else 'gem0'
-    print(f">> Using data from code {input_cv}")
+    print(f">> Using data from code {codename}")
 
     # # - option 3.1 - use pyGEM0 data
     if codename == 'gem0':
@@ -346,7 +348,7 @@ if __name__ == "__main__":
     # output_columns = ["te_value_0", "te_value_15", "te_value_30", "te_value_45", "te_value_57", "te_value_67", "te_value_77", "te_value_87", "te_value_95", 
     #                   "ti_value_0", "ti_value_15", "ti_value_30", "ti_value_45", "ti_value_57", "ti_value_67", "ti_value_77", "ti_value_87", "ti_value_95",]
     # - option 5.3 - read all core profile values
-    output_columns = [f"t{sp}_value_{coord}" for sp,coord in zip(species, prof_coord_inds)]
+    output_columns = [f"t{sp}_value_{coord}" for sp,coord in product(species, prof_coord_inds)]
 
     ### Define parallelisation paramaters
     #    e.g. surrogate: t_s ~= 10m. ; workflow t_w ~= 10m. ; buffer/overhead: t_b ~= 10m 
@@ -488,8 +490,10 @@ if __name__ == "__main__":
 
     ### Result analysis
     print(f"> Performing Analysis")
+    t_st_analysis = t.time()
     campaign.apply_analysis(analysis)
     analysis_result = campaign.get_last_analysis()
+    print(f"time for analysis: {t.time()-t_st_analysis} s")
 
     # Moments of QoI: AVG, STD, SCW, KRT
     print(analysis_result.describe())

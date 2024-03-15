@@ -83,7 +83,8 @@ class ProfileCPODecoder:
             qoi_values[f"{qoi}"] = value[coord]
 
             #print(f"{qoi}={value[coord]}") ###DEBUG
-        print(qoi_values)
+        
+        #print(qoi_values) ###DEBUG
 
         return qoi_values
 

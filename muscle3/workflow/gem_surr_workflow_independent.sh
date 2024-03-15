@@ -31,7 +31,7 @@ mkdir ${run_dir_name}
 # echo ${PYTHONPATH}
 # which python3
 # echo "running the workflow with a root at "$(pwd)
-# #python3 /u/yyudin/code/MFW/muscle3/src/gem_surr_mft_M3.py #DEBUG - script doomed to fail:
+# #python3 /u/yyudin/code/MFW/muscle3/src/gem_surr_mft_M3.py #DEBUG - script doomed to fail
 
 #TODO: (a) modify the YMMSL beforehand
 #      (b) pass id to muscle_manager: M3 'implementation' of gem_sur_imp has to accept arguments
