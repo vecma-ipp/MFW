@@ -6,13 +6,16 @@ import pandas as pd
 
 from itertools import product
 
+import time as t
+
 import pickle
 
 import chaospy as cp
 
 ### From easyvvuq
 import easyvvuq as uq
-from easyvvuq.actions import Encode, Decode, Actions, CreateRunDirectory, ExecuteLocal, QCGPJPool
+from easyvvuq.actions import Actions, Decode #, Encode CreateRunDirectory, ExecuteLocal, QCGPJPool
+from easyvvuq.constants import Status
 
 ### Form qcg-pj
 
@@ -86,11 +89,13 @@ def main(db_location):
     # ft_coords = [0.143587306141853 , 0.309813886880875 , 0.442991137504578 , 0.560640752315521 , 0.668475985527039 , 0.769291400909424 , 0.864721715450287 , 0.955828309059143]
     prof_coord_inds = [i for i in range(100)]
 
-    n_samples = int(sys.argv[2]) if len(sys.argv) > 2 else 32
-    print(f">> Using number of samples: {n_samples}")
+    # n_samples = int(sys.argv[2]) if len(sys.argv) > 2 else 32
+    n_samples = 2
+    # print(f">> Using number of samples: {n_samples}")
 
-    input_cv = float(sys.argv[1]) if len(sys.argv) > 3 else 0.1
-    print(f">> Using input C.o.V. of {input_cv}")
+    # input_cv = float(sys.argv[1]) if len(sys.argv) > 3 else 0.1
+    input_cv = 0.1
+    # print(f">> Using input C.o.V. of {input_cv}")
 
     # codename = sys.argv[1] if len(sys.argv) > 4 else 'gem0'
     # print(f">> Using data from code {input_cv}")
@@ -106,7 +111,7 @@ def main(db_location):
     # target_dataset_filename = "gem0py_new_local.csv"
     output_filename = "ets_coreprof_out.cpo"
 
-    output_columns = [f"t{sp}_value_{coord}" for sp,coord in zip(species, prof_coord_inds)]
+    output_columns = [f"t{sp}_value_{coord}" for sp,coord in product(species, prof_coord_inds)] # the right way is 'product'
 
     ### Pepare the campaign: crate the campaign object, copy the right files to the right places
 
@@ -118,12 +123,11 @@ def main(db_location):
                                 cpo_path=output_cpo_path,
                                 output_columns=output_columns)
 
-    # actions = Actions(
-    #
-    #     Decode(decoder),
-    #                  )
+    actions_new = Actions(
+        Decode(decoder),
+                     )
 
-    ### Run EasyVVUQ campaign
+    ### Create EasyVVUQ campaign
 
     # QCJ-PG specs
     # eUQ campaign
@@ -131,16 +135,41 @@ def main(db_location):
     camp_name = "UQ_8FTGEM0_WF_AL_"
 
     # Reload the campaign
-    campaign = uq.Campaign(name=camp_name, db_location=db_location)
+    campaign = uq.Campaign(name=camp_name,
+                           db_location='sqlite:///' + db_location)
     
     # Reactivare the sampler
-    sampler = campaign.get_active_sampler()
-    campaign.set_sampler(sampler)
+    sampler = campaign.get_active_sampler() # ATTENTION: could be a wrong sampler, probably shift to _sampler_id==1
+    #campaign.set_sampler(sampler)
+
+    ### Decode and collate runs
+    campaign.replace_actions(app_name=camp_name,
+                             actions=actions_new)
+    
+    run_ids_fromdb = [x[4:] for x in campaign.campaign_db.run_ids()]
+
+    campaign.campaign_db.set_run_statuses(run_ids_fromdb, Status.ENCODED)
+
+    action_pool = campaign.apply_for_each_sample(
+                                    actions=actions_new,
+                                    status=Status.ENCODED,
+                                    sequential=False,
+                                                )
+
+    exec_res = action_pool.start()
+
+    collate_res = exec_res.collate()
 
     ### Result analysis
     print(f"> Performing Analysis")
-    # campaign.apply_analysis(analysis)
-    analysis_result = campaign.get_last_analysis()
+    t_st_analysis = t.time()
+
+    # setting (a new) analysis
+    analysis_new = uq.analysis.QMCAnalysis(sampler=sampler, qoi_cols=output_columns)
+    run_result = campaign.campaign_db.get_results(camp_name, 1)
+    analysis_result = analysis_new.analyse(run_result)
+    #apply_analysis_retval = campaign.apply_analysis(analysis_new)
+    print(f"time for analysis: {t.time()-t_st_analysis} s")
 
     # Moments of QoI: AVG, STD, SCW, KRT
     print(analysis_result.describe())
@@ -155,6 +184,6 @@ def main(db_location):
 
 if __name__ == "__main__":
 
-    db_location = ''
+    db_location = sys.argv[1] if len(sys.argv)>1 else '/cobra/ptmp/yyudin/UQ_8FTGEM0_WF_AL_l842m78x/campaign.db_toplay'
 
     main(db_location)
