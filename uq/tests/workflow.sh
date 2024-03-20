@@ -2,6 +2,8 @@
 
 locid=${1:-0}
 
+n_p_p_p=${2:-5}
+
 #source activate ${HOME}/conda-envs/python3114
 
 ### Define fixed folder and file names
@@ -52,7 +54,7 @@ surdata=gem0py_new_local.csv
 locsurrogatedir=easysurrogate
 mkdir ${locsurrogatedir}
 
-${copy_op} ../${surdata} ${locdir}/${locsurrogatedir}/gem0py_new_${locid}_${itnum}.csv
+${copy_op} ../${surdata} ${locdir}/${locsurrogatedir}/gem0py_comb_${locid}_${itnum}.csv
 
 for surr_file in ${surrogate_files[@]}; do
   ${copy_op} ../${commondir}/${surr_file} ${locdir}/${locsurrogatedir}/${surr_file}
@@ -60,7 +62,8 @@ done
 
 cd ${locsurrogatedir}
 # Run the surrogate script - should already copy the surrogates
-./${surrogate_op} ${locid} ${itnum} # TODO: Should accept arbitrary id
+#./${surrogate_op} ${locid} ${itnum} 
+./${surrogate_op} ${locid} ${itnum} $(pwd) $(pwd)/../ ${n_p_p_p}
 
 ### Run the M3 workflow
 cd ..

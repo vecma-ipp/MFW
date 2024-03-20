@@ -293,10 +293,10 @@ if __name__ == "__main__":
     #     print(f">> Using DEFAULT input C.o.V. of {input_cv}")
   
     # - option 2.2 - read from script argument
-    input_cv = float(sys.argv[1]) if len(sys.argv) > 3 else 0.1
+    input_cv = float(sys.argv[1]) if len(sys.argv) > 1 else 0.1
     print(f">> Using input C.o.V. of {input_cv}")
 
-    codename = sys.argv[1] if len(sys.argv) > 4 else 'gem0'
+    codename = sys.argv[3] if len(sys.argv) > 3 else 'gem0'
     print(f">> Using data from code {codename}")
 
     # # - option 3.1 - use pyGEM0 data
@@ -321,9 +321,11 @@ if __name__ == "__main__":
     # - option 4.2 - use variable CoV QoI
     if codename == 'gem0':
         input_params_propr = input_params_scan_relative(cv=input_cv)
+        n_p_p_p = 5
     # - option 4.3 - use mean QoI from GEM scan
     elif codename == 'gem':
         input_params_propr = input_params_gem_scan()
+        n_p_p_p = 3
     
     # TODO make a look-up table between string as ChaosPy classes
     # Turn input param description into 'vary' - it has to be in the flux-average scale, so STD should in fact be CV
@@ -443,7 +445,8 @@ if __name__ == "__main__":
     exec_code = "workflow.sh" #TODO modify the retrainer script
     os.system(f"cp {test_script_dir}/{exec_code} {common_dir}/")
     exec_path = os.path.join(common_dir, exec_code)
-    exec_path_comm = exec_path
+    exec_args = f" 0 {n_p_p_p} "
+    exec_path_comm = exec_path + exec_args
 
     actions = Actions(
         CreateRunDirectory('/runs'),

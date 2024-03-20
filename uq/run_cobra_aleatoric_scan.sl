@@ -68,12 +68,12 @@ export MPIMOD=default #srunmpi
 ####################################
 # Run the UQ code - scan
 
-CODENAME=gem0
+CODENAME=gem
 
 #INPUTCOVLIST=( 0.01 0.05 ) # 0.1 0.2 0.25 0.5 ) # ( 0.3 0.5 )
-INPUTCOV=0.01
+INPUTCOV=0.1
 
-NSAMPLESLIST=( 64 )
+NSAMPLESLIST=( 32 )
 
 #TODO completely parallelisable!
 
@@ -81,7 +81,7 @@ NSAMPLESLIST=( 64 )
 for NSAMPLES in ${NSAMPLESLIST[@]}; do
 
     echo -e '> For each of these scan runs: use ExecuteLocal only + QCGPJ pool + '${MPIMOD}' exec mode + '${SLURM_NNODES}\
-    ' nodes + 2 QoIs + 8 flux tubes + n_samples '${NSAMPLES}' + commandline passed with '${MPICMD}' \n'
+    ' nodes + 2 QoIs + 8 flux tubes + n_samples '${NSAMPLES}' + data from '${CODENAME}' + commandline passed with '${MPICMD}' \n'
 
     # Echo SLURM environmental variables
     scontrol show --detail job ${SLURM_JOBID}
