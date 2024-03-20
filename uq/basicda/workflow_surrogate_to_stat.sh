@@ -19,6 +19,7 @@ prepare_op=prepare_gem0_sample.py
 surrogate_op=process_gpr_ind.sh
 simulation_op=gem_surr_workflow_independent.sh
 compare_op=compare_workflow_states.py
+merge_op=merge_samples.py
 
 ### Define the starting point of the loop - and prepare the first iteration
 echo ">>> Preparing initial state"
@@ -33,14 +34,16 @@ datenow=$(date +"%Y%m%d")
 origdir=$(pwd)
 
 curr_id=${datenow}
+rand_id=$(( RANDOM % 1024 ))
 
 itnum_min=0
-itnum_max=8
+itnum_max=10
 
 # to start iteration from scratch or to continue
 if [ ${itnum_min} == 0 ]
 then
   echo ">> Copying initial state CPOs from: "${sourcedir}
+  # For the first iteration: rename initial files as if they were results of a 0-th iteration
   cp ${sourcedir}/ets_coreprof_in.cpo    ${sourcedir}/${lastcoreprofcpo}
   cp ${sourcedir}/ets_equilibrium_in.cpo    ${sourcedir}/${lastequilibriumcpo}
 else
@@ -48,8 +51,10 @@ else
 fi
 
 # to use equilibrium data or not
-useequil=1
+useequil=0
 useequil_tocomp=1
+
+num_points_per_param=3
 
 echo ">>> Entering the loop"
 for((itnum=${itnum_min};itnum<${itnum_max};itnum++)); do
@@ -80,22 +85,37 @@ for((itnum=${itnum_min};itnum<${itnum_max};itnum++)); do
   # 	 final coreprof CPO -> final plasma state -> grid around final state -> pyGEM0 dataset around final state
   echo ">>> Preparing new training data set around iteration initial state"
 
-  if [ ${useequil_tocomp} == 1  ]
+  if [ ${useequil} -eq 1  ]
   then
-    title_plot="Distances between simulation initial and final states"
-    python ${prepare_op} ${itdir} ${curr_id} ${itnum} ${useequil} ${lastequilibriumcpo} "${title_plot}"
+    python ${prepare_op} ${itdir} ${curr_id} ${itnum} ${num_points_per_param} ${lastequilibriumcpo} ${useequil}
   else
-    python ${prepare_op} ${itdir} ${curr_id} ${itnum}
+    python ${prepare_op} ${itdir} ${curr_id} ${itnum} ${num_points_per_param} ${lastequilibriumcpo} 
+  fi
+
+  # Merge the new data file
+  data_file_name_old=${codename}_comb_${curr_id}_$(( ${itnum}-1 )).csv
+  data_file_name_new=${codename}_new_${curr_id}_${itnum}.csv 
+  data_file_name_comb_latest=${codename}_comb_${curr_id}_${itnum}.csv
+
+  if [ ${itnum} -gt 0 ]
+  then
+    python3 ${merge_op} ${data_file_name_old} ${data_file_name_new}
+  else
+    cp ${data_file_name_new}   ${data_file_name_comb_latest}
   fi
 
   ### Prepare new surrogate with new data
   echo ">>> Making a new surrogate for simulation workflow"
 
-  cp ${codename}_new_${curr_id}_${itnum}.csv ${easysurrogatedir}
+  #cp ${codename}_new_${curr_id}_${itnum}.csv ${easysurrogatedir}
+  cp ${data_file_name_comb_latest}    ${easysurrogatedir}
 
   cd ${easysurrogatedir}
  
-  ./${surrogate_op} ${datenow} ${itnum} ${easysurrogatedir} ${muscledir}
+  surrogate_data_id=${datenow}
+  #surrogate_data_id=${data_file_name_comb_latest}
+
+  ./${surrogate_op} ${surrogate_data_id} ${itnum} ${easysurrogatedir} ${muscledir} ${num_points_per_param}
 
   ### Run M3-WF with the new surrogate
   # TODO unlike surrogate, switch to use equilibrium needs a change in YMMSL file
@@ -162,8 +182,18 @@ for((itnum=${itnum_min};itnum<${itnum_max};itnum++)); do
 
 done
 
-# Renaming the results of the las iteration
+# Renaming the results of the last iteration
 mv ${origdir}/${lastcoreprofcpo}    ${origdir}/ets_coreprof_out_last_${datenow}_${itnum_max}.cpo
 mv ${origdir}/${lastequilibriumcpo}    ${origdir}/equilupdate_equilibrium_out_last_${datenow}_${itnum_max}.cpo
+
+# Store all the produced files into a new folder
+save_dir=retraining_algo_${datenow}_${rand_id}
+mkdir ${save_dir}
+
+created_file_type_list=( 'equilupdate_equilibrium_out_last_'${datenow}'_?.cpo' 'ets_coreprof_out_last_'${datenow}'_?.cpo' 'final_point_'${datenow}'_?.csv' 'grid_it_'${datenow}'_?.csv' 'gem0py_new_'${datenow}'_?.csv' 'gem0py_comb_'${datenow}'_?.csv' 'ets_coreprof_out_ets_coreprof_out_last_'${datenow}'_?.pdf' )
+
+for created_file_type in ${created_file_type_list[@]}; do
+  mv ${created_file_type}    ${save_dir}/
+done 
 
 echo ">>> Finished the retraining workflow!"

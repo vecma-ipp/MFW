@@ -495,18 +495,18 @@ def write_gem0_expanded(filename_in, filename_out, expand_factor=1.0, newps_psid
 
     return 0
 
-def write_gem0_fromfile(csv_in, filename_out):
+def write_gem0_fromfile(csv_in, filename_out, **kwargs):
     """
     write a CSV file of Qe/i computed by pyGEM0 using input profile at a point from filename_in CSV file
     requires knowing rho_tor_norm of the flux tube locations
     """
 
     #TODO: input names are actualy columns in the input CSV file
-    input_names = ['te_value', 'ti_value', 'te_ddrho', 'ti_ddrho']
+    input_names = ['te_value', 'ti_value', 'te_ddrho', 'ti_ddrho', 'profiles_1d_q', 'profiles_1d_gm3', ]
     output_names = ['te_transp_flux', 'ti_transp_flux']
 
     rho_inds   = [15, 31, 44, 55, 66, 76, 85, 94]
-    ftube_rhos = [0.143587306141853 , 0.309813886880875 , 0.442991137504578 , 0.560640752315521 , 0.668475985527039 , 0.769291400909424 , 0.864721715450287 , 0.955828309059143 ] #TODO double check
+    ftube_rhos = [0.143587306141853 , 0.309813886880875 , 0.442991137504578 , 0.560640752315521 , 0.668475985527039 , 0.769291400909424 , 0.864721715450287 , 0.955828309059143 ]
     
     nfts = len(ftube_rhos)
 
@@ -525,14 +525,20 @@ def write_gem0_fromfile(csv_in, filename_out):
     for o in output_names:
         df_out[o] = None
 
-    gem0helper = ExtCodeHelper(2, xml_file="gem0_1ft.xml")
+    # Create a pyGEM0 instance - either use default equilibrium, or a specific one
+    if 'equilibrium_file' not in kwargs: 
+        gem0helper = ExtCodeHelper(2, xml_file="gem0_1ft.xml")
+    else:
+        equilibrium_file = kwargs['equilibrium_file']
+        gem0helper = ExtCodeHelper(2, xml_file="gem0_1ft.xml", equilibrium_file=equilibrium_file)
 
-    # run through evey set of new input values
+    input_names_loc = list(set(input_names) & set(df_in.columns))
+    # Run through evey set of new input values
     for i,df_row in df_in.iterrows():
 
         ft = int(df_row['ft'])
         rho = ftube_rhos[ft]
-        x = {k:df_row[k] for k in input_names}
+        x = {k:df_row[k] for k in input_names_loc}
 
         # # - option 1 - accept only changes in coreprof
         # y,x_new = gem0helper.gem0_call_4param2target_array_coretransp(x, rho)
@@ -541,7 +547,7 @@ def write_gem0_fromfile(csv_in, filename_out):
         y,x_new = gem0helper.gem0_call_4param2target_array_params(x)
 
         # fill in the output dataframe
-        for j in range(len(input_names)):
+        for j in range(len(input_names_loc)):
             df_out.loc[i, input_names[j]] = x_new[j]        
         for j in range(len(output_names)):
             df_out.loc[i, output_names[j]] = y[j][0] # returning array should not happen?

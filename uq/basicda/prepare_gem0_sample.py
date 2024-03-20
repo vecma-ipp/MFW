@@ -14,10 +14,12 @@ def main():
     wf_id = sys.argv[2]
     itnum = sys.argv[3] 
 
+    n_p_p_p = int(sys.argv[4]) if len(sys.argv)>4 else 3
+
     coreprof_filename = f"ets_coreprof_out.cpo"
 
-    include_equilibrium =  bool(sys.argv[4]) if len(sys.argv)>4 else False
     equilibrium_filename = sys.argv[5]       if len(sys.argv)>5 else f"ets_equilibrium_out.cpo"
+    include_equilibrium =  bool(sys.argv[6]) if len(sys.argv)>6 else False
 
     # Set the fixed params: qauntities and coretransp grid
     quantities = ['te', 'ti']
@@ -43,25 +45,32 @@ def main():
     # Create a grid (in 'core profile' space) around the 'point' read
     grid_file = f"grid_it_{wf_id}_{itnum}.csv"
 
-    if len(sys.argv)>7:
-        num_steps = int(sys.argv[6])
-        exp_factor = int(sys.argv[7])
-    else:
-        if include_equilibrium:
-            num_steps = 1
-            exp_factor = 0.33
-        else:
-            # num_steps = 2
-            # exp_factor = 0.25
-            num_steps = 1
-            exp_factor = 0.33
+    # Define go to create new input samples: number of new samples per dimemsion and step size
+    num_steps = (n_p_p_p - 1) // 2
+    exp_factor = 0.33
+    # if len(sys.argv)>7:
+    #     num_steps = int(sys.argv[6])
+    #     exp_factor = int(sys.argv[7])
+    # else:
+    #     if include_equilibrium:
+    #         num_steps = 1
+    #         exp_factor = 0.33
+    #     else:
+    #         # num_steps = 2
+    #         # exp_factor = 0.25
+    #         num_steps = 1
+    #         exp_factor = 0.33
 
     param_grid = write_profs_fromfile_grid(final_point, filename_out=grid_file, num_steps=num_steps, exp_factor=exp_factor)
     #print(f"param_grid[-1]=\n{param_grid.iloc[-1]}")###DEBUG
 
     # Evaluate pyGEM0 for every point of the new grid
     gem0_file = f"gem0py_new_{wf_id}_{itnum}.csv"
-    write_gem0_fromfile(param_grid, gem0_file)
+
+    # # - option A.1 if only the default equilibrium to be used
+    # write_gem0_fromfile(param_grid, gem0_file,)
+    # - option A.2 If the background equilibrium has to be changed
+    write_gem0_fromfile(param_grid, gem0_file, equilibrium_file=equilibrium_filename)
 
     ###
 
