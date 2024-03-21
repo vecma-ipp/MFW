@@ -153,7 +153,7 @@ def exec_pj_no_templ(campaign,):
 
     exec_res = 0
 
-    n_c_p_j = 4
+    n_c_p_j = 8
 
     try:
         print(">> Creating resource pool")
@@ -204,7 +204,6 @@ def exec_dask(local=True):
         cluster.scale(32)
 
         client = Client(cluster)
-
 
     campaign.execute(pool=client).collate()
     exec_res = campaign.get_collation_result()

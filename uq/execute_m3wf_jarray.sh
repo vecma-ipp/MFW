@@ -3,7 +3,7 @@
 ##################################
 
 ## job array
-#SBATCH --array=1-128
+#SBATCH --array=1-36
 
 ## job name
 #SBATCH --job-name=UQ_AL_SURR_RESTART_
@@ -15,7 +15,7 @@
 #SBATCH --no-requeue
 
 ## wall time in format (HOURS):MINUTES:SECONDS
-#SBATCH --time=0:14:00
+#SBATCH --time=0:45:00
 
 ## number of nodes and tasks per node
 # next line: for running only the first slow flux tube
