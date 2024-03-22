@@ -61,6 +61,7 @@ def gem_surr_M3(id=0):
 
     rho_ind_s = [int(x) for x in rho_ind_s]
     n_fts = len(rho_ind_s)
+    ft_numbers = [i for i in range(n_fts)]
 
     # Reference training data CSV used to train surrogate
     ref_data = pd.read_csv(ref_data_filename, sep=',')
@@ -218,7 +219,7 @@ def gem_surr_M3(id=0):
         coretransp_cpo_obj = output_value_to_coretransp(
                                         fluxes_out_dict, 
                                         coretransp_default_file_path, 
-                                        r_s=[i for i,r in enumerate(rho_ind_s)], # actual value is not used!
+                                        r_s=ft_numbers,
                                         rho_tor_norm_sim=rho_tor_norm_sim,
                                         rho_tor_norm_sur=rho_tor_norm_sur,
                                         prof_names=['te_transp', 'ti_transp'],

@@ -421,6 +421,8 @@ def output_value_to_coretransp(
     """
     Transforms flux mean values infered by model into a CPO coretransp datastracture
     """
+
+    n_fts=len(rho_tor_norm_sur)
     
     # Casting array elements to strings
     #fluxes_out_str = {k:np.array([str(v) for v in vs]) for k,vs in fluxes_out.items()}
@@ -429,11 +431,13 @@ def output_value_to_coretransp(
 
     coretransp_datastructure = read(coretransp_file, 'coretransp')
 
-    if len(coretransp_datastructure.values[0].ti_transp.flux) != len(r_s):
-        coretransp_datastructure.values[0].ti_transp.flux = np.zeros((1, len(r_s)))
+    print(f"coretransp_datastructure.values[0].ti_transp.flux shape : {coretransp_datastructure.values[0].ti_transp.flux.shape}") ###DEBUG
 
-    if len(coretransp_datastructure.values[0].te_transp.flux) != len(r_s):
-        coretransp_datastructure.values[0].te_transp.flux = np.zeros((len(r_s)))     
+    if len(coretransp_datastructure.values[0].ti_transp.flux) != n_fts:
+        coretransp_datastructure.values[0].ti_transp.flux = np.zeros((n_fts, 1))
+
+    if len(coretransp_datastructure.values[0].te_transp.flux) != n_fts:
+        coretransp_datastructure.values[0].te_transp.flux = np.zeros((n_fts))     
 
     # if flux tube coordinates from surrogate and code are different, interpolate
     if rho_tor_norm_sur is not None and rho_tor_norm_sim is not None:
@@ -461,10 +465,13 @@ def output_value_to_coretransp(
                         coretransp_datastructure.values[0].te_transp.flux[r] = fluxes_out[prof_name+'_'+attribute][r]
                                 
                     else:
-                        print('Error: currently only temperatures for two species are supported')
+                        print('Error: currently only heat fluxes for two species are supported')
                 
                 else:
                     print('Erorr: currently only models infering fluxes are supported')
+
+    print(f"coretransp_datastructure.values[0].ti_transp.flux: {coretransp_datastructure.values[0].ti_transp.flux[:, 0]}") ###DEBUG
+    print(f"coretransp_datastructure.values[0].te_transp.flux: {coretransp_datastructure.values[0].te_transp.flux[:]}") ###DEBUG
 
     return coretransp_datastructure
 
