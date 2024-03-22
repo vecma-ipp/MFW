@@ -175,12 +175,15 @@ def exec_pj_no_templ(campaign,):
     
     return exec_res
 
-def exec_dask(local=True):
+def exec_dask(campaign, local=True):
     """
     Execute EasyVVUQ jobs using dask
     """
     
     from dask.distributed import Client
+
+    n_c_p_j = 8
+    n_c_p_n = 32
 
     if local:
 
@@ -197,11 +200,11 @@ def exec_dask(local=True):
                     #    "--mail-user=yehor.yudin@ipp.mpg.de"
                           ],
                 #queue="p.tok.openmp",
-                cores=8,
+                cores=n_c_p_j,
                 memory="8 GB",
-                processes=8
+                processes=n_c_p_j,
             )
-        cluster.scale(32)
+        cluster.scale(n_c_p_n)
 
         client = Client(cluster)
 
@@ -487,8 +490,12 @@ if __name__ == "__main__":
 
     print("> Exectung the Actions!")
     #TODO are ncores and nnodes needed for one job or all jobs?
-    #exec_res = exec_pj(campaign, exec_path_comm, ncores, nnodes, mpi_instance)
-    exec_res = exec_pj_no_templ(campaign)
+    # # - option 6.1 - execute with QCG-PJ with a full template
+    # exec_res = exec_pj(campaign, exec_path_comm, ncores, nnodes, mpi_instance)
+    # # - option 6.2 - preferable, execute with QCG-PJ and ncores specification
+    # exec_res = exec_pj_no_templ(campaign)
+    # - option 6.3 - execute with dask
+    exec_res = exec_dask(campaign, local=True)
 
     ### Result analysis
     print(f"> Performing Analysis")

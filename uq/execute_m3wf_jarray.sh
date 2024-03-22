@@ -3,7 +3,7 @@
 ##################################
 
 ## job array
-#SBATCH --array=1-36
+#SBATCH --array=1-8
 
 ## job name
 #SBATCH --job-name=UQ_AL_SURR_RESTART_
@@ -15,13 +15,13 @@
 #SBATCH --no-requeue
 
 ## wall time in format (HOURS):MINUTES:SECONDS
-#SBATCH --time=0:45:00
+#SBATCH --time=1:00:00
 
 ## number of nodes and tasks per node
 # next line: for running only the first slow flux tube
 
 ###SBATCH --nodes=1
-#SBATCH --ntasks-per-node=40
+#SBATCH --ntasks-per-node=8
 #SBATCH --ntasks-per-core=1 # should disable hyperthreading
 ###SBATCH --cpus-per-task=1
 #SBATCH --ntasks=8
@@ -83,6 +83,8 @@ echo "SLURM_NTASKS_PER_CORE: "${SLURM_NTASKS_PER_CORE}
 echo "SLURM_NTASKS_PER_NODE: "${SLURM_NTASKS_PER_NODE}
 echo "SLURM_TASKS_PER_NODE: "${SLURM_TASKS_PER_NODE}
 echo "SLURM_NTASKS: "${SLURM_NTASKS}
+
+echo "SLURM_CPU_BIND_LIST: "${SLURM_CPU_BIND_LIST}
 
 echo "job array env vars : " $SLURM_ARRAY_JOB_ID $SLURM_ARRAY_TASK_ID $SLURM_ARRAY_TASK_MIN $SLURM_ARRAY_TASK_MAX $SLURM_ARRAY_TASK_COUNT
 scontrol show -o --detail job ${SLURM_JOB_ID}

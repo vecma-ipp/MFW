@@ -40,7 +40,7 @@ def comp_states_fromcli(coreprof_1, coreprof_2, plot_diff=True):
 
 if __name__ == "__main__":
 
-        plot_diff = False
+        plot_diff = True
     
         coreprof_1 = sys.argv[1] if len(sys.argv)>1 else 'ets_coreprof_in.cpo'
         coreprof_2 = sys.argv[2] if len(sys.argv)>2 else 'ets_coreprof_out.cpo'
