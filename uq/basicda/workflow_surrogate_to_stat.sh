@@ -24,7 +24,8 @@ merge_op=merge_samples.py
 ### Define the starting point of the loop - and prepare the first iteration
 echo ">>> Preparing initial state"
 
-sourcedir=${muscledir}/${muscleworkdir}/${codenameshort}_surr_resume_data/
+#sourcedir=${muscledir}/${muscleworkdir}/${codenameshort}_surr_resume_data/
+sourcedir=${muscledir}/${muscleworkdir}/
 state_gtst=${codenameshort}wf_stst/${lastcoreprofcpo}
 state_eq_gtst=${codenameshort}wf_stst/${lastequilibriumcpo}
 
@@ -96,13 +97,15 @@ for((itnum=${itnum_min};itnum<${itnum_max};itnum++)); do
   data_file_name_old=${codename}_comb_${curr_id}_$(( ${itnum}-1 )).csv
   data_file_name_new=${codename}_new_${curr_id}_${itnum}.csv 
   data_file_name_comb_latest=${codename}_comb_${curr_id}_${itnum}.csv
-
-  if [ ${itnum} -gt 0 ]
-  then
-    python3 ${merge_op} ${data_file_name_old} ${data_file_name_new}
-  else
-    cp ${data_file_name_new}   ${data_file_name_comb_latest}
-  fi
+  # # - option 1 - merge
+  # if [ ${itnum} -gt 0 ]
+  # then
+  #   python3 ${merge_op} ${data_file_name_old} ${data_file_name_new}
+  # else
+  #   cp ${data_file_name_new}   ${data_file_name_comb_latest}
+  # fi
+  # - option 2 - use new data only
+  cp ${data_file_name_new}    ${data_file_name_comb_latest}
 
   ### Prepare new surrogate with new data
   echo ">>> Making a new surrogate for simulation workflow"
@@ -127,7 +130,7 @@ for((itnum=${itnum_min};itnum<${itnum_max};itnum++)); do
   rm -r ${runprefix}${datenow}_${itnum} 
 
   # Prepare the necessary files
-  cp ${origdir}/${codenameshort}py_new_${curr_id}_${itnum}.csv    ${muscledir}/${muscleworkdir}/ref_train_data.csv
+  cp ${origdir}/${codename}_comb_${curr_id}_${itnum}.csv    ${muscledir}/${muscleworkdir}/ref_train_data.csv
   # Original state for the new M3-WF run - two options:
   # 	1) Same inial state (~ from AUG shot)
   # 	2) Final state of the WF from the previous iteration
@@ -190,7 +193,7 @@ mv ${origdir}/${lastequilibriumcpo}    ${origdir}/equilupdate_equilibrium_out_la
 save_dir=retraining_algo_${datenow}_${rand_id}
 mkdir ${save_dir}
 
-created_file_type_list=( 'equilupdate_equilibrium_out_last_'${datenow}'_?.cpo' 'ets_coreprof_out_last_'${datenow}'_?.cpo' 'final_point_'${datenow}'_?.csv' 'grid_it_'${datenow}'_?.csv' 'gem0py_new_'${datenow}'_?.csv' 'gem0py_comb_'${datenow}'_?.csv' 'ets_coreprof_out_ets_coreprof_out_last_'${datenow}'_?.pdf' )
+created_file_type_list=( 'equilupdate_equilibrium_out_last_'${datenow}'_*.cpo' 'ets_coreprof_out_last_'${datenow}'_*.cpo' 'final_point_'${datenow}'_*.csv' 'grid_it_'${datenow}'_*.csv' 'gem0py_new_'${datenow}'_*.csv' 'gem0py_comb_'${datenow}'_*.csv' 'ets_coreprof_out_ets_coreprof_out_last_'${datenow}'_*.pdf' )
 
 for created_file_type in ${created_file_type_list[@]}; do
   mv ${created_file_type}    ${save_dir}/
