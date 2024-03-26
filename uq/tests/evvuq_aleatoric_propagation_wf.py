@@ -492,10 +492,10 @@ if __name__ == "__main__":
     #TODO are ncores and nnodes needed for one job or all jobs?
     # # - option 6.1 - execute with QCG-PJ with a full template
     # exec_res = exec_pj(campaign, exec_path_comm, ncores, nnodes, mpi_instance)
-    # # - option 6.2 - preferable, execute with QCG-PJ and ncores specification
-    # exec_res = exec_pj_no_templ(campaign)
-    # - option 6.3 - execute with dask
-    exec_res = exec_dask(campaign, local=True)
+    # - option 6.2 - PREFERABLE, execute with QCG-PJ and ncores specification
+    exec_res = exec_pj_no_templ(campaign)
+    # # - option 6.3 - execute with dask
+    # exec_res = exec_dask(campaign, local=True)
 
     ### Result analysis
     print(f"> Performing Analysis")

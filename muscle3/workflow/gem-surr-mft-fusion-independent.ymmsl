@@ -147,7 +147,7 @@ implementations:
 settings:
   # COMMENT: all paths should be w.r.t the /workdir/ of the instances!
   transport.duration: 0.1 # ATTENTION: originally was 0.1, but 0.03 should be enough for GEM0 convergence
-  transport.dt: 0.00025
+  transport.dt: 0.001
   transport.nonstationary_equilibrium: True
   
   init_cpo_dir: "../../../../"
