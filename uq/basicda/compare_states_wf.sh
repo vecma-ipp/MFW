@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #workdir=${1:-'retraining_algo_withequil_20240227'}
-workdir=''
+workdir='.'
 
 origdir=$(pwd)
 
@@ -33,7 +33,7 @@ state_gtst=${origdir}/${codenameshort}wf_stst/${lastcoreprofcpo}
 state_eq_gtst=${origdir}/${codenameshort}wf_stst/${lastequilibriumcpo}
 
 #datenow=$(date +"%Y%m%d")
-datenow=20240313
+datenow=20240325
 echo ">> Checking for the run on "${datenow}
 
 echo "workdir: "${workdir} ###DEBUG 
@@ -42,7 +42,7 @@ cd ${workdir}
 curr_id=${datenow}
 
 itnum_min=0
-itnum_max=9
+itnum_max=11
 
 # to use equilibrium data or no
 useequil=1

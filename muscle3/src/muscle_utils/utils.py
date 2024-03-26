@@ -734,12 +734,15 @@ def plot_state_diff(d_lists, state_name_1, state_name_2, yscale='linear', **kwar
 
     for name,d_list in d_lists.items():
 
-        n_loc = len(d_list)
+        if 'max_iter' in kwargs:
+            n_loc = kwargs['max_iter']
+        else:
+            n_loc = len(d_list)
 
         ax.plot(
                 #np.arange(n_loc), 
-                coords,
-                d_list, 
+                coords[:n_loc],
+                d_list[:n_loc], 
                 label=lookup_names_short[name],
                 marker='.',
                 alpha=0.6,
@@ -809,7 +812,7 @@ def compare_states(state_1, state_2, cpo_types=['coreprof'], crit='srRMSE', **kw
 
     return d_comp
 
-def plot_state_conv(datas, filename, metric_name='srRMSE', normalised=True, label_sufixes=None):
+def plot_state_conv(datas, filename, metric_name='srRMSE', normalised=True, label_sufixes=None, **kwargs):
     """
     Plots convergence of metrics for pairs of states with a simulation for a given metric
     """
@@ -831,7 +834,15 @@ def plot_state_conv(datas, filename, metric_name='srRMSE', normalised=True, labe
     for i,data in enumerate(datas):
 
         t = data['it']
-        n_it = len(t)
+
+        if 'max_iter' in kwargs:
+            n_it = kwargs['max_iter']
+        else:
+            n_it = len(t)
+
+        if slope_col in data.columns:
+            #approx_slope.append( (np.log10(data[slope_col].iloc[-2]) - np.log10(data[slope_col].iloc[0])) / (t.iloc[-2] - t.iloc[0]) )
+            approx_slope.append( (np.log10(data[slope_col].iloc[n_it]) - np.log10(data[slope_col].iloc[0])) / n_it )
 
         for col_name in data.columns:
             if col_name in col_name_dict.keys():
@@ -839,15 +850,13 @@ def plot_state_conv(datas, filename, metric_name='srRMSE', normalised=True, labe
                 norm = data[col_name].max() if normalised else 1.
 
                 # allign time by the first iteration
-                ax.plot(t, 
+                ax.plot(
+                        t[:n_it], 
                         data[col_name][:n_it] / norm,
                         alpha=0.8,
                         marker='.',
-                        label=f"{col_name_dict[col_name]} for {label_sufixes[i]}"
+                        label=f"{col_name_dict[col_name]} for {label_sufixes[i]}, $r\\approx{-approx_slope[-1]:.2f}$" if 'prevfin' in col_name else f"{col_name_dict[col_name]} for {label_sufixes[i]}",
                         )
-        
-        if slope_col in data.columns:
-            approx_slope.append( (np.log10(data[slope_col].iloc[-2]) - np.log10(data[slope_col].iloc[0])) / (t.iloc[-2] - t.iloc[0]) )
 
     ax.set_yscale("log")
     ax.legend(loc='best')
