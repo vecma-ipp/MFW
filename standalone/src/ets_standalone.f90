@@ -17,7 +17,8 @@ module ets_standalone
   real(8), save :: floor_alpha = 0.01_8
   real(8), save :: floor_beta = 0._8
   real(8), save :: floor_gamma = 0._8
-  real(8), save :: v_floor = 0._8
+  !real(8), save :: v_floor = 0._8
+  real(8), save :: v_floor = -1000.0_8
   real(8), save :: v_ceil = 2000._8
   logical, save :: e_d_cst = .true.
   logical, save :: e_v_cst = .true.
@@ -1254,10 +1255,12 @@ contains
        enddo
        icon = 2 ! <== floor limit only for Turb transp coefficients
        if (.not. c_v_cst) then 
-          coret_out%values(1)%ni_transp%vconv_eff(1,:,icon) = v_floor
+          ! coret_out%values(1)%ni_transp%vconv_eff(1,:,icon) = v_floor
+          coret_out%values(1)%ni_transp%vconv_eff(1,:,icon) = 0._8
        endif
        if (.not. e_v_cst) then 
-          coret_out%values(1)%ni_transp%vconv_eff(nrho+2,:,icon) = v_floor
+          ! coret_out%values(1)%ni_transp%vconv_eff(nrho+2,:,icon) = v_floor
+          coret_out%values(1)%ni_transp%vconv_eff(nrho+2,:,icon) = 0._8
        endif
        if (v_limit) then
           coret_out%values(1)%ni_transp%vconv_eff(:,:,icon) = MAX(coret_out%values(1)%ni_transp%vconv_eff(:,:,icon),v_floor)
@@ -1302,10 +1305,12 @@ contains
        enddo
        icon = 2 ! <== floor limit only for Turb transp coefficients
        if (.not. c_v_cst) then
-          coret_out%values(1)%ne_transp%vconv_eff(1,icon) = v_floor
+          ! coret_out%values(1)%ne_transp%vconv_eff(1,icon) = v_floor
+         coret_out%values(1)%ne_transp%vconv_eff(1,icon) = 0._8
        endif
        if (.not. e_v_cst) then
-          coret_out%values(1)%ne_transp%vconv_eff(nrho+2,icon) = v_floor
+          ! coret_out%values(1)%ne_transp%vconv_eff(nrho+2,icon) = v_floor
+         coret_out%values(1)%ne_transp%vconv_eff(nrho+2,icon) = 0._8
        endif
        if (v_limit) then 
           coret_out%values(1)%ne_transp%vconv_eff(:,icon) = MAX(coret_out%values(1)%ne_transp%vconv_eff(:,icon),v_floor)
@@ -1348,10 +1353,12 @@ contains
                coret_in%values(1)%ti_transp%vconv_eff(nrho,iion)
        enddo
        if (.not. c_v_cst) then
-          coret_out%values(1)%ti_transp%vconv_eff(1,:) = v_floor
+          ! coret_out%values(1)%ti_transp%vconv_eff(1,:) = v_floor
+         coret_out%values(1)%ti_transp%vconv_eff(1,:) = 0._8
        endif
        if (.not. e_v_cst) then
-          coret_out%values(1)%ti_transp%vconv_eff(nrho+2,:) = v_floor
+          ! coret_out%values(1)%ti_transp%vconv_eff(nrho+2,:) = v_floor
+         coret_out%values(1)%ti_transp%vconv_eff(nrho+2,:) = 0._8
        endif
        if (v_limit) then
           coret_out%values(1)%ti_transp%vconv_eff(:,:) = MAX(coret_out%values(1)%ti_transp%vconv_eff(:,:),v_floor)
@@ -1390,10 +1397,12 @@ contains
        coret_out%values(1)%te_transp%vconv_eff(nrho+2) = &
             coret_in%values(1)%te_transp%vconv_eff(nrho)
        if (.not. c_v_cst) then
-          coret_out%values(1)%te_transp%vconv_eff(1) = v_floor
+          ! coret_out%values(1)%te_transp%vconv_eff(1) = v_floor
+         coret_out%values(1)%te_transp%vconv_eff(1) = 0._8
        endif
        if (.not. e_v_cst) then
-          coret_out%values(1)%te_transp%vconv_eff(nrho+2) = v_floor
+          ! coret_out%values(1)%te_transp%vconv_eff(nrho+2) = v_floor
+         coret_out%values(1)%te_transp%vconv_eff(nrho+2) = 0._8
        endif
        if (v_limit) then
           coret_out%values(1)%te_transp%vconv_eff(:) = MAX(coret_out%values(1)%te_transp%vconv_eff(:),v_floor)
@@ -1436,10 +1445,12 @@ contains
                coret_in%values(1)%vtor_transp%vconv_eff(nrho,nion)
        enddo
        if (.not. c_v_cst) then
-          coret_out%values(1)%vtor_transp%vconv_eff(1,:) = v_floor
+          ! coret_out%values(1)%vtor_transp%vconv_eff(1,:) = v_floor
+         coret_out%values(1)%vtor_transp%vconv_eff(1,:) = 0._8
        endif
        if (.not. e_v_cst) then
-          coret_out%values(1)%vtor_transp%vconv_eff(nrho+2,:) = v_floor
+          ! coret_out%values(1)%vtor_transp%vconv_eff(nrho+2,:) = v_floor
+         coret_out%values(1)%vtor_transp%vconv_eff(nrho+2,:) = 0._8
        endif
        if (v_limit) then 
           coret_out%values(1)%vtor_transp%vconv_eff(:,:) = MAX(coret_out%values(1)%vtor_transp%vconv_eff(:,:),v_floor)
