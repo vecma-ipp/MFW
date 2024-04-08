@@ -718,12 +718,12 @@ def discontinuity_check(vals, reltol=5E-2, abstol=10E4, disc_criterion='combined
 
         if m > 0:
         
-            # Numbering is from 0 to m-2, gradient is gX^f_t = X_t+1 - X_t
+            # Numbering is from 0 to m-2, gradient is DX^f_t = X_t+1 - X_t
             diff = vals[i][0][1:] - vals[i][0][:-1]
-            # Relative gradient is gXrel^f_t = (X_t+1 - X_t) / X_t
+            # Relative gradient is DX(rel)^f_t = (X_t+1 - X_t) / X_t
             grad = np.divide(diff, vals[i][0][:-1])
 
-            # Array of second derivatives: interested in gX^f_t+1 - gX^b_t = X_t+2 - X_t+1 - X_t + X_t-1 
+            # Array of second derivatives: interested in DX^f_t+1 - DX^f_t = X_t+2 - X_t+1 - X_t + X_t-1 
             # Numeration from 1 to m-3
             #second_der = vals[i][0][2:] + vals[i][0][:-2] - 2*vals[i][0][1:-1] # first-order Laplacian without prefactor
             second_diff = vals[i][0][3:] - vals[i][0][2:-1] - vals[i][0][1:-2] + vals[i][0][:-3]
