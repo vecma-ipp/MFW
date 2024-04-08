@@ -1,13 +1,19 @@
 import csv
 import os
 import easyvvuq as uq
-# EasyVVUQ/QCG-PJ
-import eqi
+from easyvvuq.actions import Encode, Decode, Actions, CreateRunDirectory, ExecuteLocal, QCGPJPool
+from easyvvuq.actions.execute_qcgpj import EasyVVUQParallelTemplate
+
+
+# import eqi
 # from ual
+
 from ascii_cpo import read
+
 # from current package
 from base.cpo_encoder import CPOEncoder
 from base.cpo_decoder import CPODecoder
+from base.xml_element import XMLElement
 from base.utils import cpo_inputs
 from base.plots import plot_moments, plot_sobols
 
@@ -18,7 +24,7 @@ The electon and ion temperature and their gradient localisd on flux tube positio
 '''
 
 # UQ app
-def setup_gem0(ftube_index, common_dir, input_params, output_columns):
+def setup_gem0(ftube_index, common_dir, input_params, output_columns, xml=None):
     # CPO file containg initial values of uncertain params
     input_filename = "ets_coreprof_in.cpo"
     input_cponame = "coreprof"
@@ -39,7 +45,8 @@ def setup_gem0(ftube_index, common_dir, input_params, output_columns):
     encoder = CPOEncoder(cpo_filename=input_filename,
                           cpo_name=input_cponame,
                           input_dir=common_dir,
-                          ftube_index=ftube_index)
+                          ftube_index=ftube_index,
+                          xmlelement=xml)
 
     # The decoder
     decoder = CPODecoder(cpo_filename=output_filename,
@@ -47,7 +54,8 @@ def setup_gem0(ftube_index, common_dir, input_params, output_columns):
                          output_columns=output_columns)
 
     # The sampler
-    sampler = uq.sampling.PCESampler(vary=vary, polynomial_order=2)
+    pol_order = 4 #2
+    sampler = uq.sampling.PCESampler(vary=vary, polynomial_order=pol_order)
 
     # The Analysis
     stats = uq.analysis.PCEAnalysis(sampler=sampler, qoi_cols=output_columns)
@@ -55,7 +63,7 @@ def setup_gem0(ftube_index, common_dir, input_params, output_columns):
     return params, encoder, decoder, sampler, stats
 
 # Execution using QCG Pilot-Job
-def exec_pj(campaign, exec_path, ncores, log_level="info"):
+def exec_pj_old(campaign, exec_path, ncores, log_level="info"):
     qcgpjexec = eqi.Executor(campaign)
     qcgpjexec.create_manager(log_level=log_level)
 
@@ -66,6 +74,33 @@ def exec_pj(campaign, exec_path, ncores, log_level="info"):
     ))
     qcgpjexec.run(processing_scheme=eqi.ProcessingScheme.EXEC_ONLY)
     qcgpjexec.terminate_manager()
+
+# Execution using QCG Pilot-Job - new
+def exec_pj(campaign, exec_path, ncores, nnodes=None, mpi_model='srun', log_level="debug"):
+
+    exec_res = None
+
+    try:
+        print('Creating resource pool')
+
+        with QCGPJPool(
+                #qcgpj_executor=QCGPJExecutor(),
+                template=EasyVVUQParallelTemplate(),
+                template_params={
+                    'numCores':1           
+                }
+            ) as qcgpj:
+            
+            print(f">> Executing on a HPC machine")
+            exec_res = campaign.execute(pool=qcgpj).collate()
+        
+    except Exception as e:
+
+        print('!>> Exception during batch execution! :')
+        print(e)
+    
+    return exec_res
+
 
 # Main program
 if __name__ == "__main__":
@@ -81,10 +116,10 @@ if __name__ == "__main__":
 
     # Define the uncertain parameters (UQ inputs)
     input_params = {
-        "te.value": {"dist": "Uniform", "err":  0.2, "min": 0.},
-        "ti.value": {"dist": "Uniform", "err":  0.2, "min": 0.},
-        "te.ddrho": {"dist": "Uniform", "err":  0.2, "max": 0.},
-        "ti.ddrho": {"dist": "Uniform", "err":  0.2, "max": 0.}
+        "te.value": {"dist": "Uniform", "err":  0.5, "min": 0.},
+        "ti.value": {"dist": "Uniform", "err":  0.5, "min": 0.},
+        "te.ddrho": {"dist": "Uniform", "err":  0.5, "max": 0.},
+        "ti.ddrho": {"dist": "Uniform", "err":  0.5, "max": 0.}
     }
 
     # The quantities of intersts (UQ outputs)
@@ -94,6 +129,8 @@ if __name__ == "__main__":
     # base.utils.ftube_indices('gem0_coreprof_in.cpo','gem0_coretransp_out.cpo')
     # to get the list
     ftube_indices = [15, 31, 44, 55, 66, 76, 85, 94]
+
+    ftube_rhos = [0.14, 0.31, 0.44, 0.56, 0.67, 0.77, 0.86, 0.95] # these are rho_tor_norm
 
     # Campaign for mutliapp
     campaign = uq.Campaign(name='UQ_8FTGEM0_', work_dir=tmp_dir)
@@ -126,15 +163,30 @@ if __name__ == "__main__":
     sob1 = {qoi: [] for qoi in output_columns}
     sobt = {qoi: [] for qoi in output_columns}
 
+    # Load the MXL object
+    gem0xml = XMLElement(common_dir + "/" + "gem0.xml" )
+
     # Run Mutliapp
     for i, ft_index in enumerate(ftube_indices):
-        params, encoder, decoder, sampler, stats = setup_gem0(ft_index, common_dir, input_params, output_columns)
+
+        gem0xml.set_value('equilibrium_parameters.geometric.ra0', ftube_rhos[i])
+
+        params, encoder, decoder, sampler, stats = setup_gem0(ft_index, common_dir, input_params, output_columns, xml=gem0xml)
+
+        actions = Actions(
+                            CreateRunDirectory('/runs'),
+                            Encode(encoder),
+                            ExecuteLocal(exec_path),
+                            Decode(decoder),
+                            )
 
         camp_name =  "GEM0_FT"+str(i)
         campaign.add_app(name=camp_name,
                          params=params,
-                         encoder=encoder,
-                         decoder=decoder)
+                         actions=actions,
+                         #encoder=encoder,
+                         #decoder=decoder
+                         )
 
         # Set and run campaign
         campaign.set_app(camp_name)

@@ -1,19 +1,20 @@
 #!/bin/bash -l
 
 ## job name
-#SBATCH --job-name=UQ_8FTgem_
+#SBATCH --job-name=UQ_8FTgem0_
 
 ## stdout and stderr files
 #SBATCH --output=test-uq8ft-out.%j
 #SBATCH --error=test-uq8ft-err.%j
 
 ## wall time in format (HOURS):MINUTES:SECONDS
-#SBATCH --time=24:00:00
+###SBATCH --time=24:00:00
+#SBATCH --time=4:00
 
 ## number of nodes and tasks per node
 # order=3, n_params=4, n_subd=8, n_ft=8, 450 time steps -> 8192  across 40 (80 for hthreading, not used) cpus -> 216 nodes
 # order=3, n_params=4, n_subd=8, n_ft=8, 100 time steps-> 1821 -> 46 nodes (34 nodes?)
-#SBATCH --nodes=34
+#SBATCH --nodes=4
 #SBATCH --ntasks-per-node=40
 #SBATCH --ntasks-per-core=1
 ###SBATCH --cpus-per-task=8
@@ -50,7 +51,7 @@ export EASYPJ_CONFIG=conf.sh
 export MPIMOD=default #srunmpi
 
 if [ -z "${POLORDER}" ]; then
-    export POLORDER=2
+    export POLORDER=4
 fi
 
 echo -e '> In this run: use ExecuteLocal only + QCGPJ pool + '${MPIMOD}' exec mode + '${SLURM_NNODES} \
@@ -65,7 +66,9 @@ echo '> Here we take all 4 params +/- 50% error at rho_tor=[...] \n'
 scontrol show --detail job ${SLURM_JOBID}
 
 
-python3 tests/gem_multi_ft.py > test-uq8ft-log.${SLURM_JOBID}
+# python3 tests/gem_multi_ft.py > test-uq8ft-log.${SLURM_JOBID}
+
+python3 tests/gem0_multi_ft.py > test-uq8ft-log.${SLURM_JOBID}
 
 echo "> Finished an UQ SLURM job!"
 scontrol show --detail job ${SLURM_JOBID}
