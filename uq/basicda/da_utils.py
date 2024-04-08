@@ -2393,7 +2393,7 @@ def plot_1D_scalings(data, input_names=['te_value', 'ti_value', 'te_ddrho', 'ti_
                       )
 
         fig = ax.get_figure()
-        fig.savefig('scan_{0}_{1}.svg'.format(scaling, foldname))
+        fig.savefig(f"scan_{scaling}_{foldname}.png")
 
 def plot_2D_scalings(data, input_names=['te_value', 'ti_value', 'te_ddrho', 'ti_ddrho'], output_names=['ti_transp_flux'], scale_type=[('ti_value','ti_ddrho')], compare_vals=None, foldname='', traces=None, hists=None):
 

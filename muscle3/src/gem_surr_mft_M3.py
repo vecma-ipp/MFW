@@ -52,6 +52,8 @@ def gem_surr_M3(id=0):
     #init_cpo_dir = instance.get_setting('init_cpo_dir', 'str')
     bool_send_uncertainty = instance.get_setting('bool_send_uncertainty', 'bool') # bool for all any of the inputs for any of the locations to be outside of reference data
     model_type = instance.get_setting('surrogate_type', 'str') # 'ann' or 'gpr
+    model_x_scale = instance.get_setting('model_x_scale', 'str') # scale of original surrogate inputs
+    model_y_scale = instance.get_setting('model_y_scale', 'str') # scale of original surrogate 'labels'
     retrain_distance = instance.get_setting('retrain_distance', 'float') # distance to move outside of reference data to retrain surrogate
     use_equilibrium = instance.get_setting('use_equilibrium', 'bool') # boolean whether the surrogate needs new equilibrium data to infer transport
 
@@ -76,6 +78,20 @@ def gem_surr_M3(id=0):
     print(f"> Loading ES campaign with surrogates")
     camps = []
     mods = []
+
+    # Dictionary to map name of x-scale to lambda to transfrom original inputs
+    model_x_scale_dict = {
+        'lin': lambda x: x,
+        'log': lambda x: np.log(x),
+    }
+    x_scale_func = model_x_scale_dict[model_x_scale] if model_x_scale in model_x_scale_dict.keys() else model_x_scale_dict['lin']
+
+    # Dictionary to map name of y-scale to transform surrogate outputs
+    model_y_scale_dict = {
+        'lin': lambda x: x,
+        'log': lambda x: np.exp(x),
+    }
+    y_scale_func = model_y_scale_dict[model_y_scale] if model_y_scale in model_y_scale_dict.keys() else model_y_scale_dict['lin']
 
     if model_type in ['gpr', 'ann']:
         for ft in range(n_fts): #TODO: if settings reading can be moved before the main loop, easysurrogates can be initialised once
@@ -144,6 +160,9 @@ def gem_surr_M3(id=0):
         profiles_in = profiles_in[input_names_ind_permut] #TODO: either fix original order, or store permutation separately
         #print(f"> Read incoming core profile \n {profiles_in}") ###DEBUG
 
+        # Apply scaling to inputs if needed
+        profiles_in = np.apply_along_axis(x_scale_func, 0, profiles_in)
+
         # Get (n_features, n_samples) from surrogate from (n_features, n_radial_points)
         # TODO should be (n_features, n_radial_points) -> (n_features, n_radial_points, n_samples)
         if profiles_in.shape[1] == 1:
@@ -186,7 +205,7 @@ def gem_surr_M3(id=0):
         fluxes_out_std = np.zeros((n_fts, n_dim_out))
 
         # Check if input values are within learned bounds
-        bool_outofbounds, dict_outofbounds = check_outof_learned_bounds(profiles_in, ref_bounds)
+        bool_outofbounds, dict_outofbounds = check_outof_learned_bounds(profiles_in, ref_bounds) #TODO works for linear scaling only!
         
         # Infere QoI values for every flux tube
         for n_ft, r in enumerate(rho_ind_s): # actual value not used!
@@ -212,8 +231,12 @@ def gem_surr_M3(id=0):
         #TODO: find MUSCLE3 format for dataframes?
         #TODO: initialise the default data to fill in coretransp structures - look up GEM0 in Python - could be done once
 
-        fluxes_out_dict = {k:fluxes_out[:, i] for i,k in enumerate(output_names)}
 
+        # Apply scaling to outputs if needed 
+        fluxes_out = np.apply_along_axis(y_scale_func, 1, fluxes_out)
+        fluxes_out_std = np.apply_along_axis(y_scale_func, 1, fluxes_out_std)
+
+        fluxes_out_dict = {k:fluxes_out[:, i] for i,k in enumerate(output_names)}
         #print(f"fluxes_out_dict: \n{fluxes_out_dict}") ###DEBUG
         
         coretransp_cpo_obj = output_value_to_coretransp(

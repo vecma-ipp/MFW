@@ -164,6 +164,8 @@ settings:
   
   #turbulence.profs_out: "ti_transp.flux"
   turbulence.surrogate_type: "gpr" #"scikit_regression"
+  turbulence.model_x_scale: "lin"
+  turbulence.model_y_scale: "lin"
 
   turbulence.surrogate_path: "../../../../../forworkflow/gem0_es_model"
   
@@ -181,4 +183,4 @@ settings:
 #  - every 1
 #    start 0
   
-# COMMENT: running ETS+CHEASE+GEM0SUR-WF for dt=10^-3 for 48 steps
+# COMMENT: running ETS+CHEASE+GEMSUR-WF for dt=2.5*10^-4 for 200 steps

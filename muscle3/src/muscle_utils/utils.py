@@ -431,7 +431,7 @@ def output_value_to_coretransp(
 
     coretransp_datastructure = read(coretransp_file, 'coretransp')
 
-    print(f"coretransp_datastructure.values[0].ti_transp.flux shape : {coretransp_datastructure.values[0].ti_transp.flux.shape}") ###DEBUG
+    #print(f"coretransp_datastructure.values[0].ti_transp.flux shape : {coretransp_datastructure.values[0].ti_transp.flux.shape}") ###DEBUG
 
     if len(coretransp_datastructure.values[0].ti_transp.flux) != n_fts:
         coretransp_datastructure.values[0].ti_transp.flux = np.zeros((n_fts, 1))
