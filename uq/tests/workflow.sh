@@ -49,6 +49,7 @@ itnum=0
 echo ">>> Making a new surrogate for simulation workflow"
 # Copy the necessary files from common folder - the dataset CSV should already be there
 surrogate_files=( ${surrogate_op} gem_data_ind.py train_model_ind.py test_model_ind.py )
+
 surdata=gem0py_new_local.csv
 
 locsurrogatedir=easysurrogate

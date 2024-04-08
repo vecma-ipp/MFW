@@ -153,7 +153,7 @@ def exec_pj_no_templ(campaign,):
 
     exec_res = 0
 
-    n_c_p_j = 8
+    n_c_p_j = 1
 
     try:
         print(">> Creating resource pool")
@@ -309,6 +309,8 @@ if __name__ == "__main__":
         base_dataset_filename = "gem_new_baseline.csv"
     
     target_dataset_filename = "gem0py_new_local.csv"
+    #target_dataset_filename = "gem0py_comb_0_0.csv"
+    
     output_filename = "ets_coreprof_out.cpo"
     test_script_dir = "tests"
 
