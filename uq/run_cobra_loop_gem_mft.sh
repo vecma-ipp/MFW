@@ -9,7 +9,7 @@
 
 ## wall time in format (HOURS):MINUTES:SECONDS
 ###SBATCH --time=24:00:00
-#SBATCH --time=4:00
+#SBATCH --time=4:00:00
 
 ## number of nodes and tasks per node
 # order=3, n_params=4, n_subd=8, n_ft=8, 450 time steps -> 8192  across 40 (80 for hthreading, not used) cpus -> 216 nodes

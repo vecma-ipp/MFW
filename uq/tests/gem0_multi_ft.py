@@ -4,6 +4,7 @@ import easyvvuq as uq
 from easyvvuq.actions import Encode, Decode, Actions, CreateRunDirectory, ExecuteLocal, QCGPJPool
 from easyvvuq.actions.execute_qcgpj import EasyVVUQParallelTemplate
 
+import pickle 
 
 # import eqi
 # from ual
@@ -164,12 +165,14 @@ if __name__ == "__main__":
     sobt = {qoi: [] for qoi in output_columns}
 
     # Load the MXL object
-    gem0xml = XMLElement(common_dir + "/" + "gem0.xml" )
+    #print(f"XML file exists: { os.path.isfile( os.path.join(common_dir, 'gem0.xml') ) }") ###DEBUG
+    gem0xml = XMLElement(common_dir + "/" + "gem0.xml")
+    #print(f"gem0xml: {gem0xml.__dict__}") ###DEBUG
 
     # Run Mutliapp
     for i, ft_index in enumerate(ftube_indices):
 
-        gem0xml.set_value('equilibrium_parameters.geometric.ra0', ftube_rhos[i])
+        gem0xml.set_value('grid.ra0', ftube_rhos[i])
 
         params, encoder, decoder, sampler, stats = setup_gem0(ft_index, common_dir, input_params, output_columns, xml=gem0xml)
 
@@ -191,25 +194,34 @@ if __name__ == "__main__":
         # Set and run campaign
         campaign.set_app(camp_name)
         campaign.set_sampler(sampler)
-        campaign.draw_samples()
-        campaign.populate_runs_dir()
+        
+        #campaign.draw_samples()
+        #campaign.populate_runs_dir()
+        
         exec_pj(campaign, exec_path, 1)
-        campaign.collate()
+        
+        #campaign.collate()
         campaign.apply_analysis(stats)
 
         # Get and store results
         result = campaign.get_last_analysis()
 
-        for qoi in output_columns:
-            means[qoi].append(result.describe(qoi, 'mean')[i])
-            stds[qoi].append(result.describe(qoi, 'std')[i])
-            s1 = {}
-            st = {}
-            for par in list(input_params.keys()):
-                s1.update({par: result.sobols_first(qoi)[par][i]})
-                st.update({par: result.sobols_total(qoi)[par][i]})
-            sob1[qoi].append(s1)
-            sobt[qoi].append(st)
+        # Saving a pickle of results dataframe
+        pickle_filename = 'gem0_uq_results_' + str(i) + os.environ['SLURM_JOBID']  + '.pickle'
+        with open(pickle_filename, "bw") as file_pickle:
+            pickle.dump(result, file_pickle)
+
+    # Print the statistics
+    for qoi in output_columns:
+        means[qoi].append(result.describe(qoi, 'mean')[i])
+        stds[qoi].append(result.describe(qoi, 'std')[i])
+        s1 = {}
+        st = {}
+        for par in list(input_params.keys()):
+            s1.update({par: result.sobols_first(qoi)[par][i]})
+            st.update({par: result.sobols_total(qoi)[par][i]})
+        sob1[qoi].append(s1)
+        sobt[qoi].append(st)
 
     # Plot Descrtiptive Statistics and SA
     for i, qoi in enumerate(output_columns):
