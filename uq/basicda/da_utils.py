@@ -1865,6 +1865,7 @@ def get_coreprof_ev_acf(value_ev, name='ti', lags=[1,2,3,4,5,6,7,8,9,10]):
             number of effective samples (one per ACF window)
             # ACF object
     """ 
+    #print(f"value_ev: {value_ev}") ###DEBUG
     
     n_sample_min = 3
 
@@ -1885,6 +1886,7 @@ def get_coreprof_ev_acf(value_ev, name='ti', lags=[1,2,3,4,5,6,7,8,9,10]):
         if n_sample < n_sample_min:
             ac_len.append(0)
             ac_num.append(0)
+            print("Breaking beacuse the time series are too short!")
             break
 
         mean_val = value_ev[i].mean()
@@ -2614,14 +2616,15 @@ def plot_timetraces_act(traces, avg, std, sem, foldname='', alpha_discard=0.3, a
     fig.savefig('timetraces_act_{0}.pdf'.format(foldname))
     plt.close()
 
-def time_traces_per_run(traces, run_len=450, foldname='', alpha_discard=0.3):
+def time_traces_per_run(traces, run_len=450, foldname='', alpha_discard=0.3, **kwargs):
     """
-    Goes through timetraces for a single runs though each submission and:
+    Goes through timetraces for a single run through each submission and:
         calculates ACT, N_s_eff, AVG, STD, SEM
     Plots the timetraces with data from each run
     """
 
     y_lim = (1.9E+6, 2.9E+6) #(1.8E+6, 3.0E+6) #(1.5E+6, 2.8E+6) #(1.E+4, 3.5E+6)
+    y_lim = (0, 5E+6)
 
     plt.style.use("latex10pt")
     plt.rcParams.update({"axes.grid": True, "font.family": "serif", "text.usetex": False})
@@ -2674,6 +2677,7 @@ def time_traces_per_run(traces, run_len=450, foldname='', alpha_discard=0.3):
         act_loc, acn_loc = get_coreprof_ev_acf(np.array([traces_loc]),
                 name='locacf'+foldname+'_substep_'+str(i),
                 lags=lags_list_apl)
+        print(f"act={acn_loc}, acn={acn_loc}") ###DEBUG
         #TODO: take an window-average; transfer to gem_da.py
         #traces_acf_loc = traces_loc[int(act_loc[0]/2.):-1:int(act_loc[0])]
         traces_acf_loc = np.array([traces_loc[i*int(act_loc[0]):(i+1)*int(act_loc[0])].mean() for i in range(int(acn_loc[0]))])
@@ -2720,6 +2724,7 @@ def time_traces_per_run(traces, run_len=450, foldname='', alpha_discard=0.3):
     act_loc, acn_loc = get_coreprof_ev_acf(np.array([traces_loc]),
             name='locacf'+foldname+'_substep_'+str(i),
             lags=lags_list_apl)
+    print(f"act={acn_loc}, acn={acn_loc}") ###DEBUG
     traces_acf_loc = traces_loc[int(act_loc[0]/2.):-1:int(act_loc[0])]
 
     lens[i] = len(traces_loc)
@@ -2870,6 +2875,63 @@ def time_traces_per_run(traces, run_len=450, foldname='', alpha_discard=0.3):
     ##########
     fig.savefig(f"sem_act_timetraces_{foldname}.pdf")
     plt.close()
+
+    ##########
+    ### Running through the history of the sequential estimaion and applying difference convergece criterion
+
+    runnum = kwargs['runnum'] if 'runnum' in kwargs else 1
+
+    criteria_dict = {
+        'sem_rel': lambda stat_dict, etol: stat_dict['sem']/stat_dict['avg'] < etol , 
+    }
+
+    n_an_steps = 10
+
+    etol = np.logspace(-4, 0, n_an_steps)
+    print(f"etol={etol}") ###DEBUG
+
+    conv_nts_list = [None for j in range(n_an_steps)]
+
+    for crit_name, crit_func in criteria_dict.items():
+        for j,et in enumerate(etol):
+            print(f"Checking criterion {crit_name} with etol={et:.7f}")
+            for i in range(n_r-1):
+                    #print(f"Checking microiteration {i}")
+                    stat_dict = {'sem': sems[i], 'avg': means[i]}
+                    crit_val = crit_func(stat_dict, et)
+                    #print(f"Criterion value: {crit_val}")
+                    if crit_val:
+                        conv_nts_list[j] = n_disc + run_len * i
+                        break
+            if conv_nts_list[j] is None:
+                conv_nts_list[j] = n_tt
+
+        # Plotting the convergence plot
+        print(f"conv_nts_list={conv_nts_list}") ###DEBUG
+        fig, ax = plt.subplots(figsize=(7,7))
+        ax.plot(etol, 
+                conv_nts_list, 
+                color='b', 
+                marker='o',
+                label=crit_name,
+                )
+        ax.set_yscale('log')
+        ax.set_xscale('log')
+        ax.set_xlabel('Convergence criterion value')
+        ax.set_ylabel('Number of time steps to convergence')
+        ax.set_title(f"Convergence plot for {crit_name}, run {runnum}")
+        ax.legend(loc='best')
+        fig.savefig(f"conv_plot_{crit_name}_{foldname}.pdf")
+        plt.close()                    
+
+    # Saving the results of the convergence analysis
+    conv_csv_array = np.concatenate(
+                (np.arange(n_an_steps).reshape(-1,1),
+                 np.array(conv_nts_list).reshape(-1,1)),
+                            axis=1)
+    np.savetxt('res_conv_perrun_'+foldname+'.csv', conv_csv_array.astype(float), delimiter=",", header='runnum, conv_nts')
+
+    return lens, acts, means, stds, sems
 
 def get_reference_vals(p,a, filename='AUG_mix-lim_gem_inoutput.txt', path='../data/'):
             """
