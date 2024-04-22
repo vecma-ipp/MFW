@@ -43,7 +43,7 @@ from shutil import copyfileobj
 import re
 
 import lhsmdu
-from scipy.stats import qmc
+from scipy.stats import qmc, linregress
 
 #latexplotlib
 import latexplotlib as lpl
@@ -1892,12 +1892,13 @@ def get_coreprof_ev_acf(value_ev, name='ti', lags=[1,2,3,4,5,6,7,8,9,10]):
         mean_val = value_ev[i].mean()
         var_val  = value_ev[i].var()
 
+        # CHOICE I: ACF computation
         # Option I.0: Numpy Correlate function
         #acf_test = np.correlate(value_ev[i], value_ev[i], mode='full')[n_sample//2:]
 
         # Option I.1: ACF(n) = COV(Y(t),Y(t+n))/sqrt(VAR(Y(t)*VAR(Y(t+n))
-        acfs = [1. if l==0 else np.corrcoef(value_ev[i][l:], value_ev[i][:-l])[0][-1] for l in lags]
-        acf_norm = np.corrcoef(value_ev[i][:], value_ev[i][:])[0][-1]
+        # acfs = [1. if l==0 else np.corrcoef(value_ev[i][l:], value_ev[i][:-l])[0][-1] for l in lags]
+        # acf_norm = np.corrcoef(value_ev[i][:], value_ev[i][:])[0][-1]
         
         # Option I.2: ACF(n) = 1/(N-n) SUM((Y(t)-AVG(Y(t)))*(Y(t+n)-AVG(t)))
         #acfs = [1. if l==0 else np.divide(np.dot(value_ev[i][:-l] - mean_val, value_ev[i][l:] - mean_val), (n_sample - l)*var_val) for l in lags]
@@ -1937,10 +1938,12 @@ def get_coreprof_ev_acf(value_ev, name='ti', lags=[1,2,3,4,5,6,7,8,9,10]):
         sf = cf.conjugate()*cf
         acfs = np.fft.ifft(sf).real[:n_sample]/var_val/n_sample
         lags = np.arange(n_sample)
+        acf_norm = acfs[0]
 
         acfs_np = np.array(acfs)
         #print('acfs_np', acfs_np) ###DEBUG
 
+        #CHOICE II: ACT definition - criterion computation
         # TODO read up methods and implementations for that:
         # Options II: How to define the ACT, the concrete lag value:
         # 1) min(n) value for which ACF(n) <= 1/sqrt(n)
@@ -1971,12 +1974,12 @@ def get_coreprof_ev_acf(value_ev, name='ti', lags=[1,2,3,4,5,6,7,8,9,10]):
         # II.3.c)
         #if isinstance(value_ev[i], np.ndarray) :
         #    errors = [np.std(value_ev[i][:l]) / (np.abs(np.mean(value_ev[i][:l])) * np.sqrt(float(l))) for l in lags]
-        
+
         lags_np = np.array(lags)
         errors_np = np.array(errors)
         #print('ACF errors: {}'.format(errors)) ###DEBUG
 
-        # III: Methods to choose n-s for ACF(n)
+        # CHOICE III: Methods to choose n-s for ACF(n)
         # III.1: Defining ACT as the smallest lag size L that: ACF(L)<= Err(L)
         """
         acl = lags[0]
@@ -1995,7 +1998,9 @@ def get_coreprof_ev_acf(value_ev, name='ti', lags=[1,2,3,4,5,6,7,8,9,10]):
 
         acfs_normalised = np.divide(acfs_int, acf_norm)
 
-        # IV:  Methods to define ACT from ACF(n)
+        print(f"lags = {lags_int}, \nacfs = {acfs_int}") ###DEBUG
+
+        # CHOICE IV:  Methods to define ACT from ACF(n)
         # Option IV.1: Calculating autocorrelation time as lag for which ACF drops below its calcualtion error
         decor_lags = np.where(acfs_int < errors_int)[0]
 
@@ -2014,10 +2019,21 @@ def get_coreprof_ev_acf(value_ev, name='ti', lags=[1,2,3,4,5,6,7,8,9,10]):
         print('tau_ms: ', tau_ms, 'M: ', m_sum) ###DEBUG
         """
 
+        # Option IV.3: Fitting an exponential decay to ACF : ACF(t) = exp(-t/tau)
+        n_l_l_nn_acf = 0
+        for i_i, acfs_i in enumerate(acfs_int):
+            if acfs_i < 0.0:
+                break
+            else:
+                n_l_l_nn_acf = i_i
+        print(f"n_l_l_nn_acf= {n_l_l_nn_acf}") ###DEBUG
+        acl = -1. / linregress(lags_int[0:n_l_l_nn_acf-1], np.log(acfs_int[0:n_l_l_nn_acf-1])).slope
+
         ac_len_cur = float(acl)
         ac_len.append(ac_len_cur)
         ac_num.append(int(n_sample/float(ac_len_cur)))
        
+        print(f"ACT = {acl}") ###DEBUG
         #print('ACF data:'); print([ac_len[0], ac_num[0], n_sample]) ###DEBUG
         #print('ACF data:'); print([acfs_np, acfs_int, acfs_normalised, acf_norm]) ###DEBUG
 
@@ -2624,11 +2640,9 @@ def time_traces_per_run(traces, run_len=450, foldname='', alpha_discard=0.3, **k
     Plots the timetraces with data from each run
     """
 
-    y_lim = (1.9E+6, 2.9E+6) #(1.8E+6, 3.0E+6) #(1.5E+6, 2.8E+6) #(1.E+4, 3.5E+6)
-
+    #y_lim = (1.9E+6, 2.9E+6) #(1.8E+6, 3.0E+6) #(1.5E+6, 2.8E+6) #(1.E+4, 3.5E+6)
     y_min = traces.min()
     y_max = traces.max()
-
     y_lim = (y_min - 0.5*abs(y_min), y_max + 0.5*abs(y_max))
 
     plt.style.use("latex10pt")
@@ -2731,7 +2745,7 @@ def time_traces_per_run(traces, run_len=450, foldname='', alpha_discard=0.3, **k
     act_loc, acn_loc = get_coreprof_ev_acf(np.array([traces_loc]),
             name='locacf'+foldname+'_substep_'+str(i),
             lags=lags_list_apl)
-    print(f"act={acn_loc}, acn={acn_loc}") ###DEBUG
+    print(f"act={act_loc}, acn={acn_loc}") ###DEBUG
     traces_acf_loc = traces_loc[int(act_loc[0]/2.):-1:int(act_loc[0])]
 
     lens[i] = len(traces_loc)
@@ -2836,7 +2850,7 @@ def time_traces_per_run(traces, run_len=450, foldname='', alpha_discard=0.3, **k
     #plt.close()
 
     #--- Plotting Relative SEM
-    scale_factor_sem_rel = 1E-7
+    scale_factor_sem_rel = 2E-7
     ax22 = ax2
 
     ax22.plot(np.arange(n_disc+run_len, n_tt, run_len), 
@@ -2900,7 +2914,17 @@ def time_traces_per_run(traces, run_len=450, foldname='', alpha_discard=0.3, **k
     #ax5.set_ylim(ymin=0, ymax=100_000/scale_factor_dmn)
     #fig5.tight_layout()
     #fig5.savefig('rabs_mean_{0}.pdf'.format(foldname))
-    
+
+    # --- Plotting actual mean error
+    scale_factor_merr = 1.  
+    mean_gt = means[-1]
+
+    ax23 = ax2
+
+    ax23.plot(np.arange(n_disc+run_len, n_tt, run_len), 
+             abs(means - mean_gt)/scale_factor_sem, 
+             color='c', 
+             label=f"Mean Error, {scale_factor_sem} $\\cdot W/m^{{2}}$")
 
     ############################################
     ### Running through the history of the sequential estimaion and applying difference convergece criterion
@@ -2911,10 +2935,10 @@ def time_traces_per_run(traces, run_len=450, foldname='', alpha_discard=0.3, **k
         'sem_rel': lambda stat_dict, etol: stat_dict['sem']/stat_dict['avg'] < etol , 
     }
 
-    n_an_steps = 10
+    n_an_steps = 64
 
-    etol = np.logspace(-3.5, 0.5, n_an_steps)
-    etol = np.linspace(0.005, 0.2, n_an_steps)
+    etol = np.logspace(-10., 0., n_an_steps)
+    #etol = np.linspace(1E-9, 1., n_an_steps)
     #print(f"etol={etol}") ###DEBUG
 
     conv_nts_list = [None for j in range(n_an_steps)]
@@ -2943,8 +2967,8 @@ def time_traces_per_run(traces, run_len=450, foldname='', alpha_discard=0.3, **k
                 label=crit_name,
                 )
         
-        #ax_c.set_yscale('log')
-        #ax_c.set_xscale('log')
+        ax_c.set_yscale('log')
+        ax_c.set_xscale('log')
         
         ax_c.set_xlabel('Convergence criterion value')
         ax_c.set_ylabel('Number of time steps to convergence')
@@ -2963,7 +2987,7 @@ def time_traces_per_run(traces, run_len=450, foldname='', alpha_discard=0.3, **k
     #################################
     # Plotting the vertical lines for convergence
     #--- Plotting vertical line and saving
-    n_etol = -2
+    n_etol = -8  # int(n_an_steps//2)
     #n_w_c = 12 # n_disc+n_w_c*run_len
     n_ts_conv = conv_nts_list[n_etol]
 
@@ -2986,7 +3010,7 @@ def time_traces_per_run(traces, run_len=450, foldname='', alpha_discard=0.3, **k
     fig.savefig(f"sem_act_timetraces_{foldname}.pdf")
     plt.close()
 
-    return lens, acts, means, stds, sems
+    return lens, acts, means, stds, sems, conv_nts_list, etol
 
 def get_reference_vals(p,a, filename='AUG_mix-lim_gem_inoutput.txt', path='../data/'):
             """
