@@ -2935,10 +2935,11 @@ def time_traces_per_run(traces, run_len=450, foldname='', alpha_discard=0.3, **k
         'sem_rel': lambda stat_dict, etol: stat_dict['sem']/stat_dict['avg'] < etol , 
     }
 
-    n_an_steps = 64
 
-    etol = np.logspace(-10., 0., n_an_steps)
-    #etol = np.linspace(1E-9, 1., n_an_steps)
+    n_an_steps = kwargs['n_an_steps'] if 'n_an_steps' in kwargs else 128
+
+    etol = np.logspace(-3, 0., n_an_steps)
+    #etol = np.linspace(1E-3, 1., n_an_steps)
     #print(f"etol={etol}") ###DEBUG
 
     conv_nts_list = [None for j in range(n_an_steps)]
