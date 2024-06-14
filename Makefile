@@ -290,7 +290,7 @@ revert-gem:
 	&& echo -e "\033[32m\033[1m -- OK -- \033[0m") \
 	|| echo -e "\033[31m\033[1m -- FAIL -- \033[0m"
 
-gem: ual libbds patch-gem # ual libbds get-gem patch-gem
+gem: ual libbds get-gem patch-gem
 	@echo -e "\033[36m\033[1m ++++ Build GEM ++++ \033[0m"; \
 	($(MAKE) --no-print-directory -C externals -f Makefile.gem \
 	&& echo -e "\033[32m\033[1m -- OK -- \033[0m") \
@@ -299,10 +299,12 @@ gem: ual libbds patch-gem # ual libbds get-gem patch-gem
 get-gem:
 	@if [ ! -d "externals/gem" ]; then \
 	  echo "Checking out gem..."; \
-		svn co $(SVNURL_SOLPS)/GEM/trunk externals/gem; \
+		#svn co $(SVNURL_SOLPS)/GEM/trunk externals/gem; \
+		git clone git@${GITLABADR_PSNC}:ets/gem.git externals/gem; \
 	else  \
 		echo "Updating gem..."; \
-		svn up externals/gem; \
+		#svn up externals/gem; \
+		git pull externals/gem; \
 	fi
 
 clean-gem: revert-gem

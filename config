@@ -367,6 +367,44 @@ endif
 
 
 ##########################################################################################
+# RAVEN (MPCDF) ############################################################################
+ifeq ($(SYS),RAVEN)
+export CC = icc
+export CCFLAGS = -g -O3 -fPIC
+export FC90= ifort
+#export FC90FLAGS = -g -O3 -fPIC 
+#export FC90FLAGS = -g -O2 -fPIC
+export FC90FLAGS = -g -O2 -fPIC -traceback
+#export FC90FLAGS = -g -O0 -traceback -fPIC # for debugging
+export FC77 = ifort
+export FC77FLAGS = ${FC90FLAGS}
+export MPIF90 = mpiifort
+export MPIFLAGS = ${FC90FLAGS}
+export FPP = fpp
+#export FPPFLAGS =  
+export FPPFLAGS = -traceback
+export LD = ifort
+export LDFLAGS =
+
+export FPPGEM = -DMPI -DMPI2 -DMPI_REAL=MPI_DOUBLE_PRECISION \
+       -DMPI_COMPLEX=MPI_DOUBLE_COMPLEX
+
+export MODSPEC = -module 
+
+export MKL_LIB = ${MKL_HOME}/lib/intel64
+export LIBLAPACK = -I${MKL_HOME}/include -Wl,--start-group ${MKL_LIB}/libmkl_intel_lp64.a \
+${MKL_LIB}/libmkl_sequential.a ${MKL_LIB}/libmkl_core.a -Wl,--end-group -lpthread -lm
+export FFTW_INC = -I${FFTW_HOME}/include
+export FFTW_LIB = -L${FFTW_HOME}/lib -lfftw3
+
+export ORB5_MOD = RAVEN
+export ORB5_LDDIRS = -L${MKL_LIB} -L${HDF5_HOME}/lib -L${HOME}/lib/O
+export ORB5_LDFLAGS = -lmkl_scalapack_lp64 -lmkl_blacs_intelmpi_lp64 -lmkl_intel_lp64  -lmkl_sequential -lmkl_core -lpthread -lfutils -lhdf5_fortran -lhdf5 -lz -lbsplines -lpppack
+endif
+
+
+
+##########################################################################################
 # Helios (IFERC) #########################################################################
 ifeq ($(SYS),HELIOS)
 export CC = icc
