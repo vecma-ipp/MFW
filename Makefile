@@ -280,7 +280,7 @@ patch-gem:
 	@grep -q Deallocate externals/gem/actor/itm_cpos.h90 \
 	&& echo -e "\033[32m\033[1m -- ALREADY PATCHED -- \033[0m" \
 	|| (echo -e "\033[36m\033[1m ++++ Patch GEM sources ++++ \033[0m"; \
-	(patch -p0 -i externals/gem-tmppatch.diff \
+	(if [[ "${SYS}" == "RAVEN" ]]; then patch -p0 -i externals/gem-tmppatch_raven.diff; else patch -p0 -i externals/gem-tmppatch.diff; fi \
 	&& echo -e "\033[32m\033[1m -- OK -- \033[0m") \
 	|| echo -e "\033[31m\033[1m -- FAIL -- \033[0m")
 
@@ -304,7 +304,9 @@ get-gem:
 	else  \
 		echo "Updating gem..."; \
 		#svn up externals/gem; \
-		git pull externals/gem; \
+		#git pull externals/gem; \
+		echo  "Not using git pull!"; \
+		# TODO git pull will fail due to a previous patch! \
 	fi
 
 clean-gem: revert-gem
