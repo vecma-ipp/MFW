@@ -95,7 +95,7 @@ Index: externals/chease/src-f90/Makefile.define_FLAGS
 ===================================================================
 --- externals/chease/src-f90/Makefile.define_FLAGS	(revision 1281)
 +++ externals/chease/src-f90/Makefile.define_FLAGS	(working copy)
-@@ -427,3 +427,148 @@
+@@ -427,3 +427,163 @@
      OBJS_euitm =
    endif
  endif
@@ -243,6 +243,21 @@ Index: externals/chease/src-f90/Makefile.define_FLAGS
 +    OBJS_euitm = 
 +  endif 
 +endif 
++ifeq ($(CHEASE_MACHINE),raven) 
++  ifeq ($(CHEASE_F90),ifort) 
++    F90 = ifort 
++    F90FLAGS = -O2 -g -r8 -fPIC  -I$(INC_UAL) -I$(INC_XML) -I$(DIR_interpos) 
++    F90FLAGS_parser = -O1 -r8 -fPIC  -I$(INC_UAL) -I$(INC_XML) -I$(DIR_interpos) 
++    LDFLAGS = -O2 -g -r8 -fPIC  -I$(INC_UAL) -I$(INC_XML)
++    FUTILS = $(PWD)/futils_src 
++    INCL_FUTILS= -I$(FUTILS) 
++    INCL_HDF5 = -I$(HDF5_HOME)/include 
++    LIBS =  -L$(LIB_UAL) -lual -L$(LIB_XML) -lxmllib -lz -L$(MKL_LIB) -llapack -lblas 
++    LIBS_HDF5 =  -L$(FUTILS) -lfutils -L$(HDF5_HOME)/lib -lhdf5_fortran -lhdf5 -lz $(LIBS) 
++    LIBSlibxml = -lxml2
++    OBJS_euitm = 
++  endif 
++endif 
 +
 +ifeq ($(CHEASE_MACHINE),neale) 
 +  ifeq ($(CHEASE_F90),ifort) 
@@ -263,7 +278,7 @@ Index: externals/chease/src-f90/Makefile.define_MACHINE
 ===================================================================
 --- externals/chease/src-f90/Makefile.define_MACHINE	(revision 1281)
 +++ externals/chease/src-f90/Makefile.define_MACHINE	(working copy)
-@@ -60,4 +60,34 @@
+@@ -60,4 +60,37 @@
   ifneq (,$(findstring yes,$(ITM_ENVIRONMENT_LOADED)))
      # overwrites the CHEASE_MACHINE set in Makefile.define_MACHINE by using hostname
      CHEASE_MACHINE = gateway_with_itm
@@ -294,6 +309,9 @@ Index: externals/chease/src-f90/Makefile.define_MACHINE
 + endif
 + ifeq ($(SYS),COBRA)
 +   CHEASE_MACHINE = cobra
++ endif
++ ifeq ($(SYS),RAVEN)
++   CHEASE_MACHINE = raven
 + endif
 + ifeq ($(SYS),NEALE)
 +   CHEASE_MACHINE = neale
