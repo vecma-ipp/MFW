@@ -89,7 +89,7 @@ MPI_FC90FLAGS += ${RPATHLINK_FLAG}
 
 #TEST: compile all components for debug
 #FC90FLAGS += -O0 -Wall
-FC90FLAGS_DEBUG = -g -O0 -Wall -fPIC -traceback -Iinclude/COBRA -I../ual/include/COBRA/fortran_interface -I../standalone/include/COBRA -I../ual/lib/COBRA/types -I../ual/include/COBRA/types -module include/COBRA -pthread -I/u/yyudin/muscle3/include -Wl,-rpath-link,/cobra/u/yyudin/muscle3/lib -Wl,-rpath-link,/cobra/u/yyudin/muscle3/lib
+FC90FLAGS_DEBUG = -g -O0 -Wall -fPIC -traceback -Iinclude/COBRA -I../ual/include/COBRA/fortran_interface -I../standalone/include/COBRA -I../ual/lib/COBRA/types -I../ual/include/COBRA/types -module include/COBRA -pthread -I/u/yyudin/muscle3/include -Wl,-rpath-link,/cobra/u/yyudin/muscle3/lib -Wl,-rpath-link,/cobra/u/yyudin/muscle3/lib -I../../json-fortran/build
 MPI_FC90FLAGS_DEBUG = -g -O0 -Wall -fPIC -traceback -Iinclude/COBRA -I../ual/include/COBRA/fortran_interface -I../standalone/include/COBRA -I../ual/lib/COBRA/types -I../ual/include/COBRA/types -module include/COBRA -pthread -DMUSCLE_ENABLE_MPI -I/u/yyudin/muscle3/include -Wl,-rpath-link,/cobra/u/yyudin/muscle3/lib -Wl,-rpath-link,/cobra/u/yyudin/muscle3/lib
 
 # objects files ################################################################
@@ -186,9 +186,9 @@ ${OBJDIR}/gem_M3.o: gem_M3.f90
 # ${OBJDIR}/chease_M3.o: chease_M3.f90
 # 	${FC90} -o $@ -c $< $(FC90FLAGS_DEBUG)
 
-# #For debugging of ets_M3 reading issues
-# ${OBJDIR}/ets_M3.o: ets_M3.f90
-# 	${FC90} -o $@ -c $< $(FC90FLAGS_DEBUG)
+#For debugging of ets_M3 reading issues
+${OBJDIR}/ets_M3.o: ets_M3.f90
+	${FC90} -o $@ -c $< $(FC90FLAGS_DEBUG)
 
 # #For debugging of imp4dv coreprof buffer issue
 # ${OBJDIR}/imp4dv_M3.o: imp4dv_M3.f90
