@@ -103,7 +103,7 @@ stateinit=../${commondir}/${initcoreprofcpo}
 stateinit_eq=../${commondir}/${initequilibriumcpo}
 python ${compare_op} ${statelast} ${stateinit} ${statelast_eq} ${stateinit_eq}
 
-# Copy the resulting core profile to the root directory
+# Copy the resulting core profile to the parent directory
 cp ${statelast} ../
 
 echo ">>> Finished the surrogate workflow!"

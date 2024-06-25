@@ -285,7 +285,7 @@ if __name__ == "__main__":
     n_samples = int(sys.argv[2]) if len(sys.argv) > 2 else 32
     print(f">> Using number of samples: {n_samples}")
 
-    # Input variable: CoV of Q variation - to perfrom scan in level oa aleatrocic uncertainty
+    # Input variable: CoV of Q variation - to perfrom scan in level of aleatrocic uncertainty
     # # - option 2.1 - read from environmental variable
     # if 'INPUTCOV' in os.environ:
     #     input_cv = os.environ['INPUTCOV']
