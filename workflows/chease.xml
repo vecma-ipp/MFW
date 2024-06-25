@@ -122,7 +122,7 @@
               <ntest>0</ntest>
               <ntmf0>0</ntmf0>
               <nturn>20</nturn>
-              <tensbnd>-0.1</tensbnd>
+              <tensbnd>0.0</tensbnd>
               <tensprof>-0.1</tensprof>
               <ap>0. 0.7 0.4 0. 0. 0. -0.3</ap>
               <ap2>1.0E-1 5.0E-1</ap2>
