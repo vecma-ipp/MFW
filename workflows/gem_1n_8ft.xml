@@ -36,8 +36,8 @@
 
    <step_parameters>
      <step_counts>
-       <nstep> 5 </nstep>
-       <ndg> 1 </ndg>
+       <nstep> 50 </nstep>
+       <ndg> 25 </ndg>
        <nplot> 1 </nplot>
      </step_counts>
      <time_step>
