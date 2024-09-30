@@ -299,13 +299,13 @@ gem: ual libbds get-gem patch-gem
 get-gem:
 	@if [ ! -d "externals/gem" ]; then \
 	  echo "Checking out gem..."; \
-		#svn co $(SVNURL_SOLPS)/GEM/trunk externals/gem; \
-		git clone git@${GITLABADR_PSNC}:ets/gem.git externals/gem; \
+		svn co $(SVNURL_SOLPS)/GEM/trunk externals/gem; \
+		#git clone git@${GITLABADR_PSNC}:ets/gem.git externals/gem; \
 	else  \
 		echo "Updating gem..."; \
-		#svn up externals/gem; \
+		svn up externals/gem; \
 		#git pull externals/gem; \
-		echo  "Not using git pull!"; \
+		#echo  "Not using git pull!"; \
 		# TODO git pull will fail due to a previous patch! \
 	fi
 

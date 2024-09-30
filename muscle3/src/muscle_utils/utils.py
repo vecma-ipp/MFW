@@ -22,7 +22,7 @@ uqbasicdadir = '/u/yyudin/code/MFW/uq/basicda/'
 sys.path.append(uqbasicdadir)
 from gem_da import profile_evol_load, profile_evol_plot
 from da_utils import read_cpo_file
-from extcodehelper import ExtCodeHelper
+#from extcodehelper import ExtCodeHelper
 
 
 def l3interp(y_in, x_in, nr_in=None, y_out=None, x_out=None, nr_out=None):

@@ -35,7 +35,7 @@ from scipy import interpolate
 from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
 from statsmodels.tsa.api import acf, pacf, graphics
 
-from extcodehelper import ExtCodeHelper
+#from extcodehelper import ExtCodeHelper
 
 from ascii_cpo import read, write
 
@@ -2548,7 +2548,7 @@ def plot_timetraces_act(traces, avg, std, sem, foldname='', alpha_discard=0.3, a
             SEM estimstion
     """
 
-    #print(f"from time traces plotting: {avg}, {std}, {sem}, {act}") ###DEBUG
+    print(f"from time traces plotting: {avg}, {std}, {sem}, {act}") ###DEBUG
     #TODO legend too large
     #TODO gap between ACT parts -> should be solved
     #TODO linewidth and markersize don't work
@@ -2556,29 +2556,37 @@ def plot_timetraces_act(traces, avg, std, sem, foldname='', alpha_discard=0.3, a
     my_lw = 1
     my_ms = 4
 
+    PLOT_ACT_WINDOWS = False
+
     plt.style.use("latex10pt")
     plt.rcParams.update({"axes.grid": True, "font.family": "serif", "text.usetex": False})
     #lpl_context = [1100, 700] # poster size
     lpl_context = [347, 549] # LNCS paper size
-    lpl_context = [int(347*1.4), int(549*1)] # LNCS paper size - WIDENED
+    lpl_context = [int(200*1.4), int(400*1)] # LNCS paper size - WIDENED
     #lpl_context = [700, 442] #DEBUG manual fitting
     lpl.size.set(*lpl_context)
 
-    #y_lim = (1.9E+6, 2.9E+6) #(1.8E+6, 3.0E+6) #(-5.E+4, 2.8E+6)
-    #y_lim = (-1E+2, 2E+6)
-    y_lim = (traces.min()-0.1*traces.min(), traces.max()+0.1*traces.max())
-
     #fig, ax = plt.subplots(figsize=(16, 8))
-    fig, ax = lpl.subplots(1, 1, scale=.75)
+    fig, ax = lpl.subplots(1, 1, scale=1.) #.75
 
     n_tt = len(traces)
     n_disc = m.floor(alpha_discard*n_tt)
     n_stat = n_tt - n_disc
     n_act = m.floor(n_stat / act)
 
+    # Defining limits in 0Y
+    #y_lim = (1.9E+6, 2.9E+6) #(1.8E+6, 3.0E+6) #(-5.E+4, 2.8E+6)
+    #y_lim = (-1E+2, 2E+6)
+    #y_lim = (traces.min()-0.1*traces.min(), traces.max()+0.1*traces.max())
+    y_min = traces[n_disc:].min()
+    y_max = traces[n_disc:].max()
+    y_lim = (y_min - 0.25*abs(y_min), y_max + 0.25*abs(y_max))
+
     # Plotting for the ramp-up phase
     ax.plot(np.arange(0, n_disc), traces[0:n_disc], color='b', linestyle='-', linewidth=my_lw)
-    ax.vlines(n_disc, y_lim[0], y_lim[1], colors='grey', alpha=0.5, linestyles='dashed', label=f"autocorrelation time windows, n={n_act}, len={act}")
+
+    if PLOT_ACT_WINDOWS:
+        ax.vlines(n_disc, y_lim[0], y_lim[1], colors='grey', alpha=0.5, linestyles='dashed', label=f"autocorrelation time windows, n={n_act}, len={act}")
 
     for i in range(n_act-1):
         # Plotting traces for each of the ACT window
@@ -2590,7 +2598,8 @@ def plot_timetraces_act(traces, avg, std, sem, foldname='', alpha_discard=0.3, a
         mid_point = m.floor((i_f+i_l-1) / 2),
         ax.plot(mid_point, traces[mid_point], 'k*', markersize=my_ms) # scatter? fmt?
 
-        ax.vlines(i_l-1, y_lim[0], y_lim[1], colors='grey', alpha=0.3, linestyles='dashed')
+        if PLOT_ACT_WINDOWS:
+            ax.vlines(i_l-1, y_lim[0], y_lim[1], colors='grey', alpha=0.3, linestyles='dashed')
 
     # Plotting - special iteration for legends
     i_f = n_disc + act * (n_act - 1)
@@ -2598,10 +2607,11 @@ def plot_timetraces_act(traces, avg, std, sem, foldname='', alpha_discard=0.3, a
 
     ax.plot(np.arange(i_f, i_l), traces[i_f:i_l], color='b', linestyle='-', linewidth=my_lw, label="time traces of $Q_{{i}}$")
     
-    mid_point = m.floor((i_f+i_l) / 2),
+    mid_point = m.floor((i_f+i_l) / 2)
     ax.plot(mid_point, traces[mid_point], 'k*', markersize=my_ms, label=f"effective sample points")
 
-    ax.vlines(i_l, y_lim[0], y_lim[1], colors='grey', alpha=0.3, linestyles='dashed')
+    if PLOT_ACT_WINDOWS:
+        ax.vlines(i_l, y_lim[0], y_lim[1], colors='grey', alpha=0.3, linestyles='dashed')
 
     # Plotting horisontal lines for AVG and bands of STD and SEM
     ax.hlines(y=avg, xmin=0, xmax=n_tt, color='g', linestyle='-', label=f"mean: {avg:.2}")
@@ -2630,7 +2640,7 @@ def plot_timetraces_act(traces, avg, std, sem, foldname='', alpha_discard=0.3, a
     
     ax.legend(fancybox=True, framealpha=0.5)
     #fig.tight_layout()
-    fig.savefig('timetraces_act_{0}.pdf'.format(foldname))
+    fig.savefig('timetraces_act_{0}.png'.format(foldname))
     plt.close()
 
 def time_traces_per_run(traces, run_len=450, foldname='', alpha_discard=0.3, **kwargs):
@@ -2640,16 +2650,11 @@ def time_traces_per_run(traces, run_len=450, foldname='', alpha_discard=0.3, **k
     Plots the timetraces with data from each run
     """
 
-    #y_lim = (1.9E+6, 2.9E+6) #(1.8E+6, 3.0E+6) #(1.5E+6, 2.8E+6) #(1.E+4, 3.5E+6)
-    y_min = traces.min()
-    y_max = traces.max()
-    y_lim = (y_min - 0.5*abs(y_min), y_max + 0.5*abs(y_max))
-
     plt.style.use("latex10pt")
     plt.rcParams.update({"axes.grid": True, "font.family": "serif", "text.usetex": False})
     #lpl_context = [1100, 700] # poster size
     lpl_context = [347, 549] # LNCS paper size
-    lpl_context = [int(347*1.4), int(549*1)] # LNCS paper size - WIDENED
+    lpl_context = [int(200*1.4), int(400*1)] # LNCS paper size - WIDENED
     lpl.size.set(*lpl_context)
 
     #fig, ax = plt.subplots(figsize=(8,8))
@@ -2667,7 +2672,24 @@ def time_traces_per_run(traces, run_len=450, foldname='', alpha_discard=0.3, **k
     #additional check if at least one run window fit time series length
     if run_len >= n_stat:
         run_len = n_stat #TODO can be single function call probably
-    n_r = m.floor(n_stat / run_len)
+
+    if 'n_r' in kwargs:
+        n_r = kwargs['n_r'] 
+    else:   
+        n_r = m.floor(n_stat / run_len)
+        print(f"n_r={n_r}") ###DEBUG
+
+    # Definign plot limits in 0Y
+    # a) manual
+    # y_lim = (1.9E+6, 2.9E+6) #(1.8E+6, 3.0E+6) #(1.5E+6, 2.8E+6) #(1.E+4, 3.5E+6)
+    # b) all passed data
+    # y_min = traces.min()
+    # y_max = traces.max()
+    # y_lim = (y_min - 0.5*abs(y_min), y_max + 0.5*abs(y_max))
+    # c) data after discard
+    y_min = traces[n_disc:].min()
+    y_max = traces[n_disc:].max()
+    y_lim = (y_min - 0.25*abs(y_min), y_max + 0.25*abs(y_max))
 
     # Plotting for the ramp-up phase
     ax[0].plot(np.arange(0, n_disc), traces[0:n_disc], color='b', linestyle='-')
@@ -2698,7 +2720,7 @@ def time_traces_per_run(traces, run_len=450, foldname='', alpha_discard=0.3, **k
         act_loc, acn_loc = get_coreprof_ev_acf(np.array([traces_loc]),
                 name='locacf'+foldname+'_substep_'+str(i),
                 lags=lags_list_apl)
-        print(f"act={acn_loc}, acn={acn_loc}") ###DEBUG
+        #print(f"act={acn_loc}, acn={acn_loc}") ###DEBUG
         #TODO: take an window-average; transfer to gem_da.py
         #traces_acf_loc = traces_loc[int(act_loc[0]/2.):-1:int(act_loc[0])]
         traces_acf_loc = np.array([traces_loc[i*int(act_loc[0]):(i+1)*int(act_loc[0])].mean() for i in range(int(acn_loc[0]))])
@@ -2735,17 +2757,21 @@ def time_traces_per_run(traces, run_len=450, foldname='', alpha_discard=0.3, **k
 
     i_f = n_disc + run_len * i
     #i_l = n_disc + run_len * (i + 1)
-    i_l = n_tt
 
-    traces_loc = traces[n_disc:i_l]
-    x_loc = np.arange(n_disc, i_l)
+    # if full traces are used
+    i_l_tot = i_l = n_tt
+    # otherwise
+    i_l = n_disc + run_len * n_r
+
+    traces_loc = traces[n_disc:i_l][:n_disc+run_len*n_r]
+    x_loc = np.arange(n_disc, i_l)[:n_disc+run_len*n_r]
     
     # Calculating local ACT
     lags_list_apl = [l for l in lags_list if l < len(traces_loc)]
     act_loc, acn_loc = get_coreprof_ev_acf(np.array([traces_loc]),
             name='locacf'+foldname+'_substep_'+str(i),
             lags=lags_list_apl)
-    print(f"act={act_loc}, acn={acn_loc}") ###DEBUG
+    #print(f"act={act_loc}, acn={acn_loc}") ###DEBUG
     traces_acf_loc = traces_loc[int(act_loc[0]/2.):-1:int(act_loc[0])]
 
     lens[i] = len(traces_loc)
@@ -2755,8 +2781,8 @@ def time_traces_per_run(traces, run_len=450, foldname='', alpha_discard=0.3, **k
     # Calculating local AVG
     avg_loc = traces_acf_loc.mean()
     means[i] = avg_loc
-    rel_mean_changes[i] = (means[i]- means[i-1]) / means[i-1] if i>0 else 1.
-    abs_mean_changes[i] = abs(means[i]- means[i-1]) if i>0 else 1.
+    rel_mean_changes[i] = (means[i] - means[i-1]) / means[i-1] if i>0 else 1.
+    abs_mean_changes[i] = abs(means[i] - means[i-1]) if i>0 else 1.
     
     std_loc = traces_acf_loc.std()
     stds[i] = std_loc
@@ -2767,12 +2793,12 @@ def time_traces_per_run(traces, run_len=450, foldname='', alpha_discard=0.3, **k
     ax[0].vlines(i_l, y_lim[0], y_lim[1], colors='grey', alpha=0.3, linestyles='dashed', label=f"simulation length, n={run_len}")
     
     # Plotting horisontal lines for AVG and bands of STD and SEM
-    ax[0].hlines(y=avg_loc,         xmin=i_f, xmax=i_l, color='g', linestyle='-', label=f"mean: {avg_loc:.2}")
+    ax[0].hlines(y=avg_loc,         xmin=i_f, xmax=i_l, color='g', linestyle='-', label=f"mean: {avg_loc:.3}")
 
-    ax[0].hlines(y=avg_loc+sem_loc, xmin=i_f, xmax=i_l, color='g', linestyle='--', label=f"+/- standard error: {sem_loc:.2}")
+    ax[0].hlines(y=avg_loc+sem_loc, xmin=i_f, xmax=i_l, color='g', linestyle='--', label=f"+/- standard error: {sem_loc:.3}")
     ax[0].hlines(y=avg_loc-sem_loc, xmin=i_f, xmax=i_l, color='g', linestyle='--')
 
-    ax[0].hlines(y=avg_loc+1.96*std_loc, xmin=i_f, xmax=i_l, color='g', linestyle='dotted', label=f"95% predictive interval, std: {std_loc:.2}")
+    ax[0].hlines(y=avg_loc+1.96*std_loc, xmin=i_f, xmax=i_l, color='g', linestyle='dotted', label=f"95% predictive interval, std: {std_loc:.3}")
     ax[0].hlines(y=avg_loc-1.96*std_loc, xmin=i_f, xmax=i_l, color='g', linestyle='dotted')
     
     # Plotting vertical lines for different phases
@@ -2786,12 +2812,16 @@ def time_traces_per_run(traces, run_len=450, foldname='', alpha_discard=0.3, **k
     #ax.set_xlabel(f"{'time, code time-steps'}")
     ax[0].set_xlabel("${{t}}$, code time-steps")
     
+    ax[0].set_xlim(0, n_tt)
+
     ax[0].set_ylim(y_lim[0], y_lim[1])
 
     ax[0].ticklabel_format(useMathText=True)
 
-    ax[0].legend(fancybox=True, framealpha=0.5, loc='best', 
-                #prop={'size':12}
+    ax[0].legend(fancybox=True, framealpha=0.5, 
+                #loc='best', 
+                loc='upper right',
+                #prop={'size':12},
                  )
 
     # Saving a CSV with results
@@ -2804,110 +2834,132 @@ def time_traces_per_run(traces, run_len=450, foldname='', alpha_discard=0.3, **k
     np.savetxt('res_timetraces_perrun_'+foldname+'.csv', res_csv_array, delimiter=",",
                header='runnum, len, act, n_eff, avg, std, sem, rmc, amc')
 
+    # Separately store the time just a plot of time traces
+
+    fig_vanilla, ax_vanilla = lpl.subplots(scale=1.)
+    ax_vanilla.plot(np.arange(0, n_tt), traces, color='b', linestyle='-', label=f"$Q_{{i}}(\\rho=0.7,t)$")
+    ax_vanilla.set_xlabel(f"${{t}}$, code time-steps")
+    ax_vanilla.set_ylabel(f"$Q_{{i}}, \\frac{{W}}{{m^{2}}}$")
+    ax_vanilla.ticklabel_format(useMathText=True)
+    ax_vanilla.set_ylim(y_lim[0], y_lim[1])
+    fig_vanilla.savefig(f"tt_{foldname}.png")
+
+    plot_timetraces_act(traces, avg_loc, std_loc, sem_loc, foldname='', alpha_discard=alpha_discard, act=int(act_loc[0]))
+
     #########################################################
     ### Second graph: plotting ACT, SEM, Mean, STD and mean change
+
     #--- Plotting ACT
     #print(f"acts={acts}") ###DEBUG
     #fig1, ax1 = plt.subplots(figsize=(5,5))
 
-    y_max_act = 200
+    y_max_act = 100
     
     #ax[1].plot(np.arange(n_r), acts, color='b')
-    ax[1].plot(np.arange(n_disc+run_len, n_tt, run_len), 
+    ax[1].plot(np.arange(n_disc+run_len, n_tt, run_len)[:n_r], 
                acts, 
                color='b', 
                label=f"ACT, t.st.")
     
     ax[1].set_xlabel(f"${{t}}$, code time steps") #('Number of simulations')
-    ax[1].set_ylabel('Autocorrelation Time, time steps')
-    #ax[1].set_ylabel('Quantity and units in legend')
+    #ax[1].set_ylabel('Autocorrelation Time, time steps')
+    ax[1].set_ylabel('Quantity and units in legend')
     
     ax[1].set_ylim(ymin=0, ymax=y_max_act)
     ax[1].yaxis.label.set_color('b')
+
+    ax[1].set_xlim(0, n_tt)
+
     #fig1.tight_layout()
     #fig1.savefig(f"vact_mean_{foldname}.pdf")
     #plt.close()
 
-    #--- Plotting SEM
+    # #--- Plotting SEM
     scale_factor_sem = 1. #1_000
-    #fig2, ax2 = plt.subplots(figsize=(5,5))
-    ax2 = ax[1].twinx()
-    #ax2 = ax[1]
+    scale_factor_sem = 1_000.
+    # #fig2, ax2 = plt.subplots(figsize=(5,5))
+    # ax2 = ax[1].twinx()
+    ax2 = ax[1]
 
-    #ax2.plot(np.arange(n_r), sems, color='g')
-    ax2.plot(np.arange(n_disc+run_len, n_tt, run_len), 
-             sems/scale_factor_sem, 
-             color='g', 
-             label=f"SEM, {scale_factor_sem} $\\cdot W/m^{{2}}$")
+    # #ax2.plot(np.arange(n_r), sems, color='g')
+    # ax2.plot(np.arange(n_disc+run_len, n_tt, run_len)[:n_r], 
+    #          sems/scale_factor_sem, 
+    #          color='g', 
+    #          label=f"SEM, {scale_factor_sem} $\\cdot W/m^{{2}}$")
     
-    #ax2.set_xlabel('Number of simulations')
-    ax2.set_ylabel('Standard error, $\\frac{W}{m^{{2}}}$')
-    ax2.set_ylim(ymin=0, ymax=200_000/scale_factor_sem)
-    ax2.yaxis.label.set_color('g')
+    # #ax2.set_xlabel('Number of simulations')
+    # ax2.set_ylabel('Standard error, $\\frac{W}{m^{{2}}}$')
+    # ax2.set_ylim(ymin=0, ymax=200_000/scale_factor_sem)
+    # ax2.yaxis.label.set_color('g')
     
-    #fig.tight_layout()
-    #fig.savefig(f"sem_act_timetraces_{foldname}.pdf")
-    #plt.close()
+    # #fig.tight_layout()
+    # #fig.savefig(f"sem_act_timetraces_{foldname}.pdf")
+    # #plt.close()
 
     #--- Plotting Relative SEM
     scale_factor_sem_rel = 2E-7
+    scale_factor_sem_rel = 1.E-3
     ax22 = ax2
 
-    ax22.plot(np.arange(n_disc+run_len, n_tt, run_len), 
+    ax22.plot(
+             np.arange(n_disc+run_len, n_tt, run_len)[:n_r], 
              np.divide(sems, means) / scale_factor_sem_rel, 
              color='m', 
              linestyle='--',
              label=f"relative SEM, {scale_factor_sem_rel} $fraction$")
     
-    ax22.set_ylabel('Standard error, $\\frac{W}{m^{{2}}}$')
+    #ax22.set_ylabel('Relative standard error, $\\frac{W}{m^{{2}}}$')
+    
     #ax22.set_ylim(ymin=0, ymax=1/scale_factor_sem_rel)
     #ax22.yaxis.label.set_color('g')
     
-    #--- Plotting Mean
-    scale_factor_mmn = 50_000
-    #fig3, ax3 = plt.subplots(figsize=(7,7))
-    #ax3 = ax[1].twinx()
-    ax3 = ax[1]
+    # #--- Plotting Mean
+    # scale_factor_mmn = 50_000
+    # #fig3, ax3 = plt.subplots(figsize=(7,7))
+    # #ax3 = ax[1].twinx()
+    # ax3 = ax[1]
 
-    #ax3.plot(np.arange(n_r), means)
-    ax3.plot(np.arange(n_disc+run_len, n_tt, run_len), 
-             means/scale_factor_mmn, 
-             color='r', 
-             label=f"Mean, {scale_factor_mmn} $\\cdot W/m^{{2}}$")
+    # #ax3.plot(np.arange(n_r), means)
+    # ax3.plot(np.arange(n_disc+run_len, n_tt, run_len)[:n_r], 
+    #          means/scale_factor_mmn, 
+    #          color='r', 
+    #          label=f"Mean, {scale_factor_mmn} $\\cdot W/m^{{2}}$")
 
-    #ax3.set_xlabel('Number of simulations')
-    #ax3.set_ylabel('Mean value')
-    #ax3.set_ylim(ymin=0, ymax=1_000_000/scale_factor_mmn)
-    #ax3.yaxis.label.set_color('r')
-    #fig3.tight_layout()
-    #fig3.savefig('val_mean_{0}.pdf'.format(foldname))
-    #plt.close()
+    # #ax3.set_xlabel('Number of simulations')
+    # #ax3.set_ylabel('Mean value')
+    # #ax3.set_ylim(ymin=0, ymax=1_000_000/scale_factor_mmn)
+    # #ax3.yaxis.label.set_color('r')
+    # #fig3.tight_layout()
+    # #fig3.savefig('val_mean_{0}.pdf'.format(foldname))
+    # #plt.close()
 
-    #--- Plotting Standard Deviation
-    scale_factor_std = 10_000
-    #ax4 = ax[1].twinx()
-    ax4 = ax[1]
+    # #--- Plotting Standard Deviation
+    # scale_factor_std = 10_000
+    # #ax4 = ax[1].twinx()
+    # ax4 = ax[1]
 
-    ax4.plot(np.arange(n_disc+run_len, n_tt, run_len), 
-             stds/scale_factor_std, 
-             color='y', 
-             label=f"STD, {scale_factor_std} $\\cdot W/m^{{2}}$")
-    #ax4.set_ylabel('Standard Deviation')
-    #ax4.set_ylim(ymin=0, ymax=1_000_000/scale_factor_std)
-    #ax4.yaxis.label.set_color('y')
-    #fig.savefig(f"convergence_{foldname}.pdf")
-    #plt.close()
+    # ax4.plot(np.arange(n_disc+run_len, n_tt, run_len)[:n_r], 
+    #          stds/scale_factor_std, 
+    #          color='y', 
+    #          label=f"STD, {scale_factor_std} $\\cdot W/m^{{2}}$")
+    # #ax4.set_ylabel('Standard Deviation')
+    # #ax4.set_ylim(ymin=0, ymax=1_000_000/scale_factor_std)
+    # #ax4.yaxis.label.set_color('y')
+    # #fig.savefig(f"convergence_{foldname}.pdf")
+    # #plt.close()
 
     # ---Plotting mean change
-    scale_factor_dmn = 1_000
+    scale_factor_dmn = 1_000.
+    scale_factor_dmn = 1_000.
     #fig5, ax5 = plt.subplots(figsize=(7,7))
     #ax5 = ax[1].twinx()
     ax5=ax[1]
 
     #ax5.plot(np.arange(1, n_r), abs_mean_changes[1:])
-    ax5.plot(np.arange(n_disc+2*run_len, n_tt, run_len), 
-             abs_mean_changes[1:]/scale_factor_dmn, 
-             label=f"Mean change {scale_factor_dmn} $\\cdot W/m^{{2}}$")
+    if n_r > 1:
+        ax5.plot(np.arange(n_disc+2*run_len, n_tt, run_len)[:n_r-1], 
+                abs_mean_changes[1:]/scale_factor_dmn, 
+                label=f"Mean change {scale_factor_dmn} $\\cdot W/m^{{2}}$")
 
     #ax5.set_xlabel('Number of simulations')
     #ax5.set_ylabel('Absolute change of the mean')
@@ -2915,16 +2967,19 @@ def time_traces_per_run(traces, run_len=450, foldname='', alpha_discard=0.3, **k
     #fig5.tight_layout()
     #fig5.savefig('rabs_mean_{0}.pdf'.format(foldname))
 
-    # --- Plotting actual mean error
-    scale_factor_merr = 1.  
-    mean_gt = means[-1]
+    # # --- Plotting actual mean error
+    # scale_factor_merr = 1.  
+    # mean_gt = means[-1]
 
-    ax23 = ax2
+    # # make a global ground-truth mean: crudely average stationary traces
+    # mean_gt = traces[n_disc:].mean()
 
-    ax23.plot(np.arange(n_disc+run_len, n_tt, run_len), 
-             abs(means - mean_gt)/scale_factor_sem, 
-             color='c', 
-             label=f"Mean Error, {scale_factor_sem} $\\cdot W/m^{{2}}$")
+    # ax23 = ax2
+
+    # ax23.plot(np.arange(n_disc+run_len, n_tt, run_len)[:n_r], 
+    #          abs(means - mean_gt)/scale_factor_sem, 
+    #          color='c', 
+    #          label=f"Mean Error, {scale_factor_sem} $\\cdot W/m^{{2}}$")
 
     ############################################
     ### Running through the history of the sequential estimaion and applying difference convergece criterion
@@ -2946,7 +3001,7 @@ def time_traces_per_run(traces, run_len=450, foldname='', alpha_discard=0.3, **k
 
     for crit_name, crit_func in criteria_dict.items():
         for j,et in enumerate(etol):
-            print(f"Checking criterion {crit_name} with etol={et:.7f}")
+            print(f"Checking criterion {crit_name} with etol={et:.4g}")
             for i in range(n_r-1):
                     #print(f"Checking microiteration {i}")
                     stat_dict = {'sem': sems[i], 'avg': means[i]}
@@ -2992,14 +3047,17 @@ def time_traces_per_run(traces, run_len=450, foldname='', alpha_discard=0.3, **k
     #n_w_c = 12 # n_disc+n_w_c*run_len
     n_ts_conv = conv_nts_list[n_etol]
 
+    if n_r >= 21:
+        n_ts_conv = 2300 # override
+
     ax[0].vlines(x=n_ts_conv, ymin=y_lim[0], ymax=y_lim[1], color='k', label=f"Convergence of estimates for etol={etol[n_etol]:.5e}")
     
     ax[1].vlines(x=n_ts_conv, ymin=0, ymax=y_max_act, color='k', label=f"Convergence of estimates for etol={etol[n_etol]:.5e}")
     
-    for crit_name in criteria_dict.keys():
-        if crit_name == 'sem_rel':
-            for e in etol:
-                ax[1].hlines(y=e/scale_factor_sem_rel, xmin=n_disc+run_len, xmax=n_tt, color='k', linestyle='dotted')
+    # for crit_name in criteria_dict.keys():
+    #     if crit_name == 'sem_rel':
+    #         for e in etol:
+    #             ax[1].hlines(y=e/scale_factor_sem_rel, xmin=n_disc+run_len, xmax=n_tt, color='k', linestyle='dotted')
 
     ##########
     #fig.tight_layout()
@@ -3008,7 +3066,7 @@ def time_traces_per_run(traces, run_len=450, foldname='', alpha_discard=0.3, **k
 
     ax2.legend(loc='best')
     ax[1].legend(loc='best')
-    fig.savefig(f"sem_act_timetraces_{foldname}.pdf")
+    fig.savefig(f"sem_act_timetraces_{foldname}_{n_r:03d}.png")
     plt.close()
 
     return lens, acts, means, stds, sems, conv_nts_list, etol

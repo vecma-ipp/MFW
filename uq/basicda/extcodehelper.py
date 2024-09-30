@@ -5,12 +5,12 @@ import numpy as np
 import importlib.util  # TODO windows path does not understand '..' notation
 
 #TODO: make a new package + install / or get relative paths consistent
-# -- load pyGEM0 code files - via importlib
 #gem0path = "C:/Users/user/Documents/UNI/MPIPP/PHD/code/MFW/standalone/src/custom_codes/gem0/gem0_singleton.py"
 #gem0path = os.path.abspath("../standalone/src/custom_codes/gem0/gem0_singleton.py")
-gem0path = "/u/yyudin/code/MFW/standalone/src/custom_codes/gem0/gem0.py"
+gem0path =     "/u/yyudin/code/MFW/standalone/src/custom_codes/gem0/gem0.py"
 gem0singpath = "/u/yyudin/code/MFW/standalone/src/custom_codes/gem0/gem0_singleton.py"
-#pec = importlib.util.spec_from_file_location("gem0_singleton", os.path.abspath(gem0path))
+# -- load pyGEM0 code files - via importlib
+#spec = importlib.util.spec_from_file_location("gem0_singleton", os.path.abspath(gem0path))
 spec = importlib.util.spec_from_file_location("gem0_singleton", gem0singpath)
 gem0_singleton = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(gem0_singleton)
