@@ -177,10 +177,12 @@ def discontinuity_check(series, reltol=5e-2, abstol=1e4):
         )
 
     ts1 = np.where(np.abs(rel_second_diff) > reltol)[0].tolist()
-    ts1 = [t + 1 for t in ts1 if t + 2 in ts1]
+    ts1_set = set(ts1)
+    ts1 = [t + 1 for t in ts1 if t + 2 in ts1_set]
     ts2 = np.where(np.abs(diff) > abstol)[0].tolist()
 
-    ts = ts1 + [t for t in ts2 if t not in ts1]
+    ts1_filtered_set = set(ts1)
+    ts = ts1 + [t for t in ts2 if t not in ts1_filtered_set]
     return sorted(set(ts)), len(ts)
 
 
@@ -264,6 +266,9 @@ def per_window_analysis(series, run_len=None, alpha_discard=0.3):
         abs_mean_changes[i] = abs(means[i] - means[i - 1]) if i > 0 else 0.0
 
     # ---- Convergence criterion: relative SEM < tolerance ----
+    window_ends = [n_disc + run_len * (i + 1) for i in range(n_r)]
+    window_ends[-1] = n_tt
+
     n_an_steps = 128
     etol = np.logspace(-3, 0.0, n_an_steps)
     conv_nts_list = [None] * n_an_steps
@@ -271,13 +276,10 @@ def per_window_analysis(series, run_len=None, alpha_discard=0.3):
     for j, et in enumerate(etol):
         for i in range(n_r):
             if means[i] != 0 and sems[i] / abs(means[i]) < et:
-                conv_nts_list[j] = n_disc + run_len * i
+                conv_nts_list[j] = window_ends[i]
                 break
         if conv_nts_list[j] is None:
             conv_nts_list[j] = n_tt
-
-    window_ends = [n_disc + run_len * (i + 1) for i in range(n_r)]
-    window_ends[-1] = n_tt
 
     return {
         "window_ends": np.array(window_ends),
@@ -539,7 +541,11 @@ def read_time_traces(filepath):
     # Try to detect whether the first row is a header or data
     try:
         df_test = pd.read_csv(filepath, nrows=2, header=None, sep=None, engine="python")
-    except Exception as exc:
+    except FileNotFoundError:
+        sys.exit(f"Error: file not found: '{filepath}'")
+    except pd.errors.ParserError as exc:
+        sys.exit(f"Error parsing CSV file '{filepath}': {exc}")
+    except (ValueError, UnicodeDecodeError) as exc:
         sys.exit(f"Error reading file '{filepath}': {exc}")
 
     first_row_numeric = all(
