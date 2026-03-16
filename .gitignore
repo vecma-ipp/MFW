@@ -48,3 +48,7 @@ uq/run-*.sh
 uq/log-*
 
 __pycache__
+
+# Analysis output artifacts (from time_traces_analysis.py)
+test_header_*.png
+test_header_*.csv
